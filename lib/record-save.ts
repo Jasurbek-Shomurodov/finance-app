@@ -18,10 +18,10 @@ export function recordSaveProblem(editing: Entry) {
  return '';
 }
 
-/** The name an expense is saved under when left blank: its note, its custom category, or its kind's key, which
- * `shownName` reads in the current language. */
+/** The name an expense is saved under when left blank: its custom category, or its kind's key, which `shownName` reads
+ * in the current language. A note is a comment, shown under the name, never the name itself. */
 export function expenseName(editing: Entry, categoryName: string | undefined, kindName: string) {
- return expenses.includes(editing.kind) && !editing.name.trim() ? (editing.notes.trim().slice(0, 120) || categoryName || kindName) : editing.name;
+ return expenses.includes(editing.kind) && !editing.name.trim() ? (categoryName || kindName) : editing.name;
 }
 
 /** Income or spending is booked to a cash account of the workspace (once the accounts have loaded, `ready`), and in

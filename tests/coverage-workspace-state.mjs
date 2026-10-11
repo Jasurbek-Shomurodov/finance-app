@@ -145,12 +145,13 @@ test('the sample workspace starts from the backend and changes only its own copy
  await ws().save(formEvent({}));assert.equal(shown.errors.at(-1), 'Enter an amount greater than zero.');
  ws().setEditing({ ...expense, account_id: null });r.update();
  await ws().save(formEvent({}));r.update();assert.equal(shown.errors.at(-1), 'Choose a cash account.');
- // A blank expense is named after its note.
+ // A blank expense is named after its category; its note stays a comment.
  const saved = shown.saved;
  ws().setEditing({ ...expense, name: '', notes: 'Weekly shop' });r.update();
  await ws().save(formEvent({ account_exchange_rate: '1' }));r.update();
  assert.equal(shown.saved, saved + 1);assert.equal(ws().editing, null);
- assert.equal(ws().rows.find(row => row.id === expense.id).name, 'Weekly shop');
+ assert.equal(ws().rows.find(row => row.id === expense.id).name, 'Living expense');
+ assert.equal(ws().rows.find(row => row.id === expense.id).notes, 'Weekly shop');
  // Deleting keeps the record in Recently deleted, from where it comes back.
  ws().requestDelete(expense);r.update();await ws().remove();r.update();
  assert.equal(ws().rows.some(row => row.id === expense.id), false);
