@@ -25,3 +25,15 @@ test('the transaction row shows the note under the name, outside the detail line
   assert.match(source, /\{note\(r\)&&<small>\{note\(r\)\}<\/small>\}/, 'the note line renders under the name');
   assert.doesNotMatch(source, /: r\.notes && !r\.notes\.trim\(\)\.startsWith/, 'the note no longer replaces the detail line');
 });
+
+test('the note line is the comment, left out when it only repeats the name', () => {
+  const names = loadTS('lib/record-names.ts');
+  assert.equal(names.noteLine({ name: 'Living expense', notes: 'Gas & Diesel.' }), 'Gas & Diesel.');
+  assert.equal(names.noteLine({ name: 'Javoxirga', notes: 'Javoxirga' }), null);
+  assert.equal(names.noteLine({ name: 'Groceries', notes: '   ' }), null);
+});
+
+test('the Transactions screen shows the note under the name too', () => {
+  const source = fs.readFileSync('components/workspace/screens/transactions-screen.tsx', 'utf8');
+  assert.match(source, /\{noteLine\(record\) && <small>\{noteLine\(record\)\}<\/small>\}/, 'the note renders on the transaction row');
+});

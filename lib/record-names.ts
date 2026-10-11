@@ -25,3 +25,8 @@ export function matchingNames(rows: Entry[], entry: Pick<Entry, 'id' | 'kind' | 
   }
   return [...groups.values()].sort((a,b) => Number(b.exact) - Number(a.exact) || a.name.localeCompare(b.name));
 }
+/** The note under a record's name: a comment the person wrote, left out when it only repeats the name. */
+export function noteLine(record: Pick<Entry, 'name' | 'notes'>) {
+  const note = record.notes?.trim();
+  return note && !note.startsWith(record.name.trim()) ? note : null;
+}

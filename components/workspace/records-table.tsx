@@ -20,7 +20,7 @@ import { signedAmount } from '@/lib/transaction-list';
 import { trackedKinds } from '@/lib/investment-history';
 import { isTransactionHistory } from '@/lib/transaction-history';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
-import { shownName } from '@/lib/record-names';
+import { noteLine, shownName } from '@/lib/record-names';
 
 // Fee rows are written by the database under these names; show them in the visitor's language.
 
@@ -54,7 +54,7 @@ export function RecordsTable({ title, transactions = false, limit, pagination = 
   : r.rate ? t('{rate}% annual interest', { rate: formatNumber(r.rate, locale) })
   : null;
  // The note is a comment under the name, whatever else the line says; a note that only repeats the name is left out.
- const note = (r: (typeof visible)[number]) => { const text = r.notes?.trim(); return text && !text.startsWith(r.name.trim()) && text !== detail(r) ? text : null; };
+ const note = (r: (typeof visible)[number]) => { const text = noteLine(r); return text && text !== detail(r) ? text : null; };
  return <section id="workspace-records" className={`panel records${historyOnly ? ' transaction-history' : ''}`}>
   {/* A preview counts the rows it lists; the full list counts every matching record. */}
   <PanelTitle title={title} count={<Count value={limit === undefined ? totalRecords : shown.length} loading={tableLoading}/>}/>
