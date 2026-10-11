@@ -42,7 +42,7 @@ import { chunks, emptyTransactionFilter, filtersTransactions, groupPageByDay, ea
 import { canRecategorize, canTakeCategory, categoryChoices, choiceKey, newRule, ruleFromBusiness, ruleFromChange, type CategoryChoice, type TransactionRule } from '@/lib/transaction-rules';
 import { TransactionInsights } from '@/components/transaction-insights';
 import { RollingText } from '@/components/presentation-foundation/rolling-text';
-import { noteLine, shownName } from '@/lib/record-names';
+import { shownName } from '@/lib/record-names';
 
 const transactionsPerPage = 20;
 
@@ -175,9 +175,9 @@ export function TransactionsScreen() {
      {day.records.map(record => {
       const editable = canRecategorize(record, splits);
       const recordTags = tagsOf(record.id).map(id => tagById.get(id)).filter(tag => !!tag);
-      return <li key={record.id} className="transaction-row" data-selected={selected.has(record.id) || undefined} tabIndex={0} aria-label={transactionRowLabel(t('View details for {name}', { name: shownName(record, t) }), record, nameOf(record), locale, enteredSigned(signedAmount(record), record.currency))} onClick={open(record)} onKeyDown={open(record)}>
+      return <li key={record.id} className="transaction-row" data-selected={selected.has(record.id) || undefined} tabIndex={0} aria-label={transactionRowLabel(t('View details for {name}', { name: shownName(record, t, nameOf(record)) }), record, nameOf(record), locale, enteredSigned(signedAmount(record), record.currency))} onClick={open(record)} onKeyDown={open(record)}>
        {selecting && <input type="checkbox" aria-label={t('Select {name}', { name: record.name })} checked={selected.has(record.id)} onChange={() => toggle(record.id)}/>}
-       <span className="transaction-merchant"><CategoryIcon kind={record.custom_category_id ? nameOf(record) : record.kind}/><span>{attachments.counts.get(record.id) ? <span className="transaction-name"><strong>{shownName(record, t)}</strong><Paperclip className="transaction-attachment-mark" size={13} role="img" aria-label={t('Attachments: {count}', { count: attachments.counts.get(record.id)! })}/></span> : <strong>{shownName(record, t)}</strong>}{record.account_id && accounts.get(record.account_id) && <small>{accounts.get(record.account_id)}</small>}{noteLine(record) && <small>{noteLine(record)}</small>}<MortgageSplit record={record}/>{recordTags.length > 0 && <span className="transaction-tags">{recordTags.map(tag => <TagChip key={tag.id} name={tag.name} color={tag.color}/>)}</span>}</span></span>
+       <span className="transaction-merchant"><CategoryIcon kind={record.custom_category_id ? nameOf(record) : record.kind}/><span>{attachments.counts.get(record.id) ? <span className="transaction-name"><strong>{shownName(record, t, nameOf(record))}</strong><Paperclip className="transaction-attachment-mark" size={13} role="img" aria-label={t('Attachments: {count}', { count: attachments.counts.get(record.id)! })}/></span> : <strong>{shownName(record, t, nameOf(record))}</strong>}{record.account_id && accounts.get(record.account_id) && <small>{accounts.get(record.account_id)}</small>}<MortgageSplit record={record}/>{recordTags.length > 0 && <span className="transaction-tags">{recordTags.map(tag => <TagChip key={tag.id} name={tag.name} color={tag.color}/>)}</span>}</span></span>
        <span className="transaction-labels">{owners.length > 0 && <OwnerPicker record={record} owner={ownerOption(record)} owners={owners} disabled={readOnly || selecting} onChange={owner => void giveTo(record, owner)}/>}<CategoryPicker record={record} categories={data.categories} removed={removedCategories.kinds} disabled={!editable || selecting || readOnly} onChange={choice => change([record], choice)}/>
        {businessList.length > 0 && <BusinessPicker record={record} businesses={businessList} disabled={selecting || readOnly || record.frequency !== 'Once' || !!record.history_event_id || !!record.earning_source_id || (record.kind === 'Salary' && !!record.income_source_id)} onChange={business => moveToBusiness(record, business)}/>}</span>
        <TransactionAmount record={record}/>

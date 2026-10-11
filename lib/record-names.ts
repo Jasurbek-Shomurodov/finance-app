@@ -1,9 +1,25 @@
 import { expenses, income, type Entry } from './finance';
 const categoryKeys = new Set([...income, ...expenses]);
 const generatedNames = new Set(['Transaction fee', 'Transfer fee']);
+type Named = Pick<Entry, 'name'> & Partial<Pick<Entry, 'movement_id' | 'operation_id' | 'notes' | 'kind'>>;
+/** A transaction saved without a name stands in with its category (its key, its kind or its custom category's name);
+ * when it has a note, the note is what the person wrote about it, so the note is its title. */
+function noteTitle(record: Named, categoryName?: string) {
+  const note = record.notes?.trim().split('\n')[0].trim().slice(0, 120);
+  return note && isStandInName(record, categoryName) ? note : null;
+}
+/** Whether a record's name is only its category standing in for a name nobody typed. */
+export function isStandInName(record: Named, categoryName?: string) {
+  const name = (record.name ?? '').trim().toLowerCase();
+  const standIns = [record.kind ?? '', categoryName ?? ''].map(value => value.trim().toLowerCase()).filter(Boolean);
+  return !name || categoryKeys.has((record.name ?? '').trim()) || standIns.includes(name);
+}
 /** The name to show. A transaction saved without a name keeps its category's key, and transfer fees are named by the app;
- * both read in the current language. A name the person typed is shown as typed. */
-export function shownName(record: Pick<Entry, 'name'> & Partial<Pick<Entry, 'movement_id' | 'operation_id'>>, translate: (key: string) => string) {
+ * both read in the current language, unless the transaction has a note, which then names it. A name the person typed is
+ * shown as typed. Pass the custom category's name where it is known, so a stand-in under it is recognised too. */
+export function shownName(record: Named, translate: (key: string) => string, categoryName?: string) {
+  const titled = noteTitle(record, categoryName);
+  if (titled) return titled;
   const name = record.name.trim();
   return categoryKeys.has(name) || (generatedNames.has(name) && !!(record.movement_id || record.operation_id)) ? translate(name) : record.name;
 }
@@ -25,8 +41,8 @@ export function matchingNames(rows: Entry[], entry: Pick<Entry, 'id' | 'kind' | 
   }
   return [...groups.values()].sort((a,b) => Number(b.exact) - Number(a.exact) || a.name.localeCompare(b.name));
 }
-/** The note under a record's name: a comment the person wrote, left out when it only repeats the name. */
-export function noteLine(record: Pick<Entry, 'name' | 'notes'>) {
+/** A note as a row's line of context: left out when it already names the record or only repeats the name. */
+export function noteLine(record: Named, categoryName?: string) {
   const note = record.notes?.trim();
-  return note && !note.startsWith(record.name.trim()) ? note : null;
+  return note && !noteTitle(record, categoryName) && !note.startsWith(record.name.trim()) ? note : null;
 }

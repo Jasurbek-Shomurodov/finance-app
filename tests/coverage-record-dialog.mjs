@@ -516,7 +516,9 @@ test('Add expense records one payment: no Repeats, a cash account, and the Debt 
  const d=dialog(t,expense({frequency:'Once'}),{editingCashFlow:true});
  assert.equal(d.r.all(byType('ScheduleFields')).length,0);
  assert.equal(d.r.all(byType('CashAccountField')).length,1);
- assert.equal(d.r.all(byType('RecordNameInput')).length,0);
+ const names=d.r.all(byType('RecordNameInput'));
+ assert.equal(names.length,1,'a one-time expense may be named');
+ assert.equal(names[0].props.optional,true,'but it need not be');
 });
 
 test('Investments’ Add asset opens a dialog of the same name, whatever kind it starts on (I18N-013)',t=>{

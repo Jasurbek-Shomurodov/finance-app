@@ -5,6 +5,7 @@ import { FormFooter } from '@/components/presentation-foundation/form-footer';
 import { ScheduleFields } from '@/components/presentation-foundation/schedule-fields';
 import { MonthDayField } from '@/components/presentation-foundation/month-day-field';
 import { RecordNameInput } from '@/components/record-name-input';
+import { isStandInName } from '@/lib/record-names';
 import { ErrorPopup } from '@/components/presentation-foundation/error-popup';
 import { ScheduledPaymentField } from '@/components/presentation-foundation/scheduled-payment-field';
 import { chooseSchedule, paymentSchedules } from '@/lib/planning';
@@ -47,7 +48,10 @@ function CategoryAmount({form}:{form:ExpenseContext}){
  const {t}=useLanguage();
  const {editing,setEditing,busy,planning,currencies,mode,update,savedCurrency,onLeave,schedule,original}=form;
  const removed=planning.data.removedKinds??[];
- return <>   {schedule&&<RecordNameInput label={t('Name')} entry={editing} rows={planning.data.records} original={original} placeholder={t('e.g. Rent or internet subscription')} onChange={name=>update({name})}/>}
+ // A one-time expense may be named; left blank it stands in with its category, which the field shows as empty.
+ const categoryName=planning.data.categories.find(category=>category.id===editing.custom_category_id)?.name;
+ return <>   {schedule?<RecordNameInput label={t('Name')} entry={editing} rows={planning.data.records} original={original} placeholder={t('e.g. Rent or internet subscription')} onChange={name=>update({name})}/>
+   :mode==='expense'&&<RecordNameInput optional label={t('Name (optional)')} entry={isStandInName(editing,categoryName)?{...editing,name:''}:editing} rows={planning.data.records} original={original} placeholder={t('e.g. Groceries or Mum’s allowance')} onChange={name=>update({name})}/>}
    {mode==='expense'&&<div><label>{t('Category')}<NativeSelect disabled={busy||planning.loading||!!planning.error} value={editing.custom_category_id??editing.kind} onChange={event=>{
     const selected=event.target.value;
     setEditing(selectTransactionCategory(editing,selected,planning.data.categories,'expense'));
