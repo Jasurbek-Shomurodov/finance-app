@@ -14,6 +14,22 @@ test('migration 143 is in setup.sql, safe to re-run, and bumps the schema versio
  try{await d.exec('RESET ROLE');await d.exec(migration);await d.exec(migration);assert.equal((await d.query('SELECT finance_capabilities() AS c')).rows[0].c.schema_version,143);}finally{await d.close();}
 });
 
+test('migration 143 keeps one copy of the future-date check where an earlier double run of 110 left two',async()=>{
+ const d=await db(setup.slice(0,setup.indexOf(migration)));
+ try{
+  await d.exec('RESET ROLE');
+  const definition=async()=>(await d.query("SELECT pg_get_functiondef('public.planning_action_with_actual_amount(text,jsonb)'::regprocedure) AS f")).rows[0].f;
+  const ahead="IF (p_data->>'paid_on')::date>(now() AT TIME ZONE 'Asia/Tashkent')::date THEN RAISE EXCEPTION 'Check the payment date.'; END IF;";
+  const line='   '+ahead;
+  await d.exec((await definition()).replace(line,line+'\n'+line));
+  assert.equal((await definition()).split(ahead).length-1,2);
+  await d.exec(migration);await d.exec(migration);
+  const patched=await definition();
+  assert.equal(patched.split(ahead).length-1,1);
+  assert.equal(patched.split("(p_data->>'paid_on')::date<r.date").length-1,1);
+ }finally{await d.close();}
+});
+
 // A monthly gift set up to start on the 12th of last month, paid from cash.
 test('Record payment refuses a payment date before the schedule starts and keeps its due date open',async()=>{
  const d=await db(setup);

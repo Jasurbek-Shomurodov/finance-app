@@ -9151,10 +9151,17 @@ BEGIN
 END $$;
 
 -- Record payment: not before the schedule starts. It goes ahead of 110's check, so 110 still finds its own text.
-SELECT pg_temp.patch_payment_start('public.planning_action_with_actual_amount(text,jsonb)'::regprocedure,
- $old$   IF (p_data->>'paid_on')::date>(now() AT TIME ZONE 'Asia/Tashkent')::date THEN RAISE EXCEPTION 'Check the payment date.'; END IF;$old$,
- $new$   IF (p_data->>'paid_on')::date<r.date THEN RAISE EXCEPTION 'Check the payment date.'; END IF;
-   IF (p_data->>'paid_on')::date>(now() AT TIME ZONE 'Asia/Tashkent')::date THEN RAISE EXCEPTION 'Check the payment date.'; END IF;$new$,1);
+-- Some databases carry 110's check twice in a row from an earlier double run; one copy is kept.
+DO $$
+DECLARE fn regprocedure:='public.planning_action_with_actual_amount(text,jsonb)'::regprocedure; definition text:=pg_get_functiondef(fn);
+ ahead text:=$q$   IF (p_data->>'paid_on')::date>(now() AT TIME ZONE 'Asia/Tashkent')::date THEN RAISE EXCEPTION 'Check the payment date.'; END IF;$q$;
+ before text:=$q$   IF (p_data->>'paid_on')::date<r.date THEN RAISE EXCEPTION 'Check the payment date.'; END IF;$q$;
+BEGIN
+ IF position(before in definition)>0 THEN RETURN; END IF;
+ definition:=replace(definition,ahead||E'\n'||ahead,ahead);
+ IF (length(definition)-length(replace(definition,ahead,'')))/length(ahead)<>1 THEN RAISE EXCEPTION 'Unexpected function definition: %',fn; END IF;
+ EXECUTE replace(definition,ahead,before||E'\n'||ahead);
+END $$;
 
 -- A later payment of a recorded due date: the same.
 SELECT pg_temp.patch_payment_start('public.record_occurrence_extra(jsonb)'::regprocedure,
