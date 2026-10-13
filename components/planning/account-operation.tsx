@@ -47,8 +47,8 @@ export function AccountOperation({operation,records,activity,save,onClose}:{oper
   if(operation.action==='reconcile')setBalanceBlank(!(balance>0));
   setDraft({...draft,account_id:e.target.value,...(operation.action==='reconcile'?{amount:balance}:{})});
  }}><option value="">{t('Select account')}</option>{accounts.map(a=><option key={a.id} value={a.id}>{formatAccountOption(a,locale)}</option>)}</NativeSelect></label>
- {/* The day it was actually received or paid: the due date by default, never a day ahead. */}
- {operation.action==='occurrence'&&<label>{t('Payment date')}<DatePicker value={draft.paid_on??''} max={depositToday()} onChange={paid_on=>setDraft({...draft,paid_on:paid_on||depositToday()})}/></label>}
+ {/* The day it was actually received or paid: the due date by default, never a day ahead nor before the schedule starts. */}
+ {operation.action==='occurrence'&&<label>{t('Payment date')}<DatePicker value={draft.paid_on??''} min={target?.date} max={depositToday()} onChange={paid_on=>setDraft({...draft,paid_on:paid_on||depositToday()})}/></label>}
  {operation.action!=='occurrence'&&operation.action!=='reconcile'&&<label>{t('Date')}<DatePicker value={draft.date} max={depositToday()} onChange={date=>setDraft({...draft,date})}/></label>}
  </div>
  {operation.action==='transfer'&&<label>{t('Destination account')}<NativeSelect required value={draft.target_id} onChange={e=>setDraft({...draft,target_id:e.target.value})}><option value="">{t('Select account')}</option>{targets.map(a=><option key={a.id} value={a.id}>{formatAccountOption(a,locale)}</option>)}</NativeSelect></label>}

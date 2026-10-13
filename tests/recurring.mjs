@@ -102,6 +102,9 @@ test('payments left open in earlier months are carried into the current month un
  const zero = { id: 'zero', name: 'Solar panel', kind: 'Other income', currency: 'UZS', amount: 0, quantity: 1, cost: 0, rate: 0, date: '2026-08-25', frequency: 'Once', notes: 'Nothing this month' };
  const open = carriedOverdue([solar], [], '2026-10', '2026-10-05');
  assert.deepEqual(open.map(item => [item.date, item.status]), [['2026-08-25', 'overdue'], ['2026-09-25', 'overdue']], 'oldest first, this month excluded');
+ // Every month shows them at its top: a later month lists all of them, an earlier one those before it (its own are its rows).
+ assert.deepEqual(carriedOverdue([solar], [], '2026-11', '2026-10-05').map(item => item.date), ['2026-08-25', '2026-09-25']);
+ assert.deepEqual(carriedOverdue([solar], [], '2026-09', '2026-10-05').map(item => item.date), ['2026-08-25']);
  // August recorded as 0, September skipped: nothing is left open.
  const occurrences = [{ id: 'a', record_id: 'solar', due_on: '2026-08-25', status: 'paid', transaction_id: 'zero' }, { id: 'b', record_id: 'solar', due_on: '2026-09-25', status: 'dismissed' }];
  assert.deepEqual(carriedOverdue([solar, zero], occurrences, '2026-10', '2026-10-05'), []);

@@ -10,7 +10,7 @@ const auth=`CREATE ROLE anon;CREATE ROLE authenticated;CREATE SCHEMA auth;CREATE
 
 test('migration 142 is in setup.sql and bumps the schema version the app requires',()=>{
  assert.ok(setup.includes(migration));
- assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 142;/);
+ assert.ok(Number(fs.readFileSync('lib/database-capabilities.ts','utf8').match(/requiredSchemaVersion = (\d+);/)[1])>=142);
 });
 
 test('a category save from an older client keeps working: the API schema strips group_name',()=>{

@@ -55,8 +55,8 @@ export function UpcomingPage({ data, save, currency, rates, view, onView, onEdit
  // The month's payments show in the list and calendar views; the other views belong to the screen.
  const scheduled = view === 'list' || view === 'calendar';
  const items = monthOccurrences(data.records, data.occurrences, month, today, data.debtPayments);
- // Payments left open in earlier months stay at the top of the current month until they are recorded (0 counts) or skipped, so none is forgotten. They are not this month's totals.
- const carried = month === today.slice(0, 7) ? carriedOverdue(data.records, data.occurrences, month, today) : [];
+ // Payments left open in earlier months stay at the top of every month shown until they are recorded (0 counts) or skipped, so none is forgotten. They are not that month's totals.
+ const carried = carriedOverdue(data.records, data.occurrences, month, today);
  const summary = recurringSummary(items, (amount, unit) => convertAmount(amount, unit, currency, rates));
  // Tapping Income or Expenses narrows the list and calendar to that side.
  const [only, setOnly] = useState<Direction | null>(null);
