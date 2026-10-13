@@ -153,7 +153,7 @@ export function upcomingPayments(records:Entry[],occurrences:Occurrence[],today=
   if(!record.date||record.source_paused||record.archived)continue;
   const recurring=isRecurringCashFlow(record);
   const start=scheduleStart(record,assetsById);
-  const add=(date:string,type:DueItem['type'])=>{const key=record.id+':'+date;if(type==='scheduled'&&date<today&&date<installmentsFrom(record))return;if(!archivedIn(record,date.slice(0,7))&&date>=start&&date<=end&&!settled.has(key))result.push({key,record,date,type,overdue:date<today,amount:record.amount});};
+  const add=(date:string,type:DueItem['type'])=>{const key=record.id+':'+date;if(!archivedIn(record,date.slice(0,7))&&date>=start&&date<=end&&!settled.has(key))result.push({key,record,date,type,overdue:date<today,amount:record.amount});};
   if(recurring){
    for(const date of scheduleDates(record,start,end))add(date,'scheduled');
   }else if(record.amount>0&&['Loan','Debt','Mortgage','Money lent',...interestKinds].includes(record.kind))add(record.date,interestKinds.includes(record.kind)?'maturity':'repayment');

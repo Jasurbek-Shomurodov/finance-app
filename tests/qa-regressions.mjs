@@ -245,15 +245,15 @@ test('a transaction saved without a name reads in the current language and follo
  assert.match(fs.readFileSync('components/workspace/state/use-record-save.ts','utf8'),/expenseName\(editing,[^;]*,editing\.kind\)/,'the key is stored, not a translation');
 });
 
-test('a back-dated schedule is not overdue for the months before it was added',()=>{
+test('a back-dated schedule stays open for every unpaid date until it is recorded or skipped (the user, 13 October 2026)',()=>{
  const {upcomingPayments}=loadTS('lib/planning.ts');
  const {carriedOverdue}=loadTS('lib/recurring.ts');
- const gym={id:'gym',name:'QA Gym',kind:'Living expense',currency:'USD',amount:45,quantity:1,cost:0,rate:0,date:'2023-02-05',frequency:'Monthly',notes:'',created_at:'2026-10-03T07:30:00Z'};
- const due=upcomingPayments([gym],[],'2026-10-06');
- assert.deepEqual(due.filter(item=>item.overdue).map(item=>item.date),['2026-10-05'],'only the payment due after it was added');
- assert.deepEqual(carriedOverdue([gym],[],'2026-10','2026-10-06'),[],'no "Open from earlier months" backlog');
- const old={...gym,created_at:'2023-01-01T00:00:00Z'};
- assert.ok(upcomingPayments([old],[],'2026-10-06').filter(item=>item.overdue).length>40,'a schedule kept since 2023 still reminds');
+ // Added on 13 October with a start of 12 September: September is open at the top of October.
+ const gift={id:'gift',name:'Mother-in-law',kind:'Charity',currency:'USD',amount:400,quantity:1,cost:0,rate:0,date:'2026-09-12',frequency:'Monthly',notes:'',created_at:'2026-10-13T14:05:00Z'};
+ assert.deepEqual(carriedOverdue([gift],[],'2026-10','2026-10-13').map(item=>[item.date,item.status]),[['2026-09-12','overdue']]);
+ assert.deepEqual(upcomingPayments([gift],[],'2026-10-13').filter(item=>item.overdue).map(item=>item.date),['2026-09-12','2026-10-12']);
+ // Skipped, it leaves the list.
+ assert.deepEqual(carriedOverdue([gift],[{id:'s',record_id:'gift',due_on:'2026-09-12',status:'dismissed'}],'2026-10','2026-10-13'),[]);
 });
 
 test('Budget contributions are the goals Goals funds, so Left to budget and Available for goals agree',()=>{

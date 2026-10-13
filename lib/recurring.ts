@@ -50,7 +50,7 @@ export function occurrencesBetween(records: Entry[], occurrences: Occurrence[], 
    if (archivedIn(record, date.slice(0, 7))) continue;
    const key = record.id + ':' + date;
    const done = status.get(key) === 'dismissed' ? 'skipped' : settled.has(key) ? 'paid' : null;
-   items.push({ key, record, date, status: done ?? (date < today && date >= installmentsFrom(record) ? 'overdue' : 'due'), direction: income.includes(record.kind) ? 'income' : 'expense', amount: Number(record.amount), recorded: done === 'paid' ? recorded.get(key) : undefined, entered: done === 'paid' ? entered.get(key) ?? undefined : undefined });
+   items.push({ key, record, date, status: done ?? (date < today ? 'overdue' : 'due'), direction: income.includes(record.kind) ? 'income' : 'expense', amount: Number(record.amount), recorded: done === 'paid' ? recorded.get(key) : undefined, entered: done === 'paid' ? entered.get(key) ?? undefined : undefined });
   }
  }
  // A loan month counts what its payments actually paid: a $450 payment does not settle a $1,600 installment in full.
