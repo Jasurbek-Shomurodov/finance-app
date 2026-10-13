@@ -21,6 +21,11 @@ export function carriedOverdue(records: Entry[], occurrences: Occurrence[], mont
  return occurrencesBetween(records, occurrences, '', shiftDay(month + '-01', -1), today).filter(item => item.status === 'overdue');
 }
 
+/** The due dates of one schedule a payment can still settle: every one up to `today` neither recorded nor skipped, oldest first. Record payment offers them. */
+export function openDueDates(records: Entry[], occurrences: Occurrence[], scheduleId: string, today: string): string[] {
+ return occurrencesBetween(records, occurrences, '', today, today).filter(item => item.record.id === scheduleId && !item.installment && (item.status === 'overdue' || item.status === 'due')).map(item => item.date);
+}
+
 /** The occurrences from `from` (inclusive; empty for each schedule's start) to `to`. */
 export function occurrencesBetween(records: Entry[], occurrences: Occurrence[], from: string, to: string, today: string, debtPayments?: DebtPayment[]): RecurringItem[] {
  const settled = settledOccurrences(records, occurrences), paid = debtPayments && paidInstallmentMonths(debtPayments);

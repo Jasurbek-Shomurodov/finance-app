@@ -12,13 +12,14 @@ import { InfoHint } from '@/components/presentation-foundation/info-hint';
 import { DatePicker } from '@/components/presentation-foundation/date-picker';
 import { FormattedNumberInput } from '@/components/presentation-foundation/formatted-number-input';
 import { useLanguage } from '@/components/language-provider';
-import { formatAccountOption,formatMoney,formatNumber } from '@/lib/format';
+import { formatAccountOption,formatDate,formatMoney,formatNumber } from '@/lib/format';
+import { useDueLabel } from '@/components/planning/recurring-rows';
 import { depositToday } from '@/lib/deposit-interest';
 import type { Entry } from '@/lib/finance';
 import { suggestedPaymentAccount } from '@/lib/payment-account';
-export type Operation = {action:'transfer'|'reconcile'|'repayment'|'mortgage'|'occurrence';account_id?:string;target_id?:string;date?:string;amount?:number;/** Another payment for an occurrence that is already recorded. */extra?:boolean};
+export type Operation = {action:'transfer'|'reconcile'|'repayment'|'mortgage'|'occurrence';account_id?:string;target_id?:string;date?:string;amount?:number;/** Another payment for an occurrence that is already recorded. */extra?:boolean;/** The schedule's open due dates a payment may settle instead, `date` among them. */dues?:string[]};
 export function AccountOperation({operation,records,activity,save,onClose}:{operation:Operation;records:Entry[];/** Earlier operations, to start a payment from the account that last paid it. */activity?:Array<{account_id:string;target_id:string|null;occurred_on:string}>;save:(action:string,data:unknown)=>Promise<void>;onClose:()=>void}){
- const {t,locale}=useLanguage();
+ const {t,locale}=useLanguage(),dueLabel=useDueLabel();
  // A scheduled payment starts at its scheduled amount; the person edits it when the actual differs.
  const [draft,setDraft]=useState(()=>({id:crypto.randomUUID(),account_id:operation.account_id??(['repayment','mortgage','occurrence'].includes(operation.action)?suggestedPaymentAccount(records.filter(r=>r.kind==='Cash'),records.find(r=>r.id===operation.target_id),records,activity):''),target_id:operation.target_id??'',date:operation.date??depositToday(),paid_on:operation.action==='occurrence'?[operation.date??depositToday(),depositToday()].sort()[0]:undefined as string|undefined,amount:operation.amount??(operation.action==='occurrence'?Number(records.find(r=>r.id===operation.target_id)?.amount??0):0),received:0,fee:0,notes:''}));
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[submitted,setSubmitted]=useState(false);
@@ -40,6 +41,8 @@ export function AccountOperation({operation,records,activity,save,onClose}:{oper
  <form className="record-form" onSubmit={async e=>{e.preventDefault();setBusy(true);setSubmitted(true);setError('');try{await save(operation.action,{...draft,...(convertedPayment?{exchange_rate:fx.rate}:{}),...(operation.extra?{extra:true}:{}),target_id:draft.target_id||null,received:operation.action==='transfer'?(crossCurrency?draft.received:draft.amount):0});onClose();}catch(e){setError((e as Error).message);if((e as Error & {confirmedFailure?:boolean}).confirmedFailure)setSubmitted(false);}finally{setBusy(false);}}}>
  <fieldset disabled={busy||submitted} className="tracker-fields">
  {/* The account and the day share a row, and principal and interest another, when the dialog has room. */}
+ {/* Which due date this pays: the one whose row was opened, or another still open, such as last month's. */}
+ {operation.action==='occurrence'&&target&&<label>{t('Scheduled payment')}<NativeSelect value={draft.date} disabled={!operation.dues||operation.dues.length<2} onChange={e=>setDraft({...draft,date:e.target.value})}>{(operation.dues??[draft.date]).map(day=><option key={day} value={day}>{target.name} · {formatDate(day,locale)} · {dueLabel(depositToday(),day)}</option>)}</NativeSelect></label>}
  <div className="form-grid">
  <label>{t('Cash account')}<NativeSelect required value={draft.account_id} onChange={e=>{
   // A statement balance belongs to one account: never carry it over to another.
@@ -52,7 +55,7 @@ export function AccountOperation({operation,records,activity,save,onClose}:{oper
  {operation.action!=='occurrence'&&operation.action!=='reconcile'&&<label>{t('Date')}<DatePicker value={draft.date} max={depositToday()} onChange={date=>setDraft({...draft,date})}/></label>}
  </div>
  {operation.action==='transfer'&&<label>{t('Destination account')}<NativeSelect required value={draft.target_id} onChange={e=>setDraft({...draft,target_id:e.target.value})}><option value="">{t('Select account')}</option>{targets.map(a=><option key={a.id} value={a.id}>{formatAccountOption(a,locale)}</option>)}</NativeSelect></label>}
- {target&&operation.action!=='transfer'&&<p>{target.name} · {formatMoney(target.amount,target.currency,locale)}</p>}
+ {target&&operation.action!=='transfer'&&operation.action!=='occurrence'&&<p>{target.name} · {formatMoney(target.amount,target.currency,locale)}</p>}
  {operation.action==='occurrence'&&<label>{t(target&&['Salary','Rent income','Business income','Other income'].includes(target.kind)?'Amount received':'Amount paid')} {target?.currency}<FormattedNumberInput value={draft.amount} max={1e15} onValueChange={amount=>setDraft({...draft,amount})}/></label>}
  {operation.action!=='occurrence'&&<div className="form-grid">
  <label>{t(operation.action==='reconcile'?'Statement balance':operation.action==='transfer'?'Amount sent':'Principal repayment')} {operation.action==='repayment'||operation.action==='mortgage'?target?.currency:account?.currency}<FormattedNumberInput value={draft.amount} required={operation.action!=='mortgage'} requireEntry={operation.action==='reconcile'} onValueChange={(amount,blank)=>{setBalanceBlank(blank);setDraft({...draft,amount});}}/></label>

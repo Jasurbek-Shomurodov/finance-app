@@ -16,7 +16,7 @@ import { depositToday } from '@/lib/deposit-interest';
 import { shiftMonth } from '@/lib/calendar-days';
 import { convertAmount } from '@/lib/market';
 import { upcomingPayments, type PlanningData } from '@/lib/planning';
-import { archivedSchedules, calendarWeeks, carriedOverdue, monthOccurrences, onlyDirection, recurringSummary, type ArchiveTarget, type RecurringItem } from '@/lib/recurring';
+import { archivedSchedules, calendarWeeks, carriedOverdue, monthOccurrences, onlyDirection, openDueDates, recurringSummary, type ArchiveTarget, type RecurringItem } from '@/lib/recurring';
 import { AccountOperation, type Operation } from './account-operation';
 import { ArchivedFold, OccurrenceRow, useDueLabel } from './recurring-rows';
 import { useScheduleDeletion } from './delete-schedule-dialog';
@@ -67,7 +67,7 @@ export function UpcomingPage({ data, save, currency, rates, view, onView, onEdit
  async function run(action: () => Promise<void>) { setBusy(true); setError(''); try { await action(); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } }
  const payDebt = (record: RecurringItem['record']) => setOperation({ action: record.kind === 'Mortgage' ? 'mortgage' : 'repayment', target_id: record.id, date: today, amount: 0 });
  // A recorded occurrence takes another payment, starting at what is still to come.
- const pay = (item: RecurringItem) => item.installment ? payDebt(item.record) : setOperation({ action: 'occurrence', target_id: item.record.id, date: item.date, ...(item.status === 'paid' ? { extra: true, amount: Math.max(Math.ceil(item.amount - (item.recorded ?? item.amount)), 0) } : { amount: item.amount }) });
+ const pay = (item: RecurringItem) => item.installment ? payDebt(item.record) : setOperation({ action: 'occurrence', target_id: item.record.id, date: item.date, ...(item.status === 'paid' ? { extra: true, amount: Math.max(Math.ceil(item.amount - (item.recorded ?? item.amount)), 0) } : { amount: item.amount, dues: [...new Set([...openDueDates(data.records, data.occurrences, item.record.id, today), item.date])].sort() }) });
  // Tapping a row shows its history and totals; Edit is in its ⋯ menu and Record payment on the row.
  const details = useRecurringDetails(data, today);
  const archive = onArchive && ((target: ArchiveTarget, archived = true) => run(() => onArchive(target, archived)));

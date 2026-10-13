@@ -96,6 +96,18 @@ test('due labels count whole days and the calendar starts weeks on Monday', () =
  assert.equal(calendarWeeks('2027-02').flat().filter(Boolean).length, 28);
 });
 
+test('Record payment offers the schedule\'s open due dates up to today, the left-over ones and the current one, oldest first',()=>{
+ const { openDueDates } = loadTS('lib/recurring.ts');
+ const gift = { id: 'gift', name: 'Mother-in-law', kind: 'Charity', currency: 'USD', amount: 400, quantity: 1, cost: 0, rate: 0, date: '2026-08-12', frequency: 'Monthly', notes: '' };
+ const other = { ...gift, id: 'other', name: 'Gym' };
+ assert.deepEqual(openDueDates([gift, other], [], 'gift', '2026-10-13'), ['2026-08-12', '2026-09-12', '2026-10-12']);
+ // August skipped, September recorded: only October is left; November is not due yet.
+ const paid = { id: 'p', name: 'Mother-in-law', kind: 'Charity', currency: 'USD', amount: 400, quantity: 1, cost: 0, rate: 0, date: '2026-10-12', frequency: 'Once', notes: '' };
+ const occurrences = [{ id: 'a', record_id: 'gift', due_on: '2026-08-12', status: 'dismissed' }, { id: 'b', record_id: 'gift', due_on: '2026-09-12', status: 'paid', transaction_id: 'p' }];
+ assert.deepEqual(openDueDates([gift, paid], occurrences, 'gift', '2026-10-13'), ['2026-10-12']);
+ assert.deepEqual(openDueDates([gift], [], 'gift', '2026-10-12'), ['2026-08-12', '2026-09-12', '2026-10-12'], 'due today counts');
+});
+
 test('payments left open in earlier months are carried into the current month until recorded or skipped, and a recorded payment keeps both its scheduled and its actual amount',()=>{
  const { carriedOverdue } = loadTS('lib/recurring.ts');
  const solar = { id: 'solar', name: 'Solar panel', kind: 'Other income', currency: 'UZS', amount: 5000000, quantity: 1, cost: 0, rate: 0, date: '2026-08-25', frequency: 'Monthly', notes: '' };
