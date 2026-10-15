@@ -21,7 +21,7 @@ export type Operation = {action:'transfer'|'reconcile'|'repayment'|'mortgage'|'o
 export function AccountOperation({operation,records,activity,save,onClose}:{operation:Operation;records:Entry[];/** Earlier operations, to start a payment from the account that last paid it. */activity?:Array<{account_id:string;target_id:string|null;occurred_on:string}>;save:(action:string,data:unknown)=>Promise<void>;onClose:()=>void}){
  const {t,locale}=useLanguage(),dueLabel=useDueLabel();
  // A scheduled payment starts at its scheduled amount; the person edits it when the actual differs.
- const [draft,setDraft]=useState(()=>({id:crypto.randomUUID(),account_id:operation.account_id??(['repayment','mortgage','occurrence'].includes(operation.action)?suggestedPaymentAccount(records.filter(r=>r.kind==='Cash'),records.find(r=>r.id===operation.target_id),records,activity):''),target_id:operation.target_id??'',date:operation.date??depositToday(),paid_on:operation.action==='occurrence'?[operation.date??depositToday(),depositToday()].sort()[0]:undefined as string|undefined,amount:operation.amount??(operation.action==='occurrence'?Number(records.find(r=>r.id===operation.target_id)?.amount??0):0),received:0,fee:0,notes:''}));
+ const [draft,setDraft]=useState(()=>({id:crypto.randomUUID(),account_id:operation.account_id??(['repayment','mortgage','occurrence'].includes(operation.action)?suggestedPaymentAccount(records.filter(r=>r.kind==='Cash'),records.find(r=>r.id===operation.target_id),records,activity):''),target_id:operation.target_id??'',date:operation.date??depositToday(),paid_on:operation.action==='occurrence'?[operation.date??depositToday(),depositToday()].sort()[0]:undefined as string|undefined,amount:operation.amount??(operation.action==='occurrence'?Number(records.find(r=>r.id===operation.target_id)?.amount??0):0),received:0,fee:0,notes:'',currency:undefined as string|undefined}));
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[submitted,setSubmitted]=useState(false);
  // A statement balance must be typed: a blank field reads as zero and would empty the account.
  const [balanceBlank,setBalanceBlank]=useState(!(operation.amount&&operation.amount>0));
@@ -30,15 +30,20 @@ export function AccountOperation({operation,records,activity,save,onClose}:{oper
  const targets=records.filter(r=>r.id!==draft.account_id&&(operation.action==='transfer'?r.kind==='Cash':['Loan','Debt','Money lent','Mortgage'].includes(r.kind)));
  const title={transfer:'Transfer money',reconcile:'Adjust balance',repayment:'Record repayment',mortgage:'Record mortgage payment',occurrence:'Record scheduled payment'}[operation.action];
  const crossCurrency=operation.action==='transfer'&&account&&target&&account.currency!==target.currency;
- const convertedPayment=['repayment','mortgage','occurrence'].includes(operation.action)&&!!account&&!!target&&account.currency!==target.currency;
- const fx=useDatedExchangeRate(convertedPayment?account?.currency:undefined,target?.currency,draft.paid_on??draft.date);
+ const mixedCurrencies=['repayment','mortgage','occurrence'].includes(operation.action)&&!!account&&!!target&&account.currency!==target.currency;
+ // A scheduled payment is typed in its schedule's currency, or in the cash account's as it arrived, which needs no rate.
+ const paymentCurrency=draft.currency??target?.currency,paymentCurrencies=[...new Set([target?.currency,account?.currency].filter((code):code is string=>!!code))];
+ const convertedPayment=mixedCurrencies&&paymentCurrency!==account?.currency;
+ const fx=useDatedExchangeRate(mixedCurrencies?account?.currency:undefined,target?.currency,draft.paid_on??draft.date);
+ // Switching the currency carries the amount over at the day's rate, in whole units, or leaves it to be typed.
+ const switchCurrency=(code:string)=>{const toAccount=code===account?.currency&&code!==target?.currency;setDraft({...draft,currency:code===target?.currency?undefined:code,amount:fx.rate&&draft.amount>0?Math.round(toAccount?draft.amount/fx.rate:draft.amount*fx.rate):0});};
  const noAmount=(['transfer','repayment'].includes(operation.action)&&draft.amount<=0)||(operation.action==='mortgage'&&draft.amount+draft.fee<=0);
  const blockedId=useId();
  const blocked=!draft.account_id?'Choose a cash account.':noAmount?'Enter an amount greater than zero.':convertedPayment&&!fx.rate&&!fx.loading?'Exchange rate unavailable.':'';
  const [initialDraft]=useState(()=>JSON.stringify(draft));
  const guard=useDiscardChanges(JSON.stringify(draft)!==initialDraft,onClose,busy);
  return <><Dialog open onOpenChange={open=>{if(!open&&!busy)guard.close();}}><DialogContent className="record-dialog" showCloseButton={!busy}><DialogTitle>{t(title)}{operation.action==='reconcile'&&<InfoHint>{t('This records a balance correction today. It is not income or spending.')}</InfoHint>}</DialogTitle><DialogDescription className="sr-only">{t('Review the amounts before saving. Both balances update together.')}</DialogDescription>
- <form className="record-form" onSubmit={async e=>{e.preventDefault();setBusy(true);setSubmitted(true);setError('');try{await save(operation.action,{...draft,...(convertedPayment?{exchange_rate:fx.rate}:{}),...(operation.extra?{extra:true}:{}),target_id:draft.target_id||null,received:operation.action==='transfer'?(crossCurrency?draft.received:draft.amount):0});onClose();}catch(e){setError((e as Error).message);if((e as Error & {confirmedFailure?:boolean}).confirmedFailure)setSubmitted(false);}finally{setBusy(false);}}}>
+ <form className="record-form" onSubmit={async e=>{e.preventDefault();setBusy(true);setSubmitted(true);setError('');try{const {currency,...fields}=draft;await save(operation.action,{...fields,...(currency?{currency}:{}),...(convertedPayment?{exchange_rate:fx.rate}:{}),...(operation.extra?{extra:true}:{}),target_id:draft.target_id||null,received:operation.action==='transfer'?(crossCurrency?draft.received:draft.amount):0});onClose();}catch(e){setError((e as Error).message);if((e as Error & {confirmedFailure?:boolean}).confirmedFailure)setSubmitted(false);}finally{setBusy(false);}}}>
  <fieldset disabled={busy||submitted} className="tracker-fields">
  {/* The account and the day share a row, and principal and interest another, when the dialog has room. */}
  {/* Which due date this pays: the one whose row was opened, or another still open, such as last month's. */}
@@ -48,7 +53,9 @@ export function AccountOperation({operation,records,activity,save,onClose}:{oper
   // A statement balance belongs to one account: never carry it over to another.
   const balance=Number(records.find(r=>r.id===e.target.value)?.amount??0);
   if(operation.action==='reconcile')setBalanceBlank(!(balance>0));
-  setDraft({...draft,account_id:e.target.value,...(operation.action==='reconcile'?{amount:balance}:{})});
+  // A payment typed in the previous account's currency goes back to the schedule's.
+  const keepCurrency=draft.currency&&records.find(r=>r.id===e.target.value)?.currency===draft.currency;
+  setDraft({...draft,account_id:e.target.value,...(operation.action==='reconcile'?{amount:balance}:{}),...(draft.currency&&!keepCurrency?{currency:undefined,amount:0}:{})});
  }}><option value="">{t('Select account')}</option>{accounts.map(a=><option key={a.id} value={a.id}>{formatAccountOption(a,locale)}</option>)}</NativeSelect></label>
  {/* The day it was actually received or paid: the due date by default, never a day ahead nor before the schedule starts. */}
  {operation.action==='occurrence'&&<label>{t('Payment date')}<DatePicker value={draft.paid_on??''} min={target?.date} max={depositToday()} onChange={paid_on=>setDraft({...draft,paid_on:paid_on||depositToday()})}/></label>}
@@ -56,7 +63,8 @@ export function AccountOperation({operation,records,activity,save,onClose}:{oper
  </div>
  {operation.action==='transfer'&&<label>{t('Destination account')}<NativeSelect required value={draft.target_id} onChange={e=>setDraft({...draft,target_id:e.target.value})}><option value="">{t('Select account')}</option>{targets.map(a=><option key={a.id} value={a.id}>{formatAccountOption(a,locale)}</option>)}</NativeSelect></label>}
  {target&&operation.action!=='transfer'&&operation.action!=='occurrence'&&<p>{target.name} · {formatMoney(target.amount,target.currency,locale)}</p>}
- {operation.action==='occurrence'&&<label>{t(target&&['Salary','Rent income','Business income','Other income'].includes(target.kind)?'Amount received':'Amount paid')} {target?.currency}<FormattedNumberInput value={draft.amount} max={1e15} onValueChange={amount=>setDraft({...draft,amount})}/></label>}
+ {operation.action==='occurrence'&&<div className="form-grid"><label>{t(target&&['Salary','Rent income','Business income','Other income'].includes(target.kind)?'Amount received':'Amount paid')}<FormattedNumberInput value={draft.amount} max={1e15} onValueChange={amount=>setDraft({...draft,amount})}/></label>
+ <label>{t('Currency')}<NativeSelect value={paymentCurrency??''} disabled={paymentCurrencies.length<2} onChange={e=>switchCurrency(e.target.value)}>{paymentCurrencies.map(code=><option key={code} value={code}>{code}</option>)}</NativeSelect></label></div>}
  {operation.action!=='occurrence'&&<div className="form-grid">
  <label>{t(operation.action==='reconcile'?'Statement balance':operation.action==='transfer'?'Amount sent':'Principal repayment')} {operation.action==='repayment'||operation.action==='mortgage'?target?.currency:account?.currency}<FormattedNumberInput value={draft.amount} required={operation.action!=='mortgage'} requireEntry={operation.action==='reconcile'} onValueChange={(amount,blank)=>{setBalanceBlank(blank);setDraft({...draft,amount});}}/></label>
  {['transfer','repayment','mortgage'].includes(operation.action)&&<label>{t(operation.action==='transfer'?'Transfer fee':target?.kind==='Money lent'?'Interest received':'Interest paid')} {operation.action==='repayment'||operation.action==='mortgage'?target?.currency:account?.currency}<FormattedNumberInput required={false} value={draft.fee} onValueChange={fee=>setDraft({...draft,fee})}/></label>}

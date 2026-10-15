@@ -10,7 +10,7 @@ import { unitPricedKinds } from './finance';
 export type ActionEvent=
  |{type:'record';created:boolean;kind:Kind;name:string;amount:number;currency:string;date:string|null;frequency:string;category_id?:string|null}
  |{type:'record_deleted';id:string}
- |{type:'occurrence';account_id:string;target_id:string;amount:number;date:string}
+ |{type:'occurrence';account_id:string;target_id:string;amount:number;date:string;/** When it was entered in the cash account's currency. */currency?:string}
  |{type:'repayment';account_id:string;target_id:string;amount:number;date:string}
  |{type:'mortgage';account_id:string;target_id:string;principal:number;interest:number;date:string}
  |{type:'transfer';account_id:string;target_id:string;amount:number;received:number;date:string}
@@ -39,7 +39,7 @@ export function actionMessage(event:ActionEvent,lookup:ActionLookup,language:Lan
   // A record in a custom category is named by that category, as the app shows it, not by its stored Other income/expense kind.
   case 'record':return line(t(event.created?'Added {kind}':'Updated {kind}',{kind:(event.category_id&&lookup.categories?.[event.category_id])?escapeHtml(lookup.categories[event.category_id]):t(event.kind)}),name(event.name),money(event.amount,event.currency),event.date?day(event.date):null,event.frequency!=='Once'?t(event.frequency):null);
   case 'record_deleted':{const deleted=lookup.deleted[event.id];return deleted?line(t('Deleted {kind}',{kind:t(deleted.kind)}),name(deleted.name),money(deleted.amount,deleted.currency)):t('Deleted a record');}
-  case 'occurrence':{const target=record(event.target_id),account=record(event.account_id);return line(t('Payment recorded'),name(target.name),money(event.amount,target.currency||account.currency),day(event.date),t('from {account}',{account:escapeHtml(account.name)}));}
+  case 'occurrence':{const target=record(event.target_id),account=record(event.account_id);return line(t('Payment recorded'),name(target.name),money(event.amount,event.currency||target.currency||account.currency),day(event.date),t('from {account}',{account:escapeHtml(account.name)}));}
   case 'repayment':{const target=record(event.target_id),account=record(event.account_id);return line(t('Repayment recorded'),name(target.name),money(event.amount,target.currency||account.currency),day(event.date),t('from {account}',{account:escapeHtml(account.name)}));}
   case 'mortgage':{const target=record(event.target_id),account=record(event.account_id),currency=target.currency||account.currency;return line(t('Mortgage payment recorded'),name(target.name),t('principal {amount}',{amount:money(event.principal,currency)}),t('interest {amount}',{amount:money(event.interest,currency)}),day(event.date),t('from {account}',{account:escapeHtml(account.name)}));}
   case 'transfer':{const from=record(event.account_id),to=record(event.target_id);const amount=from.currency&&to.currency&&from.currency!==to.currency?`${money(event.amount,from.currency)} → ${money(event.received,to.currency)}`:money(event.amount,from.currency||to.currency);return line(t('Transfer recorded'),`${name(from.name)} → ${name(to.name)}`,amount,day(event.date));}

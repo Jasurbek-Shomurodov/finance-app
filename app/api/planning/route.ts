@@ -94,7 +94,7 @@ export async function POST(req:Request){
  }
  let paymentData:unknown=value;
  if(['occurrence','repayment','mortgage'].includes(action)&&'account_id' in value&&'target_id' in value){
-  const p=value as unknown as {id:string;account_id:string;target_id:string;date:string;paid_on?:string;exchange_rate?:number;amount?:number;fee?:number;notes?:string};
+  const p=value as unknown as {id:string;account_id:string;target_id:string;date:string;paid_on?:string;exchange_rate?:number;amount?:number;fee?:number;notes?:string;currency?:string};
   // A scheduled payment converts at the rate of the day it was paid, not its due date.
   const rateDay=p.paid_on??p.date;
   const response=await supa(`/rest/v1/finance_records?select=*&id=in.(${p.account_id},${p.target_id},${p.id})`,{},auth.token);
@@ -104,7 +104,10 @@ export async function POST(req:Request){
   if(!account||!target)return Response.json({error:'Choose one of your cash accounts.'},{status:400});
   // The database refuses an over-repayment with a generic message; name the real reason, as the bot and the investment tracker do.
   if(action==='repayment'&&account.currency===target.currency&&Number(p.amount)>Number(target.amount))return Response.json({error:'Repayment cannot exceed the outstanding balance.'},{status:409});
-  if(account.currency!==target.currency){
+  // A scheduled payment is typed in its schedule's currency or in the cash account's, which needs no rate.
+  const currency=action==='occurrence'&&p.currency!==undefined?p.currency:target.currency;
+  if(currency!==target.currency&&currency!==account.currency)return Response.json({error:"Choose the schedule's currency or the cash account's."},{status:400});
+  if(account.currency!==currency){
    const prior=records.find(record=>record.id===p.id&&record.account_id===account.id&&record.currency===target.currency&&record.date===rateDay&&record.account_currency===account.currency&&record.account_exchange_rate);
    let priorPayment:{exchange_rate:number;rate_date:string;account_id:string;account_currency:string;record_currency:string;investment_history:{balance:number|null}}|undefined;
    if(action!=='occurrence'){
@@ -155,7 +158,7 @@ export async function POST(req:Request){
 function planningEvent(action:string,data:unknown):ActionEvent|null{
  const p=data as {account_id:string;target_id:string|null;amount:number;received:number;fee:number;date:string;name:string;target:number;currency?:string};
  switch(action){
-  case 'occurrence':return {type:'occurrence',account_id:p.account_id,target_id:p.target_id!,amount:p.amount,date:p.date};
+  case 'occurrence':return {type:'occurrence',account_id:p.account_id,target_id:p.target_id!,amount:p.amount,date:p.date,...(p.currency?{currency:p.currency}:{})};
   case 'repayment':return {type:'repayment',account_id:p.account_id,target_id:p.target_id!,amount:p.amount,date:p.date};
   case 'mortgage':return {type:'mortgage',account_id:p.account_id,target_id:p.target_id!,principal:p.amount,interest:p.fee,date:p.date};
   case 'transfer':return {type:'transfer',account_id:p.account_id,target_id:p.target_id!,amount:p.amount,received:p.received,date:p.date};
