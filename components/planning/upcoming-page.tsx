@@ -1,11 +1,10 @@
 "use client";
-import { Fragment, useState } from 'react';
-import { ChevronLeft, ChevronRight, Repeat } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { CategoryIcon } from '@/components/presentation-foundation/category-icon';
 import { TodayButton } from '@/components/presentation-foundation/today-button';
 import { PageHeader } from '@/components/presentation-foundation/page-header';
 import { ErrorPopup } from '@/components/presentation-foundation/error-popup';
-import { EmptyState } from '@/components/presentation-foundation/empty-state';
 import { Count } from '@/components/presentation-foundation/count';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { Button } from '@/components/ui/button';
@@ -18,6 +17,7 @@ import { convertAmount } from '@/lib/market';
 import { upcomingPayments, type PlanningData } from '@/lib/planning';
 import { archivedSchedules, calendarWeeks, carriedOverdue, monthOccurrences, onlyDirection, openDueDates, recurringSummary, type ArchiveTarget, type RecurringItem } from '@/lib/recurring';
 import { AccountOperation, type Operation } from './account-operation';
+import { RecurringList } from './recurring-list';
 import { ArchivedFold, OccurrenceRow, useDueLabel } from './recurring-rows';
 import { useScheduleDeletion } from './delete-schedule-dialog';
 import { useColumnsFit } from '@/hooks/use-columns-fit';
@@ -76,7 +76,7 @@ export function UpcomingPage({ data, save, currency, currencies = [], rates, vie
  // Rows stay on one line while their name keeps room beside status, amount and actions; two lines only when this month's content needs it.
  const rows = useColumnsFit<HTMLUListElement>('.recurring-row');
  const skip = (item: RecurringItem, skipped = true) => run(() => save('exception', { target_id: item.record.id, date: item.date, skip: skipped }));
- const row = (item: RecurringItem, dated = false) => <OccurrenceRow key={item.key} item={item} dated={dated} today={today} busy={busy} categories={data.categories} onEdit={onEdit} onOpen={details.open} onPay={pay} onSkip={skip} onRestore={item => skip(item, false)} onArchive={archive && (() => archive({ source: 'record', record: item.record }))} onDelete={deletion.open}/>;
+ const row = (item: RecurringItem, dated = false, grouped = false) => <OccurrenceRow key={item.key} item={item} dated={dated} grouped={grouped} today={today} busy={busy} categories={data.categories} onEdit={onEdit} onOpen={details.open} onPay={pay} onSkip={skip} onRestore={item => skip(item, false)} onArchive={archive && (() => archive({ source: 'record', record: item.record }))} onDelete={deletion.open}/>;
  return <>
   <PageHeader title={t('Recurring')} tabs={<Segmented className="page-tabs" as="nav" label={t('Recurring view')} options={[{ value: 'list', label: t('List') }, { value: 'calendar', label: t('Calendar') }, { value: 'subscriptions', label: t('Subscriptions') }, { value: 'reminders', label: t('Reminders') }] as const} value={view} onChange={onView}/>} hint={<><p>{t('Every scheduled income and bill, month by month. Record a payment only after it happens; a reminder never moves money.')}</p><p>{t('Debt amounts show the outstanding balance; enter the actual principal and interest when paying.')}</p></>}>
    {scheduled && <div className="budget-month-nav">
@@ -93,16 +93,8 @@ export function UpcomingPage({ data, save, currency, currencies = [], rates, vie
    <SummaryBar label={t('Income')} done={summary.income.done} remaining={summary.income.remaining} doneLabel="{amount} received" currency={currency} tone="income" pressed={only === 'income'} onPress={() => toggle('income')}/>
    <SummaryBar label={t('Expenses')} done={summary.expense.done} remaining={summary.expense.remaining} doneLabel="{amount} paid" currency={currency} tone="expense" pressed={only === 'expense'} onPress={() => toggle('expense')}/>
   </section>
-  {view === 'list' ? <section className="panel recurring-list" aria-label={t('Recurring')}>
-   {shown.length || shownCarried.length ? <ul ref={rows}>
-    {shownCarried.length > 0 && <li className="transaction-day-heading"><h3>{t('Open from earlier months')}<Count value={shownCarried.length}/></h3></li>}
-    {shownCarried.map(item => row(item, true))}
-    {shown.map((item, index) => <Fragment key={item.key}>
-     {item.date !== shown[index - 1]?.date && <li className="transaction-day-heading"><h3>{formatDate(item.date, locale)}</h3></li>}
-     {row(item)}
-    </Fragment>)}
-   </ul> : <EmptyState icon={<Repeat aria-hidden="true"/>} description={t('Nothing is scheduled this month. Add a monthly or weekly income or expense to see it here.')}/>}
-  </section> : <RecurringCalendar month={month} items={shown} reminders={reminders} today={today}/>}
+  {view === 'list' ? <RecurringList items={shown} carried={shownCarried} categories={data.categories} listRef={rows} row={row}/>
+   : <RecurringCalendar month={month} items={shown} reminders={reminders} today={today}/>}
   {/* Only when a debt payment or deposit maturity is due this month; an empty card is just noise. */}
   {reminders.length > 0 && <section className="panel upcoming-section" aria-labelledby="upcoming-reminders">
    <header className="upcoming-section-heading"><h2 id="upcoming-reminders">{t('Debt repayments and deposit maturities')}<Count value={reminders.length}/></h2></header>

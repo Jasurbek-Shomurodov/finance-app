@@ -65,6 +65,7 @@
 .recurring-bar[data-tone=income] .progress-track>*{background:var(--positive)}
 .recurring-list{width:100%;padding:0;overflow:hidden}
 .recurring-list>ul{margin:0;padding:0;list-style:none}
+.recurring-list-tools{display:flex;justify-content:flex-end;padding:10px 16px;border-bottom:1px solid var(--hairline)}
 /* One set of columns for the whole list: each row is a subgrid, so status, amount and actions line up on every row. */
 .recurring-list>ul,.subscription-list{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto}
 .recurring-list>ul>li,.subscription-list>li{grid-column:1/-1}

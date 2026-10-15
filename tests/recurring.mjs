@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadTS } from './helpers/load-ts.mjs';
-const { monthOccurrences, scheduleHistory, onlyDirection, archivedSchedules, recurringSummary, daysFrom, calendarWeeks } = loadTS('lib/recurring.ts');
+const { monthOccurrences, scheduleHistory, onlyDirection, groupRecurring, archivedSchedules, recurringSummary, daysFrom, calendarWeeks } = loadTS('lib/recurring.ts');
 const { monthly } = loadTS('lib/finance.ts');
 const { planningSchemas } = loadTS('lib/planning-schemas.ts');
 const { upcomingPayments, debtPaymentsFrom, debtPaymentsInLoanCurrency, withExtraPayments, paymentSchedules, chooseSchedule } = loadTS('lib/planning.ts');
@@ -230,3 +230,15 @@ test('the sample workspace moves an every-month schedule\'s occurrences to its d
  assert.deepEqual(onScheduleDays(occurrences, records).map(item => item.due_on), ['2026-02-28', '2026-03-30', '2026-02-04']);
 });
 
+
+test('the Recurring list groups the month by date, type, category or status, keeping date order inside each group', () => {
+ const records = [record('rent', 'Rent', 'Rent expense', 1200, '2026-01-01'), record('pay', 'Pay', 'Salary', 3000, '2026-01-15'), record('gym', 'Gym', 'Living expense', 40, '2026-09-03', { frequency: 'Weekly' })];
+ const occurrences = [{ id: 'o1', record_id: 'rent', due_on: '2026-10-01', status: 'paid' }, { id: 'o2', record_id: 'gym', due_on: '2026-10-08', status: 'dismissed' }];
+ const items = monthOccurrences(records, occurrences, '2026-10', '2026-10-10');
+ const shape = by => groupRecurring(items, by, item => item.record.kind).map(group => [group.key, group.items.map(item => item.record.id + '@' + item.date.slice(8))]);
+ assert.deepEqual(shape('date').map(([key]) => key), ['2026-10-01', '2026-10-08', '2026-10-15', '2026-10-22', '2026-10-29']);
+ assert.deepEqual(shape('direction'), [['income', ['pay@15']], ['expense', ['gym@01', 'rent@01', 'gym@08', 'gym@15', 'gym@22', 'gym@29']]]);
+ assert.deepEqual(shape('status').map(([key]) => key), ['overdue', 'due', 'paid', 'skipped']);
+ assert.deepEqual(shape('category').map(([key]) => key), ['Living expense', 'Rent expense', 'Salary']);
+ assert.deepEqual(groupRecurring([], 'status', () => ''), []);
+});

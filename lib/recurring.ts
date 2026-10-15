@@ -125,6 +125,22 @@ export function onlyDirection(items: RecurringItem[], carried: RecurringItem[], 
  return { shown: items.filter(keep), shownCarried: carried.filter(keep) };
 }
 
+/** How the Recurring list is grouped: by due date (the default), income or expense, category, or status. */
+export type RecurringGrouping = 'date' | 'direction' | 'category' | 'status';
+export type RecurringGroup = { key: string; items: RecurringItem[] };
+const statusOrder: readonly RecurringStatus[] = ['overdue', 'due', 'paid', 'skipped'];
+const directionOrder: readonly RecurringItem['direction'][] = ['income', 'expense'];
+
+/** The month's items in groups, each keeping the items' date order. Dates run in calendar order, income before expenses,
+ * open before settled; categories by name. `categoryOf` names an item's category (a custom one or its kind). */
+export function groupRecurring(items: RecurringItem[], by: RecurringGrouping, categoryOf: (item: RecurringItem) => string): RecurringGroup[] {
+ const keyOf = (item: RecurringItem) => by === 'date' ? item.date : by === 'direction' ? item.direction : by === 'status' ? item.status : categoryOf(item);
+ const groups = new Map<string, RecurringItem[]>();
+ for (const item of items) groups.set(keyOf(item), [...(groups.get(keyOf(item)) ?? []), item]);
+ const rank = (key: string) => by === 'status' ? statusOrder.indexOf(key as RecurringStatus) : by === 'direction' ? directionOrder.indexOf(key as RecurringItem['direction']) : 0;
+ return [...groups].map(([key, rows]) => ({ key, items: rows })).sort((a, b) => rank(a.key) - rank(b.key) || (by === 'date' || by === 'category' ? a.key.localeCompare(b.key) : 0));
+}
+
 /** Summary bars: how much came in or went out, and how much is still to come. Skipped items count as neither. */
 export function recurringSummary(items: RecurringItem[], convert: (amount: number, currency: string) => number | null) {
  const totals = { income: { done: 0, remaining: 0 }, expense: { done: 0, remaining: 0 }, missing: 0 };
