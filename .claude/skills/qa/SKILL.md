@@ -62,7 +62,7 @@ SHELL, I18N and XAPP span every route; BOT is the Telegram chat.
 ## 1. Environment check (do this first, write the results down)
 
 1. Version under test: `git log -1 --oneline origin/main`. Confirm it is deployed:
-   `gh api repos/exampleschool23/personal-finance/commits/<sha>/status --jq '.statuses[]|.context+" "+.state'`
+   `gh api repos/Jasurbek-Shomurodov/finance-app/commits/<sha>/status --jq '.statuses[]|.context+" "+.state'`
    must show `Vercel success`. Probe a route that only exists in the new code if the
    change added one. Never test a deploy that is still pending.
 2. Production URL: `https://personal-finance-eta-nine.vercel.app`. Local dev (sample

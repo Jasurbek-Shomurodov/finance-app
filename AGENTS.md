@@ -214,7 +214,10 @@ Category colors must come from `lib/category-colors.ts`. Use `CategoryBadge` for
 # Git destination and standing authorization
 
 When the user requests a commit and push, use `origin` at
-`git@github-dangerhoggish:exampleschool23/personal-finance.git`, targeting `main`.
+`https://github.com/Jasurbek-Shomurodov/finance-app.git`, targeting `main`. The
+repository moved there from `exampleschool23/personal-finance` on 15 October 2026;
+the checkout pushes over HTTPS with the `Jasurbek-Shomurodov` `gh` login (a
+repo-local credential helper), since no SSH key on this Mac signs in as that account.
 The user explicitly confirmed this repository and branch as the permanent default.
 Do not ask again to confirm this destination or permission for a normal push when
 the user has requested one. This does not authorize force pushes, history rewrites,

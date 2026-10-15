@@ -1,6 +1,6 @@
 # Vercel deployment
 
-Import `exampleschool23/personal-finance` in Vercel with the **Next.js** preset.
+Import `Jasurbek-Shomurodov/finance-app` in Vercel with the **Next.js** preset.
 The Vercel build command is `npx next build --webpack`, with the default `.next`
 output directory. `vercel.json` records these overrides; the existing
 `npm run dev` command still runs the local Vinext preview on port 5000.
