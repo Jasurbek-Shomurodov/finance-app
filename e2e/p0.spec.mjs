@@ -160,15 +160,16 @@ test('CF-040 Recent transactions lists the expense saved last first', async ({ p
   await expect(rows.nth(1)).toContainText('E2E Coffee');
 });
 
-test('REC-027 REC-003 a schedule started two years back is not overdue, and paying it from an empty account is refused', async ({ page }) => {
+test('REC-027 REC-003 a schedule started two years back keeps its unpaid months open, and paying it from an empty account is refused', async ({ page }) => {
   await page.goto('/upcoming');
   await expect(page.getByText('E2E Gym').first()).toBeVisible();
-  await expect(page.getByText('Open from earlier months')).toHaveCount(0);
-  await expect(page.getByRole('navigation').getByRole('link', { name: /^Recurring\s*\d/ })).toHaveCount(0);
+  // Every unpaid past date stays open until it is recorded or skipped (the user, 13 October 2026).
+  await expect(page.getByText('Open from earlier months')).toHaveCount(1);
+  await expect(page.getByRole('navigation').getByRole('link', { name: /^Recurring\s*\d/ })).toHaveCount(1);
   const row = page.locator('li', { hasText: 'E2E Gym' }).first();
   await row.getByRole('button', { name: 'Record payment' }).click();
   const dialog = page.getByRole('dialog');
-  await chooseOption(dialog.locator('select').first(), 'E2E Empty');
+  await chooseOption(dialog.getByLabel('Cash account'), 'E2E Empty');
   await dialog.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.getByText('Insufficient balance or invalid amount.').first()).toBeVisible();
   await closeDialog(page);

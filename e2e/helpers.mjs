@@ -22,9 +22,10 @@ export async function figureAfter(page, label) {
   return match?.[1].trim() ?? null;
 }
 
-/** Opens a page from the drawer and waits for its title. */
+/** Opens a page from the drawer and waits for its title. A link may carry a count after its label (Recurring's overdue dates). */
 export async function open(page, label) {
-  await page.getByRole('navigation').getByRole('link', { name: label, exact: true }).click();
+  const name = new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s*[\\d,]+)?$`);
+  await page.getByRole('navigation').getByRole('link', { name }).click();
   await expect(page).toHaveTitle(`${label} · Hoggish Finance`);
 }
 
