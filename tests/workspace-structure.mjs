@@ -43,12 +43,14 @@ test('screens contain only their own page and leave the drawer, top bar and dial
 });
 
 test('every destination has a unique path and unknown paths open Overview',()=>{
- const {sections,sectionFor,sectionLabel}=loadTS('components/workspace/navigation.ts');
+ const {sections,sectionFor,sectionLabel,drawerGroups}=loadTS('components/workspace/navigation.ts');
  assert.equal(new Set(sections.map(section=>section.path)).size,sections.length);
  assert.equal(new Set(sections.map(section=>section.name)).size,sections.length);
  assert.deepEqual([...new Set(sections.map(section=>section.group))],['WORKSPACE','Manage','Account']);
  // Drawer: short words in its order; the section names stay as identifiers.
- assert.deepEqual(sections.map(section=>section.label),['Dashboard','Accounts','Transactions','Cash flow','Reports','Budget','Recurring','Investments','Loans & debts','Goals','Assistant','Recently deleted','Settings']);
+ assert.deepEqual(sections.map(section=>section.label),['Dashboard','Assistant','Accounts','Transactions','Cash flow','Reports','Budget','Recurring','Goals','Investments','Loans & debts','Recently deleted','Settings']);
+ // The main list is grouped under headings; Dashboard and Assistant stand on their own at the top.
+ assert.deepEqual(drawerGroups().map(group=>[group.heading,group.items.map(item=>item.label)]),[[undefined,['Dashboard','Assistant']],['Money',['Accounts','Transactions','Cash flow','Reports']],['Planning',['Budget','Recurring','Goals']],['Net worth',['Investments','Loans & debts']]]);
  assert.equal(sectionLabel('Upcoming payments'),'Recurring');assert.equal(sectionLabel('Unknown'),'Unknown');
  assert.equal(sectionFor('/goals'),'Savings goals');
  assert.equal(sectionFor('/income-expenses'),'Income & expenses');
@@ -66,7 +68,7 @@ test('the drawer marks the current route and shows overdue payments; signing out
   '@/components/language-provider':{useLanguage:()=>({locale:'en-US',t:text=>text})},
   '@/components/presentation-foundation/drawer-link':{DrawerLink:element('a')},
   '@/components/ui/button':{Button:element('button')},
-  '@/components/ui/sidebar':{Sidebar:element('aside'),SidebarContent:element('div'),SidebarFooter:element('footer'),SidebarHeader:element('header'),SidebarMenu:element('ul'),SidebarMenuItem:element('li'),SidebarMenuButton:element('div'),SidebarTrigger:element('button'),useSidebar:()=>({setOpenMobile:open=>sheet.push(open)})},
+  '@/components/ui/sidebar':{Sidebar:element('aside'),SidebarContent:element('div'),SidebarFooter:element('footer'),SidebarGroup:element('div'),SidebarGroupLabel:element('div'),SidebarHeader:element('header'),SidebarMenu:element('ul'),SidebarMenuItem:element('li'),SidebarMenuButton:element('div'),SidebarTrigger:element('button'),useSidebar:()=>({setOpenMobile:open=>sheet.push(open)})},
  });
  const props={account:{initial:'H',title:'Personal account',detail:'owner@example.com'},overdueCount:1234};
  const html=renderToStaticMarkup(React.createElement(AppDrawer,props));
@@ -104,7 +106,7 @@ test('a drawer tap highlights and shows its destination before the route arrives
   '@/components/language-provider':{useLanguage:()=>({locale:'en-US',t:text=>text})},
   '@/components/presentation-foundation/drawer-link':{DrawerLink:element('a')},
   '@/components/ui/button':{Button:element('button')},
-  '@/components/ui/sidebar':{Sidebar:element('aside'),SidebarContent:element('div'),SidebarFooter:element('footer'),SidebarHeader:element('header'),SidebarMenu:element('ul'),SidebarMenuItem:element('li'),SidebarMenuButton:element('div'),SidebarTrigger:element('button'),useSidebar:()=>({setOpenMobile:open=>sheet.push(open)})},
+  '@/components/ui/sidebar':{Sidebar:element('aside'),SidebarContent:element('div'),SidebarFooter:element('footer'),SidebarGroup:element('div'),SidebarGroupLabel:element('div'),SidebarHeader:element('header'),SidebarMenu:element('ul'),SidebarMenuItem:element('li'),SidebarMenuButton:element('div'),SidebarTrigger:element('button'),useSidebar:()=>({setOpenMobile:open=>sheet.push(open)})},
  },new Map());
  const props={account:{initial:'H',title:'Personal account',detail:'owner@example.com'},overdueCount:0,signOutLabel:'Sign out',onSignOut:()=>{},onNavigate:path=>navigated.push(path)};
  const html=renderToStaticMarkup(React.createElement(AppDrawer,{...props,pendingPath:'/goals'}));
@@ -132,7 +134,7 @@ test('the logo in the drawer goes to the main page, closing the phone drawer and
   '@/components/language-provider':{useLanguage:()=>({locale:'en-US',t:text=>text})},
   '@/components/presentation-foundation/drawer-link':{DrawerLink:element('a')},
   '@/components/ui/button':{Button:element('button')},
-  '@/components/ui/sidebar':{Sidebar:element('aside'),SidebarContent:element('div'),SidebarFooter:element('footer'),SidebarHeader:element('header'),SidebarMenu:element('ul'),SidebarMenuItem:element('li'),SidebarMenuButton:element('div'),SidebarTrigger:element('button'),useSidebar:()=>({setOpenMobile:open=>sheet.push(open)})},
+  '@/components/ui/sidebar':{Sidebar:element('aside'),SidebarContent:element('div'),SidebarFooter:element('footer'),SidebarGroup:element('div'),SidebarGroupLabel:element('div'),SidebarHeader:element('header'),SidebarMenu:element('ul'),SidebarMenuItem:element('li'),SidebarMenuButton:element('div'),SidebarTrigger:element('button'),useSidebar:()=>({setOpenMobile:open=>sheet.push(open)})},
  },new Map());
  const props={account:{initial:'H',title:'Personal account',detail:'owner@example.com'},overdueCount:0,signOutLabel:'Sign out',onSignOut:()=>{},onNavigate:path=>navigated.push(path)};
  const html=renderToStaticMarkup(React.createElement(AppDrawer,props));

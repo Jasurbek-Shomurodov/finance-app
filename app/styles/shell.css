@@ -9,6 +9,9 @@
 .sidebar-tools svg{width:17px;height:17px}
 [dir=rtl] .sidebar-tools [data-sidebar=trigger] svg{transform:scaleX(-1)}
 .sidebar-navigation{padding:2px 10px 16px;gap:0}
+.nav-group{padding:0}
+.nav-group+.nav-group{margin-top:14px}
+.nav-heading{height:auto!important;padding:0 10px 4px!important;font-size:var(--type-caption)!important;font-weight:500;color:var(--muted-foreground)!important}
 .nav-item{height:34px!important;padding:0 10px!important;gap:10px!important;border-radius:8px!important;font-size:var(--type-small)!important;font-weight:500;color:var(--sidebar-foreground);transition:background .15s,color .15s}
 .nav-item svg{width:17px!important;height:17px!important;opacity:.7}
 .nav-item[data-active=true]{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground)}

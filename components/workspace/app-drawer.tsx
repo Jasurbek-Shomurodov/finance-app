@@ -6,10 +6,10 @@ import { Brand } from '@/components/presentation-foundation/brand';
 import { DrawerLink } from '@/components/presentation-foundation/drawer-link';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { useLanguage } from '@/components/language-provider';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { formatNumber } from '@/lib/format';
 import { directionOf } from '@/lib/i18n';
-import { sectionFor, sections } from '@/components/workspace/navigation';
+import { drawerGroups, sectionFor, sections } from '@/components/workspace/navigation';
 
 type Props = {
  /** Who is signed in, shown at the foot of the drawer. */
@@ -59,7 +59,10 @@ export function AppDrawer({ account, overdueCount, pendingPath, onNavigate, badg
    </div>
   </SidebarHeader>
   <SidebarContent className="sidebar-navigation"><nav aria-label={t('WORKSPACE')}>
-   <SidebarMenu>{sections.filter(section => section.group === 'WORKSPACE').map(item)}</SidebarMenu>
+   {drawerGroups().map(group => <SidebarGroup key={group.heading ?? ''} className="nav-group">
+    {group.heading && <SidebarGroupLabel className="nav-heading">{t(group.heading)}</SidebarGroupLabel>}
+    <SidebarMenu>{group.items.map(item)}</SidebarMenu>
+   </SidebarGroup>)}
   </nav></SidebarContent>
   <SidebarFooter className="sidebar-account">
    <nav aria-label={t('Manage')}><SidebarMenu>{sections.filter(section => section.group === 'Manage').map(item)}</SidebarMenu></nav>
