@@ -27,7 +27,7 @@ import { AddRecurringMenu, type RecurringKind } from './add-recurring-menu';
 
 /** The Recurring page's views, switched from tabs beside its title: the month as a list or a calendar, subscriptions and reminders. */
 export type RecurringView = 'list' | 'calendar' | 'subscriptions' | 'reminders';
-type Props = { data: PlanningData; save: (action: string, data: unknown) => Promise<void>; currency: string; rates?: number | Record<string, number>; view: RecurringView; onView: (view: RecurringView) => void; onEdit?: (record: RecurringItem['record']) => void; onAddRecurring?: (kind: RecurringKind) => void;
+type Props = { data: PlanningData; save: (action: string, data: unknown) => Promise<void>; currency: string; /** Preferred currencies a scheduled payment may arrive in. */ currencies?: readonly string[]; rates?: number | Record<string, number>; view: RecurringView; onView: (view: RecurringView) => void; onEdit?: (record: RecurringItem['record']) => void; onAddRecurring?: (kind: RecurringKind) => void;
  /** Archiving moves a schedule out of the month and back. */
  onArchive?: (target: ArchiveTarget, archived: boolean) => Promise<void>;
  /** Moves a schedule to Recently deleted, keeping its recorded payments in history or deleting them too. */
@@ -46,7 +46,7 @@ function SummaryBar({ label, done, remaining, doneLabel, currency, tone, pressed
 }
 
 /** The month's incomes and bills, as a list or a calendar, with what came in and went out. */
-export function UpcomingPage({ data, save, currency, rates, view, onView, onEdit, onAddRecurring, onArchive, onDelete }: Props) {
+export function UpcomingPage({ data, save, currency, currencies = [], rates, view, onView, onEdit, onAddRecurring, onArchive, onDelete }: Props) {
  const { t, locale } = useLanguage(), today = depositToday();
  const { entered } = useDisplayMoney();
  const dueLabel = useDueLabel();
@@ -121,7 +121,7 @@ export function UpcomingPage({ data, save, currency, rates, view, onView, onEdit
   </>}
   {details.dialog}
   {deletion.dialog}
-  {operation && <AccountOperation operation={operation} records={data.records} activity={paymentsFrom(data.activity, data.debtPayments)} save={save} onClose={() => setOperation(null)}/>}
+  {operation && <AccountOperation operation={operation} records={data.records} activity={paymentsFrom(data.activity, data.debtPayments)} currencies={currencies} save={save} onClose={() => setOperation(null)}/>}
  </>;
 }
 

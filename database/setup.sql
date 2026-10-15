@@ -9188,14 +9188,19 @@ COMMIT;
 -- rewritten.
 BEGIN;
 
--- Called only from the two functions below, inside their owner checks.
-CREATE OR REPLACE FUNCTION public.scheduled_payment_currency(schedule_currency text,account uuid,asked text) RETURNS text
-LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public AS $$
-BEGIN
- IF asked IS NULL OR asked=schedule_currency THEN RETURN schedule_currency; END IF;
- IF asked=(SELECT currency FROM public.finance_records WHERE id=account AND kind='Cash') THEN RETURN asked; END IF;
- RAISE EXCEPTION 'Choose the schedule''s currency or the cash account''s.';
-END $$;
+-- Called only from the two functions below, inside their owner checks. Created once, so
+-- running this again keeps what a later migration (146) made of it.
+DO $do$ BEGIN
+ IF to_regprocedure('public.scheduled_payment_currency(text,uuid,text)') IS NULL THEN
+  CREATE FUNCTION public.scheduled_payment_currency(schedule_currency text,account uuid,asked text) RETURNS text
+  LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public AS $$
+  BEGIN
+   IF asked IS NULL OR asked=schedule_currency THEN RETURN schedule_currency; END IF;
+   IF asked=(SELECT currency FROM public.finance_records WHERE id=account AND kind='Cash') THEN RETURN asked; END IF;
+   RAISE EXCEPTION 'Choose the schedule''s currency or the cash account''s.';
+  END $$;
+ END IF;
+END $do$;
 REVOKE ALL ON FUNCTION public.scheduled_payment_currency(text,uuid,text) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.scheduled_payment_currency(text,uuid,text) TO authenticated;
 
@@ -9259,6 +9264,33 @@ SELECT pg_temp.patch_later_receipts('public.validate_income_source()'::regproced
 -- The capability version moves to 145, so the app can ask for this migration.
 CREATE OR REPLACE FUNCTION public.finance_capabilities() RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public AS $$
  SELECT jsonb_build_object('schema_version',145,'record_revisions',true,'verified_restore',true)
+$$;
+
+NOTIFY pgrst,'reload schema';
+COMMIT;
+
+-- Record payment in any currency. Apply after 145.
+-- Migration 144 let a scheduled payment be typed in its schedule's currency or the
+-- cash account's. A USD salary that arrives as sum into a USD cash account could
+-- still not be entered as sum. A payment may now be in any currency: one that is not
+-- the cash account's carries the dated rate the account moves by, which the
+-- finance_records guard already requires, and the planning read counts it in the
+-- schedule's currency (migration 120). No rows are rewritten.
+BEGIN;
+
+CREATE OR REPLACE FUNCTION public.scheduled_payment_currency(schedule_currency text,account uuid,asked text) RETURNS text
+LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public AS $$
+BEGIN
+ IF asked IS NULL THEN RETURN schedule_currency; END IF;
+ IF asked !~ '^[A-Z]{3}$' THEN RAISE EXCEPTION 'Check the account fields.'; END IF;
+ RETURN asked;
+END $$;
+REVOKE ALL ON FUNCTION public.scheduled_payment_currency(text,uuid,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.scheduled_payment_currency(text,uuid,text) TO authenticated;
+
+-- The capability version moves to 146, so the app can ask for this migration.
+CREATE OR REPLACE FUNCTION public.finance_capabilities() RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public AS $$
+ SELECT jsonb_build_object('schema_version',146,'record_revisions',true,'verified_restore',true)
 $$;
 
 NOTIFY pgrst,'reload schema';

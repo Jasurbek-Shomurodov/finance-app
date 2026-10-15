@@ -18,7 +18,7 @@ import { depositToday } from '@/lib/deposit-interest';
 import type { Entry } from '@/lib/finance';
 import { suggestedPaymentAccount } from '@/lib/payment-account';
 export type Operation = {action:'transfer'|'reconcile'|'repayment'|'mortgage'|'occurrence';account_id?:string;target_id?:string;date?:string;amount?:number;/** Another payment for an occurrence that is already recorded. */extra?:boolean;/** The schedule's open due dates a payment may settle instead, `date` among them. */dues?:string[]};
-export function AccountOperation({operation,records,activity,save,onClose}:{operation:Operation;records:Entry[];/** Earlier operations, to start a payment from the account that last paid it. */activity?:Array<{account_id:string;target_id:string|null;occurred_on:string}>;save:(action:string,data:unknown)=>Promise<void>;onClose:()=>void}){
+export function AccountOperation({operation,records,activity,currencies=[],save,onClose}:{operation:Operation;records:Entry[];/** The person's preferred currencies, offered for a scheduled payment. */currencies?:readonly string[];/** Earlier operations, to start a payment from the account that last paid it. */activity?:Array<{account_id:string;target_id:string|null;occurred_on:string}>;save:(action:string,data:unknown)=>Promise<void>;onClose:()=>void}){
  const {t,locale}=useLanguage(),dueLabel=useDueLabel();
  // A scheduled payment starts at its scheduled amount; the person edits it when the actual differs.
  const [draft,setDraft]=useState(()=>({id:crypto.randomUUID(),account_id:operation.account_id??(['repayment','mortgage','occurrence'].includes(operation.action)?suggestedPaymentAccount(records.filter(r=>r.kind==='Cash'),records.find(r=>r.id===operation.target_id),records,activity):''),target_id:operation.target_id??'',date:operation.date??depositToday(),paid_on:operation.action==='occurrence'?[operation.date??depositToday(),depositToday()].sort()[0]:undefined as string|undefined,amount:operation.amount??(operation.action==='occurrence'?Number(records.find(r=>r.id===operation.target_id)?.amount??0):0),received:0,fee:0,notes:'',currency:undefined as string|undefined}));
@@ -30,13 +30,14 @@ export function AccountOperation({operation,records,activity,save,onClose}:{oper
  const targets=records.filter(r=>r.id!==draft.account_id&&(operation.action==='transfer'?r.kind==='Cash':['Loan','Debt','Money lent','Mortgage'].includes(r.kind)));
  const title={transfer:'Transfer money',reconcile:'Adjust balance',repayment:'Record repayment',mortgage:'Record mortgage payment',occurrence:'Record scheduled payment'}[operation.action];
  const crossCurrency=operation.action==='transfer'&&account&&target&&account.currency!==target.currency;
- const mixedCurrencies=['repayment','mortgage','occurrence'].includes(operation.action)&&!!account&&!!target&&account.currency!==target.currency;
- // A scheduled payment is typed in its schedule's currency, or in the cash account's as it arrived, which needs no rate.
- const paymentCurrency=draft.currency??target?.currency,paymentCurrencies=[...new Set([target?.currency,account?.currency].filter((code):code is string=>!!code))];
- const convertedPayment=mixedCurrencies&&paymentCurrency!==account?.currency;
- const fx=useDatedExchangeRate(mixedCurrencies?account?.currency:undefined,target?.currency,draft.paid_on??draft.date);
- // Switching the currency carries the amount over at the day's rate, in whole units, or leaves it to be typed.
- const switchCurrency=(code:string)=>{const toAccount=code===account?.currency&&code!==target?.currency;setDraft({...draft,currency:code===target?.currency?undefined:code,amount:fx.rate&&draft.amount>0?Math.round(toAccount?draft.amount/fx.rate:draft.amount*fx.rate):0});};
+ // A scheduled payment is typed in the currency it arrived in: its schedule's, the cash account's or a preferred
+ // one. Any but the account's moves the account at the day's rate.
+ const paymentCurrency=draft.currency??target?.currency,paymentCurrencies=[...new Set([target?.currency,account?.currency,...currencies].filter((code):code is string=>!!code))];
+ const rateCurrency=operation.action==='occurrence'?paymentCurrency:target?.currency;
+ const convertedPayment=['repayment','mortgage','occurrence'].includes(operation.action)&&!!account&&!!target&&account.currency!==rateCurrency;
+ const fx=useDatedExchangeRate(convertedPayment?account?.currency:undefined,rateCurrency,draft.paid_on??draft.date);
+ // The schedule's own currency brings back its scheduled amount; another one is typed as it arrived.
+ const switchCurrency=(code:string)=>setDraft({...draft,currency:code===target?.currency?undefined:code,amount:code===target?.currency?operation.amount??Number(target?.amount??0):0});
  const noAmount=(['transfer','repayment'].includes(operation.action)&&draft.amount<=0)||(operation.action==='mortgage'&&draft.amount+draft.fee<=0);
  const blockedId=useId();
  const blocked=!draft.account_id?'Choose a cash account.':noAmount?'Enter an amount greater than zero.':convertedPayment&&!fx.rate&&!fx.loading?'Exchange rate unavailable.':'';
@@ -53,9 +54,7 @@ export function AccountOperation({operation,records,activity,save,onClose}:{oper
   // A statement balance belongs to one account: never carry it over to another.
   const balance=Number(records.find(r=>r.id===e.target.value)?.amount??0);
   if(operation.action==='reconcile')setBalanceBlank(!(balance>0));
-  // A payment typed in the previous account's currency goes back to the schedule's.
-  const keepCurrency=draft.currency&&records.find(r=>r.id===e.target.value)?.currency===draft.currency;
-  setDraft({...draft,account_id:e.target.value,...(operation.action==='reconcile'?{amount:balance}:{}),...(draft.currency&&!keepCurrency?{currency:undefined,amount:0}:{})});
+  setDraft({...draft,account_id:e.target.value,...(operation.action==='reconcile'?{amount:balance}:{})});
  }}><option value="">{t('Select account')}</option>{accounts.map(a=><option key={a.id} value={a.id}>{formatAccountOption(a,locale)}</option>)}</NativeSelect></label>
  {/* The day it was actually received or paid: the due date by default, never a day ahead nor before the schedule starts. */}
  {operation.action==='occurrence'&&<label>{t('Payment date')}<DatePicker value={draft.paid_on??''} min={target?.date} max={depositToday()} onChange={paid_on=>setDraft({...draft,paid_on:paid_on||depositToday()})}/></label>}
