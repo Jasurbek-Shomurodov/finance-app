@@ -7,7 +7,7 @@ import { liabilities, type Entry } from '@/lib/finance';
 import { resolveIncomeSource } from '@/lib/income-sources';
 import type { Category } from '@/lib/planning';
 import { applyRecordChange, lendFromAccount, withSavedRecord } from '@/lib/record-balance';
-import { businessMoveFrom, cashAccountProblem, debtDatesProblem, demoScheduleLink, duplicateSalaryPayment, duplicateScheduledPayment, expenseName, recordSaveProblem } from '@/lib/record-save';
+import { businessMoveFrom, cashAccountProblem, debtDatesProblem, demoScheduleLink, expenseName, recordSaveProblem } from '@/lib/record-save';
 import { depositToday } from '@/lib/deposit-interest';
 import { savedRecord } from '@/lib/record-table';
 import { isLinkedTransaction } from '@/lib/linked-transactions';
@@ -37,9 +37,7 @@ export function useRecordSave(input: RecordSaveInput) {
         // A saved record carries its revision, also one opened from a screen with its own read (Transactions).
         const stored=savedRecord(editing.id,rows,planning.data.records,editing);
         const earningPatch=editing.earning_source_id?resolveEarningSource(editing,input.sources,stored):{};
-        if(demo&&duplicateScheduledPayment(editing,rows,earningPatch.earning_due_on))throw Error('This scheduled payment is already recorded.');
         const incomeSourcePatch=editing.income_source_id?resolveIncomeSource(editing,planning.data.records):{};
-        if(demo&&duplicateSalaryPayment(editing,rows,incomeSourcePatch.income_due_on))throw Error('This salary payment is already recorded.');
         const name=expenseName(editing,planning.data.categories.find(category=>category.id===editing.custom_category_id)?.name,editing.kind);
         const opened=liabilities.includes(editing.kind)&&!stored?{opened_on:editing.opened_on??today()}:{};
         // Only new money lent leaves a cash account.

@@ -33,14 +33,6 @@ export function cashAccountProblem(editing: Entry, records: readonly Entry[], re
  return '';
 }
 
-/** In the sample workspace, which checks no database, a scheduled payment is recorded once per due date. */
-export const duplicateScheduledPayment = (editing: Entry, rows: readonly Entry[], dueOn: string | null | undefined) =>
- !!dueOn && rows.some(row => row.id !== editing.id && row.earning_source_id === editing.earning_source_id && row.earning_due_on === dueOn);
-
-/** Likewise a salary payment, once per pay day of its income source. */
-export const duplicateSalaryPayment = (editing: Entry, rows: readonly Entry[], dueOn: string | null | undefined) =>
- editing.kind === 'Salary' && !!editing.income_source_id && rows.some(row => row.id !== editing.id && row.income_source_id === editing.income_source_id && row.income_due_on === dueOn);
-
 /** The sample workspace's copy of name_scheduled_payment for a source receipt or a salary with a plan (migration 140):
  * the row names the schedule it pays and the due date it chose, so the income cards and Recurring join it by that one id. */
 export function demoScheduleLink(editing: Entry, patch: Pick<Entry, 'earning_due_on' | 'income_due_on'>, sources: readonly { id: string; schedule_id?: string | null }[]): Partial<Entry> {

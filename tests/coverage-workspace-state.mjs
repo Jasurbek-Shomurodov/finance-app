@@ -313,8 +313,6 @@ test('the pure save rules and the table view behave as the provider relied on', 
  assert.equal(save.recordSaveProblem({ kind: 'Living expense', date: '2999-01-01', amount: 5, frequency: 'Once' }), 'Actual income and expenses cannot be dated in the future.');
  assert.equal(save.cashAccountProblem({ kind: 'Cash', account_id: 'c', currency: 'EUR' }, [{ id: 'c', kind: 'Cash', currency: 'USD' }], true, 0), 'Historical exchange rates are unavailable.');
  assert.equal(save.cashAccountProblem({ kind: 'Living expense', account_id: 'c', currency: 'USD', frequency: 'Once' }, [{ id: 'c', kind: 'Cash', currency: 'USD' }], false, 1), 'Choose a cash account.');
- assert.equal(save.duplicateScheduledPayment({ id: 'a', earning_source_id: 's' }, [{ id: 'b', earning_source_id: 's', earning_due_on: '2026-01-01' }], '2026-01-01'), true);
- assert.equal(save.duplicateSalaryPayment({ id: 'a', kind: 'Salary', income_source_id: 'i' }, [{ id: 'b', income_source_id: 'i', income_due_on: '2026-01-01' }], '2026-01-01'), true);
  assert.equal(save.debtDatesProblem({ kind: 'Loan', opened_on: '2026-05-01', date: '2026-04-01' }), 'Check the start and due dates.');
  assert.equal(save.debtDatesProblem({ kind: 'Loan', opened_on: null, date: '2026-04-01' }), '');
  assert.deepEqual(save.businessMoveFrom({ kind: 'Cash', business_id: 'b2' }, { business_id: 'b1' }), { from: 'b1' });

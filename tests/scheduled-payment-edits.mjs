@@ -63,7 +63,7 @@ test('a late receipt settles the earliest open due date, not the paid one it was
  assert.equal(openEarningDue(weekly, '2026-10-09', new Set(['2026-10-09'])), '2026-10-02');
  // Nothing paid yet: the earlier week first, so no week is left open beside a paid one.
  assert.equal(openEarningDue(weekly, '2026-10-09', new Set()), '2026-10-02');
- // Both paid: the period it was received in, which the database then reports as already recorded.
+ // Both paid: the period it was received in, which the receipt then adds to as a later payment.
  assert.equal(openEarningDue(weekly, '2026-10-09', new Set(['2026-10-02', '2026-10-09'])), '2026-10-09');
  // Never a date after the receipt.
  assert.equal(openEarningDue(weekly, '2026-10-05', new Set(['2026-10-02'])), '2026-10-02');

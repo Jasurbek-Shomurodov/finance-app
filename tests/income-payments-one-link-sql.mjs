@@ -55,12 +55,17 @@ test('a source receipt and a salary with a plan name their schedule as they are 
   await salary(d,20,{income_source_id:id(12),income_due_on:'2026-10-05'});
   assert.deepEqual([await named(d,20),await named(d,21)],[[id(12),'2026-10-05'],[id(30),'2026-10-15']]);
   assert.deepEqual(await occurrences(d),[[id(12),'2026-10-05','paid',id(20)],[id(30),'2026-10-15','paid',id(21)]]);
-  // An edit keeps the link; the due date it was taken from cannot move; a second receipt of the same due date is still refused.
+  // An edit keeps the link; the due date it was taken from cannot move.
   await d.query('UPDATE finance_records SET amount=2600 WHERE id=$1',[id(20)]);
   assert.deepEqual([await named(d,20),await occurrences(d)],[[id(12),'2026-10-05'],[[id(12),'2026-10-05','paid',id(20)],[id(30),'2026-10-15','paid',id(21)]]]);
   await assert.rejects(d.query("UPDATE finance_records SET income_due_on='2026-11-05' WHERE id=$1",[id(20)]),/keeps its schedule/);
   await assert.rejects(d.query("UPDATE finance_records SET earning_due_on='2026-11-15' WHERE id=$1",[id(21)]),/keeps its schedule/);
-  await assert.rejects(receipt(d,22),/already recorded/);
+  // A second receipt of the same due date adds to it (migration 145): the first still settles it.
+  await receipt(d,22,{amount:50});
+  assert.deepEqual(await named(d,22),[id(30),'2026-10-15']);
+  await salary(d,24,{income_source_id:id(12),income_due_on:'2026-10-05'});
+  assert.deepEqual(await named(d,24),[id(12),'2026-10-05']);
+  assert.deepEqual(await occurrences(d),[[id(12),'2026-10-05','paid',id(20)],[id(30),'2026-10-15','paid',id(21)]]);
   // A bonus and a variable source's receipt pay no schedule.
   await receipt(d,23,{kind:'Other income',earning_due_on:null,payment_type:'bonus'});
   assert.deepEqual(await named(d,23),[null,null]);
