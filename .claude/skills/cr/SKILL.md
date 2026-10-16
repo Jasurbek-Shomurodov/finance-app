@@ -1,9 +1,14 @@
 ---
 name: cr
 description: Precise code and architecture review of Hoggish against AGENTS.md and the code regression catalog - leaks (secrets, personal data, resources), misuse of shared helpers, DRY, SOLID, module boundaries, database architecture (RLS, households, migrations, indexes, constraints), money precision, concurrency and operational risks. Use for "/cr", "code review", "architecture review", "find risks", "audit the code", or before shipping a large change. Arguments - empty or "full" (whole codebase), "diff" (uncommitted changes plus the last commit), a path or glob (one file or folder), or an area code (SEC, LEAK, AUTHZ, DB, MIG, API, MONEY, DRY, SOLID, ARCH, RES, CONC, ERR, PERF, DEP, BOT, TEST).
+argument-hint: "[empty = full | diff | commit | A..B | branch | PR number | path | area] [fix]"
 ---
 
 # /cr — precise code review
+
+> **Shared contract.** Load the `review-core` skill first (`~/.claude/skills/review-core/SKILL.md`). Its ground rules, argument
+> grammar, S0/S1/S2 severity scale, report skeleton, fix mode and fan-out
+> apply here. This file adds only what is specific to Hoggish (finance-app).
 
 You are the reviewer. Every finding names the rule it breaks (a catalog case, an
 `AGENTS.md` section, or a named principle), the exact place (`file:line`), the
@@ -22,6 +27,8 @@ Default mode is **review only**: do not edit code unless the user asks ("/cr fix
 
 ## 0. Ground rules (never break these)
 
+`review-core` section 0 applies in full. Project additions:
+
 - **Read-only by default.** No commits, no pushes, no migrations applied, no calls
   to production, Supabase, Telegram or any paid API. Reviewing a cron or webhook
   route means reading it, never invoking it.
@@ -37,12 +44,17 @@ Default mode is **review only**: do not edit code unless the user asks ("/cr fix
 
 ## 1. Scope
 
+The grammar is `review-core` section 1; here is what each target means in
+this repository:
+
 | Argument | What to read |
 |---|---|
 | empty / `full` | Every area below. Fan out one subagent per area group (see §3) and merge. |
 | `diff` | `git diff HEAD` plus `git show HEAD`; review the changed lines and everything they call or that calls them. Map files to areas with the table below. |
+| commit, `A..B`, branch or PR number | The same as `diff`, against that range (`gh pr diff <n>` for a PR). |
 | path or glob | Those files plus their direct imports and callers. |
 | area code | That area's cases across the whole codebase. |
+| `fix` (modifier) | Apply the confirmed fixes afterwards (`review-core` section 4). |
 
 | Area | Where it lives |
 |---|---|
@@ -121,25 +133,28 @@ format of §4:
 5. DRY + SOLID + ARCH (design and boundaries)
 6. RES + DEP + TEST (resources, supply chain, coverage)
 
-Then deduplicate, re-verify every R0 and R1 yourself, and write one report.
+Then deduplicate, re-verify every S0 and S1 yourself, and write one report.
 
 ## 4. Report
 
-Order by severity, then area. Each finding:
+The skeleton is `review-core` section 3. Order by severity, then area. Each
+finding:
 
 ```
-[R0|R1|R2] AREA-NNN (or AGENTS.md § / principle) — one-line defect
+[S0|S1|S2] AREA-NNN (or AGENTS.md § / principle) — one-line defect
   where:    path/to/file.ts:123 (and the other places it repeats)
-  failure:  concrete inputs/state → leak / wrong amount / crash / cross-owner read
+  scenario: concrete inputs/state → leak / wrong amount / crash / cross-owner read
   fix:      the change, naming the shared helper or file to use
   verified: what you followed to confirm it (helper, policy, test)
 ```
 
-Severity: **R0** exploitable or data-corrupting (cross-owner read or write, secret
-or personal data leaked, money wrong in storage, data loss); **R1** a written rule
-broken or a real risk under plausible conditions (missing rate limit, unvalidated
-input, race, unbounded read, DRY breach of a financial rule, boundary violation);
-**R2** maintainability (smaller DRY, naming, size-limit pressure, dead code).
+Severity is the `review-core` scale; the catalog's R0/R1/R2 read as S0/S1/S2.
+Here **S0** = exploitable or data-corrupting (cross-owner read or write, secret
+or personal data leaked, money wrong in storage, data loss); **S1** = a written
+rule broken or a real risk under plausible conditions (missing rate limit,
+unvalidated input, race, unbounded read, DRY breach of a financial rule,
+boundary violation); **S2** = maintainability (smaller DRY, naming, size-limit
+pressure, dead code). New catalog cases use S0/S1/S2.
 
 After the findings: **Suggestions** (not rule-backed), **Checked, not a finding**
 (plausible risks you ruled out, one line each), **Not run** (what you skipped and

@@ -1,15 +1,22 @@
 ---
 name: qa
 description: Precise functional QA of the Hoggish web app and the Telegram bot, run live in the built-in browser against the regression catalog. Use for "/qa", "test the app", "full QA", "retest", or checking a deploy. Arguments - empty or "full" (whole catalog), an area code (AUTH, ONB, SHELL, DASH, ACC, TX, CF, REP, BUD, REC, INV, LOAN, GOAL, AST, DEL, SET, I18N, BOT, XAPP), "smoke" (P0 cases only), or "retest" (cases touched by commits since the last QA run).
+argument-hint: "[empty = full | area code | smoke | retest | diff | feature or request text] [fix]"
 ---
 
 # /qa — precise QA
+
+> **Shared contract.** Load the `review-core` skill first (`~/.claude/skills/review-core/SKILL.md`). Its ground rules, argument
+> grammar, S0/S1/S2 severity scale, report skeleton, fix mode and fan-out
+> apply here. This file adds only what is specific to Hoggish (finance-app).
 
 You are the QA engineer for this app. Your output is a verdict per case, backed by
 evidence, never an impression. Read `AGENTS.md` (product rules) before starting and
 keep `references/cases.md` (the regression catalog) open: it is the plan.
 
 ## 0. Ground rules (never break these)
+
+`review-core` section 0 applies in full. Project additions:
 
 - **Loading state:** the full "Loading your workspace…" layout (the sign-in-to-app screen, `WorkspaceSkeleton`) is
   only for the first load of the app and for a reload. Switching a tab or a drawer page must show shimmer
@@ -140,17 +147,22 @@ is blocked by the pane; that is expected.
    the pane being hidden; an undeployed fix; a deliberate design (read the code
    comment or the UI copy — e.g. "not added to forecasts"); stale data (reload).
    Reproduce every FAIL twice.
-8. **Severity:** P0 money wrong / data loss / security / cannot complete a core
-   flow. P1 wrong figure on one page, broken control, misleading state. P2 copy,
-   formatting, layout, consistency nits.
+8. **Severity:** the `review-core` scale; the catalog's P0/P1/P2 read as
+   S0/S1/S2. S0 money wrong / data loss / security / cannot complete a core
+   flow. S1 wrong figure on one page, broken control, misleading state. S2 copy,
+   formatting, layout, consistency nits. New cases use S0/S1/S2.
 
 ## 4. Report (in chat; tables, no prose walls)
 
-1. Header: version (sha), environment, scope, account, date.
-2. **Findings table** — `ID | Area | Steps (short) | Expected | Actual (quoted) | Severity`,
+The `review-core` section 3 skeleton, in table form:
+
+1. Header: `QA: <scope>`, version (sha), environment, account, date, verdict
+   (PASS, PASS WITH ISSUES, FAIL), checks run (`test:e2e:full` result).
+2. **Findings table** — `ID | Area | Steps (short) | Expected | Actual (quoted) | Fix | Severity (S0/S1/S2)`,
    sorted by severity. New findings get a new catalog ID.
 3. **Passed** — case IDs grouped by area, one line each area.
-4. **Not tested** — case ID and the reason (needs user OK, needs a file, blocked by X).
+4. **Checked, not a finding** and **Not run** — case ID and the reason (needs
+   user OK, needs a file, blocked by X).
 5. **Data left behind** — every QA record created, the Telegram link state, theme or
    layout changes you made (restore theme and dashboard layout before finishing).
 6. Offer to fix; do not fix unasked.

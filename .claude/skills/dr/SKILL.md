@@ -1,9 +1,14 @@
 ---
 name: dr
 description: Precise design review of Hoggish screens against AGENTS.md, UI-AGENT.md and the reference app, using the design regression catalog. Use for "/dr", "design review", "check the UI", or before shipping a UI change. Arguments - empty or "full" (every screen), a screen name (dashboard, accounts, transactions, cash-flow, reports, budget, recurring, investments, loans, goals, assistant, recently-deleted, settings, onboarding, sign-in, landing, legal, account-access, connect), "diff" (screens touched by uncommitted or the last commit's changes), or a case-area code (TOK, TYPE, HEAD, FMT, COMP, LIST, DND, STATE, DLG, RESP, THEME, RTL, I18N, A11Y, MOT, REF, SCR).
+argument-hint: "[empty = full | screen name | diff | case-area code] [fix]"
 ---
 
 # /dr — precise design review
+
+> **Shared contract.** Load the `review-core` skill first (`~/.claude/skills/review-core/SKILL.md`). Its ground rules, argument
+> grammar, S0/S1/S2 severity scale, report skeleton, fix mode and fan-out
+> apply here. This file adds only what is specific to Hoggish (finance-app).
 
 You are the design reviewer. Every finding names the rule it breaks, the exact
 element, how you measured it, and the fix with a file path. No taste-only remarks:
@@ -15,9 +20,14 @@ Sources of truth, read before every review:
 3. `references/cases.md` → the design regression catalog (the checklist).
 4. The reference app (UI-AGENT.md lists the video chapters) for structure only.
 
-Default mode is **review only**: do not edit code unless the user asks ("/dr fix").
+Default mode is **review only**: do not edit code unless the user asks ("/dr fix",
+`review-core` section 4). `review-core` section 0 applies in full.
 
 ## 1. Scope: screens, routes, files
+
+The grammar is `review-core` section 1: empty or `full` is every row of the
+table below, `diff` the screens whose files changed, a screen name or a
+case-area code narrows it.
 
 Every page the app serves is one screen here; `tests/qa-design-catalogs.mjs` fails
 when a route has no row, a file no longer exists, or a screen has no `SCR` case.
@@ -262,17 +272,21 @@ JavaScript runs. Report the file and line.
 6. Compare with the reference app for structure (what the screen leads with, where actions
    sit, what is hidden); list differences as "REF" findings only when UI-AGENT.md
    adopted that pattern.
-7. Severity: **D0** broken or unreadable (overflow hiding content, unusable at
-   375 px, contrast failure, RTL broken, money misformatted); **D1** a written rule
+7. Severity: the `review-core` scale; the catalog's D0/D1/D2 read as
+   S0/S1/S2. **S0** broken or unreadable (overflow hiding content, unusable at
+   375 px, contrast failure, RTL broken, money misformatted); **S1** a written rule
    broken (grey sentence, wrong tone, missing reorder, inline formatter, missing
-   empty state); **D2** inconsistency or polish.
+   empty state); **S2** inconsistency or polish. New cases use S0/S1/S2.
 
 ## 5. Report
 
-1. Header: screens, viewports, themes, languages, data states, commit.
-2. Findings table: `ID | Screen | Element | Rule (file § section) | Measured | Fix (file) | Severity`.
-3. Passed cases by area; not-checked cases with the reason.
-4. Screenshots only for D0/D1 layout findings (one per finding).
+The `review-core` section 3 skeleton, in table form:
+
+1. Header: `DR: <scope>`, screens, viewports, themes, languages, data states,
+   commit, one-line verdict.
+2. Findings table: `ID | Screen | Element | Rule (file § section) | Measured | Fix (file) | Severity (S0/S1/S2)`.
+3. Passed cases by area; "Checked, not a finding" and "Not run" cases with the reason.
+4. Screenshots only for S0/S1 layout findings (one per finding).
 5. Restore theme, language, viewport, dashboard layout.
 
 ## 6. Keep the catalog alive

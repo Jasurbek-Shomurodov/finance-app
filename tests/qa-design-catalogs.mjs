@@ -21,7 +21,7 @@ for (const [skill, path] of Object.entries(catalogs)) {
  });
  test(`/${skill} skill points at its catalog and names a valid trigger`, () => {
   const skillFile = fs.readFileSync(`.claude/skills/${skill}/SKILL.md`, 'utf8');
-  assert.match(skillFile, new RegExp(`^---\\nname: ${skill}\\ndescription: .+\\n---`, 'm'));
+  assert.match(skillFile, new RegExp(`^---\\nname: ${skill}\\ndescription: .+\\n(argument-hint: .+\\n)?---`, 'm'));
   assert.match(skillFile, /references\/cases\.md/);
   assert.match(skillFile, /AGENTS\.md/);
  });
