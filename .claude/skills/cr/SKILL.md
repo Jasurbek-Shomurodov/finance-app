@@ -120,6 +120,55 @@ grep -niE "security definer" database/setup.sql migrations/*.sql
 git log -p --all -S "sb_secret_" --oneline | head
 ```
 
+### Database evidence (DB, MIG, PERF)
+
+The project's Supabase MCP server (`.mcp.json`) is read-only; use it, never a
+guess, for anything about the live database:
+
+- `list_tables` to confirm the tables, columns and indexes a change relies on
+  exist in production with the shape `database/setup.sql` describes.
+- `execute_sql` with `EXPLAIN` on every new or changed hot query, PostgREST
+  read and SQL function (`EXPLAIN (ANALYZE, BUFFERS)` only on reads; never on
+  an insert, update, delete or a function that writes). Report seq scans on
+  `finance_records` and the other per-owner tables, sorts without an index and
+  nested loops over big sets.
+- `get_advisors` for `performance` and `security`: unindexed foreign keys,
+  unused or duplicate indexes, policies that re-evaluate `auth.uid()` per row,
+  `security definer` functions without a fixed `search_path`.
+- Never run writes, DDL, `truncate` or anything that changes production
+  through the MCP, even inside a transaction. Every DB, MIG and PERF finding
+  quotes the plan or advisor output it rests on; one without it is a Suggestion.
+
+**Migration replay and schema drift** (one command, PGlite, no network): load
+`database/setup.sql` on an empty database with the stub preamble the SQL tests
+use (`tests/database-integrity-sql.mjs`), re-run the last ten migrations to
+prove each is idempotent, then compare `finance_records` columns with
+`recordSchema` in `lib/record-schema.ts` (loaded through
+`tests/helpers/load-ts.mjs`). A `RERUN FAIL` line is a `MIG-010` finding. A
+column the app reads or writes that no schema in `lib/*-schemas.ts` or
+`lib/record-schema.ts` names, or a schema key with no column, is a `DB-022`
+finding; server-set columns (`user_id`, `created_at`, link ids the SQL
+functions fill) and input-only keys such as `lent_from` are expected and are
+listed under "Checked, not a finding".
+
+```bash
+node --input-type=module -e "
+import { PGlite } from '@electric-sql/pglite'; import fs from 'node:fs'; import { loadTS } from './tests/helpers/load-ts.mjs';
+const db = new PGlite();
+await db.exec(\"CREATE ROLE anon;CREATE ROLE authenticated;CREATE ROLE service_role;CREATE SCHEMA auth;CREATE TABLE auth.users(id uuid PRIMARY KEY);CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS \$\$SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid\$\$;GRANT USAGE ON SCHEMA auth TO authenticated;\");
+await db.exec(fs.readFileSync('database/setup.sql', 'utf8')); console.log('setup.sql loaded');
+for (const f of fs.readdirSync('migrations').filter((f) => f.endsWith('.sql')).sort().slice(-10)) { try { await db.exec(fs.readFileSync('migrations/' + f, 'utf8')); console.log('re-ran ok', f); } catch (e) { console.log('RERUN FAIL', f, e.message.split('\\n')[0]); } }
+const cols = (await db.query(\"select column_name from information_schema.columns where table_schema='public' and table_name='finance_records'\")).rows.map((r) => r.column_name);
+const { recordSchema } = loadTS('lib/record-schema.ts'); const keys = Object.keys(recordSchema._def.schema?.shape ?? recordSchema.shape);
+console.log('columns not in recordSchema:', cols.filter((c) => !keys.includes(c))); console.log('schema keys not in finance_records:', keys.filter((k) => !cols.includes(k)));"
+```
+
+`tests/database-integrity-sql.mjs` already re-runs the text-patching
+migrations and checks `requiredSchemaVersion`; the command above covers the
+newest ten whatever they do. `node scripts/check-migrations.mjs` (read-only,
+needs the service key in `.env.local`) reports which files production has not
+applied yet; say in the report whether it ran.
+
 ## 3. Full runs: fan out
 
 For `full`, launch subagents in one message (background), each with this file, the
