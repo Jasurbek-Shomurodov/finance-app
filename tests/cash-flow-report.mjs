@@ -98,7 +98,7 @@ test('Cash flow shows its four tiles for a month, and a dash with the shared not
   ...Object.fromEntries(['stat-tile', 'segmented', 'panel-title', 'inline-error', 'loading-placeholder'].map(name => ['@/components/presentation-foundation/' + name, hostModule()])),
   '@/components/category-icons-context': { useCategoryHue: () => key => key },
   '@/hooks/use-owner-resource': { useOwnerResource: () => ({ data: { records: [] } }) },
-  '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }) },
+  '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 },
  };
  const { CashFlowReport } = r.load('components/cash-flow-report.tsx', modules);
  const { depositToday } = loadTS('lib/deposit-interest.ts');

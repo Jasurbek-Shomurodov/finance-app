@@ -19,7 +19,7 @@ import { formatCompactMoney, formatMoney, formatMonthYear, formatPercent } from 
 import { marketRates, type MarketData } from '@/lib/market';
 import { emptyPlanning, type PlanningData } from '@/lib/planning';
 import type { TransactionSplit } from '@/lib/transaction-tools';
-import { measureLabel, sankeyLabelMargins } from '@/lib/sankey-labels';
+import { measureLabel, sankeyLabelMargins, sankeyMinWidth } from '@/lib/sankey-labels';
 
 const periodLabels: Record<ReportPeriod, string> = { month: 'Month', quarter: 'Quarter', year: 'Year' };
 const trendTitles: Record<ReportPeriod, string> = { month: 'Income and spending by month', quarter: 'Income and spending by quarter', year: 'Income and spending by year' };
@@ -81,7 +81,7 @@ export function CashFlowReport({ owner, demo, revision, data: provided, splits, 
  const colorKey = (key: string) => grouping === 'category' ? hueColor(categoryHue(data.categories.find(category => category.id === key)?.name ?? key)) : 'var(--foreground)';
  const flows = sankeyFlows(report, categoryName);
  const sankeyLabel = (name: string, value: number) => `${name} · ${formatCompactMoney(value, currency, locale)}`;
- // Each side gets exactly the room its longest label needs.
+ // Each side gets exactly the room its longest label needs; on a narrow screen the chart scrolls rather than squeezing its columns.
  const room = sankeyLabelMargins(flows, sankeyLabel, measureLabel);
  if (live && remote.initialLoading) return <section className="panel cash-flow-report"><ChartSkeleton label={t('Loading records…')}/></section>;
  if (live && remote.error) return <section className="panel cash-flow-report"><InlineError message={t(remote.error)} onRetry={remote.retry}/></section>;
@@ -115,7 +115,7 @@ export function CashFlowReport({ owner, demo, revision, data: provided, splits, 
    {view === 'bars' ? <div className="cash-flow-breakdown">
     <div><h3>{t('Income')}</h3><ShareBars items={report[grouping === 'category' ? 'categories' : 'merchants'].income} label={label} colorKey={() => 'var(--positive)'} currency={currency}/></div>
     <div><h3>{t('Expenses')}</h3><ShareBars items={report[grouping === 'category' ? 'categories' : 'merchants'].expense} label={label} colorKey={colorKey} currency={currency}/></div>
-   </div> : flows.links.length ? <div className="cash-flow-sankey"><ResponsiveContainer width="100%" height={Math.max(280, flows.nodes.length * 34)}>
+   </div> : flows.links.length ? <div className="cash-flow-sankey"><ResponsiveContainer width="100%" minWidth={sankeyMinWidth(flows, room)} height={Math.max(280, flows.nodes.length * 34)}>
     <Sankey data={flows} {...chartSankey} margin={{ top: 8, right: room.right, bottom: 8, left: room.left }} link={sankeyLink} node={({ x, y, width, height, index, payload }: { x: number; y: number; width: number; height: number; index: number; payload: { name: string; value: number } }) => {
      const kind = flows.nodes[index]?.kind;
      const fill = kind === 'income' || kind === 'savings' ? chartColors.income : kind === 'total' ? 'var(--mark-bg)' : chartColors.expense;

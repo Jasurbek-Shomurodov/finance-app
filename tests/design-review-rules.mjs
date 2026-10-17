@@ -270,6 +270,18 @@ test('Reports keeps the 8 October 2026 review fixes (SCR-095, SCR-096, HEAD-011,
  assert.equal(sankeyColumns(flows),3);assert.equal(sankeyMinWidth(flows,{left:150,right:140}),570);assert.equal(sankeyMinWidth(flows,{left:150,right:140,middle:180}),698,'a long middle label widens its gap');
 });
 
+test('every Sankey keeps room for its columns on a phone and scrolls instead of squeezing them (17 October 2026)', () => {
+ // On Cash flow the label margins took the whole phone width: the flows bent into blobs and the middle label ran over the bars.
+ for(const file of ['components/cash-flow-report.tsx','components/business-reports.tsx']){
+  const source=fs.readFileSync(file,'utf8'),charts=source.match(/<ResponsiveContainer[^>]*>\s*<Sankey/g)??[];
+  assert.ok(charts.length,file+' draws a Sankey');
+  for(const chart of charts)assert.match(chart,/minWidth=\{sankeyMinWidth\(/,file+': the Sankey sets its narrowest width from its labels and columns');
+ }
+ const {sankeyMinWidth}=loadTS('lib/sankey-labels.ts');
+ const flows={nodes:[{name:'Salary'},{name:'Rent income'},{name:'Income'},{name:'Savings'},{name:'Charity'}],links:[{source:0,target:2,value:5},{source:1,target:2,value:1},{source:2,target:3,value:4},{source:2,target:4,value:2}]};
+ assert.ok(sankeyMinWidth(flows,{left:150,right:150,middle:130})>375,'a three-column Sankey with long labels is wider than a phone, so it scrolls');
+});
+
 test('the 9 October 2026 full review fixes stay fixed (SCR-097…SCR-104, HEAD-016, DLG-023, COMP-040, A11Y-017)', () => {
  const css=stylesheet(),read=file=>fs.readFileSync(file,'utf8');
  // Names and goal meta lines wrap instead of ellipsising (LIST-007).
