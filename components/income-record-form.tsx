@@ -28,6 +28,7 @@ import { incomeSources, selectIncomeSource, changeIncomeKind, salaryDueDate } fr
 import { formatMoney, formatDate, formatNumber } from '@/lib/format';
 import type { RecordDialogProps } from '@/components/record-dialog';
 import { withAccount } from '@/lib/business';
+import { Textarea } from '@/components/ui/textarea';
 
 function ScheduledPaymentSummary({date,label}:{date:string;label:string}){
  const {t,locale}=useLanguage();
@@ -108,7 +109,7 @@ export function IncomeRecordForm({editing,setEditing,busy,save,currencies,planni
   {editing.frequency!=='Once'&&<><label>{t('End date (optional)')}<DatePicker value={editing.end_date??''} required={false} min={editing.date} onChange={date=>update({end_date:date||null})}/></label><p className="muted">{t('{amount} {frequency} from {date}. This is a recurring plan; it does not automatically create transactions or change account balances.',{amount:formatMoney(editing.amount,editing.currency,locale),frequency:t(frequencyLabels[editing.frequency]),date:formatDate(editing.date,locale)})}</p></>}
   {!salaryPlan&&<CashAccountField entry={editing} records={planning.data.records} loading={planning.loading} error={planning.error} busy={busy} onChange={account_id=>setEditing(withAccount(editing,account_id,planning.data.records))}/>}
   {planning.error&&<InlineError message={t(planning.error)}/>}
-  <label>{t('Notes (optional)')}<textarea value={editing.notes} maxLength={2000} rows={2} onChange={event=>update({notes:event.target.value})}/></label>
+  <label>{t('Notes (optional)')}<Textarea value={editing.notes} maxLength={2000} rows={2} onChange={event=>update({notes:event.target.value})}/></label>
   <ErrorPopup message={error}/>
   <FormFooter busy={busy} onCancel={()=>setEditing(null)}><Button className="primary" disabled={busy||missing||(!named&&(planning.loading||!!planning.error))|| (!!editing.earning_source_id&&(earningSources?.loading||!!earningSources?.error))}>{t(busy?'Saving…':salaryPlan?'Save salary plan':demo?'Save in demo':'Save income')}</Button></FormFooter>
  </form>;

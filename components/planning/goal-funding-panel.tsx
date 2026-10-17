@@ -23,6 +23,7 @@ import { fundingPlan, type GoalEvent } from '@/lib/goal-funding';
 import { emptyPlanning,type Goal,type PlanningData } from '@/lib/planning';
 import { useOwnerResource, saveOwnerResource } from '@/hooks/use-owner-resource';
 import { RollingText } from '@/components/presentation-foundation/rolling-text';
+import { Textarea } from '@/components/ui/textarea';
 
 const empty = { events: [] as GoalEvent[] };
 type Props = { data: PlanningData; currency: string; surplus: number | null; today: string; rates?: Record<string, number>; owner: string | null; demo: boolean; revision: number; onSaved: () => void;
@@ -149,7 +150,7 @@ function GoalActivityForm({ data, goals, today, busy, save }: { data: PlanningDa
    <label>{t('Date')}<DatePicker value={date} max={today} onChange={value => { setDate(value); setSource(''); }}/></label>
    {type === 'transfer' && <label>{t('Destination goal')}<NativeSelect required value={target} onChange={event => setTarget(event.target.value)}><option value="">{t('Select goal')}</option>{goals.filter(item => item.id !== goalId && item.account_id === goal?.account_id).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</NativeSelect></label>}
    {type === 'contribution' && <label>{t('Link income (optional)')}<NativeSelect value={source} onChange={event => setSource(event.target.value)}><option value="">{t('None')}</option>{data.records.filter(record => record.account_id === goal?.account_id && record.currency === goal?.currency && record.date <= date && record.frequency === 'Once' && income.includes(record.kind)).map(record => <option key={record.id} value={record.id}>{record.name} · {formatMoney(record.amount, record.currency, locale)}</option>)}</NativeSelect>{exceedsIncome && linked && <small className="negative" role="alert">{t('Enter no more than the linked income: {amount}.', { amount: formatMoney(Number(linked.amount), linked.currency, locale) })}</small>}</label>}
-   <label className="goal-field-wide">{t('Notes (optional)')}<textarea rows={2} value={notes} maxLength={2000} onChange={event => setNotes(event.target.value)}/></label>
+   <label className="goal-field-wide">{t('Notes (optional)')}<Textarea rows={2} value={notes} maxLength={2000} onChange={event => setNotes(event.target.value)}/></label>
   </fieldset>
   <div className="goal-activity-actions"><Button type="submit" disabled={busy || !goal || amount <= 0 || exceedsIncome || type === 'transfer' && !target}>{t(operation ? 'Retry' : 'Save')}</Button>{operation && !busy && <Button type="button" variant="outline" onClick={() => setOperation(null)}>{t('Edit details after checking activity')}</Button>}</div>
   {operation && !busy && <p className="muted">{t('Check goal activity before changing a request whose result is uncertain. Retry keeps the same operation identifier.')}</p>}

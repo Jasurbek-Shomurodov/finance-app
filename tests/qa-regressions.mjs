@@ -291,11 +291,11 @@ test('the transaction details dialog offers a bin to delete and a pencil to edit
  assert.match(dialogs,/onDelete=\{\(\)=>\{const r=viewing;setViewing\(null\);requestDelete\(r\);\}\}/);
 });
 
-test('every Notes field is a multi-line textarea, never a one-line input', () => {
+test('every Notes field is a multi-line Textarea, never a one-line input', () => {
  const files = fs.globSync('{components,app}/**/*.tsx');
  const notes = files.flatMap(file => [...fs.readFileSync(file, 'utf8').matchAll(/t\(['"]Notes[^'"]*['"]\)\}\s*<(\w+)/g)].map(match => [file, match[1]]));
  assert.ok(notes.length >= 10, 'finds the Notes fields');
- assert.deepEqual(notes.filter(([, tag]) => tag !== 'textarea'), []);
+ assert.deepEqual(notes.filter(([, tag]) => tag !== 'Textarea'), []);
 });
 
 test('Record payment starts from the account that last paid the loan or bill, else the only one in its currency', () => {

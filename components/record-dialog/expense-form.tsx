@@ -27,6 +27,7 @@ import { liabilities, type Entry } from '@/lib/finance';
 import { depositToday as today } from '@/lib/deposit-interest';
 import type { RecordDialogProps } from '../record-dialog';
 import { withAccountAndOwner } from './record-form';
+import { Textarea } from '@/components/ui/textarea';
 
 /** The expense form: an expense in a category, or a payment on a debt. */
 /** What every part of the expense form reads: the dialog's props with the expense being entered, and the form's own state. */
@@ -71,7 +72,7 @@ function DateDetails({form}:{form:ExpenseContext}){
    {mode==='expense'&&<section className="expense-optional-details"><h3>{t('Optional details')}</h3><div className="expense-optional-fields">
     <label>{t('Linked business (optional)')}<NativeSelect value={editing.business_id||''} onChange={event=>update({business_id:event.target.value||null})}><option value="">{t('No linked business')}</option>{planning.data.records.filter(record=>record.kind==='Business').map(business=><option key={business.id} value={business.id}>{business.name}</option>)}</NativeSelect></label>
     {editing.frequency!=='Once'&&<label>{t('End date (optional)')}<DatePicker value={editing.end_date||''} required={false} min={editing.date} onChange={end_date=>update({end_date:end_date||null})}/></label>}
-    <label>{t('Notes (optional)')}<textarea value={editing.notes} maxLength={2000} rows={2} onChange={event=>update({notes:event.target.value})}/></label>
+    <label>{t('Notes (optional)')}<Textarea value={editing.notes} maxLength={2000} rows={2} onChange={event=>update({notes:event.target.value})}/></label>
    </div></section>}
    {editing.frequency!=='Once'&&<p className="muted">{t('{amount} {frequency} from {date}. This is a recurring plan; it does not automatically create transactions or change account balances.',{amount:formatMoney(editing.amount,editing.currency,locale),frequency:t(frequencyLabels[editing.frequency]),date:sharedFormatDate(editing.date,locale)})}</p>}</>;
 }

@@ -198,3 +198,17 @@ test('Goals, Reports and Cash flow switch their views from tabs beside the title
  assert.match(css,/\.segmented:not\(\.page-tabs\)\{display:flex;width:100%;flex-wrap:wrap/,'page tabs stay on one scrolling line on phones');
  assert.match(css,/\.segmented\.page-tabs>button:focus-visible\{outline:2px solid var\(--ring\);outline-offset:-2px/,'focus shows inside the tab, never clipped to a line');
 });
+
+test('typed text is never spellchecked or autocorrected',()=>{
+ const sources=['app','components'].flatMap(function walk(dir){return fs.readdirSync(dir,{withFileTypes:true}).flatMap(entry=>{const file=`${dir}/${entry.name}`;return entry.isDirectory()?walk(file):/\.tsx$/.test(file)?[file]:[];});});
+ assert.match(fs.readFileSync('app/layout.tsx','utf8'),/<html [^>]*spellCheck=\{false\}/);
+ for(const file of ['components/ui/input.tsx','components/ui/textarea.tsx','components/ui/command.tsx']){
+  const source=fs.readFileSync(file,'utf8');
+  assert.match(source,/spellCheck=\{false\}/,file);
+  assert.match(source,/autoCorrect="off"/,file);
+ }
+ // Free text goes through Textarea, which carries both attributes.
+ for(const file of sources.filter(file=>file!=='components/ui/textarea.tsx'))assert.doesNotMatch(fs.readFileSync(file,'utf8'),/<textarea\b/,file);
+ const {Textarea}=loadTS('components/ui/textarea.tsx');
+ assert.equal(render(Textarea,{rows:2}),'<textarea spellCheck="false" autoCorrect="off" rows="2"></textarea>');
+});

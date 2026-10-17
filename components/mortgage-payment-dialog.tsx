@@ -14,6 +14,7 @@ import { DatePicker } from '@/components/presentation-foundation/date-picker';
 import { FormattedNumberInput } from '@/components/presentation-foundation/formatted-number-input';
 import { formatAccountOption, formatMoney } from '@/lib/format';
 import type { Entry } from '@/lib/finance';
+import { Textarea } from '@/components/ui/textarea';
 export type MortgagePayment = { id: string; mortgage_id: string; principal: number; interest: number; date: string; notes: string; account_id?:string;exchange_rate?:number };
 export function MortgagePaymentDialog({ mortgage, accounts = [], onClose, onSave, inline=false, onDraftState }: { inline?:boolean;onDraftState?:(dirty:boolean,busy:boolean)=>void; accounts?:Entry[]; mortgage: Entry; onClose: () => void; onSave: (payment: MortgagePayment) => Promise<void> }) {
  const { t, locale } = useLanguage();
@@ -46,7 +47,7 @@ export function MortgagePaymentDialog({ mortgage, accounts = [], onClose, onSave
     {!accounts.some(account=>account.kind==='Cash')&&<p className="muted">{t('Add a cash account to record this transaction.')}</p>}
     {crossCurrency&&<ExchangeRatePreview fx={fx}/>}
     {selectedAccount&&debit!==null&&<div className="ownership-summary"><p>{t('Cash deducted from {account}: {amount}',{account:selectedAccount.name,amount:formatMoney(debit,selectedAccount.currency,locale)})}</p><p>{t('Cash balance after update')}: {formatMoney(selectedAccount.amount-debit,selectedAccount.currency,locale)}</p>{debit>selectedAccount.amount&&<p className="error">{t('Not enough money in the selected cash account.')}</p>}</div>}
-    <label>{t('Notes (optional)')}<textarea rows={2} maxLength={2000} value={payment.notes} onChange={e => setPayment({ ...payment, notes: e.target.value })}/></label>
+    <label>{t('Notes (optional)')}<Textarea rows={2} maxLength={2000} value={payment.notes} onChange={e => setPayment({ ...payment, notes: e.target.value })}/></label>
    </fieldset>
    <div className="ownership-summary"><p>{t('Total payment: {amount}', { amount: money(payment.principal + payment.interest) })}</p><p>{t('Remaining balance: {amount}', { amount: money(mortgage.amount - payment.principal) })}</p></div>
    <p className="muted">{t('Saved once in Income & expenses. The selected cash account pays the total. To undo a payment, delete it from Transactions; you can restore it from Recently deleted.')}</p>

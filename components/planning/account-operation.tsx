@@ -17,6 +17,7 @@ import { useDueLabel } from '@/components/planning/recurring-rows';
 import { depositToday } from '@/lib/deposit-interest';
 import type { Entry } from '@/lib/finance';
 import { suggestedPaymentAccount } from '@/lib/payment-account';
+import { Textarea } from '@/components/ui/textarea';
 export type Operation = {action:'transfer'|'reconcile'|'repayment'|'mortgage'|'occurrence';account_id?:string;target_id?:string;date?:string;amount?:number;/** Another payment for an occurrence that is already recorded. */extra?:boolean;/** The schedule's open due dates a payment may settle instead, `date` among them. */dues?:string[]};
 export function AccountOperation({operation,records,activity,currencies=[],save,onClose}:{operation:Operation;records:Entry[];/** The person's preferred currencies, offered for a scheduled payment. */currencies?:readonly string[];/** Earlier operations, to start a payment from the account that last paid it. */activity?:Array<{account_id:string;target_id:string|null;occurred_on:string}>;save:(action:string,data:unknown)=>Promise<void>;onClose:()=>void}){
  const {t,locale}=useLanguage(),dueLabel=useDueLabel();
@@ -69,7 +70,7 @@ export function AccountOperation({operation,records,activity,currencies=[],save,
  {['transfer','repayment','mortgage'].includes(operation.action)&&<label>{t(operation.action==='transfer'?'Transfer fee':target?.kind==='Money lent'?'Interest received':'Interest paid')} {operation.action==='repayment'||operation.action==='mortgage'?target?.currency:account?.currency}<FormattedNumberInput required={false} value={draft.fee} onValueChange={fee=>setDraft({...draft,fee})}/></label>}
  </div>}
  {crossCurrency&&<><label>{t('Amount received')} {target.currency}<FormattedNumberInput value={draft.received} onValueChange={received=>setDraft({...draft,received})}/></label>{draft.amount>0&&draft.received>0&&<p>{t('Exchange rate')}: {formatNumber(draft.received/draft.amount,locale,8)} {target.currency}/{account.currency}</p>}</>}
- <label>{t('Notes (optional)')}<textarea rows={2} value={draft.notes} maxLength={2000} onChange={e=>setDraft({...draft,notes:e.target.value})}/></label>
+ <label>{t('Notes (optional)')}<Textarea rows={2} value={draft.notes} maxLength={2000} onChange={e=>setDraft({...draft,notes:e.target.value})}/></label>
  </fieldset>
  {convertedPayment&&<><ExchangeRatePreview fx={fx}/>{fx.rate&&account&&<p className="muted">{t('Account amount')}: {formatMoney((operation.action==='occurrence'?draft.amount:draft.amount+draft.fee)/fx.rate,account.currency,locale)}</p>}</>}
  <ErrorPopup message={error}/>

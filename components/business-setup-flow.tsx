@@ -16,6 +16,7 @@ import { businessAccountGroups, isBusinessAccount, nextPaletteColor, setupGuide 
 import { value, type Entry } from '@/lib/finance';
 import { showSaved } from '@/lib/feedback';
 import { formatMoney } from '@/lib/format';
+import { Textarea } from '@/components/ui/textarea';
 
 const steps = ['start', 'businesses', 'accounts', 'done'] as const;
 const stepLabels = { start: 'Start', businesses: 'Businesses', accounts: 'Accounts', done: 'Done' } as const;
@@ -94,7 +95,7 @@ export function BusinessSetupFlow({ businesses, records, newBusiness, saveBusine
       <header><BusinessMark name={draft.name || '?'} color={draft.business_color} logo={draft.business_logo}/><label className="goal-setup-name">{t('Name')}<Input required maxLength={120} value={draft.name} placeholder={t('e.g. Coastal Candle Company')} onChange={event => update(draft.id, { name: event.target.value })}/></label>
        {drafts.length > 1 && !businesses.some(item => item.id === draft.id) && <Button variant="ghost" size="icon" aria-label={t('Remove {name}', { name: draft.name || t('Business') })} onClick={() => setDrafts(list => list.filter(item => item.id !== draft.id))}><Trash2 size={16} aria-hidden="true"/></Button>}</header>
       <BusinessProfileFields value={draft} disabled={busy} onChange={patch => update(draft.id, patch)}/>
-      <label className="business-setup-notes">{t('Notes (optional)')}<textarea rows={2} maxLength={2000} value={draft.notes} onChange={event => update(draft.id, { notes: event.target.value })}/></label>
+      <label className="business-setup-notes">{t('Notes (optional)')}<Textarea rows={2} maxLength={2000} value={draft.notes} onChange={event => update(draft.id, { notes: event.target.value })}/></label>
      </article>)}
      <Button variant="outline" disabled={busy} onClick={() => setDrafts(list => [...list, { ...newBusiness(), business_color: nextPaletteColor(list.map(item => item.business_color)) }])}><Plus size={16} aria-hidden="true"/>{t('Add another business')}</Button>
     </section>}

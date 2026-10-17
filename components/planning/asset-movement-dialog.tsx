@@ -17,6 +17,7 @@ import { decimalSum } from '@/lib/decimal-amounts';
 import { isHolding, movementSources, holdingQuantity, movementTargets, type AssetMovement, type MovementKind } from '@/lib/asset-movements';
 import type { Entry } from '@/lib/finance';
 import type { HoldingAccount } from '@/lib/holding-accounts';
+import { Textarea } from '@/components/ui/textarea';
 
 export type MovementDraft = { kind:MovementKind; source_id?:string; target_id?:string };
 export function AssetMovementDialog({initial,records,accounts=[],save,onClose}:{initial:MovementDraft;records:Entry[];accounts?:HoldingAccount[];save:(movement:AssetMovement)=>Promise<void>;onClose:()=>void}){
@@ -73,7 +74,7 @@ export function AssetMovementDialog({initial,records,accounts=[],save,onClose}:{
     {crossTransfer&&<ExchangeRatePreview fx={fx}/>}
     {draft.kind==='transfer'&&target&&rate&&<p>{t('Net amount received')}: {formatMoney(received,target.currency,locale)}</p>}
     <label>{t('Date')}<DatePicker value={draft.date} max={depositToday()} onChange={date=>change('date',date)}/></label>
-    <label>{t('Notes (optional)')}<textarea rows={2} maxLength={2000} value={draft.notes} onChange={event=>change('notes',event.target.value)}/></label>
+    <label>{t('Notes (optional)')}<Textarea rows={2} maxLength={2000} value={draft.notes} onChange={event=>change('notes',event.target.value)}/></label>
    </fieldset>
    {source&&target&&valid&&<div className="ownership-summary">{!interest&&<p>{source.name}: {units(source,available-draft.sent)}</p>}<p>{target.name}: {units(target,(isHolding(target)?target.quantity:target.amount)+received)}</p><small>{t('Balances after this transaction')}</small></div>}
    {!interest&&(!movementSources(draft.kind,records).length||!movementTargets(draft.kind,source,records).length)&&<p className="muted">{t('Add the source and destination first. For a new holding or proceeds balance, start at zero.')}</p>}

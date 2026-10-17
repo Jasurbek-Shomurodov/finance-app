@@ -33,7 +33,7 @@ export default async function RootLayout({
   // The request's language, so right-to-left pages are laid out that way before any script runs; the language provider updates both after loading.
   const language = detectLanguage(acceptedLanguages((await headers()).get("accept-language")));
   return (
-    <html lang={language} dir={directionOf(language)} suppressHydrationWarning>
+    <html lang={language} dir={directionOf(language)} spellCheck={false} suppressHydrationWarning>
       <head><script dangerouslySetInnerHTML={{ __html: fontBootScript }}/></head>
       <body className="antialiased"><ThemeProvider>{children}<Toaster position="top-center" duration={4000} offset="max(24px, env(safe-area-inset-top))" mobileOffset="max(16px, env(safe-area-inset-top))" /><WebAppRegistration/><ErrorReporter/></ThemeProvider></body>
     </html>

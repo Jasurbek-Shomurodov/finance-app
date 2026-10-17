@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
 import { assistantSuggestions, assistantUnavailable } from '@/lib/assistant';
 import { marketRates } from '@/lib/market';
+import { Textarea } from '@/components/ui/textarea';
 
 type Turn = { role: 'user' | 'assistant'; content: string };
 
@@ -81,7 +82,7 @@ export function AssistantScreen() {
    {!turns.length && !demo && !unavailable && <div className="assistant-suggestions">{assistantSuggestions.map(item => <button key={item} type="button" disabled={busy || !available} onClick={() => ask(t(item))}>{t(item)}</button>)}</div>}
    {error && <p className="form-error" role="alert">{t(error)}</p>}
    <form className="assistant-form" onSubmit={event => { event.preventDefault(); ask(draft); }}>
-    <textarea aria-label={t('Ask anything about your money')} placeholder={t('Ask anything about your money…')} value={draft} maxLength={4000} rows={2} disabled={demo || !user || !available} onChange={event => setDraft(event.currentTarget.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); ask(draft); } }}/>
+    <Textarea aria-label={t('Ask anything about your money')} placeholder={t('Ask anything about your money…')} value={draft} maxLength={4000} rows={2} disabled={demo || !user || !available} onChange={event => setDraft(event.currentTarget.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); ask(draft); } }}/>
     <span title={send.title}><Button size="icon" disabled={busy || demo || !available || !draft.trim()} aria-label={t('Send')} aria-describedby={send.describedBy}><ArrowUp size={18}/></Button></span>
    </form>
    <p className="assistant-note">{t('The assistant can make mistakes and is not financial advice.')}</p>
