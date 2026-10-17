@@ -2605,5 +2605,15 @@
   "Where the money came from": "돈이 들어온 곳",
   "Spent this month": "이번 달 지출",
   "Personal": "개인",
-  "Name (optional)": "이름 (선택)"
+  "Name (optional)": "이름 (선택)",
+  "Database health": "데이터베이스 상태",
+  "Checks that every database migration this version of the app needs has been applied.": "이 버전의 앱에 필요한 모든 데이터베이스 마이그레이션이 적용되었는지 확인합니다.",
+  "The sample workspace has no database to check.": "샘플 워크스페이스에는 확인할 데이터베이스가 없습니다.",
+  "Checking database…": "데이터베이스 확인 중…",
+  "Check database": "데이터베이스 확인",
+  "Up to date": "최신 상태",
+  "Update needed": "업데이트 필요",
+  "Check failed": "확인 실패",
+  "Checked {time}": "확인 시각 {time}",
+  "Database version {version}; the app needs {required}.": "데이터베이스 버전 {version}, 앱에 필요한 버전 {required}."
 }

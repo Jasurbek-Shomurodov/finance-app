@@ -2605,5 +2605,15 @@
   "Where the money came from": "De unde au venit banii",
   "Spent this month": "Cheltuit luna aceasta",
   "Personal": "Personal",
-  "Name (optional)": "Nume (opțional)"
+  "Name (optional)": "Nume (opțional)",
+  "Database health": "Starea bazei de date",
+  "Checks that every database migration this version of the app needs has been applied.": "Verifică dacă au fost aplicate toate migrările bazei de date de care are nevoie această versiune a aplicației.",
+  "The sample workspace has no database to check.": "Spațiul de exemplu nu are o bază de date de verificat.",
+  "Checking database…": "Se verifică baza de date…",
+  "Check database": "Verifică baza de date",
+  "Up to date": "La zi",
+  "Update needed": "Necesită actualizare",
+  "Check failed": "Verificarea a eșuat",
+  "Checked {time}": "Verificat {time}",
+  "Database version {version}; the app needs {required}.": "Versiunea bazei de date {version}; aplicația are nevoie de {required}."
 }

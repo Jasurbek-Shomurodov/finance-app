@@ -2605,5 +2605,15 @@
   "Where the money came from": "Saan nanggaling ang pera",
   "Spent this month": "Nagastos ngayong buwan",
   "Personal": "Personal",
-  "Name (optional)": "Pangalan (opsyonal)"
+  "Name (optional)": "Pangalan (opsyonal)",
+  "Database health": "Kalagayan ng database",
+  "Checks that every database migration this version of the app needs has been applied.": "Sinusuri kung nailapat na ang lahat ng database migration na kailangan ng bersyong ito ng app.",
+  "The sample workspace has no database to check.": "Walang database na susuriin sa sample na workspace.",
+  "Checking database…": "Sinusuri ang database…",
+  "Check database": "Suriin ang database",
+  "Up to date": "Napapanahon",
+  "Update needed": "Kailangang i-update",
+  "Check failed": "Nabigo ang pagsusuri",
+  "Checked {time}": "Nasuri {time}",
+  "Database version {version}; the app needs {required}.": "Bersyon ng database {version}; kailangan ng app ang {required}."
 }

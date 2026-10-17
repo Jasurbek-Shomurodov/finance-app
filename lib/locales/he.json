@@ -2605,5 +2605,15 @@
   "Where the money came from": "מאיפה הגיע הכסף",
   "Spent this month": "הוצאות החודש",
   "Personal": "אישי",
-  "Name (optional)": "שם (אופציונלי)"
+  "Name (optional)": "שם (אופציונלי)",
+  "Database health": "מצב מסד הנתונים",
+  "Checks that every database migration this version of the app needs has been applied.": "בודק שכל העברות מסד הנתונים שהגרסה הזו של האפליקציה צריכה הוחלו.",
+  "The sample workspace has no database to check.": "בסביבת הדוגמה אין מסד נתונים לבדיקה.",
+  "Checking database…": "בודק את מסד הנתונים…",
+  "Check database": "בדיקת מסד הנתונים",
+  "Up to date": "מעודכן",
+  "Update needed": "נדרש עדכון",
+  "Check failed": "הבדיקה נכשלה",
+  "Checked {time}": "נבדק {time}",
+  "Database version {version}; the app needs {required}.": "גרסת מסד הנתונים {version}; האפליקציה צריכה {required}."
 }

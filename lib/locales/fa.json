@@ -2605,5 +2605,15 @@
   "Where the money came from": "پول از کجا آمد",
   "Spent this month": "خرج این ماه",
   "Personal": "شخصی",
-  "Name (optional)": "نام (اختیاری)"
+  "Name (optional)": "نام (اختیاری)",
+  "Database health": "وضعیت پایگاه داده",
+  "Checks that every database migration this version of the app needs has been applied.": "بررسی می‌کند که همهٔ مهاجرت‌های پایگاه داده‌ای که این نسخهٔ برنامه نیاز دارد اعمال شده باشند.",
+  "The sample workspace has no database to check.": "فضای کاری نمونه پایگاه داده‌ای برای بررسی ندارد.",
+  "Checking database…": "در حال بررسی پایگاه داده…",
+  "Check database": "بررسی پایگاه داده",
+  "Up to date": "به‌روز",
+  "Update needed": "نیاز به به‌روزرسانی",
+  "Check failed": "بررسی ناموفق بود",
+  "Checked {time}": "بررسی‌شده {time}",
+  "Database version {version}; the app needs {required}.": "نسخهٔ پایگاه داده {version}؛ برنامه به {required} نیاز دارد."
 }

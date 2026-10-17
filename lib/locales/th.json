@@ -2605,5 +2605,15 @@
   "Where the money came from": "เงินมาจากไหน",
   "Spent this month": "ใช้จ่ายเดือนนี้",
   "Personal": "ส่วนตัว",
-  "Name (optional)": "ชื่อ (ไม่บังคับ)"
+  "Name (optional)": "ชื่อ (ไม่บังคับ)",
+  "Database health": "สถานะฐานข้อมูล",
+  "Checks that every database migration this version of the app needs has been applied.": "ตรวจสอบว่าได้ใช้การย้ายข้อมูลฐานข้อมูลทั้งหมดที่แอปเวอร์ชันนี้ต้องการแล้ว",
+  "The sample workspace has no database to check.": "พื้นที่ทำงานตัวอย่างไม่มีฐานข้อมูลให้ตรวจสอบ",
+  "Checking database…": "กำลังตรวจสอบฐานข้อมูล…",
+  "Check database": "ตรวจสอบฐานข้อมูล",
+  "Up to date": "เป็นปัจจุบัน",
+  "Update needed": "ต้องอัปเดต",
+  "Check failed": "ตรวจสอบไม่สำเร็จ",
+  "Checked {time}": "ตรวจสอบเมื่อ {time}",
+  "Database version {version}; the app needs {required}.": "ฐานข้อมูลเวอร์ชัน {version} แอปต้องการ {required}"
 }

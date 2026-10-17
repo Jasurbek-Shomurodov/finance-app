@@ -2605,5 +2605,15 @@
   "Where the money came from": "Dari mana uang datang",
   "Spent this month": "Dibelanjakan bulan ini",
   "Personal": "Pribadi",
-  "Name (optional)": "Nama (opsional)"
+  "Name (optional)": "Nama (opsional)",
+  "Database health": "Kesehatan database",
+  "Checks that every database migration this version of the app needs has been applied.": "Memeriksa bahwa semua migrasi database yang dibutuhkan versi aplikasi ini sudah diterapkan.",
+  "The sample workspace has no database to check.": "Ruang kerja contoh tidak memiliki database untuk diperiksa.",
+  "Checking database…": "Memeriksa database…",
+  "Check database": "Periksa database",
+  "Up to date": "Terbaru",
+  "Update needed": "Perlu pembaruan",
+  "Check failed": "Pemeriksaan gagal",
+  "Checked {time}": "Diperiksa {time}",
+  "Database version {version}; the app needs {required}.": "Versi database {version}; aplikasi membutuhkan {required}."
 }

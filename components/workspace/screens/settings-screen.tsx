@@ -13,6 +13,7 @@ import { tagsByRecord } from '@/lib/tags';
 import { newRule, type TransactionRule } from '@/lib/transaction-rules';
 import { AccountAccessPanel } from '@/components/account-access-panel';
 import { DataTools } from '@/components/data-tools';
+import { DatabaseHealth } from '@/components/database-health';
 import { HouseholdPanel } from '@/components/household-panel';
 import { ImportHistory } from '@/components/import-history';
 import { InvestmentComparisonSettings } from '@/components/investment-comparison-settings';
@@ -46,7 +47,7 @@ export function SettingsScreen() {
    tags={<TagSettings tags={tags} preferences={workspacePreferences} owner={demo?null:user} demo={demo}/>}
    rules={<><RulesPanel rules={rules.rules} categories={planning.data.categories} businesses={businessList} tags={tags.data.tags} onEdit={setRule} onAdd={() => setRule(newRule())} onRemove={item => rules.remove(item.id)}/>
     {rule && <RuleDialog key={rule.id} rule={rule} records={demo ? planning.data.records : undefined} categories={planning.data.categories} businesses={businessList} accounts={planning.data.records.filter(record => record.kind === 'Cash').map(record => ({ id: record.id, name: record.name }))} tags={tags.data.tags} tagsOf={tagsOf} onCreateTag={createTag} splits={transactionTools.data.splits} onSave={async (next, apply) => { const changed = await rules.save(next, apply); if (apply) showNotice(t('{changed} updated', { changed })); return changed; }} onClose={() => setRule(null)}/>}</>}
-   data-tools={<><DataTools owner={user} currency={currency} market={market} preferences={workspacePreferences} records={planning.data.records} onSaved={refreshRecords} demo={demo}/><ImportHistory owner={user} demo={demo} revision={reload} onSaved={refreshRecords}/></>}
+   data-tools={<><DataTools owner={user} currency={currency} market={market} preferences={workspacePreferences} records={planning.data.records} onSaved={refreshRecords} demo={demo}/><ImportHistory owner={user} demo={demo} revision={reload} onSaved={refreshRecords}/><DatabaseHealth demo={demo}/></>}
   />
  </div>;
 }

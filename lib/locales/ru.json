@@ -2605,5 +2605,15 @@
   "Where the money came from": "Откуда пришли деньги",
   "Spent this month": "Потрачено в этом месяце",
   "Personal": "Личное",
-  "Name (optional)": "Название (необязательно)"
+  "Name (optional)": "Название (необязательно)",
+  "Database health": "Состояние базы данных",
+  "Checks that every database migration this version of the app needs has been applied.": "Проверяет, что применены все миграции базы данных, нужные этой версии приложения.",
+  "The sample workspace has no database to check.": "В демо-пространстве нет базы данных для проверки.",
+  "Checking database…": "Проверка базы данных…",
+  "Check database": "Проверить базу данных",
+  "Up to date": "Актуальна",
+  "Update needed": "Нужно обновление",
+  "Check failed": "Проверка не удалась",
+  "Checked {time}": "Проверено {time}",
+  "Database version {version}; the app needs {required}.": "Версия базы данных {version}; приложению нужна {required}."
 }

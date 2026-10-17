@@ -2605,5 +2605,15 @@
   "Where the money came from": "Waar het geld vandaan kwam",
   "Spent this month": "Deze maand uitgegeven",
   "Personal": "Persoonlijk",
-  "Name (optional)": "Naam (optioneel)"
+  "Name (optional)": "Naam (optioneel)",
+  "Database health": "Databasestatus",
+  "Checks that every database migration this version of the app needs has been applied.": "Controleert of alle databasemigraties zijn toegepast die deze versie van de app nodig heeft.",
+  "The sample workspace has no database to check.": "De voorbeeldwerkruimte heeft geen database om te controleren.",
+  "Checking database…": "Database controleren…",
+  "Check database": "Database controleren",
+  "Up to date": "Bijgewerkt",
+  "Update needed": "Update nodig",
+  "Check failed": "Controle mislukt",
+  "Checked {time}": "Gecontroleerd {time}",
+  "Database version {version}; the app needs {required}.": "Databaseversie {version}; de app heeft {required} nodig."
 }

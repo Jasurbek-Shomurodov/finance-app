@@ -2605,5 +2605,15 @@
   "Where the money came from": "Pesa zilikotoka",
   "Spent this month": "Zilizotumika mwezi huu",
   "Personal": "Binafsi",
-  "Name (optional)": "Jina (si lazima)"
+  "Name (optional)": "Jina (si lazima)",
+  "Database health": "Hali ya hifadhidata",
+  "Checks that every database migration this version of the app needs has been applied.": "Hukagua kwamba uhamishaji wote wa hifadhidata unaohitajika na toleo hili la programu umetumika.",
+  "The sample workspace has no database to check.": "Nafasi ya mfano haina hifadhidata ya kukagua.",
+  "Checking database…": "Inakagua hifadhidata…",
+  "Check database": "Kagua hifadhidata",
+  "Up to date": "Imesasishwa",
+  "Update needed": "Inahitaji kusasishwa",
+  "Check failed": "Ukaguzi umeshindwa",
+  "Checked {time}": "Imekaguliwa {time}",
+  "Database version {version}; the app needs {required}.": "Toleo la hifadhidata {version}; programu inahitaji {required}."
 }

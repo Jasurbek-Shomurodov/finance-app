@@ -2605,5 +2605,15 @@
   "Where the money came from": "Tiền đến từ đâu",
   "Spent this month": "Đã chi tháng này",
   "Personal": "Cá nhân",
-  "Name (optional)": "Tên (không bắt buộc)"
+  "Name (optional)": "Tên (không bắt buộc)",
+  "Database health": "Tình trạng cơ sở dữ liệu",
+  "Checks that every database migration this version of the app needs has been applied.": "Kiểm tra xem mọi bản di chuyển cơ sở dữ liệu mà phiên bản ứng dụng này cần đã được áp dụng chưa.",
+  "The sample workspace has no database to check.": "Không gian mẫu không có cơ sở dữ liệu để kiểm tra.",
+  "Checking database…": "Đang kiểm tra cơ sở dữ liệu…",
+  "Check database": "Kiểm tra cơ sở dữ liệu",
+  "Up to date": "Đã cập nhật",
+  "Update needed": "Cần cập nhật",
+  "Check failed": "Kiểm tra thất bại",
+  "Checked {time}": "Đã kiểm tra {time}",
+  "Database version {version}; the app needs {required}.": "Phiên bản cơ sở dữ liệu {version}; ứng dụng cần {required}."
 }

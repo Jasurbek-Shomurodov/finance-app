@@ -2605,5 +2605,15 @@
   "Where the money came from": "पैसा कहाँ से आया",
   "Spent this month": "इस महीने खर्च",
   "Personal": "व्यक्तिगत",
-  "Name (optional)": "नाम (वैकल्पिक)"
+  "Name (optional)": "नाम (वैकल्पिक)",
+  "Database health": "डेटाबेस की स्थिति",
+  "Checks that every database migration this version of the app needs has been applied.": "जाँचता है कि ऐप के इस संस्करण को चाहिए सभी डेटाबेस माइग्रेशन लागू हो चुके हैं।",
+  "The sample workspace has no database to check.": "नमूना वर्कस्पेस में जाँचने के लिए कोई डेटाबेस नहीं है।",
+  "Checking database…": "डेटाबेस जाँचा जा रहा है…",
+  "Check database": "डेटाबेस जाँचें",
+  "Up to date": "अद्यतन",
+  "Update needed": "अपडेट चाहिए",
+  "Check failed": "जाँच विफल रही",
+  "Checked {time}": "जाँचा गया {time}",
+  "Database version {version}; the app needs {required}.": "डेटाबेस संस्करण {version}; ऐप को {required} चाहिए।"
 }

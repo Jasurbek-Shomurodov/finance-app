@@ -2605,5 +2605,15 @@
   "Where the money came from": "Odkud přišly peníze",
   "Spent this month": "Utraceno tento měsíc",
   "Personal": "Osobní",
-  "Name (optional)": "Název (nepovinné)"
+  "Name (optional)": "Název (nepovinné)",
+  "Database health": "Stav databáze",
+  "Checks that every database migration this version of the app needs has been applied.": "Ověří, že byly použity všechny migrace databáze, které tato verze aplikace potřebuje.",
+  "The sample workspace has no database to check.": "Ukázkový prostor nemá databázi k ověření.",
+  "Checking database…": "Ověřuji databázi…",
+  "Check database": "Ověřit databázi",
+  "Up to date": "Aktuální",
+  "Update needed": "Je potřeba aktualizace",
+  "Check failed": "Ověření selhalo",
+  "Checked {time}": "Ověřeno {time}",
+  "Database version {version}; the app needs {required}.": "Verze databáze {version}; aplikace potřebuje {required}."
 }

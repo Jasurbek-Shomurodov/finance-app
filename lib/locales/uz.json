@@ -2605,5 +2605,15 @@
   "Where the money came from": "Pul qayerdan keldi",
   "Spent this month": "Shu oy sarflandi",
   "Personal": "Shaxsiy",
-  "Name (optional)": "Nomi (ixtiyoriy)"
+  "Name (optional)": "Nomi (ixtiyoriy)",
+  "Database health": "Maʼlumotlar bazasi holati",
+  "Checks that every database migration this version of the app needs has been applied.": "Ilovaning ushbu versiyasi uchun zarur barcha maʼlumotlar bazasi migratsiyalari qoʻllanganini tekshiradi.",
+  "The sample workspace has no database to check.": "Namuna ish maydonida tekshiriladigan maʼlumotlar bazasi yoʻq.",
+  "Checking database…": "Maʼlumotlar bazasi tekshirilmoqda…",
+  "Check database": "Maʼlumotlar bazasini tekshirish",
+  "Up to date": "Yangilangan",
+  "Update needed": "Yangilash kerak",
+  "Check failed": "Tekshirib boʻlmadi",
+  "Checked {time}": "Tekshirildi: {time}",
+  "Database version {version}; the app needs {required}.": "Maʼlumotlar bazasi versiyasi {version}; ilovaga {required} kerak."
 }

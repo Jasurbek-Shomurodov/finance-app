@@ -2605,5 +2605,15 @@
   "Where the money came from": "Where the money came from",
   "Spent this month": "Spent this month",
   "Personal": "Personal",
-  "Name (optional)": "Name (optional)"
+  "Name (optional)": "Name (optional)",
+  "Database health": "Database health",
+  "Checks that every database migration this version of the app needs has been applied.": "Checks that every database migration this version of the app needs has been applied.",
+  "The sample workspace has no database to check.": "The sample workspace has no database to check.",
+  "Checking database…": "Checking database…",
+  "Check database": "Check database",
+  "Up to date": "Up to date",
+  "Update needed": "Update needed",
+  "Check failed": "Check failed",
+  "Checked {time}": "Checked {time}",
+  "Database version {version}; the app needs {required}.": "Database version {version}; the app needs {required}."
 }

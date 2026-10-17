@@ -2605,5 +2605,15 @@
   "Where the money came from": "টাকা কোথা থেকে এল",
   "Spent this month": "এই মাসে খরচ",
   "Personal": "ব্যক্তিগত",
-  "Name (optional)": "নাম (ঐচ্ছিক)"
+  "Name (optional)": "নাম (ঐচ্ছিক)",
+  "Database health": "ডেটাবেসের অবস্থা",
+  "Checks that every database migration this version of the app needs has been applied.": "অ্যাপের এই সংস্করণের প্রয়োজনীয় সব ডেটাবেস মাইগ্রেশন প্রয়োগ হয়েছে কি না তা যাচাই করে।",
+  "The sample workspace has no database to check.": "নমুনা ওয়ার্কস্পেসে যাচাই করার মতো কোনো ডেটাবেস নেই।",
+  "Checking database…": "ডেটাবেস যাচাই করা হচ্ছে…",
+  "Check database": "ডেটাবেস যাচাই করুন",
+  "Up to date": "হালনাগাদ",
+  "Update needed": "আপডেট প্রয়োজন",
+  "Check failed": "যাচাই ব্যর্থ হয়েছে",
+  "Checked {time}": "যাচাই করা হয়েছে {time}",
+  "Database version {version}; the app needs {required}.": "ডেটাবেস সংস্করণ {version}; অ্যাপের প্রয়োজন {required}।"
 }

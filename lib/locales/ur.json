@@ -2605,5 +2605,15 @@
   "Where the money came from": "پیسہ کہاں سے آیا",
   "Spent this month": "اس مہینے خرچ",
   "Personal": "ذاتی",
-  "Name (optional)": "نام (اختیاری)"
+  "Name (optional)": "نام (اختیاری)",
+  "Database health": "ڈیٹا بیس کی حالت",
+  "Checks that every database migration this version of the app needs has been applied.": "جانچتا ہے کہ ایپ کے اس ورژن کو درکار تمام ڈیٹا بیس مائیگریشنز لاگو ہو چکی ہیں۔",
+  "The sample workspace has no database to check.": "نمونہ ورک اسپیس میں جانچنے کے لیے کوئی ڈیٹا بیس نہیں ہے۔",
+  "Checking database…": "ڈیٹا بیس جانچا جا رہا ہے…",
+  "Check database": "ڈیٹا بیس جانچیں",
+  "Up to date": "تازہ ترین",
+  "Update needed": "اپ ڈیٹ درکار ہے",
+  "Check failed": "جانچ ناکام رہی",
+  "Checked {time}": "جانچا گیا {time}",
+  "Database version {version}; the app needs {required}.": "ڈیٹا بیس ورژن {version}؛ ایپ کو {required} درکار ہے۔"
 }

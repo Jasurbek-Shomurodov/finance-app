@@ -2605,5 +2605,15 @@
   "Where the money came from": "من أين جاء المال",
   "Spent this month": "المنفق هذا الشهر",
   "Personal": "شخصي",
-  "Name (optional)": "الاسم (اختياري)"
+  "Name (optional)": "الاسم (اختياري)",
+  "Database health": "حالة قاعدة البيانات",
+  "Checks that every database migration this version of the app needs has been applied.": "يتحقق من تطبيق جميع ترحيلات قاعدة البيانات التي يحتاجها هذا الإصدار من التطبيق.",
+  "The sample workspace has no database to check.": "لا تحتوي مساحة العمل التجريبية على قاعدة بيانات للتحقق منها.",
+  "Checking database…": "جارٍ التحقق من قاعدة البيانات…",
+  "Check database": "التحقق من قاعدة البيانات",
+  "Up to date": "محدّثة",
+  "Update needed": "تحتاج إلى تحديث",
+  "Check failed": "تعذّر التحقق",
+  "Checked {time}": "تم التحقق {time}",
+  "Database version {version}; the app needs {required}.": "إصدار قاعدة البيانات {version}؛ يحتاج التطبيق إلى {required}."
 }

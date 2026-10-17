@@ -2605,5 +2605,15 @@
   "Where the money came from": "Woher das Geld kam",
   "Spent this month": "Diesen Monat ausgegeben",
   "Personal": "Persönlich",
-  "Name (optional)": "Name (optional)"
+  "Name (optional)": "Name (optional)",
+  "Database health": "Datenbankstatus",
+  "Checks that every database migration this version of the app needs has been applied.": "Prüft, ob alle Datenbankmigrationen angewendet sind, die diese App-Version braucht.",
+  "The sample workspace has no database to check.": "Der Beispiel-Arbeitsbereich hat keine Datenbank zum Prüfen.",
+  "Checking database…": "Datenbank wird geprüft…",
+  "Check database": "Datenbank prüfen",
+  "Up to date": "Aktuell",
+  "Update needed": "Update nötig",
+  "Check failed": "Prüfung fehlgeschlagen",
+  "Checked {time}": "Geprüft {time}",
+  "Database version {version}; the app needs {required}.": "Datenbankversion {version}; die App braucht {required}."
 }

@@ -2605,5 +2605,15 @@
   "Where the money came from": "钱从哪里来",
   "Spent this month": "本月支出",
   "Personal": "个人",
-  "Name (optional)": "名称（可选）"
+  "Name (optional)": "名称（可选）",
+  "Database health": "数据库状态",
+  "Checks that every database migration this version of the app needs has been applied.": "检查此版本应用所需的所有数据库迁移是否均已应用。",
+  "The sample workspace has no database to check.": "示例工作区没有可检查的数据库。",
+  "Checking database…": "正在检查数据库…",
+  "Check database": "检查数据库",
+  "Up to date": "已是最新",
+  "Update needed": "需要更新",
+  "Check failed": "检查失败",
+  "Checked {time}": "检查于 {time}",
+  "Database version {version}; the app needs {required}.": "数据库版本 {version}；应用需要 {required}。"
 }

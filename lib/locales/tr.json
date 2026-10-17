@@ -2605,5 +2605,15 @@
   "Where the money came from": "Para nereden geldi",
   "Spent this month": "Bu ay harcanan",
   "Personal": "Kişisel",
-  "Name (optional)": "Ad (isteğe bağlı)"
+  "Name (optional)": "Ad (isteğe bağlı)",
+  "Database health": "Veritabanı durumu",
+  "Checks that every database migration this version of the app needs has been applied.": "Uygulamanın bu sürümünün ihtiyaç duyduğu tüm veritabanı geçişlerinin uygulandığını denetler.",
+  "The sample workspace has no database to check.": "Örnek çalışma alanında denetlenecek veritabanı yok.",
+  "Checking database…": "Veritabanı denetleniyor…",
+  "Check database": "Veritabanını denetle",
+  "Up to date": "Güncel",
+  "Update needed": "Güncelleme gerekli",
+  "Check failed": "Denetim başarısız",
+  "Checked {time}": "Denetlendi {time}",
+  "Database version {version}; the app needs {required}.": "Veritabanı sürümü {version}; uygulama {required} gerektiriyor."
 }
