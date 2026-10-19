@@ -61,16 +61,19 @@ function CategoryAmount({form}:{form:ExpenseContext}){
    <ScheduledPaymentField schedules={mode==='expense'&&editing.frequency==='Once'&&(savedCurrency===undefined||!original?.occurrence_record_id)?paymentSchedules(planning.data.records,editing):[]} value={editing.occurrence_record_id} saved={!!original?.occurrence_record_id} disabled={busy||planning.loading} onChange={schedule=>update(chooseSchedule(editing,schedule))}/>
    <AmountCurrencyFields amount={editing.amount} currency={editing.currency} currencies={currencies} savedCurrency={savedCurrency} disabled={busy} onAmountChange={amount=>update({amount})} onCurrencyChange={currency=>update({currency,account_exchange_rate:null,account_rate_date:null,account_currency:null})}/></>;
 }
-/** The day, and for a plain expense the optional details: how it repeats, a business, an end date and notes. */
+/** The day, and for a plain expense the optional details: how it repeats, a business, a property, an end date and notes. */
 function DateDetails({form}:{form:ExpenseContext}){
  const {t}=useLanguage();
  const {household,editing,setEditing,busy,planning,locale,mode,update,schedule,original}=form;
  // A saved schedule keeps its start date; an every-month one may move to another day of its month.
  const started=schedule&&!!original&&original.frequency!=='Once';
+ // Repairs, tax or a service charge may be paid for one of the person's properties.
+ const properties=planning.data.records.filter(record=>record.kind==='Property');
  return <>   <div className="form-grid"><label>{t(editing.frequency==='Once'?'Record date':'Start date')}<DatePicker value={editing.date} disabled={started} max={editing.frequency==='Once'?today():undefined} onChange={date=>update({date})}/></label>{schedule?<><ScheduleFields frequency={editing.frequency} days={editing.recurrence_days} disabled={busy} onChange={(frequency,recurrence_days)=>update({frequency,recurrence_days})}/>{editing.frequency==='Monthly'&&<MonthDayField date={editing.date} disabled={busy} onChange={date=>update({date})}/>}</>:<CashAccountField entry={editing} records={planning.data.records} loading={planning.loading} error={planning.error} busy={busy} onChange={account_id=>setEditing(withAccountAndOwner(editing,account_id,planning.data.records,household))}/>}</div>
    {planning.error&&<p className="error" role="alert">{t(planning.error)}</p>}
    {mode==='expense'&&<section className="expense-optional-details"><h3>{t('Optional details')}</h3><div className="expense-optional-fields">
     <label>{t('Linked business (optional)')}<NativeSelect value={editing.business_id||''} onChange={event=>update({business_id:event.target.value||null})}><option value="">{t('No linked business')}</option>{planning.data.records.filter(record=>record.kind==='Business').map(business=><option key={business.id} value={business.id}>{business.name}</option>)}</NativeSelect></label>
+    {(properties.length>0||!!editing.property_id)&&<label>{t('Linked property (optional)')}<NativeSelect value={editing.property_id||''} disabled={busy} onChange={event=>update({property_id:event.target.value||null})}><option value="">{t('No linked property')}</option>{properties.map(property=><option key={property.id} value={property.id}>{property.name}</option>)}</NativeSelect></label>}
     {editing.frequency!=='Once'&&<label>{t('End date (optional)')}<DatePicker value={editing.end_date||''} required={false} min={editing.date} onChange={end_date=>update({end_date:end_date||null})}/></label>}
     <label>{t('Notes (optional)')}<Textarea value={editing.notes} maxLength={2000} rows={2} onChange={event=>update({notes:event.target.value})}/></label>
    </div></section>}

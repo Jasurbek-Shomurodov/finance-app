@@ -2628,5 +2628,11 @@
   "Expenses by category": "カテゴリ別の支出",
   "Net worth, last 30 days": "純資産（過去30日間）",
   "{percent} of income": "収入の{percent}",
-  "Last 30 days: income {income}, expenses {expenses}.": "過去30日間：収入 {income}、支出 {expenses}。"
+  "Last 30 days: income {income}, expenses {expenses}.": "過去30日間：収入 {income}、支出 {expenses}。",
+  "Linked property (optional)": "関連する不動産（任意）",
+  "No linked property": "関連する不動産なし",
+  "Rent received this year": "今年の受取家賃",
+  "Costs this year": "今年の費用",
+  "Net this year": "今年の純額",
+  "Choose one of your properties.": "ご自身の不動産を1つ選んでください。"
 }

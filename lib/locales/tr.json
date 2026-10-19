@@ -2628,5 +2628,11 @@
   "Expenses by category": "Kategoriye göre giderler",
   "Net worth, last 30 days": "Net varlık, son 30 gün",
   "{percent} of income": "gelirin {percent} kadarı",
-  "Last 30 days: income {income}, expenses {expenses}.": "Son 30 gün: gelir {income}, gider {expenses}."
+  "Last 30 days: income {income}, expenses {expenses}.": "Son 30 gün: gelir {income}, gider {expenses}.",
+  "Linked property (optional)": "Bağlı mülk (isteğe bağlı)",
+  "No linked property": "Bağlı mülk yok",
+  "Rent received this year": "Bu yıl alınan kira",
+  "Costs this year": "Bu yılki giderler",
+  "Net this year": "Bu yılki net",
+  "Choose one of your properties.": "Mülklerinizden birini seçin."
 }

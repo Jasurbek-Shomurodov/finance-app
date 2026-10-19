@@ -133,12 +133,14 @@ const demoCategories: Category[] = [
  * accounts, plus one supply order paid from personal checking. */
 function demoBusinessActivity(today: string, record: (id: string, name: string, kind: Entry['kind'], amount: number, extra?: Partial<Entry>) => Entry): Entry[] {
  const candles = { business_id: 'demo-biz-candles', account_id: 'demo-candle-checking' }, rentals = { business_id: 'demo-biz-rentals', account_id: 'demo-rental-checking' };
+ // The rentals' payments name the property they are for: the condo's guests and upkeep, the studio's repairs.
+ const condoRent = { ...rentals, income_source_id: 'demo-condo' }, condo = { ...rentals, property_id: 'demo-condo' }, studio = { ...rentals, property_id: 'demo-studio' };
  const lines: Array<[string, Entry['kind'], number, string | null, Partial<Entry>, number]> = [
   ['Etsy payout', 'Other income', 1150, 'demo-cat-sales', candles, 3], ['Farmers market sales', 'Other income', 250, 'demo-cat-sales', candles, 14],
   ['CandleScience', 'Other expense', 900, 'demo-cat-supplies', candles, 5], ['Etsy fees', 'Other expense', 140, 'demo-cat-fees', candles, 4],
   ['Shipping labels', 'Other expense', 220, 'demo-cat-shipping', candles, 9], ['Instagram ads', 'Other expense', 300, 'demo-cat-ads', candles, 12],
-  ['Airbnb payout', 'Rent income', 2600, null, rentals, 2], ['Cleaning service', 'Other expense', 380, 'demo-cat-cleaning', rentals, 6],
-  ['Property management', 'Other expense', 260, 'demo-cat-management', rentals, 7],
+  ['Airbnb payout', 'Rent income', 2600, null, condoRent, 2], ['Cleaning service', 'Other expense', 380, 'demo-cat-cleaning', condo, 6],
+  ['Property management', 'Other expense', 260, 'demo-cat-management', condo, 7],
  ];
  const month = today.slice(0, 7), todayDay = Number(today.slice(8, 10));
  const result: Entry[] = [];
@@ -148,7 +150,7 @@ function demoBusinessActivity(today: string, record: (id: string, name: string, 
    if (back === 0 && day > todayDay) return;
    result.push(record(`biz-${back}-${name.toLowerCase().replace(/\W+/g, '-')}`, name, kind, Math.round(amount * factor), { ...extra, custom_category_id: category, date: `${current}-${String(day).padStart(2, '0')}` }));
   });
-  if (back % 2 === 0 && back > 0) result.push(record(`biz-${back}-repairs`, 'Handyman repairs', 'Other expense', 450, { ...rentals, custom_category_id: 'demo-cat-repairs', date: `${current}-20` }));
+  if (back % 2 === 0 && back > 0) result.push(record(`biz-${back}-repairs`, 'Handyman repairs', 'Other expense', 450, { ...studio, custom_category_id: 'demo-cat-repairs', date: `${current}-20` }));
  }
  result.push(record('biz-personal-wax', 'CandleScience', 'Other expense', 185, { business_id: 'demo-biz-candles', account_id: 'demo-checking', custom_category_id: 'demo-cat-supplies', date: `${previousMonth(month, 1)}-22` }));
  return result;

@@ -71,7 +71,8 @@
 .asset-card-details[open] summary svg{transform:rotate(180deg)}
 .asset-card-details dl{display:grid;gap:8px;padding:4px 0 12px}
 .asset-card-details dl>div{display:flex;justify-content:space-between;gap:14px;align-items:baseline}
-.asset-card-details dd{min-width:0;text-align:end;color:var(--foreground);overflow-wrap:anywhere}
+.asset-card-details dd{min-width:0;text-align:end;overflow-wrap:anywhere}
+.asset-card-details dd:not(.positive,.negative){color:var(--foreground)}
 .asset-card-holdings>div{flex-wrap:wrap;align-items:center}
 .asset-card-holdings dt{flex:1;min-width:0;overflow-wrap:anywhere}
 .asset-card-holdings dd:last-child{display:flex;flex-basis:100%;justify-content:flex-end;gap:6px}

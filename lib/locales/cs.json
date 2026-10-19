@@ -2628,5 +2628,11 @@
   "Expenses by category": "Výdaje podle kategorií",
   "Net worth, last 30 days": "Čisté jmění, posledních 30 dní",
   "{percent} of income": "{percent} příjmů",
-  "Last 30 days: income {income}, expenses {expenses}.": "Posledních 30 dní: příjmy {income}, výdaje {expenses}."
+  "Last 30 days: income {income}, expenses {expenses}.": "Posledních 30 dní: příjmy {income}, výdaje {expenses}.",
+  "Linked property (optional)": "Propojená nemovitost (nepovinné)",
+  "No linked property": "Žádná propojená nemovitost",
+  "Rent received this year": "Nájemné přijaté letos",
+  "Costs this year": "Náklady letos",
+  "Net this year": "Čistý výsledek letos",
+  "Choose one of your properties.": "Vyberte jednu ze svých nemovitostí."
 }

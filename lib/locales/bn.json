@@ -2628,5 +2628,11 @@
   "Expenses by category": "বিভাগ অনুযায়ী খরচ",
   "Net worth, last 30 days": "নিট সম্পদ, গত ৩০ দিন",
   "{percent} of income": "আয়ের {percent}",
-  "Last 30 days: income {income}, expenses {expenses}.": "গত ৩০ দিন: আয় {income}, খরচ {expenses}।"
+  "Last 30 days: income {income}, expenses {expenses}.": "গত ৩০ দিন: আয় {income}, খরচ {expenses}।",
+  "Linked property (optional)": "সংযুক্ত সম্পত্তি (ঐচ্ছিক)",
+  "No linked property": "কোনো সংযুক্ত সম্পত্তি নেই",
+  "Rent received this year": "এই বছর প্রাপ্ত ভাড়া",
+  "Costs this year": "এই বছরের খরচ",
+  "Net this year": "এই বছরের নিট",
+  "Choose one of your properties.": "আপনার একটি সম্পত্তি বেছে নিন।"
 }

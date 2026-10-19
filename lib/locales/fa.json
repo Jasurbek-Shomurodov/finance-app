@@ -2628,5 +2628,11 @@
   "Expenses by category": "هزینه‌ها بر اساس دسته",
   "Net worth, last 30 days": "ارزش خالص، ۳۰ روز گذشته",
   "{percent} of income": "{percent} از درآمد",
-  "Last 30 days: income {income}, expenses {expenses}.": "۳۰ روز گذشته: درآمد {income}، هزینه‌ها {expenses}."
+  "Last 30 days: income {income}, expenses {expenses}.": "۳۰ روز گذشته: درآمد {income}، هزینه‌ها {expenses}.",
+  "Linked property (optional)": "ملک مرتبط (اختیاری)",
+  "No linked property": "بدون ملک مرتبط",
+  "Rent received this year": "اجاره دریافتی امسال",
+  "Costs this year": "هزینه‌های امسال",
+  "Net this year": "خالص امسال",
+  "Choose one of your properties.": "یکی از املاک خود را انتخاب کنید."
 }

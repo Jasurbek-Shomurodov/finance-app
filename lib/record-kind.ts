@@ -28,6 +28,8 @@ export function changeRecordKind(entry: Entry, kind: Entry['kind'], today: strin
   end_date: cashFlow.includes(kind) ? entry.end_date : null,
   // Profile fields belong to a Business record; they are cleared only where they were set, so older databases accept the save.
   business_id: kind === 'Business' ? null : entry.business_id,
+  // Only an expense pays for a property; cleared only where it was set, so older databases accept the save.
+  property_id: expenses.includes(kind) ? entry.property_id : entry.property_id == null ? undefined : null,
   business_structure: kind === 'Business' ? entry.business_structure : entry.business_structure == null ? undefined : null,
   business_color: kind === 'Business' ? entry.business_color : entry.business_color == null ? undefined : null,
   business_logo: kind === 'Business' ? entry.business_logo : entry.business_logo == null ? undefined : null,

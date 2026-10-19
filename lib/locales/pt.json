@@ -2628,5 +2628,11 @@
   "Expenses by category": "Gastos por categoria",
   "Net worth, last 30 days": "Patrimônio líquido, últimos 30 dias",
   "{percent} of income": "{percent} da renda",
-  "Last 30 days: income {income}, expenses {expenses}.": "Últimos 30 dias: renda {income}, gastos {expenses}."
+  "Last 30 days: income {income}, expenses {expenses}.": "Últimos 30 dias: renda {income}, gastos {expenses}.",
+  "Linked property (optional)": "Imóvel vinculado (opcional)",
+  "No linked property": "Nenhum imóvel vinculado",
+  "Rent received this year": "Aluguel recebido este ano",
+  "Costs this year": "Custos este ano",
+  "Net this year": "Líquido este ano",
+  "Choose one of your properties.": "Escolha um dos seus imóveis."
 }

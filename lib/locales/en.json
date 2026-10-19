@@ -2628,5 +2628,11 @@
   "Expenses by category": "Expenses by category",
   "Net worth, last 30 days": "Net worth, last 30 days",
   "{percent} of income": "{percent} of income",
-  "Last 30 days: income {income}, expenses {expenses}.": "Last 30 days: income {income}, expenses {expenses}."
+  "Last 30 days: income {income}, expenses {expenses}.": "Last 30 days: income {income}, expenses {expenses}.",
+  "Linked property (optional)": "Linked property (optional)",
+  "No linked property": "No linked property",
+  "Rent received this year": "Rent received this year",
+  "Costs this year": "Costs this year",
+  "Net this year": "Net this year",
+  "Choose one of your properties.": "Choose one of your properties."
 }

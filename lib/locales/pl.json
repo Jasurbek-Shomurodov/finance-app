@@ -2628,5 +2628,11 @@
   "Expenses by category": "Wydatki według kategorii",
   "Net worth, last 30 days": "Majątek netto, ostatnie 30 dni",
   "{percent} of income": "{percent} dochodu",
-  "Last 30 days: income {income}, expenses {expenses}.": "Ostatnie 30 dni: dochody {income}, wydatki {expenses}."
+  "Last 30 days: income {income}, expenses {expenses}.": "Ostatnie 30 dni: dochody {income}, wydatki {expenses}.",
+  "Linked property (optional)": "Powiązana nieruchomość (opcjonalnie)",
+  "No linked property": "Brak powiązanej nieruchomości",
+  "Rent received this year": "Czynsz otrzymany w tym roku",
+  "Costs this year": "Koszty w tym roku",
+  "Net this year": "Netto w tym roku",
+  "Choose one of your properties.": "Wybierz jedną ze swoich nieruchomości."
 }

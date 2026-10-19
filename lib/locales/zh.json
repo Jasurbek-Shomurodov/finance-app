@@ -2628,5 +2628,11 @@
   "Expenses by category": "按类别的支出",
   "Net worth, last 30 days": "净资产（最近 30 天）",
   "{percent} of income": "收入的 {percent}",
-  "Last 30 days: income {income}, expenses {expenses}.": "最近 30 天：收入 {income}，支出 {expenses}。"
+  "Last 30 days: income {income}, expenses {expenses}.": "最近 30 天：收入 {income}，支出 {expenses}。",
+  "Linked property (optional)": "关联房产（可选）",
+  "No linked property": "无关联房产",
+  "Rent received this year": "今年已收租金",
+  "Costs this year": "今年费用",
+  "Net this year": "今年净额",
+  "Choose one of your properties.": "请选择您的一处房产。"
 }

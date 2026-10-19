@@ -2628,5 +2628,11 @@
   "Expenses by category": "Витрати за категоріями",
   "Net worth, last 30 days": "Чистий капітал за 30 днів",
   "{percent} of income": "{percent} доходу",
-  "Last 30 days: income {income}, expenses {expenses}.": "За 30 днів: доходи {income}, витрати {expenses}."
+  "Last 30 days: income {income}, expenses {expenses}.": "За 30 днів: доходи {income}, витрати {expenses}.",
+  "Linked property (optional)": "Пов’язана нерухомість (необов’язково)",
+  "No linked property": "Без пов’язаної нерухомості",
+  "Rent received this year": "Отримано оренди цього року",
+  "Costs this year": "Витрати цього року",
+  "Net this year": "Чистий підсумок цього року",
+  "Choose one of your properties.": "Виберіть один зі своїх об’єктів нерухомості."
 }

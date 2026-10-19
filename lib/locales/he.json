@@ -2628,5 +2628,11 @@
   "Expenses by category": "הוצאות לפי קטגוריה",
   "Net worth, last 30 days": "שווי נקי, 30 הימים האחרונים",
   "{percent} of income": "{percent} מההכנסה",
-  "Last 30 days: income {income}, expenses {expenses}.": "30 הימים האחרונים: הכנסות {income}, הוצאות {expenses}."
+  "Last 30 days: income {income}, expenses {expenses}.": "30 הימים האחרונים: הכנסות {income}, הוצאות {expenses}.",
+  "Linked property (optional)": "נכס מקושר (אופציונלי)",
+  "No linked property": "אין נכס מקושר",
+  "Rent received this year": "שכר דירה שהתקבל השנה",
+  "Costs this year": "עלויות השנה",
+  "Net this year": "נטו השנה",
+  "Choose one of your properties.": "בחרו אחד מהנכסים שלכם."
 }

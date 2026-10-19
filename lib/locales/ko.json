@@ -2628,5 +2628,11 @@
   "Expenses by category": "카테고리별 지출",
   "Net worth, last 30 days": "순자산, 최근 30일",
   "{percent} of income": "수입의 {percent}",
-  "Last 30 days: income {income}, expenses {expenses}.": "최근 30일: 수입 {income}, 지출 {expenses}."
+  "Last 30 days: income {income}, expenses {expenses}.": "최근 30일: 수입 {income}, 지출 {expenses}.",
+  "Linked property (optional)": "연결된 부동산(선택)",
+  "No linked property": "연결된 부동산 없음",
+  "Rent received this year": "올해 받은 임대료",
+  "Costs this year": "올해 비용",
+  "Net this year": "올해 순액",
+  "Choose one of your properties.": "내 부동산 중 하나를 선택하세요."
 }
