@@ -165,9 +165,12 @@ setup and nothing is sent.
 The morning digest runs from `vercel.json` at 04:00 UTC (09:00 in Tashkent)
 through `/api/cron/telegram-digest`, protected by the same `CRON_SECRET`. The digest
 opens with a greeting by the name saved in Settings and one line of
-encouragement, then lists what is overdue or due in each owner's reminder window
-(snoozes from the Upcoming page apply), yesterday's net-worth change and the
-last seven days' spending against the seven before. It is sent every morning,
+encouragement, then the last 30 days: income, expenses against the 30 days
+before, what was saved and how net worth grew, a line of net worth over those
+days and a bar chart of expenses by category (the five largest, the rest as
+Other). Last come the next six payments due in each owner's reminder window
+(snoozes from the Upcoming page apply; at most three overdue), with how many more.
+It is sent every morning,
 and answers 503 when any owner could not be reached so monitoring notices.
 `/api/cron/telegram-recap` sends a weekly recap on Sundays at 15:00 UTC: money
 saved, the top spending category and the goals that received contributions, with

@@ -14,19 +14,32 @@ const items=[
  {amount:1000000,key:'b',record:record('Sheep feed','Living expense',1000000),date:'2026-10-21',overdue:false,type:'scheduled'},
  {amount:5000000,key:'c',record:record('Solar Panel','Rent income',5000000),date:'2026-10-25',overdue:false,type:'scheduled'},
 ];
-const extras={name:'HOGGISH',currency:'USD',netWorth:{amount:314690,change:-422},spending:{current:818,previous:2962}};
+const history=[{date:'2026-09-19',net:309460},{date:'2026-10-05',net:311000},{date:'2026-10-19',net:314690}];
+const extras={name:'HOGGISH',currency:'USD',netWorth:{amount:314690,history},cashflow:{income:4200,spending:3270,previousSpending:3810,categories:[
+ {key:'Living expense',label:'Living expense',amount:1240},{key:'Rent expense',label:'Rent expense',amount:800},{key:'c-feed',label:'Sheep feed',amount:520},
+ {key:'Charity',label:'Charity',amount:300},{key:'c-car',label:'Car',amount:210},{key:'Other expense',label:'Other expense',amount:120},{key:'c-x',label:'Phone',amount:80}]}};
 
-test('the digest card carries the greeting, the figures as tiles and each payment as it was entered',()=>{
+test('the digest card shows the last 30 days as tiles, net worth\'s line, expenses by category and the next payments',()=>{
+ const {categoryColor}=loadTS('lib/category-colors.ts');
  const {card,caption}=digestCard(items,'en',today,extras);
  assert.equal(caption,'☀️ <b>Good morning, HOGGISH</b>');
  assert.equal(card.title,'Good morning, HOGGISH');
- assert.equal(card.subtitle,'Upcoming payments · 19 October 2026');
+ assert.equal(card.subtitle,'19 October 2026');assert.equal(card.tilesTitle,'Last 30 days');assert.equal(card.sectionsTitle,'Upcoming payments');
  assert.match(card.note,/\.$/);
  assert.deepEqual(card.tiles,[
-  {label:'Net worth',value:'$314,690',detail:'−$422 since yesterday',tone:'bad'},
+  {label:'Income',value:'$4,200'},
   // Spending is stated plainly either way, never coloured as good or bad news.
-  {label:'Spending',value:'$818',detail:'$2,144 less than the week before'},
+  {label:'Expenses',value:'$3,270',detail:'$540 less than the 30 days before'},
+  {label:'Saved',value:'$930',detail:'22% of income',tone:'good'},
+  {label:'Net worth',value:'$314,690',detail:'+$5,230 in 30 days',tone:'good'},
  ]);
+ assert.deepEqual(card.charts[0],{kind:'line',title:'Net worth, last 30 days',values:[309460,311000,314690],from:{label:'19 September 2026',value:'$309,460'},to:{label:'Today',value:'$314,690'}});
+ const bars=card.charts[1];
+ assert.equal(bars.title,'Expenses by category');
+ // The five largest keep their own colour; the rest fold into one Other bar.
+ assert.deepEqual(bars.bars.map(bar=>[bar.label,bar.value,bar.share]),[['Living expense','$1,240','38%'],['Rent expense','$800','24%'],['Sheep feed','$520','16%'],['Charity','$300','9%'],['Car','$210','6%'],['Other','$200','6%']]);
+ assert.equal(bars.bars[0].color,categoryColor('Living expense'));assert.equal(bars.bars[2].color,categoryColor('c-feed'));
+ assert.equal(digestCard(items,'en',today,{...extras,netWorth:{amount:1,history:[{date:'2026-10-01',net:5},{date:'2026-10-18',net:1}]}}).card.charts[0].tone,'bad');
  assert.deepEqual(card.sections,[
   {title:'Overdue',tone:'bad',rows:[{label:'Debt for Tracker car',value:'UZS 50,000,000',detail:'repayment · 5 October 2026'}]},
   {title:'21 October 2026',rows:[{label:'Sheep feed',value:'UZS 1,000,000'}]},
@@ -37,14 +50,11 @@ test('the digest card carries the greeting, the figures as tiles and each paymen
 
 test('a digest card with nothing due says so, a name is escaped only in the HTML caption, and a long list says what it left out',()=>{
  const empty=digestCard([],'en',today,{name:'<b>X</b>'});
- assert.deepEqual(empty.card.lines,['Nothing is due soon.']);assert.equal(empty.card.subtitle,'19 October 2026');assert.deepEqual(empty.card.tiles,[]);
+ assert.deepEqual(empty.card.lines,['Nothing is due soon.']);assert.deepEqual(empty.card.tiles,[]);assert.deepEqual(empty.card.charts,[]);assert.equal(empty.card.tilesTitle,undefined);
  assert.equal(empty.card.title,'Good morning, <b>X</b>');assert.equal(empty.caption,'☀️ <b>Good morning, &lt;b&gt;X&lt;/b&gt;</b>');
  const many=Array.from({length:40},(_,index)=>({...items[1],key:'k'+index,record:record('Bill '+index,'Living expense',1000)}));
  const long=digestCard(many,'en',today).card;
- assert.equal(long.sections.flatMap(section=>section.rows).length,24);assert.equal(long.footer,'16 more');
- // A rate missing for one amount shows the spending as unavailable, not as a partial week.
- assert.deepEqual(digestCard([],'en',today,{spending:{current:5,previous:3,missing:true}}).card.tiles,[{label:'Spending',value:'—',detail:'Exchange rate unavailable.'}]);
- assert.deepEqual(digestCard([],'en',today,{spending:{current:5,previous:0}}).card.tiles,[{label:'Spending',value:'$5',detail:'Last 7 days'}]);
+ assert.equal(long.sections.flatMap(section=>section.rows).length,6);assert.equal(long.footer,'34 more');
  assert.equal(digestCard([],'ru',today,{name:'Анна'}).card.title,'Доброе утро, Анна');
 });
 
@@ -259,9 +269,9 @@ test('migration 147 lets a monthly report claim its delivery and is in setup.sql
 test('the edges of each card: unnamed owners, a list that fills the card across days, and quiet or empty months',()=>{
  const bills=(date,count,overdue=false)=>Array.from({length:count},(_,index)=>({...items[1],key:date+index,date,overdue,record:record(`Bill ${date} ${index}`,'Living expense',1000)}));
  const card=digestCard([...bills('2026-10-01',12,true),...bills('2026-10-20',10),...bills('2026-10-21',10)],'en',today).card;
- // Ten overdue items at most, then the days ahead until the card holds 24 rows.
- assert.deepEqual(card.sections.map(section=>[section.title,section.rows.length]),[['Overdue',10],['20 October 2026',10],['21 October 2026',4]]);
- assert.equal(card.footer,'8 more');
+ // Three overdue items at most, then the days ahead until the card holds six rows.
+ assert.deepEqual(card.sections.map(section=>[section.title,section.rows.length]),[['Overdue',3],['20 October 2026',3]]);
+ assert.equal(card.footer,'26 more');
  const week={currency:'USD',from:'2026-09-28',to:'2026-10-04',income:10,spending:5,top:null,goalsMoved:0,shareOrigin:null};
  const recap=recapCard(week,'en');
  assert.equal(recap.caption,'📊 <b>Your week</b>');assert.equal(recap.keyboard,undefined);assert.equal(recap.card.lines,undefined);
@@ -280,4 +290,20 @@ test('the monthly cron names a deleted category as Other expense and answers 503
  const unconfigured=loadTS('app/api/cron/telegram-monthly/route.ts',{'@/lib/service-role':{serviceDatabase:()=>null}});
  const response=await unconfigured.GET(new Request('https://local',{headers:{authorization:'Bearer test-secret'}}));
  assert.equal(response.status,503);assert.deepEqual(await response.json(),{error:'Telegram monthly report is not configured.'});
+});
+
+test('the card draws a line for net worth and labelled bars against the largest category',()=>{
+ const svg=reportCardSvg({title:'T',tilesTitle:'Last 30 days',tiles:[{label:'Income',value:'$1'}],sectionsTitle:'Upcoming payments',sections:[{title:'Today',rows:[{label:'Rent',value:'$1'}]}],charts:[
+  {kind:'line',title:'Net worth, last 30 days',values:[100,100,100],from:{label:'1 October 2026',value:'$100'},to:{label:'Today',value:'$100'}},
+  {kind:'bars',title:'Expenses by category',bars:[{label:'Food',value:'$300',share:'75%',amount:300,color:'hsl(48 60% 48%)'},{label:'Tiny',value:'$0',share:'0%',amount:0,color:'#9aa38f'}]},
+ ]});
+ assert.match(svg,/LAST 30 DAYS/);assert.match(svg,/UPCOMING PAYMENTS/);assert.match(svg,/NET WORTH, LAST 30 DAYS/);assert.match(svg,/EXPENSES BY CATEGORY/);
+ // A flat line sits in the middle of its plot, not on an edge.
+ const [,y0]=/<polyline points="[\d.]+,([\d.]+)/.exec(svg);assert.ok(Number(y0)>0);
+ assert.match(svg,/<polyline points="88,(\S+) 540,\1 992,\1"/);
+ // The largest bar fills the width; a zero bar is still a dot.
+ assert.match(svg,/width="904" height="14" rx="7" fill="hsl\(48 60% 48%\)"/);assert.match(svg,/width="14" height="14" rx="7" fill="#9aa38f"/);
+ assert.match(svg,/>75%</);assert.match(svg,/>Today</);
+ const falling=reportCardSvg({title:'T',charts:[{kind:'line',title:'N',values:[3,1],from:{label:'a',value:'3'},to:{label:'b',value:'1'},tone:'bad'}]});
+ assert.match(falling,/stroke="#c0392b"/);
 });

@@ -3,7 +3,7 @@
 import {forEachLimited} from './bounded-concurrency';
 import {reportError} from './monitoring';
 import {expenses,type Entry} from './finance';
-import {isLanguage,type Language} from './i18n';
+import {isLanguage,translate,type Language} from './i18n';
 import {ownerRows,pagePath,readAllPages,readIdPages} from './owner-rows';
 import {cashflowKinds,standingRecords} from './planning-reads';
 import type {PortfolioSnapshot} from './portfolio-snapshots';
@@ -16,6 +16,17 @@ export type OwnerProfile={language:Language;name:string;currency:string};
 export async function ownerProfile(db:ServiceDatabase,owner:string):Promise<OwnerProfile>{
  const [row]=await db.read<Array<{language?:string;display_name?:string;currencies?:string[]}>>('/rest/v1/user_preferences?select=language,display_name,currencies&user_id=eq.'+owner);
  return {language:isLanguage(row?.language)?row.language:'en',name:(row?.display_name??'').trim(),currency:row?.currencies?.[0]||'USD'};
+}
+/** The owner's added spending categories, to name them in the scheduled reports. */
+export const ownerCategories=(db:ServiceDatabase,owner:string)=>db.read<Array<{id:string;name:string}>>('/rest/v1/custom_categories?select=id,name&user_id=eq.'+owner);
+/** Spending by category (keys from lib/period-summary.ts), largest first, named in `language`: a built-in category is
+ * translated, an added one shows the owner's own name, and one since deleted counts as Other expense. `key` is the
+ * kind or the added category's id, which picks its colour. */
+export function namedCategories(byCategory:Record<string,number>,categories:readonly {id:string;name:string}[],language:Language){
+ return Object.entries(byCategory).filter(([,amount])=>amount>0).sort((a,b)=>b[1]-a[1]).map(([key,amount])=>{
+  const own=key.startsWith('c:')?categories.find(category=>category.id===key.slice(2)):undefined;
+  return {key:key.slice(2),label:own?.name??translate(language,key.startsWith('c:')?'Other expense':key.slice(2)),amount};
+ });
 }
 /** The owner's newest daily snapshots, oldest first. */
 export async function recentSnapshots(db:ServiceDatabase,owner:string,limit:number){

@@ -2,14 +2,13 @@ import { cronAuthorized } from '@/lib/cron-auth';
 import { reportError } from '@/lib/monitoring';
 import { monthEnd, shiftMonth } from '@/lib/calendar-days';
 import { depositToday } from '@/lib/deposit-interest';
-import { translate } from '@/lib/i18n';
 import { monthlyCard, monthlyCategories, monthlyMessage } from '@/lib/monthly-message';
 import { periodTotals } from '@/lib/period-summary';
 import { snapshotPoints } from '@/lib/portfolio-snapshots';
 import { serviceDatabase } from '@/lib/service-role';
 import { telegramConfig } from '@/lib/telegram';
 import { deliverReport } from '@/lib/telegram-report';
-import { deliverToSubscribers, ownerCashflowSince, ownerProfile, ownerSpendingExtras, snapshotOnOrBefore } from '@/lib/telegram-owner';
+import { deliverToSubscribers, namedCategories, ownerCashflowSince, ownerCategories, ownerProfile, ownerSpendingExtras, snapshotOnOrBefore } from '@/lib/telegram-owner';
 export const maxDuration=60;
 /** Sends each linked owner, as a picture, the report of the month that ended before today (scheduled for the 1st). One owner's failure never blocks the others. */
 export async function GET(req:Request){
@@ -25,7 +24,7 @@ export async function GET(req:Request){
     const [records,categories,profile,closing,opening]=await Promise.all([
      // The month's cash flow and the month before's, for the spending comparison.
      ownerCashflowSince(db,user_id,previousFrom),
-     db.read<Array<{id:string;name:string}>>('/rest/v1/custom_categories?select=id,name&user_id=eq.'+user_id),
+     ownerCategories(db,user_id),
      ownerProfile(db,user_id),
      snapshotOnOrBefore(db,user_id,to),
      snapshotOnOrBefore(db,user_id,previousTo),
@@ -33,9 +32,7 @@ export async function GET(req:Request){
     // Both months are converted at the rates of the month's last snapshot, as the recap uses its latest.
     const rates={...closing?.rates},extras={records,...await ownerSpendingExtras(db,user_id,previousFrom,records)};
     const totals=periodTotals(extras,from,to,profile.currency,rates),previous=periodTotals(extras,previousFrom,previousTo,profile.currency,rates);
-    // Built-in categories are translated; an added category shows the owner's own name.
-    const named=Object.entries(totals.byCategory).filter(([,amount])=>amount>0).sort((a,b)=>b[1]-a[1]).slice(0,monthlyCategories)
-     .map(([key,amount])=>({label:key.startsWith('c:')?categories.find(category=>category.id===key.slice(2))?.name??translate(profile.language,'Other expense'):translate(profile.language,key.slice(2)),amount}));
+    const named=namedCategories(totals.byCategory,categories,profile.language).slice(0,monthlyCategories);
     // Net worth counts only when the month's last snapshot falls inside the month, and its change only against a
     // snapshot from the month before, so a long gap is never shown as one month's move.
     const [end]=closing&&closing.occurred_on>=from?snapshotPoints([closing],profile.currency):[],[start]=opening&&opening.occurred_on>=previousFrom?snapshotPoints([opening],profile.currency):[];

@@ -8,9 +8,18 @@ export type CardTone='good'|'bad'|'plain';
 export type CardTile={label:string;value:string;detail?:string;tone?:CardTone};
 export type CardRow={label:string;value:string;detail?:string;tone?:CardTone};
 export type CardSection={title:string;tone?:CardTone;rows:CardRow[]};
+/** A line over time, such as net worth: the values oldest first, with the first and last labelled. */
+export type CardLine={kind:'line';title:string;values:number[];from:{label:string;value:string};to:{label:string;value:string};tone?:CardTone};
+/** Bars against the largest, such as spending by category: each bar names itself, so colour is never the only key. */
+export type CardBars={kind:'bars';title:string;bars:{label:string;value:string;share:string;amount:number;color:string}[]};
+export type CardChart=CardLine|CardBars;
 export type ReportCard={
  title:string;subtitle?:string;note?:string;
- tiles?:CardTile[];sections?:CardSection[];
+ /** A heading over the tiles, such as the period they cover. */
+ tilesTitle?:string;
+ tiles?:CardTile[];charts?:CardChart[];
+ /** A heading over the sections, such as "Upcoming payments". */
+ sectionsTitle?:string;sections?:CardSection[];
  /** Sentences under the figures, such as "Nothing is due soon." */
  lines?:string[];
  footer?:string;
@@ -23,7 +32,10 @@ export const estimateWidth:Measure=(text,size,bold)=>[...text].length*size*(bold
 export const cardLanguage=(language:Language)=>!pdfUnsupportedLanguages.includes(language);
 export const cardWidth=1080;
 const margin=36,padding=52,content=cardWidth-margin*2-padding*2,tileGap=20,tilePadding=28;
-const color={page:'#eef2e6',card:'#ffffff',header:'#11150e',brand:'#c4f36b',brandInk:'#18240d',title:'#ffffff',subtitle:'#d3dec0',note:'#a7b592',ink:'#18200f',muted:'#6b7560',tile:'#f4f7ee',rule:'#e4e9db',good:'#2f7d32',bad:'#c0392b'};
+const lineHeight=200,barTrack=14;
+/** A coordinate to a tenth of a pixel, which keeps the SVG short. */
+const at=(value:number)=>Math.round(value*10)/10;
+const color={line:'#4d7c0f',lineFill:'#c4f36b',track:'#eef2e6',page:'#eef2e6',card:'#ffffff',header:'#11150e',brand:'#c4f36b',brandInk:'#18240d',title:'#ffffff',subtitle:'#d3dec0',note:'#a7b592',ink:'#18200f',muted:'#6b7560',tile:'#f4f7ee',rule:'#e4e9db',good:'#2f7d32',bad:'#c0392b'};
 const tone=(value:CardTone|undefined,fallback:string)=>value==='good'?color.good:value==='bad'?color.bad:fallback;
 /** The bundled font has no minus sign (U+2212), which the app's signed amounts use; an en dash is drawn in its place. */
 export const drawable=(text:string)=>text.replace(/\u2212/g,'\u2013');
@@ -49,6 +61,7 @@ export function wrapText(text:string,width:number,size:number,measure:Measure,{l
 type Draw={svg:string[];measure:Measure};
 type Style={size:number;fill:string;bold?:boolean;anchor?:'end';spacing?:number};
 const text=(draw:Draw,x:number,y:number,value:string,{size,fill,bold,anchor,spacing}:Style)=>draw.svg.push(`<text x="${x}" y="${y}" font-size="${size}"${bold?' font-weight="700"':''}${anchor?` text-anchor="${anchor}"`:''}${spacing?` letter-spacing="${spacing}"`:''} fill="${fill}">${escapeXml(drawable(value))}</text>`);
+const heading=(draw:Draw,y:number,title:string,fill=color.muted)=>text(draw,margin+padding,y+22,title.toLocaleUpperCase(),{size:21,fill,bold:true,spacing:1.2});
 function tiles(draw:Draw,items:CardTile[],top:number){
  let y=top;
  for(let index=0;index<items.length;index+=2){
@@ -71,7 +84,7 @@ function sections(draw:Draw,items:CardSection[],top:number){
  let y=top;const left=margin+padding,right=margin+padding+content;
  items.forEach((section,sectionIndex)=>{
   if(sectionIndex)y+=34;
-  text(draw,left,y+22,section.title.toLocaleUpperCase(),{size:21,fill:tone(section.tone,color.muted),bold:true,spacing:1.2});
+  heading(draw,y,section.title,tone(section.tone,color.muted));
   y+=40;
   section.rows.forEach((row,rowIndex)=>{
    const valueWidth=draw.measure(row.value,28,true);
@@ -86,6 +99,61 @@ function sections(draw:Draw,items:CardSection[],top:number){
    y+=details.length*30+18;
   });
  });
+ return y;
+}
+function line(draw:Draw,chart:CardLine,top:number){
+ const left=margin+padding,right=left+content,plotTop=top+56,plotBottom=plotTop+lineHeight;
+ heading(draw,top,chart.title);
+ const low=Math.min(...chart.values),high=Math.max(...chart.values),span=high-low||Math.abs(high)||1;
+ // A little room above and below, so a flat month is a level line in the middle, not glued to an edge.
+ const x=(index:number)=>left+index/(chart.values.length-1)*content;
+ const y=(value:number)=>plotBottom-((value-low)/span*0.76+0.12)*lineHeight;
+ const points=chart.values.map((value,index)=>`${at(x(index))},${at(y(value))}`);
+ const stroke=chart.tone==='bad'?color.bad:color.line,last=chart.values.length-1;
+ draw.svg.push(`<rect x="${left}" y="${plotTop}" width="${content}" height="${lineHeight}" rx="18" fill="${color.tile}"/>`);
+ draw.svg.push(`<path d="M${left},${plotBottom} L${points.join(' L')} L${right},${plotBottom} Z" fill="${chart.tone==='bad'?color.bad:color.lineFill}" fill-opacity="0.28"/>`);
+ draw.svg.push(`<polyline points="${points.join(' ')}" fill="none" stroke="${stroke}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`);
+ draw.svg.push(`<circle cx="${x(last)}" cy="${y(chart.values[last])}" r="9" fill="${stroke}" stroke="${color.card}" stroke-width="3"/>`);
+ // The first and the last value are labelled under the plot; the line between them shows the way there.
+ text(draw,left,plotBottom+38,chart.from.value,{size:24,fill:color.muted,bold:true});
+ text(draw,left,plotBottom+68,chart.from.label,{size:21,fill:color.muted});
+ text(draw,right,plotBottom+38,chart.to.value,{size:24,fill:color.ink,bold:true,anchor:'end'});
+ text(draw,right,plotBottom+68,chart.to.label,{size:21,fill:color.muted,anchor:'end'});
+ return plotBottom+84;
+}
+function bars(draw:Draw,chart:CardBars,top:number){
+ const left=margin+padding,right=left+content,largest=Math.max(...chart.bars.map(bar=>bar.amount),0)||1;
+ heading(draw,top,chart.title);
+ let y=top+48;
+ for(const bar of chart.bars){
+  const shareWidth=draw.measure(bar.share,22)+16,valueWidth=draw.measure(bar.value,26,true);
+  const [label]=wrapText(bar.label,content-shareWidth-valueWidth-24,26,draw.measure,{limit:1});
+  text(draw,left,y+30,label,{size:26,fill:color.ink});
+  text(draw,right,y+30,bar.share,{size:22,fill:color.muted,anchor:'end'});
+  text(draw,right-shareWidth,y+30,bar.value,{size:26,fill:color.ink,bold:true,anchor:'end'});
+  draw.svg.push(`<rect x="${left}" y="${y+46}" width="${content}" height="${barTrack}" rx="${barTrack/2}" fill="${color.track}"/>`);
+  // Every bar is at least a dot wide, so a small category still shows.
+  draw.svg.push(`<rect x="${left}" y="${y+46}" width="${at(Math.max(barTrack,bar.amount/largest*content))}" height="${barTrack}" rx="${barTrack/2}" fill="${bar.color}"/>`);
+  y+=82;
+ }
+ return y;
+}
+/** Everything under the header, top to bottom; returns where it ends. */
+function drawBody(draw:Draw,card:ReportCard,top:number){
+ let y=top;const left=margin+padding,measure=draw.measure;
+ if(card.tiles?.length){
+  if(card.tilesTitle){heading(draw,y,card.tilesTitle);y+=44;}
+  y=tiles(draw,card.tiles,y)+40;
+ }
+ for(const chart of card.charts??[])y=(chart.kind==='line'?line(draw,chart,y):bars(draw,chart,y))+36;
+ if(card.sectionsTitle){heading(draw,y,card.sectionsTitle,color.ink);y+=56;}
+ if(card.sections?.length)y=sections(draw,card.sections.filter(section=>section.rows.length),y)+18;
+ for(const sentence of card.lines??[])for(const [number,line] of wrapText(sentence,content-28,26,measure,{limit:4}).entries()){
+  if(!number)draw.svg.push(`<circle cx="${left+7}" cy="${y+22}" r="6" fill="${color.brand}"/>`);
+  text(draw,left+28,y+30,line,{size:26,fill:color.ink});y+=38;
+ }
+ if(card.lines?.length)y+=18;
+ if(card.footer){text(draw,left,y+24,card.footer,{size:22,fill:color.muted});y+=44;}
  return y;
 }
 /** The card as an SVG document, `cardWidth` pixels wide and as tall as its content. */
@@ -107,14 +175,7 @@ export function reportCardSvg(card:ReportCard,measureWith:Measure=estimateWidth)
  if(notes.length)y+=notes.length*34;
  const headerBottom=y+6;
  y=headerBottom+40;
- if(card.tiles?.length)y=tiles(draw,card.tiles,y)+36;
- if(card.sections?.length)y=sections(draw,card.sections.filter(section=>section.rows.length),y)+18;
- for(const sentence of card.lines??[])for(const [number,line] of wrapText(sentence,content-28,26,measure,{limit:4}).entries()){
-  if(!number)draw.svg.push(`<circle cx="${left+7}" cy="${y+22}" r="6" fill="${color.brand}"/>`);
-  text(draw,left+28,y+30,line,{size:26,fill:color.ink});y+=38;
- }
- if(card.lines?.length)y+=18;
- if(card.footer){text(draw,left,y+24,card.footer,{size:22,fill:color.muted});y+=44;}
+ y=drawBody(draw,card,y);
  const bottom=y+28,height=bottom+margin;
  return `<svg xmlns="http://www.w3.org/2000/svg" width="${cardWidth}" height="${height}" viewBox="0 0 ${cardWidth} ${height}">
 <rect width="${cardWidth}" height="${height}" fill="${color.page}"/>
