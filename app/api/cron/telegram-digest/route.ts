@@ -2,17 +2,18 @@ import { cronAuthorized } from '@/lib/cron-auth';
 import { reportError } from '@/lib/monitoring';
 import { dueReminders, type ReminderSettings } from '@/lib/daily-finance';
 import { depositToday } from '@/lib/deposit-interest';
-import { digestMessage } from '@/lib/digest-message';
+import { digestCard, digestMessage } from '@/lib/digest-message';
 import { debtPaymentsFrom, type Occurrence } from '@/lib/planning';
 import { ownerRows } from '@/lib/owner-rows';
 import { periodTotals, shiftDay } from '@/lib/period-summary';
 import { snapshotPoints } from '@/lib/portfolio-snapshots';
 import { serviceDatabase } from '@/lib/service-role';
-import { deliverTelegramMessage, telegramConfig } from '@/lib/telegram';
+import { telegramConfig } from '@/lib/telegram';
+import { deliverReport } from '@/lib/telegram-report';
 import { deliverToSubscribers, ownerDebtPayments, ownerProfile, ownerRecordsSince, ownerSpendingExtras, recentSnapshots } from '@/lib/telegram-owner';
 export const maxDuration=60;
 const defaultReminders:ReminderSettings={enabled:true,days_ahead:7,snoozed:[]};
-/** Sends each linked owner their digest: a greeting, what is due, yesterday's net-worth change and the week's spending. One owner's failure never blocks the others; the response says how many were reached. */
+/** Sends each linked owner their digest as a picture: a greeting, what is due, yesterday's net-worth change and the week's spending. One owner's failure never blocks the others; the response says how many were reached. */
 export async function GET(req:Request){
  if(!cronAuthorized(req))return new Response(null,{status:401});
  const config=telegramConfig(),db=serviceDatabase();
@@ -41,8 +42,9 @@ export async function GET(req:Request){
     const extras=await ownerSpendingExtras(db,user_id,shiftDay(today,-13),records);
     const current=periodTotals({records,...extras},shiftDay(today,-6),today,profile.currency,rates),previous=periodTotals({records,...extras},shiftDay(today,-13),shiftDay(today,-7),profile.currency,rates);
     const spending={current:current.spending,previous:previous.spending,missing:current.missing+previous.missing>0};
-    const text=digestMessage(dueReminders({records,occurrences,categories:[],goals:[],activity:[],debtPayments:debtPaymentsFrom(activity,mortgagePayments)},settings,today),profile.language,today,{name:profile.name,currency:profile.currency,rates,netWorth,spending});
-    return deliverTelegramMessage({chat_id,text},config);
+    const due=dueReminders({records,occurrences,categories:[],goals:[],activity:[],debtPayments:debtPaymentsFrom(activity,mortgagePayments)},settings,today),digest={name:profile.name,currency:profile.currency,rates,netWorth,spending};
+    // A picture, or the text where the picture's font cannot draw the language.
+    return deliverReport({chat_id,language:profile.language,text:digestMessage(due,profile.language,today,digest),picture:{...digestCard(due,profile.language,today,digest),filename:`hoggish-${today}.png`}},config);
   });
   if(failed)await reportError('cron:telegram-digest','Some Telegram digests were not delivered.',{route:'/api/cron/telegram-digest',status:503,counts:{sent,failed,blocked}},{alert:true});
   return Response.json({sent,failed,blocked},{status:failed?503:200,headers:{'Cache-Control':'no-store'}});

@@ -2615,5 +2615,17 @@
   "Update needed": "نیاز به به‌روزرسانی",
   "Check failed": "بررسی ناموفق بود",
   "Checked {time}": "بررسی‌شده {time}",
-  "Database version {version}; the app needs {required}.": "نسخهٔ پایگاه داده {version}؛ برنامه به {required} نیاز دارد."
+  "Database version {version}; the app needs {required}.": "نسخهٔ پایگاه داده {version}؛ برنامه به {required} نیاز دارد.",
+  "{change} less than the week before": "{change} کمتر از هفته قبل",
+  "{change} more than the week before": "{change} بیشتر از هفته قبل",
+  "Last 7 days": "۷ روز گذشته",
+  "Top spending": "بیشترین هزینه",
+  "Your month, {name}": "ماه شما، {name}",
+  "Your month": "ماه شما",
+  "{change} less than the month before": "{change} کمتر از ماه قبل",
+  "{change} more than the month before": "{change} بیشتر از ماه قبل",
+  "{change} this month": "{change} در این ماه",
+  "A quiet month. Add this month's records to see your report.": "ماهی آرام. برای دیدن گزارش، ثبت‌های این ماه را اضافه کنید.",
+  "You saved {amount} this month.": "این ماه {amount} پس‌انداز کردید.",
+  "You spent {amount} more than you earned this month.": "این ماه {amount} بیشتر از درآمدتان خرج کردید."
 }

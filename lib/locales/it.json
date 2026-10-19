@@ -2615,5 +2615,17 @@
   "Update needed": "Aggiornamento necessario",
   "Check failed": "Verifica non riuscita",
   "Checked {time}": "Verificato {time}",
-  "Database version {version}; the app needs {required}.": "Versione del database {version}; l’app richiede la {required}."
+  "Database version {version}; the app needs {required}.": "Versione del database {version}; l’app richiede la {required}.",
+  "{change} less than the week before": "{change} in meno rispetto alla settimana prima",
+  "{change} more than the week before": "{change} in più rispetto alla settimana prima",
+  "Last 7 days": "Ultimi 7 giorni",
+  "Top spending": "Spese maggiori",
+  "Your month, {name}": "Il tuo mese, {name}",
+  "Your month": "Il tuo mese",
+  "{change} less than the month before": "{change} in meno rispetto al mese prima",
+  "{change} more than the month before": "{change} in più rispetto al mese prima",
+  "{change} this month": "{change} questo mese",
+  "A quiet month. Add this month's records to see your report.": "Un mese tranquillo. Aggiungi le registrazioni di questo mese per vedere il resoconto.",
+  "You saved {amount} this month.": "Questo mese hai risparmiato {amount}.",
+  "You spent {amount} more than you earned this month.": "Questo mese hai speso {amount} più di quanto hai guadagnato."
 }

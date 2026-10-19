@@ -2615,5 +2615,17 @@
   "Update needed": "Kailangang i-update",
   "Check failed": "Nabigo ang pagsusuri",
   "Checked {time}": "Nasuri {time}",
-  "Database version {version}; the app needs {required}.": "Bersyon ng database {version}; kailangan ng app ang {required}."
+  "Database version {version}; the app needs {required}.": "Bersyon ng database {version}; kailangan ng app ang {required}.",
+  "{change} less than the week before": "{change} na mas mababa kaysa noong nakaraang linggo",
+  "{change} more than the week before": "{change} na mas mataas kaysa noong nakaraang linggo",
+  "Last 7 days": "Huling 7 araw",
+  "Top spending": "Pinakamalaking gastos",
+  "Your month, {name}": "Ang buwan mo, {name}",
+  "Your month": "Ang buwan mo",
+  "{change} less than the month before": "{change} na mas mababa kaysa noong nakaraang buwan",
+  "{change} more than the month before": "{change} na mas mataas kaysa noong nakaraang buwan",
+  "{change} this month": "{change} ngayong buwan",
+  "A quiet month. Add this month's records to see your report.": "Tahimik na buwan. Idagdag ang mga tala ngayong buwan para makita ang ulat.",
+  "You saved {amount} this month.": "Nakapag-ipon ka ng {amount} ngayong buwan.",
+  "You spent {amount} more than you earned this month.": "Gumastos ka ng {amount} nang higit sa kinita mo ngayong buwan."
 }

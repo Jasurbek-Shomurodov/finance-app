@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const supabaseOrigin=(()=>{try{return process.env.SUPABASE_URL?new URL(process.env.SUPABASE_URL).origin:'';}catch{return '';}})();
 const connectSources=["'self'",...(supabaseOrigin?[supabaseOrigin]:[])].join(' ');
 const nextConfig: NextConfig = {
+ // The scheduled Telegram reports are drawn on the server in the bundled font (lib/report-card-render.ts).
+ outputFileTracingIncludes:{'/api/cron/telegram-*':['./public/fonts/NotoSans-Regular.ttf']},
  async headers(){return [{source:'/:path*',headers:[
  {key:'X-Content-Type-Options',value:'nosniff'},
  // Only this site may frame its pages: the public pages show the app's sample workspace in a frame (lib/app-preview.ts).

@@ -2615,5 +2615,17 @@
   "Update needed": "Necesită actualizare",
   "Check failed": "Verificarea a eșuat",
   "Checked {time}": "Verificat {time}",
-  "Database version {version}; the app needs {required}.": "Versiunea bazei de date {version}; aplicația are nevoie de {required}."
+  "Database version {version}; the app needs {required}.": "Versiunea bazei de date {version}; aplicația are nevoie de {required}.",
+  "{change} less than the week before": "cu {change} mai puțin decât săptămâna anterioară",
+  "{change} more than the week before": "cu {change} mai mult decât săptămâna anterioară",
+  "Last 7 days": "Ultimele 7 zile",
+  "Top spending": "Cele mai mari cheltuieli",
+  "Your month, {name}": "Luna ta, {name}",
+  "Your month": "Luna ta",
+  "{change} less than the month before": "cu {change} mai puțin decât luna anterioară",
+  "{change} more than the month before": "cu {change} mai mult decât luna anterioară",
+  "{change} this month": "{change} luna aceasta",
+  "A quiet month. Add this month's records to see your report.": "O lună liniștită. Adaugă înregistrările lunii pentru a vedea raportul.",
+  "You saved {amount} this month.": "Luna aceasta ai economisit {amount}.",
+  "You spent {amount} more than you earned this month.": "Luna aceasta ai cheltuit cu {amount} mai mult decât ai câștigat."
 }

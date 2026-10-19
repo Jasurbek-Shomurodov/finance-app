@@ -2615,5 +2615,17 @@
   "Update needed": "اپ ڈیٹ درکار ہے",
   "Check failed": "جانچ ناکام رہی",
   "Checked {time}": "جانچا گیا {time}",
-  "Database version {version}; the app needs {required}.": "ڈیٹا بیس ورژن {version}؛ ایپ کو {required} درکار ہے۔"
+  "Database version {version}; the app needs {required}.": "ڈیٹا بیس ورژن {version}؛ ایپ کو {required} درکار ہے۔",
+  "{change} less than the week before": "پچھلے ہفتے سے {change} کم",
+  "{change} more than the week before": "پچھلے ہفتے سے {change} زیادہ",
+  "Last 7 days": "پچھلے 7 دن",
+  "Top spending": "سب سے زیادہ خرچ",
+  "Your month, {name}": "آپ کا مہینہ، {name}",
+  "Your month": "آپ کا مہینہ",
+  "{change} less than the month before": "پچھلے مہینے سے {change} کم",
+  "{change} more than the month before": "پچھلے مہینے سے {change} زیادہ",
+  "{change} this month": "اس مہینے {change}",
+  "A quiet month. Add this month's records to see your report.": "ایک پرسکون مہینہ۔ رپورٹ دیکھنے کے لیے اس مہینے کے اندراجات شامل کریں۔",
+  "You saved {amount} this month.": "آپ نے اس مہینے {amount} بچائے۔",
+  "You spent {amount} more than you earned this month.": "آپ نے اس مہینے کمائی سے {amount} زیادہ خرچ کیے۔"
 }

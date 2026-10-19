@@ -2615,5 +2615,17 @@
   "Update needed": "تحتاج إلى تحديث",
   "Check failed": "تعذّر التحقق",
   "Checked {time}": "تم التحقق {time}",
-  "Database version {version}; the app needs {required}.": "إصدار قاعدة البيانات {version}؛ يحتاج التطبيق إلى {required}."
+  "Database version {version}; the app needs {required}.": "إصدار قاعدة البيانات {version}؛ يحتاج التطبيق إلى {required}.",
+  "{change} less than the week before": "{change} أقل من الأسبوع السابق",
+  "{change} more than the week before": "{change} أكثر من الأسبوع السابق",
+  "Last 7 days": "آخر 7 أيام",
+  "Top spending": "أعلى إنفاق",
+  "Your month, {name}": "شهرك يا {name}",
+  "Your month": "شهرك",
+  "{change} less than the month before": "{change} أقل من الشهر السابق",
+  "{change} more than the month before": "{change} أكثر من الشهر السابق",
+  "{change} this month": "{change} هذا الشهر",
+  "A quiet month. Add this month's records to see your report.": "شهر هادئ. أضف سجلات هذا الشهر لترى تقريرك.",
+  "You saved {amount} this month.": "وفّرت {amount} هذا الشهر.",
+  "You spent {amount} more than you earned this month.": "أنفقت {amount} أكثر مما كسبت هذا الشهر."
 }

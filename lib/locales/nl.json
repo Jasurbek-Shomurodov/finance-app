@@ -2615,5 +2615,17 @@
   "Update needed": "Update nodig",
   "Check failed": "Controle mislukt",
   "Checked {time}": "Gecontroleerd {time}",
-  "Database version {version}; the app needs {required}.": "Databaseversie {version}; de app heeft {required} nodig."
+  "Database version {version}; the app needs {required}.": "Databaseversie {version}; de app heeft {required} nodig.",
+  "{change} less than the week before": "{change} minder dan de week ervoor",
+  "{change} more than the week before": "{change} meer dan de week ervoor",
+  "Last 7 days": "Laatste 7 dagen",
+  "Top spending": "Hoogste uitgaven",
+  "Your month, {name}": "Jouw maand, {name}",
+  "Your month": "Jouw maand",
+  "{change} less than the month before": "{change} minder dan de maand ervoor",
+  "{change} more than the month before": "{change} meer dan de maand ervoor",
+  "{change} this month": "{change} deze maand",
+  "A quiet month. Add this month's records to see your report.": "Een rustige maand. Voeg de invoer van deze maand toe om je rapport te zien.",
+  "You saved {amount} this month.": "Deze maand heb je {amount} gespaard.",
+  "You spent {amount} more than you earned this month.": "Deze maand gaf je {amount} meer uit dan je verdiende."
 }

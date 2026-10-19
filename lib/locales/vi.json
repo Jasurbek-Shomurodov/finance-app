@@ -2615,5 +2615,17 @@
   "Update needed": "Cần cập nhật",
   "Check failed": "Kiểm tra thất bại",
   "Checked {time}": "Đã kiểm tra {time}",
-  "Database version {version}; the app needs {required}.": "Phiên bản cơ sở dữ liệu {version}; ứng dụng cần {required}."
+  "Database version {version}; the app needs {required}.": "Phiên bản cơ sở dữ liệu {version}; ứng dụng cần {required}.",
+  "{change} less than the week before": "ít hơn tuần trước {change}",
+  "{change} more than the week before": "nhiều hơn tuần trước {change}",
+  "Last 7 days": "7 ngày qua",
+  "Top spending": "Chi nhiều nhất",
+  "Your month, {name}": "Tháng của bạn, {name}",
+  "Your month": "Tháng của bạn",
+  "{change} less than the month before": "ít hơn tháng trước {change}",
+  "{change} more than the month before": "nhiều hơn tháng trước {change}",
+  "{change} this month": "{change} trong tháng này",
+  "A quiet month. Add this month's records to see your report.": "Một tháng yên ắng. Hãy thêm các bản ghi của tháng này để xem báo cáo.",
+  "You saved {amount} this month.": "Tháng này bạn đã tiết kiệm {amount}.",
+  "You spent {amount} more than you earned this month.": "Tháng này bạn đã chi nhiều hơn thu nhập {amount}."
 }

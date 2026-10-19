@@ -171,10 +171,17 @@ last seven days' spending against the seven before. It is sent every morning,
 and answers 503 when any owner could not be reached so monitoring notices.
 `/api/cron/telegram-recap` sends a weekly recap on Sundays at 15:00 UTC: money
 saved, the top spending category and the goals that received contributions, with
-a share button that carries no amounts. Celebrations (first record, a savings
+a share button that carries no amounts. `/api/cron/telegram-monthly` sends a
+monthly report on the 1st at 05:00 UTC for the month that just ended: income,
+spending against the month before, what was saved, the top five spending
+categories and net worth's change over the month (migration 147). The digest, the
+recap and the monthly report are sent as one PNG card each, drawn on the server
+in the bundled Noto Sans (`public/fonts`); languages that font cannot draw
+(Arabic, Urdu, Persian, Hebrew, Hindi, Bengali, Thai, Chinese, Japanese, Korean)
+and a render that fails get the same report as text. Celebrations (first record, a savings
 goal passing 25/50/75/100 percent, a new net-worth high found by the daily
 snapshot cron) are sent once each and recorded in `telegram_milestones`
-(migration 083). Digest and recap follow the digest switch; celebrations follow
+(migration 083). Digest, recap and monthly report follow the digest switch; celebrations follow
 the milestone switch, checked by the write routes after the response, so they
 never delay or fail a save. Saves made in the app are not announced one by
 one in Telegram; only the bot replies to entries made in the bot.

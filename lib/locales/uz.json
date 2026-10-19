@@ -2615,5 +2615,17 @@
   "Update needed": "Yangilash kerak",
   "Check failed": "Tekshirib boʻlmadi",
   "Checked {time}": "Tekshirildi: {time}",
-  "Database version {version}; the app needs {required}.": "Maʼlumotlar bazasi versiyasi {version}; ilovaga {required} kerak."
+  "Database version {version}; the app needs {required}.": "Maʼlumotlar bazasi versiyasi {version}; ilovaga {required} kerak.",
+  "{change} less than the week before": "oldingi haftadan {change} kam",
+  "{change} more than the week before": "oldingi haftadan {change} ko‘p",
+  "Last 7 days": "Oxirgi 7 kun",
+  "Top spending": "Eng katta xarajatlar",
+  "Your month, {name}": "Oyingiz, {name}",
+  "Your month": "Oyingiz",
+  "{change} less than the month before": "oldingi oydan {change} kam",
+  "{change} more than the month before": "oldingi oydan {change} ko‘p",
+  "{change} this month": "shu oyda {change}",
+  "A quiet month. Add this month's records to see your report.": "Sokin oy. Hisobotni ko‘rish uchun shu oydagi yozuvlarni qo‘shing.",
+  "You saved {amount} this month.": "Bu oy {amount} jamg‘ardingiz.",
+  "You spent {amount} more than you earned this month.": "Bu oy topganingizdan {amount} ko‘p sarfladingiz."
 }

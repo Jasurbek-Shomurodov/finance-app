@@ -2615,5 +2615,17 @@
   "Update needed": "更新が必要",
   "Check failed": "確認できませんでした",
   "Checked {time}": "確認日時 {time}",
-  "Database version {version}; the app needs {required}.": "データベースのバージョン {version}、アプリに必要なのは {required} です。"
+  "Database version {version}; the app needs {required}.": "データベースのバージョン {version}、アプリに必要なのは {required} です。",
+  "{change} less than the week before": "前週より{change}少ない",
+  "{change} more than the week before": "前週より{change}多い",
+  "Last 7 days": "過去7日間",
+  "Top spending": "最も多い支出",
+  "Your month, {name}": "{name}さんの1か月",
+  "Your month": "今月のまとめ",
+  "{change} less than the month before": "前月より{change}少ない",
+  "{change} more than the month before": "前月より{change}多い",
+  "{change} this month": "今月{change}",
+  "A quiet month. Add this month's records to see your report.": "静かな1か月でした。今月の記録を追加するとレポートが表示されます。",
+  "You saved {amount} this month.": "今月は{amount}貯まりました。",
+  "You spent {amount} more than you earned this month.": "今月は収入より{amount}多く使いました。"
 }

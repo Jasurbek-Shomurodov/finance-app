@@ -2615,5 +2615,17 @@
   "Update needed": "נדרש עדכון",
   "Check failed": "הבדיקה נכשלה",
   "Checked {time}": "נבדק {time}",
-  "Database version {version}; the app needs {required}.": "גרסת מסד הנתונים {version}; האפליקציה צריכה {required}."
+  "Database version {version}; the app needs {required}.": "גרסת מסד הנתונים {version}; האפליקציה צריכה {required}.",
+  "{change} less than the week before": "{change} פחות מהשבוע הקודם",
+  "{change} more than the week before": "{change} יותר מהשבוע הקודם",
+  "Last 7 days": "7 הימים האחרונים",
+  "Top spending": "ההוצאות הגדולות ביותר",
+  "Your month, {name}": "החודש שלך, {name}",
+  "Your month": "החודש שלך",
+  "{change} less than the month before": "{change} פחות מהחודש הקודם",
+  "{change} more than the month before": "{change} יותר מהחודש הקודם",
+  "{change} this month": "{change} החודש",
+  "A quiet month. Add this month's records to see your report.": "חודש שקט. הוסף את רישומי החודש כדי לראות את הדוח.",
+  "You saved {amount} this month.": "חסכת {amount} החודש.",
+  "You spent {amount} more than you earned this month.": "הוצאת החודש {amount} יותר ממה שהרווחת."
 }

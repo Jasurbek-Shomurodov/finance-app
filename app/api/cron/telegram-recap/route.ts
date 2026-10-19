@@ -4,12 +4,13 @@ import { reportError } from '@/lib/monitoring';
 import { depositToday } from '@/lib/deposit-interest';
 import { translate } from '@/lib/i18n';
 import { periodTotals, shiftDay, topCategory } from '@/lib/period-summary';
-import { recapMessage } from '@/lib/recap-message';
+import { recapCard, recapMessage } from '@/lib/recap-message';
 import { serviceDatabase } from '@/lib/service-role';
-import { deliverTelegramMessage, telegramConfig } from '@/lib/telegram';
+import { telegramConfig } from '@/lib/telegram';
+import { deliverReport } from '@/lib/telegram-report';
 import { deliverToSubscribers, ownerProfile, ownerCashflowSince, ownerSpendingExtras, recentSnapshots } from '@/lib/telegram-owner';
 export const maxDuration=60;
-/** Sends each linked owner the recap of the seven days ending today (scheduled for Sunday evening). One owner's failure never blocks the others. */
+/** Sends each linked owner, as a picture, the recap of the seven days ending today (scheduled for Sunday evening). One owner's failure never blocks the others. */
 export async function GET(req:Request){
  if(!cronAuthorized(req))return new Response(null,{status:401});
  const config=telegramConfig(),db=serviceDatabase();
@@ -30,8 +31,9 @@ export async function GET(req:Request){
     const totals=periodTotals({records,...await ownerSpendingExtras(db,user_id,from,records)},from,to,profile.currency,{...snapshots[0]?.rates}),best=topCategory(totals.byCategory);
     // Built-in categories are translated; an added category shows the owner's own name.
     const label=best&&(best.key.startsWith('c:')?categories.find(category=>category.id===best.key.slice(2))?.name:translate(profile.language,best.key.slice(2)));
-    const message=recapMessage({name:profile.name,currency:profile.currency,from,to,income:totals.income,spending:totals.spending,missing:totals.missing,top:best&&label?{label,amount:best.amount}:null,goalsMoved:new Set(goalEvents.map(event=>event.goal_id)).size,shareOrigin},profile.language);
-    return deliverTelegramMessage({chat_id,...message},config);
+    const recap={name:profile.name,currency:profile.currency,from,to,income:totals.income,spending:totals.spending,missing:totals.missing,top:best&&label?{label,amount:best.amount}:null,goalsMoved:new Set(goalEvents.map(event=>event.goal_id)).size,shareOrigin};
+    const message=recapMessage(recap,profile.language),picture=recapCard(recap,profile.language);
+    return deliverReport({chat_id,language:profile.language,...message,picture:picture&&{...picture,filename:`hoggish-week-${to}.png`}},config);
   });
   if(failed)await reportError('cron:telegram-recap','Some Telegram recaps were not delivered.',{route:'/api/cron/telegram-recap',status:503,counts:{sent,failed,blocked}},{alert:true});
   return Response.json({sent,failed,blocked},{status:failed?503:200,headers:{'Cache-Control':'no-store'}});

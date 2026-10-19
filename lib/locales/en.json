@@ -2615,5 +2615,17 @@
   "Update needed": "Update needed",
   "Check failed": "Check failed",
   "Checked {time}": "Checked {time}",
-  "Database version {version}; the app needs {required}.": "Database version {version}; the app needs {required}."
+  "Database version {version}; the app needs {required}.": "Database version {version}; the app needs {required}.",
+  "{change} less than the week before": "{change} less than the week before",
+  "{change} more than the week before": "{change} more than the week before",
+  "Last 7 days": "Last 7 days",
+  "Top spending": "Top spending",
+  "Your month, {name}": "Your month, {name}",
+  "Your month": "Your month",
+  "{change} less than the month before": "{change} less than the month before",
+  "{change} more than the month before": "{change} more than the month before",
+  "{change} this month": "{change} this month",
+  "A quiet month. Add this month's records to see your report.": "A quiet month. Add this month's records to see your report.",
+  "You saved {amount} this month.": "You saved {amount} this month.",
+  "You spent {amount} more than you earned this month.": "You spent {amount} more than you earned this month."
 }

@@ -2615,5 +2615,17 @@
   "Update needed": "Perlu dikemas kini",
   "Check failed": "Semakan gagal",
   "Checked {time}": "Disemak {time}",
-  "Database version {version}; the app needs {required}.": "Versi pangkalan data {version}; aplikasi memerlukan {required}."
+  "Database version {version}; the app needs {required}.": "Versi pangkalan data {version}; aplikasi memerlukan {required}.",
+  "{change} less than the week before": "{change} kurang daripada minggu sebelumnya",
+  "{change} more than the week before": "{change} lebih daripada minggu sebelumnya",
+  "Last 7 days": "7 hari lepas",
+  "Top spending": "Perbelanjaan terbesar",
+  "Your month, {name}": "Bulan anda, {name}",
+  "Your month": "Bulan anda",
+  "{change} less than the month before": "{change} kurang daripada bulan sebelumnya",
+  "{change} more than the month before": "{change} lebih daripada bulan sebelumnya",
+  "{change} this month": "{change} bulan ini",
+  "A quiet month. Add this month's records to see your report.": "Bulan yang tenang. Tambah rekod bulan ini untuk melihat laporan anda.",
+  "You saved {amount} this month.": "Bulan ini anda menyimpan {amount}.",
+  "You spent {amount} more than you earned this month.": "Bulan ini anda berbelanja {amount} lebih daripada pendapatan."
 }

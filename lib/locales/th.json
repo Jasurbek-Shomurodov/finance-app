@@ -2615,5 +2615,17 @@
   "Update needed": "ต้องอัปเดต",
   "Check failed": "ตรวจสอบไม่สำเร็จ",
   "Checked {time}": "ตรวจสอบเมื่อ {time}",
-  "Database version {version}; the app needs {required}.": "ฐานข้อมูลเวอร์ชัน {version} แอปต้องการ {required}"
+  "Database version {version}; the app needs {required}.": "ฐานข้อมูลเวอร์ชัน {version} แอปต้องการ {required}",
+  "{change} less than the week before": "น้อยกว่าสัปดาห์ก่อน {change}",
+  "{change} more than the week before": "มากกว่าสัปดาห์ก่อน {change}",
+  "Last 7 days": "7 วันที่ผ่านมา",
+  "Top spending": "ใช้จ่ายมากที่สุด",
+  "Your month, {name}": "เดือนของคุณ{name}",
+  "Your month": "เดือนของคุณ",
+  "{change} less than the month before": "น้อยกว่าเดือนก่อน {change}",
+  "{change} more than the month before": "มากกว่าเดือนก่อน {change}",
+  "{change} this month": "{change} ในเดือนนี้",
+  "A quiet month. Add this month's records to see your report.": "เดือนที่เงียบสงบ เพิ่มรายการของเดือนนี้เพื่อดูรายงาน",
+  "You saved {amount} this month.": "เดือนนี้คุณเก็บออมได้ {amount}",
+  "You spent {amount} more than you earned this month.": "เดือนนี้คุณใช้จ่ายมากกว่ารายได้ {amount}"
 }

@@ -2615,5 +2615,17 @@
   "Update needed": "Je potřeba aktualizace",
   "Check failed": "Ověření selhalo",
   "Checked {time}": "Ověřeno {time}",
-  "Database version {version}; the app needs {required}.": "Verze databáze {version}; aplikace potřebuje {required}."
+  "Database version {version}; the app needs {required}.": "Verze databáze {version}; aplikace potřebuje {required}.",
+  "{change} less than the week before": "o {change} méně než týden předtím",
+  "{change} more than the week before": "o {change} více než týden předtím",
+  "Last 7 days": "Posledních 7 dní",
+  "Top spending": "Nejvyšší výdaje",
+  "Your month, {name}": "Tvůj měsíc, {name}",
+  "Your month": "Tvůj měsíc",
+  "{change} less than the month before": "o {change} méně než měsíc předtím",
+  "{change} more than the month before": "o {change} více než měsíc předtím",
+  "{change} this month": "{change} za tento měsíc",
+  "A quiet month. Add this month's records to see your report.": "Klidný měsíc. Přidej záznamy z tohoto měsíce a uvidíš přehled.",
+  "You saved {amount} this month.": "Tento měsíc jsi ušetřil(a) {amount}.",
+  "You spent {amount} more than you earned this month.": "Tento měsíc jsi utratil(a) o {amount} více, než jsi vydělal(a)."
 }

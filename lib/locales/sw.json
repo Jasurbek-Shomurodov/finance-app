@@ -2615,5 +2615,17 @@
   "Update needed": "Inahitaji kusasishwa",
   "Check failed": "Ukaguzi umeshindwa",
   "Checked {time}": "Imekaguliwa {time}",
-  "Database version {version}; the app needs {required}.": "Toleo la hifadhidata {version}; programu inahitaji {required}."
+  "Database version {version}; the app needs {required}.": "Toleo la hifadhidata {version}; programu inahitaji {required}.",
+  "{change} less than the week before": "{change} chini ya wiki iliyopita",
+  "{change} more than the week before": "{change} zaidi ya wiki iliyopita",
+  "Last 7 days": "Siku 7 zilizopita",
+  "Top spending": "Matumizi makubwa zaidi",
+  "Your month, {name}": "Mwezi wako, {name}",
+  "Your month": "Mwezi wako",
+  "{change} less than the month before": "{change} chini ya mwezi uliopita",
+  "{change} more than the month before": "{change} zaidi ya mwezi uliopita",
+  "{change} this month": "{change} mwezi huu",
+  "A quiet month. Add this month's records to see your report.": "Mwezi tulivu. Ongeza rekodi za mwezi huu ili uone ripoti yako.",
+  "You saved {amount} this month.": "Umeokoa {amount} mwezi huu.",
+  "You spent {amount} more than you earned this month.": "Umetumia {amount} zaidi ya ulichopata mwezi huu."
 }

@@ -2615,5 +2615,17 @@
   "Update needed": "अपडेट चाहिए",
   "Check failed": "जाँच विफल रही",
   "Checked {time}": "जाँचा गया {time}",
-  "Database version {version}; the app needs {required}.": "डेटाबेस संस्करण {version}; ऐप को {required} चाहिए।"
+  "Database version {version}; the app needs {required}.": "डेटाबेस संस्करण {version}; ऐप को {required} चाहिए।",
+  "{change} less than the week before": "पिछले सप्ताह से {change} कम",
+  "{change} more than the week before": "पिछले सप्ताह से {change} अधिक",
+  "Last 7 days": "पिछले 7 दिन",
+  "Top spending": "सबसे अधिक खर्च",
+  "Your month, {name}": "आपका महीना, {name}",
+  "Your month": "आपका महीना",
+  "{change} less than the month before": "पिछले महीने से {change} कम",
+  "{change} more than the month before": "पिछले महीने से {change} अधिक",
+  "{change} this month": "इस महीने {change}",
+  "A quiet month. Add this month's records to see your report.": "शांत महीना। रिपोर्ट देखने के लिए इस महीने की प्रविष्टियाँ जोड़ें।",
+  "You saved {amount} this month.": "इस महीने आपने {amount} बचाए।",
+  "You spent {amount} more than you earned this month.": "इस महीने आपने कमाई से {amount} अधिक खर्च किया।"
 }

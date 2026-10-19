@@ -333,7 +333,10 @@ Shared modules to reach for first:
 - Client requests: `requestJson` from `lib/api-client.ts`; owner resources load
   through `useOwnerResource`.
 - Telegram messages: `lib/telegram-kit.ts` (`messageKit`, `keyboardRows`,
-  `backButton`); typed amounts through `parseTypedAmount`. The bot answers private
+  `backButton`); typed amounts through `parseTypedAmount`. Scheduled reports
+  (digest, recap, monthly) are pictures: a `ReportCard` (`lib/report-card.ts`)
+  sent by `deliverReport` (`lib/telegram-report.ts`), which keeps the text for
+  languages the bundled font cannot draw. The bot answers private
   chats only, and only the Telegram user linked to the subscription.
 
 # Languages and audience

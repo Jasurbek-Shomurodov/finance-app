@@ -2615,5 +2615,17 @@
   "Update needed": "Perlu pembaruan",
   "Check failed": "Pemeriksaan gagal",
   "Checked {time}": "Diperiksa {time}",
-  "Database version {version}; the app needs {required}.": "Versi database {version}; aplikasi membutuhkan {required}."
+  "Database version {version}; the app needs {required}.": "Versi database {version}; aplikasi membutuhkan {required}.",
+  "{change} less than the week before": "{change} lebih sedikit dari minggu sebelumnya",
+  "{change} more than the week before": "{change} lebih banyak dari minggu sebelumnya",
+  "Last 7 days": "7 hari terakhir",
+  "Top spending": "Pengeluaran terbesar",
+  "Your month, {name}": "Bulanmu, {name}",
+  "Your month": "Bulanmu",
+  "{change} less than the month before": "{change} lebih sedikit dari bulan sebelumnya",
+  "{change} more than the month before": "{change} lebih banyak dari bulan sebelumnya",
+  "{change} this month": "{change} bulan ini",
+  "A quiet month. Add this month's records to see your report.": "Bulan yang tenang. Tambahkan catatan bulan ini untuk melihat laporanmu.",
+  "You saved {amount} this month.": "Bulan ini kamu menabung {amount}.",
+  "You spent {amount} more than you earned this month.": "Bulan ini kamu mengeluarkan {amount} lebih banyak dari pemasukan."
 }

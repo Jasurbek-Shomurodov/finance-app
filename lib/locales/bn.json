@@ -2615,5 +2615,17 @@
   "Update needed": "আপডেট প্রয়োজন",
   "Check failed": "যাচাই ব্যর্থ হয়েছে",
   "Checked {time}": "যাচাই করা হয়েছে {time}",
-  "Database version {version}; the app needs {required}.": "ডেটাবেস সংস্করণ {version}; অ্যাপের প্রয়োজন {required}।"
+  "Database version {version}; the app needs {required}.": "ডেটাবেস সংস্করণ {version}; অ্যাপের প্রয়োজন {required}।",
+  "{change} less than the week before": "আগের সপ্তাহের চেয়ে {change} কম",
+  "{change} more than the week before": "আগের সপ্তাহের চেয়ে {change} বেশি",
+  "Last 7 days": "গত ৭ দিন",
+  "Top spending": "সর্বোচ্চ খরচ",
+  "Your month, {name}": "আপনার মাস, {name}",
+  "Your month": "আপনার মাস",
+  "{change} less than the month before": "আগের মাসের চেয়ে {change} কম",
+  "{change} more than the month before": "আগের মাসের চেয়ে {change} বেশি",
+  "{change} this month": "এই মাসে {change}",
+  "A quiet month. Add this month's records to see your report.": "শান্ত একটি মাস। প্রতিবেদন দেখতে এই মাসের এন্ট্রি যোগ করুন।",
+  "You saved {amount} this month.": "এই মাসে আপনি {amount} সঞ্চয় করেছেন।",
+  "You spent {amount} more than you earned this month.": "এই মাসে আপনি আয়ের চেয়ে {amount} বেশি খরচ করেছেন।"
 }

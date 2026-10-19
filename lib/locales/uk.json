@@ -2615,5 +2615,17 @@
   "Update needed": "Потрібне оновлення",
   "Check failed": "Перевірка не вдалася",
   "Checked {time}": "Перевірено {time}",
-  "Database version {version}; the app needs {required}.": "Версія бази даних {version}; застосунку потрібна {required}."
+  "Database version {version}; the app needs {required}.": "Версія бази даних {version}; застосунку потрібна {required}.",
+  "{change} less than the week before": "на {change} менше, ніж тижнем раніше",
+  "{change} more than the week before": "на {change} більше, ніж тижнем раніше",
+  "Last 7 days": "Останні 7 днів",
+  "Top spending": "Найбільші витрати",
+  "Your month, {name}": "Ваш місяць, {name}",
+  "Your month": "Ваш місяць",
+  "{change} less than the month before": "на {change} менше, ніж місяцем раніше",
+  "{change} more than the month before": "на {change} більше, ніж місяцем раніше",
+  "{change} this month": "{change} за місяць",
+  "A quiet month. Add this month's records to see your report.": "Тихий місяць. Додайте записи цього місяця, щоб побачити звіт.",
+  "You saved {amount} this month.": "Цього місяця ви заощадили {amount}.",
+  "You spent {amount} more than you earned this month.": "Цього місяця ви витратили на {amount} більше, ніж заробили."
 }

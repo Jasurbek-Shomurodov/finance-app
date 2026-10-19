@@ -115,7 +115,9 @@ function cronRoute({subscriptions,records={},splits={},links={},occurrences={},l
  };
  const route=loadTS('app/api/cron/telegram-digest/route.ts',{
   '@/lib/service-role':{serviceDatabase:()=>db},
-  '@/lib/telegram':{telegramConfig:()=>({token:'T',webhookSecret:'S',botUsername:'b'}),deliverTelegramMessage:async message=>{sent.push(message);return sendResult;},escapeHtml:text=>text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')},
+  '@/lib/telegram':{telegramConfig:()=>({token:'T',webhookSecret:'S',botUsername:'b'}),escapeHtml:text=>text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')},
+  // The report as built: its text, and the picture sent in its place where the language has one.
+  '@/lib/telegram-report':{deliverReport:async report=>{sent.push(report);return sendResult;}},
   '@/lib/deposit-interest':{...loadTS('lib/deposit-interest.ts'),depositToday:()=>'2026-09-30'},
  });
  return {sent,reads,deliveries,GET:()=>route.GET(new Request('https://local',{headers:{authorization:'Bearer test-secret'}}))};

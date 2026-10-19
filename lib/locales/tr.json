@@ -2615,5 +2615,17 @@
   "Update needed": "Güncelleme gerekli",
   "Check failed": "Denetim başarısız",
   "Checked {time}": "Denetlendi {time}",
-  "Database version {version}; the app needs {required}.": "Veritabanı sürümü {version}; uygulama {required} gerektiriyor."
+  "Database version {version}; the app needs {required}.": "Veritabanı sürümü {version}; uygulama {required} gerektiriyor.",
+  "{change} less than the week before": "önceki haftadan {change} az",
+  "{change} more than the week before": "önceki haftadan {change} fazla",
+  "Last 7 days": "Son 7 gün",
+  "Top spending": "En çok harcama",
+  "Your month, {name}": "Ayın, {name}",
+  "Your month": "Ayın",
+  "{change} less than the month before": "önceki aydan {change} az",
+  "{change} more than the month before": "önceki aydan {change} fazla",
+  "{change} this month": "bu ay {change}",
+  "A quiet month. Add this month's records to see your report.": "Sakin bir ay. Raporunu görmek için bu ayın kayıtlarını ekle.",
+  "You saved {amount} this month.": "Bu ay {amount} biriktirdin.",
+  "You spent {amount} more than you earned this month.": "Bu ay kazandığından {amount} fazla harcadın."
 }

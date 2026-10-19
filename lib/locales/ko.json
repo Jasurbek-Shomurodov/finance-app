@@ -2615,5 +2615,17 @@
   "Update needed": "업데이트 필요",
   "Check failed": "확인 실패",
   "Checked {time}": "확인 시각 {time}",
-  "Database version {version}; the app needs {required}.": "데이터베이스 버전 {version}, 앱에 필요한 버전 {required}."
+  "Database version {version}; the app needs {required}.": "데이터베이스 버전 {version}, 앱에 필요한 버전 {required}.",
+  "{change} less than the week before": "지난주보다 {change} 적음",
+  "{change} more than the week before": "지난주보다 {change} 많음",
+  "Last 7 days": "최근 7일",
+  "Top spending": "최대 지출",
+  "Your month, {name}": "{name}님의 한 달",
+  "Your month": "이번 달",
+  "{change} less than the month before": "지난달보다 {change} 적음",
+  "{change} more than the month before": "지난달보다 {change} 많음",
+  "{change} this month": "이번 달 {change}",
+  "A quiet month. Add this month's records to see your report.": "조용한 한 달이었어요. 이번 달 기록을 추가하면 보고서를 볼 수 있어요.",
+  "You saved {amount} this month.": "이번 달에 {amount}을(를) 저축했어요.",
+  "You spent {amount} more than you earned this month.": "이번 달에는 수입보다 {amount} 더 지출했어요."
 }

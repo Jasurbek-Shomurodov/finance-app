@@ -2615,5 +2615,17 @@
   "Update needed": "Нужно обновление",
   "Check failed": "Проверка не удалась",
   "Checked {time}": "Проверено {time}",
-  "Database version {version}; the app needs {required}.": "Версия базы данных {version}; приложению нужна {required}."
+  "Database version {version}; the app needs {required}.": "Версия базы данных {version}; приложению нужна {required}.",
+  "{change} less than the week before": "на {change} меньше, чем неделей ранее",
+  "{change} more than the week before": "на {change} больше, чем неделей ранее",
+  "Last 7 days": "Последние 7 дней",
+  "Top spending": "Больше всего потрачено",
+  "Your month, {name}": "Ваш месяц, {name}",
+  "Your month": "Ваш месяц",
+  "{change} less than the month before": "на {change} меньше, чем месяцем ранее",
+  "{change} more than the month before": "на {change} больше, чем месяцем ранее",
+  "{change} this month": "{change} за месяц",
+  "A quiet month. Add this month's records to see your report.": "Тихий месяц. Добавьте записи за этот месяц, чтобы увидеть отчёт.",
+  "You saved {amount} this month.": "Вы сохранили {amount} за этот месяц.",
+  "You spent {amount} more than you earned this month.": "Вы потратили на {amount} больше, чем заработали за этот месяц."
 }

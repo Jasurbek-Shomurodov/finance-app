@@ -2615,5 +2615,17 @@
   "Update needed": "需要更新",
   "Check failed": "检查失败",
   "Checked {time}": "检查于 {time}",
-  "Database version {version}; the app needs {required}.": "数据库版本 {version}；应用需要 {required}。"
+  "Database version {version}; the app needs {required}.": "数据库版本 {version}；应用需要 {required}。",
+  "{change} less than the week before": "比前一周少 {change}",
+  "{change} more than the week before": "比前一周多 {change}",
+  "Last 7 days": "最近 7 天",
+  "Top spending": "支出最多",
+  "Your month, {name}": "{name}，你的一个月",
+  "Your month": "你的一个月",
+  "{change} less than the month before": "比前一个月少 {change}",
+  "{change} more than the month before": "比前一个月多 {change}",
+  "{change} this month": "本月{change}",
+  "A quiet month. Add this month's records to see your report.": "安静的一个月。添加本月的记录即可查看报告。",
+  "You saved {amount} this month.": "本月你结余了 {amount}。",
+  "You spent {amount} more than you earned this month.": "本月你的支出比收入多 {amount}。"
 }
