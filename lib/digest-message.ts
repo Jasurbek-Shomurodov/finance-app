@@ -137,7 +137,7 @@ function digestCharts(kit:Kit,extras:DigestExtras,today:string):CardChart[]{
  * then the next payments as they were entered, grouped as in the text. The caption is the greeting, so the chat list shows who it is for. */
 export function digestCard(items:DueItem[],language:Language,today:string,extras:DigestExtras={}):{card:ReportCard;caption:string}{
  const kit=messageKit(language),{locale,t}=kit;
- const name=extras.name?.trim(),{title,note}=greetingOf(kit,name,today);
+ const name=extras.name?.trim(),{title}=greetingOf(kit,name,today);
  const groups=paymentGroups(items,today,kit,(item,overdue):CardRow=>{
   const incoming=income.includes(item.record.kind),kind=paymentKind(item,t);
   const detail=[kind,overdue?formatDate(item.date,locale):null].filter(Boolean).join(' · ');
@@ -151,8 +151,8 @@ export function digestCard(items:DueItem[],language:Language,today:string,extras
  }
  const hidden=items.length-shown;
  const card:ReportCard={
-  title,note,
-  subtitle:formatDate(today,locale),sectionsTitle:t('Upcoming payments'),
+  // The header is the greeting alone: Telegram already dates the message.
+  title,sectionsTitle:t('Upcoming payments'),
   ...(extras.cashflow||extras.netWorth?{tilesTitle:t('Last 30 days')}:{}),
   tiles:digestTiles(kit,extras),charts:digestCharts(kit,extras,today),sections,
   ...(items.length?{}:{lines:[t('Nothing is due soon.')]}),

@@ -24,8 +24,7 @@ test('the digest card shows the last 30 days as tiles, net worth\'s line, expens
  const {card,caption}=digestCard(items,'en',today,extras);
  assert.equal(caption,'☀️ <b>Good morning, HOGGISH</b>');
  assert.equal(card.title,'Good morning, HOGGISH');
- assert.equal(card.subtitle,'19 October 2026');assert.equal(card.tilesTitle,'Last 30 days');assert.equal(card.sectionsTitle,'Upcoming payments');
- assert.match(card.note,/\.$/);
+ assert.equal(card.subtitle,undefined);assert.equal(card.note,undefined);assert.equal(card.tilesTitle,'Last 30 days');assert.equal(card.sectionsTitle,'Upcoming payments');
  assert.deepEqual(card.tiles,[
   {label:'Income',value:'$4,200'},
   // Spending is stated plainly either way, never coloured as good or bad news.
