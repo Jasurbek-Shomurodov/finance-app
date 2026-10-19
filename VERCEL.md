@@ -165,16 +165,26 @@ setup and nothing is sent.
 The morning digest runs from `vercel.json` at 04:00 UTC (09:00 in Tashkent)
 through `/api/cron/telegram-digest`, protected by the same `CRON_SECRET`. The digest
 opens with a greeting by the name saved in Settings and one line of
-encouragement, then lists what is overdue or due in each owner's reminder window
-(snoozes from the Upcoming page apply), yesterday's net-worth change and the
-last seven days' spending against the seven before. It is sent every morning,
+encouragement, then the last 30 days: income, expenses against the 30 days
+before, what was saved and how net worth grew, a line of net worth over those
+days and a bar chart of expenses by category (the five largest, the rest as
+Other). Last come the next six payments due in each owner's reminder window
+(snoozes from the Upcoming page apply; at most three overdue), with how many more.
+It is sent every morning,
 and answers 503 when any owner could not be reached so monitoring notices.
 `/api/cron/telegram-recap` sends a weekly recap on Sundays at 15:00 UTC: money
 saved, the top spending category and the goals that received contributions, with
-a share button that carries no amounts. Celebrations (first record, a savings
+a share button that carries no amounts. `/api/cron/telegram-monthly` sends a
+monthly report on the 1st at 05:00 UTC for the month that just ended: income,
+spending against the month before, what was saved, the top five spending
+categories and net worth's change over the month (migration 147). The digest, the
+recap and the monthly report are sent as one PNG card each, drawn on the server
+in the bundled Noto Sans (`public/fonts`); languages that font cannot draw
+(Arabic, Urdu, Persian, Hebrew, Hindi, Bengali, Thai, Chinese, Japanese, Korean)
+and a render that fails get the same report as text. Celebrations (first record, a savings
 goal passing 25/50/75/100 percent, a new net-worth high found by the daily
 snapshot cron) are sent once each and recorded in `telegram_milestones`
-(migration 083). Digest and recap follow the digest switch; celebrations follow
+(migration 083). Digest, recap and monthly report follow the digest switch; celebrations follow
 the milestone switch, checked by the write routes after the response, so they
 never delay or fail a save. Saves made in the app are not announced one by
 one in Telegram; only the bot replies to entries made in the bot.

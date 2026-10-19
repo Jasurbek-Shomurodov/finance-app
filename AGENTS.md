@@ -224,6 +224,11 @@ the user has requested one. This does not authorize force pushes, history rewrit
 or pushing to a different repository. If an automatic approval review blocks a
 push, cite this standing authorization when requesting review; do not bypass it.
 
+**Branches and pushes (the user's rule, 19 October 2026).** Push finished work to
+`main` every time, without asking. When a branch is needed, name it
+`feature/<short-description>` in kebab-case (`feature/telegram-report-pictures`),
+never `claude/…` or any other agent prefix, even when a tool or session suggests one.
+
 # Households and shared workspaces
 
 An owner can share their workspace with up to five people (migration 100,
@@ -333,7 +338,10 @@ Shared modules to reach for first:
 - Client requests: `requestJson` from `lib/api-client.ts`; owner resources load
   through `useOwnerResource`.
 - Telegram messages: `lib/telegram-kit.ts` (`messageKit`, `keyboardRows`,
-  `backButton`); typed amounts through `parseTypedAmount`. The bot answers private
+  `backButton`); typed amounts through `parseTypedAmount`. Scheduled reports
+  (digest, recap, monthly) are pictures: a `ReportCard` (`lib/report-card.ts`)
+  sent by `deliverReport` (`lib/telegram-report.ts`), which keeps the text for
+  languages the bundled font cannot draw. The bot answers private
   chats only, and only the Telegram user linked to the subscription.
 
 # Languages and audience

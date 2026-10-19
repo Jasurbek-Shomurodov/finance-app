@@ -3,7 +3,7 @@
 import {forEachLimited} from './bounded-concurrency';
 import {reportError} from './monitoring';
 import {expenses,type Entry} from './finance';
-import {isLanguage,type Language} from './i18n';
+import {isLanguage,translate,type Language} from './i18n';
 import {ownerRows,pagePath,readAllPages,readIdPages} from './owner-rows';
 import {cashflowKinds,standingRecords} from './planning-reads';
 import type {PortfolioSnapshot} from './portfolio-snapshots';
@@ -17,10 +17,26 @@ export async function ownerProfile(db:ServiceDatabase,owner:string):Promise<Owne
  const [row]=await db.read<Array<{language?:string;display_name?:string;currencies?:string[]}>>('/rest/v1/user_preferences?select=language,display_name,currencies&user_id=eq.'+owner);
  return {language:isLanguage(row?.language)?row.language:'en',name:(row?.display_name??'').trim(),currency:row?.currencies?.[0]||'USD'};
 }
+/** The owner's added spending categories, to name them in the scheduled reports. */
+export const ownerCategories=(db:ServiceDatabase,owner:string)=>db.read<Array<{id:string;name:string}>>('/rest/v1/custom_categories?select=id,name&user_id=eq.'+owner);
+/** Spending by category (keys from lib/period-summary.ts), largest first, named in `language`: a built-in category is
+ * translated, an added one shows the owner's own name, and one since deleted counts as Other expense. `key` is the
+ * kind or the added category's id, which picks its colour. */
+export function namedCategories(byCategory:Record<string,number>,categories:readonly {id:string;name:string}[],language:Language){
+ return Object.entries(byCategory).filter(([,amount])=>amount>0).sort((a,b)=>b[1]-a[1]).map(([key,amount])=>{
+  const own=key.startsWith('c:')?categories.find(category=>category.id===key.slice(2)):undefined;
+  return {key:key.slice(2),label:own?.name??translate(language,key.startsWith('c:')?'Other expense':key.slice(2)),amount};
+ });
+}
 /** The owner's newest daily snapshots, oldest first. */
 export async function recentSnapshots(db:ServiceDatabase,owner:string,limit:number){
  const rows=await db.read<PortfolioSnapshot[]>(`/rest/v1/portfolio_snapshots?select=occurred_on,assets,debt,rates,updated_at&user_id=eq.${owner}&order=occurred_on.desc&limit=${limit}`);
  return rows.reverse();
+}
+/** The owner's last daily snapshot on or before `day`, or null when there is none. */
+export async function snapshotOnOrBefore(db:ServiceDatabase,owner:string,day:string):Promise<PortfolioSnapshot|null>{
+ const [row]=await db.read<PortfolioSnapshot[]>(`/rest/v1/portfolio_snapshots?select=occurred_on,assets,debt,rates,updated_at&user_id=eq.${owner}&occurred_on=lte.${day}&order=occurred_on.desc&limit=1`);
+ return row??null;
 }
 /** The columns of one-time income and expenses that the bot and its messages use: totals, categories, the account last
  * used for a name, the Tracker expense a record copies, and the older way a salary settled its schedule. */
@@ -61,14 +77,15 @@ export async function ownerSpendingExtras(db:ServiceDatabase,owner:string,from:s
  ]);
  return {splits:normalizeSplits(splitPages.flat()),investmentLinks:links.map(({account,...link})=>({...link,account_currency:link.account_currency??account?.currency??null}))};
 }
-/** An owner whose linked chat takes the digest and the weekly recap. */
+/** An owner whose linked chat takes the digest, the weekly recap and the monthly report. */
 export type DigestSubscriber={user_id:string;chat_id:number};
 /** Owners with a linked private chat and the digest switch on. Private chat ids are positive; a group's are negative and never receive anything. */
 export const digestSubscribersPath='/rest/v1/telegram_subscriptions?select=user_id,chat_id&chat_id=not.is.null&digest_enabled=is.true&chat_id=gt.0&order=user_id.asc';
-/** A scheduled message: the morning digest of a day, or the weekly recap keyed by the week's last day. */
-export type Delivery={kind:'digest'|'recap';period:string};
+/** A scheduled message: the morning digest of a day, the weekly recap keyed by the week's last day, or the monthly
+ * report keyed by the month's first day. */
+export type Delivery={kind:'digest'|'recap'|'monthly';period:string};
 const deliveries='/rest/v1/telegram_deliveries';
-/** Claims an owner's message for the period (migration 129). False when another run already sent it or is sending it. */
+/** Claims an owner's message for the period (migrations 129 and 147). False when another run already sent it or is sending it. */
 async function claimDelivery(db:ServiceDatabase,owner:string,{kind,period}:Delivery){
  const response=await db.write(deliveries+'?on_conflict=user_id,kind,period',{method:'POST',headers:{Prefer:'resolution=ignore-duplicates,return=representation'},body:JSON.stringify({user_id:owner,kind,period})});
  if(!response.ok)throw Error('Database request failed.');

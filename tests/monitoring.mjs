@@ -152,7 +152,7 @@ test('cron runs report failures and partial runs as alerts with their tallies; t
  const telegram={telegramConfig:()=>({token:'T',webhookSecret:'S',botUsername:'b'}),sendTelegramMessage:async message=>message.chat_id!==2,deliverTelegramMessage:async message=>message.chat_id!==2,escapeHtml:text=>text};
  const owner={'@/lib/telegram-owner':{deliverToSubscribers:async(db,delivery,send)=>{let sent=0,failed=0;for(const chat_id of [1,2]){if(await send({user_id:'u'+chat_id,chat_id}).catch(()=>false))sent++;else failed++;}return {sent,failed,blocked:0};},ownerProfile:async()=>{throw Error('profile unavailable');},recentSnapshots:async()=>[],ownerDebtPayments:async()=>[[],[]]}};
  const db={read:async()=>[],write:async()=>Response.json(true)};
- for(const name of ['telegram-digest','telegram-recap']){
+ for(const name of ['telegram-digest','telegram-recap','telegram-monthly']){
   reported.length=0;
   const route=loadTS(`app/api/cron/${name}/route.ts`,{...monitor,...owner,'@/lib/telegram':telegram,'@/lib/service-role':{serviceDatabase:()=>db}});
   let response=await route.GET(cron);

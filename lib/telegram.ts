@@ -23,17 +23,34 @@ export const escapeHtml=(text:string)=>text.replace(/&/g,'&amp;').replace(/</g,'
 export type SendOutcome='sent'|'blocked'|'failed';
 /** Telegram's 403s are all permanent (blocked, deactivated, kicked, never started); of its 400s only a missing chat is. */
 const goneChat=/chat not found/i;
-/** Send one message and say how it ended. */
-export async function deliverTelegramMessage(message:TelegramMessage,config:TelegramConfig|null=telegramConfig(),fetcher:typeof fetch=fetch):Promise<SendOutcome>{
+/** Calls one Bot API method and says how it ended. */
+async function deliver(config:TelegramConfig|null,method:string,init:{headers?:Record<string,string>;body:string|FormData},fetcher:typeof fetch,timeout=10000):Promise<SendOutcome>{
  if(!config)return 'failed';
  try{
-  const response=await fetcher(`https://api.telegram.org/bot${config.token}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(sendMessageBody(message)),cache:'no-store',signal:AbortSignal.timeout(10000)});
+  const response=await fetcher(`https://api.telegram.org/bot${config.token}/${method}`,{method:'POST',...init,cache:'no-store',signal:AbortSignal.timeout(timeout)});
   if(response.ok)return 'sent';
   if(response.status===403)return 'blocked';
   if(response.status!==400)return 'failed';
   const body=await response.json().catch(()=>null) as {description?:unknown}|null;
   return goneChat.test(String(body?.description??''))?'blocked':'failed';
  }catch{return 'failed';}
+}
+/** Send one message and say how it ended. */
+export function deliverTelegramMessage(message:TelegramMessage,config:TelegramConfig|null=telegramConfig(),fetcher:typeof fetch=fetch):Promise<SendOutcome>{
+ return deliver(config,'sendMessage',{headers:{'Content-Type':'application/json'},body:JSON.stringify(sendMessageBody(message))},fetcher);
+}
+/** One picture with an optional HTML caption (Telegram allows 1,024 characters) and the same keyboards as a message. */
+export type TelegramPhoto={chat_id:number;photo:Uint8Array<ArrayBuffer>;filename:string;caption?:string;keyboard?:TelegramKeyboard};
+/** Send one PNG and say how it ended, as deliverTelegramMessage does. */
+export function deliverTelegramPhoto(message:TelegramPhoto,config:TelegramConfig|null=telegramConfig(),fetcher:typeof fetch=fetch):Promise<SendOutcome>{
+ const {reply_markup}=sendMessageBody({chat_id:message.chat_id,text:'',keyboard:message.keyboard}) as {reply_markup?:unknown};
+ const form=new FormData();
+ form.set('chat_id',String(message.chat_id));
+ form.set('photo',new Blob([message.photo],{type:'image/png'}),message.filename);
+ if(message.caption){form.set('caption',message.caption);form.set('parse_mode','HTML');}
+ if(reply_markup)form.set('reply_markup',JSON.stringify(reply_markup));
+ // An upload takes longer than a short text.
+ return deliver(config,'sendPhoto',{body:form},fetcher,20000);
 }
 /** Send one message. Resolves to true when Telegram accepted it, false otherwise. */
 export async function sendTelegramMessage(message:TelegramMessage,config:TelegramConfig|null=telegramConfig(),fetcher:typeof fetch=fetch){

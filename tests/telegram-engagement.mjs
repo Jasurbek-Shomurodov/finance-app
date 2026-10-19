@@ -256,7 +256,8 @@ function recapRoute({onRead=()=>{},subscriptions,records={},splits={},links={},c
  };
  const route=loadTS('app/api/cron/telegram-recap/route.ts',{
   '@/lib/service-role':{serviceDatabase:()=>db},
-  '@/lib/telegram':{telegramConfig:()=>config,deliverTelegramMessage:async message=>{sent.push(message);return sendResult;},escapeHtml:text=>text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')},
+  '@/lib/telegram':{telegramConfig:()=>config,escapeHtml:text=>text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')},
+  '@/lib/telegram-report':{deliverReport:async report=>{sent.push(report);return sendResult;}},
   '@/lib/deposit-interest':{depositToday:()=>'2026-10-04'},
   '@/lib/account-access':{accountOrigin:()=>'https://hoggish.app'},
  });
