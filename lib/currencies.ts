@@ -7,9 +7,15 @@ import type { Language } from './languages';
 export const fiatCurrencies = catalogue;
 export const isCurrency = (value: string) => catalogue.some(c => c.code === value);
 export { currencyDigits } from './currency-digits.js';
-export function currencyLabel(code: string, locale: string) {
-  try { return `${code} · ${new Intl.DisplayNames([locale], { type: 'currency' }).of(code) || code}`; }
-  catch { return `${code} · ${catalogue.find(c => c.code === code)?.name || code}`; }
+/** How a currency is shown everywhere: its code alone (UZS, USD), never its name (the user's rule, 20 October 2026). */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function currencyLabel(code: string, locale?: string) {
+  return code;
+}
+/** A currency's name, only so a search for "som" or "dollar" finds it; never shown. */
+function currencyName(code: string, locale: string) {
+  try { return new Intl.DisplayNames([locale], { type: 'currency' }).of(code) || code; }
+  catch { return catalogue.find(c => c.code === code)?.name || code; }
 }
 // Accents are dropped so "cordoba" finds Córdoba; ł and ø do not decompose, so they are mapped by hand.
 const fold = (value: string) => value.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/ł/g, 'l').replace(/ø/g, 'o').trim();
@@ -17,9 +23,9 @@ const fold = (value: string) => value.normalize('NFD').replace(/\p{M}/gu, '').to
 export function currencyMatches(query: string, locale: string): string[] {
   const wanted = fold(query);
   if (!wanted) return catalogue.map(item => item.code);
-  return catalogue.filter(item => [item.code, item.name, currencyLabel(item.code, locale)].some(text => fold(text).includes(wanted))).map(item => item.code);
+  return catalogue.filter(item => [item.code, item.name, currencyName(item.code, locale)].some(text => fold(text).includes(wanted))).map(item => item.code);
 }
-/** The code a label stands for: a `currencyLabel` such as "EUR · Euro", or a bare code. */
+/** The code a typed or tapped label stands for: a bare code, or an older "EUR · Euro" label. */
 export function currencyFromText(text: string): string | null {
   const code = /^([A-Za-z]{3})(?:\s·\s.+)?$/.exec(text.trim())?.[1].toUpperCase();
   return code && isCurrency(code) ? code : null;

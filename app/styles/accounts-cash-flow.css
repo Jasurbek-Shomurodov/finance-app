@@ -76,8 +76,7 @@
 /* Where the exchange rates come from and how fresh they are, under the currencies they convert. */
 .preferences-rates-credit{display:flex;flex-wrap:wrap;gap:4px 10px;margin:8px 0 0;font-size:var(--type-caption);color:var(--muted-foreground)}
 .preferences-rates-credit a{color:inherit;text-decoration:underline;text-underline-offset:3px}
-.preferences-currency-code{font-weight:600;width:52px;flex-shrink:0}
-.preferences-currency-name{color:var(--muted-foreground);flex:1;min-width:0;overflow-wrap:anywhere}
+.preferences-currency-code{font-weight:600;flex:1;min-width:0}
 .preferences-primary{background:var(--accent);color:var(--primary);border-radius:20px;padding:4px 12px;font-size:var(--type-micro)}
 .preferences-currency-list button{width:32px;height:32px;min-height:32px;flex-shrink:0;color:var(--muted-foreground)}
 .preferences-card .currency-search-trigger{color:var(--primary);padding:6px 0;min-height:36px;height:auto;font-size:var(--type-small);margin-top:4px;box-shadow:none}

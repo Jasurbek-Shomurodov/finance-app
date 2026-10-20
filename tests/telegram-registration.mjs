@@ -395,9 +395,9 @@ test('the other-currency question lists every currency like the languages, and t
  assert.equal(all.text,t('en','Choose your currency, or type part of its name or code to search, such as peso or EUR.'));
  const labels=all.keyboard.reply.flat();
  assert.equal(labels.length,fiatCurrencies.length+1);assert.equal(labels.at(-1),back);
- assert.ok(labels.includes('EUR · Euro'),'labels name the currency in the chat language');
+ assert.ok(labels.includes('EUR')&&!labels.some(label=>label.includes('·')),'labels are the code alone, never the currency name');
  assert.ok(all.keyboard.reply.slice(0,-1).every(row=>row.length<=2));
- // Tapping a label, or typing a code in any case, chooses it.
+ // Tapping a label, an older "EUR · Euro" label, or typing a code in any case, chooses it.
  assert.deepEqual(advanceOnboarding(step(),{text:'EUR · Euro'},{language:'en'},777).effects,{currency:'EUR'});
  assert.deepEqual(advanceOnboarding(step(),{text:' uzs '},{language:'en'},777).effects,{currency:'UZS'});
  // Anything else searches by code or name, in the chat language or English, ignoring accents and case.
@@ -405,10 +405,10 @@ test('the other-currency question lists every currency like the languages, and t
  assert.equal(peso.draft.step,'currency_other');assert.equal(peso.draft.data.search,'peso');assert.deepEqual(peso.effects,{});
  assert.equal(peso.reply.text,t('en','Currencies matching “{query}”',{query:'peso'}));
  const found=peso.reply.keyboard.reply.flat();
- assert.ok(found.includes('ARS · Argentine Peso')&&found.includes('MXN · Mexican Peso'));assert.ok(!found.some(label=>label.startsWith('EUR')));assert.equal(found.at(-1),back);
- assert.deepEqual(advanceOnboarding(peso.draft,{text:'MXN · Mexican Peso'},{language:'en'},777).draft.data,{currency:'MXN'},'choosing clears the search');
+ assert.ok(found.includes('ARS')&&found.includes('MXN'),'a search by name lists the codes');assert.ok(!found.some(label=>label.startsWith('EUR')));assert.equal(found.at(-1),back);
+ assert.deepEqual(advanceOnboarding(peso.draft,{text:'MXN'},{language:'en'},777).draft.data,{currency:'MXN'},'choosing clears the search');
  const russian=advanceOnboarding(step(),{text:'евро'},{language:'ru'},777).reply.keyboard.reply.flat();
- assert.ok(russian.some(label=>label.startsWith('EUR ·')),'searches the localized name');
+ assert.ok(russian.includes('EUR'),'searches the localized name');
  assert.ok(advanceOnboarding(step(),{text:'Złoty'},{language:'en'},777).reply.keyboard.reply.flat().some(label=>label.startsWith('PLN')),'accents are ignored');
  assert.ok(advanceOnboarding(step(),{text:'cordoba'},{language:'en'},777).reply.keyboard.reply.flat().some(label=>label.startsWith('NIO')),'typed without accents');
  const none=advanceOnboarding(step(),{text:'zzzz'},{language:'en'},777);

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { currencyFromText, currencyMatches, fiatCurrencies, isCurrency, replacePreferredCurrency, togglePreferredCurrency } from '../lib/currencies.ts';
+import { currencyFromText, currencyLabel, currencyMatches, fiatCurrencies, isCurrency, replacePreferredCurrency, togglePreferredCurrency } from '../lib/currencies.ts';
 import { formatMoney } from '../lib/format.ts';
 import { convertAmount, marketEntry } from '../lib/market.ts';
 test('fiat catalogue excludes metals and supports common and minor currencies',()=>{
@@ -42,4 +42,10 @@ test('currency search matches codes and names in the chosen language or English,
  assert.deepEqual(currencyMatches('no such money','en-US'),[]);
  assert.equal(currencyFromText('EUR · Euro'),'EUR');assert.equal(currencyFromText(' usd '),'USD');
  assert.equal(currencyFromText('BTC'),null);assert.equal(currencyFromText('Euro'),null);
+});
+
+test('a currency is shown by its code alone in every language, while search still finds it by name',()=>{
+ for(const locale of ['en-US','ru-RU','uz-UZ','ar'])assert.equal(currencyLabel('UZS',locale),'UZS');
+ assert.equal(currencyLabel('USD'),'USD');
+ assert.ok(currencyMatches('som','en-US').includes('UZS'),'typing a name still finds the code');
 });

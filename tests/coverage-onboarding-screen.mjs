@@ -57,7 +57,7 @@ test('the profile step keeps the name, picks the country currency first and swit
  // The legacy USD and UZS pair starts from USD alone; France makes EUR primary and keeps USD second.
  const pressed=view.all(node=>node.type==='button'&&node.props['aria-pressed']===true).map(node=>view.find(item=>item.type==='strong',node).children[0]);
  assert.deepEqual(pressed,['EUR','USD']);
- assert.match(text(view.find(byType('button','EUR'))),/Euro.*Primary/);
+ assert.equal(text(view.find(byType('button','EUR'))),'EURPrimary','the code alone, never the currency name');
  assert.match(text(view.tree),/EUR is primary\./);
 });
 
@@ -75,7 +75,7 @@ test('the currency step reorders, replaces and searches currencies',()=>{
  change(search(),'zzzz');view.render();
  assert.equal(text(view.find(node=>node.props.role==='status')),'No matching currencies.');
  change(search(),'yen');view.render();
- const chip=view.find(byType('button','JPY · Japanese Yen'));
+ const chip=view.all(byType('button','JPY')).find(node=>text(node)==='JPY');
  assert.equal(chip.props['aria-pressed'],false);
  chip.props.onClick();view.render();
  assert.equal(search().props.value,'','choosing a result clears the search');

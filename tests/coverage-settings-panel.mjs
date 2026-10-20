@@ -141,7 +141,7 @@ test('the primary currency can be swapped and the second one removed',async t=>{
  const primary=()=>s.r.find(node=>node.type==='NativeSelect'&&node.props.value==='USD'||node.type==='NativeSelect'&&node.props.value==='EUR');
  assert.deepEqual(primary().children.map(text),[currencyLabel('USD','en'),currencyLabel('EUR','en')]);
  const list=()=>s.r.find(node=>node.props.className==='preferences-currency-list');
- assert.equal(text(list()),'USD'+currencyLabel('USD','en').split(' · ')[1]+'Primary'+'EUR'+currencyLabel('EUR','en').split(' · ')[1]);
+ assert.equal(text(list()),'USDPrimaryEUR','the codes alone, never the currency names');
  assert.equal(text(s.r.find(node=>node.props.className==='currency-search-trigger')),'Change currencies');
  s.r.fire(primary(),'onChange',{target:{value:'EUR'}});
  await s.settle();
