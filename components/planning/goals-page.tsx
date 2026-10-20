@@ -1,4 +1,5 @@
 "use client";
+import type { DrillTarget } from '@/lib/cash-flow-drill-types';
 import { useLocationSearch } from '@/hooks/use-location-search';
 import { InfoHint } from '@/components/presentation-foundation/info-hint';
 import { DeleteButton } from '@/components/presentation-foundation/delete-button';
@@ -51,8 +52,8 @@ import type {PreferenceResource} from '@/hooks/use-workspace-preferences';
 import { GoalForecast } from './goal-forecast';
 import type { EarningSource } from '@/lib/earning-sources';
 
-type Props={preferences:PreferenceResource;owner:string|null;demo:boolean;revision:number;onSaved:()=>void;data:PlanningData;save:(action:string,data:unknown)=>Promise<void>;currencies:string[];currency:string;market:MarketData|null;snapshots:PortfolioSnapshot[];historyError:string;/** Budget, which the monthly surplus counts. */budget?:ForecastBudget;/** Income sources, whose variable estimates the surplus counts. */sources?:readonly EarningSource[]};
-export function GoalsPage({preferences,owner,demo,revision,onSaved,data,save,currencies,currency,market,snapshots,historyError,budget,sources=[]}:Props){
+type Props={/** Opens a goal's Sankey over the page (the workspace's), its Details editing the goal. */onSankey?:(request:{target:DrillTarget;title:string;month:string;onDetails?:()=>void})=>void;preferences:PreferenceResource;owner:string|null;demo:boolean;revision:number;onSaved:()=>void;data:PlanningData;save:(action:string,data:unknown)=>Promise<void>;currencies:string[];currency:string;market:MarketData|null;snapshots:PortfolioSnapshot[];historyError:string;/** Budget, which the monthly surplus counts. */budget?:ForecastBudget;/** Income sources, whose variable estimates the surplus counts. */sources?:readonly EarningSource[]};
+export function GoalsPage({onSankey,preferences,owner,demo,revision,onSaved,data,save,currencies,currency,market,snapshots,historyError,budget,sources=[]}:Props){
  const {t,locale}=useLanguage();
  const {show}=useDisplayMoney();
  // The page's three views, switched from the top bar: the goals, the chosen goal's planner, and cash goal history.
@@ -80,6 +81,8 @@ export function GoalsPage({preferences,owner,demo,revision,onSaved,data,save,cur
  // Goals page: one list in the person's own order (drag the six dots) with the chosen goal and what is free for goals;
  // the planner and the cash moved in and out of goals are their own views.
  const plannerFor=(id:string)=>{setSelected(id);setView('planner');};
+ // Picking a goal still selects it, and opens its Sankey for this month over the page; its Details edit it.
+ const pick=(goal:Goal)=>{setSelected(goal.id);onSankey?.({target:{side:'goal',key:goal.id},title:goal.name,month:today.slice(0,7),onDetails:()=>open(goal)});};
  return <>
   <PageHeader title={t('Goals')} tabs={<Segmented className="page-tabs" as="nav" label={t('Goals')} options={[{value:'overview',label:t('Overview')},{value:'planner',label:t('Goal planner')},{value:'history',label:t('History')}]} value={view} onChange={setView}/>}><Button onClick={()=>setSetup(true)}><Plus size={17} aria-hidden="true"/>{t('Add goal')}</Button></PageHeader>
   <ErrorPopup message={order.error}/>
@@ -96,7 +99,7 @@ export function GoalsPage({preferences,owner,demo,revision,onSaved,data,save,cur
     const percent=investment?investmentGoalCompletion(goal,data):current===null?null:Math.max(0,Math.min(100,current/goal.target*100));
     const status=investment?(percent!==null&&percent>=100?'completed':null):goalStatus(goalSummary(goal,current,today));
     return <SortableItem key={goal.id} id={goal.id} label={goal.name} as="li" className={'goal-row'+(active?.id===goal.id?' is-selected':'')}>
-     <button type="button" className="goal-row-main" aria-current={active?.id===goal.id||undefined} onClick={()=>setSelected(goal.id)}>
+     <button type="button" className="goal-row-main" aria-current={active?.id===goal.id||undefined} onClick={()=>pick(goal)}>
       <GoalSummaryRow emoji={goalEmoji(goal,investment&&holdingItems.every(item=>item.target.asset_kind==='Crypto'))} name={goal.name} status={status} percent={percent} amount={investment?(percent===null?'—':formatPercent(percent,locale,0)):current===null?'—':money(current)} meta={<>{goal.target_date?formatDate(goal.target_date,locale):t('No target date')}{account&&<> · {account.name}</>}</>} detail={investment?`${t('Holdings')} · ${formatNumber(holdingItems.length,locale,0)}`:t('{percent} of {amount}',{percent:percent===null?'—':formatPercent(percent,locale,0),amount:money(goal.target)})}/>
      </button>
      <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="goal-row-menu" aria-label={t('Actions for {name}',{name:goal.name})}><MoreHorizontal size={18} aria-hidden="true"/></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={()=>plannerFor(goal.id)}>{t('Goal planner')}</DropdownMenuItem><DropdownMenuItem onSelect={()=>open(goal)}>{t('Edit goal')}</DropdownMenuItem></DropdownMenuContent></DropdownMenu>

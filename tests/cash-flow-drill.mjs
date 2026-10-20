@@ -904,3 +904,10 @@ test('an Accounts row, holding or other asset opens its Sankey; picking an accou
  assert.match(fs.readFileSync('components/planning/accounts/accounts-overview.tsx', 'utf8'), /<BusinessHoldings records=\{businessHoldings\} market=\{market\} onOpen=\{holdingActions\.onOpen\}\/>/);
  assert.match(fs.readFileSync('components/workspace/screens/accounts-screen.tsx', 'utf8'), /<AccountsPage onSankey=\{setSankey\}/);
 });
+
+test('a goal row on Goals still selects it, and opens its Sankey for this month with Details editing it', () => {
+ const page = fs.readFileSync('components/planning/goals-page.tsx', 'utf8');
+ assert.match(page, /const pick=\(goal:Goal\)=>\{setSelected\(goal\.id\);onSankey\?\.\(\{target:\{side:'goal',key:goal\.id\},title:goal\.name,month:today\.slice\(0,7\),onDetails:\(\)=>open\(goal\)\}\);\};/);
+ assert.match(page, /className="goal-row-main" aria-current=\{active\?\.id===goal\.id\|\|undefined\} onClick=\{\(\)=>pick\(goal\)\}/);
+ assert.match(fs.readFileSync('components/workspace/screens/goals-screen.tsx', 'utf8'), /<GoalsPage onSankey=\{setSankey\}/);
+});
