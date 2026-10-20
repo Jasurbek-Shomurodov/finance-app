@@ -580,3 +580,26 @@ test('every node of every drill-down Sankey opens something', () => {
  assert.deepEqual(silent, [], 'nodes that open nothing');
  for (const side of ['savings', 'cashflow', 'account', 'income', 'expense', 'group', 'merchant', 'operation', 'principal', 'payment', 'interest', 'balance', 'untraced', 'goal']) assert.ok([...seen].some(id => JSON.parse(id).side === side), 'reached a ' + side + ' view');
 });
+
+test('a goal lists its additions and withdrawals as entered; a row opens the account the money came from, or Goals', () => {
+ const goals = [{ id: 'g', name: 'Holiday', account_id: 'card', allocated: 700, target: 1000, target_date: null, archived: false }];
+ const event = (id, occurred_on, delta, event_type, extra = {}) => ({ id, goal_id: 'g', operation_id: null, occurred_on, delta, balance: 0, event_type, notes: '', source_name: null, ...extra });
+ const goalEvents = [event('e1', '2026-08-05', 300, 'contribution', { source_id: 'card' }), event('e2', '2026-08-20', -100, 'withdrawal', { source_name: 'Old wallet' }), event('e0', '2026-01-01', 400, 'opening'), event('e3', '2026-09-02', 50, 'contribution', { source_id: 'card' })];
+ const ctx = { ...context([]), today: '2026-09-20', goalEvents, data: { records: accounts, activity: [], investmentLinks: [], goals } };
+ const { goalEventsIn } = loadTS('lib/cash-flow-goal.ts');
+ assert.deepEqual(goalEventsIn('g', ctx).map(row => [row.event.id, row.source, row.open]), [['e2', 'Old wallet', { side: 'link', href: '/goals' }], ['e1', 'Card', { side: 'account', key: 'card' }]], 'the period only, newest first, never the opening');
+ const r = createRenderer();
+ const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), 'next/navigation': { useRouter: () => router }, '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
+ const { CashFlowDrillDialog } = r.load('components/cash-flow-sankey.tsx', modules);
+ let closed = 0;
+ r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'goal', key: 'g' }, title: 'Holiday', period: 'August 2026', savings: 0, context: ctx, onClose() { closed += 1; }, onOpenRecord() {} }));
+ // The test language returns keys as they are; en.json writes them "Contribution" and "Withdrawal".
+ assert.match(r.html(), /<strong>contribution<\/strong><small>5 August 2026 · ← Card<\/small><\/span><span class="positive">\+\$300<\/span>/);
+ assert.match(r.html(), /<strong>withdrawal<\/strong><small>20 August 2026 · → Old wallet<\/small><\/span><span>−\$100<\/span>/);
+ r.fire(r.all(node => node.type === 'button' && node.props['aria-label'] === 'View details for contribution')[0], 'onClick');
+ assert.equal(r.find(node => node.type === 'DialogTitle').props.children[0], 'Card', 'a contribution opens its account');
+ r.fire(r.all(node => node.type === 'Button' && node.props.className === 'cash-flow-drill-back')[0], 'onClick');
+ router.pushed.length = 0;
+ r.all(node => node.type === 'button' && node.props['aria-label'] === 'View details for withdrawal')[0].props.onClick();
+ assert.deepEqual([router.pushed, closed], [['/goals'], 1], 'one from an account that is gone opens Goals');
+});

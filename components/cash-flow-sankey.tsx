@@ -11,7 +11,7 @@ import { OperationDetails, OperationRow, operationTitle } from '@/components/cas
 import { accountOperations, operationFlows, type Operation } from '@/lib/cash-flow-operations';
 import { useRouter } from 'next/navigation';
 import { balanceFlows } from '@/lib/cash-flow-balance';
-import { goalFlows } from '@/lib/cash-flow-goal';
+import { goalEventsIn, goalFlows } from '@/lib/cash-flow-goal';
 import { mainFlows } from '@/lib/cash-flow-main';
 import { untracedFlows, untracedTransfers } from '@/lib/cash-flow-untraced';
 import { interestFlows, mortgageTransactions, paymentFlows, principalFlows, principalPayments } from '@/lib/cash-flow-principal';
@@ -81,6 +81,24 @@ function DrillTransactions({ target: shown, context, onOpenRecord, onOpenOperati
  </section>;
 }
 
+/** A goal's additions and withdrawals under its Sankey, as entered in the goal's currency; a tap opens the account the
+ * money came from or went to, or Goals. */
+function GoalEvents({ id, context, onOpen }: { id: string; context: DrillContext; onOpen: (target: DrillTarget, title: string) => void }) {
+ const { t, locale } = useLanguage();
+ const rows = goalEventsIn(id, context);
+ if (!rows.length) return null;
+ return <section className="drill-transactions" aria-label={t('Activity')}>
+  <h3>{t('Activity')}</h3>
+  <ul>{rows.map(({ event, currency, source, open }) => {
+   const added = Number(event.delta) >= 0, title = t(event.event_type);
+   return <li key={event.id}><button type="button" onClick={() => onOpen(open, source || title)} aria-label={t('View details for {name}', { name: title })}>
+    <span><strong>{title}</strong><small>{source ? `${formatDate(event.occurred_on, locale)} · ${added ? '←' : '→'} ${source}` : formatDate(event.occurred_on, locale)}</small></span>
+    <span className={added ? 'positive' : undefined}>{`${added ? '+' : '−'}${formatMoney(Math.abs(Number(event.delta)), currency, locale)}`}</span>
+   </button></li>;
+  })}</ul>
+ </section>;
+}
+
 /** The Sankey behind a tapped node, in a dialog over Cash flow: a category by payer or merchant, where the savings went,
  * one account, or one payer, merchant or account; each with its transactions. An account, category or merchant in it opens its own
  * Sankey in the same dialog; Back returns to the one before. A transaction opens its details over it (`onOpenRecord`). */
@@ -95,18 +113,21 @@ export function CashFlowDrillDialog({ target, title, period, savings, context, o
  const canOpen = (index: number) => { const open = flows.nodes[index]?.open; return !!open && (open.side !== 'record' || (!!onOpenRecord && !!record(open.key))); };
  // A page link closes the dialog and opens the page.
  const openNode = (index: number) => {
-  const node = flows.nodes[index], open = node?.open;
-  if (!open) return;
+  const node = flows.nodes[index];
+  if (node?.open) go(node.open, node.name);
+ };
+ function go(open: DrillTarget, name: string) {
   if (open.side === 'link') { onClose(); router.push(open.href); return; }
   if (open.side === 'record') { const found = record(open.key); if (found) onOpenRecord?.(found); return; }
-  setTrail([...trail, { target: open, title: node.name }]);
- };
+  setTrail([...trail, { target: open, title: name }]);
+ }
  return <Dialog open onOpenChange={open => { if (!open) onClose(); }}><DialogContent className="record-dialog cash-flow-drill-dialog" aria-describedby={undefined}>
   {trail.length > 1 && <Button type="button" variant="ghost" size="sm" className="cash-flow-drill-back" onClick={() => setTrail(trail.slice(0, -1))}><ArrowLeft aria-hidden="true"/>{t('Back')}</Button>}
   <DialogTitle>{current.title} <span className="panel-figure">{period}</span></DialogTitle>
   {flows.missing > 0 && <p className="partial-total" role="status">{t('Some transactions could not be converted. Current or previous month totals are incomplete.')}</p>}
   {flows.links.length ? <FlowSankey key={trail.length} flows={flows} currency={context.currency} canOpen={canOpen} onOpen={openNode}/> : <p className="budget-left-empty">{t('Nothing recorded in this period.')}</p>}
   {current.target.side === 'operation' && <OperationDetails id={current.target.key} context={context}/>}
+  {current.target.side === 'goal' && <GoalEvents id={current.target.key} context={context} onOpen={(open, name) => go(open, name)}/>}
   {onOpenRecord && <DrillTransactions target={current.target} context={context} onOpenRecord={onOpenRecord} onOpenOperation={row => setTrail([...trail, { target: { side: 'operation', key: row.id }, title: operationTitle(row, t) }])}/>}
  </DialogContent></Dialog>;
 }

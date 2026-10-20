@@ -1,5 +1,5 @@
 import { accountNode, span } from './cash-flow-drill';
-import type { DrillContext, DrillFlows, DrillNode } from './cash-flow-drill-types';
+import type { DrillContext, DrillFlows, DrillNode, DrillTarget } from './cash-flow-drill-types';
 import type { Entry } from './finance';
 import type { GoalEvent } from './goal-funding';
 import { convertAmount } from './market';
@@ -44,4 +44,20 @@ export function goalFlows(id: string, context: DrillContext): DrillFlows {
   links: [...left.map((part, index) => ({ source: index, target: left.length, value: part.value })), ...right.map((part, index) => ({ source: left.length, target: left.length + 1 + index, value: part.value }))],
   missing: 0,
  };
+}
+
+/** A goal's additions and withdrawals in the period, newest first, each as it was entered in the goal's currency, with
+ * what a tap opens: the account it came from or went to, else Goals. */
+export function goalEventsIn(id: string, context: DrillContext) {
+ const { from, to } = span(context.months, context.today);
+ const goal = (context.data.goals ?? []).find(item => item.id === id);
+ const byId = new Map((context.data.records as Entry[]).map(record => [record.id, record]));
+ const currency = goal?.currency ?? byId.get(goal?.account_id ?? '')?.currency ?? context.currency;
+ return (context.goalEvents ?? []).filter(event => event.goal_id === id && event.event_type !== 'opening' && event.occurred_on >= from && event.occurred_on <= to)
+  .sort((a, b) => b.occurred_on.localeCompare(a.occurred_on) || a.id.localeCompare(b.id))
+  .map(event => {
+   const account = event.source_id ? byId.get(event.source_id) : undefined;
+   const open: DrillTarget = account ? { side: 'account', key: account.id } : { side: 'link', href: '/goals' };
+   return { event, currency, source: account?.name.trim() || event.source_name?.trim() || '', open };
+  });
 }
