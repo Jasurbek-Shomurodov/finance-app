@@ -2628,11 +2628,12 @@
   "Net worth, last 30 days": "कुल संपत्ति, पिछले 30 दिन",
   "{percent} of income": "आय का {percent}",
   "Last 30 days: income {income}, expenses {expenses}.": "पिछले 30 दिन: आय {income}, खर्च {expenses}।",
-  "Linked property (optional)": "जुड़ी संपत्ति (वैकल्पिक)",
-  "No linked property": "कोई जुड़ी संपत्ति नहीं",
   "Rent received this year": "इस वर्ष मिला किराया",
   "Costs this year": "इस वर्ष की लागत",
   "Net this year": "इस वर्ष का शुद्ध",
   "Choose one of your properties.": "अपनी किसी एक संपत्ति को चुनें।",
-  "Swap accounts": "खाते आपस में बदलें"
+  "Swap accounts": "खाते आपस में बदलें",
+  "Linked to (optional)": "से जुड़ा (वैकल्पिक)",
+  "Not linked": "जुड़ा नहीं",
+  "Business or property": "व्यवसाय या संपत्ति"
 }

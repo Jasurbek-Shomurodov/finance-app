@@ -41,7 +41,9 @@ test('demo generates selectable linked plans without counting asset income twice
  assert.equal(withAssetIncomePlans([asset],[{linked_record_id:asset.id,archived:true}]).length,1);
 });
 test('picker supports category hover, focus, touch, searching, and keyboard selection',()=>{
- const ui=fs.readFileSync('components/income-source-picker.tsx','utf8');
+ // Income source and Linked to share one picker, which holds the interaction.
+ assert.match(fs.readFileSync('components/income-source-picker.tsx','utf8'),/<GroupedPicker /);
+ const ui=fs.readFileSync('components/presentation-foundation/grouped-picker.tsx','utf8');
  for(const expected of ['onMouseEnter','onFocus','onClick','ArrowDown','ArrowUp','ArrowRight','aria-pressed','formatNumber','PopoverContent'])assert.ok(ui.includes(expected));
  for(const locale of ['en','ru','uz']){
   const messages=JSON.parse(fs.readFileSync(`lib/locales/${locale}.json`,'utf8'));
@@ -50,7 +52,7 @@ test('picker supports category hover, focus, touch, searching, and keyboard sele
 });
 
 test('income picker owns its scroll lock inside the record dialog',()=>{
- const ui=fs.readFileSync('components/income-source-picker.tsx','utf8');
+ const ui=fs.readFileSync('components/presentation-foundation/grouped-picker.tsx','utf8');
  // A non-modal body portal sits outside the enclosing dialog's allowed scroll area.
  assert.match(ui,/<Popover modal open=\{open\}/);
  const css=stylesheet();

@@ -13,6 +13,7 @@ export { StatTile, StatTiles, type StatTone } from './stat-tile';
 export { PanelTitle } from './panel-title';
 export { InfoHint } from './info-hint';
 export { HintedLabel } from './hinted-label';
+export { GroupedPicker, type PickerItem } from './grouped-picker';
 export { Count } from './count';
 export { EmptyState } from './empty-state';
 export { InlineError } from './inline-error';

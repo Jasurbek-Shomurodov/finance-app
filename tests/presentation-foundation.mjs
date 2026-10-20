@@ -477,3 +477,14 @@ test('a hinted field keeps its explanation behind an ⓘ on the label line, afte
  assert.equal(html,'<label class="hinted-label"><span class="hinted-label-text">Start date</span><input/><i class="info-hint">When this debt began.</i></label>');
  assert.match(render(HintedLabel,{label:'Rate',hint:'x',className:'record-amount'},React.createElement('input')),/^<label class="hinted-label record-amount">/);
 });
+
+test('a grouped picker names the chosen item, lists groups with counts, and searches names and group labels',()=>{
+ const popover={Popover:({children})=>React.createElement('span',null,children),PopoverTrigger:({children})=>children,PopoverContent:({children,className})=>React.createElement('div',{className},children)};
+ const {GroupedPicker}=load('grouped-picker.tsx',{'@/components/ui/popover':popover,'@/components/ui/input':{Input:element('input')}});
+ const items=[{id:'',name:'Not linked',group:''},{id:'b:1',name:'Café',group:'Business'},{id:'p:1',name:'Flat',group:'Property'},{id:'p:2',name:'Garage',group:'Property'}];
+ const props={label:'Linked to',placeholder:'Not linked',searchLabel:'Business or property',allLabel:'All',emptyText:'None',groups:['Business','Property'],groupLabel:group=>group,items,value:'p:1',onChange:()=>{}};
+ const html=render(GroupedPicker,props);
+ assert.match(html,/<span>Flat<\/span>/,'the trigger names the chosen item');
+ assert.match(html,/<span>All<\/span><small>4<\/small>.*<span>Business<\/span><small>1<\/small>.*<span>Property<\/span><small>2<\/small>/);
+ assert.match(render(GroupedPicker,{...props,value:'x'}),/<span>Not linked<\/span><svg/,'nothing chosen shows the placeholder');
+});

@@ -2628,11 +2628,12 @@
   "Net worth, last 30 days": "Sof kapital, oxirgi 30 kun",
   "{percent} of income": "daromadning {percent}",
   "Last 30 days: income {income}, expenses {expenses}.": "Oxirgi 30 kun: daromad {income}, xarajatlar {expenses}.",
-  "Linked property (optional)": "Bog‘langan ko‘chmas mulk (ixtiyoriy)",
-  "No linked property": "Bog‘langan ko‘chmas mulk yo‘q",
   "Rent received this year": "Bu yil olingan ijara",
   "Costs this year": "Bu yilgi xarajatlar",
   "Net this year": "Bu yilgi sof natija",
   "Choose one of your properties.": "Ko‘chmas mulklaringizdan birini tanlang.",
-  "Swap accounts": "Hisoblarni almashtirish"
+  "Swap accounts": "Hisoblarni almashtirish",
+  "Linked to (optional)": "Bogʻlangan (ixtiyoriy)",
+  "Not linked": "Bogʻlanmagan",
+  "Business or property": "Biznes yoki koʻchmas mulk"
 }

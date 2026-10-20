@@ -11,6 +11,9 @@ import { ScheduledPaymentField } from '@/components/presentation-foundation/sche
 import { openPaymentSchedules } from '@/lib/planning';
 import { changedFields, recentCategories, scheduleChoice } from '@/lib/form-suggestions';
 import { RecentCategories } from './recent-categories';
+import { chooseLinked, linkedValue } from '@/lib/linked-asset';
+import { GroupedPicker } from '@/components/presentation-foundation/grouped-picker';
+import { CategoryBadge } from '@/components/presentation-foundation/category-badge';
 import { frequencyLabels } from '@/lib/finance';
 import { selectTransactionCategory } from '@/lib/transaction-categories';
 import { InvestmentTracker } from '@/components/investment-tracker-lazy';
@@ -86,18 +89,21 @@ function DateDetails({form}:{form:ExpenseContext}){
    <PaymentNameDetails form={form}/>
    {editing.frequency!=='Once'&&<p className="muted">{t('{amount} {frequency} from {date}. This is a recurring plan; it does not automatically create transactions or change account balances.',{amount:formatMoney(editing.amount,editing.currency,locale),frequency:t(frequencyLabels[editing.frequency]),date:sharedFormatDate(editing.date,locale)})}</p>}</>;
 }
-/** The optional details, folded away: a business, a property, an end date and notes. */
+/** The optional details, folded away: the business or property it is for (one choice), an end date and notes. */
 function OptionalDetails({form}:{form:ExpenseContext}){
  const {t}=useLanguage();
  const {editing,busy,planning,update}=form;
  // Repairs, tax or a service charge may be paid for one of the person's properties.
  const properties=planning.data.records.filter(record=>record.kind==='Property');
  const businesses=planning.data.records.filter(record=>record.kind==='Business');
+ // A business's cash account gives its expenses that business; a property chosen for one keeps it.
+ const accountBusiness=planning.data.records.find(record=>record.id===editing.account_id)?.business_id;
  // The details open by themselves only when one of them is already filled in.
  const [detailsOpen]=useState(()=>!!(editing.business_id||editing.property_id||editing.notes||editing.end_date));
  return <details className="record-optional-details" open={detailsOpen}><summary>{t('Optional details')}</summary><div className="record-optional-fields">
-    {(businesses.length>0||!!editing.business_id)&&<label>{t('Linked business (optional)')}<NativeSelect value={editing.business_id||''} disabled={busy} onChange={event=>update({business_id:event.target.value||null})}><option value="">{t('No linked business')}</option>{businesses.map(business=><option key={business.id} value={business.id}>{business.name}</option>)}</NativeSelect></label>}
-    {(properties.length>0||!!editing.property_id)&&<label>{t('Linked property (optional)')}<NativeSelect value={editing.property_id||''} disabled={busy} onChange={event=>update({property_id:event.target.value||null})}><option value="">{t('No linked property')}</option>{properties.map(property=><option key={property.id} value={property.id}>{property.name}</option>)}</NativeSelect></label>}
+    {(businesses.length>0||properties.length>0||!!editing.business_id||!!editing.property_id)&&<GroupedPicker label={t('Linked to (optional)')} placeholder={t('Not linked')} searchLabel={t('Business or property')} allLabel={t('All')} emptyText={t('No matching records')}
+     groups={['Business','Property']} groupLabel={kind=>t(kind)} value={linkedValue(editing)} disabled={busy} onChange={value=>update(chooseLinked(value,accountBusiness))}
+     items={[{id:'',name:t('Not linked'),group:''},...[...businesses,...properties].map(record=>({id:`${record.kind==='Business'?'business':'property'}:${record.id}`,name:record.name,group:record.kind,badge:<CategoryBadge kind={record.kind} label={t(record.kind)}/>}))]}/>}
     {editing.frequency!=='Once'&&<label>{t('End date (optional)')}<DatePicker value={editing.end_date||''} required={false} min={editing.date} onChange={end_date=>update({end_date:end_date||null})}/></label>}
     <label>{t('Notes (optional)')}<Textarea value={editing.notes} maxLength={2000} rows={2} onChange={event=>update({notes:event.target.value})}/></label>
    </div></details>;

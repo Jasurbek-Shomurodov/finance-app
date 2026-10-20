@@ -2628,11 +2628,12 @@
   "Net worth, last 30 days": "มูลค่าสุทธิ 30 วันที่ผ่านมา",
   "{percent} of income": "{percent} ของรายได้",
   "Last 30 days: income {income}, expenses {expenses}.": "30 วันที่ผ่านมา: รายได้ {income} ค่าใช้จ่าย {expenses}",
-  "Linked property (optional)": "อสังหาริมทรัพย์ที่เชื่อมโยง (ไม่บังคับ)",
-  "No linked property": "ไม่มีอสังหาริมทรัพย์ที่เชื่อมโยง",
   "Rent received this year": "ค่าเช่าที่ได้รับปีนี้",
   "Costs this year": "ค่าใช้จ่ายปีนี้",
   "Net this year": "สุทธิปีนี้",
   "Choose one of your properties.": "เลือกอสังหาริมทรัพย์ของคุณหนึ่งรายการ",
-  "Swap accounts": "สลับบัญชี"
+  "Swap accounts": "สลับบัญชี",
+  "Linked to (optional)": "เชื่อมโยงกับ (ไม่บังคับ)",
+  "Not linked": "ไม่ได้เชื่อมโยง",
+  "Business or property": "ธุรกิจหรืออสังหาริมทรัพย์"
 }

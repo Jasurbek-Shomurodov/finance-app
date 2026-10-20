@@ -2628,11 +2628,12 @@
   "Net worth, last 30 days": "Kekayaan bersih, 30 hari terakhir",
   "{percent} of income": "{percent} dari pemasukan",
   "Last 30 days: income {income}, expenses {expenses}.": "30 hari terakhir: pemasukan {income}, pengeluaran {expenses}.",
-  "Linked property (optional)": "Properti tertaut (opsional)",
-  "No linked property": "Tidak ada properti tertaut",
   "Rent received this year": "Sewa diterima tahun ini",
   "Costs this year": "Biaya tahun ini",
   "Net this year": "Bersih tahun ini",
   "Choose one of your properties.": "Pilih salah satu properti Anda.",
-  "Swap accounts": "Tukar akun"
+  "Swap accounts": "Tukar akun",
+  "Linked to (optional)": "Terkait dengan (opsional)",
+  "Not linked": "Tidak terkait",
+  "Business or property": "Bisnis atau properti"
 }

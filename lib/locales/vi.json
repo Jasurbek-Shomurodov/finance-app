@@ -2628,11 +2628,12 @@
   "Net worth, last 30 days": "Giá trị ròng, 30 ngày qua",
   "{percent} of income": "{percent} thu nhập",
   "Last 30 days: income {income}, expenses {expenses}.": "30 ngày qua: thu nhập {income}, chi tiêu {expenses}.",
-  "Linked property (optional)": "Bất động sản liên kết (không bắt buộc)",
-  "No linked property": "Không có bất động sản liên kết",
   "Rent received this year": "Tiền thuê nhận được năm nay",
   "Costs this year": "Chi phí năm nay",
   "Net this year": "Ròng năm nay",
   "Choose one of your properties.": "Chọn một bất động sản của bạn.",
-  "Swap accounts": "Hoán đổi tài khoản"
+  "Swap accounts": "Hoán đổi tài khoản",
+  "Linked to (optional)": "Liên kết với (tùy chọn)",
+  "Not linked": "Không liên kết",
+  "Business or property": "Doanh nghiệp hoặc bất động sản"
 }

@@ -2628,11 +2628,12 @@
   "Net worth, last 30 days": "Чистый капитал за 30 дней",
   "{percent} of income": "{percent} дохода",
   "Last 30 days: income {income}, expenses {expenses}.": "За 30 дней: доходы {income}, расходы {expenses}.",
-  "Linked property (optional)": "Связанная недвижимость (необязательно)",
-  "No linked property": "Без связанной недвижимости",
   "Rent received this year": "Получено аренды в этом году",
   "Costs this year": "Расходы в этом году",
   "Net this year": "Чистый итог в этом году",
   "Choose one of your properties.": "Выберите один из ваших объектов недвижимости.",
-  "Swap accounts": "Поменять счета местами"
+  "Swap accounts": "Поменять счета местами",
+  "Linked to (optional)": "Связано с (необязательно)",
+  "Not linked": "Не связано",
+  "Business or property": "Бизнес или недвижимость"
 }

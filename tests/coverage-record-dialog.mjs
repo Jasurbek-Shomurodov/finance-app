@@ -6,7 +6,7 @@ import {loadTS} from './helpers/load-ts.mjs';
 const {formatMoney}=loadTS('lib/format.ts');
 const finance=loadTS('lib/finance.ts');
 const now=new Date('2026-09-30T07:00:00Z');// 30 September 2026 in Tashkent
-const stubs=['loading-placeholder','form-footer','schedule-fields','error-popup','amount-currency-fields','currency-select','currency-value','record-icon','date-picker','formatted-number-input','confirm-dialog','info-hint'].map(name=>'@/components/presentation-foundation/'+name);
+const stubs=['grouped-picker','loading-placeholder','form-footer','schedule-fields','error-popup','amount-currency-fields','currency-select','currency-value','record-icon','date-picker','formatted-number-input','confirm-dialog','info-hint'].map(name=>'@/components/presentation-foundation/'+name);
 const components=['record-edit-history','cash-investment-option','investment-tracker','investment-tracker-lazy','mortgage-payment-dialog','income-record-form','cash-account-field','instrument-picker','record-name-input','business-profile-fields','ui/tabs','ui/button','ui/native-select','ui/dialog'].map(name=>'@/components/'+name);
 
 const record=(id,kind,extra={})=>({id,name:id,kind,amount:100,quantity:1,cost:0,rate:0,currency:'USD',frequency:'Once',date:'2026-09-15',notes:'',...extra});
@@ -396,11 +396,17 @@ test('an expense opens on the expense tab with its category, amount, date and ac
  assert.equal(date.props.max,'2026-09-30','a one-time expense cannot be dated after today');
  d.r.fire(date,'onChange','2026-09-20');assert.equal(d.state.editing.date,'2026-09-20');
  d.r.fire(d.r.find(byType('CashAccountField')),'onChange','acct');assert.equal(d.state.editing.account_id,'acct');
- // A business is offered only to someone who has one; the details fold away behind Optional details.
- assert.ok(!d.r.all(node=>node.type==='label'&&node.children[0]==='Linked business (optional)').length);
+ // Linked to is offered only to someone with a business or a property; the details fold away behind Optional details.
+ assert.ok(!d.r.all(node=>node.type==='GroupedPicker').length);
  assert.equal(d.r.find(node=>node.type==='details').props.open,false,'empty details start folded');
- const owner=dialog(t,expense(),{editingCashFlow:true,planning:planning({categories,records:[record('acct','Cash'),record('shop','Business')]})});
- owner.r.fire(owner.labelled('Linked business (optional)','NativeSelect'),'onChange',{target:{value:'shop'}});assert.equal(owner.state.editing.business_id,'shop');
+ // One Linked to choice lists businesses and properties together, each in its own group.
+ const owner=dialog(t,expense(),{editingCashFlow:true,planning:planning({categories,records:[record('acct','Cash'),record('shop','Business'),record('flat','Property')]})});
+ const linked=()=>owner.r.find(node=>node.type==='GroupedPicker'&&node.props.label==='Linked to (optional)');
+ assert.deepEqual(linked().props.groups,['Business','Property']);
+ assert.deepEqual(linked().props.items.map(item=>[item.id,item.group]),[['',''],['business:shop','Business'],['property:flat','Property']]);
+ owner.r.fire(linked(),'onChange','business:shop');assert.equal(owner.state.editing.business_id,'shop');assert.equal(owner.state.editing.property_id,null);
+ assert.equal(linked().props.value,'business:shop');
+ owner.r.fire(linked(),'onChange','property:flat');assert.equal(owner.state.editing.property_id,'flat');assert.equal(owner.state.editing.business_id,null);
  d.r.fire(d.labelled('Notes (optional)','textarea'),'onChange',{target:{value:'Lunch'}});assert.equal(d.state.editing.notes,'Lunch');
  assert.equal(text(d.r.find(node=>node.type==='Button'&&node.props.className==='primary')),'Save expense');
  d.r.fire(d.r.find(byType('form')),'onSubmit',event());

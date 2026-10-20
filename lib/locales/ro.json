@@ -2628,11 +2628,12 @@
   "Net worth, last 30 days": "Avere netă, ultimele 30 de zile",
   "{percent} of income": "{percent} din venit",
   "Last 30 days: income {income}, expenses {expenses}.": "Ultimele 30 de zile: venituri {income}, cheltuieli {expenses}.",
-  "Linked property (optional)": "Proprietate asociată (opțional)",
-  "No linked property": "Nicio proprietate asociată",
   "Rent received this year": "Chirie încasată anul acesta",
   "Costs this year": "Costuri anul acesta",
   "Net this year": "Net anul acesta",
   "Choose one of your properties.": "Alege una dintre proprietățile tale.",
-  "Swap accounts": "Inversează conturile"
+  "Swap accounts": "Inversează conturile",
+  "Linked to (optional)": "Legat de (opțional)",
+  "Not linked": "Nelegat",
+  "Business or property": "Afacere sau proprietate"
 }

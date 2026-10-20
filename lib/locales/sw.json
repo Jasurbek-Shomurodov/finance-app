@@ -2628,11 +2628,12 @@
   "Net worth, last 30 days": "Thamani halisi, siku 30 zilizopita",
   "{percent} of income": "{percent} ya mapato",
   "Last 30 days: income {income}, expenses {expenses}.": "Siku 30 zilizopita: mapato {income}, matumizi {expenses}.",
-  "Linked property (optional)": "Mali iliyounganishwa (si lazima)",
-  "No linked property": "Hakuna mali iliyounganishwa",
   "Rent received this year": "Kodi iliyopokelewa mwaka huu",
   "Costs this year": "Gharama mwaka huu",
   "Net this year": "Halisi mwaka huu",
   "Choose one of your properties.": "Chagua moja ya mali zako.",
-  "Swap accounts": "Badilisha akaunti"
+  "Swap accounts": "Badilisha akaunti",
+  "Linked to (optional)": "Imeunganishwa na (si lazima)",
+  "Not linked": "Haijaunganishwa",
+  "Business or property": "Biashara au mali"
 }

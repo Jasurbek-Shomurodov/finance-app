@@ -2628,11 +2628,12 @@
   "Net worth, last 30 days": "صافي الثروة، آخر 30 يومًا",
   "{percent} of income": "{percent} من الدخل",
   "Last 30 days: income {income}, expenses {expenses}.": "آخر 30 يومًا: الدخل {income}، المصروفات {expenses}.",
-  "Linked property (optional)": "العقار المرتبط (اختياري)",
-  "No linked property": "لا يوجد عقار مرتبط",
   "Rent received this year": "الإيجار المستلم هذا العام",
   "Costs this year": "التكاليف هذا العام",
   "Net this year": "الصافي هذا العام",
   "Choose one of your properties.": "اختر أحد عقاراتك.",
-  "Swap accounts": "تبديل الحسابين"
+  "Swap accounts": "تبديل الحسابين",
+  "Linked to (optional)": "مرتبط بـ (اختياري)",
+  "Not linked": "غير مرتبط",
+  "Business or property": "نشاط تجاري أو عقار"
 }

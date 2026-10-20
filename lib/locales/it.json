@@ -2628,11 +2628,12 @@
   "Net worth, last 30 days": "Patrimonio netto, ultimi 30 giorni",
   "{percent} of income": "{percent} delle entrate",
   "Last 30 days: income {income}, expenses {expenses}.": "Ultimi 30 giorni: entrate {income}, spese {expenses}.",
-  "Linked property (optional)": "Immobile collegato (facoltativo)",
-  "No linked property": "Nessun immobile collegato",
   "Rent received this year": "Affitti incassati quest’anno",
   "Costs this year": "Costi quest’anno",
   "Net this year": "Netto quest’anno",
   "Choose one of your properties.": "Scegli uno dei tuoi immobili.",
-  "Swap accounts": "Scambia i conti"
+  "Swap accounts": "Scambia i conti",
+  "Linked to (optional)": "Collegato a (facoltativo)",
+  "Not linked": "Non collegato",
+  "Business or property": "Attività o immobile"
 }

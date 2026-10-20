@@ -2628,11 +2628,12 @@
   "Net worth, last 30 days": "خالص مالیت، پچھلے 30 دن",
   "{percent} of income": "آمدنی کا {percent}",
   "Last 30 days: income {income}, expenses {expenses}.": "پچھلے 30 دن: آمدنی {income}، اخراجات {expenses}۔",
-  "Linked property (optional)": "منسلک جائیداد (اختیاری)",
-  "No linked property": "کوئی منسلک جائیداد نہیں",
   "Rent received this year": "اس سال وصول شدہ کرایہ",
   "Costs this year": "اس سال کے اخراجات",
   "Net this year": "اس سال خالص",
   "Choose one of your properties.": "اپنی جائیدادوں میں سے ایک منتخب کریں۔",
-  "Swap accounts": "اکاؤنٹس کی جگہ بدلیں"
+  "Swap accounts": "اکاؤنٹس کی جگہ بدلیں",
+  "Linked to (optional)": "سے منسلک (اختیاری)",
+  "Not linked": "منسلک نہیں",
+  "Business or property": "کاروبار یا جائیداد"
 }

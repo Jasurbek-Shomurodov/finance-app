@@ -2628,11 +2628,12 @@
   "Net worth, last 30 days": "純資産（過去30日間）",
   "{percent} of income": "収入の{percent}",
   "Last 30 days: income {income}, expenses {expenses}.": "過去30日間：収入 {income}、支出 {expenses}。",
-  "Linked property (optional)": "関連する不動産（任意）",
-  "No linked property": "関連する不動産なし",
   "Rent received this year": "今年の受取家賃",
   "Costs this year": "今年の費用",
   "Net this year": "今年の純額",
   "Choose one of your properties.": "ご自身の不動産を1つ選んでください。",
-  "Swap accounts": "口座を入れ替える"
+  "Swap accounts": "口座を入れ替える",
+  "Linked to (optional)": "関連先（任意）",
+  "Not linked": "関連なし",
+  "Business or property": "事業または不動産"
 }

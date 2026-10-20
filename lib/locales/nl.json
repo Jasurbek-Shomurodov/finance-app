@@ -2628,11 +2628,12 @@
   "Net worth, last 30 days": "Nettovermogen, laatste 30 dagen",
   "{percent} of income": "{percent} van het inkomen",
   "Last 30 days: income {income}, expenses {expenses}.": "Laatste 30 dagen: inkomsten {income}, uitgaven {expenses}.",
-  "Linked property (optional)": "Gekoppeld vastgoed (optioneel)",
-  "No linked property": "Geen gekoppeld vastgoed",
   "Rent received this year": "Ontvangen huur dit jaar",
   "Costs this year": "Kosten dit jaar",
   "Net this year": "Netto dit jaar",
   "Choose one of your properties.": "Kies een van je panden.",
-  "Swap accounts": "Rekeningen omwisselen"
+  "Swap accounts": "Rekeningen omwisselen",
+  "Linked to (optional)": "Gekoppeld aan (optioneel)",
+  "Not linked": "Niet gekoppeld",
+  "Business or property": "Bedrijf of vastgoed"
 }
