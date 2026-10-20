@@ -150,17 +150,16 @@ test('panel title keeps the heading, count and hint on one line and the aside on
  assert.equal(render(Count,{value:12,loading:true}),'<span class="count">—</span>');
 });
 
-test('animated money rolls each digit on its own 0–9 strip and keeps the amount whole for screen readers',()=>{
+test('animated money draws each digit at its value, ready to roll, and keeps the amount whole for screen readers',()=>{
  const {AnimatedMoney}=load('animated-money.tsx',{'@/lib/format':{formatMoney:value=>(value<0?'-$':'$')+Math.abs(value).toLocaleString('en-US')}});
  const {rollingColumns}=load('rolling-text.tsx');
  const html=render(AnimatedMoney,{value:-20631,currency:'USD'});
  assert.match(html,/<span class="sr-only">-\$20,631<\/span><\/roll-text>$/,'the whole amount for screen readers');
  assert.match(html,/^<roll-text><roll-chars aria-hidden="true"><roll-char>-<\/roll-char><roll-char>\$<\/roll-char><roll-digit>/,'signs and separators stay put');
- assert.equal(html.match(/<roll-digit>/g).length,5,'one strip per digit');
- assert.equal(html.match(/<roll-strip /g).length,5);
- assert.ok(html.includes([...'0123456789'].map(digit=>`<roll-char>${digit}</roll-char>`).join('')),'each strip holds 0–9');
+ assert.equal(html.match(/<roll-digit>/g).length,5,'one column per digit');
+ assert.ok(html.includes('<roll-digit><roll-char>2</roll-char></roll-digit><roll-digit><roll-char>0</roll-char></roll-digit>'),'drawn at their values');
  assert.doesNotMatch(html.replace('<span class="sr-only">',''),/<span/,'no spans for page rules to restyle');
- assert.ok(html.includes('translateY(-0%)'),'digits start at 0 and roll up into place');
+ assert.doesNotMatch(html,/<roll-strip/,'nothing counts up from 0 when the figure appears');
  // Keys count from the right, so units stay units when the amount gains a digit and roll instead of jumping.
  assert.deepEqual(rollingColumns('$9').map(item=>item.key),[2,1]);
  assert.deepEqual(rollingColumns('$10').map(item=>[item.key,item.digit]),[[3,null],[2,1],[1,0]]);
@@ -169,7 +168,7 @@ test('animated money rolls each digit on its own 0–9 strip and keeps the amoun
  assert.deepEqual(rollingColumns('€1,655').filter(item=>item.digit===null).map(item=>item.char),['€',',']);
 });
 
-test('a rolling digit moves only after its strip is drawn, then rests as plain text until it changes',()=>{
+test('a rolling digit appears at its value, and on a change moves only after its strip is drawn, then rests as plain text',()=>{
  const slots=[];let cursor=0,effects=[],frames=[];
  const react={useState:initial=>{const i=cursor++;if(!(i in slots))slots[i]=initial;return [slots[i],value=>{slots[i]=value;}];},
   // The strip's element: it reports the end of its slide the way a browser does.
@@ -183,14 +182,14 @@ test('a rolling digit moves only after its strip is drawn, then rests as plain t
   let text='7';
   const draw=()=>{cursor=0;const element=RollingText({text}).props.children[0].props.children[0];const tree=element.type(element.props);effects.splice(0).forEach(effect=>effect());return tree.props.children;};
   const frame=()=>frames.splice(0).forEach(cb=>cb());
-  assert.equal(draw().props.style.transform,'translateY(-0%)');
-  frame();assert.equal(draw().props.style.transform,'translateY(-0%)','not on the first frame');
-  frame();const strip=draw();assert.equal(strip.props.style.transform,'translateY(-70%)','rolls to 7 on the second');
-  listeners.transitionend();
-  const rest=draw();assert.equal(rest.type,'roll-char','at rest the strip gives way to the plain digit');assert.equal(rest.props.children,7);
+  const first=draw();assert.equal(first.type,'roll-char','the first draw is the plain digit');assert.equal(first.props.children,7);
+  assert.equal(frames.length,0,'and nothing is scheduled to roll');
   // React re-renders after the layout effect and before painting; the second draw is that render.
   text='3';draw();assert.equal(draw().props.style.transform,'translateY(-70%)','a change rolls from where it rests');
-  frame();frame();assert.equal(draw().props.style.transform,'translateY(-30%)');
+  frame();assert.equal(draw().props.style.transform,'translateY(-70%)','not on the first frame');
+  frame();const strip=draw();assert.equal(strip.props.style.transform,'translateY(-30%)','rolls to 3 on the second');
+  listeners.transitionend();
+  const rest=draw();assert.equal(rest.type,'roll-char','at rest the strip gives way to the plain digit');assert.equal(rest.props.children,3);
  }finally{globalThis.requestAnimationFrame=saved.raf;globalThis.cancelAnimationFrame=saved.caf;}
 });
 

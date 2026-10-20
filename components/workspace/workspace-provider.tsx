@@ -61,7 +61,7 @@ function useWorkspaceState() {
     const pathname = usePathname();
     const router = useRouter();
     const section = sectionFor(pathname);
-    const { t, locale } = useLanguage();
+    const { t, locale, language } = useLanguage();
     const [demo, setDemo] = useState(false), [rows, setRows] = useState<Entry[]>([]), [editing, setEditing] = useState<Entry | null>(null), [deleting, setDeleting] = useState<Entry | null>(null), [busy, setBusy] = useState(false), [error, setError] = useState('');
     const { user, setUser, ready, configured, login } = useAuth({ setError, setBusy });
     const { pendingInvite, dismissInvite } = useInviteLink();
@@ -73,7 +73,7 @@ function useWorkspaceState() {
     const { currency, preferencesData, settingsLoading } = settings;
     const { closeRecordDialogs, ...dialogs } = useOpenDialogs();
     const { stopping, setEditingIncomeSource } = dialogs;
-    const sample = useSampleWorkspace();
+    const sample = useSampleWorkspace({ demo, language, setRows });
     const { demoHoldingAccounts, setDemoHoldingAccounts } = sample;
     const [reload, setReload] = useState(0);
     // A household that is no longer available closed while the first reads were under way: read again from the person's own workspace.
@@ -161,8 +161,8 @@ function useWorkspaceState() {
             // The sample workspace comes from the backend, like a signed-in account's records.
             const response = await fetch('/api/demo', { cache: 'no-store' });
             if (!response.ok) throw Error();
-            const sample = await response.json() as DemoWorkspace;
-            setRows(withAssetIncomePlans(sample.records.map(normalizeEntry))); seedSample(sample); setDemo(true);
+            const sample = seedSample(await response.json() as DemoWorkspace);
+            setRows(withAssetIncomePlans(sample.records.map(normalizeEntry))); setDemo(true);
         } catch { setError('Connection unavailable. Please try again.'); }
         finally { setBusy(false); }
     }

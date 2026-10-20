@@ -109,7 +109,9 @@ h2:has(>.info-hint){display:flex;align-items:center;gap:6px}
 .stat-tile>p{margin-top:auto;font-size:var(--type-caption);line-height:1.5;color:var(--muted-foreground)}
 @container content (max-width:860px){.stat-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.stat-tiles[data-columns="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @container content (max-width:720px){.stat-tiles[data-columns="3"]{grid-template-columns:minmax(0,1fr)}.stat-tiles[data-columns="3"] .stat-tile{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 16px;padding:16px}.stat-tiles[data-columns="3"] .stat-tile>p{grid-column:1/-1;margin:0}}
-@container content (max-width:520px){.stat-tiles{grid-template-columns:minmax(0,1fr);gap:12px}.stat-tile{padding:16px}}
+@container content (max-width:520px){.stat-tiles{grid-template-columns:minmax(0,1fr);gap:12px}.stat-tile{padding:16px}
+ /* The dashboard's headline row stays two by two on a phone, so the page below it is in view. */
+ .stat-tiles:has(>.stat-tile-link){grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.stat-tile-link{gap:4px;padding:12px 14px}.stat-tile-link>strong{font-size:var(--type-title)}}
 
 /* Segmented controls switch between views of the same data. */
 .segmented{display:inline-flex;gap:2px;max-width:100%;padding:3px;border:1px solid var(--border);border-radius:12px;background:var(--muted);overflow-x:auto;scrollbar-width:none}

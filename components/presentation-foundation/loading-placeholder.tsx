@@ -46,7 +46,7 @@ const chartCards = new Set(['spending', 'allocation', 'forecast', 'income']);
 
 /** One dashboard card while the workspace loads: Net worth in its full shape, chart cards with a chart, the rest with rows. */
 function DashboardCardSkeleton({ card }: { card: string }) {
-  if (card === 'net_worth') return <section className="panel overview-hero"><div className="overview-hero-head"><div className="overview-hero-value"><Skeleton className="h-8 w-40"/><Skeleton className="h-8 w-48 max-w-full"/></div><Skeleton className="h-11 w-96 max-w-full rounded-xl"/></div><NetWorthBodySkeleton/></section>;
+  if (card === 'net_worth') return <section className="panel overview-hero"><div className="overview-hero-head"><div className="overview-hero-value"><Skeleton className="h-8 w-56 max-w-full"/></div><Skeleton className="h-11 w-96 max-w-full rounded-xl"/></div><NetWorthBodySkeleton/></section>;
   return <section className="panel overview-panel"><Skeleton className="mb-6 h-8 w-1/3"/>{chartCards.has(card) ? <Skeleton className="h-52 w-full"/> : <SkeletonRows rows={3}/>}</section>;
 }
 

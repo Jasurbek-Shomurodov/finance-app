@@ -52,7 +52,7 @@ export function OverviewScreen() {
    <OverviewHeading name={preferencesData.display_name?.trim()} firstVisit={!demo && firstVisit(preferencesData, depositToday())}>{arranging ? <Button onClick={() => setArranging(false)}><Check size={16} aria-hidden="true"/>{t('Done')}</Button> : <Button variant="outline" onClick={() => setCustomizing(true)}><LayoutGrid size={16} aria-hidden="true"/>{t('Customize')}</Button>}</OverviewHeading>
    <ScreenNotices/>
    {!workspaceLoading&&<TelegramNudge demo={demo}/>}
-   {!workspaceLoading&&planningReady&&<DashboardHeadline netWorth={netWorth} budget={monthBudget} data={planning.data} currency={currency} market={market}/>}
+   {!workspaceLoading&&<DashboardHeadline netWorth={netWorth} budget={monthBudget} data={planningReady ? planning.data : null} currency={currency} market={market}/>}
    {workspaceLoading ? <WorkspaceSkeleton label={t("Loading your workspace…")} section="Overview" columns={dashboardColumns(layout)}/> : <PortfolioOverview excludedCurrencies={excludedCurrencies} snapshots={snapshots.snapshots} snapshotError={snapshots.error} onSnapshotRetry={snapshots.retry} key={demo ? 'demo' : user} entries={current} demoRecords={demo ? rows : undefined} currency={currency} market={market} demo={demo} revision={reload} onAddIncome={() => addCashFlow('Other income')} board={nodes => <DashboardBoard layout={layout} cards={card(nodes)} arranging={arranging} onChange={change}/>}/>}
   </div>
   {customizing&&<CustomizeDashboardDialog layout={layout} onChange={change} onRearrange={() => { setCustomizing(false); setArranging(true); }} onClose={() => setCustomizing(false)}/>}

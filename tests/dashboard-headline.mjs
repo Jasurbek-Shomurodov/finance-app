@@ -28,4 +28,6 @@ test('the headline says over, or nothing, rather than a wrong budget figure',()=
  assert.match(render({budget:{plan:0,spent:10,loading:false}}),/Budget=—/,'no plan, no remainder');
  assert.match(render({budget:{plan:6200,spent:0,loading:true}}),/Spent this month=—.*Budget=—/,'still loading');
  assert.match(render({netWorth:null}),/Net worth=—/);
+ // Net worth no longer waits for the planning read: only what is due does.
+ assert.match(render({data:null}),/Net worth=\$1,484,820.*<a href="\/upcoming">Due in 7 days=—<\/a>/);
 });

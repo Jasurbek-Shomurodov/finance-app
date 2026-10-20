@@ -16,7 +16,6 @@ import { useLanguage } from '@/components/language-provider';
 import { NetWorthBodySkeleton } from '@/components/presentation-foundation/loading-placeholder';
 import { financialTotals, type Entry } from '@/lib/finance';
 import { formatMoney, formatNumber, formatPercent } from '@/lib/format';
-import { AnimatedMoney } from '@/components/presentation-foundation/animated-money';
 import { depositToday } from '@/lib/deposit-interest';
 import { mergePortfolioPoints, type PortfolioSnapshot } from '@/lib/portfolio-snapshots';
 import { portfolioHistory, portfolioWindow, trackingWindowStart } from '@/lib/portfolio-history';
@@ -62,8 +61,8 @@ export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecord
  const netWorth = <section className="panel portfolio-trend overview-hero" aria-labelledby="overview-net-worth">
    <header className="overview-hero-head">
     <div className="overview-hero-value">
-     <h2 id="overview-net-worth">{t('Net worth')}</h2>
-     <strong><AnimatedMoney value={portfolioValue} currency={currency}/></strong>
+     {/* The figure itself opens the dashboard in its headline row; this card is how it has moved. */}
+     <h2 id="overview-net-worth">{t('Net worth over time')}</h2>
      {!loading && !error && change !== null && <p><span className={change >= 0 ? 'overview-delta positive' : 'overview-delta negative'}><Trend size={15} aria-hidden="true"/>{change > 0 ? '+' : ''}{money(change)}{percent !== null && <> · {percent > 0 ? '+' : ''}{formatPercent(percent, locale)}</>}</span><span>{t('Change in selected period')}</span></p>}
      <PartialTotal currencies={excludedCurrencies}/>
     </div>

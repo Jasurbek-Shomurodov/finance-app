@@ -27,16 +27,19 @@ export function rollingColumns(text: string) {
  return chars.map((char, index) => ({ key: chars.length - index, char, digit: /[0-9]/.test(char) ? Number(char) : null }));
 }
 
-/** One digit as a strip of 0–9 that slides to its value: up from 0 when it appears, up or down when it changes.
+/** One digit as a strip of 0–9 that slides up or down when its value changes. A digit that appears (a page opening, a
+ * figure arriving after its loading dash, a new column) is drawn at its value at once: nothing counts up from 0.
  * Once it has arrived the strip is swapped for the plain digit, so a resting figure is drawn exactly like text
  * (a strip moved by fractions of a pixel can leave its digit a hair above or below its neighbours). */
 function RollingDigit({ digit, column }: { digit: number; column: number }) {
- const [shown, setShown] = useState(0);
- const [settled, setSettled] = useState(false);
- const at = useRef(0);
+ const [shown, setShown] = useState(digit);
+ const [settled, setSettled] = useState(true);
+ const at = useRef(digit), drawn = useRef(false);
  const delay = Math.min(column, 8) * 35;
  useLayoutEffect(() => {
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- the strip must be back on screen before the next roll is painted.
+  // The first run only notes that the digit is on screen at its value; later runs roll.
+  if (!drawn.current) { drawn.current = true; return; }
+  // The strip must be back on screen before the next roll is painted.
   setSettled(false);
   let timer: ReturnType<typeof setTimeout> | undefined;
   // Two frames: the browser must paint the strip where it is before a move can be animated.

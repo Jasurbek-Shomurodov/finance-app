@@ -6,7 +6,6 @@
 .overview-hero-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px 20px;flex-wrap:wrap}
 .overview-hero-value{display:grid;gap:4px;min-width:0}
 .overview-hero-value h2{font-family:var(--font-display);font-size:var(--type-display);font-weight:500;letter-spacing:-.02em;line-height:1.15}
-.overview-hero-value>strong{font-size:var(--type-page);font-weight:500;letter-spacing:-.03em;line-height:1.15;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .overview-hero-value>p{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:2px;font-size:var(--type-small);color:var(--muted-foreground)}
 .overview-delta{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-weight:600;font-variant-numeric:tabular-nums;background:color-mix(in srgb,currentColor 10%,transparent)}
 .overview-hero-note{font-size:var(--type-caption);margin-top:12px}
