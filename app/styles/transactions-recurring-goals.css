@@ -85,6 +85,9 @@
 .subscription-totals{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:var(--type-small);font-weight:500;font-variant-numeric:tabular-nums}
 .subscription-list{margin:0;padding:0;list-style:none}
 .subscription-list>.recurring-row{padding-inline:0}
+/* A subscription opens its merchant's Sankey. */
+:is(.subscription-list,.subscription-hidden) li[data-clickable]{cursor:pointer}
+:is(.subscription-list,.subscription-hidden) li[data-clickable]:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
 .subscription-hidden{margin-top:8px;border-top:1px solid var(--hairline)}
 .status-badge.is-paid{background:color-mix(in srgb,var(--positive) 12%,transparent);color:var(--pill-positive)}
 .recurring-calendar{width:100%;padding:0;overflow:hidden}

@@ -791,3 +791,27 @@ test('a schedule opened from the dashboard, where its history is not at hand, op
  r.mount(React.createElement(TransactionSankey));
  assert.equal(r.find(node => node.type === 'CashFlowDrillDialog').props.onDetails, sankey.onDetails, 'a page that has the details opens them itself');
 });
+
+test('a subscription row opens its merchant’s Sankey; its menu and Restore button do only their own thing', () => {
+ const r = createRenderer();
+ const charge = record('n3', 'Netflix', 'Living expense', 18, '2026-10-11', { account_id: 'card' });
+ const item = { id: 'netflix', merchant: 'netflix', currency: 'USD', record: charge, cadence: 'monthly', amount: 18, yearly: 216, next: '2026-11-11', missed: false, priceIncrease: null };
+ const modules = { '@/components/language-provider': language('en-US'), 'lucide-react': hostModule(), '@/components/display-money': { useDisplayMoney: () => ({ entered: (amount, currency) => `${currency} ${amount}`, showSum: () => '' }) },
+  ...Object.fromEntries(['category-icon', 'count', 'empty-state', 'error-popup', 'panel-title', 'row-menu'].map(name => ['@/components/presentation-foundation/' + name, hostModule()])),
+  '@/components/presentation-foundation/resource-state': { ResourceState: ({ children }) => children }, '@/components/ui/button': hostModule(), '@/hooks/use-columns-fit': { useColumnsFit: () => null },
+  '@/lib/recurring-insights': { applySubscriptionDecisions: () => ({ active: [item], hidden: [{ item: { ...item, id: 'gym', record: { ...charge, id: 'g1', name: 'Gym' } }, decision: { status: 'cancelled' } }] }), detectSubscriptions: () => [], subscriptionTotals: () => [], cadenceLabels: { monthly: 'Every month' }, recurringPlanDraft: () => ({}) } };
+ const { SubscriptionsPanel } = r.load('components/planning/subscriptions-panel.tsx', modules);
+ const opened = [];
+ r.mount(React.createElement(SubscriptionsPanel, { records: [], decisions: [], loading: false, onRetry() {}, decide: async () => {}, restore: async () => {}, onTrack() {}, onOpen: found => opened.push(found.id) }));
+ const rows = r.all(node => node.type === 'li' && node.props['data-clickable']);
+ assert.deepEqual(rows.map(row => row.props['aria-label']), ['Open Netflix', 'Open Gym'], 'active and hidden subscriptions');
+ const inside = { closest: () => null }, onButton = { closest: () => ({}) };
+ const event = target => ({ target, currentTarget: { contains: () => true } });
+ rows[0].props.onClick(event(inside));
+ rows[0].props.onClick(event(onButton));
+ rows[1].props.onKeyDown({ key: 'Enter', target: 1, currentTarget: 1, preventDefault() {} });
+ assert.deepEqual(opened, ['n3', 'g1'], 'its last charge, which the transaction Sankey opens for its merchant and month');
+ r.mount(React.createElement(SubscriptionsPanel, { records: [], decisions: [], loading: false, onRetry() {}, decide: async () => {}, restore: async () => {}, onTrack() {} }));
+ assert.equal(r.all(node => node.type === 'li' && node.props['data-clickable']).length, 0, 'without a handler the rows stay plain');
+ assert.match(fs.readFileSync('components/workspace/screens/upcoming-screen.tsx', 'utf8'), /<SubscriptionsPanel [^\n]*onOpen=\{record => setDrilling\(record\)\}\/>/);
+});

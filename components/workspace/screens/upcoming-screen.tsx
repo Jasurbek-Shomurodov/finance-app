@@ -13,7 +13,7 @@ import { marketRates } from '@/lib/market';
 
 export function UpcomingScreen() {
  const { t } = useLanguage();
- const { user, demo, reload, planning, workspacePreferences, currency, preferencesData, market, reviewRecurring, editRecord, addCashFlow, addRecurringIncome, readOnly, archiveSchedule, deleteSchedule, setSankey } = useWorkspace();
+ const { user, demo, reload, planning, workspacePreferences, currency, preferencesData, market, reviewRecurring, editRecord, addCashFlow, addRecurringIncome, readOnly, archiveSchedule, deleteSchedule, setSankey, setDrilling } = useWorkspace();
  const [view, setView] = useState<RecurringView>('list');
  // Add recurring sets up schedules only; payments are recorded on their rows.
  const addRecurring = (kind: RecurringKind) => kind === 'income' ? addRecurringIncome() : addCashFlow('Other expense', 'Monthly');
@@ -22,7 +22,7 @@ export function UpcomingScreen() {
   <div data-page="Upcoming payments" className="content">
    <PlanningError/>
    {planning.loading ? <LoadingPlaceholder label={t('Loading records…')}/> : <UpcomingPage data={planning.data} save={planning.save} currency={currency} currencies={preferencesData.currencies} rates={marketRates(market)} view={view} onView={setView} onEdit={editRecord} onAddRecurring={readOnly ? undefined : addRecurring} onArchive={archiveSchedule} onDelete={deleteSchedule} onSankey={setSankey}/>}
-   {view === 'subscriptions' && !planning.loading && <SubscriptionsPanel records={subscriptions.records} decisions={subscriptions.decisions} loading={subscriptions.loading} error={subscriptions.error} onRetry={subscriptions.retry} decide={subscriptions.decide} restore={subscriptions.restore} onTrack={reviewRecurring}/>}
+   {view === 'subscriptions' && !planning.loading && <SubscriptionsPanel records={subscriptions.records} decisions={subscriptions.decisions} loading={subscriptions.loading} error={subscriptions.error} onRetry={subscriptions.retry} decide={subscriptions.decide} restore={subscriptions.restore} onTrack={reviewRecurring} onOpen={record => setDrilling(record)}/>}
   </div>
   {(workspacePreferences.error||planning.error)&&<ToolsUnavailable/>}
   {view === 'reminders' && (planning.loading||workspacePreferences.loading)&&<div className="content review-content"><PanelSkeleton label={t('Loading records…')} rows={2}/></div>}
