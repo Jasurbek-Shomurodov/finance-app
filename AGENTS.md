@@ -188,7 +188,7 @@ lists the migration files not yet applied (a warning; `MIGRATIONS_CHECK=strict` 
 
 # Account settings and fiat currencies
 
-Use `lib/currencies.ts` for the fiat catalogue and localized currency names. Never
+Use `lib/currencies.ts` for the fiat catalogue. **Currencies show by code alone (the user's rule, 20 October 2026):** UZS, USD, never "Uzbekistani Som" or "USD · US Dollar", on every surface; `currencyLabel` returns the code, and names are used only so a search finds the code. Never
 hard-code a USD/UZS-only selector or validation rule. `formatMoney` displays whole
 amounts by default; unit quotes retain up to eight decimals without trailing zeros.
 Stored values and inputs retain their precision. Conversions require explicit
