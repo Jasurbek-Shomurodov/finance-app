@@ -2,22 +2,11 @@ import { monthEnd } from './calendar-days';
 import { assets, liabilities, type Entry } from './finance';
 import { convertAmount } from './market';
 import type { PlanningData } from './planning';
+import type { DrillContext, DrillFlows, DrillNode, DrillTarget } from './cash-flow-drill-types';
 import { otherShareKey, topShares, type Share } from './cash-flow-report';
 import { cashFlowItems, spendingAmount, transferAmount, type CashFlowItem } from './spending';
-import type { TransactionSplit } from './transaction-tools';
 
-/** What a tap on the Cash flow Sankey opens: one income or spending category, the period's savings, or one account. */
-export type DrillTarget = { side: 'income' | 'expense'; key: string } | { side: 'account'; key: string } | { side: 'savings' }
- /** One transfer or loan repayment, by its account operation's id (`lib/cash-flow-operations.ts`). */
- | { side: 'operation'; key: string }
- /** One payer (`income`) or merchant, by the name its transactions carry. */
- | { side: 'merchant'; key: string; income: boolean };
-/** A node of a drill-down Sankey; `open` is the Sankey a tap on it opens next. */
-export type DrillNode = { name: string; kind: 'income' | 'expense' | 'savings' | 'account' | 'holding' | 'debt' | 'untraced'; open?: DrillTarget };
-export type DrillFlows = { nodes: DrillNode[]; links: Array<{ source: number; target: number; value: number }>; missing: number };
-type Rates = number | Record<string, number> | undefined;
-/** `label` names a category key (an added category's id or a built-in kind). */
-export type DrillContext = { data: Pick<PlanningData, 'records' | 'activity' | 'investmentLinks' | 'movements'>; splits: TransactionSplit[]; months: string[]; currency: string; today: string; rates: Rates; t: (key: string) => string; label?: (key: string) => string };
+export type { DrillContext, DrillFlows, DrillNode, DrillTarget } from './cash-flow-drill-types';
 
 const add = (totals: Map<string, number>, key: string, amount: number) => totals.set(key, (totals.get(key) ?? 0) + amount);
 const shares = (totals: Map<string, number>): Share[] => [...totals].filter(([, amount]) => amount > 0).map(([key, amount]) => ({ key, amount, share: 0 })).sort((a, b) => b.amount - a.amount || a.key.localeCompare(b.key));
@@ -225,7 +214,8 @@ function accountFlows(key: string, title: string, context: DrillContext): DrillF
  const change = left.reduce((sum, entry) => sum + entry.value, 0) - right.reduce((sum, entry) => sum + entry.value, 0);
  // What stays in a holding is money invested; what reaches a debt pays its principal; in an account it is the balance.
  const kept = t(self.kind === 'holding' ? 'Money invested' : self.kind === 'debt' ? 'Principal' : 'Balance');
- if (change >= .5) right.push({ node: { name: kept, kind: 'savings' }, value: change });
+ // A debt's principal opens the payments that paid it down.
+ if (change >= .5) right.push({ node: { name: kept, kind: 'savings', open: self.kind === 'debt' ? { side: 'principal', key } : undefined }, value: change });
  if (change <= -.5) left.push({ node: { name: kept, kind: 'savings' }, value: -change });
  const nodes: DrillNode[] = [...left.map(entry => entry.node), { ...self, name: title, open: undefined }, ...right.map(entry => entry.node)];
  const hub = left.length;
@@ -268,7 +258,7 @@ export function drillTransactions(target: DrillTarget, context: DrillContext): E
  const paidDebt = new Map((data.activity ?? []).filter(row => row.action === 'mortgage' && row.target_id).map(row => [row.id, row.target_id!]));
  const matches = (item: Item) => {
   if (target.side === 'savings') return true;
-  if (target.side === 'operation') return false;
+  if (target.side === 'operation' || target.side === 'principal' || target.side === 'record') return false;
   if (target.side === 'merchant') return item.income === target.income && merchantOf(item, t) === target.key;
   if (target.side === 'account') return accountOf(item, activityAccount) === target.key || (!!item.record && paidDebt.get(item.record.id) === target.key);
   // A category: income by its category, spending by any part of it (a split transaction is listed once).
@@ -283,7 +273,8 @@ export function drillTransactions(target: DrillTarget, context: DrillContext): E
  * one payer or merchant. */
 export function drillFlows(target: DrillTarget, title: string, savings: number, context: DrillContext): DrillFlows {
  if (target.side === 'savings') return savingsFlows(savings, context);
- if (target.side === 'operation') return { nodes: [], links: [], missing: 0 };
+ // A transfer, a debt's principal and a transaction are drawn by their own modules or open their details.
+ if (target.side === 'operation' || target.side === 'principal' || target.side === 'record') return { nodes: [], links: [], missing: 0 };
  if (target.side === 'account') return accountFlows(target.key, title, context);
  if (target.side === 'merchant') return merchantFlows(target, title, context);
  return categoryFlows(target, title, context);
