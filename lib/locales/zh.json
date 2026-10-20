@@ -546,7 +546,6 @@
   "Add investment": "添加投资",
   "Interest-bearing deposit": "计息存款",
   "Cash and deposits hold a balance. Stocks and crypto are holdings within an account.": "现金和存款持有余额。股票和加密货币是账户内的持仓。",
-  "For an interest-bearing balance, choose Deposit and enter its annual interest rate.": "如需计息余额，请选择“存款”并输入其年利率。",
   "Current balance": "当前余额",
   "Manage deposit": "管理存款",
   "{count} holdings": "{count} 项持仓",

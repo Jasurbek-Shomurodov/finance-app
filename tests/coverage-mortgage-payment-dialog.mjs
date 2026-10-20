@@ -34,16 +34,18 @@ function open(props = {}) {
  return { view, calls, save, number, setPrincipal, setInterest, choose };
 }
 
-test('mortgage payment dialog opens empty with the outstanding balance and only cash accounts to choose', () => {
+test('mortgage payment dialog opens with the outstanding balance, only cash accounts to choose and the one in its currency chosen', () => {
  const { view, save, calls, number } = open();
  const html = view.html();
- assert.match(html, /<h2>Record mortgage payment<\/h2>/);
+ // The guidance sits behind the ⓘ in the title, not under it.
+ assert.match(html, /<h2>Record mortgage payment<i data-hint="Enter principal and interest/);
  assert.ok(html.includes(`Home loan · Outstanding balance: ${formatMoney(100000, 'USD', 'en-US')}`));
  assert.ok(html.includes(`Total payment: ${formatMoney(0, 'USD', 'en-US')}`));
  assert.ok(html.includes(`Remaining balance: ${formatMoney(100000, 'USD', 'en-US')}`));
  const options = view.all(element => element.type === 'option').map(text);
  assert.deepEqual(options, ['Choose a cash account', `Wallet · ${formatMoney(5000, 'USD', 'en-US')}`, `Euro account · ${formatMoney(1000, 'EUR', 'en-US')}`]);
  assert.doesNotMatch(html, /Add a cash account to record this transaction/);
+ assert.equal(view.find(byType(ui.NativeSelect)).props.value, 'c1', 'the only account in the mortgage\'s currency starts chosen');
  assert.equal(number(0).props.max, 100000);
  const date = view.find(byType(ui.DatePicker));
  assert.equal(date.props.min, '2026-01-15');

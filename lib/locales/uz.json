@@ -546,7 +546,6 @@
   "Add investment": "Sarmoya qo'shish",
   "Interest-bearing deposit": "Foizli omonat",
   "Cash and deposits hold a balance. Stocks and crypto are holdings within an account.": "Naqd pul va omonatlarda qoldiq saqlanadi. Aksiyalar va kripto — hisob ichidagi aktivlar.",
-  "For an interest-bearing balance, choose Deposit and enter its annual interest rate.": "Foizli qoldiq uchun «Omonat»ni tanlab, yillik foiz stavkasini kiriting.",
   "Current balance": "Joriy qoldiq",
   "Manage deposit": "Omonatni boshqarish",
   "{count} holdings": "{count} ta aktiv",

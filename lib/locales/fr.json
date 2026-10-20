@@ -546,7 +546,6 @@
   "Add investment": "Ajouter un investissement",
   "Interest-bearing deposit": "Dépôt rémunéré",
   "Cash and deposits hold a balance. Stocks and crypto are holdings within an account.": "Les espèces et les dépôts ont un solde. Les actions et les cryptomonnaies sont des avoirs au sein d’un compte.",
-  "For an interest-bearing balance, choose Deposit and enter its annual interest rate.": "Pour un solde rémunéré, choisissez Dépôt et saisissez son taux d’intérêt annuel.",
   "Current balance": "Solde actuel",
   "Manage deposit": "Gérer le dépôt",
   "{count} holdings": "{count} avoirs",

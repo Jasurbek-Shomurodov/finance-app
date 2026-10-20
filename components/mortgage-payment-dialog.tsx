@@ -15,10 +15,13 @@ import { FormattedNumberInput } from '@/components/presentation-foundation/forma
 import { formatAccountOption, formatMoney } from '@/lib/format';
 import type { Entry } from '@/lib/finance';
 import { Textarea } from '@/components/ui/textarea';
+import { InfoHint } from '@/components/presentation-foundation/info-hint';
+import { suggestedCashAccount } from '@/lib/form-suggestions';
 export type MortgagePayment = { id: string; mortgage_id: string; principal: number; interest: number; date: string; notes: string; account_id?:string;exchange_rate?:number };
 export function MortgagePaymentDialog({ mortgage, accounts = [], onClose, onSave, inline=false, onDraftState }: { inline?:boolean;onDraftState?:(dirty:boolean,busy:boolean)=>void; accounts?:Entry[]; mortgage: Entry; onClose: () => void; onSave: (payment: MortgagePayment) => Promise<void> }) {
  const { t, locale } = useLanguage();
- const [payment, setPayment] = useState<MortgagePayment>(() => ({ id: crypto.randomUUID(), mortgage_id: mortgage.id, principal: 0, interest: 0, date: depositToday(), notes: '' }));
+ // It starts from the cash account last used in the mortgage's currency, or the only one; that is not a change to discard.
+ const [payment, setPayment] = useState<MortgagePayment>(() => ({ id: crypto.randomUUID(), mortgage_id: mortgage.id, principal: 0, interest: 0, date: depositToday(), notes: '', account_id: suggestedCashAccount(accounts, mortgage.currency, 'expense') ?? undefined }));
  const [busy, setBusy] = useState(false);
  const [error, setError] = useState('');
  const [submitted, setSubmitted] = useState(false);
@@ -39,7 +42,7 @@ export function MortgagePaymentDialog({ mortgage, accounts = [], onClose, onSave
   };
 
  const content=<div className="record-form">
-   <p className="muted">{t('Enter principal and interest from your bank statement. Only principal reduces your mortgage.')}</p>
+   {inline&&<p className="muted">{t('Enter principal and interest from your bank statement. Only principal reduces your mortgage.')}</p>}
    <fieldset disabled={busy || submitted} className="grid gap-5 border-0 p-0 m-0 min-w-0">
     <div className="form-grid"><label>{t('Principal repayment')}<FormattedNumberInput value={payment.principal} required={false} max={mortgage.amount} onValueChange={principal => setPayment({ ...payment, principal })}/></label>
     <label>{t('Interest paid')}<FormattedNumberInput value={payment.interest} required={false} onValueChange={interest => setPayment({ ...payment, interest })}/></label></div>
@@ -50,13 +53,13 @@ export function MortgagePaymentDialog({ mortgage, accounts = [], onClose, onSave
     <label>{t('Notes (optional)')}<Textarea rows={2} maxLength={2000} value={payment.notes} onChange={e => setPayment({ ...payment, notes: e.target.value })}/></label>
    </fieldset>
    <div className="ownership-summary"><p>{t('Total payment: {amount}', { amount: money(payment.principal + payment.interest) })}</p><p>{t('Remaining balance: {amount}', { amount: money(mortgage.amount - payment.principal) })}</p></div>
-   <p className="muted">{t('Saved once in Income & expenses. The selected cash account pays the total. To undo a payment, delete it from Transactions; you can restore it from Recently deleted.')}</p>
+   {inline&&<p className="muted">{t('Saved once in Income & expenses. The selected cash account pays the total. To undo a payment, delete it from Transactions; you can restore it from Recently deleted.')}</p>}
    <ErrorPopup message={error} detail="Retry the same payment to avoid duplicates."/>
    <FormFooter busy={busy} onCancel={guard.close}><span title={busy||!blocked?undefined:t(blocked)}><Button disabled={busy || !valid} type="button" onClick={()=>void submit()}>{t(busy ? 'Saving…' : 'Save payment')}</Button></span></FormFooter>
   </div>;
  if(inline)return <>{content}{guard.confirmation}</>;
  return <><Dialog open onOpenChange={open=>{if(!open&&!busy)guard.close();}}><DialogContent className="record-dialog" showCloseButton={!busy}>
-  <DialogTitle>{t('Record mortgage payment')}</DialogTitle>
+  <DialogTitle>{t('Record mortgage payment')}<InfoHint><p>{t('Enter principal and interest from your bank statement. Only principal reduces your mortgage.')}</p><p>{t('Saved once in Income & expenses. The selected cash account pays the total. To undo a payment, delete it from Transactions; you can restore it from Recently deleted.')}</p></InfoHint></DialogTitle>
   <DialogDescription>{mortgage.name} · {t('Outstanding balance: {amount}',{amount:money(mortgage.amount)})}</DialogDescription>
   {content}
  </DialogContent></Dialog>{guard.confirmation}</>;

@@ -34,7 +34,8 @@ export function recordForms({ editable, setError, setRecordKinds, setEditing, se
         if (cashFlowSection) { addCashFlow('Other expense'); return; }
         setError('');
         setRecordKinds(section === 'Assets & investments' ? assetRecordKinds : section === 'Loans & debts' ? lendingRecordKinds : kinds);
-        setEditing({ ...fresh(), currency, kind: section === 'Loans & debts' ? 'Mortgage' : 'Cash' });
+        // Investments' Add asset starts on a property: cash and deposits are added as accounts.
+        setEditing({ ...fresh(), currency, kind: section === 'Loans & debts' ? 'Mortgage' : section === 'Assets & investments' ? 'Property' : 'Cash' });
     };
     const addAccountRecord = (kind: 'Cash'|'Deposit'|'Stock'|'Crypto', holdingAccountId?: string) => {
         if (!editable()) return;

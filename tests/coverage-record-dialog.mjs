@@ -61,7 +61,7 @@ test('account mode titles, lending and debt records, and edited records use thei
  const lent=dialog(t,record('lent','Money lent'));
  assert.equal(lent.title(),'Add money lent');assert.equal(lent.description(),'Keep track of who owes you, how much, and when.');
  const loan=dialog(t,record('loan','Loan'),{recordKinds:finance.liabilities});
- assert.equal(loan.title(),'Add a record');assert.equal(loan.description(),'Keep a current balance for this record.');
+ assert.equal(loan.title(),'Add loan or debt');assert.equal(loan.description(),'Keep a current balance for this record.');
  const other=dialog(t,record('loan','Loan'),{recordKinds:['Loan','Salary'],rows:[record('loan','Loan')]});
  assert.equal(other.title(),'Edit record');
  const mixed=dialog(t,record('x','Valuables',{kind:'Valuables'}),{recordKinds:['Loan','Salary'],accountMode:false});
@@ -145,19 +145,25 @@ test('opening focuses the expense amount, else the form\'s first field, and othe
 test('a new cash account offers the investment option, an investment account and an opening date',t=>{
  const holdingAccounts=[{id:'broker',name:'Broker',kind:'Stock'},{id:'wallet',name:'Exchange',kind:'Crypto'}];
  const d=dialog(t,record('cash','Cash'),{accountMode:true,planning:planning({holdingAccounts})});
- d.r.fire(d.r.find(byType('CashInvestmentOption')),'onChange',true);
- assert.equal(d.state.editing.is_investment,true);
+ // The account chooser already asked whether it is a cash investment account; outside it the option stays.
+ assert.equal(d.r.all(byType('CashInvestmentOption')).length,0);
+ const asset=dialog(t,record('cash','Cash'),{planning:planning({holdingAccounts})});
+ asset.r.fire(asset.r.find(byType('CashInvestmentOption')),'onChange',true);
+ assert.equal(asset.state.editing.is_investment,true);
  const account=d.labelled('Investment account (optional)','NativeSelect');
  assert.deepEqual(account.children.map(text),['No investment account','Broker · Stock account','Exchange · Crypto account']);
  d.r.fire(account,'onChange',{target:{value:'broker'}});
  assert.equal(d.state.editing.holding_account_id,'broker');
  d.r.fire(d.labelled('Investment account (optional)','NativeSelect'),'onChange',{target:{value:''}});
  assert.equal(d.state.editing.holding_account_id,null);
- assert.ok(d.r.find(node=>node.type==='p'&&text(node)==='For an interest-bearing balance, choose Deposit and enter its annual interest rate.'));
+ assert.equal(d.r.find(node=>node.type==='details').props.open,false,'the investment account and notes fold away');
  const opened=d.labelled('Opening balance date','DatePicker');
  assert.equal(opened.props.value,'2026-09-30','the opening date defaults to today');
  d.r.fire(opened,'onChange','2026-09-01');
  assert.equal(d.state.editing.opened_on,'2026-09-01');
+ // A new account has one date: its record date follows the opening date, and no Record date field is shown.
+ assert.equal(d.state.editing.date,'2026-09-01');
+ assert.equal(d.r.all(node=>node.type==='label'&&node.children[0]==='Record date').length,0);
  // Changing the kind goes through the shared kind change.
  d.r.fire(d.labelled('Account type','NativeSelect'),'onChange',{target:{value:'Deposit'}});
  assert.equal(d.state.editing.kind,'Deposit');

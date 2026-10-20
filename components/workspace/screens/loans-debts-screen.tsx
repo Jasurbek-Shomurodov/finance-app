@@ -20,7 +20,7 @@ export function LoansDebtsScreen() {
  const { user, current, currency, planning, workspacePreferences, workspaceLoading, addRecord } = useWorkspace();
  return <>
   <div data-page="Loans & debts" className="content">
-   <PageHeader title={t('Loans & debts')} tabs={<Segmented className="page-tabs" as="nav" label={t('Loans & debts')} options={[{ value: 'overview', label: t('Overview') }, { value: 'payoff', label: t('Debt payoff planner') }] as const} value={view} onChange={setView}/>}><Button onClick={addRecord}><Plus size={17} aria-hidden="true"/>{t("Add record")}</Button></PageHeader>
+   <PageHeader title={t('Loans & debts')} tabs={<Segmented className="page-tabs" as="nav" label={t('Loans & debts')} options={[{ value: 'overview', label: t('Overview') }, { value: 'payoff', label: t('Debt payoff planner') }] as const} value={view} onChange={setView}/>}><Button onClick={addRecord}><Plus size={17} aria-hidden="true"/>{t("Add loan or debt")}</Button></PageHeader>
    <ScreenNotices/>
    {view === 'overview' && (workspaceLoading ? <WorkspaceSkeleton label={t("Loading your workspace…")} section="Loans & debts"/> : <>
     <DebtSummary entries={current} currency={currency}/>

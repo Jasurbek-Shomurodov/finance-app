@@ -24,7 +24,7 @@ function title({props,saved,assetRecord}:Heading,t:Translate){
  if(assetRecord)return props.recordKinds.length===assetRecordKinds.length&&assetRecordKinds.every(kind=>props.recordKinds.includes(kind))?t("Add asset"):assetTitle(editing,t);
  if(accountMode)return isHolding(editing)?t("Add holding"):t("Add account");
  if(editingCashFlow)return income.includes(editing!.kind)?t("Add income"):editing!.frequency!=='Once'?t("Recurring bill"):t("Add expense");
- return editing?.kind==='Money lent'?t("Add money lent"):t("Add a record");
+ return editing?.kind==='Money lent'?t("Add money lent"):t("Add loan or debt");
 }
 /** The dialog's one-line description, for the kind of record and whether it is saved already. */
 function description({props,existing,assetRecord,liability}:Heading,t:Translate){

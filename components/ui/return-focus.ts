@@ -10,6 +10,16 @@ function openerOf(active: Element | null) {
   return trigger ?? active
 }
 
+/** A dialog with fields opens on its first field, not on the ⓘ beside its title; a dialog of choices keeps Radix's first
+ * focusable element. A dialog that sets its own focus prevents this. */
+function focusFirstField(event: Event) {
+  const dialog = event.currentTarget as HTMLElement | null
+  const field = dialog?.querySelector?.<HTMLElement>(":is(input:not([type=hidden]):not([type=checkbox]):not([type=radio]),select,textarea):not([disabled])")
+  if (!field) return
+  event.preventDefault()
+  field.focus()
+}
+
 /** Focus goes back where it was when the dialog opened. Most dialogs here open from state, without a Radix trigger to return to,
  * and some stay mounted while closed (ConfirmDialog, the Recurring delete question), so the opener is read each time the dialog
  * opens (`onOpenAutoFocus`, before focus moves in), not once when the component first renders. */
@@ -20,6 +30,7 @@ export function useReturnFocus(onCloseAutoFocus?: (event: Event) => void, onOpen
     onOpenAutoFocus: (event: Event) => {
       opener.current = openerOf(document.activeElement)
       onOpenAutoFocus?.(event)
+      if (!event.defaultPrevented) focusFirstField(event)
     },
     onCloseAutoFocus: (event: Event) => {
       onCloseAutoFocus?.(event)

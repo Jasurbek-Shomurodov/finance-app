@@ -546,7 +546,6 @@
   "Add investment": "Yatırım ekle",
   "Interest-bearing deposit": "Faiz getiren mevduat",
   "Cash and deposits hold a balance. Stocks and crypto are holdings within an account.": "Nakit ve mevduatlar bir bakiye tutar. Hisse senetleri ve kripto, bir hesap içindeki varlıklardır.",
-  "For an interest-bearing balance, choose Deposit and enter its annual interest rate.": "Faiz getiren bir bakiye için Mevduat'ı seçin ve yıllık faiz oranını girin.",
   "Current balance": "Güncel bakiye",
   "Manage deposit": "Mevduatı yönet",
   "{count} holdings": "{count} varlık",

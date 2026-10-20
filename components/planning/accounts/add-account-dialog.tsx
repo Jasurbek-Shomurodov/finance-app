@@ -3,11 +3,12 @@ import { Bitcoin, ChartNoAxesCombined, Landmark, Wallet } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
+// The everyday account first; a cash investment account sits with the other investment accounts.
 const accountTypes = [
- {kind:'CashInvestment',title:'Cash investment account',description:'Hold cash in your preferred currencies as an investment.',Icon:Wallet},
  {kind:'Cash',title:'Cash account',description:'Money available for spending, transfers and savings goals.',Icon:Wallet},
  {kind:'Deposit',title:'Interest-bearing deposit',description:'A balance with an annual interest rate, top-ups and withdrawals.',Icon:Landmark},
  {kind:'Stock',title:'Stock account',description:'A brokerage account containing multiple stock holdings.',Icon:ChartNoAxesCombined},
+ {kind:'CashInvestment',title:'Cash investment account',description:'Hold cash in your preferred currencies as an investment.',Icon:Wallet},
  {kind:'Crypto',title:'Crypto account',description:'An exchange or wallet containing multiple crypto holdings.',Icon:Bitcoin},
 ] as const;
 export type AccountType = typeof accountTypes[number]['kind'];

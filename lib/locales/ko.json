@@ -546,7 +546,6 @@
   "Add investment": "투자 추가",
   "Interest-bearing deposit": "이자가 붙는 예금",
   "Cash and deposits hold a balance. Stocks and crypto are holdings within an account.": "현금과 예금은 잔액을 가져요. 주식과 암호화폐는 계좌 안의 보유 자산이에요.",
-  "For an interest-bearing balance, choose Deposit and enter its annual interest rate.": "이자가 붙는 잔액은 예금을 선택하고 연 이자율을 입력하세요.",
   "Current balance": "현재 잔액",
   "Manage deposit": "예금 관리",
   "{count} holdings": "보유 자산 {count}개",

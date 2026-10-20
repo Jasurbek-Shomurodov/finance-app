@@ -546,7 +546,6 @@
   "Add investment": "เพิ่มการลงทุน",
   "Interest-bearing deposit": "เงินฝากที่มีดอกเบี้ย",
   "Cash and deposits hold a balance. Stocks and crypto are holdings within an account.": "เงินสดและเงินฝากมียอดคงเหลือ ส่วนหุ้นและคริปโตเป็นสินทรัพย์ที่ถืออยู่ในบัญชี",
-  "For an interest-bearing balance, choose Deposit and enter its annual interest rate.": "สำหรับยอดเงินที่มีดอกเบี้ย ให้เลือก \"เงินฝาก\" แล้วป้อนอัตราดอกเบี้ยต่อปี",
   "Current balance": "ยอดคงเหลือปัจจุบัน",
   "Manage deposit": "จัดการเงินฝาก",
   "{count} holdings": "{count} รายการที่ถือ",

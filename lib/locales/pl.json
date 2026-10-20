@@ -546,7 +546,6 @@
   "Add investment": "Dodaj inwestycję",
   "Interest-bearing deposit": "Lokata oprocentowana",
   "Cash and deposits hold a balance. Stocks and crypto are holdings within an account.": "Gotówka i lokaty mają saldo. Akcje i kryptowaluty to pozycje na koncie.",
-  "For an interest-bearing balance, choose Deposit and enter its annual interest rate.": "W przypadku salda z oprocentowaniem wybierz Lokata i wpisz roczne oprocentowanie.",
   "Current balance": "Bieżące saldo",
   "Manage deposit": "Zarządzaj lokatą",
   "{count} holdings": "Pozycje: {count}",

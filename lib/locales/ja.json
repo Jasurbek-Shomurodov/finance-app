@@ -546,7 +546,6 @@
   "Add investment": "投資を追加",
   "Interest-bearing deposit": "利息付き預金",
   "Cash and deposits hold a balance. Stocks and crypto are holdings within an account.": "現金と預金は残高を保有します。株式と暗号資産は、口座内の保有資産です。",
-  "For an interest-bearing balance, choose Deposit and enter its annual interest rate.": "利息付きの残高には「預金」を選択し、年利率を入力してください。",
   "Current balance": "現在の残高",
   "Manage deposit": "預金を管理",
   "{count} holdings": "保有資産{count}件",

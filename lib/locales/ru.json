@@ -546,7 +546,6 @@
   "Add investment": "Добавить вложение",
   "Interest-bearing deposit": "Процентный вклад",
   "Cash and deposits hold a balance. Stocks and crypto are holdings within an account.": "Наличные и вклады хранят баланс. Акции и криптовалюта — активы внутри счёта.",
-  "For an interest-bearing balance, choose Deposit and enter its annual interest rate.": "Для процентного баланса выберите «Вклад» и укажите годовую ставку.",
   "Current balance": "Текущий баланс",
   "Manage deposit": "Управлять вкладом",
   "{count} holdings": "Активов: {count}",

@@ -546,7 +546,6 @@
   "Add investment": "Añadir inversión",
   "Interest-bearing deposit": "Depósito con intereses",
   "Cash and deposits hold a balance. Stocks and crypto are holdings within an account.": "El efectivo y los depósitos mantienen un saldo. Las acciones y las criptomonedas son posiciones dentro de una cuenta.",
-  "For an interest-bearing balance, choose Deposit and enter its annual interest rate.": "Para un saldo con intereses, elige Depósito e introduce su tasa de interés anual.",
   "Current balance": "Saldo actual",
   "Manage deposit": "Gestionar depósito",
   "{count} holdings": "{count} posiciones",
