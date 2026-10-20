@@ -127,7 +127,7 @@ test('an account in the savings Sankey opens its own: income and transfers in, s
  const save = drillFlows({ side: 'account', key: 'save' }, 'Savings account', 0, ctx);
  assert.deepEqual(shape(save), [['Card', 'Savings account', 1490], ['Savings account', 'Charity', 50], ['Savings account', 'Balance', 1440]]);
  const loan = drillFlows({ side: 'account', key: 'loan' }, 'Car loan', 0, ctx);
- assert.deepEqual(shape(loan), [['Card', 'Car loan', 300], ['Car loan', 'Balance', 300]], 'a repayment flows into the debt');
+ assert.deepEqual(shape(loan), [['Card', 'Car loan', 300], ['Car loan', 'Principal', 300]], 'a repayment flows into the debt and pays its principal');
  const drawn = drillFlows({ side: 'account', key: 'card' }, 'Card', 0, context([record('food', 'Market', 'Living expense', 200, '2026-08-06', { account_id: 'card' })]));
  assert.deepEqual(shape(drawn), [['Balance', 'Card', 200], ['Card', 'Living expense', 200]], 'spending more than came in draws on the balance');
  const fx = drillFlows({ side: 'account', key: 'card' }, 'Card', 0, context([], [{ id: 't', action: 'transfer', account_id: 'card', target_id: 'eur', amount: 100, received: 220, fee: 0, occurred_on: '2026-08-10', notes: '', before_balance: 0, after_balance: 0 }], { data: { records: [...accounts, record('eur', 'Euro', 'Cash', 0, '2026-01-01', { frequency: 'Monthly', currency: 'EUR' })], activity: [{ id: 't', action: 'transfer', account_id: 'card', target_id: 'eur', amount: 100, received: 220, fee: 0, occurred_on: '2026-08-10', notes: '', before_balance: 0, after_balance: 0 }], investmentLinks: [] } }));
@@ -317,4 +317,25 @@ test('a holding in the savings Sankey is marked as one and opens its own: what w
  const { accountNode } = loadTS('lib/cash-flow-drill.ts');
  assert.equal(accountNode('cd', new Map([['cd', { kind: 'Deposit', name: 'CD' }]]), key => key).kind, 'account', 'a deposit is where money is kept, not a holding');
  assert.equal(accountNode('home', new Map([['home', { kind: 'Mortgage', name: 'Home' }]]), key => key).kind, 'debt');
+});
+
+test('a debt in the savings Sankey opens its own: what paid it down, as principal, with its repayments and mortgage payments listed', () => {
+ const records = [
+  record('pay', 'EPAM', 'Salary', 3000, '2026-08-05', { account_id: 'card' }),
+  record('mp', 'Mortgage payment', 'Other expense', 1000, '2026-08-20', { mortgage_payment_id: 'mp', payment_interest: 400, payment_principal: 600 }),
+ ];
+ const activity = [
+  { id: 'r1', action: 'repayment', account_id: 'card', target_id: 'loan', amount: 300, received: 300, fee: 0, occurred_on: '2026-08-15', notes: '', before_balance: 0, after_balance: 0 },
+  { id: 'mp', action: 'mortgage', account_id: 'card', target_id: 'home', amount: 1000, received: 1000, fee: 0, occurred_on: '2026-08-20', notes: '', before_balance: 0, after_balance: 0 },
+ ];
+ const ctx = context(records, activity);
+ const savings = drillFlows({ side: 'savings' }, 'Savings', 2600, ctx);
+ assert.deepEqual(savings.nodes.filter(node => node.kind === 'debt').map(node => [node.name, node.open]), [['Home', { side: 'account', key: 'home' }], ['Car loan', { side: 'account', key: 'loan' }]], 'every debt opens its own Sankey');
+ assert.deepEqual(shape(drillFlows({ side: 'account', key: 'loan' }, 'Car loan', 0, ctx)), [['Card', 'Car loan', 300], ['Car loan', 'Principal', 300]]);
+ assert.deepEqual(shape(drillFlows({ side: 'account', key: 'home' }, 'Home', 0, ctx)), [['Card', 'Home', 600], ['Home', 'Principal', 600]], 'only the principal reaches the mortgage; the interest is spending');
+ const { drillTransactions } = loadTS('lib/cash-flow-drill.ts');
+ const { accountOperations } = loadTS('lib/cash-flow-operations.ts');
+ assert.deepEqual(drillTransactions({ side: 'account', key: 'home' }, ctx).map(item => item.id), ['mp'], 'the mortgage lists its payment');
+ assert.deepEqual(drillTransactions({ side: 'account', key: 'card' }, ctx).map(item => item.id), ['mp', 'pay'], 'and so does the account that paid it');
+ assert.deepEqual(accountOperations('loan', ctx).map(row => row.id), ['r1'], 'the loan lists its repayment');
 });

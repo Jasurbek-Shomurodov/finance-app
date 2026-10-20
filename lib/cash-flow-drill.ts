@@ -204,8 +204,8 @@ function accountFlows(key: string, title: string, context: DrillContext): DrillF
  const nets = [...ends.values()].map(entry => ({ node: entry.node, value: entry.inflow - entry.outflow })).filter(entry => Math.abs(entry.value) >= .5);
  const left = nets.filter(entry => entry.value > 0).sort((a, b) => b.value - a.value), right = nets.filter(entry => entry.value < 0).map(entry => ({ ...entry, value: -entry.value })).sort((a, b) => b.value - a.value);
  const change = left.reduce((sum, entry) => sum + entry.value, 0) - right.reduce((sum, entry) => sum + entry.value, 0);
- // What stays in a holding is money invested; in an account or debt it is the balance.
- const kept = t(self.kind === 'holding' ? 'Money invested' : 'Balance');
+ // What stays in a holding is money invested; what reaches a debt pays its principal; in an account it is the balance.
+ const kept = t(self.kind === 'holding' ? 'Money invested' : self.kind === 'debt' ? 'Principal' : 'Balance');
  if (change >= .5) right.push({ node: { name: kept, kind: 'savings' }, value: change });
  if (change <= -.5) left.push({ node: { name: kept, kind: 'savings' }, value: -change });
  const nodes: DrillNode[] = [...left.map(entry => entry.node), { ...self, name: title, open: undefined }, ...right.map(entry => entry.node)];
@@ -245,11 +245,13 @@ function merchantFlows(target: { key: string; income: boolean }, title: string, 
 export function drillTransactions(target: DrillTarget, context: DrillContext): Entry[] {
  const { data, splits, months, today, t } = context, { from, to } = span(months, today);
  const activityAccount = new Map((data.activity ?? []).map(row => [row.id, row.account_id]));
+ // A mortgage payment is listed under the account that paid it and under its mortgage.
+ const paidDebt = new Map((data.activity ?? []).filter(row => row.action === 'mortgage' && row.target_id).map(row => [row.id, row.target_id!]));
  const matches = (item: Item) => {
   if (target.side === 'savings') return true;
   if (target.side === 'operation') return false;
   if (target.side === 'merchant') return item.income === target.income && merchantOf(item, t) === target.key;
-  if (target.side === 'account') return accountOf(item, activityAccount) === target.key;
+  if (target.side === 'account') return accountOf(item, activityAccount) === target.key || (!!item.record && paidDebt.get(item.record.id) === target.key);
   // A category: income by its category, spending by any part of it (a split transaction is listed once).
   return target.side === 'income' ? item.income && (item.record?.custom_category_id ?? item.record?.kind) === target.key : !item.income && item.parts.some(part => part.category === target.key);
  };
