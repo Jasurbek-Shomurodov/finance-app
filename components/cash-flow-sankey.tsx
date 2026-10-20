@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { OperationDetails, OperationRow, operationTitle } from '@/components/cash-flow-operation';
 import { accountOperations, operationFlows, type Operation } from '@/lib/cash-flow-operations';
+import { balanceFlows } from '@/lib/cash-flow-balance';
 import { interestFlows, mortgageTransactions, paymentFlows, principalFlows, principalPayments } from '@/lib/cash-flow-principal';
 import { drillFlows, drillTransactions, type DrillContext, type DrillTarget } from '@/lib/cash-flow-drill';
 import { income, type Entry } from '@/lib/finance';
@@ -47,8 +48,10 @@ export function FlowSankey({ flows, currency, onOpen, canOpen }: { flows: Flows;
 }
 
 /** The transactions under a drill-down Sankey (for Savings, all the period's income and spending), each as it was entered; a tap opens its details. */
-function DrillTransactions({ target, context, onOpenRecord, onOpenOperation }: { target: DrillTarget; context: DrillContext; onOpenRecord: (record: Entry) => void; onOpenOperation: (row: Operation) => void }) {
+function DrillTransactions({ target: shown, context, onOpenRecord, onOpenOperation }: { target: DrillTarget; context: DrillContext; onOpenRecord: (record: Entry) => void; onOpenOperation: (row: Operation) => void }) {
  const { t, locale } = useLanguage();
+ // An account's balance lists the account's transactions, as the account does.
+ const target: DrillTarget = shown.side === 'balance' ? { side: 'account', key: shown.key } : shown;
  const name = context.label ?? t;
  // A debt's principal lists the payments that paid it down: mortgage payments and loan repayments.
  const records = target.side === 'principal' ? principalPayments(target.key, context).flatMap(payment => payment.record ? [payment.record] : [])
@@ -80,7 +83,7 @@ export function CashFlowDrillDialog({ target, title, period, savings, context, o
  const { t } = useLanguage();
  const [trail, setTrail] = useState([{ target, title }]);
  const current = trail.at(-1)!;
- const flows = current.target.side === 'operation' ? operationFlows(current.target.key, context) : current.target.side === 'principal' ? principalFlows(current.target.key, context) : current.target.side === 'payment' ? paymentFlows(current.target.key, context) : current.target.side === 'interest' ? interestFlows(current.target.key, context) : drillFlows(current.target, current.title, savings, context);
+ const flows = current.target.side === 'operation' ? operationFlows(current.target.key, context) : current.target.side === 'principal' ? principalFlows(current.target.key, context) : current.target.side === 'payment' ? paymentFlows(current.target.key, context) : current.target.side === 'interest' ? interestFlows(current.target.key, context) : current.target.side === 'balance' ? balanceFlows(current.target.key, context) : drillFlows(current.target, current.title, savings, context);
  // A transaction opens its shared details over the dialog; anything else opens in the dialog, with Back to return.
  const record = (id: string) => (context.data.records as Entry[]).find(item => item.id === id);
  const canOpen = (index: number) => { const open = flows.nodes[index]?.open; return !!open && (open.side !== 'record' || (!!onOpenRecord && !!record(open.key))); };

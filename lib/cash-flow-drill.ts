@@ -164,9 +164,12 @@ function accountFlows(key: string, title: string, context: DrillContext): DrillF
  const change = left.reduce((sum, entry) => sum + entry.value, 0) - right.reduce((sum, entry) => sum + entry.value, 0);
  // What stays in a holding is money invested; what reaches a debt pays its principal; in an account it is the balance.
  const kept = t(self.kind === 'holding' ? 'Money invested' : self.kind === 'debt' ? 'Principal' : 'Balance');
- // A debt's principal opens the payments that paid it down.
- if (change >= .5) right.push({ node: { name: kept, kind: 'savings', open: self.kind === 'debt' ? { side: 'principal', key } : undefined }, value: change });
- if (change <= -.5) left.push({ node: { name: kept, kind: 'savings' }, value: -change });
+ // A debt's principal opens the payments that paid it down; an account's balance where it stands today, when the period
+ // runs to this month (an earlier one would need what moved since).
+ const current = (context.months.at(-1) ?? '') >= context.today.slice(0, 7);
+ const open: DrillTarget | undefined = self.kind === 'debt' ? { side: 'principal', key } : self.kind === 'account' && key && current ? { side: 'balance', key } : undefined;
+ if (change >= .5) right.push({ node: { name: kept, kind: 'savings', open }, value: change });
+ if (change <= -.5) left.push({ node: { name: kept, kind: 'savings', open: self.kind === 'account' ? open : undefined }, value: -change });
  const nodes: DrillNode[] = [...left.map(entry => entry.node), { ...self, name: title, open: undefined }, ...right.map(entry => entry.node)];
  const hub = left.length;
  return { nodes, links: [...left.map((entry, index) => ({ source: index, target: hub, value: entry.value })), ...right.map((entry, index) => ({ source: hub, target: hub + 1 + index, value: entry.value }))], missing: missing + interest.missing };
@@ -197,6 +200,10 @@ function merchantFlows(target: { key: string; income: boolean }, title: string, 
  return { nodes, links: [...left.map((entry, index) => ({ source: index, target: hub, value: entry.value })), ...right.map((entry, index) => ({ source: hub, target: hub + 1 + index, value: entry.value }))], missing };
 }
 
+/** Views other modules draw (`cash-flow-operations`, `cash-flow-principal`, `cash-flow-balance`) or that open details:
+ * they list their own transactions. */
+const elsewhere = new Set<DrillTarget['side']>(['operation', 'principal', 'interest', 'payment', 'balance', 'record']);
+
 /** The transactions behind a category, payer, merchant or account Sankey, newest first: each as it was entered, in its own amount
  * and currency. A transaction split over several categories is listed once. Tracker expenses have no record, and
  * transfers and repayments are account operations rather than transactions, so they are left out. Savings lists every
@@ -209,7 +216,7 @@ export function drillTransactions(target: DrillTarget, context: DrillContext): E
  const paidDebt = new Map((data.activity ?? []).filter(row => row.action === 'mortgage' && row.target_id).map(row => [row.id, row.target_id!]));
  const matches = (item: Item) => {
   if (target.side === 'savings') return true;
-  if (target.side === 'operation' || target.side === 'principal' || target.side === 'interest' || target.side === 'payment' || target.side === 'record') return false;
+  if (elsewhere.has(target.side)) return false;
   if (target.side === 'merchant') return item.income === target.income && merchantOf(item, t) === target.key;
   return target.side === 'account' && (accountOf(item, activityAccount) === target.key || (!!item.record && paidDebt.get(item.record.id) === target.key));
  };
@@ -222,10 +229,10 @@ export function drillTransactions(target: DrillTarget, context: DrillContext): E
  * one payer or merchant. */
 export function drillFlows(target: DrillTarget, title: string, savings: number, context: DrillContext): DrillFlows {
  if (target.side === 'savings') return savingsFlows(savings, context);
- // A transfer, a debt's principal and a transaction are drawn by their own modules or open their details.
- if (target.side === 'operation' || target.side === 'principal' || target.side === 'interest' || target.side === 'payment' || target.side === 'record') return { nodes: [], links: [], missing: 0 };
  if (target.side === 'account') return accountFlows(target.key, title, context);
  if (target.side === 'merchant') return merchantFlows(target, title, context);
  if (target.side === 'group') return groupFlows(target, title, context);
- return groupFlows(categoryGroup(target), title, context);
+ if (target.side === 'income' || target.side === 'expense') return groupFlows(categoryGroup(target), title, context);
+ // A transfer, a debt's principal, a balance and a transaction are drawn by their own modules or open their details.
+ return { nodes: [], links: [], missing: 0 };
 }

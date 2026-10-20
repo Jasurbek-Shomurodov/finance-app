@@ -121,7 +121,7 @@ test('an account in the savings Sankey opens its own: income and transfers in, s
  assert.deepEqual(savings.nodes.filter(node => node.open).map(node => [node.name, node.open]), [['Savings account', { side: 'account', key: 'save' }], ['Card', { side: 'account', key: 'card' }], ['Car loan', { side: 'account', key: 'loan' }]], 'every account and debt opens its own Sankey');
  const card = drillFlows({ side: 'account', key: 'card' }, 'Card', 0, ctx);
  assert.deepEqual(shape(card), [['EPAM', 'Card', 3000], ['Card', 'Savings account', 1490], ['Card', 'Groceries', 500], ['Card', 'Car loan', 300], ['Card', 'Not traced', 10], ['Card', 'Balance', 700]]);
- assert.deepEqual(card.nodes.map(node => node.open?.side ?? null), ['merchant', null, 'account', 'expense', 'account', null, null], 'income sources, categories and other accounts open; the account itself, its balance and the gap do not');
+ assert.deepEqual(card.nodes.map(node => node.open?.side ?? null), ['merchant', null, 'account', 'expense', 'account', null, 'balance'], 'income sources, categories, other accounts and its balance open; the account itself and the gap do not');
  // 20 October 2026: income came in by category (Rent income) rather than by its source (Airbnb payout).
  assert.deepEqual(card.nodes[0].open, { side: 'merchant', key: 'EPAM', income: true }, 'an income source opens its own Sankey');
  const save = drillFlows({ side: 'account', key: 'save' }, 'Savings account', 0, ctx);
@@ -442,4 +442,29 @@ test('every node opens something: No account, the main chart’s merged Other an
  assert.deepEqual(rest.open, { side: 'group', income: false, keys: ['Other expense'], by: 'merchant', skip: ['Shop 0', 'Shop 1', 'Shop 2', 'Shop 3', 'Shop 4', 'Shop 5', 'Shop 6', 'Shop 7', 'Shop 8'] }, 'a category’s Other opens the merchants it folds');
  assert.deepEqual(shape(drillFlows(rest.open, 'Other', 0, ctx)), [['Other', 'Shop 9', 91], ['Other', 'Shop 10', 90]]);
  assert.deepEqual(drillTransactions(rest.open, ctx).map(item => item.id).sort(), ['s10', 's9']);
+});
+
+test('an account’s balance opens where it stands today: opening balance and the period’s change, then its goals and what is available', () => {
+ const card = record('card', 'Card', 'Cash', 2500, '2026-01-01', { frequency: 'Monthly' });
+ const records = [card, ...accounts.filter(item => item.id !== 'card'), record('pay', 'EPAM', 'Salary', 1000, '2026-08-05', { account_id: 'card' }), record('food', 'Market', 'Living expense', 200, '2026-08-06', { account_id: 'card' })];
+ const goals = [{ id: 'g1', name: 'Holiday', account_id: 'card', allocated: 600, target: 1000, target_date: null, archived: false }, { id: 'g2', name: 'Old', account_id: 'card', allocated: 50, target: 50, target_date: null, archived: true }, { id: 'g3', name: 'Euro trip', account_id: 'card', allocated: 100, currency: 'EUR', target: 500, target_date: null, archived: false }];
+ const ctx = { ...context([]), data: { records, activity: [], investmentLinks: [], goals } };
+ const account = drillFlows({ side: 'account', key: 'card' }, 'Card', 0, ctx);
+ assert.deepEqual(account.nodes.find(node => node.name === 'Balance').open, { side: 'balance', key: 'card' }, 'Balance opens, in a period running to this month');
+ assert.equal(drillFlows({ side: 'account', key: 'card' }, 'Card', 0, { ...ctx, today: '2026-10-20' }).nodes.find(node => node.name === 'Balance').open, undefined, 'not for an earlier period: its opening balance would need what moved since');
+ const { balanceFlows } = loadTS('lib/cash-flow-balance.ts');
+ assert.deepEqual(shape(balanceFlows('card', ctx)), [['Opening balance', 'Card', 1700], ['This period', 'Card', 800], ['Card', 'Holiday', 600], ['Card', 'Euro trip', 200], ['Card', 'Available', 1700]], '$2,500 today: $1,700 before the period’s $800; goals hold $800 (EUR 100 at 0.5), archived ones nothing');
+ const spent = { ...ctx, data: { ...ctx.data, records: [card, record('food', 'Market', 'Living expense', 300, '2026-08-06', { account_id: 'card' })], goals: [] } };
+ assert.deepEqual(shape(balanceFlows('card', spent)), [['Opening balance', 'Card', 2800], ['Card', 'This period', 300], ['Card', 'Current balance', 2500]], 'a period that used money; no goals: the current balance');
+ assert.equal(balanceFlows('card', { ...ctx, currency: 'GBP' }).links.length, 0, 'no rate: nothing drawn');
+
+ const r = createRenderer();
+ const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
+ const { CashFlowDrillDialog } = r.load('components/cash-flow-sankey.tsx', modules);
+ r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'account', key: 'card' }, title: 'Card', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord() {} }));
+ const sankey = () => r.find(node => node.type === 'Sankey').props;
+ const index = sankey().data.nodes.findIndex(node => node.name === 'Balance');
+ r.fire(sankey().node({ x: 0, y: 0, width: 10, height: 20, index, payload: { name: 'Balance', value: 800 } }), 'onClick');
+ assert.equal(r.find(node => node.type === 'DialogTitle').props.children[0], 'Balance');
+ assert.equal(r.all(node => node.type === 'button' && node.props['aria-label']?.startsWith('View details')).length, 2, 'with the account’s transactions listed');
 });
