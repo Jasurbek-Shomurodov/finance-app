@@ -126,7 +126,7 @@ export function CashFlowDrillDialog({ target, title, period, savings, context, o
   <DialogTitle>{current.title} <span className="panel-figure">{period}</span></DialogTitle>
   {flows.missing > 0 && <p className="partial-total" role="status">{t('Some transactions could not be converted. Current or previous month totals are incomplete.')}</p>}
   {flows.links.length ? <FlowSankey key={trail.length} flows={flows} currency={context.currency} canOpen={canOpen} onOpen={openNode}/> : <p className="budget-left-empty">{t('Nothing recorded in this period.')}</p>}
-  {current.target.side === 'operation' && <OperationDetails id={current.target.key} context={context}/>}
+  {current.target.side === 'operation' && <OperationDetails id={current.target.key} context={context} onOpen={(open, name) => go(open, name)}/>}
   {current.target.side === 'goal' && <GoalEvents id={current.target.key} context={context} onOpen={(open, name) => go(open, name)}/>}
   {onOpenRecord && <DrillTransactions target={current.target} context={context} onOpenRecord={onOpenRecord} onOpenOperation={row => setTrail([...trail, { target: { side: 'operation', key: row.id }, title: operationTitle(row, t) }])}/>}
  </DialogContent></Dialog>;

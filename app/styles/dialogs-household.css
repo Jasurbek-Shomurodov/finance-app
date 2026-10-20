@@ -224,6 +224,9 @@ summary.tax-line-heading>svg{flex-shrink:0;color:var(--muted-foreground);transit
 .drill-transactions button>span:first-child{display:grid;min-width:0}
 .drill-transactions small{color:var(--muted-foreground);font-size:var(--type-caption)}
 /* A transfer or repayment opened from an account's Sankey: label and value pairs under its two-account Sankey. */
-.drill-operation{display:grid;grid-template-columns:minmax(0,10rem) minmax(0,1fr);gap:8px 16px;font-size:var(--type-small)}
-.drill-operation dt{color:var(--muted-foreground)}
-.drill-operation dd{overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.drill-operation{display:grid;border-block-start:1px solid var(--hairline);font-size:var(--type-small)}
+.drill-operation button{display:grid;grid-template-columns:minmax(0,10rem) minmax(0,1fr);gap:16px;width:100%;padding:8px 4px;border-block-end:1px solid var(--hairline);text-align:start}
+.drill-operation button:hover{background:color-mix(in srgb,var(--foreground) 4%,transparent)}
+.drill-operation button:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
+.drill-operation span{color:var(--muted-foreground)}
+.drill-operation strong{font-weight:500;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}

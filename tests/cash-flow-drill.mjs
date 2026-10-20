@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
 import { loadTS } from './helpers/load-ts.mjs';
-import { createRenderer, hostModule, language } from './helpers/component-tree.mjs';
+import { createRenderer, hostModule, language, text } from './helpers/component-tree.mjs';
 const { drillFlows, accountChanges } = loadTS('lib/cash-flow-drill.ts');
 const { cashFlowReport, sankeyFlows } = loadTS('lib/cash-flow-report.ts');
 
@@ -274,7 +274,19 @@ test('an account lists its transfers and repayments; a tap opens one with what w
  r.fire(rows[1], 'onClick');
  assert.equal(r.find(node => node.type === 'DialogTitle').props.children[0], 'Transfer');
  const details = r.html();
- assert.match(details, /<dt>Amount<\/dt><dd>\$100<\/dd><dt>Received<\/dt><dd>€220<\/dd><dt>Transfer fee<\/dt><dd>\$2<\/dd><dt>Notes<\/dt><dd>Trip money<\/dd>/);
+ assert.match(details, /<li><button type="button"><span>From<\/span><strong>Card<\/strong><\/button><\/li><li><button type="button"><span>To<\/span><strong>Euro<\/strong><\/button><\/li><li><button type="button"><span>Date<\/span><strong>10 August 2026<\/strong><\/button><\/li><li><button type="button"><span>Amount<\/span><strong>\$100<\/strong><\/button><\/li><li><button type="button"><span>Received<\/span><strong>€220<\/strong><\/button><\/li><li><button type="button"><span>Transfer fee<\/span><strong>\$2<\/strong><\/button><\/li><li><button type="button"><span>Notes<\/span><strong>Trip money<\/strong><\/button><\/li>/);
+ // Every row opens something: the accounts their Sankeys, the fee the card's untraced amounts, the day and notes Accounts.
+ const row = label => r.all(node => node.type === 'button' && text(node).startsWith(label))[0];
+ r.fire(row('Received'), 'onClick');
+ assert.equal(r.find(node => node.type === 'DialogTitle').props.children[0], 'Euro');
+ r.fire(r.all(node => node.type === 'Button' && node.props.className === 'cash-flow-drill-back')[0], 'onClick');
+ r.fire(row('Transfer fee'), 'onClick');
+ assert.equal(r.find(node => node.type === 'DialogTitle').props.children[0], 'Not traced');
+ assert.deepEqual(shape(r.find(node => node.type === 'Sankey').props.data), [['10 August 2026 · Transfer', 'Not traced', 340]], 'EUR 220 is worth $440, more than the $100 sent: the gap is the Euro account’s');
+ r.fire(r.all(node => node.type === 'Button' && node.props.className === 'cash-flow-drill-back')[0], 'onClick');
+ router.pushed.length = 0;
+ row('Notes').props.onClick();
+ assert.deepEqual(router.pushed, ['/accounts']);
  assert.deepEqual(shape(r.find(node => node.type === 'Sankey').props.data), [['Card', 'Euro', 100]]);
  r.fire(r.all(node => node.type === 'Button' && node.props.className === 'cash-flow-drill-back')[0], 'onClick');
  assert.equal(r.find(node => node.type === 'DialogTitle').props.children[0], 'Card');
@@ -304,7 +316,7 @@ test('transfers, buys and sales recorded on Accounts count in the Sankeys and op
  assert.match(r.html(), /<strong>Buy holding<\/strong><small>12 August 2026 · → VT<\/small><\/span><span>−\$300<\/span>/);
  assert.match(r.html(), /<strong>Transfer<\/strong><small>11 August 2026 · ← Card<\/small><\/span><span class="positive">\+\$495<\/span>/);
  r.fire(r.all(node => node.type === 'button' && node.props['aria-label'] === 'View details for Transfer')[0], 'onClick');
- assert.match(r.html(), /<dt>Amount<\/dt><dd>\$500<\/dd><dt>Received<\/dt><dd>\$495<\/dd><dt>Transfer fee<\/dt><dd>\$5<\/dd>/);
+ assert.match(r.html(), /<li><button type="button"><span>Amount<\/span><strong>\$500<\/strong><\/button><\/li><li><button type="button"><span>Received<\/span><strong>\$495<\/strong><\/button><\/li><li><button type="button"><span>Transfer fee<\/span><strong>\$5<\/strong><\/button><\/li>/);
 });
 
 test('a holding in the savings Sankey is marked as one and opens its own: what was bought from where, kept as money invested', () => {
@@ -405,7 +417,7 @@ test('a debt’s principal opens the payments that paid it down; a mortgage paym
  assert.match(r.html(), /<strong>Repayment<\/strong><small>15 August 2026 · ← Card<\/small>/);
  tap('15 August 2026 · Card');
  assert.equal(r.find(node => node.type === 'DialogTitle').props.children[0], '15 August 2026 · Card', 'a repayment opens as a transfer');
- assert.match(r.html(), /<dt>Amount<\/dt><dd>\$300<\/dd>/);
+ assert.match(r.html(), /<li><button type="button"><span>Amount<\/span><strong>\$300<\/strong><\/button><\/li>/);
 });
 
 test('every node opens something: No account, the main chart’s merged Other and Income total, a category’s Other merchants', () => {
