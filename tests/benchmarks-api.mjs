@@ -10,7 +10,8 @@ const dates=loadTS('lib/benchmark-data.ts');
 const source=ts.transpileModule(fs.readFileSync('app/api/benchmarks/route.ts','utf8').replace(/^import .*;\n/gm,'').replace(/export /g,''),{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
 let auth=true,limited=false;const counted=[];
 const {signInAgain,tooManyAttempts}=loadTS('lib/api-route.ts');
-const deps={isCurrency,portfolioAssets,portfolioAssetKey,diversifiedPortfolioSchema,benchmarkSelectionSchema,stockBenchmarks,...dates,signInAgain,tooManyAttempts,limits:{benchmarks:[]},rateLimited:async(req,name,limits,key)=>{counted.push([name,key]);return limited;},session:async()=>auth?{token:'owner',user:{id:'owner-id'}}:null,depositToday:()=> '2026-09-17'};
+const {cbuDayTable}=loadTS('lib/day-rate-tables.ts',{'./service-role':{serviceDatabase:()=>null}});
+const deps={cbuDayTable,isCurrency,portfolioAssets,portfolioAssetKey,diversifiedPortfolioSchema,benchmarkSelectionSchema,stockBenchmarks,...dates,signInAgain,tooManyAttempts,limits:{benchmarks:[]},rateLimited:async(req,name,limits,key)=>{counted.push([name,key]);return limited;},session:async()=>auth?{token:'owner',user:{id:'owner-id'}}:null,depositToday:()=> '2026-09-17'};
 const GET=new Function(...Object.keys(deps),source+';return GET;')(...Object.values(deps));
 const request=(params='start=2026-09-14&end=2026-09-17')=>new Request('https://local/api/benchmarks?'+params);
 test('rejects anonymous users, invalid dates, future or reversed periods, and arbitrary symbols',async()=>{

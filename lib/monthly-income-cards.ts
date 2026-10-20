@@ -3,6 +3,7 @@ import type { EarningSource } from './earning-sources';
 import { income, interestKinds, monthly, duplicatesAssetEstimate, type Entry } from './finance';
 import { convertAmount } from './market';
 import { amountIn, type Money, type PairRate, type RateTable } from './money';
+import { ratesOrPair } from './transaction-rates';
 
 /** One income source's card, in that source's own currency (`entry.currency`): its estimate and what came in. `entered` is
  * what came in as it was entered, when every payment shares one currency (a mix leaves it null and `receivedAmount`, in the
@@ -92,7 +93,7 @@ export function monthlyIncomeCards(entries: Entry[], month: string, sources: Ear
    // Actual payments accumulate only within this month; estimates stay intact.
    if (existing.excluded && existing.entry.frequency === 'Once' && entry.frequency === 'Once') existing.amount += entry.amount;
    existing.received ||= received;
-   const value = received ? amountIn({ amount: entry.amount, currency: entry.currency }, existing.entry.currency, rates) : 0;
+   const value = received ? amountIn({ amount: entry.amount, currency: entry.currency }, existing.entry.currency, ratesOrPair(entry, rates)) : 0;
    if (value === null) existing.missing += 1; else existing.receivedAmount += value;
    if (received) existing.entered = enteredWith(existing.entered, entry);
    if (!existing.notes.includes(note)) existing.notes.push(note);

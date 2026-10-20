@@ -5,6 +5,7 @@ import { signInAgain, tooManyAttempts } from '@/lib/api-route';
 import { limits, rateLimited } from '@/lib/rate-limit';
 import { session } from '@/lib/supabase';
 import { depositToday } from '@/lib/deposit-interest';
+import { cbuDayTable } from '@/lib/day-rate-tables';
 import { checkpointDates, loadFxCheckpoints, dateMillis, dayMillis, shiftDay, validDay, type BenchmarkData, type PricePoint, type FxPoint } from '@/lib/benchmark-data';
 
 async function read(url: string, fresh = false): Promise<unknown> {
@@ -96,15 +97,7 @@ async function cryptoHistory(start: string, end: string, symbol = 'BTC'): Promis
  throw Error('Unavailable');
 }
 async function fxAt(date: string): Promise<FxPoint> {
- const rows = await read(`https://cbu.uz/ru/arkhiv-kursov-valyut/json/all/${date}/`);
- if (!Array.isArray(rows)) throw Error('Unavailable');
- const uzs: Record<string, number> = { UZS: 1 };
- for (const row of rows) {
-  const effective = typeof row.Date === 'string' && /^\d{2}\.\d{2}\.\d{4}$/.test(row.Date) ? row.Date.split('.').reverse().join('-') : '';
-  if (/^[A-Z]{3}$/.test(row.Ccy) && validDay(effective) && effective <= date && positive(row.Rate) && positive(row.Nominal)) uzs[row.Ccy] = Number(row.Rate) / Number(row.Nominal);
- }
- if (!uzs.USD) throw Error('Unavailable');
- return { date, rates: Object.fromEntries(Object.entries(uzs).map(([currency, value]) => [currency, uzs.USD / value])) };
+ return { date, rates: cbuDayTable(await read(`https://cbu.uz/ru/arkhiv-kursov-valyut/json/all/${date}/`), date) };
 }
 async function loadBenchmarks(req: Request) {
  try {

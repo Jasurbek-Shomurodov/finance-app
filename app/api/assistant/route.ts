@@ -10,6 +10,7 @@ import { crossSite, readJson, signInAgain, tooManyAttempts } from '@/lib/api-rou
 import { reportError } from '@/lib/monitoring';
 import { limits, rateLimited } from '@/lib/rate-limit';
 import { session, sameOrigin } from '@/lib/supabase';
+import { withViewerDayRates } from '@/lib/viewer-day-rates';
 
 /** Whether the assistant can answer at all, so the screen can say so before anyone types. Reveals nothing but a yes or no. */
 export const dynamic = 'force-dynamic';
@@ -39,7 +40,9 @@ export async function POST(req: Request) {
    readOwnerRows<PlanningData['goals'][number]>('savings_goals', auth.token), readOwnerRows<PlanningData['occurrences'][number]>('payment_occurrences', auth.token),
    readOwnerRows<PlanningData['activity'][number]>('account_activity', auth.token, filters.activity),
   ]);
-  snapshot = assistantContext({ records: records.map(normalizeEntry), categories, goals, occurrences, activity, investmentLinks: [] }, today, currency, rates, language);
+  // Income and spending count at the official rates of their own day.
+  const dated = await withViewerDayRates({ records: records.map(normalizeEntry), activity }, auth);
+  snapshot = assistantContext({ ...dated, categories, goals, occurrences, investmentLinks: [] }, today, currency, rates, language);
  } catch (error) {
   await reportError('assistant', error, { route, status: 503, userId: auth.user.id }, { alert: 'repeated' });
   return Response.json({ error: 'Could not load your records. Please try again.' }, { status: 503 });

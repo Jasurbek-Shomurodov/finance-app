@@ -11,6 +11,7 @@ import { serviceDatabase } from '@/lib/service-role';
 import { telegramConfig } from '@/lib/telegram';
 import { deliverReport } from '@/lib/telegram-report';
 import { deliverToSubscribers, namedCategories, ownerCategories, ownerDebtPayments, ownerProfile, ownerRecordsSince, ownerSpendingExtras, recentSnapshots } from '@/lib/telegram-owner';
+import { withDayRates } from '@/lib/day-rate-tables';
 export const maxDuration=60;
 const defaultReminders:ReminderSettings={enabled:true,days_ahead:7,snoozed:[]};
 /** Sends each linked owner their digest as a picture: a greeting, the last 30 days' income, expenses and net-worth growth, where the money went, and what is due. One owner's failure never blocks the others; the response says how many were reached. */
@@ -24,7 +25,7 @@ export async function GET(req:Request){
   // The 30 days ending today, and the 30 before them for the comparison.
   const from=shiftDay(today,1-digestDays),before=shiftDay(from,-digestDays);
   const {sent,failed,blocked}=await deliverToSubscribers(db,{kind:'digest',period:today},async({user_id,chat_id})=>{
-    const [records,occurrences,profile,snapshots,reminders,[activity,mortgagePayments],categories]=await Promise.all([
+    const [stored,occurrences,profile,snapshots,reminders,[activity,mortgagePayments],categories]=await Promise.all([
      // Schedules and holdings in full; actual cash flow only for the two periods compared.
      ownerRecordsSince(db,user_id,before),
      ownerRows<Occurrence>(db,'payment_occurrences',user_id,'id,record_id,due_on,status'),
@@ -36,6 +37,8 @@ export async function GET(req:Request){
      ownerDebtPayments(db,user_id),
      ownerCategories(db,user_id),
     ]);
+    // Each transaction counts in the owner's currency at the official rates of its own day.
+    const records=await withDayRates(stored,[profile.currency],{today:depositToday(),db});
     // The digest has its own switch, so the in-app reminder toggle only lends its window and snoozes.
     const settings={...defaultReminders,...reminders[0]?.data,enabled:true};
     const points=snapshotPoints(snapshots,profile.currency),latest=points[points.length-1];

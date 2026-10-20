@@ -118,11 +118,11 @@ test('every planning scope answers the same as the offset reader, for the owner,
   const supabase={session:async()=>({token:viewer,user:{id:viewer}}),supa,sameOrigin:()=>true};
   const quiet={'@/lib/notify-action':{queueMilestoneCheck:()=>{}},'@/lib/dated-exchange-rate':{loadDatedExchangeRate:async()=>{throw Error('unused');}}};
   let viewer=owner;
-  const current=loadTS('app/api/planning/route.ts',{'@/lib/supabase':supabase,'./supabase':supabase,...quiet});
+  const current=loadTS('app/api/planning/route.ts',{'@/lib/supabase':supabase,'./supabase':supabase,...quiet,'@/lib/viewer-day-rates':{withViewerDayRates:async data=>data}});
   // The reader before this change: offset pages, and deposits read again for their estimates.
   const {readAllPages,pagePath}=loadTS('lib/owner-rows.ts');
   const {depositForecasts}=loadTS('lib/deposit-forecasts.ts',{'./supabase':supabase});
-  const legacy=loadTS('app/api/planning/route.ts',{'@/lib/supabase':supabase,...quiet,
+  const legacy=loadTS('app/api/planning/route.ts',{'@/lib/supabase':supabase,...quiet,'@/lib/viewer-day-rates':{withViewerDayRates:async data=>data},
    '@/lib/server-records':{readOwnerRows:(table,token,extra={})=>{const params=new URLSearchParams({select:'*',order:'id.asc',...extra});return readAllPages(range=>supa(pagePath('/rest/v1/'+table+'?'+params,range),{},token),'Could not load planning data.');}},
    '@/lib/deposit-forecasts':{depositForecasts:token=>depositForecasts(token)}});
   const answer=async(api,query)=>{const response=await api.GET(new Request('https://app.local/api/planning'+query));return {status:response.status,body:await response.json()};};

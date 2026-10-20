@@ -5,6 +5,7 @@ import type { DrillContext, DrillFlows, DrillNode, DrillTarget } from './cash-fl
 import { accountNode, accountOf, add, categoryNode, merchantOf, pageOf, span, type Item } from './cash-flow-drill-base';
 import { categoryGroup, groupFlows, groupTransactions } from './cash-flow-group';
 import { cashFlowItems, spendingAmount, transferAmount } from './spending';
+import { ratesOf, type DatedRecord, type DayTable } from './transaction-rates';
 
 export type { DrillContext, DrillFlows, DrillNode, DrillTarget } from './cash-flow-drill-types';
 export { accountNode, categoryNode, span } from './cash-flow-drill-base';
@@ -13,7 +14,7 @@ export { accountNode, categoryNode, span } from './cash-flow-drill-base';
 /** `ref` names the transfer an untraced amount (a fee, an exchange difference) belongs to. */
 type End = { account: string } | { income: string; payer?: string } | { expense: string } | { untraced: true; ref?: string };
 export type Flow = { from: End; to: End; value: number };
-type Mover = (from: End, to: End, amount: number, currency: string | null | undefined) => boolean;
+type Mover = (from: End, to: End, amount: number, currency: string | null | undefined, record?: DatedRecord | null) => boolean;
 type Activity = NonNullable<PlanningData['activity']>[number];
 /** One account operation: a transfer between accounts, a loan repayment, or a mortgage payment's principal (its interest
  * is spending, counted with the transactions). Reconciliations are corrections, not flows, and stay out. A transfer's
@@ -24,10 +25,10 @@ function moveActivity(row: Activity, byId: Map<string, Entry>, recorder: Recorde
  const source = { account: row.account_id }, target = { account: row.target_id }, unit = byId.get(row.account_id)?.currency;
  if (row.action === 'transfer') transfer({ from: row.account_id, to: row.target_id, ref: row.id }, { amount: Number(row.amount), currency: byId.get(row.account_id)?.currency }, { amount: Number(row.received || row.amount), currency: byId.get(row.target_id)?.currency ?? byId.get(row.account_id)?.currency }, recorder);
  else if (row.action === 'repayment') move(source, target, Number(row.amount), unit);
- else if (row.action === 'mortgage') { const payment = byId.get(row.id); if (payment) move(source, target, transferAmount(payment), payment.currency); }
+ else if (row.action === 'mortgage') { const payment = byId.get(row.id); if (payment) move(source, target, transferAmount(payment), payment.currency, payment); }
 }
 
-type Convert = (amount: number, currency: string | null | undefined) => number | null;
+type Convert = (amount: number, currency: string | null | undefined, record?: DatedRecord | null) => number | null;
 /** How flows are recorded: `move` adds one, `convert` turns an amount into the display `currency`. */
 type Recorder = { move: Mover; convert: Convert; currency: string };
 /** Money moved between two accounts: what left the source in its currency, what reached the target in its own. What
@@ -65,10 +66,10 @@ export function periodFlows(context: DrillContext) {
  const records = data.records as Entry[], byId = new Map(records.map(record => [record.id, record]));
  const flows: Flow[] = [];
  let missing = 0;
- const convert: Convert = (amount, unit) => unit ? convertAmount(amount, unit, currency, rates) ?? null : null;
- const move: Mover = (source, target, amount, unit) => {
+ const convert: Convert = (amount, unit, record) => unit ? convertAmount(amount, unit, currency, ratesOf(record, rates)) ?? null : null;
+ const move: Mover = (source, target, amount, unit, record) => {
   if (!amount) return true;
-  const value = convert(amount, unit);
+  const value = convert(amount, unit, record);
   if (value === null) { missing += 1; return false; }
   flows.push({ from: source, to: target, value });
   return true;
@@ -76,12 +77,17 @@ export function periodFlows(context: DrillContext) {
  const activityAccount = new Map((data.activity ?? []).map(row => [row.id, row.account_id]));
  for (const item of cashFlowItems(records, from, to, { splits, investmentLinks: data.investmentLinks })) {
   const account = { account: accountOf(item, activityAccount) };
-  if (item.income) move({ income: item.record?.custom_category_id ?? item.record?.kind ?? 'Other income', payer: merchantOf(item, context.t) }, account, item.amount, item.currency);
-  else for (const part of item.parts) move(account, { expense: part.category }, part.amount, item.currency);
+  if (item.income) move({ income: item.record?.custom_category_id ?? item.record?.kind ?? 'Other income', payer: merchantOf(item, context.t) }, account, item.amount, item.currency, item.record);
+  else for (const part of item.parts) move(account, { expense: part.category }, part.amount, item.currency, item.record);
  }
-  for (const row of data.activity ?? []) if (row.occurred_on >= from && row.occurred_on <= to) moveActivity(row, byId, { move, convert, currency });
- for (const link of data.investmentLinks ?? []) moveInvestment(link, from, to, byId, move);
- for (const row of data.movements ?? []) if (row.occurred_on >= from && row.occurred_on <= to) moveMovement(row, byId, { move, convert, currency });
+ // A transfer, repayment or purchase converts at the rates of its own day, as a transaction does.
+ const onDay = (row: { day_rates?: DayTable | null }): Recorder => {
+  const day = row.day_rates === undefined ? null : { currency: '', day_rates: row.day_rates };
+  return { currency, move: (source, target, amount, unit, record) => move(source, target, amount, unit, record ?? day), convert: (amount, unit, record) => convert(amount, unit, record ?? day) };
+ };
+ for (const row of data.activity ?? []) if (row.occurred_on >= from && row.occurred_on <= to) moveActivity(row, byId, onDay(row));
+ for (const link of data.investmentLinks ?? []) moveInvestment(link, from, to, byId, onDay(link).move);
+ for (const row of data.movements ?? []) if (row.occurred_on >= from && row.occurred_on <= to) moveMovement(row, byId, onDay(row));
  return { flows, missing, byId };
 }
 
@@ -134,7 +140,7 @@ function mortgageInterest(debt: string, context: DrillContext, byId: Map<string,
  for (const row of data.activity ?? []) {
   const payment = byId.get(row.id);
   if (row.action !== 'mortgage' || row.target_id !== debt || row.occurred_on < from || row.occurred_on > to || !payment) continue;
-  const value = convertAmount(spendingAmount(payment), payment.currency, currency, rates);
+  const value = convertAmount(spendingAmount(payment), payment.currency, currency, ratesOf(payment, rates));
   if (value === null || value === undefined) { missing += 1; continue; }
   if (value > 0) paid.push({ account: row.account_id, category: payment.custom_category_id ?? payment.kind, value });
  }
@@ -190,7 +196,7 @@ function merchantFlows(target: { key: string; income: boolean }, title: string, 
   if (item.income !== target.income || merchantOf(item, t) !== target.key) continue;
   const parts = item.income ? [{ category: item.record?.custom_category_id ?? item.record?.kind ?? 'Other income', amount: item.amount }] : item.parts;
   for (const part of parts) {
-   const value = item.currency ? convertAmount(part.amount, item.currency, currency, rates) ?? null : null;
+   const value = item.currency ? convertAmount(part.amount, item.currency, currency, ratesOf(item.record, rates)) ?? null : null;
    if (value === null) { missing += 1; continue; }
    add(accounts, accountOf(item, activityAccount), value);
    add(categories, part.category, value);

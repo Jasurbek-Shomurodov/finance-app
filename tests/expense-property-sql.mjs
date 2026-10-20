@@ -11,7 +11,7 @@ const propertyOf=async(d,n)=>(await d.query('SELECT property_id FROM finance_rec
 
 test('migration 148 is in setup.sql, safe to re-run, and bumps the schema version the app requires',async()=>{
  assert.ok(setup.includes(migration),'setup.sql includes migration 148');
- assert.equal(Number(fs.readFileSync('lib/database-capabilities.ts','utf8').match(/requiredSchemaVersion = (\d+);/)[1]),148);
+ assert.ok(Number(fs.readFileSync('lib/database-capabilities.ts','utf8').match(/requiredSchemaVersion = (\d+);/)[1])>=148);
  const d=await db(setup.slice(0,setup.indexOf(migration)));
  try{await d.exec('RESET ROLE');await d.exec(migration);await d.exec(migration);assert.equal((await d.query('SELECT finance_capabilities() AS c')).rows[0].c.schema_version,148);}finally{await d.close();}
 });

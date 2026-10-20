@@ -2,6 +2,7 @@ import { daysBetween, shiftDay } from './calendar-days';
 import { expenses, income, type Entry } from './finance';
 import { convertAmount } from './market';
 import { spendingAmount } from './spending';
+import { ratesOf } from './transaction-rates';
 
 type Rates = number | Record<string, number> | undefined;
 type MoneyRow = Pick<Entry, 'id' | 'kind' | 'amount' | 'currency' | 'date' | 'frequency'> & Partial<Pick<Entry, 'account_id' | 'mortgage_payment_id' | 'payment_principal' | 'payment_interest'>>;
@@ -39,7 +40,7 @@ export function ageOfMoney(records: readonly MoneyRow[], currency: string, asOf:
   if (cashAccounts && record.account_id && !cashAccounts.has(record.account_id)) continue;
   const raw = inflow ? Number(record.amount) : spendingAmount(record);
   if (!(raw > 0)) continue;
-  const amount = convertAmount(raw, record.currency, currency, rates);
+  const amount = convertAmount(raw, record.currency, currency, ratesOf(record, rates));
   if (amount === null) { skipped++; continue; }
   flows.push({ id: record.id, date: record.date, amount, inflow });
  }

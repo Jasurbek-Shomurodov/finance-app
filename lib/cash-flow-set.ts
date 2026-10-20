@@ -3,6 +3,7 @@ import type { DrillContext, DrillFlows, DrillNode, DrillTarget } from './cash-fl
 import type { Entry } from './finance';
 import { convertAmount } from './market';
 import { cashFlowItems } from './spending';
+import { ratesOf } from './transaction-rates';
 
 export type SetTarget = Extract<DrillTarget, { side: 'set' }>;
 /** Whether a transaction belongs to the set: a business's by its `business_id`, a tag's by the ids it labels. */
@@ -21,7 +22,7 @@ export function setFlows(target: SetTarget, title: string, context: DrillContext
   if (!item.record || !inSet(item.record)) continue;
   const parts = item.income ? [{ category: item.record.custom_category_id ?? item.record.kind, amount: item.amount }] : item.parts;
   for (const part of parts) {
-   const value = item.currency ? convertAmount(part.amount, item.currency, currency, rates) ?? null : null;
+   const value = item.currency ? convertAmount(part.amount, item.currency, currency, ratesOf(item.record, rates)) ?? null : null;
    if (value === null) { missing += 1; continue; }
    add(item.income ? incoming : outgoing, part.category, value);
   }

@@ -192,6 +192,7 @@ function monthlyRoute({subscriptions,records={},categories={},prefs={},snapshots
   write:deliveries.write,
  };
  const route=loadTS('app/api/cron/telegram-monthly/route.ts',{
+  '@/lib/day-rate-tables':{withDayRates:async records=>records},
   '@/lib/service-role':{serviceDatabase:()=>db},
   '@/lib/telegram':{telegramConfig:()=>({token:'T',webhookSecret:'S',botUsername:'b'}),escapeHtml:text=>text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')},
   '@/lib/telegram-report':{deliverReport:async report=>{sent.push(report);return sendResult;}},

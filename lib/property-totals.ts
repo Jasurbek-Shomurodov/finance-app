@@ -1,5 +1,6 @@
 import { expenses, type Entry } from './finance';
 import { amountIn, type PairRate, type RateTable } from './money';
+import { ratesOrPair } from './transaction-rates';
 
 /** A property's actual income and costs over a period, in one currency; `missing` counts payments no rate converts. */
 export type PropertyTotals = { income: number; costs: number; missing: number };
@@ -31,7 +32,7 @@ export function propertyTotals(records: readonly Entry[], from: string, to: stri
   const property = paymentProperty(entry, byId);
   const total = property ? totals.get(property) : undefined;
   if (!total) continue;
-  const amount = amountIn({ amount: entry.amount, currency: entry.currency }, currency, rates);
+  const amount = amountIn({ amount: entry.amount, currency: entry.currency }, currency, ratesOrPair(entry, rates));
   if (amount === null) total.missing += 1;
   else if (entry.kind === 'Rent income') total.income += amount;
   else total.costs += amount;

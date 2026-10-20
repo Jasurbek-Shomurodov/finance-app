@@ -16,7 +16,18 @@ export function FinancialReportExport({demo,market=null,currency}:{demo:boolean;
    const [response,fontResponse,model,pdf]=await Promise.all([fetch('/api/backup',{cache:'no-store'}),fetch('/fonts/NotoSans-Regular.ttf'),import('@/lib/financial-report'),import('@/lib/financial-report-pdf')]);
    if(!response.ok)throw Error('Could not export all data. No incomplete backup was created.');
    if(!fontResponse.ok)throw Error('Could not create the PDF. Please try again.');
-   const report=model.buildFinancialReport(await response.json(),pdfUnsupportedLanguages.includes(language)?'en':language,'',market,{currency});
+   const backup=await response.json();
+   // Combined figures add each transaction at the official rates of its own day.
+   const {days,currencies}=model.reportRateDays(backup,currency);
+   const dayRates:Record<string,Record<string,number>>={};
+   // A day without rates leaves the combined figures "Not available"; it never stops the report.
+   for(let index=0;index<days.length;index+=300){
+    try{
+     const answer=await fetch(`/api/exchange-rate?days=${days.slice(index,index+300).join(',')}&currencies=${currencies.join(',')}`,{cache:'no-store'});
+     if(answer.ok)Object.assign(dayRates,(await answer.json() as {days:Record<string,Record<string,number>>}).days);
+    }catch{/* Left missing. */}
+   }
+   const report=model.buildFinancialReport(backup,pdfUnsupportedLanguages.includes(language)?'en':language,'',market,{currency,dayRates});
    const bytes=await pdf.renderFinancialReportPdf(report,new Uint8Array(await fontResponse.arrayBuffer()));
    const url=URL.createObjectURL(new Blob([new Uint8Array(bytes)],{type:'application/pdf'}));
    const link=document.createElement('a');link.href=url;link.download='personal-financial-report.pdf';document.body.appendChild(link);link.click();link.remove();

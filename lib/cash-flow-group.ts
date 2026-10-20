@@ -4,6 +4,7 @@ import { otherShareKey, topShares } from './cash-flow-report';
 import type { Entry } from './finance';
 import { convertAmount } from './market';
 import { cashFlowItems } from './spending';
+import { ratesOf } from './transaction-rates';
 
 /** Income or spending in some categories, shown by category or by payer or merchant. One category by merchant is a
  * category's Sankey; several by category is the main chart's merged "Other"; all income by payer is its Income total. */
@@ -27,7 +28,7 @@ export function groupFlows(group: Group, title: string, context: DrillContext): 
  let missing = 0;
  for (const item of cashFlowItems(data.records as Entry[], from, to, { splits, investmentLinks: data.investmentLinks })) {
   for (const part of members(item, group, context)) {
-   const value = item.currency ? convertAmount(part.amount, item.currency, currency, rates) ?? null : null;
+   const value = item.currency ? convertAmount(part.amount, item.currency, currency, ratesOf(item.record, rates)) ?? null : null;
    if (value === null) { missing += 1; continue; }
    add(totals, part.member, value);
   }

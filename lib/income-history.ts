@@ -3,6 +3,7 @@ import { monthly, income, interestKinds, interestCompounding, duplicatesAssetEst
 import type { HistoryEvent } from './investment-history';
 import { convertAmount } from './market';
 import { depositInterest } from './deposit-interest';
+import { ratesOf } from './transaction-rates';
 
 export const incomeGroups = ['salary','dividends','rent','business','interest','other'] as const;
 export type IncomeGroup = typeof incomeGroups[number];
@@ -21,7 +22,7 @@ function group(entry:Entry,investment=false):IncomeGroup {
 export function receivedIncome(records:Entry[],events:HistoryEvent[],incomeRecords:Entry[],today:string) {
  const byId=new Map(records.map(record=>[record.id,record]));
  const eventIds=new Set<string>(),seen=new Set<string>();
- const receipts:Array<{id:string;date:string;amount:number;currency:string;group:IncomeGroup;name:string}>=[];
+ const receipts:Array<{id:string;date:string;amount:number;currency:string;group:IncomeGroup;name:string;record?:Entry}>=[];
  for(const event of events){
   if(event.event_type!=='income'||eventIds.has(event.id)||event.occurred_on>today)continue;
   const record=byId.get(event.record_id);if(!record)continue;
@@ -32,7 +33,7 @@ export function receivedIncome(records:Entry[],events:HistoryEvent[],incomeRecor
   if(seen.has(entry.id)||!income.includes(entry.kind)||entry.frequency!=='Once'||entry.date>today)continue;
   seen.add(entry.id);
   if(entry.history_event_id&&eventIds.has(entry.history_event_id))continue;
-  receipts.push({id:entry.id,date:entry.date,amount:Number(entry.amount),currency:entry.currency,group:group(entry),name:entry.name});
+  receipts.push({id:entry.id,date:entry.date,amount:Number(entry.amount),currency:entry.currency,group:group(entry),name:entry.name,record:entry});
  }
  return receipts.sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));
 }
@@ -43,13 +44,13 @@ export function incomeHistory(records:Entry[],events:HistoryEvent[],incomeRecord
  const byMonth=new Map(points.map(point=>[point.month,point]));
  let missing=0;
  const recordedMonths=new Set<string>();
- const add=(date:string,amount:number,unit:string,kind:IncomeGroup)=>{
+ const add=(date:string,amount:number,unit:string,kind:IncomeGroup,record?:Entry)=>{
   const point=byMonth.get(date.slice(0,7));if(!point||date>today)return;
   recordedMonths.add(point.month);
-  const converted=convertAmount(Number(amount),unit,currency,rates);
+  const converted=convertAmount(Number(amount),unit,currency,ratesOf(record,rates));
   if(converted===null||!Number.isFinite(converted)){missing++;return;}point[kind]+=converted;
  };
- for(const receipt of receivedIncome(records,events,incomeRecords,today))add(receipt.date,receipt.amount,receipt.currency,receipt.group);
+ for(const receipt of receivedIncome(records,events,incomeRecords,today))add(receipt.date,receipt.amount,receipt.currency,receipt.group,receipt.record);
  const estimateForMonth=(month:string)=>{
   let estimateMissing=0;
   const expected=blank();

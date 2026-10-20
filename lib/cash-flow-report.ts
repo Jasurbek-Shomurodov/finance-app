@@ -6,6 +6,7 @@ import { convertAmount } from './market';
 import type { Category, PlanningData } from './planning';
 import { spendingAmount } from './spending';
 import type { TransactionSplit } from './transaction-tools';
+import { ratesOf } from './transaction-rates';
 
 export const reportPeriods = ['month', 'quarter', 'year'] as const;
 export type ReportPeriod = typeof reportPeriods[number];
@@ -56,7 +57,7 @@ export function cashFlowReport(data: Pick<PlanningData, 'records' | 'activity' |
  for (const record of data.records as Entry[]) {
   if (record.frequency !== 'Once' || !first || !last || record.date.slice(0, 7) < first || record.date.slice(0, 7) > last || record.date > today) continue;
   const direction = income.includes(record.kind) ? 'income' : expenses.includes(record.kind) ? 'expense' : null;
-  const value = direction && convertAmount(direction === 'income' ? Number(record.amount) : spendingAmount(record), record.currency, currency, rates);
+  const value = direction && convertAmount(direction === 'income' ? Number(record.amount) : spendingAmount(record), record.currency, currency, ratesOf(record, rates));
   if (direction && value !== null && value !== undefined) add(byMerchant[direction], record.name.trim() || record.kind, value);
  }
  const totalIncome = series.reduce((sum, item) => sum + item.income, 0), totalSpending = series.reduce((sum, item) => sum + item.expenses, 0);

@@ -10,6 +10,7 @@ import { inScheduleCurrency } from '@/lib/schedule-currency';
 import { crossSite,parseAction,postgrestFailure,readJson,signInAgain } from '@/lib/api-route';
 import { session,supa,sameOrigin } from '@/lib/supabase';
 import { readOwnerRows } from '@/lib/server-records';
+import { withViewerDayRates } from '@/lib/viewer-day-rates';
 import { categoryNameTaken, duplicateCategoryMessage } from '@/lib/category-names';
 import type { Category, ExtraPayment, Occurrence } from '@/lib/planning';
 import { queueMilestoneCheck } from '@/lib/notify-action';
@@ -37,6 +38,8 @@ export async function GET(req?:Request){
  const dayRate=sharedDayRate(async(from,to,date)=>(await loadDatedExchangeRate(from,to,date)).rate);
  const results=await reads;
  const data={records:[],categories:[],goals:[],occurrences:[],activity:[],movements:[],investmentLinks:[],...Object.fromEntries(results)} as Record<string,unknown>;
+ // Each transaction carries its own day's rates, read while the rest of the answer is put together.
+ const dated=withViewerDayRates(data as Parameters<typeof withViewerDayRates>[0],auth);dated.catch(()=>null);
  // Loan repayments and mortgage payments settle a loan's monthly payment on Recurring and Upcoming payments.
  if(plan.debtPayments){const [repayments,mortgagePayments]=await Promise.all([readOwnerRows<{id:string;action:string;target_id:string|null;occurred_on:string;amount:number;fee:number;account_id:string}>('account_activity',auth.token,{select:'id,action,target_id,occurred_on,amount,fee,account_id',action:'in.(repayment,mortgage)'}),readOwnerRows<{id:string;mortgage_id:string;paid_on:string;principal:number;interest:number}>('mortgage_payments',auth.token,{select:'id,mortgage_id,paid_on,principal,interest'})]);
   // Each payment says how much it paid, in its loan's currency, so a partial payment never shows the installment paid in full.
@@ -49,6 +52,7 @@ export async function GET(req?:Request){
  // Every scope but the history reads reads every holding (only income and expense history is period-limited), so
  // the deposits are already here and are not read again.
  const estimates=new Map((plan.historyOnly?[]:await depositForecasts(auth.token,data.records as Entry[])).map(record=>[record.id,record.estimated_monthly_income]));
+ Object.assign(data,await dated);
  data.records=(data.records as Entry[]).map(record=>interestKinds.includes(record.kind)?{...record,estimated_monthly_income:estimates.get(record.id)??0}:record);
  return Response.json(data,{headers:{'Cache-Control':'no-store'}});
  }catch{return Response.json({error:'Could not load planning data. Check that the latest migrations are installed.'},{status:503});}

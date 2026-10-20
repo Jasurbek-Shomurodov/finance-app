@@ -5,6 +5,7 @@ import type { Entry } from './finance';
 import { formatDate } from './format';
 import { convertAmount } from './market';
 import { spendingAmount, transferAmount } from './spending';
+import { ratesOf } from './transaction-rates';
 
 /** One payment towards a debt's principal: a loan repayment (an account operation) or a mortgage payment's principal
  * (its transaction, `record`), in its own currency, with the account that paid it. */
@@ -38,7 +39,7 @@ export function principalFlows(debt: string, context: DrillContext): DrillFlows 
  const paid: Array<{ node: DrillNode; value: number }> = [];
  let missing = 0;
  for (const payment of principalPayments(debt, context)) {
-  const value = convertAmount(payment.principal.amount, payment.principal.currency, context.currency, context.rates);
+  const value = convertAmount(payment.principal.amount, payment.principal.currency, context.currency, ratesOf(payment.record, context.rates));
   if (value === null || value === undefined) { missing += 1; continue; }
   if (value <= 0) continue;
   const from = accountNode(payment.account, byId, context.t);
@@ -55,7 +56,7 @@ export function paymentFlows(id: string, context: DrillContext): DrillFlows {
  const byId = new Map((context.data.records as Entry[]).map(record => [record.id, record]));
  const payment = byId.get(id);
  if (!row?.target_id || !payment) return { nodes: [], links: [], missing: 0 };
- const convert = (amount: number) => convertAmount(amount, payment.currency, context.currency, context.rates);
+ const convert = (amount: number) => convertAmount(amount, payment.currency, context.currency, ratesOf(payment, context.rates));
  const principal = convert(transferAmount(payment)), interest = convert(spendingAmount(payment));
  if (principal === null || principal === undefined || interest === null || interest === undefined) return { nodes: [], links: [], missing: 1 };
  const debt = byId.get(row.target_id);
@@ -78,7 +79,7 @@ export function interestFlows(debt: string, context: DrillContext): DrillFlows {
  const paid: Array<{ node: DrillNode; value: number }> = [], categories = new Set<string>();
  let missing = 0;
  for (const payment of mortgagePayments(debt, context)) {
-  const value = convertAmount(spendingAmount(payment.record), payment.record.currency, context.currency, context.rates);
+  const value = convertAmount(spendingAmount(payment.record), payment.record.currency, context.currency, ratesOf(payment.record, context.rates));
   if (value === null || value === undefined) { missing += 1; continue; }
   if (value <= 0) continue;
   categories.add(payment.record.custom_category_id ?? payment.record.kind);

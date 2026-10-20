@@ -44,7 +44,8 @@ export function transactionsIn(records: readonly Entry[], range: { from: string;
   .sort((a, b) => b.date.localeCompare(a.date) || a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
 }
 
-type Convert = (amount: number, currency: string) => number | null;
+/** Converts a record's amount; the record names the day whose rates it converts at (lib/transaction-rates.ts). */
+type Convert = (amount: number, currency: string, record?: Entry) => number | null;
 /** The money a record moved: income counts up, outgoings down. A mortgage payment shows its whole payment, principal plus interest. */
 export const signedAmount = (record: Pick<Entry, 'kind' | 'amount'>) => income.includes(record.kind) ? Number(record.amount) : -Number(record.amount);
 
@@ -55,7 +56,7 @@ export function groupByDay(records: readonly Entry[], convert: Convert) {
   let day = days.at(-1);
   if (!day || day.date !== record.date) { day = { date: record.date, records: [], total: 0 }; days.push(day); }
   day.records.push(record);
-  const value = convert(signedAmount(record), record.currency);
+  const value = convert(signedAmount(record), record.currency, record);
   day.total = value === null || day.total === null ? null : day.total + value;
  }
  return days;
@@ -74,7 +75,7 @@ export function summarizeTransactions(records: readonly Entry[], convert: Conver
  let largest: { name: string; amount: number; entered: { amount: number; currency: string } } | null = null;
  for (const record of records) {
   const own = income.includes(record.kind) ? Number(record.amount) : spendingAmount(record);
-  const value = convert(own, record.currency);
+  const value = convert(own, record.currency, record);
   if (value === null) { missing++; continue; }
   if (income.includes(record.kind)) received += value;
   else { spent += value; if (!largest || value > largest.amount) largest = { name: record.name, amount: value, entered: { amount: own, currency: record.currency } }; }

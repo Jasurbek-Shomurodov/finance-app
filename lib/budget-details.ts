@@ -6,6 +6,7 @@ import { convertAmount } from './market';
 import type { PlanningData } from './planning';
 import { cashFlowItems } from './spending';
 import type { TransactionSplit } from './transaction-tools';
+import { ratesOf } from './transaction-rates';
 
 type Rates = number | Record<string, number> | undefined;
 /** One payment in the category: `amount` is in the display currency, null when no rate converts it; `entered` is what
@@ -27,7 +28,7 @@ export function categoryMonth(data: Pick<PlanningData, 'records' | 'investmentLi
  for (const item of cashFlowItems(data.records, month + '-01', today < end ? today : end, { splits, investmentLinks: data.investmentLinks ?? [] })) {
   const own = item.income ? (item.record && (item.record.custom_category_id ?? item.record.kind) === key ? item.amount : null) : item.parts.filter(part => part.category === key).reduce<number | null>((sum, part) => (sum ?? 0) + part.amount, null);
   if (own === null) continue;
-  const amount = item.currency === null ? null : convertAmount(own, item.currency, currency, rates);
+  const amount = item.currency === null ? null : convertAmount(own, item.currency, currency, ratesOf(item.record, rates));
   payments.push({ id: item.id, date: item.date, name: item.record?.name.trim() ?? '', amount: amount !== null && Number.isFinite(amount) ? amount : null, entered: item.currency === null ? null : { amount: own, currency: item.currency }, record: item.record });
  }
  payments.sort((a, b) => b.date.localeCompare(a.date));

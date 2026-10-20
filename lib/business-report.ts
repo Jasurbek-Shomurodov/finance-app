@@ -7,6 +7,7 @@ import type { Share } from './cash-flow-report';
 import type { PlanningData } from './planning';
 import { isMortgagePayment, spendingAmount } from './spending';
 import type { TransactionSplit } from './transaction-tools';
+import { ratesOf } from './transaction-rates';
 
 type Rates = number | Record<string, number> | undefined;
 export type Direction = 'income' | 'expense';
@@ -52,7 +53,7 @@ export function reportLedger(data: Pick<PlanningData, 'records' | 'investmentLin
   const total = direction === 'income' ? Number(record.amount) : spendingAmount(record);
   const parts = isMortgagePayment(record) ? [] : splits.filter(part => part.record_id === record.id);
   for (const [index, part] of (parts.length ? parts.map(part => ({ category: part.category_id, amount: Number(part.amount) })) : [{ category: record.custom_category_id ?? record.kind, amount: total }]).entries()) {
-   const amount = convertAmount(part.amount, record.currency, currency, rates);
+   const amount = convertAmount(part.amount, record.currency, currency, ratesOf(record, rates));
    if (amount === null || !Number.isFinite(amount)) { missing++; break; }
    lines.push({ id: parts.length ? `${record.id}:${index}` : record.id, record, name: record.name.trim() || record.kind, date: record.date, direction, amount, category: part.category, business: record.business_id ?? null });
   }

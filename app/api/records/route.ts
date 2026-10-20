@@ -13,6 +13,7 @@ import { pagePath,readAllPages } from '@/lib/owner-rows';
 import { session,supa,sameOrigin } from '@/lib/supabase';
 import { queueMilestoneCheck } from '@/lib/notify-action';
 import type { ActionEvent } from '@/lib/action-messages';
+import { withViewerDayRates } from '@/lib/viewer-day-rates';
 async function handle(req:Request,method:string){if(method!=='GET'&&!sameOrigin(req))return crossSite();try{const s=await session();if(!s)return signInAgain();let path='/rest/v1/finance_records';let init:RequestInit={};let event:ActionEvent|null=null;if(method==='GET'){
  const params=new URL(req.url).searchParams;
  const query=z.object({page:z.coerce.number().int().min(1).max(1000000),section:z.enum(['all','assets','cashflow','debts']),currency:fiatCurrency.nullable(),summary:z.enum(['0','1'])}).safeParse({page:params.get('page')||'1',section:params.get('section')||'all',currency:params.get('currency'),summary:params.get('summary')||'0'});
@@ -68,6 +69,9 @@ if(method==='GET' && new URL(req.url).searchParams.get('section')==='assets'){
  data.records=records;data.total=records.length;
  data.page=Math.min(data.page ?? 1,Math.max(1,Math.ceil(records.length/10)));
 }
+if(method==='GET' && data.records && new URL(req.url).searchParams.get('section')!=='assets')data.records=(await withViewerDayRates({records:data.records},s)).records as Entry[];
+// A saved transaction comes back with its day's rates too, so totals do not move until the next read.
+if(method==='POST' && 'kind' in data && 'currency' in data){const saved=data as unknown as Entry;const [dated]=(await withViewerDayRates({records:[saved]},s)).records;return Response.json(dated);}
 if(method==='GET' && data.summary){
  const deposits=await depositForecasts(s.token);
  data.summary=[...data.summary.filter((entry:{kind:string})=>!interestKinds.includes(entry.kind)),...deposits];

@@ -4,6 +4,7 @@ import type { Entry } from './finance';
 import type { Activity, PlanningData } from './planning';
 import { snapshotPoints, type PortfolioSnapshot } from './portfolio-snapshots';
 import { cashFlowItems } from './spending';
+import { ratesOf } from './transaction-rates';
 /** `category_id` is an added category's id or a built-in category kind such as 'Living expense'. */
 export type TransactionSplit={record_id:string;position:number;category_id:string;amount:number};
 /** Database rows keep built-in categories in `kind`; the app reads one label, like `custom_category_id ?? kind` on records. */
@@ -22,11 +23,11 @@ export function monthlyReview(records:Entry[],splits:TransactionSplit[],snapshot
  let received=0,spent=0,missing=0;
  const categories=new Map<string,number>();
  for(const item of cashFlowItems(records,start,today<end?today:end,{splits,investmentLinks})){
-  const amount=item.currency===null?null:convertAmount(item.amount,item.currency,currency,rates);
+  const amount=item.currency===null?null:convertAmount(item.amount,item.currency,currency,ratesOf(item.record,rates));
   if(amount===null||!Number.isFinite(amount)){missing++;continue;}
   if(item.income){received+=amount;continue;}
   spent+=amount;
-  for(const part of item.parts)categories.set(part.category,(categories.get(part.category)??0)+convertAmount(part.amount,item.currency!,currency,rates)!);
+  for(const part of item.parts)categories.set(part.category,(categories.get(part.category)??0)+convertAmount(part.amount,item.currency!,currency,ratesOf(item.record,rates))!);
  }
  const points=snapshotPoints(snapshots,currency).sort((a,b)=>a.date.localeCompare(b.date));
  const before=points.filter(point=>point.date<start).at(-1),after=points.filter(point=>point.date>=start&&point.date<=end&&point.date<=today).at(-1);

@@ -5,6 +5,7 @@ import type { PlanningData } from './planning';
 import type { PortfolioSnapshot } from './portfolio-snapshots';
 import { cashFlowItems } from './spending';
 import { monthlyReview, type TransactionSplit } from './transaction-tools';
+import { ratesOf } from './transaction-rates';
 
 export type SpendingPacePoint = { day: number; current: number | null; previous: number | null };
 export type SpendingPace = { month: string; previousMonth: string; points: SpendingPacePoint[]; spent: number; previousToDate: number; missing: boolean; empty: boolean };
@@ -40,7 +41,7 @@ export function spendingOnDay(records: Entry[], date: string, currency: string, 
  const names = new Map(records.map(record => [record.id, record.name]));
  const items: SpendingItem[] = [];
  for (const item of cashFlowItems(records, date, date, { investmentLinks })) {
-  const amount = item.income || item.currency === null ? null : convertAmount(item.amount, item.currency, currency, rates);
+  const amount = item.income || item.currency === null ? null : convertAmount(item.amount, item.currency, currency, ratesOf(item.record, rates));
   if (amount === null || !Number.isFinite(amount) || amount <= 0) continue;
   const { record, link } = item;
   items.push(record ? { id: record.id, name: record.name, kind: record.kind, amount } : { id: item.id, name: names.get(link?.investment_history?.record_id ?? '') ?? '', kind: 'Other expense', amount });

@@ -115,6 +115,17 @@ export function consolidatedFlow(flows: ReadonlyMap<string, ReportCashFlow>, key
  return reportSum([...flows].map(([currency, flow]) => flow[key] === null ? null : convertAmount(flow[key]!, currency, reporting, rates)));
 }
 
+/** The period's cash flow over every currency in `reporting`. Income and spending add each transaction at the official rates
+ * of its own day (`day_rates` on the ledger's records, lib/transaction-rates.ts); principal repaid adds each currency's
+ * total at today's rates. Every figure is null when one currency's flow is incomplete or an amount has no rate. */
+export function consolidatedCashFlow(ledger: ReportLedger, flows: ReadonlyMap<string, ReportCashFlow>, span: { period: string; cutoff: string }, reporting: string, market: MarketData | null) {
+ const review = monthlyReview(ledger.records, ledger.splits, [], span.period, reporting, span.cutoff, ledger.activity, marketRates(market), ledger.links);
+ const principal = consolidatedFlow(flows, 'principal', reporting, market);
+ const known = ![...flows.values()].some(flow => flow.invalid) && review.missing === 0 && Number.isFinite(review.received) && Number.isFinite(review.spent);
+ const received = known ? review.received : null, spent = known ? review.spent : null;
+ return { received, spent, principal, net: received === null || spent === null || principal === null ? null : received - spent - principal };
+}
+
 /** The budgets in force in `month` for the spending categories `known` accepts: each category's amount saved for that
  * month, or else its latest forward amount (`budgetAmountFor`). Zero budgets are left out. */
 export function monthBudgets(rows: readonly ReportRow[], month: string, known: (key: string) => boolean): BudgetAmount[] {

@@ -38,6 +38,7 @@ import { normalizeEntry, type Entry } from '@/lib/finance';
 import { formatMoney, formatNumber } from '@/lib/format';
 import { convertAmount, marketRates } from '@/lib/market';
 import { emptyPlanning } from '@/lib/planning';
+import { ratesOf } from '@/lib/transaction-rates';
 import { chunks, emptyTransactionFilter, filtersTransactions, groupPageByDay, earliestTransactionDay, periodDays, signedAmount, summarizeTransactions, transactionPeriodLabels, transactionPeriods, transactionsIn, type TransactionPeriod } from '@/lib/transaction-list';
 import { canRecategorize, canTakeCategory, categoryChoices, choiceKey, newRule, ruleFromBusiness, ruleFromChange, type CategoryChoice, type TransactionRule } from '@/lib/transaction-rules';
 import { TransactionInsights } from '@/components/transaction-insights';
@@ -83,7 +84,7 @@ export function TransactionsScreen() {
  const tagById = new Map(tags.data.tags.map(tag => [tag.id, tag]));
  const createTag = async (name: string) => { const id = crypto.randomUUID(); await tags.save({ id, name, color: nextPaletteColor(tags.data.tags.map(tag => tag.color)) }); return id; };
  const rates = marketRates(market);
- const convert = (amount: number, unit: string) => convertAmount(amount, unit, currency, rates);
+ const convert = (amount: number, unit: string, record?: Entry) => convertAmount(amount, unit, currency, ratesOf(record, rates));
  // Twenty transactions a page; changing the period or a filter starts again at the first page.
  const listKey = JSON.stringify([range, filter, ownerFilter]);
  const [paging, setPaging] = useState({ key: listKey, page: 1 });

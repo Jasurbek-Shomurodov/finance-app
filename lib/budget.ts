@@ -7,6 +7,7 @@ import { fundingBudget, inFundingPlan } from './goal-funding';
 import type { Category, Goal, PlanningData } from './planning';
 import { offeredKinds } from './removed-categories';
 import { monthlyReview, type TransactionSplit } from './transaction-tools';
+import { ratesOf } from './transaction-rates';
 
 /** Three spending buckets. Fixed: the same every month (rent, loans). Flexible: day-to-day spending.
  * Non-monthly: yearly or irregular costs that are saved for ahead. */
@@ -109,7 +110,7 @@ export function monthActuals(data: Pick<PlanningData, 'records' | 'activity' | '
  for (const record of data.records as Entry[]) {
   if (seen.has(record.id) || record.frequency !== 'Once' || !income.includes(record.kind) || record.date.slice(0, 7) !== month || record.date > today) continue;
   seen.add(record.id);
-  const value = convertAmount(Number(record.amount), record.currency, currency, rates);
+  const value = convertAmount(Number(record.amount), record.currency, currency, ratesOf(record, rates));
   // The review already counted an income amount it could not convert.
   if (value === null) continue;
   const key = record.custom_category_id ?? record.kind;

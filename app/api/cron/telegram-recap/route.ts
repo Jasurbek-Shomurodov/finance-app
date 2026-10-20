@@ -9,6 +9,7 @@ import { serviceDatabase } from '@/lib/service-role';
 import { telegramConfig } from '@/lib/telegram';
 import { deliverReport } from '@/lib/telegram-report';
 import { deliverToSubscribers, ownerProfile, ownerCashflowSince, ownerSpendingExtras, recentSnapshots } from '@/lib/telegram-owner';
+import { withDayRates } from '@/lib/day-rate-tables';
 export const maxDuration=60;
 /** Sends each linked owner, as a picture, the recap of the seven days ending today (scheduled for Sunday evening). One owner's failure never blocks the others. */
 export async function GET(req:Request){
@@ -19,7 +20,7 @@ export async function GET(req:Request){
  try{
   // One recap per owner and week, keyed by its last day: a retried or overlapping run skips the owners already sent.
   const {sent,failed,blocked}=await deliverToSubscribers(db,{kind:'recap',period:to},async({user_id,chat_id})=>{
-    const [records,categories,profile,snapshots,goalEvents]=await Promise.all([
+    const [stored,categories,profile,snapshots,goalEvents]=await Promise.all([
      // Only the week's own cash flow counts.
      ownerCashflowSince(db,user_id,from),
      db.read<Array<{id:string;name:string}>>('/rest/v1/custom_categories?select=id,name&user_id=eq.'+user_id),
@@ -27,6 +28,8 @@ export async function GET(req:Request){
      recentSnapshots(db,user_id,1),
      db.read<Array<{goal_id:string}>>(`/rest/v1/goal_events?select=goal_id&user_id=eq.${user_id}&event_type=eq.contribution&delta=gt.0&occurred_on=gte.${from}&occurred_on=lte.${to}`),
     ]);
+    // Each transaction counts in the owner's currency at the official rates of its own day.
+    const records=await withDayRates(stored,[profile.currency],{today:depositToday(),db});
     // Splits and Tracker expenses count as they do in the app.
     const totals=periodTotals({records,...await ownerSpendingExtras(db,user_id,from,records)},from,to,profile.currency,{...snapshots[0]?.rates}),best=topCategory(totals.byCategory);
     // Built-in categories are translated; an added category shows the owner's own name.

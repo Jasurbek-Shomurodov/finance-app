@@ -9,6 +9,7 @@ import { serviceDatabase } from '@/lib/service-role';
 import { telegramConfig } from '@/lib/telegram';
 import { deliverReport } from '@/lib/telegram-report';
 import { deliverToSubscribers, namedCategories, ownerCashflowSince, ownerCategories, ownerProfile, ownerSpendingExtras, snapshotOnOrBefore } from '@/lib/telegram-owner';
+import { withDayRates } from '@/lib/day-rate-tables';
 export const maxDuration=60;
 /** Sends each linked owner, as a picture, the report of the month that ended before today (scheduled for the 1st). One owner's failure never blocks the others. */
 export async function GET(req:Request){
@@ -21,7 +22,7 @@ export async function GET(req:Request){
  try{
   // One report per owner and month, keyed by its first day: a retried or overlapping run skips the owners already sent.
   const {sent,failed,blocked}=await deliverToSubscribers(db,{kind:'monthly',period:from},async({user_id,chat_id})=>{
-    const [records,categories,profile,closing,opening]=await Promise.all([
+    const [stored,categories,profile,closing,opening]=await Promise.all([
      // The month's cash flow and the month before's, for the spending comparison.
      ownerCashflowSince(db,user_id,previousFrom),
      ownerCategories(db,user_id),
@@ -29,6 +30,8 @@ export async function GET(req:Request){
      snapshotOnOrBefore(db,user_id,to),
      snapshotOnOrBefore(db,user_id,previousTo),
     ]);
+    // Each transaction counts in the owner's currency at the official rates of its own day.
+    const records=await withDayRates(stored,[profile.currency],{today:depositToday(),db});
     // Both months are converted at the rates of the month's last snapshot, as the recap uses its latest.
     const rates={...closing?.rates},extras={records,...await ownerSpendingExtras(db,user_id,previousFrom,records)};
     const totals=periodTotals(extras,from,to,profile.currency,rates),previous=periodTotals(extras,previousFrom,previousTo,profile.currency,rates);

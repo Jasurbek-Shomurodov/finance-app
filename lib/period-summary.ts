@@ -5,6 +5,7 @@ import {shiftDay} from './calendar-days';
 import {expenses,income,type Entry} from './finance';
 import {convertAmount} from './market';
 import {cashFlowItems,type CashFlowExtras} from './spending';
+import {ratesOf} from './transaction-rates';
 type Row=Pick<Entry,'kind'|'amount'|'currency'|'date'|'frequency'|'custom_category_id'>&Partial<Pick<Entry,'id'|'history_event_id'|'mortgage_payment_id'|'payment_principal'|'payment_interest'>>;
 /** `missing` counts amounts left out because no rate converts them; while it is above zero the totals are incomplete. */
 export type PeriodTotals={income:number;spending:number;byCategory:Record<string,number>;missing:number};
@@ -22,11 +23,11 @@ export function periodTotals(input:PeriodInput,from:string,to:string,currency:st
  const totals:PeriodTotals={income:0,spending:0,byCategory:{},missing:0};
  const table={USD:1,...rates};
  for(const item of cashFlowItems(records,from,to,extras)){
-  const amount=item.currency===null?null:convertAmount(item.amount,item.currency,currency,table);
+  const amount=item.currency===null?null:convertAmount(item.amount,item.currency,currency,ratesOf(item.record,table));
   if(amount===null||!Number.isFinite(amount)){totals.missing++;continue;}
   if(item.income){totals.income+=amount;continue;}
   totals.spending+=amount;
-  for(const part of item.parts){const key=categoryKey(part.category);totals.byCategory[key]=(totals.byCategory[key]??0)+convertAmount(part.amount,item.currency!,currency,table)!;}
+  for(const part of item.parts){const key=categoryKey(part.category);totals.byCategory[key]=(totals.byCategory[key]??0)+convertAmount(part.amount,item.currency!,currency,ratesOf(item.record,table))!;}
  }
  return totals;
 }

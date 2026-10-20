@@ -8,16 +8,18 @@ import { formatDate, formatDateTime, formatMoney, formatNumber, formatPercent } 
 import { isCurrency, currencyLabel } from './currencies';
 import { locales, type Language } from './languages';
 import { translate } from './translations';
+import { happened } from './transaction-rates';
 import { upcomingPayments, type Goal, type Occurrence, type PlanningData } from './planning';
 import { legacyEarningSources, type EarningSource } from './earning-sources';
 import { investmentGoalItems, investmentGoalPlan } from './investment-goals';
-import { consolidatedFlow, expectedMonthlyIncome, hasFlowHistory, inPeriod, budgetFigures, monthBudgets, parseFinanceBackup, reportCashFlow, reportCurrencies, reportLedger, reportNumber as number, reportWealth, wealthTotals, type FinanceBackup, type ReportCashFlow, type ReportLedger, type ReportRow, type WealthItem, type WealthTotals } from './report-figures';
+import { consolidatedCashFlow, expectedMonthlyIncome, hasFlowHistory, inPeriod, budgetFigures, monthBudgets, parseFinanceBackup, reportCashFlow, reportCurrencies, reportLedger, reportNumber as number, reportWealth, wealthTotals, type FinanceBackup, type ReportCashFlow, type ReportLedger, type ReportRow, type WealthItem, type WealthTotals } from './report-figures';
 
 export type { FinanceBackup, ReportRow };
 export { parseFinanceBackup };
 export type ReportBlock={kind:'title'|'heading'|'subheading'|'text'|'pageBreak';text:string}|{kind:'table';text:string;headers:string[];rows:string[][];widths:number[];numeric?:number[]};
 export type FinancialReport={title:string;generated:string;locale:string;blocks:ReportBlock[]};
-export type ReportOptions={currency?:string};
+/** `dayRates`: each day's official rates (units per US dollar), so combined figures add transactions at their own day's rates. */
+export type ReportOptions={currency?:string;dayRates?:Readonly<Record<string,Record<string,number>>>};
 
 type Block='title'|'heading'|'subheading'|'text'|'pageBreak';
 /** What every section reads: the backup's records and tables, the period, the currencies and the shared formatters. */
@@ -56,7 +58,8 @@ function overviewSection(r:Report){
  }),[.12,.22,.22,.22,.22],[1,2,3,4]);
  const invalidFlowCurrency=records.some(rec=>(income.includes(rec.kind)||expenses.includes(rec.kind))&&rec.frequency==='Once'&&inPeriod(rec.date,r.month,r.today)&&!isCurrency(rec.currency));
  if(invalidFlowCurrency)r.issues.add(t('A transaction has no valid currency; consolidated cash flow is unavailable.'));
- const convertedFlow=(key:'received'|'spent'|'principal'|'net')=>invalidFlowCurrency?null:consolidatedFlow(flows,key,reporting,r.market);
+ const combined=consolidatedCashFlow(r.ledger,flows,{period:r.month,cutoff:r.today},reporting,r.market);
+ const convertedFlow=(key:'received'|'spent'|'principal'|'net')=>invalidFlowCurrency?null:combined[key];
  if(currencies.some(c=>c!==reporting)){
   const total=r.consolidated;
   add('subheading',`${t('Consolidated total')} · ${reporting}`);
@@ -225,8 +228,10 @@ function reviewSection(r:Report){
 function reportContext(backup:FinanceBackup,language:Language,market:MarketData|null,options:ReportOptions,blocks:ReportBlock[]):Report{
  const locale=locales[language],t=(key:string,params?:Record<string,string|number>)=>translate(language,key,params),na=t('Not available');
  const tables:Record<string,ReportRow[]>={...backup.tables,...(backup.income_sources?{income_sources:backup.income_sources}:{})};
- const ledger=reportLedger(tables),{records,byId}=ledger;
  const today=depositToday(new Date(backup.exported_at)),month=today.slice(0,7);
+ const read=reportLedger(tables),days=options.dayRates;
+ // Each transaction carries its day's rates, as the app's own reads attach them.
+ const ledger=days?{...read,records:read.records.map(record=>happened(record,today)?{...record,day_rates:days[record.date]??null}:record)}:read,{records,byId}=ledger;
  const preferred=tables.user_preferences?.[0]?.currencies;
  const reporting=options.currency??(Array.isArray(preferred)?String(preferred[0]):'USD');
  if(!isCurrency(reporting))throw Error('Choose a valid reporting currency.');
@@ -242,6 +247,15 @@ function reportContext(backup:FinanceBackup,language:Language,market:MarketData|
 }
 
 /** Pure owner-backup projection. Never includes arbitrary fields, notes, credentials or deleted rows. */
+/** The days and currencies whose official rates the report needs (`ReportOptions.dayRates`): each transaction's day, in
+ * the backup's currencies and the reporting currency. */
+export function reportRateDays(input:unknown,currency?:string){
+ const backup=parseFinanceBackup(input),today=depositToday(new Date(backup.exported_at)),{records}=reportLedger(backup.tables);
+ const preferred=backup.tables.user_preferences?.[0]?.currencies;
+ const currencies=new Set([...(currency?[currency]:[]),...(Array.isArray(preferred)?preferred.map(String):[]),...records.map(record=>record.currency)].filter(isCurrency));
+ return {days:[...new Set(records.filter(record=>happened(record,today)).map(record=>record.date))].sort(),currencies:[...currencies]};
+}
+
 export function buildFinancialReport(input:unknown,language:Language,context='',market:MarketData|null=null,options:ReportOptions={}):FinancialReport {
  const backup=parseFinanceBackup(input),blocks:ReportBlock[]=[];
  const r=reportContext(backup,language,market,options,blocks),{t,add}=r;
