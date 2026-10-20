@@ -1,7 +1,7 @@
 import { archivedIn, budgetKey, scheduleDates, income, expenses, interestKinds, type Entry } from './finance';
 import type { AssetMovement } from './asset-movements';
 import type { HoldingAccount } from './holding-accounts';
-import { monthEnd, shiftDay, withMonthDay } from './calendar-days';
+import { daysBetween, monthEnd, shiftDay, shiftMonth, withMonthDay } from './calendar-days';
 import { depositToday } from './deposit-interest';
 import { amountIn, type Money } from './money';
 import { sharedDayRate, type DayRate } from './day-rates';
@@ -140,6 +140,17 @@ export function openPaymentSchedules(records:Entry[],occurrences:Occurrence[],pa
  if(!offered.length)return [];
  const open=new Set(upcomingPayments(records,occurrences,payment.date,monthEnd(payment.date)).filter(item=>item.type==='scheduled').map(item=>item.record.id));
  return offered.filter(record=>open.has(record.id));
+}
+/** The due date a payment on `date` settles, as the database's `scheduled_payment_due` picks it (the sample workspace's
+ * copy): an open date of the payment's own month, else last month's, else the recorded date of its own month nearest the
+ * payment, which the payment adds to. A skipped date, or a recorded one of last month, is never picked. Null when none. */
+export function scheduledPaymentDue(schedule:Pick<Entry,'id'|'date'|'frequency'|'recurrence_days'|'end_date'>,date:string,occurrences:readonly Pick<Occurrence,'record_id'|'due_on'|'status'>[]):string|null{
+ const month=date.slice(0,7),from=shiftMonth(month,-1)+'-01';
+ const status=new Map(occurrences.filter(item=>item.record_id===schedule.id).map(item=>[item.due_on,item.status]));
+ const rank=(day:string)=>[status.has(day)?1:0,day<month+'-01'?1:0,status.has(day)?Math.abs(daysBetween(date,day)):0];
+ const candidates=scheduleDates(schedule,from,monthEnd(month)).filter(day=>!status.has(day)||(status.get(day)==='paid'&&day>=month+'-01'));
+ candidates.sort((a,b)=>{const x=rank(a),y=rank(b);return x[0]-y[0]||x[1]-y[1]||x[2]-y[2]||a.localeCompare(b);});
+ return candidates[0]??null;
 }
 /** A payment naming `schedule` by id, or none. It takes the schedule's name when it has none, its amount when it has none and
  * is in the schedule's currency, and rent its property. A payment in another currency keeps its own: the schedule counts it at the day's rate. */

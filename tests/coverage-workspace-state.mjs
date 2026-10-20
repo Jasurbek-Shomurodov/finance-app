@@ -175,9 +175,13 @@ test('the sample workspace starts from the backend and changes only its own copy
  assert.equal(ws().rows.find(row => row.id === cash.id).holding_account_id, 'broker');
  const mortgage = ws().rows.find(row => row.kind === 'Mortgage');
  const before = mortgage.amount;
- await ws().recordMortgagePayment({ id: 'pay', mortgage_id: mortgage.id, principal: 100, interest: 20, date: today, notes: '' });r.update();
+ const payingFrom = ws().rows.find(row => row.kind === 'Cash');
+ await ws().recordMortgagePayment({ id: 'pay', mortgage_id: mortgage.id, principal: 100, interest: 20, date: today, notes: '', account_id: payingFrom.id });r.update();
  assert.equal(ws().rows.find(row => row.id === mortgage.id).amount, before - 100);
  assert.equal(ws().rows.find(row => row.id === 'pay').amount, 120);
+ // The sample payment leaves the cash account the dialog named, as a signed-in one does: principal and interest, 120.
+ assert.equal(ws().rows.find(row => row.id === 'pay').account_id, payingFrom.id);
+ assert.equal(ws().rows.find(row => row.id === payingFrom.id).amount, payingFrom.amount - 120);
  ws().setStopping(expense);r.update();
  await ws().stopRecord('2030-01-01');r.update();
  assert.equal(ws().rows.find(row => row.id === expense.id).end_date, '2030-01-01');

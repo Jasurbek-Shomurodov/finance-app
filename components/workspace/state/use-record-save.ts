@@ -5,7 +5,7 @@ import { withAssetIncomePlans, resolveEarningSource, type EarningSource } from '
 import { showDeleted, showSaved } from '@/lib/feedback';
 import { liabilities, type Entry } from '@/lib/finance';
 import { resolveIncomeSource } from '@/lib/income-sources';
-import type { Category } from '@/lib/planning';
+import type { Category, Occurrence } from '@/lib/planning';
 import { applyRecordChange, lendFromAccount, withSavedRecord } from '@/lib/record-balance';
 import { businessMoveFrom, cashAccountProblem, debtDatesProblem, demoScheduleLink, expenseName, recordSaveProblem } from '@/lib/record-save';
 import { depositToday } from '@/lib/deposit-interest';
@@ -21,7 +21,7 @@ export type RecordSaveInput = {
     setBusy: Dispatch<SetStateAction<boolean>>; setError: Dispatch<SetStateAction<string>>;
     /** Shows why a change was refused. */
     fail: (message: string) => void;
-    planning: { loading: boolean; error: string; data: { records: Entry[]; categories: Category[] }; updateRecords?: (change: (records: Entry[]) => Entry[]) => void };
+    planning: { loading: boolean; error: string; data: { records: Entry[]; categories: Category[]; /** Settled and skipped due dates: the sample workspace picks a payment's due date from them. */occurrences?: Occurrence[] }; updateRecords?: (change: (records: Entry[]) => Entry[]) => void };
     sources: EarningSource[];
     refreshRecords: () => void;
     setAccountBusiness: (accountId: string, business: string | null) => Promise<number>;
@@ -43,7 +43,7 @@ export function useRecordSave(input: RecordSaveInput) {
         // Only new money lent leaves a cash account.
         const lentFrom=editing.kind==='Money lent'&&!stored?editing.lent_from??null:null;
         // Signed in, the database names the schedule a source receipt or a salary pays; the sample workspace does it here.
-        const link=demo?demoScheduleLink(editing,{...incomeSourcePatch,...earningPatch},input.sources):{};
+        const link=demo?demoScheduleLink(editing,{...incomeSourcePatch,...earningPatch},input.sources,{records:planning.data.records,occurrences:planning.data.occurrences??[]}):{};
         return {...editing,name,lent_from:lentFrom||undefined,account_exchange_rate:converted?rate:undefined,...opened,...incomeSourcePatch,...earningPatch,...link};
     }
     async function save(e: React.FormEvent) {

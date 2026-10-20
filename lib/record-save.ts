@@ -2,6 +2,7 @@ import { cashFlowAmountMissing, requiresCashAccount } from './cash-account-requi
 import { depositToday } from './deposit-interest';
 import { isBusinessAccount } from './business';
 import { expenses, liabilities, simpleInterestKinds, type Entry } from './finance';
+import { scheduledPaymentDue, type Occurrence } from './planning';
 
 const today = depositToday;
 
@@ -35,8 +36,15 @@ export function cashAccountProblem(editing: Entry, records: readonly Entry[], re
 
 /** The sample workspace's copy of name_scheduled_payment for a source receipt or a salary with a plan (migration 140):
  * the row names the schedule it pays and the due date it chose, so the income cards and Recurring join it by that one id. */
-export function demoScheduleLink(editing: Entry, patch: Pick<Entry, 'earning_due_on' | 'income_due_on'>, sources: readonly { id: string; schedule_id?: string | null }[]): Partial<Entry> {
- if (editing.frequency !== 'Once' || editing.occurrence_record_id) return {};
+export function demoScheduleLink(editing: Entry, patch: Pick<Entry, 'earning_due_on' | 'income_due_on'>, sources: readonly { id: string; schedule_id?: string | null }[], schedules: { records: readonly Entry[]; occurrences: readonly Occurrence[] } = { records: [], occurrences: [] }): Partial<Entry> {
+ if (editing.frequency !== 'Once') return {};
+ // A payment that names its schedule (Scheduled payment, a due bill) gets the due date the database would pick.
+ if (editing.occurrence_record_id) {
+  if (editing.occurrence_due_on) return {};
+  const schedule = schedules.records.find(record => record.id === editing.occurrence_record_id);
+  const due = schedule ? scheduledPaymentDue(schedule, editing.date, schedules.occurrences) : null;
+  return due ? { occurrence_due_on: due } : { occurrence_record_id: null };
+ }
  const source = sources.find(source => source.id === editing.earning_source_id);
  if (source && patch.earning_due_on) return { occurrence_record_id: source.schedule_id ?? source.id, occurrence_due_on: patch.earning_due_on };
  if (editing.kind === 'Salary' && editing.income_source_id && patch.income_due_on) return { occurrence_record_id: editing.income_source_id, occurrence_due_on: patch.income_due_on };

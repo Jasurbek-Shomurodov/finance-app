@@ -45,11 +45,11 @@ export function useRecordActions({ demo, rows, setRows, refreshRecords, splits, 
     }
     async function recordMortgagePayment(payment: MortgagePayment) {
         if (demo) {
-            setRows(previous => {
-                if (previous.some(row => row.id === payment.id)) return previous;
-                const mortgage = previous.find(row => row.id === payment.mortgage_id)!;
-                return [...previous.map(row => row.id === mortgage.id ? { ...row, amount: row.amount - payment.principal } : row), { ...fresh(), id: payment.id, name: mortgage.name, kind: 'Other expense', currency: mortgage.currency, amount: decimalSum([payment.principal, payment.interest]), date: payment.date, notes: payment.notes, mortgage_payment_id: payment.id, payment_principal: payment.principal, payment_interest: payment.interest }];
-            });
+            if (rows.some(row => row.id === payment.id)) return;
+            const mortgage = rows.find(row => row.id === payment.mortgage_id)!;
+            const expense: Entry = { ...fresh(), id: payment.id, name: mortgage.name, kind: 'Other expense', currency: mortgage.currency, amount: decimalSum([payment.principal, payment.interest]), date: payment.date, account_id: payment.account_id ?? null, account_exchange_rate: payment.exchange_rate ?? null, notes: payment.notes, mortgage_payment_id: payment.id, payment_principal: payment.principal, payment_interest: payment.interest };
+            // The payment leaves the cash account it names, as a saved expense does; too little money refuses it.
+            setRows(applyRecordChange(rows.map(row => row.id === mortgage.id ? { ...row, amount: row.amount - payment.principal } : row), undefined, expense));
         } else {
             const crossCurrency=payment.exchange_rate!==undefined;
             const payload=crossCurrency?{...payment,record_id:payment.mortgage_id,type:'mortgage_payment',amount:decimalSum([payment.principal,payment.interest]),balance:null}:payment;

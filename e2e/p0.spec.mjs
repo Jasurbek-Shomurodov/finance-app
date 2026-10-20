@@ -92,6 +92,8 @@ test('ACC-005 XAPP-010 a transfer with a fee moves the money once and counts onl
   const [from, to] = await dialog.locator('select').all();
   await chooseOption(from, 'E2E Checking');
   await chooseOption(to, 'E2E Savings');
+  // The fee sits with the notes under Optional details.
+  await dialog.getByText('Optional details').click();
   const [amount, fee] = await dialog.getByPlaceholder('0').all();
   await amount.fill('20');
   await fee.fill('2');
