@@ -172,3 +172,29 @@ test('a merchant in a category Sankey opens its own: the accounts it was paid fr
  assert.deepEqual(shape(epam), [['Salary', 'EPAM', 2000], ['EPAM', 'Savings account', 2000]], 'a payer: its income category on the left, the account it landed in on the right');
  assert.deepEqual(shape(drillFlows({ side: 'merchant', key: 'Costco', income: true }, 'Costco', 0, ctx)), [], 'a merchant is never read as a payer');
 });
+
+test('a merchant Sankey lists its transactions as entered, newest first, and a tap opens one', () => {
+ const records = [
+  record('a', 'Costco', 'Living expense', 120, '2026-08-02', { account_id: 'card', custom_category_id: 'groceries' }),
+  record('b', 'Costco', 'Living expense', 40, '2026-08-10', { currency: 'GBP' }),
+  record('c', 'Cafe', 'Living expense', 50, '2026-08-11'),
+  record('d', 'Costco', 'Other income', 30, '2026-08-12'),
+ ];
+ const ctx = { ...context(records), label: key => key === 'groceries' ? 'Groceries' : key };
+ const { merchantTransactions } = loadTS('lib/cash-flow-drill.ts');
+ assert.deepEqual(merchantTransactions({ key: 'Costco', income: false }, ctx).map(item => item.id), ['b', 'a'], 'newest first; a refund or income under the same name is not spending, and a GBP amount without a rate is still listed');
+ const r = createRenderer();
+ const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
+ const { CashFlowDrillDialog } = r.load('components/cash-flow-sankey.tsx', modules);
+ const opened = [];
+ r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'merchant', key: 'Costco', income: false }, title: 'Costco', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord: item => opened.push(item.id) }));
+ const rows = r.all(node => node.type === 'button' && node.props['aria-label'] === 'View details for Costco');
+ assert.equal(rows.length, 2);
+ assert.match(r.html(), /10 August 2026/);
+ assert.match(r.html(), /−£40/, 'as entered, in its own currency');
+ assert.match(r.html(), /Groceries/);
+ rows[1].props.onClick();
+ assert.deepEqual(opened, ['a']);
+ r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'expense', key: 'groceries' }, title: 'Groceries', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord() {} }));
+ assert.equal(r.all(node => node.props?.className === 'drill-transactions').length, 0, 'a category lists none');
+});

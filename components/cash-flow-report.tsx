@@ -16,7 +16,7 @@ import { cashFlowReport, partialBar, periodMonths, reportPeriods, sankeyFlows, t
 import { hueColor } from '@/lib/category-colors';
 import { useCategoryHue } from '@/components/category-icons-context';
 import { depositToday } from '@/lib/deposit-interest';
-import { normalizeEntry } from '@/lib/finance';
+import { normalizeEntry, type Entry } from '@/lib/finance';
 import { formatMoney, formatMonthYear, formatPercent } from '@/lib/format';
 import { marketRates, type MarketData } from '@/lib/market';
 import { emptyPlanning, type PlanningData } from '@/lib/planning';
@@ -24,7 +24,7 @@ import type { TransactionSplit } from '@/lib/transaction-tools';
 
 const periodLabels: Record<ReportPeriod, string> = { month: 'Month', quarter: 'Quarter', year: 'Year' };
 const trendTitles: Record<ReportPeriod, string> = { month: 'Income and spending by month', quarter: 'Income and spending by quarter', year: 'Income and spending by year' };
-type Props = { owner: string | null; demo: boolean; revision: number; data: PlanningData; splits: TransactionSplit[]; month: string; currency: string; market: MarketData | null };
+type Props = { /** Opens a transaction's details, as a row on Transactions does. */onOpenRecord?: (record: Entry) => void; owner: string | null; demo: boolean; revision: number; data: PlanningData; splits: TransactionSplit[]; month: string; currency: string; market: MarketData | null };
 
 /** One side of the breakdown: proportional bars with amount and share, the Income / Expenses panels. The largest ten
  * are named and the rest share one "Other" row, so the rows add up to the total.
@@ -59,7 +59,7 @@ function CashFlowTiles({ report, currency }: { report: ReturnType<typeof cashFlo
 }
 
 /** Cash flow: figures for the period, monthly bars, and where money came from and went, as bars or a Sankey diagram. */
-export function CashFlowReport({ owner, demo, revision, data: provided, splits, month, currency, market }: Props) {
+export function CashFlowReport({ onOpenRecord, owner, demo, revision, data: provided, splits, month, currency, market }: Props) {
  const { t, locale } = useLanguage();
  const today = depositToday();
  const [period, setPeriod] = useState<ReportPeriod>('month');
@@ -119,6 +119,6 @@ export function CashFlowReport({ owner, demo, revision, data: provided, splits, 
     <div><h3>{t('Expenses')}</h3><ShareBars items={report[grouping === 'category' ? 'categories' : 'merchants'].expense} label={label} colorKey={colorKey} currency={currency}/></div>
    </div> : flows.links.length ? <FlowSankey flows={flows} currency={currency} canOpen={index => !!drillOf(index)} onOpen={index => { const target = drillOf(index); if (target) setDrill({ target, title: flows.nodes[index].name }); }}/> : <p className="budget-left-empty">{t('Nothing recorded in this period.')}</p>}
   </section>
-  {drill && <CashFlowDrillDialog target={drill.target} title={drill.title} period={periodName} savings={report.savings} context={{ data, splits, months: periodMonths(month, period), currency, today, rates, t, label: categoryName }} onClose={() => setDrill(null)}/>}
+  {drill && <CashFlowDrillDialog target={drill.target} title={drill.title} period={periodName} savings={report.savings} context={{ data, splits, months: periodMonths(month, period), currency, today, rates, t, label: categoryName }} onClose={() => setDrill(null)} onOpenRecord={onOpenRecord}/>}
  </section>;
 }

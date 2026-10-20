@@ -219,6 +219,15 @@ function merchantFlows(target: { key: string; income: boolean }, title: string, 
  return { nodes, links: [...left.map((entry, index) => ({ source: index, target: hub, value: entry.value })), ...right.map((entry, index) => ({ source: hub, target: hub + 1 + index, value: entry.value }))], missing };
 }
 
+/** A payer's or merchant's transactions in the period, newest first: each as it was entered, in its own amount and
+ * currency. A transaction split over several categories is listed once. Tracker expenses have no record and are left out. */
+export function merchantTransactions(target: { key: string; income: boolean }, context: DrillContext): Entry[] {
+ const { data, splits, months, today, t } = context, { from, to } = span(months, today);
+ const found: Entry[] = [];
+ for (const item of cashFlowItems(data.records as Entry[], from, to, { splits, investmentLinks: data.investmentLinks })) if (item.record && item.income === target.income && merchantOf(item, t) === target.key) found.push(item.record);
+ return found.sort((a, b) => b.date.localeCompare(a.date) || a.id.localeCompare(b.id));
+}
+
 /** The second Sankey behind a tap on the first: a category by payer or merchant, where the savings went, one account, or
  * one payer or merchant. */
 export function drillFlows(target: DrillTarget, title: string, savings: number, context: DrillContext): DrillFlows {

@@ -215,3 +215,11 @@ summary.tax-line-heading>svg{flex-shrink:0;color:var(--muted-foreground);transit
  .recurring-details-bar .segmented>button{flex:1;min-width:0;padding-inline:6px}
  .recurring-details-chart,.recurring-details-history{padding:12px}
 }
+/* A merchant's transactions under its Sankey in the Cash flow drill-down: date and category, then the amount as entered. */
+.drill-transactions h3{font-size:var(--type-small);font-weight:500;margin-block-end:6px}
+.drill-transactions ul{display:grid;max-height:min(40svh,320px);overflow-y:auto;border-block-start:1px solid var(--hairline)}
+.drill-transactions button{display:flex;width:100%;align-items:center;justify-content:space-between;gap:12px;padding:8px 4px;border-block-end:1px solid var(--hairline);text-align:start;font-variant-numeric:tabular-nums}
+.drill-transactions button:hover{background:color-mix(in srgb,var(--foreground) 4%,transparent)}
+.drill-transactions button:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
+.drill-transactions button>span:first-child{display:grid;min-width:0}
+.drill-transactions small{color:var(--muted-foreground);font-size:var(--type-caption)}
