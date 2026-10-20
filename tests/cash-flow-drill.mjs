@@ -181,8 +181,8 @@ test('a merchant Sankey lists its transactions as entered, newest first, and a t
   record('d', 'Costco', 'Other income', 30, '2026-08-12'),
  ];
  const ctx = { ...context(records), label: key => key === 'groceries' ? 'Groceries' : key };
- const { merchantTransactions } = loadTS('lib/cash-flow-drill.ts');
- assert.deepEqual(merchantTransactions({ key: 'Costco', income: false }, ctx).map(item => item.id), ['b', 'a'], 'newest first; a refund or income under the same name is not spending, and a GBP amount without a rate is still listed');
+ const { drillTransactions } = loadTS('lib/cash-flow-drill.ts');
+ assert.deepEqual(drillTransactions({ side: 'merchant', key: 'Costco', income: false }, ctx).map(item => item.id), ['b', 'a'], 'newest first; a refund or income under the same name is not spending, and a GBP amount without a rate is still listed');
  const r = createRenderer();
  const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
  const { CashFlowDrillDialog } = r.load('components/cash-flow-sankey.tsx', modules);
@@ -197,4 +197,28 @@ test('a merchant Sankey lists its transactions as entered, newest first, and a t
  assert.deepEqual(opened, ['a']);
  r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'expense', key: 'groceries' }, title: 'Groceries', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord() {} }));
  assert.equal(r.all(node => node.props?.className === 'drill-transactions').length, 0, 'a category lists none');
+});
+
+test('an account Sankey lists the transactions recorded against it; a tap opens one', () => {
+ const records = [
+  record('pay', 'EPAM', 'Salary', 3000, '2026-08-05', { account_id: 'card' }),
+  record('food', 'Market', 'Living expense', 500, '2026-08-06', { account_id: 'card', custom_category_id: 'groceries' }),
+  record('cash', 'Taxi', 'Living expense', 100, '2026-08-07'),
+  record('mp', 'Mortgage payment', 'Other expense', 1000, '2026-08-20', { mortgage_payment_id: 'mp', payment_interest: 400, payment_principal: 600 }),
+ ];
+ const activity = [{ id: 'mp', action: 'mortgage', account_id: 'card', target_id: 'home', amount: 1000, received: 1000, fee: 0, occurred_on: '2026-08-20', notes: '', before_balance: 0, after_balance: 0 }];
+ const ctx = { ...context(records, activity), label: key => key === 'groceries' ? 'Groceries' : key };
+ const { drillTransactions } = loadTS('lib/cash-flow-drill.ts');
+ assert.deepEqual(drillTransactions({ side: 'account', key: 'card' }, ctx).map(item => item.id), ['mp', 'food', 'pay'], 'income and spending, a mortgage payment through its operation; never another account’s');
+ assert.deepEqual(drillTransactions({ side: 'account', key: '' }, ctx).map(item => item.id), ['cash']);
+ assert.deepEqual(drillTransactions({ side: 'savings' }, ctx), [], 'Savings lists none');
+ const r = createRenderer();
+ const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
+ const { CashFlowDrillDialog } = r.load('components/cash-flow-sankey.tsx', modules);
+ const opened = [];
+ r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'account', key: 'card' }, title: 'Card', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord: item => opened.push(item.id) }));
+ const html = r.html();
+ assert.match(html, /EPAM/);assert.match(html, /\+\$3,000/, 'income in green with a plus');assert.match(html, /6 August 2026 · Groceries/);
+ r.all(node => node.type === 'button' && node.props['aria-label'] === 'View details for Market')[0].props.onClick();
+ assert.deepEqual(opened, ['food']);
 });

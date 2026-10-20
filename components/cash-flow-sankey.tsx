@@ -7,8 +7,8 @@ import { useLanguage } from '@/components/language-provider';
 import { chartColors, chartSankey, chartTooltip, sankeyNodeRadius } from '@/components/presentation-foundation/chart';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { drillFlows, merchantTransactions, type DrillContext, type DrillTarget } from '@/lib/cash-flow-drill';
-import type { Entry } from '@/lib/finance';
+import { drillFlows, drillTransactions, type DrillContext, type DrillTarget } from '@/lib/cash-flow-drill';
+import { income, type Entry } from '@/lib/finance';
 import { formatCompactMoney, formatDate, formatMoney } from '@/lib/format';
 import { measureLabel, sankeyLabelMargins, sankeyMinWidth } from '@/lib/sankey-labels';
 
@@ -43,22 +43,25 @@ export function FlowSankey({ flows, currency, onOpen, canOpen }: { flows: Flows;
  </ResponsiveContainer></div>;
 }
 
-/** A payer's or merchant's transactions under its Sankey, each as it was entered; a tap opens its details. */
-function MerchantTransactions({ target, context, onOpenRecord }: { target: { key: string; income: boolean }; context: DrillContext; onOpenRecord: (record: Entry) => void }) {
+/** The transactions under a payer, merchant or account Sankey, each as it was entered; a tap opens its details. */
+function DrillTransactions({ target, context, onOpenRecord }: { target: DrillTarget; context: DrillContext; onOpenRecord: (record: Entry) => void }) {
  const { t, locale } = useLanguage();
- const records = merchantTransactions(target, context), name = context.label ?? t;
+ const records = drillTransactions(target, context), name = context.label ?? t;
  if (!records.length) return null;
  return <section className="drill-transactions" aria-label={t('Transactions')}>
   <h3>{t('Transactions')}</h3>
-  <ul>{records.map(record => <li key={record.id}><button type="button" onClick={() => onOpenRecord(record)} aria-label={t('View details for {name}', { name: record.name.trim() || t(record.kind) })}>
-   <span><strong>{formatDate(record.date, locale)}</strong><small>{name(record.custom_category_id ?? record.kind)}</small></span>
-   <span className={target.income ? 'positive' : undefined}>{`${target.income ? '+' : '−'}${formatMoney(Number(record.amount), record.currency, locale)}`}</span>
-  </button></li>)}</ul>
+  <ul>{records.map(record => {
+   const incoming = income.includes(record.kind), title = record.name.trim() || t(record.kind);
+   return <li key={record.id}><button type="button" onClick={() => onOpenRecord(record)} aria-label={t('View details for {name}', { name: title })}>
+    <span><strong>{target.side === 'account' ? title : formatDate(record.date, locale)}</strong><small>{target.side === 'account' ? `${formatDate(record.date, locale)} · ${name(record.custom_category_id ?? record.kind)}` : name(record.custom_category_id ?? record.kind)}</small></span>
+    <span className={incoming ? 'positive' : undefined}>{`${incoming ? '+' : '−'}${formatMoney(Number(record.amount), record.currency, locale)}`}</span>
+   </button></li>;
+  })}</ul>
  </section>;
 }
 
 /** The Sankey behind a tapped node, in a dialog over Cash flow: a category by payer or merchant, where the savings went,
- * one account, or one payer or merchant with its transactions. An account, category or merchant in it opens its own
+ * one account, or one payer, merchant or account with its transactions. An account, category or merchant in it opens its own
  * Sankey in the same dialog; Back returns to the one before. A transaction opens its details over it (`onOpenRecord`). */
 export function CashFlowDrillDialog({ target, title, period, savings, context, onClose, onOpenRecord }: { target: DrillTarget; title: string; period: string; savings: number; context: DrillContext; onClose: () => void; onOpenRecord?: (record: Entry) => void }) {
  const { t } = useLanguage();
@@ -70,6 +73,6 @@ export function CashFlowDrillDialog({ target, title, period, savings, context, o
   <DialogTitle>{current.title} <span className="panel-figure">{period}</span></DialogTitle>
   {flows.missing > 0 && <p className="partial-total" role="status">{t('Some transactions could not be converted. Current or previous month totals are incomplete.')}</p>}
   {flows.links.length ? <FlowSankey key={trail.length} flows={flows} currency={context.currency} canOpen={index => !!flows.nodes[index]?.open} onOpen={index => { const node = flows.nodes[index]; if (node.open) setTrail([...trail, { target: node.open, title: node.name }]); }}/> : <p className="budget-left-empty">{t('Nothing recorded in this period.')}</p>}
-  {current.target.side === 'merchant' && onOpenRecord && <MerchantTransactions target={current.target} context={context} onOpenRecord={onOpenRecord}/>}
+  {onOpenRecord && <DrillTransactions target={current.target} context={context} onOpenRecord={onOpenRecord}/>}
  </DialogContent></Dialog>;
 }
