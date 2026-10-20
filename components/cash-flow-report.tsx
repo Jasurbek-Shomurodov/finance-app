@@ -119,6 +119,6 @@ export function CashFlowReport({ owner, demo, revision, data: provided, splits, 
     <div><h3>{t('Expenses')}</h3><ShareBars items={report[grouping === 'category' ? 'categories' : 'merchants'].expense} label={label} colorKey={colorKey} currency={currency}/></div>
    </div> : flows.links.length ? <FlowSankey flows={flows} currency={currency} canOpen={index => !!drillOf(index)} onOpen={index => { const target = drillOf(index); if (target) setDrill({ target, title: flows.nodes[index].name }); }}/> : <p className="budget-left-empty">{t('Nothing recorded in this period.')}</p>}
   </section>
-  {drill && <CashFlowDrillDialog target={drill.target} title={drill.title} period={periodName} savings={report.savings} context={{ data, splits, months: periodMonths(month, period), currency, today, rates, t }} onClose={() => setDrill(null)}/>}
+  {drill && <CashFlowDrillDialog target={drill.target} title={drill.title} period={periodName} savings={report.savings} context={{ data, splits, months: periodMonths(month, period), currency, today, rates, t, label: categoryName }} onClose={() => setDrill(null)}/>}
  </section>;
 }

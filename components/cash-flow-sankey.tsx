@@ -1,8 +1,11 @@
 "use client";
+import { useState } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import { ResponsiveContainer, Sankey, Tooltip } from 'recharts';
 import type { LinkProps } from 'recharts/types/chart/Sankey';
 import { useLanguage } from '@/components/language-provider';
 import { chartColors, chartSankey, chartTooltip, sankeyNodeRadius } from '@/components/presentation-foundation/chart';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { drillFlows, type DrillContext, type DrillTarget } from '@/lib/cash-flow-drill';
 import { formatCompactMoney, formatMoney } from '@/lib/format';
@@ -39,13 +42,17 @@ export function FlowSankey({ flows, currency, onOpen, canOpen }: { flows: Flows;
  </ResponsiveContainer></div>;
 }
 
-/** The Sankey behind a tapped node, in a dialog over Cash flow: a category by payer or merchant, or where the savings went. */
+/** The Sankey behind a tapped node, in a dialog over Cash flow: a category by payer or merchant, where the savings went,
+ * or one account. An account or category in it opens its own Sankey in the same dialog; Back returns to the one before. */
 export function CashFlowDrillDialog({ target, title, period, savings, context, onClose }: { target: DrillTarget; title: string; period: string; savings: number; context: DrillContext; onClose: () => void }) {
  const { t } = useLanguage();
- const flows = drillFlows(target, title, savings, context);
+ const [trail, setTrail] = useState([{ target, title }]);
+ const current = trail.at(-1)!;
+ const flows = drillFlows(current.target, current.title, savings, context);
  return <Dialog open onOpenChange={open => { if (!open) onClose(); }}><DialogContent className="record-dialog cash-flow-drill-dialog" aria-describedby={undefined}>
-  <DialogTitle>{title} <span className="panel-figure">{period}</span></DialogTitle>
+  {trail.length > 1 && <Button type="button" variant="ghost" size="sm" className="cash-flow-drill-back" onClick={() => setTrail(trail.slice(0, -1))}><ArrowLeft aria-hidden="true"/>{t('Back')}</Button>}
+  <DialogTitle>{current.title} <span className="panel-figure">{period}</span></DialogTitle>
   {flows.missing > 0 && <p className="partial-total" role="status">{t('Some transactions could not be converted. Current or previous month totals are incomplete.')}</p>}
-  {flows.links.length ? <FlowSankey flows={flows} currency={context.currency}/> : <p className="budget-left-empty">{t('Nothing recorded in this period.')}</p>}
+  {flows.links.length ? <FlowSankey key={trail.length} flows={flows} currency={context.currency} canOpen={index => !!flows.nodes[index]?.open} onOpen={index => { const node = flows.nodes[index]; if (node.open) setTrail([...trail, { target: node.open, title: node.name }]); }}/> : <p className="budget-left-empty">{t('Nothing recorded in this period.')}</p>}
  </DialogContent></Dialog>;
 }

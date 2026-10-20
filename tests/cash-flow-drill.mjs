@@ -105,3 +105,50 @@ test('the Cash flow Sankey opens a category or Savings in a dialog; the total an
  r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'income', key: 'Salary' }, title: 'Salary', period: 'August 2026', savings: 0, context: context([]), onClose() {} }));
  assert.ok(r.find(item => item.type === 'p' && item.props.className === 'budget-left-empty'), 'an empty category says so');
 });
+
+test('an account in the savings Sankey opens its own: income and transfers in, spending, transfers and debts out, the rest to its balance', () => {
+ const records = [
+  record('pay', 'EPAM', 'Salary', 3000, '2026-08-05', { account_id: 'card' }),
+  record('food', 'Market', 'Living expense', 500, '2026-08-06', { account_id: 'card', custom_category_id: 'groceries' }),
+  record('gift', 'Gift', 'Charity', 50, '2026-08-07', { account_id: 'save' }),
+ ];
+ const activity = [
+  { id: 't1', action: 'transfer', account_id: 'card', target_id: 'save', amount: 1500, received: 1490, fee: 10, occurred_on: '2026-08-10', notes: '', before_balance: 0, after_balance: 0 },
+  { id: 'r1', action: 'repayment', account_id: 'card', target_id: 'loan', amount: 300, received: 300, fee: 0, occurred_on: '2026-08-15', notes: '', before_balance: 0, after_balance: 0 },
+ ];
+ const ctx = { ...context(records, activity), label: key => key === 'groceries' ? 'Groceries' : key };
+ const savings = drillFlows({ side: 'savings' }, 'Savings', 2450, ctx);
+ assert.deepEqual(savings.nodes.filter(node => node.open).map(node => [node.name, node.open]), [['Savings account', { side: 'account', key: 'save' }], ['Card', { side: 'account', key: 'card' }], ['Car loan', { side: 'account', key: 'loan' }]], 'every account and debt opens its own Sankey');
+ const card = drillFlows({ side: 'account', key: 'card' }, 'Card', 0, ctx);
+ assert.deepEqual(shape(card), [['Salary', 'Card', 3000], ['Card', 'Savings account', 1490], ['Card', 'Groceries', 500], ['Card', 'Car loan', 300], ['Card', 'Not traced', 10], ['Card', 'Balance', 700]]);
+ assert.deepEqual(card.nodes.map(node => node.open?.side ?? null), ['income', null, 'account', 'expense', 'account', null, null], 'categories and other accounts open; the account itself, its balance and the gap do not');
+ const save = drillFlows({ side: 'account', key: 'save' }, 'Savings account', 0, ctx);
+ assert.deepEqual(shape(save), [['Card', 'Savings account', 1490], ['Savings account', 'Charity', 50], ['Savings account', 'Balance', 1440]]);
+ const loan = drillFlows({ side: 'account', key: 'loan' }, 'Car loan', 0, ctx);
+ assert.deepEqual(shape(loan), [['Card', 'Car loan', 300], ['Car loan', 'Balance', 300]], 'a repayment flows into the debt');
+ const drawn = drillFlows({ side: 'account', key: 'card' }, 'Card', 0, context([record('food', 'Market', 'Living expense', 200, '2026-08-06', { account_id: 'card' })]));
+ assert.deepEqual(shape(drawn), [['Balance', 'Card', 200], ['Card', 'Living expense', 200]], 'spending more than came in draws on the balance');
+ const fx = drillFlows({ side: 'account', key: 'card' }, 'Card', 0, context([], [{ id: 't', action: 'transfer', account_id: 'card', target_id: 'eur', amount: 100, received: 220, fee: 0, occurred_on: '2026-08-10', notes: '', before_balance: 0, after_balance: 0 }], { data: { records: [...accounts, record('eur', 'Euro', 'Cash', 0, '2026-01-01', { frequency: 'Monthly', currency: 'EUR' })], activity: [{ id: 't', action: 'transfer', account_id: 'card', target_id: 'eur', amount: 100, received: 220, fee: 0, occurred_on: '2026-08-10', notes: '', before_balance: 0, after_balance: 0 }], investmentLinks: [] } }));
+ assert.deepEqual(shape(fx), [['Balance', 'Card', 100], ['Card', 'Euro', 100]], 'EUR 220 at 0.5 per dollar is $110: the $10 exchange difference is not the card’s');
+});
+
+test('the drill-down dialog opens an account in place and Back returns to the Sankey before it', () => {
+ const r = createRenderer();
+ const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
+ const { CashFlowDrillDialog } = r.load('components/cash-flow-sankey.tsx', modules);
+ const ctx = context([record('pay', 'EPAM', 'Salary', 1000, '2026-08-05', { account_id: 'card' })]);
+ r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'savings' }, title: 'Savings', period: 'August 2026', savings: 1000, context: ctx, onClose() {} }));
+ const title = () => r.find(item => item.type === 'DialogTitle').props.children[0];
+ const back = () => r.all(item => item.type === 'Button' && item.props.className === 'cash-flow-drill-back');
+ assert.equal(title(), 'Savings');
+ assert.equal(back().length, 0, 'no Back on the first Sankey');
+ const sankey = () => r.find(item => item.type === 'Sankey').props;
+ const card = sankey().data.nodes.findIndex(node => node.name === 'Card');
+ const tile = sankey().node({ x: 0, y: 0, width: 10, height: 20, index: card, payload: { name: 'Card', value: 1000 } });
+ assert.equal(tile.props.role, 'button');
+ r.fire(tile, 'onClick');
+ assert.equal(title(), 'Card');
+ assert.deepEqual(shape(sankey().data), [['Salary', 'Card', 1000], ['Card', 'Balance', 1000]]);
+ r.fire(back()[0], 'onClick');
+ assert.equal(title(), 'Savings');
+});
