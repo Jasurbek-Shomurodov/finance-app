@@ -223,7 +223,8 @@ test('an account Sankey lists the transactions recorded against it; a tap opens 
  const { drillTransactions } = loadTS('lib/cash-flow-drill.ts');
  assert.deepEqual(drillTransactions({ side: 'account', key: 'card' }, ctx).map(item => item.id), ['mp', 'food', 'pay'], 'income and spending, a mortgage payment through its operation; never another account’s');
  assert.deepEqual(drillTransactions({ side: 'account', key: '' }, ctx).map(item => item.id), ['cash']);
- assert.deepEqual(drillTransactions({ side: 'savings' }, ctx), [], 'Savings lists none');
+ assert.deepEqual(drillTransactions({ side: 'savings' }, ctx).map(item => item.id), ['mp', 'cash', 'food', 'pay'], 'Savings lists all the income and spending it is made of, with or without an account');
+ assert.deepEqual(drillTransactions({ side: 'savings' }, { ...ctx, months: ['2026-09'] }), [], 'only the period');
  const r = createRenderer();
  const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
  const { CashFlowDrillDialog } = r.load('components/cash-flow-sankey.tsx', modules);

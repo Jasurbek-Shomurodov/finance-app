@@ -222,12 +222,13 @@ function merchantFlows(target: { key: string; income: boolean }, title: string, 
 
 /** The transactions behind a category, payer, merchant or account Sankey, newest first: each as it was entered, in its own amount
  * and currency. A transaction split over several categories is listed once. Tracker expenses have no record, and
- * transfers and repayments are account operations rather than transactions, so they are left out. Savings lists none. */
+ * transfers and repayments are account operations rather than transactions, so they are left out. Savings lists every
+ * income and spending transaction of the period, the ones its figure is made of. */
 export function drillTransactions(target: DrillTarget, context: DrillContext): Entry[] {
- if (target.side === 'savings') return [];
  const { data, splits, months, today, t } = context, { from, to } = span(months, today);
  const activityAccount = new Map((data.activity ?? []).map(row => [row.id, row.account_id]));
  const matches = (item: Item) => {
+  if (target.side === 'savings') return true;
   if (target.side === 'merchant') return item.income === target.income && merchantOf(item, t) === target.key;
   if (target.side === 'account') return accountOf(item, activityAccount) === target.key;
   // A category: income by its category, spending by any part of it (a split transaction is listed once).

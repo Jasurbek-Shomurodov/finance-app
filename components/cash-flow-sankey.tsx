@@ -43,7 +43,7 @@ export function FlowSankey({ flows, currency, onOpen, canOpen }: { flows: Flows;
  </ResponsiveContainer></div>;
 }
 
-/** The transactions under a category, payer, merchant or account Sankey, each as it was entered; a tap opens its details. */
+/** The transactions under a drill-down Sankey (for Savings, all the period's income and spending), each as it was entered; a tap opens its details. */
 function DrillTransactions({ target, context, onOpenRecord }: { target: DrillTarget; context: DrillContext; onOpenRecord: (record: Entry) => void }) {
  const { t, locale } = useLanguage();
  const records = drillTransactions(target, context), name = context.label ?? t;
@@ -53,7 +53,7 @@ function DrillTransactions({ target, context, onOpenRecord }: { target: DrillTar
   <ul>{records.map(record => {
    const incoming = income.includes(record.kind), title = record.name.trim() || t(record.kind);
    return <li key={record.id}><button type="button" onClick={() => onOpenRecord(record)} aria-label={t('View details for {name}', { name: title })}>
-    <span><strong>{target.side === 'merchant' ? formatDate(record.date, locale) : title}</strong><small>{target.side === 'account' ? `${formatDate(record.date, locale)} · ${name(record.custom_category_id ?? record.kind)}` : target.side === 'merchant' ? name(record.custom_category_id ?? record.kind) : formatDate(record.date, locale)}</small></span>
+    <span><strong>{target.side === 'merchant' ? formatDate(record.date, locale) : title}</strong><small>{target.side === 'account' || target.side === 'savings' ? `${formatDate(record.date, locale)} · ${name(record.custom_category_id ?? record.kind)}` : target.side === 'merchant' ? name(record.custom_category_id ?? record.kind) : formatDate(record.date, locale)}</small></span>
     <span className={incoming ? 'positive' : undefined}>{`${incoming ? '+' : '−'}${formatMoney(Number(record.amount), record.currency, locale)}`}</span>
    </button></li>;
   })}</ul>
@@ -61,7 +61,7 @@ function DrillTransactions({ target, context, onOpenRecord }: { target: DrillTar
 }
 
 /** The Sankey behind a tapped node, in a dialog over Cash flow: a category by payer or merchant, where the savings went,
- * one account, or one payer, merchant or account; each but Savings with its transactions. An account, category or merchant in it opens its own
+ * one account, or one payer, merchant or account; each with its transactions. An account, category or merchant in it opens its own
  * Sankey in the same dialog; Back returns to the one before. A transaction opens its details over it (`onOpenRecord`). */
 export function CashFlowDrillDialog({ target, title, period, savings, context, onClose, onOpenRecord }: { target: DrillTarget; title: string; period: string; savings: number; context: DrillContext; onClose: () => void; onOpenRecord?: (record: Entry) => void }) {
  const { t } = useLanguage();
