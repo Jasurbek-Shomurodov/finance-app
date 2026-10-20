@@ -169,7 +169,7 @@ test('a merchant in a category Sankey opens its own: the accounts it was paid fr
  const costco = drillFlows({ side: 'merchant', key: 'Costco', income: false }, 'Costco', 0, ctx);
  assert.deepEqual(shape(costco), [['Card', 'Costco', 120], ['No account', 'Costco', 80], ['Costco', 'Groceries', 120], ['Costco', 'Household', 80]], 'across every category, never the GBP amount without a rate');
  assert.equal(costco.missing, 1);
- assert.deepEqual(costco.nodes.map(node => node.open?.side ?? null), ['account', null, null, 'expense', 'expense'], 'its account and categories open; No account and the merchant do not');
+ assert.deepEqual(costco.nodes.map(node => node.open?.side ?? null), ['account', 'account', null, 'expense', 'expense'], 'its accounts (No account too) and categories open; the merchant itself does not');
  const epam = drillFlows({ side: 'merchant', key: 'EPAM', income: true }, 'EPAM', 0, ctx);
  assert.deepEqual(shape(epam), [['Salary', 'EPAM', 2000], ['EPAM', 'Savings account', 2000]], 'a payer: its income category on the left, the account it landed in on the right');
  assert.deepEqual(shape(drillFlows({ side: 'merchant', key: 'Costco', income: true }, 'Costco', 0, ctx)), [], 'a merchant is never read as a payer');
@@ -370,7 +370,7 @@ test('a debt’s principal opens the payments that paid it down; a mortgage paym
  assert.deepEqual(interest.nodes.map(node => node.open ?? null), [{ side: 'payment', key: 'mp1' }, { side: 'payment', key: 'mp2' }, { side: 'expense', key: 'Other expense' }], 'a payment opens its Sankey; the total opens the category the payments share');
  assert.deepEqual(mortgageTransactions('home', ctx).map(item => item.id), ['mp1', 'mp2']);
  const split = interestFlows('home', { ...ctx, data: { ...ctx.data, records: ctx.data.records.map(item => item.id === 'mp2' ? { ...item, custom_category_id: 'housing' } : item) } });
- assert.equal(split.nodes.at(-1).open, undefined, 'payments in two categories: the total opens neither');
+ assert.deepEqual(split.nodes.at(-1).open, { side: 'group', income: false, keys: ['Other expense', 'housing'], by: 'category' }, 'payments in two categories: the total opens both');
  assert.equal(interestFlows('home', { ...ctx, currency: 'GBP' }).missing, 2);
  assert.deepEqual([shape(paymentFlows('mp1', { ...ctx, currency: 'GBP' })), paymentFlows('mp1', { ...ctx, currency: 'GBP' }).missing], [[], 1]);
  assert.deepEqual(shape(paymentFlows('r1', ctx)), [], 'a repayment is not a mortgage payment');
@@ -404,4 +404,42 @@ test('a debt’s principal opens the payments that paid it down; a mortgage paym
  tap('15 August 2026 · Card');
  assert.equal(r.find(node => node.type === 'DialogTitle').props.children[0], '15 August 2026 · Card', 'a repayment opens as a transfer');
  assert.match(r.html(), /<dt>Amount<\/dt><dd>\$300<\/dd>/);
+});
+
+test('every node opens something: No account, the main chart’s merged Other and Income total, a category’s Other merchants', () => {
+ // 20 October 2026: the user asked node by node for the drill-down to respond; now every node with something behind it opens.
+ const records = [
+  record('pay', 'EPAM', 'Salary', 2000, '2026-08-05', { account_id: 'card' }),
+  record('gig', 'Upwork', 'Other income', 300, '2026-08-06'),
+  record('cash', 'Taxi', 'Living expense', 100, '2026-08-07'),
+  record('cafe', 'Cafe', 'Living expense', 60, '2026-08-08', { account_id: 'card' }),
+  record('gift', 'Gift', 'Charity', 50, '2026-08-09'),
+  ...Array.from({ length: 11 }, (_, index) => record('s' + index, 'Shop ' + index, 'Other expense', 100 - index, '2026-08-10')),
+ ];
+ const ctx = context(records);
+ const { accountNode } = loadTS('lib/cash-flow-drill.ts');
+ assert.deepEqual(accountNode('', new Map(), key => key).open, { side: 'account', key: '' }, 'No account opens');
+ assert.deepEqual(shape(drillFlows({ side: 'account', key: '' }, 'No account', 0, ctx)), [['Upwork', 'No account', 300], ['Balance', 'No account', 895], ['No account', 'Other expense', 1045], ['No account', 'Living expense', 100], ['No account', 'Charity', 50]], 'the transactions recorded against no account');
+ const { drillTransactions } = loadTS('lib/cash-flow-drill.ts');
+ assert.equal(drillTransactions({ side: 'account', key: '' }, ctx).length, 14);
+
+ const report = cashFlowReport({ records, activity: [], investmentLinks: [], categories: [] }, [], ['2026-08'], 'USD', '2026-08-31', { USD: 1 });
+ const main = sankeyFlows(report, key => key, 2);
+ const other = main.nodes.find(node => node.name === 'Other expense' && node.keys);
+ assert.deepEqual(other.keys, ['Living expense', 'Charity'], 'the merged Other knows its categories');
+ assert.deepEqual(main.nodes.find(node => node.kind === 'total').keys, ['Salary', 'Other income']);
+ const merged = drillFlows({ side: 'group', income: false, keys: other.keys, by: 'category' }, 'Other expense', 0, ctx);
+ assert.deepEqual(shape(merged), [['Other expense', 'Living expense', 160], ['Other expense', 'Charity', 50]]);
+ assert.deepEqual(merged.nodes.slice(1).map(node => node.open), [{ side: 'expense', key: 'Living expense' }, { side: 'expense', key: 'Charity' }], 'each category opens');
+ const income = drillFlows({ side: 'group', income: true, keys: ['Salary', 'Other income'], by: 'merchant' }, 'Income', 0, ctx);
+ assert.deepEqual(shape(income), [['EPAM', 'Income', 2000], ['Upwork', 'Income', 300]], 'the Income total by source');
+ assert.deepEqual(income.nodes[0].open, { side: 'merchant', key: 'EPAM', income: true });
+ assert.deepEqual(drillTransactions({ side: 'group', income: false, keys: other.keys, by: 'category' }, ctx).map(item => item.id), ['gift', 'cafe', 'cash']);
+
+ const shops = drillFlows({ side: 'expense', key: 'Other expense' }, 'Other expense', 0, ctx);
+ const rest = shops.nodes.at(-1);
+ assert.equal(rest.name, 'Other');
+ assert.deepEqual(rest.open, { side: 'group', income: false, keys: ['Other expense'], by: 'merchant', skip: ['Shop 0', 'Shop 1', 'Shop 2', 'Shop 3', 'Shop 4', 'Shop 5', 'Shop 6', 'Shop 7', 'Shop 8'] }, 'a category’s Other opens the merchants it folds');
+ assert.deepEqual(shape(drillFlows(rest.open, 'Other', 0, ctx)), [['Other', 'Shop 9', 91], ['Other', 'Shop 10', 90]]);
+ assert.deepEqual(drillTransactions(rest.open, ctx).map(item => item.id).sort(), ['s10', 's9']);
 });

@@ -13,6 +13,9 @@ export type DrillTarget = { side: 'income' | 'expense'; key: string } | { side: 
  | { side: 'interest'; key: string }
  /** One mortgage payment by its id: the paying account, then its principal and interest (`lib/cash-flow-principal.ts`). */
  | { side: 'payment'; key: string }
+ /** Income or spending in some categories (`keys`), by category or by payer or merchant, less the members in `skip`
+  * (`lib/cash-flow-group.ts`). */
+ | { side: 'group'; income: boolean; keys: string[]; by: 'category' | 'merchant'; skip?: string[] }
  /** One transaction by its id: it opens the shared transaction details rather than a Sankey. */
  | { side: 'record'; key: string };
 /** A node of a drill-down Sankey; `open` is what a tap on it opens next. */

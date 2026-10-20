@@ -71,8 +71,8 @@ export function paymentFlows(id: string, context: DrillContext): DrillFlows {
 }
 
 /** One mortgage's interest in the period: each payment's interest, by its day and the account that paid it, flowing into
- * one total. A payment opens its own Sankey; the total opens the spending category the interest counts in, when the
- * payments share one. A payment without a rate is missing, never drawn. */
+ * one total. A payment opens its own Sankey; the total opens the spending category the interest counts in (or the
+ * categories, when the payments are in several). A payment without a rate is missing, never drawn. */
 export function interestFlows(debt: string, context: DrillContext): DrillFlows {
  const byId = new Map((context.data.records as Entry[]).map(record => [record.id, record]));
  const paid: Array<{ node: DrillNode; value: number }> = [], categories = new Set<string>();
@@ -86,6 +86,7 @@ export function interestFlows(debt: string, context: DrillContext): DrillFlows {
   paid.push({ value, node: { name: `${formatDate(payment.date, context.locale ?? 'en-US')} · ${from.name}`, kind: from.kind, open: { side: 'payment', key: payment.id } } });
  }
  const [category] = categories;
- const total: DrillNode = { name: context.t('Interest'), kind: 'expense', open: categories.size === 1 ? categoryNode(category, false, context).open : undefined };
+ // Payments in several categories open those categories together.
+ const total: DrillNode = { name: context.t('Interest'), kind: 'expense', open: categories.size === 1 ? categoryNode(category, false, context).open : categories.size ? { side: 'group', income: false, keys: [...categories], by: 'category' } : undefined };
  return { nodes: [...paid.map(item => item.node), total], links: paid.map((item, index) => ({ source: index, target: paid.length, value: item.value })), missing };
 }

@@ -81,9 +81,17 @@ export function CashFlowReport({ onOpenRecord, owner, demo, revision, data: prov
  const categoryHue = useCategoryHue();
  const colorKey = (key: string) => grouping === 'category' ? hueColor(categoryHue(data.categories.find(category => category.id === key)?.name ?? key)) : 'var(--foreground)';
  const flows = sankeyFlows(report, categoryName);
- // A tap on a category or on Savings opens its own Sankey in a dialog; the total and the merged "Other" open nothing.
+ // Every node opens its own Sankey in a dialog: a category, Savings, the merged "Other" (its categories) and the Income
+ // total (every income source).
  const [drill, setDrill] = useState<{ target: DrillTarget; title: string } | null>(null);
- const drillOf = (index: number): DrillTarget | null => { const node = flows.nodes[index]; return node?.kind === 'savings' ? { side: 'savings' } : node?.key && node.kind !== 'total' ? { side: node.kind === 'income' ? 'income' : 'expense', key: node.key } : null; };
+ const drillOf = (index: number): DrillTarget | null => {
+  const node = flows.nodes[index];
+  if (!node) return null;
+  if (node.kind === 'savings') return { side: 'savings' };
+  if (node.kind === 'total') return node.keys?.length ? { side: 'group', income: true, keys: node.keys, by: 'merchant' } : null;
+  if (node.key) return { side: node.kind === 'income' ? 'income' : 'expense', key: node.key };
+  return node.keys?.length ? { side: 'group', income: node.kind === 'income', keys: node.keys, by: 'category' } : null;
+ };
  const periodName = period === 'month' ? formatMonthYear(month, locale) : `${formatMonthYear(periodMonths(month, period)[0], locale)} – ${formatMonthYear(month, locale)}`;
  if (live && remote.initialLoading) return <section className="panel cash-flow-report"><ChartSkeleton label={t('Loading records…')}/></section>;
  if (live && remote.error) return <section className="panel cash-flow-report"><InlineError message={t(remote.error)} onRetry={remote.retry}/></section>;

@@ -1,53 +1,13 @@
-import { monthEnd } from './calendar-days';
-import { assets, liabilities, type Entry } from './finance';
+import { type Entry } from './finance';
 import { convertAmount } from './market';
 import type { PlanningData } from './planning';
 import type { DrillContext, DrillFlows, DrillNode, DrillTarget } from './cash-flow-drill-types';
-import { otherShareKey, topShares, type Share } from './cash-flow-report';
-import { cashFlowItems, spendingAmount, transferAmount, type CashFlowItem } from './spending';
+import { accountNode, accountOf, add, categoryNode, merchantOf, span, type Item } from './cash-flow-drill-base';
+import { categoryGroup, groupFlows, groupTransactions } from './cash-flow-group';
+import { cashFlowItems, spendingAmount, transferAmount } from './spending';
 
 export type { DrillContext, DrillFlows, DrillNode, DrillTarget } from './cash-flow-drill-types';
-
-const add = (totals: Map<string, number>, key: string, amount: number) => totals.set(key, (totals.get(key) ?? 0) + amount);
-const shares = (totals: Map<string, number>): Share[] => [...totals].filter(([, amount]) => amount > 0).map(([key, amount]) => ({ key, amount, share: 0 })).sort((a, b) => b.amount - a.amount || a.key.localeCompare(b.key));
-/** The period's first day and its last day so far. */
-export function span(months: string[], today: string) {
- const last = months.at(-1) ?? today.slice(0, 7), end = monthEnd(last);
- return { from: (months[0] ?? last) + '-01', to: today < end ? today : end };
-}
-
-type Item = CashFlowItem<Entry>;
-/** The payer or merchant a transaction is grouped under: its name, else its category; a Tracker expense has neither. */
-const merchantOf = (item: Item, t: (key: string) => string) => item.record ? item.record.name.trim() || t(item.record.kind) : t('Other expense');
-/** The account a transaction was recorded against, or the account of the operation that made it; '' for none. */
-const accountOf = (item: Item, activityAccount: Map<string, string>) => (item.record ? item.record.account_id ?? activityAccount.get(item.record.id) : item.link?.account_id) ?? '';
-/** A category node; a tap on it opens that category's Sankey. */
-export const categoryNode = (key: string, income: boolean, context: DrillContext): DrillNode => ({ name: (context.label ?? context.t)(key), kind: income ? 'income' : 'expense', open: { side: income ? 'income' : 'expense', key } });
-
-/** One category's payers (income) or merchants (spending), from the same transactions Cash flow counts, so the flows add
- * up to the category's total there. The nine largest are named; the rest share "Other". */
-function categoryFlows(target: { side: 'income' | 'expense'; key: string }, title: string, context: DrillContext): DrillFlows {
- const { data, splits, months, currency, today, rates, t } = context, { from, to } = span(months, today);
- const totals = new Map<string, number>();
- let missing = 0;
- for (const item of cashFlowItems(data.records as Entry[], from, to, { splits, investmentLinks: data.investmentLinks })) {
-  if (item.income !== (target.side === 'income')) continue;
-  const amount = item.income ? (item.record && (item.record.custom_category_id ?? item.record.kind) === target.key ? item.amount : 0) : item.parts.filter(part => part.category === target.key).reduce((sum, part) => sum + part.amount, 0);
-  if (!amount) continue;
-  const value = item.currency ? convertAmount(amount, item.currency, currency, rates) : null;
-  if (value === null || value === undefined) { missing += 1; continue; }
-  add(totals, merchantOf(item, t), value);
- }
- const income = target.side === 'income', side: DrillNode['kind'] = target.side;
- // Each named payer or merchant opens its own Sankey; the merged "Other" does not.
- const named = topShares(shares(totals), 9).map(item => item.key === otherShareKey ? { name: t('Other'), value: item.amount, open: undefined } : { name: item.key, value: item.amount, open: { side: 'merchant' as const, key: item.key, income } });
- if (target.side === 'income') {
-  const nodes: DrillNode[] = [...named.map(item => ({ name: item.name, kind: side, open: item.open })), { name: title, kind: side }];
-  return { nodes, links: named.map((item, index) => ({ source: index, target: named.length, value: item.value })), missing };
- }
- const nodes: DrillNode[] = [{ name: title, kind: side }, ...named.map(item => ({ name: item.name, kind: side, open: item.open }))];
- return { nodes, links: named.map((item, index) => ({ source: 0, target: index + 1, value: item.value })), missing };
-}
+export { accountNode, categoryNode, span } from './cash-flow-drill-base';
 
 /** One end of a flow: an account, holding or debt by id ('' for transactions recorded against no account), or a category. */
 type End = { account: string } | { income: string; payer?: string } | { expense: string } | { untraced: true };
@@ -133,16 +93,6 @@ export function accountChanges(context: DrillContext) {
   if ('account' in flow.to) add(changes, flow.to.account, flow.value);
  }
  return { changes, missing };
-}
-
-/** Where money is kept to spend: cash and deposits. Any other asset is a holding (stocks, crypto, bonds, property…). */
-const balanceKinds = new Set(['Cash', 'Deposit']);
-const nodeKind = (record: Entry | undefined): DrillNode['kind'] => !record ? 'account' : liabilities.includes(record.kind) ? 'debt' : assets.includes(record.kind) && !balanceKinds.has(record.kind) ? 'holding' : 'account';
-/** The node for an account, holding or debt; a tap on it opens that account's own Sankey. */
-export function accountNode(key: string, byId: Map<string, Entry>, t: (key: string) => string): DrillNode {
- if (!key) return { name: t('No account'), kind: 'untraced' };
- const record = byId.get(key);
- return { name: record?.name.trim() || t(record?.kind ?? 'Other'), kind: nodeKind(record), open: { side: 'account', key } };
 }
 
 /** Where the period's savings went: the accounts and holdings that grew and the debts paid down, fed by the savings and by
@@ -252,6 +202,7 @@ function merchantFlows(target: { key: string; income: boolean }, title: string, 
  * transfers and repayments are account operations rather than transactions, so they are left out. Savings lists every
  * income and spending transaction of the period, the ones its figure is made of. */
 export function drillTransactions(target: DrillTarget, context: DrillContext): Entry[] {
+ if (target.side === 'income' || target.side === 'expense' || target.side === 'group') return groupTransactions(target.side === 'group' ? target : categoryGroup(target), context);
  const { data, splits, months, today, t } = context, { from, to } = span(months, today);
  const activityAccount = new Map((data.activity ?? []).map(row => [row.id, row.account_id]));
  // A mortgage payment is listed under the account that paid it and under its mortgage.
@@ -260,9 +211,7 @@ export function drillTransactions(target: DrillTarget, context: DrillContext): E
   if (target.side === 'savings') return true;
   if (target.side === 'operation' || target.side === 'principal' || target.side === 'interest' || target.side === 'payment' || target.side === 'record') return false;
   if (target.side === 'merchant') return item.income === target.income && merchantOf(item, t) === target.key;
-  if (target.side === 'account') return accountOf(item, activityAccount) === target.key || (!!item.record && paidDebt.get(item.record.id) === target.key);
-  // A category: income by its category, spending by any part of it (a split transaction is listed once).
-  return target.side === 'income' ? item.income && (item.record?.custom_category_id ?? item.record?.kind) === target.key : !item.income && item.parts.some(part => part.category === target.key);
+  return target.side === 'account' && (accountOf(item, activityAccount) === target.key || (!!item.record && paidDebt.get(item.record.id) === target.key));
  };
  const found: Entry[] = [];
  for (const item of cashFlowItems(data.records as Entry[], from, to, { splits, investmentLinks: data.investmentLinks })) if (item.record && matches(item)) found.push(item.record);
@@ -277,5 +226,6 @@ export function drillFlows(target: DrillTarget, title: string, savings: number, 
  if (target.side === 'operation' || target.side === 'principal' || target.side === 'interest' || target.side === 'payment' || target.side === 'record') return { nodes: [], links: [], missing: 0 };
  if (target.side === 'account') return accountFlows(target.key, title, context);
  if (target.side === 'merchant') return merchantFlows(target, title, context);
- return categoryFlows(target, title, context);
+ if (target.side === 'group') return groupFlows(target, title, context);
+ return groupFlows(categoryGroup(target), title, context);
 }
