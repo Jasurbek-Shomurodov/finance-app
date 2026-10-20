@@ -73,8 +73,10 @@ test('GET narrower scopes read only what they need',async()=>{
 
  ({api,state}=harness());
  assert.equal((await api.GET(get('?scope=budget&month=2026-09&from=2024-10'))).status,200);
- assert.deepEqual(tables(state),['holding_accounts','finance_records','transaction_categories','savings_goals','payment_occurrences','account_activity','investment_account_links','finance_records']);
- assert.match(state.reads[1].extra.or,/date\.gte\.2024-10-01,date\.lt\.2026-10-01/);
+ // Cash flow traces the period's transfers, buys and sales, so the budget read takes them for its months.
+ assert.deepEqual(tables(state),['asset_movements','holding_accounts','finance_records','transaction_categories','savings_goals','payment_occurrences','account_activity','investment_account_links','finance_records']);
+ assert.equal(state.reads[0].extra.and,'(occurred_on.gte.2024-10-01,occurred_on.lt.2026-10-01)');
+ assert.match(state.reads[2].extra.or,/date\.gte\.2024-10-01,date\.lt\.2026-10-01/);
 });
 
 test('GET accounts reads holdings and every operation without the transaction history, which its activity view reads alone',async()=>{

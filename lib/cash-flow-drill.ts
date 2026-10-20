@@ -8,6 +8,8 @@ import type { TransactionSplit } from './transaction-tools';
 
 /** What a tap on the Cash flow Sankey opens: one income or spending category, the period's savings, or one account. */
 export type DrillTarget = { side: 'income' | 'expense'; key: string } | { side: 'account'; key: string } | { side: 'savings' }
+ /** One transfer or loan repayment, by its account operation's id (`lib/cash-flow-operations.ts`). */
+ | { side: 'operation'; key: string }
  /** One payer (`income`) or merchant, by the name its transactions carry. */
  | { side: 'merchant'; key: string; income: boolean };
 /** A node of a drill-down Sankey; `open` is the Sankey a tap on it opens next. */
@@ -15,12 +17,12 @@ export type DrillNode = { name: string; kind: 'income' | 'expense' | 'savings' |
 export type DrillFlows = { nodes: DrillNode[]; links: Array<{ source: number; target: number; value: number }>; missing: number };
 type Rates = number | Record<string, number> | undefined;
 /** `label` names a category key (an added category's id or a built-in kind). */
-export type DrillContext = { data: Pick<PlanningData, 'records' | 'activity' | 'investmentLinks'>; splits: TransactionSplit[]; months: string[]; currency: string; today: string; rates: Rates; t: (key: string) => string; label?: (key: string) => string };
+export type DrillContext = { data: Pick<PlanningData, 'records' | 'activity' | 'investmentLinks' | 'movements'>; splits: TransactionSplit[]; months: string[]; currency: string; today: string; rates: Rates; t: (key: string) => string; label?: (key: string) => string };
 
 const add = (totals: Map<string, number>, key: string, amount: number) => totals.set(key, (totals.get(key) ?? 0) + amount);
 const shares = (totals: Map<string, number>): Share[] => [...totals].filter(([, amount]) => amount > 0).map(([key, amount]) => ({ key, amount, share: 0 })).sort((a, b) => b.amount - a.amount || a.key.localeCompare(b.key));
 /** The period's first day and its last day so far. */
-function span(months: string[], today: string) {
+export function span(months: string[], today: string) {
  const last = months.at(-1) ?? today.slice(0, 7), end = monthEnd(last);
  return { from: (months[0] ?? last) + '-01', to: today < end ? today : end };
 }
@@ -67,25 +69,35 @@ type Activity = NonNullable<PlanningData['activity']>[number];
 /** One account operation: a transfer between accounts, a loan repayment, or a mortgage payment's principal (its interest
  * is spending, counted with the transactions). Reconciliations are corrections, not flows, and stay out. A transfer's
  * fee and an exchange difference are the gap between what left and what arrived. */
-function moveActivity(row: Activity, byId: Map<string, Entry>, move: Mover, convert: Convert, currency: string) {
+function moveActivity(row: Activity, byId: Map<string, Entry>, recorder: Recorder) {
+ const { move } = recorder;
  if (!row.target_id) return;
  const source = { account: row.account_id }, target = { account: row.target_id }, unit = byId.get(row.account_id)?.currency;
- if (row.action === 'transfer') transfer(row, byId, move, convert, currency);
+ if (row.action === 'transfer') transfer({ from: row.account_id, to: row.target_id }, { amount: Number(row.amount), currency: byId.get(row.account_id)?.currency }, { amount: Number(row.received || row.amount), currency: byId.get(row.target_id)?.currency ?? byId.get(row.account_id)?.currency }, recorder);
  else if (row.action === 'repayment') move(source, target, Number(row.amount), unit);
  else if (row.action === 'mortgage') { const payment = byId.get(row.id); if (payment) move(source, target, transferAmount(payment), payment.currency); }
 }
 
 type Convert = (amount: number, currency: string | null | undefined) => number | null;
-/** A transfer arrives as `received`, in the target's currency. What left beyond that (a fee, an exchange difference)
- * goes nowhere traceable, so it shows as "Not traced" instead of making the target look richer or the source poorer. */
-function transfer(row: Activity, byId: Map<string, Entry>, move: Mover, convert: Convert, currency: string) {
- const source = { account: row.account_id }, target = { account: row.target_id! };
- const unit = byId.get(row.account_id)?.currency, arrival = byId.get(row.target_id!)?.currency ?? unit;
- const sent = convert(Number(row.amount), unit), received = convert(Number(row.received || row.amount), arrival);
- if (sent === null || received === null) { move(source, target, Number(row.amount), null); return; }
- move(source, target, Math.min(sent, received), currency);
- if (sent - received >= .005) move(source, untraced, sent - received, currency);
- else if (received - sent >= .005) move(untraced, target, received - sent, currency);
+/** How flows are recorded: `move` adds one, `convert` turns an amount into the display `currency`. */
+type Recorder = { move: Mover; convert: Convert; currency: string };
+/** Money moved between two accounts: what left the source in its currency, what reached the target in its own. What
+ * left beyond what arrived (a fee, an exchange difference) goes nowhere traceable, so it shows as "Not traced" instead
+ * of making the target look richer or the source poorer. */
+function transfer(ends: { from: string; to: string }, sent: { amount: number; currency?: string | null }, received: { amount: number; currency?: string | null }, { move, convert, currency }: Recorder) {
+ const source = { account: ends.from }, target = { account: ends.to };
+ const out = convert(sent.amount, sent.currency), arrived = convert(received.amount, received.currency);
+ if (out === null || arrived === null) { move(source, target, sent.amount, null); return; }
+ move(source, target, Math.min(out, arrived), currency);
+ if (out - arrived >= .005) move(source, untraced, out - arrived, currency);
+ else if (arrived - out >= .005) move(untraced, target, arrived - out, currency);
+}
+
+/** A transfer, buy or sale recorded on Accounts (`asset_movements`): its values are money in each side's currency, also
+ * for a holding, whose `sent` and `received` are quantities. Capitalized interest moves nothing between accounts. */
+function moveMovement(row: NonNullable<PlanningData['movements']>[number], byId: Map<string, Entry>, recorder: Recorder) {
+ if (row.kind === 'interest') return;
+ transfer({ from: row.source_id, to: row.target_id }, { amount: Number(row.source_value), currency: byId.get(row.source_id)?.currency }, { amount: Number(row.target_value), currency: byId.get(row.target_id)?.currency }, recorder);
 }
 
 /** Cash moved from an account into a holding (a buy) or back out of it (a sale). Tracker expenses are spending. */
@@ -118,8 +130,9 @@ export function periodFlows(context: DrillContext) {
   if (item.income) move({ income: item.record?.custom_category_id ?? item.record?.kind ?? 'Other income', payer: merchantOf(item, context.t) }, account, item.amount, item.currency);
   else for (const part of item.parts) move(account, { expense: part.category }, part.amount, item.currency);
  }
-  for (const row of data.activity ?? []) if (row.occurred_on >= from && row.occurred_on <= to) moveActivity(row, byId, move, convert, currency);
+  for (const row of data.activity ?? []) if (row.occurred_on >= from && row.occurred_on <= to) moveActivity(row, byId, { move, convert, currency });
  for (const link of data.investmentLinks ?? []) moveInvestment(link, from, to, byId, move);
+ for (const row of data.movements ?? []) if (row.occurred_on >= from && row.occurred_on <= to) moveMovement(row, byId, { move, convert, currency });
  return { flows, missing, byId };
 }
 
@@ -134,7 +147,7 @@ export function accountChanges(context: DrillContext) {
 }
 
 /** The node for an account, holding or debt; a tap on it opens that account's own Sankey. */
-function accountNode(key: string, byId: Map<string, Entry>, t: (key: string) => string): DrillNode {
+export function accountNode(key: string, byId: Map<string, Entry>, t: (key: string) => string): DrillNode {
  if (!key) return { name: t('No account'), kind: 'untraced' };
  const record = byId.get(key);
  return { name: record?.name.trim() || t(record?.kind ?? 'Other'), kind: record && liabilities.includes(record.kind) ? 'debt' : 'account', open: { side: 'account', key } };
@@ -229,6 +242,7 @@ export function drillTransactions(target: DrillTarget, context: DrillContext): E
  const activityAccount = new Map((data.activity ?? []).map(row => [row.id, row.account_id]));
  const matches = (item: Item) => {
   if (target.side === 'savings') return true;
+  if (target.side === 'operation') return false;
   if (target.side === 'merchant') return item.income === target.income && merchantOf(item, t) === target.key;
   if (target.side === 'account') return accountOf(item, activityAccount) === target.key;
   // A category: income by its category, spending by any part of it (a split transaction is listed once).
@@ -243,6 +257,7 @@ export function drillTransactions(target: DrillTarget, context: DrillContext): E
  * one payer or merchant. */
 export function drillFlows(target: DrillTarget, title: string, savings: number, context: DrillContext): DrillFlows {
  if (target.side === 'savings') return savingsFlows(savings, context);
+ if (target.side === 'operation') return { nodes: [], links: [], missing: 0 };
  if (target.side === 'account') return accountFlows(target.key, title, context);
  if (target.side === 'merchant') return merchantFlows(target, title, context);
  return categoryFlows(target, title, context);

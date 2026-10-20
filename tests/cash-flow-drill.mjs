@@ -235,3 +235,72 @@ test('an account Sankey lists the transactions recorded against it; a tap opens 
  r.all(node => node.type === 'button' && node.props['aria-label'] === 'View details for Market')[0].props.onClick();
  assert.deepEqual(opened, ['food']);
 });
+
+test('an account lists its transfers and repayments; a tap opens one with what was sent, what arrived and the fee', () => {
+ const euro = record('eur', 'Euro', 'Cash', 0, '2026-01-01', { frequency: 'Monthly', currency: 'EUR' });
+ const op = (id, action, account_id, target_id, amount, received, occurred_on, extra = {}) => ({ id, action, account_id, target_id, amount, received, fee: 0, occurred_on, notes: '', before_balance: 0, after_balance: 0, ...extra });
+ const activity = [
+  op('t1', 'transfer', 'card', 'eur', 100, 220, '2026-08-10', { fee: 2, notes: 'Trip money' }),
+  op('t2', 'transfer', 'save', 'card', 50, 50, '2026-08-12'),
+  op('r1', 'repayment', 'card', 'loan', 300, 300, '2026-08-15'),
+  op('x', 'reconcile', 'card', 'card', 9, 9, '2026-08-16'),
+  op('m', 'mortgage', 'card', 'home', 1000, 1000, '2026-08-17'),
+  op('old', 'transfer', 'card', 'save', 10, 10, '2026-07-30'),
+ ];
+ const ctx = { ...context([record('pay', 'EPAM', 'Salary', 3000, '2026-08-05', { account_id: 'card' })], activity), data: { records: [...accounts, euro, record('pay', 'EPAM', 'Salary', 3000, '2026-08-05', { account_id: 'card' })], activity, investmentLinks: [] } };
+ const { accountOperations, operationDetails, operationFlows } = loadTS('lib/cash-flow-operations.ts');
+ assert.deepEqual(accountOperations('card', ctx).map(row => row.id), ['r1', 't2', 't1'], 'in and out, newest first; no reconciliation, no mortgage payment (listed as its transaction), only the period');
+ const transfer = operationDetails('t1', ctx).row;
+ assert.deepEqual([transfer.sent, transfer.received, transfer.fee], [{ amount: 100, currency: 'USD' }, { amount: 220, currency: 'EUR' }, 2], 'each side in its own account’s currency');
+ assert.deepEqual(operationDetails('r1', ctx).row.received, { amount: 300, currency: 'USD' }, 'a repayment reaches its loan as sent');
+ assert.equal(operationDetails('x', ctx), null);
+ const flows = operationFlows('t1', ctx);
+ assert.deepEqual(shape(flows), [['Card', 'Euro', 100]]);
+ assert.deepEqual(flows.nodes.map(node => node.open), [{ side: 'account', key: 'card' }, { side: 'account', key: 'eur' }], 'both accounts open');
+ assert.equal(operationFlows('t1', { ...ctx, currency: 'GBP' }).missing, 1, 'no rate: missing, never under the wrong currency');
+
+ const r = createRenderer();
+ const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
+ const { CashFlowDrillDialog } = r.load('components/cash-flow-sankey.tsx', modules);
+ r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'account', key: 'card' }, title: 'Card', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord() {} }));
+ const html = r.html();
+ assert.match(html, /<strong>Transfer<\/strong><small>12 August 2026 · ← Savings account<\/small><\/span><span class="positive">\+\$50<\/span>/);
+ assert.match(html, /<strong>Transfer<\/strong><small>10 August 2026 · → Euro<\/small><\/span><span>−\$100<\/span>/);
+ assert.match(html, /<strong>Repayment<\/strong><small>15 August 2026 · → Car loan<\/small>/);
+ const rows = r.all(node => node.type === 'button' && node.props['aria-label'] === 'View details for Transfer');
+ assert.equal(rows.length, 2);
+ r.fire(rows[1], 'onClick');
+ assert.equal(r.find(node => node.type === 'DialogTitle').props.children[0], 'Transfer');
+ const details = r.html();
+ assert.match(details, /<dt>Amount<\/dt><dd>\$100<\/dd><dt>Received<\/dt><dd>€220<\/dd><dt>Transfer fee<\/dt><dd>\$2<\/dd><dt>Notes<\/dt><dd>Trip money<\/dd>/);
+ assert.deepEqual(shape(r.find(node => node.type === 'Sankey').props.data), [['Card', 'Euro', 100]]);
+ r.fire(r.all(node => node.type === 'Button' && node.props.className === 'cash-flow-drill-back')[0], 'onClick');
+ assert.equal(r.find(node => node.type === 'DialogTitle').props.children[0], 'Card');
+});
+
+test('transfers, buys and sales recorded on Accounts count in the Sankeys and open like any transfer', () => {
+ // 20 October 2026: Accounts › Transfer money records an asset movement, which the drill-down did not read at all.
+ const movement = (id, kind, source_id, target_id, source_value, target_value, occurred_on, extra = {}) => ({ id, kind, source_id, target_id, sent: source_value, received: target_value, source_value, target_value, fee: 0, occurred_on, notes: '', realized_gain: null, ...extra });
+ const vt = record('vt', 'VT', 'Stock', 100, '2026-01-01', { frequency: 'Monthly', quantity: 3 });
+ const movements = [
+  movement('m1', 'transfer', 'card', 'save', 500, 495, '2026-08-11', { fee: 5 }),
+  movement('m2', 'buy', 'save', 'vt', 300, 300, '2026-08-12', { sent: 300, received: 3 }),
+  movement('m3', 'interest', 'save', 'save', 0, 4, '2026-08-13'),
+  movement('m4', 'transfer', 'card', 'save', 70, 70, '2026-09-02'),
+ ];
+ const records = [...accounts, vt, record('pay', 'EPAM', 'Salary', 1000, '2026-08-05', { account_id: 'card' })];
+ const ctx = { ...context([]), data: { records, activity: [], investmentLinks: [], movements } };
+ assert.deepEqual(Object.fromEntries(accountChanges(ctx).changes), { card: 500, save: 195, vt: 300 }, 'card +1000 −500; savings +495 −300; the fee and the interest are not traced; September is outside the period');
+ assert.deepEqual(shape(drillFlows({ side: 'savings' }, 'Savings', 1000, ctx)), [['Savings', 'Card', 500], ['Savings', 'VT', 300], ['Savings', 'Savings account', 195], ['Savings', 'Not traced', 5]]);
+ const { accountOperations, operationDetails } = loadTS('lib/cash-flow-operations.ts');
+ assert.deepEqual(accountOperations('save', ctx).map(row => [row.id, row.kind]), [['m2', 'buy'], ['m1', 'transfer']], 'no capitalized interest');
+ assert.deepEqual(operationDetails('m2', ctx).row.received, { amount: 300, currency: 'USD' }, 'a holding’s side is its money value, not its quantity');
+ const r = createRenderer();
+ const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
+ const { CashFlowDrillDialog } = r.load('components/cash-flow-sankey.tsx', modules);
+ r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'account', key: 'save' }, title: 'Savings account', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord() {} }));
+ assert.match(r.html(), /<strong>Buy holding<\/strong><small>12 August 2026 · → VT<\/small><\/span><span>−\$300<\/span>/);
+ assert.match(r.html(), /<strong>Transfer<\/strong><small>11 August 2026 · ← Card<\/small><\/span><span class="positive">\+\$495<\/span>/);
+ r.fire(r.all(node => node.type === 'button' && node.props['aria-label'] === 'View details for Transfer')[0], 'onClick');
+ assert.match(r.html(), /<dt>Amount<\/dt><dd>\$500<\/dd><dt>Received<\/dt><dd>\$495<\/dd><dt>Transfer fee<\/dt><dd>\$5<\/dd>/);
+});

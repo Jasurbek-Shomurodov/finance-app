@@ -26,12 +26,12 @@ export const accountActivityColumns='id,name,kind,amount,currency,date,account_i
 export function planningReadPlan(scope:PlanningScope):{tables:Set<Table>;debtPayments:boolean;historyOnly:boolean}{
  const historyOnly=scope==='insights'||scope==='account-activity';
  const all:Table[]=['movements','holdingAccounts','records','categories','goals','occurrences','activity','investmentLinks'];
- const skipped:Table[]=historyOnly?all.filter(table=>table!=='records'):scope==='review'||scope==='budget'?['movements']:scope==='workspace'?['movements','activity','investmentLinks']:[];
+ const skipped:Table[]=historyOnly?all.filter(table=>table!=='records'):scope==='review'?['movements']:scope==='workspace'?['movements','activity','investmentLinks']:[];
  return {tables:new Set(all.filter(table=>!skipped.includes(table))),debtPayments:scope==='full'||scope==='workspace'||scope==='accounts',historyOnly};
 }
 
 /** `review` reads the month and the one before it; `budget` reads from `first` (a month) through `month`. */
-export function planningReadFilters(scope:string,month:string,first?:string):Record<'records'|'activity'|'investmentLinks'|'occurrences',Record<string,string>> {
+export function planningReadFilters(scope:string,month:string,first?:string):Record<'records'|'activity'|'movements'|'investmentLinks'|'occurrences',Record<string,string>> {
  const from=(scope==='budget'&&first?first:shiftMonth(month,-1))+'-01';
  const to=shiftMonth(month,1)+'-01';
  // Holdings and schedules remain complete. Only actual transaction history is
@@ -46,6 +46,8 @@ export function planningReadFilters(scope:string,month:string,first?:string):Rec
  return {
   records,
   activity:periods?{and:`(occurred_on.gte.${from},occurred_on.lt.${to})`}:{},
+  // Budget reads the period's transfers, buys and sales too, so Cash flow can show where the savings went.
+  movements:periods?{and:`(occurred_on.gte.${from},occurred_on.lt.${to})`}:{},
   // A settled occurrence carries what was recorded for it: limited scopes leave its transaction out of `records`.
   occurrences:{select:'*,transaction:finance_records!transaction_id(amount,date,currency)'},
   investmentLinks:periods?{select:'*,investment_history!inner(occurred_on,record_id,event_type)','investment_history.and':`(occurred_on.gte.${from},occurred_on.lt.${to})`}:{select:'*,investment_history(occurred_on,record_id,event_type)'},

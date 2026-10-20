@@ -33,7 +33,7 @@ test('history API validates filters and binds them as RPC values with the owner 
 test('workspace excludes transaction history; review includes both selected months and year rollover',()=>{
  const {planningReadFilters}=loadTS('lib/planning-reads.ts');
  const workspace=planningReadFilters('workspace','2026-01');assert.match(workspace.records.or,/frequency.neq.Once/);assert.doesNotMatch(workspace.records.or,/date.gte/);
- const review=planningReadFilters('review','2026-01');assert.match(review.records.or,/date.gte.2025-12-01,date.lt.2026-02-01/);assert.match(review.activity.and,/2025-12-01/);assert.equal(review.investmentLinks['investment_history.and'],'(occurred_on.gte.2025-12-01,occurred_on.lt.2026-02-01)');
+ const review=planningReadFilters('review','2026-01');assert.match(review.records.or,/date.gte.2025-12-01,date.lt.2026-02-01/);assert.match(review.activity.and,/2025-12-01/);assert.equal(planningReadFilters('budget','2026-10','2026-01').movements.and,'(occurred_on.gte.2026-01-01,occurred_on.lt.2026-11-01)');assert.equal(review.investmentLinks['investment_history.and'],'(occurred_on.gte.2025-12-01,occurred_on.lt.2026-02-01)');
  assert.deepEqual(planningReadFilters('full','2026-01').records,{});
  // Accounts reads holdings and schedules only; its Recent activity view reads what was booked to an account itself.
  assert.deepEqual(planningReadFilters('accounts','2026-01').records,workspace.records);
