@@ -10,7 +10,7 @@ import { fonts, isFont, resolveFont } from '@/lib/fonts';
 import { formatDate, formatMoney } from '@/lib/format';
 import { Plus, X } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
-import { languageCatalogue } from '@/lib/i18n';
+import { languageCatalogue } from '@/lib/languages';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';

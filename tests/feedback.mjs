@@ -9,7 +9,8 @@ function feedback(language='en') {
  const calls=[],raw=[];
  const context={exports:{},document:{documentElement:{lang:language}},require(name){
   if(name==='sonner')return {toast:{success:(...args)=>{calls.push(args);raw.push(['success',...args]);},error:(...args)=>raw.push(['error',...args])}};
-  if(name==='@/lib/i18n')return {isLanguage:value=>['en','ru','uz'].includes(value),translate:(lang,key)=>dictionaries[lang][key]??key};
+  if(name==='@/lib/languages')return {isLanguage:value=>['en','ru','uz'].includes(value)};
+  if(name==='@/lib/translations')return {translate:(lang,key)=>dictionaries[lang][key]??key};
   throw Error(name);
  }};
  const source=readFileSync(new URL('../lib/feedback.ts',import.meta.url),'utf8');

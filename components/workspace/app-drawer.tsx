@@ -8,7 +8,7 @@ import { Segmented } from '@/components/presentation-foundation/segmented';
 import { useLanguage } from '@/components/language-provider';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { formatNumber } from '@/lib/format';
-import { directionOf } from '@/lib/i18n';
+import { directionOf } from '@/lib/languages';
 import { drawerGroups, sectionFor, sections } from '@/components/workspace/navigation';
 
 type Props = {

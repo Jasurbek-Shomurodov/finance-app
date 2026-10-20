@@ -3,7 +3,7 @@ import Link from 'next/link';
 import {LanguageProvider,useLanguage} from '@/components/language-provider';
 import {Brand} from '@/components/presentation-foundation/brand';
 import {formatDate} from '@/lib/format';
-import {directionOf} from '@/lib/i18n';
+import {directionOf} from '@/lib/languages';
 import {legalPaths,legalUpdated,privacyPolicy,termsOfUse,type LegalDocument} from '@/lib/legal';
 const titles={terms:'Terms of use',privacy:'Privacy policy'} as const;
 function LegalContent({document}:{document:LegalDocument}){

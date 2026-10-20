@@ -13,7 +13,7 @@ import { countryOptions } from '@/lib/countries';
 import { currencyLabel, currencyMatches, type Preferences } from '@/lib/currencies';
 import { depositToday } from '@/lib/deposit-interest';
 import { formatDate, formatMoney } from '@/lib/format';
-import { isLanguage, languageCatalogue } from '@/lib/i18n';
+import { isLanguage, languageCatalogue } from '@/lib/languages';
 import { countryCurrency, currenciesForCountry, goalHorizons, goalTargetDate, horizonDate, makePrimary, onboardingGoalPayload, onboardingSteps, pickCurrency, startingCurrencies, suggestedCurrencies, trackingStartFor, type OnboardingGoal, type TrackingPreset } from '@/lib/onboarding';
 import styles from './onboarding-screen.module.css';
 

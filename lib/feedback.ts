@@ -1,7 +1,8 @@
 "use client";
 
 import { toast } from 'sonner';
-import { isLanguage, translate, type Language } from '@/lib/i18n';
+import { isLanguage, type Language } from '@/lib/languages';
+import { translate } from '@/lib/translations';
 
 function currentLanguage(language?: Language): Language {
   const current = language ?? (typeof document === 'undefined' ? 'en' : document.documentElement.lang);

@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import { LanguageContext } from '@/components/language-context';
-import { translate } from '@/lib/i18n';
+import { translate } from '@/lib/translations';
 
 /** Labels inside the shared ui primitives (dialog and sheet Close, the drawer's name): translated under a LanguageProvider, English without one, so a primitive never throws. */
 export function useUiLabel() {

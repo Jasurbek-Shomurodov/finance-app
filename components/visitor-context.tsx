@@ -1,9 +1,9 @@
 "use client";
 import { createContext, useContext, type ReactNode } from 'react';
-import type { Language } from '@/lib/i18n';
+import type { Language } from '@/lib/languages';
 
 /** What the server knows about a visitor before the browser has checked the session. */
-type Visitor = { signedOut: boolean; language: Language };
+type Visitor = { signedOut: boolean; language: Language; dictionary?: Record<string, string> };
 
 const VisitorContext = createContext<Visitor>({ signedOut: false, language: 'en' });
 

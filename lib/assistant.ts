@@ -3,7 +3,7 @@ import { shiftMonth } from './calendar-days';
 import { cashFlowReport } from './cash-flow-report';
 import { assets, liabilities, value, type Entry } from './finance';
 import { formatDate, formatMoney, formatMonthYear, formatNumber } from './format';
-import { isLanguage, locales } from './i18n';
+import { isLanguage, locales } from './languages';
 import { convertAmount } from './market';
 import { upcomingPayments, type PlanningData } from './planning';
 import { monthOccurrences } from './recurring';

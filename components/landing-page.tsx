@@ -9,8 +9,7 @@ import { CategoryIcon } from '@/components/presentation-foundation/category-icon
 import { AppPreview } from '@/components/app-preview';
 import { usePhoneSignIn } from '@/hooks/use-phone-sign-in';
 import { formatMoney } from '@/lib/format';
-import { directionOf } from '@/lib/i18n';
-import { languageCatalogue } from '@/lib/languages';
+import { directionOf, languageCatalogue } from '@/lib/languages';
 import { legalPaths } from '@/lib/legal';
 import { signInPath, signUpPath } from '@/lib/sign-in-path';
 import styles from './landing-page.module.css';
