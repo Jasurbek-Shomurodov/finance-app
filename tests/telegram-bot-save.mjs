@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import {loadTS} from './helpers/load-ts.mjs';
 
 // Saving what the button flow produced: which wrapper each commit goes to, and the words for a refused save.
-const {commitDraft}=loadTS('lib/telegram-bot/save.ts');
+// What each commit asked to keep before saving: the day's official rates (migration 150), never fetched in tests.
+const kept=[];
+const {commitDraft}=loadTS('lib/telegram-bot/save.ts',{'../day-rate-tables':{keepDayRates:async(dates,deps)=>{kept.push({dates:[...dates],db:deps.db});}}});
 const {formatMoney}=loadTS('lib/format.ts');
 const id=n=>`77000000-0000-4000-8000-0000000000${String(n).padStart(2,'0')}`;
 const card={id:id(1),name:'Card',kind:'Cash',currency:'USD',amount:50,quantity:0,cost:0,rate:0,date:'2026-01-01',frequency:'Once',notes:''};
@@ -15,8 +17,10 @@ const database=(reply={ok:true,body:{}})=>{const writes=[];return {writes,read:a
 
 test('each commit goes to its owner-scoped wrapper, and a save is confirmed with what was saved',async()=>{
  const db=database();
+ kept.length=0;
  const saved=await commitDraft(db,'owner',{type:'record',record:record(),fx:{account_rate_date:'2026-09-29',account_currency:'EUR'}},ctx);
- assert.equal(saved.saved,true);assert.match(saved.text,/^Saved\.\n/);
+ assert.equal(saved.saved,true);
+ assert.deepEqual(kept[0].dates,['2026-09-30'],'the expense\'s day is kept before it is saved, so it is saved with that day\'s rates');assert.equal(kept[0].db,db);assert.match(saved.text,/^Saved\.\n/);
  assert.deepEqual([db.writes[0][0],db.writes[0][1].p_record.account_currency],['/rest/v1/rpc/telegram_save_finance_record','EUR']);
  await commitDraft(db,'owner',{type:'planning',action:'transfer',data:payment({received:20})},ctx);
  assert.equal(db.writes[1][0],'/rest/v1/rpc/telegram_planning_action');

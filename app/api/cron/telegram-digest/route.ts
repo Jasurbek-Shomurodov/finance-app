@@ -11,7 +11,7 @@ import { serviceDatabase } from '@/lib/service-role';
 import { telegramConfig } from '@/lib/telegram';
 import { deliverReport } from '@/lib/telegram-report';
 import { deliverToSubscribers, namedCategories, ownerCategories, ownerDebtPayments, ownerProfile, ownerRecordsSince, ownerSpendingExtras, recentSnapshots } from '@/lib/telegram-owner';
-import { withDayRates } from '@/lib/day-rate-tables';
+import { keepDayRates, withDayRates } from '@/lib/day-rate-tables';
 export const maxDuration=60;
 const defaultReminders:ReminderSettings={enabled:true,days_ahead:7,snoozed:[]};
 /** Sends each linked owner their digest as a picture: a greeting, the last 30 days' income, expenses and net-worth growth, where the money went, and what is due. One owner's failure never blocks the others; the response says how many were reached. */
@@ -23,6 +23,8 @@ export async function GET(req:Request){
  try{
   // One digest per owner and day: a retried or overlapping run skips the owners already sent today.
   // The 30 days ending today, and the 30 before them for the comparison.
+  // Today's official rates are kept every morning, so whatever saves a transaction today saves it with them.
+  await keepDayRates([today],{today,db});
   const from=shiftDay(today,1-digestDays),before=shiftDay(from,-digestDays);
   const {sent,failed,blocked}=await deliverToSubscribers(db,{kind:'digest',period:today},async({user_id,chat_id})=>{
     const [stored,occurrences,profile,snapshots,reminders,[activity,mortgagePayments],categories]=await Promise.all([

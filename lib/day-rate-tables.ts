@@ -41,7 +41,7 @@ async function readKept(db: ServiceDatabase, days: string[]) {
  return kept;
 }
 
-/** Fetches `days` a few at a time; a day still waiting when `deadline` passes is left for later. Past days are kept. */
+/** Fetches `days` a few at a time; a day still waiting when `deadline` passes is left for later. Each day found is kept. */
 async function fetchDays(days: string[], deps: Required<Pick<DayTableDeps, 'fetchDay' | 'concurrency'>> & { db: ServiceDatabase | null; today: string }, deadline = Infinity) {
  const found = new Map<string, DayTable>(), queue = [...days];
  const worker = async () => {
@@ -52,7 +52,8 @@ async function fetchDays(days: string[], deps: Required<Pick<DayTableDeps, 'fetc
   }
  };
  await Promise.all(Array.from({ length: Math.min(deps.concurrency, days.length) }, worker));
- const keep = [...found].filter(([day]) => day < deps.today).map(([day, rates]) => ({ day, rates, source: 'CBU' }));
+ // The archive publishes a day's rates before it starts, so today's are final too.
+ const keep = [...found].filter(([day]) => day <= deps.today).map(([day, rates]) => ({ day, rates, source: 'CBU' }));
  if (deps.db && keep.length) {
   try { await deps.db.write('/rest/v1/exchange_rate_days?on_conflict=day', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(keep) }); } catch { /* Kept next time. */ }
  }
@@ -85,15 +86,17 @@ type Dateable = { records: readonly Dated[]; activity?: readonly DayRow[]; movem
  * its records. A day whose rates could not be loaded is attached as null, so its amounts count as missing. */
 export async function withPlanningDayRates<D extends Dateable>(data: D, currencies: Iterable<string>, deps: DayTableDeps): Promise<D> {
  const rows = (['activity', 'movements', 'investmentLinks'] as const).flatMap(key => data[key] ?? []);
- const days = [...data.records.filter(record => happened(record, deps.today)).map(record => record.date!), ...rows.map(rowDay).filter((day): day is string => !!day && day <= deps.today)];
- if (!days.length) return data;
- const tables = await dayTables(days, deps);
+ // A transaction saved with its day's rates (migration 150) keeps them; only the others look their day up.
+ const unsaved = (record: Dated) => happened(record, deps.today) && !record.day_rates;
+ const days = [...data.records.filter(unsaved).map(record => record.date!), ...rows.map(rowDay).filter((day): day is string => !!day && day <= deps.today)];
+ const tables = days.length ? await dayTables(days, deps) : new Map<string, DayTable>();
  const shown = new Set(['USD', ...currencies, ...data.records.flatMap(record => [record.currency, record.account_currency ?? record.currency])]);
- const cut = new Map([...tables].map(([day, table]) => [day, Object.fromEntries(Object.entries(table).filter(([currency]) => shown.has(currency)))]));
+ const cutTable = (table: DayTable) => Object.fromEntries(Object.entries(table).filter(([currency]) => shown.has(currency)));
+ const cut = new Map([...tables].map(([day, table]) => [day, cutTable(table)]));
  const dated = <R extends DayRow>(row: R): R => { const day = rowDay(row); return day && day <= deps.today ? { ...row, day_rates: cut.get(day) ?? null } : row; };
  return {
   ...data,
-  records: data.records.map(record => happened(record, deps.today) ? { ...record, day_rates: cut.get(record.date!) ?? null } : record),
+  records: data.records.map(record => !happened(record, deps.today) ? record : { ...record, day_rates: record.day_rates ? cutTable(record.day_rates) : cut.get(record.date!) ?? null }),
   ...Object.fromEntries((['activity', 'movements', 'investmentLinks'] as const).filter(key => data[key]).map(key => [key, data[key]!.map(dated)])),
  };
 }
@@ -101,4 +104,14 @@ export async function withPlanningDayRates<D extends Dateable>(data: D, currenci
 /** `records` with each transaction's day rates attached, as `withPlanningDayRates` does. */
 export async function withDayRates<T extends Dated>(records: readonly T[], currencies: Iterable<string>, deps: DayTableDeps): Promise<T[]> {
  return (await withPlanningDayRates({ records }, currencies, deps)).records as T[];
+}
+
+/** Keeps the official rates of `dates` (today or earlier) in exchange_rate_days before transactions on them are saved, so
+ * the database saves each one with its day's rates (migration 150). A day the archive cannot give in time is skipped:
+ * the transaction saves without rates and its day is looked up when it is read. Without the server-only key nothing can be
+ * kept, so nothing is fetched. Never fails a save. */
+export async function keepDayRates(dates: Iterable<string | null | undefined>, deps: DayTableDeps): Promise<void> {
+ const db = deps.db === undefined ? serviceDatabase() : deps.db;
+ if (!db) return;
+ try { await dayTables([...dates].filter((day): day is string => !!day), { budgetMs: 8000, ...deps, db }); } catch { /* The save goes on. */ }
 }

@@ -255,7 +255,7 @@ function recapRoute({onRead=()=>{},subscriptions,records={},splits={},links={},c
   write:deliveries.write,
  };
  const route=loadTS('app/api/cron/telegram-recap/route.ts',{
-  '@/lib/day-rate-tables':{withDayRates:async records=>records},
+  '@/lib/day-rate-tables':{withDayRates:async records=>records,keepDayRates:async()=>{}},
   '@/lib/service-role':{serviceDatabase:()=>db},
   '@/lib/telegram':{telegramConfig:()=>config,escapeHtml:text=>text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')},
   '@/lib/telegram-report':{deliverReport:async report=>{sent.push(report);return sendResult;}},

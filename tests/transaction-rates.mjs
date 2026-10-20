@@ -61,7 +61,7 @@ test('the archive\'s rows become units per dollar, ignoring rows published after
  assert.throws(() => cbuDayTable({}, '2026-10-15'), /unavailable/);
 });
 
-test('kept days are read at once; missing past days are fetched and kept, today\'s is not kept, late days follow the response', async () => {
+test('kept days are read at once; missing days are fetched and kept, late days follow the response', async () => {
  const writes = [], later = [];
  const db = {
   read: async path => { assert.match(path, /exchange_rate_days\?select=day,rates&day=in\./); return [{ day: '2026-10-01', rates: { USD: 1, UZS: 12000 } }]; },
@@ -72,7 +72,7 @@ test('kept days are read at once; missing past days are fetched and kept, today\
  const tables = await dayTables(['2026-10-01', '2026-10-15', '2026-10-15', '2026-10-20', '2026-10-03', '2026-10-21', 'not a day'], { db, fetchDay, today: '2026-10-20', later: work => later.push(work) });
  assert.deepEqual([...tables.keys()].sort(), ['2026-10-01', '2026-10-15', '2026-10-20']);
  assert.deepEqual(fetched.sort(), ['2026-10-03', '2026-10-15', '2026-10-20'], 'a kept day and a future day are never fetched');
- assert.deepEqual(writes.flat().map(row => row.day), ['2026-10-15'], 'past days are kept; today\'s may still change; a failed day is not kept');
+ assert.deepEqual(writes.flat().map(row => row.day).sort(), ['2026-10-15', '2026-10-20'], 'every day found is kept, today\'s too (it is published before it starts); a failed day is not');
  assert.equal(later.length, 0);
  // A day not reached within the budget is fetched after the response.
  const slow = await dayTables(['2026-09-01', '2026-09-02'], { db: null, fetchDay: async date => ({ USD: 1, UZS: 1 + Number(date.slice(8)) }), today: '2026-10-20', budgetMs: -1, later: work => later.push(work) });
@@ -180,4 +180,72 @@ test('the rate route answers several days\' official rates in the asked currenci
  for (const query of ['days=2099-01-01&currencies=UZS', 'days=nope&currencies=UZS', 'days=2026-10-01&currencies=', 'days=2026-10-01&currencies=XX1', 'days=' + Array.from({ length: 401 }, () => '2026-10-01').join(',') + '&currencies=UZS'])
   assert.equal((await read(query)).status, 400, query);
  assert.equal(asked.length, 1);
+});
+
+test('a transaction saved with its day\'s rates keeps them on read; only unsaved days are looked up', async () => {
+ const looked = [];
+ const deps = { db: null, today: '2026-10-20', fetchDay: async date => { looked.push(date); return { USD: 1, UZS: 12500, EUR: 0.9 }; } };
+ const stored = { USD: 1, UZS: 11963.16, EUR: 0.86, JPY: 150 };
+ const out = await withPlanningDayRates({ records: [record('a', 'Mother-in-law', 'Charity', 4_800_000, '2026-10-15', { day_rates: stored }), record('b', 'Lunch', 'Living expense', 1, '2026-10-16', { day_rates: null })] }, ['EUR'], deps);
+ assert.deepEqual(out.records[0].day_rates, { USD: 1, UZS: 11963.16, EUR: 0.86 }, 'the saved rates, cut to the currencies it can be shown in');
+ assert.deepEqual(looked, ['2026-10-16'], 'the saved day is never looked up again');
+ assert.equal(out.records[1].day_rates.UZS, 12500);
+});
+
+test('the day is kept before a save; without the server key nothing is fetched, and a failure never stops the save', async () => {
+ const { keepDayRates } = loadTS('lib/day-rate-tables.ts', { './service-role': { serviceDatabase: () => null } });
+ let fetched = 0;
+ await keepDayRates(['2026-10-15'], { today: '2026-10-20', fetchDay: async () => { fetched++; return { USD: 1 }; } });
+ assert.equal(fetched, 0);
+ const writes = [];
+ const db = { read: async () => [], write: async (path, init) => { writes.push(JSON.parse(init.body)); return new Response(null, { status: 201 }); } };
+ await keepDayRates(['2026-10-15', null, undefined], { db, today: '2026-10-20', fetchDay: async () => ({ USD: 1, UZS: 11963.16 }) });
+ assert.deepEqual(writes.flat().map(row => row.day), ['2026-10-15']);
+ await keepDayRates(['2026-10-15'], { db: { read: async () => { throw Error('down'); }, write: async () => { throw Error('down'); } }, today: '2026-10-20', fetchDay: async () => { throw Error('down'); } });
+});
+
+const sqlId = n => `79000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
+async function savedDb() {
+ const d = new PGlite();
+ await d.exec(`CREATE ROLE anon;CREATE ROLE authenticated;CREATE ROLE service_role;CREATE SCHEMA auth;CREATE TABLE auth.users(id uuid PRIMARY KEY);CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;GRANT USAGE ON SCHEMA auth TO authenticated;INSERT INTO auth.users VALUES('${sqlId(1)}');`);
+ await d.exec(fs.readFileSync('database/setup.sql', 'utf8'));
+ await d.exec(`INSERT INTO exchange_rate_days(day,rates) VALUES('2026-10-15','{"USD":1,"UZS":11963.16}'),('2026-10-16','{"USD":1,"UZS":11990}')`);
+ await d.exec(`SET request.jwt.claim.sub='${sqlId(1)}';SET ROLE authenticated;`);
+ return d;
+}
+const saveRow = (d, row) => d.query('SELECT save_finance_record($1::jsonb)', [JSON.stringify({ quantity: 1, cost: 0, rate: 0, frequency: 'Once', notes: '', currency: 'UZS', date: '2026-10-15', ...row })]);
+const ratesIn = async (d, n) => (await d.query('SELECT day_rates FROM finance_records WHERE id=$1', [sqlId(n)])).rows[0].day_rates;
+
+test('migration 150 saves each transaction with its day\'s rates, whatever saves it, and nobody can write other rates', async () => {
+ const migration = fs.readFileSync('migrations/150_transaction_day_rates.sql', 'utf8');
+ assert.ok(fs.readFileSync('database/setup.sql', 'utf8').includes(migration), 'setup.sql includes migration 150');
+ assert.ok(Number(fs.readFileSync('lib/database-capabilities.ts', 'utf8').match(/requiredSchemaVersion = (\d+);/)[1]) >= 150);
+ const d = await savedDb();
+ try {
+  await d.exec('RESET ROLE'); await d.exec(migration); await d.exec(`SET ROLE authenticated`);
+  await saveRow(d, { id: sqlId(10), name: 'Mother-in-law', kind: 'Charity', amount: 4_800_000 });
+  assert.deepEqual(await ratesIn(d, 10), { USD: 1, UZS: 11963.16 }, 'an expense is saved with its day\'s rates');
+  await saveRow(d, { id: sqlId(11), name: 'Salary', kind: 'Salary', amount: 1, date: '2026-10-16' });
+  assert.deepEqual(await ratesIn(d, 11), { USD: 1, UZS: 11990 }, 'income too');
+  await saveRow(d, { id: sqlId(12), name: 'Lunch', kind: 'Living expense', amount: 1, date: '2026-10-17' });
+  assert.equal(await ratesIn(d, 12), null, 'a day not kept yet saves without rates');
+  await saveRow(d, { id: sqlId(13), name: 'Rent', kind: 'Rent expense', amount: 1, frequency: 'Monthly' });
+  assert.equal(await ratesIn(d, 13), null, 'a schedule has no day');
+  await saveRow(d, { id: sqlId(14), name: 'Wallet', kind: 'Cash', amount: 1 });
+  assert.equal(await ratesIn(d, 14), null, 'a holding has no day');
+  // Writing rates directly is ignored: an insert takes the day's, an edit on the same day keeps what was saved.
+  await d.query(`INSERT INTO finance_records(id,user_id,name,kind,currency,amount,quantity,cost,rate,date,frequency,notes,day_rates) VALUES($1,$2,'Forged','Charity','UZS',1,1,0,0,'2026-10-15','Once','','{"USD":1,"UZS":1}')`, [sqlId(15), sqlId(1)]);
+  assert.deepEqual(await ratesIn(d, 15), { USD: 1, UZS: 11963.16 });
+  await d.query(`UPDATE finance_records SET day_rates='{"USD":1,"UZS":2}', amount=2 WHERE id=$1`, [sqlId(10)]);
+  assert.deepEqual(await ratesIn(d, 10), { USD: 1, UZS: 11963.16 });
+  // A new date takes that day's rates; a day kept later is stored by the next edit.
+  await d.query(`UPDATE finance_records SET date='2026-10-16' WHERE id=$1`, [sqlId(10)]);
+  assert.deepEqual(await ratesIn(d, 10), { USD: 1, UZS: 11990 });
+  await d.exec('RESET ROLE'); await d.exec(`INSERT INTO exchange_rate_days(day,rates) VALUES('2026-10-17','{"USD":1,"UZS":12001}')`); await d.exec('SET ROLE authenticated');
+  await d.query(`UPDATE finance_records SET notes='paid' WHERE id=$1`, [sqlId(12)]);
+  assert.deepEqual(await ratesIn(d, 12), { USD: 1, UZS: 12001 });
+  await d.exec('RESET ROLE');
+  assert.equal((await d.query('SELECT finance_capabilities() AS c')).rows[0].c.schema_version, 150);
+  await assert.rejects(d.query(`UPDATE finance_records SET day_rates='{"UZS":1}', frequency='Monthly' WHERE id=$1`, [sqlId(13)]).then(() => d.query(`ALTER TABLE finance_records DISABLE TRIGGER keep_transaction_day_rates`)).then(() => d.query(`UPDATE finance_records SET day_rates='{"UZS":1}' WHERE id=$1`, [sqlId(13)])), /finance_records_day_rates/, 'a table is in units per dollar');
+ } finally { await d.close(); }
 });

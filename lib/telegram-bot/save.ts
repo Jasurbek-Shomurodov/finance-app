@@ -9,6 +9,8 @@ import type {ServiceDatabase} from '../service-role';
 import type {Commit,FlowContext} from '../telegram-flow';
 import {moneyIn,t} from '../telegram-kit';
 import {escapeHtml} from '../telegram';
+import {keepDayRates} from '../day-rate-tables';
+import {depositToday} from '../deposit-interest';
 
 function commitEvent(commit:Commit):ActionEvent{
  if(commit.type==='record')return {type:'record',created:true,kind:commit.record.kind,name:commit.record.name,amount:commit.record.amount,currency:commit.record.currency,date:commit.record.date||null,frequency:commit.record.frequency,category_id:commit.record.custom_category_id??null};
@@ -63,6 +65,9 @@ export async function commitDraft(db:ServiceDatabase,owner:string,commit:Commit,
  const language=ctx.language;
  const request=saveRequest(owner,commit);
  if(!request)return {text:t(language,'Could not save. {reason}',{reason:t(language,'Check the record fields.')}),saved:false};
+ // The record is saved with its day's official rates (migration 150), so that day is kept first.
+ const body=request.body as {p_record?:{date?:string};p_data?:{date?:string}};
+ await keepDayRates([body.p_record?.date??body.p_data?.date],{today:depositToday(),db});
  const response=await db.write('/rest/v1/rpc/'+request.path,{method:'POST',body:JSON.stringify(request.body)});
  if(!response.ok){
   const failure=await response.json().catch(()=>({})) as Failure;

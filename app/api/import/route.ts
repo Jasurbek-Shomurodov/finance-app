@@ -5,6 +5,8 @@ import { crossSite,postgrestFailure,readCapped,readJson,signInAgain,tooManyAttem
 import { limits,rateLimited } from '@/lib/rate-limit';
 import { session,supa,sameOrigin } from '@/lib/supabase';
 import { queueMilestoneCheck } from '@/lib/notify-action';
+import { keepDayRates } from '@/lib/day-rate-tables';
+import { depositToday } from '@/lib/deposit-interest';
 const schema=z.object({batch_id:uuid,account_id:uuid,rows:z.array(z.object({name:z.string().trim().min(1).max(120),date:isoDate,amount:z.number().finite().min(-1e15).max(1e15).refine(n=>n!==0),notes:z.string().max(2000),sourceId:z.string().trim().min(1).max(200).optional(),selected:z.boolean().optional()})).min(1).max(500)});
 export async function POST(req:Request){
  if(!sameOrigin(req))return crossSite();
@@ -15,6 +17,8 @@ export async function POST(req:Request){
  const counts=new Map<string,number>();const rows=[];
  for(const row of parsed.data.rows){const signature=row.sourceId?JSON.stringify(['source',parsed.data.account_id,row.sourceId]):JSON.stringify([parsed.data.account_id,row.date,row.name,row.amount]);const n=counts.get(signature)??0;counts.set(signature,n+1);const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(row.sourceId?signature:signature+':'+n));const key=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');if(row.selected!==false){const {selected,...entry}=row;void selected;rows.push({...entry,key});}}
  if(!rows.length)return Response.json({error:'Select at least one transaction.'},{status:400});
+ // Each imported transaction is saved with its day's rates (migration 150); days not kept in time are looked up when read.
+ await keepDayRates(rows.map(row=>(row as {date?:string}).date),{today:depositToday()});
  const r=await supa('/rest/v1/rpc/import_statement',{method:'POST',body:JSON.stringify({p_batch:parsed.data.batch_id,p_account:parsed.data.account_id,p_rows:rows})},auth.token);
  if(!r.ok)return postgrestFailure(r,'Import failed. Check the opening balance and transaction amounts. No rows were imported.');const outcome=await r.json() as {added?:number;skipped?:number};queueMilestoneCheck(auth,{type:'import',added:outcome.added??0,skipped:outcome.skipped??0});return Response.json(outcome);
  }catch{return Response.json({error:'Could not import the file. Retry the same file safely.'},{status:503});}

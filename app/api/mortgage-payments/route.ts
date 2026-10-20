@@ -3,6 +3,8 @@ import { isoDate, nonnegativeAmount, uuid } from '@/lib/api-validation';
 import { crossSite, postgrestFailure, readJson, signInAgain } from '@/lib/api-route';
 import { session, supa, sameOrigin } from '@/lib/supabase';
 import { queueMilestoneCheck } from '@/lib/notify-action';
+import { keepDayRates } from '@/lib/day-rate-tables';
+import { depositToday } from '@/lib/deposit-interest';
 const schema = z.object({
  account_id: uuid.optional(), id: uuid, mortgage_id: uuid,
  principal: nonnegativeAmount, interest: nonnegativeAmount,
@@ -20,6 +22,7 @@ export async function POST(req: Request) {
   if (!parsed.success) return Response.json({ error: 'Check the payment fields.' }, { status: 400 });
   const p = parsed.data;
   if(!p.account_id)return Response.json({error:'Choose a cash account.'},{status:400});
+  await keepDayRates([p.date], { today: depositToday() });
   const result = await supa('/rest/v1/rpc/planning_action', { method: 'POST', body: JSON.stringify({p_action:'mortgage',p_data:{id:p.id,account_id:p.account_id,target_id:p.mortgage_id,amount:p.principal,received:0,fee:p.interest,date:p.date,notes:p.notes}}) }, auth.token);
   if (!result.ok) return postgrestFailure(result, 'Could not save the payment. Check the database migration and try again.', { codes: { PGRST202: [databaseUpdate, 503] } });
   queueMilestoneCheck(auth,{type:'mortgage',account_id:p.account_id,target_id:p.mortgage_id,principal:p.principal,interest:p.interest,date:p.date});

@@ -118,7 +118,7 @@ function cronRoute({subscriptions,records={},splits={},links={},occurrences={},l
   write:deliveries.write,
  };
  const route=loadTS('app/api/cron/telegram-digest/route.ts',{
-  '@/lib/day-rate-tables':{withDayRates:async records=>records},
+  '@/lib/day-rate-tables':{withDayRates:async records=>records,keepDayRates:async()=>{}},
   '@/lib/service-role':{serviceDatabase:()=>db},
   '@/lib/telegram':{telegramConfig:()=>({token:'T',webhookSecret:'S',botUsername:'b'}),escapeHtml:text=>text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')},
   // The report as built: its text, and the picture sent in its place where the language has one.

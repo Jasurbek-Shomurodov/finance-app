@@ -15,6 +15,8 @@ import { categoryNameTaken, duplicateCategoryMessage } from '@/lib/category-name
 import type { Category, ExtraPayment, Occurrence } from '@/lib/planning';
 import { queueMilestoneCheck } from '@/lib/notify-action';
 import type { ActionEvent } from '@/lib/action-messages';
+import { keepDayRates } from '@/lib/day-rate-tables';
+import { depositToday } from '@/lib/deposit-interest';
 /** Later payments for recorded occurrences add to them; limited scopes leave those transactions out of `records`.
  * A failed read answers 503 like the other reads: counting none would show scheduled payments as less paid than they are. */
 const readExtraPayments=(historyOnly:boolean,token:string)=>historyOnly?Promise.resolve([] as ExtraPayment[]):readOwnerRows<ExtraPayment>('finance_records',token,{select:'id,occurrence_record_id,occurrence_due_on,amount,currency,date',occurrence_record_id:'not.is.null'});
@@ -52,7 +54,8 @@ export async function GET(req?:Request){
  // Every scope but the history reads reads every holding (only income and expense history is period-limited), so
  // the deposits are already here and are not read again.
  const estimates=new Map((plan.historyOnly?[]:await depositForecasts(auth.token,data.records as Entry[])).map(record=>[record.id,record.estimated_monthly_income]));
- Object.assign(data,await dated);
+ // Only the dated lists come back; everything else was finished after the copy was taken.
+ const {records,activity,movements,investmentLinks}=await dated;Object.assign(data,{records,activity,movements,investmentLinks});
  data.records=(data.records as Entry[]).map(record=>interestKinds.includes(record.kind)?{...record,estimated_monthly_income:estimates.get(record.id)??0}:record);
  return Response.json(data,{headers:{'Cache-Control':'no-store'}});
  }catch{return Response.json({error:'Could not load planning data. Check that the latest migrations are installed.'},{status:503});}
@@ -62,6 +65,8 @@ export async function POST(req:Request){
  try{const auth=await session();if(!auth)return signInAgain();
  const input=parseAction(await readJson(req),planningSchemas);if(!input)return Response.json({error:'Check the account fields.'},{status:400});
  const action=input.action,value=input.data;
+ // A payment is saved with the official rates of its day (migration 150), so that day is kept first.
+ await keepDayRates([(value as {date?:string}).date],{today:depositToday()});
  if(action==='delete_goal'){
   // Moves the goal and its activity to Recently deleted; retries are harmless.
   const response=await supa('/rest/v1/rpc/delete_savings_goal',{method:'POST',body:JSON.stringify({p_id:(value as {id:string}).id})},auth.token);
