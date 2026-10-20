@@ -199,6 +199,12 @@ test('a merchant Sankey lists its transactions as entered, newest first, and a t
  assert.deepEqual(opened, ['a']);
  r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'expense', key: 'groceries' }, title: 'Groceries', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord() {} }));
  assert.equal(r.all(node => node.props?.className === 'drill-transactions').length, 0, 'a category lists none');
+ // A payer lists its income the same way, in green with a plus, and a tap opens it.
+ assert.deepEqual(drillTransactions({ side: 'merchant', key: 'Costco', income: true }, ctx).map(item => item.id), ['d'], 'a payer lists its income, never spending under the same name');
+ r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'merchant', key: 'Costco', income: true }, title: 'Costco', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord: item => opened.push(item.id) }));
+ assert.match(r.html(), /12 August 2026/);assert.match(r.html(), /\+\$30/);
+ r.all(node => node.type === 'button' && node.props['aria-label'] === 'View details for Costco')[0].props.onClick();
+ assert.deepEqual(opened, ['a', 'd']);
 });
 
 test('an account Sankey lists the transactions recorded against it; a tap opens one', () => {
