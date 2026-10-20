@@ -7,6 +7,8 @@ const { drillFlows, accountChanges } = loadTS('lib/cash-flow-drill.ts');
 const { cashFlowReport, sankeyFlows } = loadTS('lib/cash-flow-report.ts');
 
 const record = (id, name, kind, amount, date, extra = {}) => ({ id, name, kind, currency: 'USD', amount, quantity: 1, cost: 0, rate: 0, date, frequency: 'Once', notes: '', ...extra });
+/** Pages the drill-down opens: a link closes the dialog and goes there. */
+const router = { pushed: [], push(href) { this.pushed.push(href); } };
 const accounts = [record('card', 'Card', 'Cash', 0, '2026-01-01', { frequency: 'Monthly' }), record('save', 'Savings account', 'Cash', 0, '2026-01-01', { frequency: 'Monthly' }), record('loan', 'Car loan', 'Loan', 5000, '2026-01-01', { frequency: 'Monthly' }), record('home', 'Home', 'Mortgage', 90000, '2026-01-01', { frequency: 'Monthly' })];
 const context = (records, activity = [], extra = {}) => ({ data: { records: [...accounts, ...records], activity, investmentLinks: [] }, splits: [], months: ['2026-08'], currency: 'USD', today: '2026-08-31', rates: { USD: 1, EUR: 0.5 }, t: key => key, ...extra });
 const shape = flows => flows.links.map(link => [flows.nodes[link.source].name, flows.nodes[link.target].name, link.value]);
@@ -74,7 +76,7 @@ test('the Cash flow Sankey opens a category or Savings in a dialog; the total an
  const report = { savings: 300, categories: { income: [{ key: 'Salary', amount: 1000 }], expense: [{ key: 'A', amount: 400 }, { key: 'B', amount: 200 }, { key: 'C', amount: 60 }, { key: 'D', amount: 40 }] } };
  assert.deepEqual(sankeyFlows(report, key => key, 3).nodes.map(node => node.key), ['Salary', undefined, 'A', 'B', undefined, undefined], 'only real categories carry a key');
  const r = createRenderer();
- const modules = { 'recharts': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
+ const modules = { 'recharts': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), 'next/navigation': { useRouter: () => router }, '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
  const { FlowSankey, CashFlowDrillDialog } = r.load('components/cash-flow-sankey.tsx', modules);
  const flows = sankeyFlows(report, key => key, 3);
  const opened = [];
@@ -118,10 +120,10 @@ test('an account in the savings Sankey opens its own: income and transfers in, s
  ];
  const ctx = { ...context(records, activity), label: key => key === 'groceries' ? 'Groceries' : key };
  const savings = drillFlows({ side: 'savings' }, 'Savings', 2450, ctx);
- assert.deepEqual(savings.nodes.filter(node => node.open).map(node => [node.name, node.open]), [['Savings account', { side: 'account', key: 'save' }], ['Card', { side: 'account', key: 'card' }], ['Car loan', { side: 'account', key: 'loan' }]], 'every account and debt opens its own Sankey');
+ assert.deepEqual(savings.nodes.filter(node => node.open).map(node => [node.name, node.open]), [['Savings account', { side: 'account', key: 'save' }], ['Card', { side: 'account', key: 'card' }], ['Car loan', { side: 'account', key: 'loan' }], ['Not traced', { side: 'untraced' }]], 'every account and debt opens its own Sankey, Not traced its transfers');
  const card = drillFlows({ side: 'account', key: 'card' }, 'Card', 0, ctx);
  assert.deepEqual(shape(card), [['EPAM', 'Card', 3000], ['Card', 'Savings account', 1490], ['Card', 'Groceries', 500], ['Card', 'Car loan', 300], ['Card', 'Not traced', 10], ['Card', 'Balance', 700]]);
- assert.deepEqual(card.nodes.map(node => node.open?.side ?? null), ['merchant', null, 'account', 'expense', 'account', null, 'balance'], 'income sources, categories, other accounts and its balance open; the account itself and the gap do not');
+ assert.deepEqual(card.nodes.map(node => node.open?.side ?? null), ['merchant', null, 'account', 'expense', 'account', 'untraced', 'balance'], 'everything but the account itself opens: sources, categories, other accounts, the transfer fee and its balance');
  // 20 October 2026: income came in by category (Rent income) rather than by its source (Airbnb payout).
  assert.deepEqual(card.nodes[0].open, { side: 'merchant', key: 'EPAM', income: true }, 'an income source opens its own Sankey');
  const save = drillFlows({ side: 'account', key: 'save' }, 'Savings account', 0, ctx);
@@ -136,7 +138,7 @@ test('an account in the savings Sankey opens its own: income and transfers in, s
 
 test('the drill-down dialog opens an account in place and Back returns to the Sankey before it', () => {
  const r = createRenderer();
- const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
+ const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), 'next/navigation': { useRouter: () => router }, '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
  const { CashFlowDrillDialog } = r.load('components/cash-flow-sankey.tsx', modules);
  const ctx = context([record('pay', 'EPAM', 'Salary', 1000, '2026-08-05', { account_id: 'card' })]);
  r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'savings' }, title: 'Savings', period: 'August 2026', savings: 1000, context: ctx, onClose() {} }));
@@ -186,7 +188,7 @@ test('a merchant Sankey lists its transactions as entered, newest first, and a t
  const { drillTransactions } = loadTS('lib/cash-flow-drill.ts');
  assert.deepEqual(drillTransactions({ side: 'merchant', key: 'Costco', income: false }, ctx).map(item => item.id), ['b', 'a'], 'newest first; a refund or income under the same name is not spending, and a GBP amount without a rate is still listed');
  const r = createRenderer();
- const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
+ const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), 'next/navigation': { useRouter: () => router }, '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
  const { CashFlowDrillDialog } = r.load('components/cash-flow-sankey.tsx', modules);
  const opened = [];
  r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'merchant', key: 'Costco', income: false }, title: 'Costco', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord: item => opened.push(item.id) }));
@@ -226,7 +228,7 @@ test('an account Sankey lists the transactions recorded against it; a tap opens 
  assert.deepEqual(drillTransactions({ side: 'savings' }, ctx).map(item => item.id), ['mp', 'cash', 'food', 'pay'], 'Savings lists all the income and spending it is made of, with or without an account');
  assert.deepEqual(drillTransactions({ side: 'savings' }, { ...ctx, months: ['2026-09'] }), [], 'only the period');
  const r = createRenderer();
- const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
+ const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), 'next/navigation': { useRouter: () => router }, '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
  const { CashFlowDrillDialog } = r.load('components/cash-flow-sankey.tsx', modules);
  const opened = [];
  r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'account', key: 'card' }, title: 'Card', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord: item => opened.push(item.id) }));
@@ -260,7 +262,7 @@ test('an account lists its transfers and repayments; a tap opens one with what w
  assert.equal(operationFlows('t1', { ...ctx, currency: 'GBP' }).missing, 1, 'no rate: missing, never under the wrong currency');
 
  const r = createRenderer();
- const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
+ const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), 'next/navigation': { useRouter: () => router }, '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
  const { CashFlowDrillDialog } = r.load('components/cash-flow-sankey.tsx', modules);
  r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'account', key: 'card' }, title: 'Card', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord() {} }));
  const html = r.html();
@@ -296,7 +298,7 @@ test('transfers, buys and sales recorded on Accounts count in the Sankeys and op
  assert.deepEqual(accountOperations('save', ctx).map(row => [row.id, row.kind]), [['m2', 'buy'], ['m1', 'transfer']], 'no capitalized interest');
  assert.deepEqual(operationDetails('m2', ctx).row.received, { amount: 300, currency: 'USD' }, 'a holding’s side is its money value, not its quantity');
  const r = createRenderer();
- const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
+ const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), 'next/navigation': { useRouter: () => router }, '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
  const { CashFlowDrillDialog } = r.load('components/cash-flow-sankey.tsx', modules);
  r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'account', key: 'save' }, title: 'Savings account', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord() {} }));
  assert.match(r.html(), /<strong>Buy holding<\/strong><small>12 August 2026 · → VT<\/small><\/span><span>−\$300<\/span>/);
@@ -379,7 +381,7 @@ test('a debt’s principal opens the payments that paid it down; a mortgage paym
  assert.equal(principalFlows('home', { ...ctx, currency: 'GBP' }).missing, 2, 'no rate: missing, never drawn');
 
  const r = createRenderer();
- const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
+ const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), 'next/navigation': { useRouter: () => router }, '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
  const { CashFlowDrillDialog } = r.load('components/cash-flow-sankey.tsx', modules);
  const opened = [];
  r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'account', key: 'home' }, title: 'Home', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord: item => opened.push(item.id) }));
@@ -451,7 +453,7 @@ test('an account’s balance opens where it stands today: opening balance and th
  const ctx = { ...context([]), data: { records, activity: [], investmentLinks: [], goals } };
  const account = drillFlows({ side: 'account', key: 'card' }, 'Card', 0, ctx);
  assert.deepEqual(account.nodes.find(node => node.name === 'Balance').open, { side: 'balance', key: 'card' }, 'Balance opens, in a period running to this month');
- assert.equal(drillFlows({ side: 'account', key: 'card' }, 'Card', 0, { ...ctx, today: '2026-10-20' }).nodes.find(node => node.name === 'Balance').open, undefined, 'not for an earlier period: its opening balance would need what moved since');
+ assert.equal(drillFlows({ side: 'account', key: 'card' }, 'Card', 0, { ...ctx, today: '2026-10-20', throughToday: false }).nodes.find(node => node.name === 'Balance').open, undefined, 'not when the data stops before today: the balance at the period’s end cannot be told');
  const { balanceFlows } = loadTS('lib/cash-flow-balance.ts');
  assert.deepEqual(shape(balanceFlows('card', ctx)), [['Opening balance', 'Card', 1700], ['This period', 'Card', 800], ['Card', 'Holiday', 600], ['Card', 'Euro trip', 200], ['Card', 'Available', 1700]], '$2,500 today: $1,700 before the period’s $800; goals hold $800 (EUR 100 at 0.5), archived ones nothing');
  const spent = { ...ctx, data: { ...ctx.data, records: [card, record('food', 'Market', 'Living expense', 300, '2026-08-06', { account_id: 'card' })], goals: [] } };
@@ -459,7 +461,7 @@ test('an account’s balance opens where it stands today: opening balance and th
  assert.equal(balanceFlows('card', { ...ctx, currency: 'GBP' }).links.length, 0, 'no rate: nothing drawn');
 
  const r = createRenderer();
- const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
+ const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), 'next/navigation': { useRouter: () => router }, '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
  const { CashFlowDrillDialog } = r.load('components/cash-flow-sankey.tsx', modules);
  r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'account', key: 'card' }, title: 'Card', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord() {} }));
  const sankey = () => r.find(node => node.type === 'Sankey').props;
@@ -467,4 +469,54 @@ test('an account’s balance opens where it stands today: opening balance and th
  r.fire(sankey().node({ x: 0, y: 0, width: 10, height: 20, index, payload: { name: 'Balance', value: 800 } }), 'onClick');
  assert.equal(r.find(node => node.type === 'DialogTitle').props.children[0], 'Balance');
  assert.equal(r.all(node => node.type === 'button' && node.props['aria-label']?.startsWith('View details')).length, 2, 'with the account’s transactions listed');
+});
+
+test('money invested opens where the holding stands: what it cost, what the period invested, its gain, its value', () => {
+ const vt = record('vt', 'VT', 'Stock', 120, '2026-01-01', { frequency: 'Monthly', quantity: 5, cost: 100 });
+ const movements = [{ id: 'm', kind: 'buy', source_id: 'card', target_id: 'vt', sent: 200, received: 2, source_value: 200, target_value: 200, fee: 0, occurred_on: '2026-08-12', notes: '', realized_gain: null }];
+ const ctx = { ...context([]), data: { records: [...accounts, vt], activity: [], investmentLinks: [], movements } };
+ const holding = drillFlows({ side: 'account', key: 'vt' }, 'VT', 0, ctx);
+ assert.deepEqual(holding.nodes.find(node => node.name === 'Money invested').open, { side: 'balance', key: 'vt' });
+ const { balanceFlows } = loadTS('lib/cash-flow-balance.ts');
+ const stood = balanceFlows('vt', ctx);
+ assert.deepEqual(shape(stood), [['Purchase cost', 'VT', 300], ['This period', 'VT', 200], ['Gain/loss', 'VT', 100], ['VT', 'Current value', 600]], '5 units cost $500, $200 of it this period; at $120 they are worth $600');
+ assert.deepEqual(stood.nodes.map(node => node.open?.side ?? null), ['link', 'account', 'link', null, 'link'], 'the period opens the holding’s flows; cost, gain and value open Investments');
+ const fallen = balanceFlows('vt', { ...ctx, data: { ...ctx.data, records: [...accounts, { ...vt, amount: 80 }] } });
+ assert.deepEqual(shape(fallen), [['Purchase cost', 'VT', 300], ['This period', 'VT', 200], ['VT', 'Current value', 400], ['VT', 'Gain/loss', 100]], 'a loss flows out');
+});
+
+test('a past period’s balance is today’s less what moved since; Cash flow and Not traced open, and page links close the dialog', () => {
+ const card = record('card', 'Card', 'Cash', 2500, '2026-01-01', { frequency: 'Monthly' });
+ const records = [card, ...accounts.filter(item => item.id !== 'card'), record('pay', 'EPAM', 'Salary', 1000, '2026-08-05', { account_id: 'card' }), record('later', 'Market', 'Living expense', 300, '2026-09-10', { account_id: 'card' })];
+ const activity = [{ id: 't', action: 'transfer', account_id: 'card', target_id: 'save', amount: 100, received: 95, fee: 5, occurred_on: '2026-08-20', notes: '', before_balance: 0, after_balance: 0 }];
+ const ctx = { ...context([], activity), today: '2026-09-20', data: { records, activity, investmentLinks: [], goals: [{ id: 'g', name: 'Holiday', account_id: 'card', allocated: 500, target: 900, target_date: null, archived: false }] } };
+ const { balanceFlows } = loadTS('lib/cash-flow-balance.ts');
+ assert.deepEqual(shape(balanceFlows('card', ctx)), [['Opening balance', 'Card', 1900], ['This period', 'Card', 900], ['Card', 'Balance', 2800]], 'August ended at $2,800: today’s $2,500 plus September’s $300; goals are today’s, so not split');
+
+ const { mainFlows } = loadTS('lib/cash-flow-main.ts');
+ const main = mainFlows({ ...ctx, data: { ...ctx.data, categories: [] } });
+ assert.deepEqual(shape(main), [['Salary', 'Income', 1000], ['Income', 'Savings', 1000]], 'Cash flow opens the period’s income and spending');
+ assert.deepEqual(main.nodes.map(node => node.open?.side ?? null), ['income', 'group', 'savings']);
+ const savings = drillFlows({ side: 'savings' }, 'Savings', 1000, ctx);
+ assert.deepEqual(savings.nodes.find(node => node.name === 'Cash flow')?.open ?? null, null, 'no feeding column when nothing was drawn down');
+
+ const { untracedFlows, untracedTransfers } = loadTS('lib/cash-flow-untraced.ts');
+ assert.deepEqual(untracedTransfers('card', ctx).map(item => [item.operation.id, item.value]), [['t', 5]]);
+ assert.deepEqual(untracedTransfers('loan', ctx), [], 'only the account’s own transfers');
+ const notTraced = untracedFlows(undefined, 1000, ctx);
+ assert.deepEqual(shape(notTraced), [['20 August 2026 · Transfer', 'Not traced', 5]]);
+ assert.deepEqual(notTraced.nodes[0].open, { side: 'operation', key: 't' });
+
+ const r = createRenderer();
+ const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), 'next/navigation': { useRouter: () => router }, '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
+ const { CashFlowDrillDialog } = r.load('components/cash-flow-sankey.tsx', modules);
+ let closed = 0;
+ r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'balance', key: 'card' }, title: 'Balance', period: 'August 2026', savings: 0, context: ctx, onClose() { closed += 1; }, onOpenRecord() {} }));
+ const sankey = r.find(node => node.type === 'Sankey').props;
+ const index = sankey.data.nodes.findIndex(node => node.name === 'Opening balance');
+ router.pushed.length = 0;
+ sankey.node({ x: 0, y: 0, width: 10, height: 20, index, payload: { name: 'Opening balance', value: 1 } }).props.onClick();
+ assert.deepEqual([router.pushed, closed], [['/accounts'], 1], 'a page link closes the dialog and opens Accounts');
+ r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'untraced', key: 'card' }, title: 'Not traced', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord() {} }));
+ assert.match(r.html(), /<strong>Transfer<\/strong><small>20 August 2026 · → Savings account<\/small>/, 'Not traced lists its transfers');
 });

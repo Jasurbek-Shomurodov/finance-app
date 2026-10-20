@@ -5,6 +5,8 @@ import { useLanguage } from '@/components/language-provider';
 import { chartAxis, chartColors, chartGrid, chartHeight, chartLegend, chartMargin, chartTooltip, chartValueAxis, groupedBar, intervalLabel, moneyTick } from '@/components/presentation-foundation/chart';
 import { CashFlowDrillDialog, FlowSankey } from '@/components/cash-flow-sankey';
 import type { DrillTarget } from '@/lib/cash-flow-drill';
+import { mainTarget } from '@/lib/cash-flow-main';
+import { monthsBetween } from '@/lib/budget';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
 import { ChartSkeleton } from '@/components/presentation-foundation/loading-placeholder';
 import { PanelTitle } from '@/components/presentation-foundation/panel-title';
@@ -66,7 +68,9 @@ export function CashFlowReport({ onOpenRecord, owner, demo, revision, data: prov
  const [grouping, setGrouping] = useState<'category' | 'merchant'>('category');
  const [view, setView] = useState<'bars' | 'sankey'>('sankey');
  const live = !!owner && !demo;
- const remote = useOwnerResource(`/api/planning?scope=budget&month=${month}&from=${trendMonths(month, 'year')[0]}`, owner, live, revision, emptyPlanning);
+ // The read runs through this month when it can (two years at most), so a drill-down can tell a past balance from today's.
+ const first = trendMonths(month, 'year')[0], now = today.slice(0, 7), readTo = month < now && monthsBetween(first, now).length <= 24 ? now : month;
+ const remote = useOwnerResource(`/api/planning?scope=budget&month=${readTo}&from=${first}`, owner, live, revision, emptyPlanning);
  const data = useMemo(() => live ? { ...remote.data, records: remote.data.records.map(normalizeEntry) } : provided, [live, remote.data, provided]);
  const rates = marketRates(market);
  const report = useMemo(() => cashFlowReport(data, splits, periodMonths(month, period), currency, today, rates), [data, splits, month, period, currency, today, rates]);
@@ -84,14 +88,7 @@ export function CashFlowReport({ onOpenRecord, owner, demo, revision, data: prov
  // Every node opens its own Sankey in a dialog: a category, Savings, the merged "Other" (its categories) and the Income
  // total (every income source).
  const [drill, setDrill] = useState<{ target: DrillTarget; title: string } | null>(null);
- const drillOf = (index: number): DrillTarget | null => {
-  const node = flows.nodes[index];
-  if (!node) return null;
-  if (node.kind === 'savings') return { side: 'savings' };
-  if (node.kind === 'total') return node.keys?.length ? { side: 'group', income: true, keys: node.keys, by: 'merchant' } : null;
-  if (node.key) return { side: node.kind === 'income' ? 'income' : 'expense', key: node.key };
-  return node.keys?.length ? { side: 'group', income: node.kind === 'income', keys: node.keys, by: 'category' } : null;
- };
+ const drillOf = (index: number): DrillTarget | null => mainTarget(flows.nodes[index]);
  const periodName = period === 'month' ? formatMonthYear(month, locale) : `${formatMonthYear(periodMonths(month, period)[0], locale)} – ${formatMonthYear(month, locale)}`;
  if (live && remote.initialLoading) return <section className="panel cash-flow-report"><ChartSkeleton label={t('Loading records…')}/></section>;
  if (live && remote.error) return <section className="panel cash-flow-report"><InlineError message={t(remote.error)} onRetry={remote.retry}/></section>;
@@ -127,6 +124,6 @@ export function CashFlowReport({ onOpenRecord, owner, demo, revision, data: prov
     <div><h3>{t('Expenses')}</h3><ShareBars items={report[grouping === 'category' ? 'categories' : 'merchants'].expense} label={label} colorKey={colorKey} currency={currency}/></div>
    </div> : flows.links.length ? <FlowSankey flows={flows} currency={currency} canOpen={index => !!drillOf(index)} onOpen={index => { const target = drillOf(index); if (target) setDrill({ target, title: flows.nodes[index].name }); }}/> : <p className="budget-left-empty">{t('Nothing recorded in this period.')}</p>}
   </section>
-  {drill && <CashFlowDrillDialog target={drill.target} title={drill.title} period={periodName} savings={report.savings} context={{ data, splits, months: periodMonths(month, period), currency, today, rates, t, label: categoryName, locale }} onClose={() => setDrill(null)} onOpenRecord={onOpenRecord}/>}
+  {drill && <CashFlowDrillDialog target={drill.target} title={drill.title} period={periodName} savings={report.savings} context={{ data, splits, months: periodMonths(month, period), currency, today, rates, t, label: categoryName, locale, throughToday: !live || readTo >= now }} onClose={() => setDrill(null)} onOpenRecord={onOpenRecord}/>}
  </section>;
 }
