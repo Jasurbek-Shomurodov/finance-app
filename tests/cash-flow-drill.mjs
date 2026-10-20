@@ -152,3 +152,23 @@ test('the drill-down dialog opens an account in place and Back returns to the Sa
  r.fire(back()[0], 'onClick');
  assert.equal(title(), 'Savings');
 });
+
+test('a merchant in a category Sankey opens its own: the accounts it was paid from and the categories it was spent on', () => {
+ const records = [
+  record('a', 'Costco', 'Living expense', 120, '2026-08-02', { account_id: 'card', custom_category_id: 'groceries' }),
+  record('b', 'Costco', 'Living expense', 80, '2026-08-09', { custom_category_id: 'household' }),
+  record('c', 'Costco', 'Living expense', 40, '2026-08-10', { account_id: 'card', currency: 'GBP' }),
+  record('d', 'Cafe', 'Living expense', 50, '2026-08-10', { account_id: 'card', custom_category_id: 'groceries' }),
+  record('e', 'EPAM', 'Salary', 2000, '2026-08-05', { account_id: 'save' }),
+ ];
+ const ctx = { ...context(records), label: key => ({ groceries: 'Groceries', household: 'Household' })[key] ?? key };
+ const groceries = drillFlows({ side: 'expense', key: 'groceries' }, 'Groceries', 0, ctx);
+ assert.deepEqual(groceries.nodes.map(node => node.open ?? null), [null, { side: 'merchant', key: 'Costco', income: false }, { side: 'merchant', key: 'Cafe', income: false }], 'each merchant opens; the category itself does not');
+ const costco = drillFlows({ side: 'merchant', key: 'Costco', income: false }, 'Costco', 0, ctx);
+ assert.deepEqual(shape(costco), [['Card', 'Costco', 120], ['No account', 'Costco', 80], ['Costco', 'Groceries', 120], ['Costco', 'Household', 80]], 'across every category, never the GBP amount without a rate');
+ assert.equal(costco.missing, 1);
+ assert.deepEqual(costco.nodes.map(node => node.open?.side ?? null), ['account', null, null, 'expense', 'expense'], 'its account and categories open; No account and the merchant do not');
+ const epam = drillFlows({ side: 'merchant', key: 'EPAM', income: true }, 'EPAM', 0, ctx);
+ assert.deepEqual(shape(epam), [['Salary', 'EPAM', 2000], ['EPAM', 'Savings account', 2000]], 'a payer: its income category on the left, the account it landed in on the right');
+ assert.deepEqual(shape(drillFlows({ side: 'merchant', key: 'Costco', income: true }, 'Costco', 0, ctx)), [], 'a merchant is never read as a payer');
+});
