@@ -59,7 +59,7 @@ function categoryFlows(target: { side: 'income' | 'expense'; key: string }, titl
 }
 
 /** One end of a flow: an account, holding or debt by id ('' for transactions recorded against no account), or a category. */
-type End = { account: string } | { income: string } | { expense: string } | { untraced: true };
+type End = { account: string } | { income: string; payer?: string } | { expense: string } | { untraced: true };
 type Flow = { from: End; to: End; value: number };
 type Mover = (from: End, to: End, amount: number, currency: string | null | undefined) => boolean;
 const untraced: End = { untraced: true };
@@ -115,7 +115,7 @@ export function periodFlows(context: DrillContext) {
  const activityAccount = new Map((data.activity ?? []).map(row => [row.id, row.account_id]));
  for (const item of cashFlowItems(records, from, to, { splits, investmentLinks: data.investmentLinks })) {
   const account = { account: accountOf(item, activityAccount) };
-  if (item.income) move({ income: item.record?.custom_category_id ?? item.record?.kind ?? 'Other income' }, account, item.amount, item.currency);
+  if (item.income) move({ income: item.record?.custom_category_id ?? item.record?.kind ?? 'Other income', payer: merchantOf(item, context.t) }, account, item.amount, item.currency);
   else for (const part of item.parts) move(account, { expense: part.category }, part.amount, item.currency);
  }
   for (const row of data.activity ?? []) if (row.occurred_on >= from && row.occurred_on <= to) moveActivity(row, byId, move, convert, currency);
@@ -164,7 +164,7 @@ function savingsFlows(savings: number, context: DrillContext): DrillFlows {
  return { nodes, links: links.filter(link => link.value > 0), missing };
 }
 
-/** One account's period: what came in (income by category, transfers from other accounts, sales of holdings) on the
+/** One account's period: what came in (income by source, transfers from other accounts, sales of holdings) on the
  * left, what went out (spending by category, transfers, debt payments, purchases) on the right. The difference is the
  * change in its balance, shown as "Balance" on whichever side balances the account. Every other node opens its own Sankey. */
 function accountFlows(key: string, title: string, context: DrillContext): DrillFlows {
@@ -173,8 +173,9 @@ function accountFlows(key: string, title: string, context: DrillContext): DrillF
  const self = accountNode(key, byId, t);
  const ends = new Map<string, { node: DrillNode; inflow: number; outflow: number }>();
  const tally = (end: End, side: 'inflow' | 'outflow', value: number) => {
-  const id = 'account' in end ? 'a:' + end.account : 'income' in end ? 'i:' + end.income : 'expense' in end ? 'e:' + end.expense : 'u';
-  const node: DrillNode = 'account' in end ? accountNode(end.account, byId, t) : 'income' in end ? categoryNode(end.income, true, context) : 'expense' in end ? categoryNode(end.expense, false, context) : { name: t('Not traced'), kind: 'untraced' };
+  // Income shows by its source (a payer), which opens the payer's own Sankey; spending shows by category.
+  const id = 'account' in end ? 'a:' + end.account : 'income' in end ? (end.payer ? 'p:' + end.payer : 'i:' + end.income) : 'expense' in end ? 'e:' + end.expense : 'u';
+  const node: DrillNode = 'account' in end ? accountNode(end.account, byId, t) : 'income' in end ? (end.payer ? { name: end.payer, kind: 'income', open: { side: 'merchant', key: end.payer, income: true } } : categoryNode(end.income, true, context)) : 'expense' in end ? categoryNode(end.expense, false, context) : { name: t('Not traced'), kind: 'untraced' };
   const entry = ends.get(id) ?? { node, inflow: 0, outflow: 0 };
   entry[side] += value;
   ends.set(id, entry);

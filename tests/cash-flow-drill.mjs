@@ -120,8 +120,10 @@ test('an account in the savings Sankey opens its own: income and transfers in, s
  const savings = drillFlows({ side: 'savings' }, 'Savings', 2450, ctx);
  assert.deepEqual(savings.nodes.filter(node => node.open).map(node => [node.name, node.open]), [['Savings account', { side: 'account', key: 'save' }], ['Card', { side: 'account', key: 'card' }], ['Car loan', { side: 'account', key: 'loan' }]], 'every account and debt opens its own Sankey');
  const card = drillFlows({ side: 'account', key: 'card' }, 'Card', 0, ctx);
- assert.deepEqual(shape(card), [['Salary', 'Card', 3000], ['Card', 'Savings account', 1490], ['Card', 'Groceries', 500], ['Card', 'Car loan', 300], ['Card', 'Not traced', 10], ['Card', 'Balance', 700]]);
- assert.deepEqual(card.nodes.map(node => node.open?.side ?? null), ['income', null, 'account', 'expense', 'account', null, null], 'categories and other accounts open; the account itself, its balance and the gap do not');
+ assert.deepEqual(shape(card), [['EPAM', 'Card', 3000], ['Card', 'Savings account', 1490], ['Card', 'Groceries', 500], ['Card', 'Car loan', 300], ['Card', 'Not traced', 10], ['Card', 'Balance', 700]]);
+ assert.deepEqual(card.nodes.map(node => node.open?.side ?? null), ['merchant', null, 'account', 'expense', 'account', null, null], 'income sources, categories and other accounts open; the account itself, its balance and the gap do not');
+ // 20 October 2026: income came in by category (Rent income) rather than by its source (Airbnb payout).
+ assert.deepEqual(card.nodes[0].open, { side: 'merchant', key: 'EPAM', income: true }, 'an income source opens its own Sankey');
  const save = drillFlows({ side: 'account', key: 'save' }, 'Savings account', 0, ctx);
  assert.deepEqual(shape(save), [['Card', 'Savings account', 1490], ['Savings account', 'Charity', 50], ['Savings account', 'Balance', 1440]]);
  const loan = drillFlows({ side: 'account', key: 'loan' }, 'Car loan', 0, ctx);
@@ -148,7 +150,7 @@ test('the drill-down dialog opens an account in place and Back returns to the Sa
  assert.equal(tile.props.role, 'button');
  r.fire(tile, 'onClick');
  assert.equal(title(), 'Card');
- assert.deepEqual(shape(sankey().data), [['Salary', 'Card', 1000], ['Card', 'Balance', 1000]]);
+ assert.deepEqual(shape(sankey().data), [['EPAM', 'Card', 1000], ['Card', 'Balance', 1000]]);
  r.fire(back()[0], 'onClick');
  assert.equal(title(), 'Savings');
 });

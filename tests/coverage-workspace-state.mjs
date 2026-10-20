@@ -19,7 +19,8 @@ function browser(href, { framed = false } = {}) {
  const self = {}, top = framed ? {} : self;
  globalThis.window = { location, self, top, history: { replaceState: (_, __, next) => { events.replaced.push(next); const at = new URL(next, url.origin); url.search = at.search; } }, addEventListener: (name, listener) => { events.listeners[name] = listener; }, removeEventListener: name => { delete events.listeners[name]; }, parent: { postMessage: (message, origin) => events.posted.push([message, origin]) } };
  globalThis.sessionStorage = { setItem: (key, value) => events.stored.set(key, value), getItem: key => events.stored.get(key) ?? null, removeItem: key => events.stored.delete(key) };
- globalThis.document = { documentElement: { dataset: {} }, modelContext: { registerTool: tool => { events.tool = tool; } } };
+ // querySelector finds no loading placeholder: a preview's screen counts as drawn (whenLoaded, lib/app-preview.ts).
+ globalThis.document = { documentElement: { dataset: {} }, querySelector: () => null, modelContext: { registerTool: tool => { events.tool = tool; } } };
 }
 
 // The server: each route answers from `server`, and every request is kept.
@@ -301,7 +302,8 @@ test('inside a public page’s preview the sample workspace opens by itself and 
  const ws = mount();
  for (let i = 0; i < 4; i++) await settle();
  assert.equal(ws().preview, true);assert.equal(ws().demo, true);
- assert.equal(events.posted.at(-1)[1], 'https://app.test');
+ // Once the charts are in and nothing is loading, the frame tells its page it is ready, to the page's own origin only.
+ assert.deepEqual(events.posted.at(-1), [{ source: 'hoggish-preview', type: 'ready' }, 'https://app.test']);
  events.listeners.message({ origin: 'https://evil.test', data: { source: 'hoggish-preview', type: 'open', path: '/goals' } });
  assert.deepEqual(router.pushed, []);
  events.listeners.message({ origin: 'https://app.test', data: { source: 'hoggish-preview', type: 'open', path: '/goals' } });
