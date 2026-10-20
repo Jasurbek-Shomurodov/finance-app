@@ -3,7 +3,8 @@ import { recurringTarget } from '@/lib/cash-flow-schedule';
 import type { DrillTarget } from '@/lib/cash-flow-drill-types';
 import type { Entry } from '@/lib/finance';
 import type { KeyboardEvent, MouseEvent } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { liabilities } from '@/lib/finance';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { CategoryIcon } from '@/components/presentation-foundation/category-icon';
 import { TodayButton } from '@/components/presentation-foundation/today-button';
@@ -19,7 +20,7 @@ import { depositToday } from '@/lib/deposit-interest';
 import { shiftMonth } from '@/lib/calendar-days';
 import { convertAmount } from '@/lib/market';
 import { upcomingPayments, type PlanningData } from '@/lib/planning';
-import { archivedSchedules, calendarWeeks, carriedOverdue, monthOccurrences, onlyDirection, openDueDates, recurringSummary, type ArchiveTarget, type RecurringItem } from '@/lib/recurring';
+import { archivedSchedules, calendarWeeks, carriedOverdue, monthOccurrences, onlyDirection, openDueDates, payRequest, recurringSummary, type ArchiveTarget, type RecurringItem } from '@/lib/recurring';
 import { AccountOperation, type Operation } from './account-operation';
 import { RecurringList } from './recurring-list';
 import { ArchivedFold, OccurrenceRow, useDueLabel } from './recurring-rows';
@@ -89,6 +90,20 @@ export function UpcomingPage({ data, save, currency, currencies = [], rates, vie
  const deletion = useScheduleDeletion(data, onDelete);
  // Rows stay on one line while their name keeps room beside status, amount and actions; two lines only when this month's content needs it.
  const rows = useColumnsFit<HTMLUListElement>('.recurring-row');
+ // The dashboard's Record payment arrives as #pay=<schedule>:<date>. The router sets the address after the page first
+ // renders, so it is read after every render until one is found; opening clears it, so it opens once.
+ useEffect(() => {
+  const open = () => {
+   const request = payRequest(window.location.hash);
+   if (!request || !data.records.length) return;
+   const item = [...carried, ...items].find(entry => entry.record.id === request.recordId && entry.date === request.date);
+   const debt = item ? undefined : data.records.find(record => record.id === request.recordId && liabilities.includes(record.kind));
+   if (!item && !debt && request.date.slice(0, 7) !== month) { setMonth(request.date.slice(0, 7)); return; }
+   window.history.replaceState(null, '', window.location.pathname);
+   if (item && item.status !== 'skipped') pay(item); else if (debt) payDebt(debt);
+  };
+  open();
+ });
  const skip = (item: RecurringItem, skipped = true) => run(() => save('exception', { target_id: item.record.id, date: item.date, skip: skipped }));
  // A row opens its Sankey; its history (the details) opens from the Sankey's schedule.
  const open = (item: RecurringItem) => onSankey ? onSankey({ target: recurringTarget(item), title: item.record.name, month: item.date.slice(0, 7), onDetails: () => details.open(item) }) : details.open(item);

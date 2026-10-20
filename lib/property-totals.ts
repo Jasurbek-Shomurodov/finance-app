@@ -13,6 +13,14 @@ export function paymentProperty(entry: Entry, byId: ReadonlyMap<string, Entry>):
  return null;
 }
 
+/** The name of the property a payment belongs to, for its details; undefined when it names none we know. */
+export function propertyNameOf(entry: Entry, records: readonly Entry[]): string | undefined {
+ const byId = new Map(records.map(record => [record.id, record]));
+ const id = paymentProperty(entry, byId);
+ const property = id ? byId.get(id) : undefined;
+ return property?.kind === 'Property' ? property.name : undefined;
+}
+
 /** Rent received and costs paid for each property from `from` through `to`, in `currency`. Only recorded one-time
  * payments count, never schedules or estimates; a link to a property that is not in `records` adds nothing. */
 export function propertyTotals(records: readonly Entry[], from: string, to: string, currency: string, rates?: RateTable | PairRate | null): Map<string, PropertyTotals> {

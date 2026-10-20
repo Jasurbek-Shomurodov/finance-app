@@ -33,7 +33,9 @@
 .goal-setup-card>header strong{font-size:var(--type-body);font-weight:500}
 .goal-setup-name{flex:1;margin:0}
 .goal-setup-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.goal-setup-fields>label{display:grid;gap:6px;margin:0;font-size:var(--type-small)}
+.goal-setup-fields label{display:grid;gap:6px;margin:0;font-size:var(--type-small)}
+/* The target and its currency share a row of their own, as in every form. */
+.goal-setup-fields>.amount-currency-row{grid-column:1/-1;gap:12px}
 .goal-setup-fields .date-picker-trigger{width:100%}
 .goal-setup-note{margin:0;font-size:var(--type-small);color:var(--muted-foreground)}
 .goal-setup-needed{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:6px;font-size:var(--type-caption);color:var(--muted-foreground)}

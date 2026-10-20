@@ -97,7 +97,8 @@ test('upcoming payments put overdue ones first, show formatted dates and colour 
  assert.match(plain(ahead.upcoming),/Upcoming payments \d+ due soon/);
  assert.ok(upcoming.indexOf('Old debt')<upcoming.indexOf('Car loan'),'overdue first');
  assert.match(upcoming,new RegExp(`<small class="negative">Overdue · ${formatDate(late,'en-US')}</small>`));
- assert.match(upcoming,new RegExp(`<small>${formatDate(soon,'en-US')}</small><\\/span><strong>\\$321</strong>`));
+ // Each due payment links to Recurring's Record payment for that date.
+ assert.match(upcoming,new RegExp(`<small>${formatDate(soon,'en-US')}</small><a href="/upcoming#pay=Car%20loan:${soon}" class="overview-due-pay" aria-label="Record payment: Car loan">Record payment</a><\\/span><strong>\\$321</strong>`));
  assert.match(upcoming,/<strong class="positive">\+\$3,000<\/strong>/,'income is green with a plus');
  assert.match(upcoming,/href="\/upcoming"/);
  const none=cards({planning:{records:[],occurrences:[],categories:[],goals:[],activity:[]}});

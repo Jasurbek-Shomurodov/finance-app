@@ -111,7 +111,9 @@ test('TX-019 TX-020 an expense needs an amount above zero and cannot be dated in
   await page.getByRole('button', { name: 'Add transaction' }).click();
   await page.getByRole('menuitem', { name: 'Add expense' }).click();
   const dialog = page.getByRole('dialog');
-  await chooseOption(dialog.locator('select').filter({ hasText: 'Choose a cash account' }), 'E2E Checking');
+  // The cash account is a searchable picker; its choices open in a popover beside the dialog.
+  await dialog.getByRole('button', { name: 'Cash account' }).click();
+  await page.getByRole('button', { name: /E2E Checking/ }).click();
   // Typed, as a person would. Clicking Save leaves the field, which shows a zero as its empty placeholder, so the
   // browser's required-field check refuses it before the app's "greater than zero" rule; either way nothing is saved.
   const amount = dialog.getByPlaceholder('0').first();

@@ -20,6 +20,7 @@ import { formatDate, formatMoney, formatNumber, formatPercent } from '@/lib/form
 import { allocationRows, assetAllocation, nextPayments } from '@/lib/overview';
 import { otherShareKey } from '@/lib/cash-flow-report';
 import { upcomingPayments, type DueItem, type PlanningData } from '@/lib/planning';
+import { payLink } from '@/lib/recurring';
 
 /** `firstVisit` greets a brand-new account with "Welcome" instead of "Welcome back". */
 export function OverviewHeading({ name, firstVisit = false, children }: { name?: string; firstVisit?: boolean; children?: ReactNode }) {
@@ -75,7 +76,7 @@ export function useOverviewCards({ entries, currency, excludedCurrencies, foreca
   <PanelTitle title={<>{t('Upcoming payments')} {overdueCount > 0 ? <span className="panel-figure negative">{t('{count} overdue', { count: formatNumber(overdueCount, locale, 0) })}</span> : upcomingItems.length > 0 && figure(t('{count} due soon', { count: formatNumber(upcomingItems.length, locale, 0) }))}</>}><DrawerLink href="/upcoming">{t('View all')}</DrawerLink></PanelTitle>
   {due.length ? <ul className="overview-list overview-due">{due.map(item => {
    const incoming = income.includes(item.record.kind);
-   return <li key={item.key} {...dueRow(onSankey, item, t('Open {name}', { name: item.record.name }))}><CategoryIcon kind={item.record.kind}/><span>{item.record.name}<small className={item.overdue ? 'negative' : undefined}>{item.overdue ? t('Overdue') + ' · ' : ''}{formatDate(item.date, locale)}</small></span><strong className={incoming ? 'positive' : undefined}>{incoming ? '+' : ''}{entered(item.amount, item.record.currency)}</strong></li>;
+   return <li key={item.key} {...dueRow(onSankey, item, t('Open {name}', { name: item.record.name }))}><CategoryIcon kind={item.record.kind}/><span>{item.record.name}<small className={item.overdue ? 'negative' : undefined}>{item.overdue ? t('Overdue') + ' · ' : ''}{formatDate(item.date, locale)}</small><DrawerLink href={payLink(item.record.id, item.date)} className="overview-due-pay" aria-label={`${t('Record payment')}: ${item.record.name}`}>{t('Record payment')}</DrawerLink></span><strong className={incoming ? 'positive' : undefined}>{incoming ? '+' : ''}{entered(item.amount, item.record.currency)}</strong></li>;
   })}</ul> : planning ? <EmptyState icon={<CalendarClock/>} description={t('Nothing is due in the next 31 days.')}/> : <LoadingPlaceholder label={t('Loading records…')} rows={3}/>}
  </section>;
  return { commitments, allocation: allocationCard, upcoming };

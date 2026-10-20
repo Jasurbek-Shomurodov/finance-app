@@ -29,7 +29,7 @@ import type { HoldingActions } from './accounts/holding-rows';
 import { AccountActivity } from './accounts/account-activity';
 import { AddAccountDialog, type AccountType } from './accounts/add-account-dialog';
 import { AccountsOverview, selectedItem } from './accounts/accounts-overview';
-import { movementSources } from '@/lib/asset-movements';
+import { lastTransferTarget, movementSources } from '@/lib/asset-movements';
 
 type Props = {
  owner:string|null; onSaved:()=>void;
@@ -67,11 +67,11 @@ export function AccountsPage({ owner,onSaved,revision=0,data, save, onAdd, onEdi
  const holdingActions:HoldingActions={accounts:investmentAccounts,market,onEdit,onTrack,assignHolding,onMove:setMovement,onCorporate:setCorporate};
  const choose=(kind:AccountType)=>{if(kind==='Cash'||kind==='Deposit')onAdd(kind);else setDraft({id:crypto.randomUUID(),kind:kind==='CashInvestment'?'Cash':kind,name:'',currency});};
  const owners=filters.owners;
- // Transfer money starts from the account shown beside the directory, when money can leave it.
+ // Transfer money starts from the account shown beside the directory, when money can leave it, to where it last sent money.
  const shown=selectedItem(filters.visible,selected)?.key;
  const transferFrom=movementSources('transfer',data.records).find(record=>shown===`record:${record.id}`)?.id;
  return <>
-  <PageHeader title={t('Accounts')} tabs={<Segmented className="page-tabs" as="nav" label={t('Accounts')} options={[{value:'accounts',label:t('Overview')},{value:'activity',label:t('Recent activity')}]} value={view} onChange={setView}/>}>{owners.length>0&&<Button variant="outline" disabled={readOnly} onClick={()=>setEditingOwners(true)}><Users size={17} aria-hidden="true"/>{t('Edit owners')}</Button>}{businesses.length>0&&<Button variant="outline" onClick={()=>setEditingBusinesses(true)}><Briefcase size={17} aria-hidden="true"/>{t('Edit businesses')}</Button>}<Button variant="outline" onClick={()=>setMovement({kind:'transfer',source_id:transferFrom})}><ArrowRightLeft size={17} aria-hidden="true"/>{t('Transfer money')}</Button><Button onClick={()=>setChoosing(true)}><Plus size={17} aria-hidden="true" />{t('Add account')}</Button></PageHeader>
+  <PageHeader title={t('Accounts')} tabs={<Segmented className="page-tabs" as="nav" label={t('Accounts')} options={[{value:'accounts',label:t('Overview')},{value:'activity',label:t('Recent activity')}]} value={view} onChange={setView}/>}>{owners.length>0&&<Button variant="outline" disabled={readOnly} onClick={()=>setEditingOwners(true)}><Users size={17} aria-hidden="true"/>{t('Edit owners')}</Button>}{businesses.length>0&&<Button variant="outline" onClick={()=>setEditingBusinesses(true)}><Briefcase size={17} aria-hidden="true"/>{t('Edit businesses')}</Button>}<Button variant="outline" onClick={()=>setMovement({kind:'transfer',source_id:transferFrom,target_id:lastTransferTarget(data.movements??[],transferFrom,data.records)})}><ArrowRightLeft size={17} aria-hidden="true"/>{t('Transfer money')}</Button><Button onClick={()=>setChoosing(true)}><Plus size={17} aria-hidden="true" />{t('Add account')}</Button></PageHeader>
   {view==='accounts'&&<AccountsOverview items={accountItems} data={data} filters={filters} order={order} businesses={businesses} holdingActions={holdingActions} onEditAccount={setDraft} onAdd={onAdd} onAddAccount={()=>setChoosing(true)} selected={selected} onSelect={setSelected}
    cardActions={{onEdit,onTrack,onDelete:remove,onMove:setMovement,onOperation:setOperation,onStatement:owner?setStatement:undefined}}/>}
   {/* Account operations are their own view, opened from the top bar. */}

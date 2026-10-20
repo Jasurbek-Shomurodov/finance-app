@@ -188,6 +188,8 @@
 .asset-type-options{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-top:12px}
 .asset-type-options>button{display:flex;align-items:center;gap:10px;min-width:0;min-height:56px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-card);background:var(--card);font-size:var(--type-compact);font-weight:500;text-align:start;transition:background .15s,border-color .15s}
 .asset-type-options>button:hover{background:var(--accent);border-color:color-mix(in srgb,var(--primary) 55%,var(--border))}
+/* On a phone two tiles share a row, the icon above its name, so the whole list fits without scrolling. */
+@media(max-width:480px){.asset-type-options{grid-template-columns:repeat(2,minmax(0,1fr))}.asset-type-options>button{flex-direction:column;align-items:flex-start;gap:8px;padding:12px}}
 .account-type-options>button:focus-visible{outline:2px solid var(--ring);outline-offset:3px}
 .account-type-options>button>svg{flex-shrink:0;margin-top:2px;color:var(--primary)}
 .account-type-options>button>span{display:flex;flex-direction:column;gap:3px}

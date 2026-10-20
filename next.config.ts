@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 const supabaseOrigin=(()=>{try{return process.env.SUPABASE_URL?new URL(process.env.SUPABASE_URL).origin:'';}catch{return '';}})();
 const connectSources=["'self'",...(supabaseOrigin?[supabaseOrigin]:[])].join(' ');
 const nextConfig: NextConfig = {
+ // A production webpack build starts fresh: a cache kept from an earlier local build made the next one crash in webpack's
+ // WasmHash (Node 24), and CI and Vercel build from a clean checkout anyway.
+ webpack(config,{dev}){if(!dev)config.cache=false;return config;},
  // The scheduled Telegram reports are drawn on the server in the bundled font (lib/report-card-render.ts).
  outputFileTracingIncludes:{'/api/cron/telegram-*':['./public/fonts/NotoSans-Regular.ttf']},
  async headers(){return [{source:'/:path*',headers:[

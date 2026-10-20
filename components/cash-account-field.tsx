@@ -1,8 +1,7 @@
 "use client";
 import { useEffect, useRef } from 'react';
-import { requiresCashAccount } from '@/lib/cash-account-required';
 import { suggestedCashAccount } from '@/lib/form-suggestions';
-import { NativeSelect } from '@/components/ui/native-select';
+import { GroupedPicker } from '@/components/presentation-foundation/grouped-picker';
 import { useLanguage } from '@/components/language-provider';
 import { ExchangeRatePreview } from '@/components/presentation-foundation/exchange-rate-preview';
 import { useDatedExchangeRate } from '@/hooks/use-dated-exchange-rate';
@@ -23,7 +22,13 @@ export function CashAccountField({entry,records,loading,error,busy,onSuggest,onC
  const fx=useDatedExchangeRate(savedRate?undefined:account?.currency,entry.currency,entry.date);
  const cross=!!account&&account.currency!==entry.currency;
  const rate=savedRate??fx.rate;
- return <div className="cash-account-field"><label>{t('Cash account')}<NativeSelect required={requiresCashAccount(entry)} disabled={busy||loading||!!error||entry.frequency!=='Once'} value={entry.account_id||''} onChange={event=>onChange(event.target.value||null)}><option value="" disabled>{t('Choose a cash account')}</option>{accounts.map(account=><option key={account.id} value={account.id}>{formatAccountOption(account,locale)} · {account.currency}</option>)}</NativeSelect></label>
+ // Accounts grouped as the household's and each business's, searchable, like Income source; saving without one says
+ // "Choose a cash account." (cashAccountProblem), so the field needs no browser check of its own.
+ const businesses=[...new Set(accounts.map(account=>account.business_id).filter((id):id is string=>!!id))];
+ const groupLabel=(group:string)=>group==='household'?t('Household'):records.find(record=>record.id===group)?.name??t('Business');
+ return <div className="cash-account-field"><GroupedPicker label={t('Cash account')} placeholder={t('Choose a cash account')} searchLabel={t('Search accounts...')} allLabel={t('All accounts')} emptyText={t('No matching records')}
+  groups={['household',...businesses]} groupLabel={groupLabel} value={entry.account_id||''} disabled={busy||loading||!!error||entry.frequency!=='Once'} onChange={id=>onChange(id||null)}
+  items={accounts.map(account=>({id:account.id,name:`${formatAccountOption(account,locale)} · ${account.currency}`,group:account.business_id??'household'}))}/>
   {!loading&&!error&&!accounts.length&&<p className="muted">{t('Add a cash account to record this transaction.')}</p>}
   {loading&&<p className="muted">{t('Waiting for current cash account balances.')}</p>}
   {error&&<p className="error" role="alert">{t(error)}</p>}

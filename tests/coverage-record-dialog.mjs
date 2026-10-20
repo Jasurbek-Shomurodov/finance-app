@@ -372,9 +372,10 @@ test('an expense opens on the expense tab with its category, amount, date and ac
  assert.equal(d.hint(),d.description(),'the explanation sits behind the ⓘ in the title, not under it');
  assert.equal(d.r.find(byType('Tabs')).props.value,'expense');
  assert.equal(d.r.all(byType('TabsTrigger')).length,0,'no tabs without a debt payment action');
- const category=d.labelled('Category','NativeSelect');
- assert.deepEqual(category.children.map(text),[...finance.expenses,'Eating out']);
- d.r.fire(category,'onChange',{target:{value:'c1'}});
+ // Category is a searchable picker: the built-in kinds, then the person's own, each in its group.
+ const category=d.r.find(node=>node.type==='GroupedPicker'&&node.props.label==='Category');
+ assert.deepEqual(category.props.items.map(item=>[item.name,item.group]),[...finance.expenses.map(kind=>[kind,'builtin']),['Eating out','added']]);
+ d.r.fire(category,'onChange','c1');
  assert.equal(d.state.editing.custom_category_id,'c1');assert.equal(d.state.editing.kind,'Other expense');
  assert.equal(d.r.find(byType('Link')).props.href,'/settings#categories');
  // Following Manage categories closes an untouched expense rather than leaving it over Settings.
@@ -397,7 +398,7 @@ test('an expense opens on the expense tab with its category, amount, date and ac
  d.r.fire(date,'onChange','2026-09-20');assert.equal(d.state.editing.date,'2026-09-20');
  d.r.fire(d.r.find(byType('CashAccountField')),'onChange','acct');assert.equal(d.state.editing.account_id,'acct');
  // Linked to is offered only to someone with a business or a property; the details fold away behind Optional details.
- assert.ok(!d.r.all(node=>node.type==='GroupedPicker').length);
+ assert.ok(!d.r.all(node=>node.type==='GroupedPicker'&&node.props.label==='Linked to (optional)').length);
  assert.equal(d.r.find(node=>node.type==='details').props.open,false,'empty details start folded');
  // One Linked to choice lists businesses and properties together, each in its own group.
  const owner=dialog(t,expense(),{editingCashFlow:true,planning:planning({categories,records:[record('acct','Cash'),record('shop','Business'),record('flat','Property')]})});
@@ -440,7 +441,7 @@ test('a recurring expense shows its schedule, end date and plan summary through 
 
 test('a failed record read disables the category choice and explains why',t=>{
  const planningFailed=dialog(t,expense(),{editingCashFlow:true,planning:planning({},{error:'Records are unavailable.'})});
- assert.equal(planningFailed.labelled('Category','NativeSelect').props.disabled,true);
+ assert.equal(planningFailed.r.find(node=>node.type==='GroupedPicker'&&node.props.label==='Category').props.disabled,true);
  assert.ok(planningFailed.r.all(node=>node.props.role==='alert').map(text).every(message=>message==='Records are unavailable.'));
 });
 
@@ -549,4 +550,19 @@ test('Investments’ Add asset opens a dialog of the same name, whatever kind it
  const d=dialog(t,record('new','Cash'),{recordKinds:finance.assetRecordKinds});
  assert.equal(d.title(),'Add asset');
  assert.equal(d.hint(),'Record an existing account balance. This adds to your assets; it does not record income or transfer money.');
+});
+
+test('a due bill of another category moves the expense into it, and a later category change lets the bill go',t=>{
+ const rent=record('rent','Rent expense',{frequency:'Monthly',date:'2026-09-01',amount:900});
+ const d=dialog(t,expense(),{editingCashFlow:true,planning:planning({records:[record('acct','Cash'),rent],occurrences:[]})});
+ const bills=d.select('','rent');
+ d.r.fire(bills,'onChange',{target:{value:'rent'}});
+ assert.equal(d.state.editing.kind,'Rent expense','the bill\'s own category');
+ assert.equal(d.state.editing.occurrence_record_id,'rent');
+ assert.equal(d.state.editing.amount,45.5,'an amount already typed is kept');
+ const category=d.r.find(node=>node.type==='GroupedPicker'&&node.props.label==='Category');
+ d.r.fire(category,'onChange','Living expense');
+ assert.equal(d.state.editing.occurrence_record_id,null,'a Living expense does not pay the rent');
+ d.r.fire(d.select('','rent'),'onChange',{target:{value:''}});
+ assert.equal(d.state.editing.occurrence_record_id,null);
 });

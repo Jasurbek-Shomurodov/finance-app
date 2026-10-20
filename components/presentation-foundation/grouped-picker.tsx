@@ -35,7 +35,7 @@ export function GroupedPicker({ label, placeholder, searchLabel, allLabel, empty
   <PopoverTrigger asChild><Button type="button" variant="outline" className="income-source-trigger" disabled={disabled} aria-labelledby={labelId}>
    <span>{selected?.name ?? placeholder}</span><ChevronDown size={16}/>
   </Button></PopoverTrigger>
-  <PopoverContent align="start" className="income-source-popover" aria-labelledby={labelId}>
+  <PopoverContent align="start" collisionPadding={16} className="income-source-popover" aria-labelledby={labelId}>
    <div className="income-source-search"><Search size={17}/><Input aria-label={searchLabel} placeholder={searchLabel} value={search} onChange={event => setSearch(event.target.value)} onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); firstResult(); } }}/></div>
    <div className="income-source-columns"><div className="income-source-categories" aria-label={label}>
     {['all', ...shown].map(key => <button type="button" key={key} aria-pressed={active === key} aria-controls={resultsId} onMouseEnter={() => setGroup(key)} onFocus={() => setGroup(key)} onClick={() => setGroup(key)} onKeyDown={event => { if (event.key === 'ArrowRight') { event.preventDefault(); firstResult(); } }}>

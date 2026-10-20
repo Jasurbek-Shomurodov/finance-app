@@ -98,7 +98,6 @@
   "hooks/use-earning-sources.ts",
   "hooks/use-goal-order.ts",
   "hooks/use-household.ts",
-  "hooks/use-location-search.ts",
   "hooks/use-market.ts",
   "hooks/use-phone-sign-in.ts",
   "hooks/use-planning.ts",

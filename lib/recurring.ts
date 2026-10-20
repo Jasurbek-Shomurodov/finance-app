@@ -167,3 +167,11 @@ export function calendarWeeks(month: string) {
  while (cells.length % 7) cells.push(null);
  return Array.from({ length: cells.length / 7 }, (_, week) => cells.slice(week * 7, week * 7 + 7));
 }
+
+/** A link that opens Recurring's Record payment for one due date: `/upcoming#pay=<schedule id>:<due date>`. */
+export const payLink = (recordId: string, date: string) => `/upcoming#pay=${encodeURIComponent(recordId)}:${date}`;
+/** The schedule and due date a Recurring address asks to pay, or null. */
+export function payRequest(hash: string): { recordId: string; date: string } | null {
+ const match = /^#pay=([^:]+):(\d{4}-\d{2}-\d{2})$/.exec(hash);
+ return match ? { recordId: decodeURIComponent(match[1]), date: match[2] } : null;
+}

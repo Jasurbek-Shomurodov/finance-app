@@ -62,5 +62,8 @@ function RollingDigit({ digit, column }: { digit: number; column: number }) {
 
 /** An already formatted figure (money, a percentage, a count) whose digits roll into place like an odometer and roll up or down when it changes. Signs and separators stay put; screen readers and reduced motion get the final text only. */
 export function RollingText({ text }: { text: string }) {
+ // Right-to-left words (an Arabic "remaining") cannot be split into rolling characters without breaking how their letters
+ // join, so such a value is shown as it is; a figure alone rolls, left to right in every language.
+ if (/[\u0590-\u08ff\ufb1d-\ufdff\ufe70-\ufeff]/.test(text)) return <span>{text}</span>;
  return <roll-text><roll-chars aria-hidden="true">{rollingColumns(text).map(({ key, char, digit }) => digit === null ? <roll-char key={`c${key}`}>{char}</roll-char> : <RollingDigit key={`d${key}`} digit={digit} column={key}/>)}</roll-chars><span className="sr-only">{text}</span></roll-text>;
 }

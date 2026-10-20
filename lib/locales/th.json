@@ -2638,5 +2638,9 @@
   "Business or property": "ธุรกิจหรืออสังหาริมทรัพย์",
   "No account": "ไม่มีบัญชี",
   "Not traced": "ติดตามไม่ได้",
-  "This period": "ช่วงนี้"
+  "This period": "ช่วงนี้",
+  "All accounts": "บัญชีทั้งหมด",
+  "Built-in categories": "หมวดหมู่เริ่มต้น",
+  "Your categories": "หมวดหมู่ของคุณ",
+  "Due in 7 days": "ครบกำหนดใน 7 วัน"
 }

@@ -101,6 +101,11 @@ h2:has(>.info-hint){display:flex;align-items:center;gap:6px}
 .stat-tile{display:flex;flex-direction:column;gap:8px;min-width:0;padding:20px;border:1px solid var(--border);border-radius:var(--radius-card);background:var(--card);box-shadow:var(--shadow-card)}
 .stat-tile h3{font-size:var(--type-caption);font-weight:500;line-height:1.4;color:var(--muted-foreground)}
 .stat-tile>strong{font-size:var(--type-stat);font-weight:600;letter-spacing:-.03em;line-height:1.2;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+/* A headline tile that opens its page (StatTile href). */
+.stat-tile-link{color:inherit;transition:border-color .15s,background .15s}
+.stat-tile-link:hover{border-color:color-mix(in srgb,var(--primary) 45%,var(--border))}
+.stat-tile-link:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){.stat-tile-link{transition:none}}
 .stat-tile>p{margin-top:auto;font-size:var(--type-caption);line-height:1.5;color:var(--muted-foreground)}
 @container content (max-width:860px){.stat-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.stat-tiles[data-columns="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @container content (max-width:720px){.stat-tiles[data-columns="3"]{grid-template-columns:minmax(0,1fr)}.stat-tiles[data-columns="3"] .stat-tile{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 16px;padding:16px}.stat-tiles[data-columns="3"] .stat-tile>p{grid-column:1/-1;margin:0}}

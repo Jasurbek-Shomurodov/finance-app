@@ -14,6 +14,7 @@ import { RecentCategories } from './recent-categories';
 import { chooseLinked, linkedValue } from '@/lib/linked-asset';
 import { GroupedPicker } from '@/components/presentation-foundation/grouped-picker';
 import { CategoryBadge } from '@/components/presentation-foundation/category-badge';
+import { CategoryIcon } from '@/components/presentation-foundation/category-icon';
 import { frequencyLabels } from '@/lib/finance';
 import { selectTransactionCategory } from '@/lib/transaction-categories';
 import { InvestmentTracker } from '@/components/investment-tracker-lazy';
@@ -64,7 +65,8 @@ function CategoryAmount({form}:{form:ExpenseContext}){
  return <>   {schedule&&<RecordNameInput label={t('Name')} entry={editing} rows={planning.data.records} original={original} placeholder={t('e.g. Rent or internet subscription')} onChange={name=>update({name})}/>}
    <BillChoice form={form}/>
    <AmountCurrencyFields prominent amount={editing.amount} currency={editing.currency} currencies={currencies} savedCurrency={savedCurrency} disabled={busy} onAmountChange={amount=>update({amount})} onCurrencyChange={currency=>update({currency,account_exchange_rate:null,account_rate_date:null,account_currency:null})}/>
-   {mode==='expense'&&<div className="field-with-links"><label>{t('Category')}<NativeSelect disabled={busy||planning.loading||!!planning.error} value={editing.custom_category_id??editing.kind} onChange={event=>choose(event.target.value)}>{kinds.map(kind=><option key={kind} value={kind}>{t(kind)}</option>)}{added.map(category=><option key={category.id} value={category.id}>{category.name}</option>)}</NativeSelect></label>
+   {mode==='expense'&&<div className="field-with-links"><GroupedPicker label={t('Category')} placeholder={t('Other expense')} searchLabel={t('Search categories')} allLabel={t('All categories')} emptyText={t('No matching records')} groups={['builtin','added']} groupLabel={group=>t(group==='builtin'?'Built-in categories':'Your categories')} value={editing.custom_category_id??editing.kind} disabled={busy||planning.loading||!!planning.error} onChange={choose}
+     items={[...kinds.map(kind=>({id:kind as string,name:t(kind),group:'builtin',badge:<CategoryIcon kind={kind} size="sm"/>})),...added.map(category=>({id:category.id,name:category.name,group:'added',badge:<CategoryIcon kind={category.name} size="sm"/>}))]}/>
     <RecentCategories keys={recent} value={editing.custom_category_id??editing.kind} label={label} disabled={busy||planning.loading||!!planning.error} onChoose={choose}/>
     <div className="field-links"><Link className="panel-link" href="/settings#categories" onNavigate={event=>{if(busy){event.preventDefault();return;}if(onLeave)onLeave(event,'/settings#categories');else setEditing(null);}}>{t('Manage categories in Settings')}</Link></div></div>}</>;
 }

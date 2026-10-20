@@ -18,7 +18,7 @@ import { shownName } from '@/lib/record-names';
 
 type TagProps={tags:readonly Tag[];tagIds:readonly string[];onTags:(add:string[],remove:string[])=>Promise<unknown>;onCreateTag:(name:string)=>Promise<string>};
 /** A transaction at a glance. Its business, tags and receipts change right here, as on the transaction drawer; the pencil edits it and the bin moves it to Recently deleted after a confirmation; the dialog's own × closes it. */
-export function TransactionDetailsDialog({record:initial,incoming,categoryName,businesses,onBusiness,tagging,accountName,attachments,editable,onEdit,onDelete,onClose}:{record:Entry;incoming:boolean;categoryName?:string;businesses:readonly BusinessOption[];onBusiness:(business:string|null)=>Promise<number>;tagging:TagProps;accountName?:string;attachments?:ReactNode;editable:boolean;onEdit:()=>void;onDelete?:()=>void;onClose:()=>void}) {
+export function TransactionDetailsDialog({record:initial,incoming,categoryName,businesses,onBusiness,tagging,accountName,propertyName,attachments,editable,onEdit,onDelete,onClose}:{record:Entry;incoming:boolean;categoryName?:string;businesses:readonly BusinessOption[];onBusiness:(business:string|null)=>Promise<number>;tagging:TagProps;accountName?:string;/** The property it was paid for or received from. */propertyName?:string;attachments?:ReactNode;editable:boolean;onEdit:()=>void;onDelete?:()=>void;onClose:()=>void}) {
  const {t,locale}=useLanguage();
  const [record,setRecord]=useState(initial),[tagIds,setTagIds]=useState<readonly string[]>(tagging.tagIds);
  const business=businesses.find(item=>item.id===record.business_id);
@@ -37,6 +37,7 @@ export function TransactionDetailsDialog({record:initial,incoming,categoryName,b
  if(businessEditable)rows.push([t('Business'),<BusinessPicker key="b" record={record} businesses={businesses} onChange={next=>void changeBusiness(next)}/>]);
  else if(business)rows.push([t('Business'),business.name]);
  if(canTag(record))rows.push([t('Tags'),<TagSelector key="t" tags={tagging.tags} selected={tagIds} onToggle={id=>void toggleTag(id)} onCreate={tagging.onCreateTag}/>]);
+ if(propertyName)rows.push([t('Property'),propertyName]);
  if(accountName)rows.push([t('Account'),accountName]);
  if(record.account_currency&&record.account_currency!==record.currency&&record.account_exchange_rate)rows.push([t('Exchange rate'),`1 ${record.account_currency} = ${formatNumber(record.account_exchange_rate,locale)} ${record.currency}`]);
  if(record.notes)rows.push([t('Notes'),<span key="n" className="whitespace-pre-wrap break-words">{record.notes}</span>]);

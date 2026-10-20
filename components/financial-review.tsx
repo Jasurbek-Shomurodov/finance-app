@@ -19,7 +19,7 @@ import type { ToolsController } from '@/components/transaction-tools-panel';
 import { emptyPlanning,type PlanningData } from '@/lib/planning';
 import { depositToday } from '@/lib/deposit-interest';
 import { shiftMonth } from '@/lib/calendar-days';
-import { formatDate, formatMoney, formatMonthYear } from '@/lib/format';
+import { formatDate, formatMoney, formatMonthYear, formatPercent } from '@/lib/format';
 import type { PortfolioSnapshot } from '@/lib/portfolio-snapshots';
 /** The compact Cash flow summary while its month loads: same tiles and note line, so nothing below it moves. */
 export function CashflowSummarySkeleton(){
@@ -41,11 +41,13 @@ export function MonthlyReview({data:providedData,owner,demo=false,revision=0,too
  if(owner&&!demo&&(remote.loading||remote.error))return <section className="panel tools-panel monthly-review"><h2>{t('Monthly review')} · {formatMonthYear(month,locale)}</h2>{remote.error?<InlineError message={t(remote.error)} onRetry={remote.retry}/>:<LoadingPlaceholder label={t('Loading records…')} rows={3}/>}</section>;
  if(compact)return <section className="cashflow-summary" aria-label={t('Monthly review')}>
   {tools.error&&<InlineError message={t(tools.error)} onRetry={tools.retry}/>}
-  <StatTiles columns={3}>{[
+  <StatTiles columns={4}>{[
    {label:'Income received',value:result.received,estimate:estimates?.income},
    {label:'Actual spending',value:result.spent,estimate:estimates?.spending},
    {label:'Net cash flow',value:result.saved,estimate:estimates?.net,tone:signTone(result.saved)},
-  ].map(({label,value,estimate,tone})=><StatTile key={label} label={t(label)} value={tools.loading?<Skeleton aria-hidden="true" className="h-7 w-3/4"/>:tools.error?'—':money(value)} tone={tools.loading||tools.error?undefined:tone}><p>{t(label==='Net cash flow'?'Estimated monthly surplus':'Monthly estimate')}: {estimate==null?'—':money(estimate)}</p></StatTile>)}</StatTiles>
+  ].map(({label,value,estimate,tone})=><StatTile key={label} label={t(label)} value={tools.loading?<Skeleton aria-hidden="true" className="h-7 w-3/4"/>:tools.error?'—':money(value)} tone={tools.loading||tools.error?undefined:tone}><p>{t(label==='Net cash flow'?'Estimated monthly surplus':'Monthly estimate')}: {estimate==null?'—':money(estimate)}</p></StatTile>)}
+   {/* The month's savings rate, as the period report shows it for a quarter or a year (the user's choice, 20 October 2026). */}
+   <StatTile label={t('Savings rate')} value={tools.loading?<Skeleton aria-hidden="true" className="h-7 w-3/4"/>:tools.error||!(result.received>0)?'—':formatPercent(result.saved/result.received*100,locale)} tone={tools.loading||tools.error||!(result.received>0)?undefined:signTone(result.saved)}/></StatTiles>
   {!!result.missing&&<p className="partial-total" role="status">{t('Some transactions could not be converted. Current or previous month totals are incomplete.')}</p>}
  </section>;
  return <section className="panel tools-panel monthly-review">

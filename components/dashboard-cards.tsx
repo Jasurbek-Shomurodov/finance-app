@@ -88,13 +88,14 @@ function BudgetCardTotal({ plan, spent, currency }: { plan: number | null; spent
 
 /** This month's budget at a glance: planned spending against what is spent, and the categories closest to their limit.
  * `budget` is the workspace's one Budget (`useWorkspace().budget`), so an edit on Budget shows here at once. */
-export function BudgetCard({ owner = null, demo = false, revision = 0, budget, data: provided, currency, market, splits }: { owner?: string | null; demo?: boolean; revision?: number; budget: Pick<WorkspaceBudget, 'state' | 'loading'>; data: PlanningData; currency: string; market: MarketData | null; splits: TransactionSplit[] }) {
- const { t, locale } = useLanguage();
+/** This month's budget for spending, as Budget counts it: what was spent, the plan, and the categories closest to their
+ * limit. The dashboard works it out once for its Budget card and its headline row; `skip` leaves the read to that caller. */
+export function useMonthBudget({ owner = null, demo = false, revision = 0, budget, data: provided, currency, market, splits, skip = false }: { owner?: string | null; demo?: boolean; revision?: number; budget: Pick<WorkspaceBudget, 'state' | 'loading'>; data: PlanningData; currency: string; market: MarketData | null; splits: TransactionSplit[] ; skip?: boolean }) {
  const today = depositToday(), month = depositMonth();
  const removed = provided.removedKinds ?? [];
  // Rollover categories need every month since their rollover started.
  const range = budgetReadRange(month, 'month', budgetCategories(provided.categories, budget.state.categories, removed));
- const remote = useOwnerResource(`/api/planning?scope=budget&month=${month}&from=${range.from}`, owner, !!owner && !demo, revision, emptyPlanning);
+ const remote = useOwnerResource(`/api/planning?scope=budget&month=${month}&from=${range.from}`, owner, !!owner && !demo && !skip, revision, emptyPlanning);
  const data = owner && !demo ? { ...remote.data, records: remote.data.records.map(normalizeEntry) } : provided;
  const rates = marketRates(market);
  const history = new Map(monthsBetween(range.from, month).map(item => [item, monthActuals(data, splits, item, currency, today, rates)]));
@@ -105,8 +106,15 @@ export function BudgetCard({ owner = null, demo = false, revision = 0, budget, d
  const plan = leftToBudget(rows, budget.state.mode, flexible, 0).expenses, spent = rows.reduce((sum, row) => sum + row.actual, 0);
  // In flex mode flexible categories share one bucket, so only fixed categories keep a budget of their own here, as on the Budget page.
  const watched = budgetRowsForMode(rows, budget.state.mode).filter(row => row.budget).sort((a, b) => b.progress - a.progress).slice(0, 3);
+ const loading = !!((owner && !demo && remote.loading) || budget.loading);
+ return { month, rows, plan, spent, watched, loading };
+}
+
+export function BudgetCard({ owner = null, demo = false, revision = 0, budget, data: provided, currency, market, splits, figures }: { owner?: string | null; demo?: boolean; revision?: number; budget: Pick<WorkspaceBudget, 'state' | 'loading'>; data: PlanningData; currency: string; market: MarketData | null; splits: TransactionSplit[]; /** Worked out already by the caller (useMonthBudget). */figures?: ReturnType<typeof useMonthBudget> }) {
+ const { t, locale } = useLanguage();
+ const own = useMonthBudget({ owner, demo, revision, budget, data: provided, currency, market, splits, skip: !!figures });
+ const { month, plan, spent, watched, loading } = figures ?? own;
  const money = (amount: number) => formatMoney(amount, currency, locale);
- const loading = (owner && !demo && remote.loading) || budget.loading;
  return <section className="panel overview-panel dashboard-budget" aria-label={t('Budget')}>
   <PanelTitle title={<>{t('Budget')} <span className="panel-figure">{formatMonthYear(month, locale)}</span></>}><DrawerLink href="/budget">{t('View all')}</DrawerLink></PanelTitle>
   {loading ? <LoadingPlaceholder label={t('Loading records…')} rows={3}/> : plan === null || plan > 0 ? <>

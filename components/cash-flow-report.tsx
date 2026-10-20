@@ -108,7 +108,8 @@ export function CashFlowReport({ onOpenRecord, owner, demo, revision, data: prov
   <div className="cash-flow-report-tools">
    <Segmented label={t('Period')} options={reportPeriods.map(value => ({ value, label: t(periodLabels[value]) }))} value={period} onChange={setPeriod}/>
   </div>
-  <CashFlowTiles report={report} currency={currency}/>
+  {/* A month's figures are the page's headline tiles already; a quarter or a year adds its own (the user's choice, 20 October 2026). */}
+  {period !== 'month' && <CashFlowTiles report={report} currency={currency}/>}
   {unknown && <p className="partial-total" role="status">{t('Some transactions could not be converted. Current or previous month totals are incomplete.')}</p>}
   <section className="panel">
    <PanelTitle title={t(trendTitles[period])}/>

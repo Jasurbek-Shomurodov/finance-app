@@ -1,5 +1,7 @@
-import { assets, totalValue, type Entry } from './finance';
-import type { DueItem } from './planning';
+import { assets, income, totalValue, type Entry } from './finance';
+import { upcomingPayments, type DueItem, type PlanningData } from './planning';
+import { shiftDay } from './calendar-days';
+import { amountIn, type PairRate, type RateTable } from './money';
 import { topShares } from './cash-flow-report';
 
 /** Entries must already be expressed in the display currency. Shares stay precise; round only when displaying. */
@@ -27,4 +29,17 @@ export function changePercent(current: number, change: number | null) {
 /** Overdue items come first, then the nearest due dates. */
 export function nextPayments(due: readonly DueItem[], limit = 5) {
  return [...due].sort((a, b) => Number(b.overdue) - Number(a.overdue) || a.date.localeCompare(b.date) || a.record.name.localeCompare(b.record.name)).slice(0, limit);
+}
+
+/** What falls due to be paid by `days` from today, overdue included: how many payments, and their total in `currency`.
+ * Income on its way is not a payment due. The total is null when one has no rate to convert it, never a figure under the
+ * wrong currency. */
+export function dueSoon(data: Pick<PlanningData, 'records' | 'occurrences' | 'debtPayments'>, today: string, days: number, currency: string, rates?: RateTable | PairRate | null) {
+ const items = upcomingPayments(data.records, data.occurrences, today, shiftDay(today, days), data.debtPayments).filter(item => !income.includes(item.record.kind));
+ let total: number | null = 0;
+ for (const item of items) {
+  const amount = amountIn({ amount: item.amount, currency: item.record.currency }, currency, rates);
+  total = total === null || amount === null ? null : total + amount;
+ }
+ return { count: items.length, total };
 }

@@ -31,7 +31,7 @@ function RuleCriteria({ draft, next, open, categories, removed, businesses, acco
   <div className="budget-dialog-label">{t('When the name')}
    <div className="rule-name-criterion">
     <NativeSelect aria-label={t('Name match')} value={draft.match} onChange={event => change({ match: event.currentTarget.value as TransactionRule['match'] })}><option value="contains">{t('Contains')}</option><option value="exact">{t('Is exactly')}</option></NativeSelect>
-    <Input aria-label={t('Name')} required={!extra} maxLength={120} value={draft.pattern} onChange={event => change({ pattern: event.currentTarget.value })}/>
+    <Input data-autofocus aria-label={t('Name')} required={!extra} maxLength={120} value={draft.pattern} onChange={event => change({ pattern: event.currentTarget.value })}/>
    </div>
   </div>
   <div className="budget-dialog-label">{t('Applies to')}<Segmented label={t('Applies to')} options={[{ value: 'expense', label: t('Expenses') }, { value: 'income', label: t('Income') }, { value: 'any', label: t('Both') }] as const} value={draft.direction} onChange={direction => change({ direction })}/></div>

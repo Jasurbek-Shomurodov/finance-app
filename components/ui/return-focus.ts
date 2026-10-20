@@ -10,11 +10,12 @@ function openerOf(active: Element | null) {
   return trigger ?? active
 }
 
-/** A dialog with fields opens on its first field, not on the ⓘ beside its title; a dialog of choices keeps Radix's first
+/** A dialog with fields opens on its first editable field (or the one marked `data-autofocus`), not on the ⓘ beside its title; a dialog of choices keeps Radix's first
  * focusable element. A dialog that sets its own focus prevents this. */
 function focusFirstField(event: Event) {
   const dialog = event.currentTarget as HTMLElement | null
-  const field = dialog?.querySelector?.<HTMLElement>(":is(input:not([type=hidden]):not([type=checkbox]):not([type=radio]),select,textarea):not([disabled])")
+  // A form can name the field it is really about (`data-autofocus`), ahead of a setting that happens to come first.
+  const field = dialog?.querySelector?.<HTMLElement>("[data-autofocus]:not([disabled])") ?? dialog?.querySelector?.<HTMLElement>(":is(input:not([type=hidden]):not([type=checkbox]):not([type=radio]),select,textarea):not([disabled]):not([readonly])")
   if (!field) return
   event.preventDefault()
   field.focus()

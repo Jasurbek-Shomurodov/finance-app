@@ -488,3 +488,26 @@ test('a grouped picker names the chosen item, lists groups with counts, and sear
  assert.match(html,/<span>All<\/span><small>4<\/small>.*<span>Business<\/span><small>1<\/small>.*<span>Property<\/span><small>2<\/small>/);
  assert.match(render(GroupedPicker,{...props,value:'x'}),/<span>Not linked<\/span><svg/,'nothing chosen shows the placeholder');
 });
+
+test('a headline tile with href is one link to its page; right-to-left words are never split into rolling characters',()=>{
+ const {StatTile}=load('stat-tile.tsx',{'@/components/presentation-foundation/drawer-link':{DrawerLink:({href,className,children})=>React.createElement('a',{href,className},children)},'@/components/presentation-foundation/rolling-text':{RollingText:({text})=>React.createElement('b',null,text)}});
+ assert.equal(render(StatTile,{label:'Net worth',value:'$10',href:'/assets'}),'<a href="/assets" class="stat-tile stat-tile-link"><h3>Net worth</h3><strong><b>$10</b></strong></a>');
+ assert.match(render(StatTile,{label:'Net worth',value:'$10'}),/^<article class="stat-tile">/);
+ const {RollingText}=load('rolling-text.tsx');
+ assert.equal(render(RollingText,{text:'المتبقي 2,376 US$'}),'<span>المتبقي 2,376 US$</span>','Arabic letters keep joining');
+ assert.match(render(RollingText,{text:'2,376 US$'}),/^<roll-text>/,'a figure alone still rolls');
+});
+
+test('a dialog opens on its field marked data-autofocus, else its first editable field, never a read-only one',()=>{
+ const {useReturnFocus}=loadTS('components/ui/return-focus.ts',{react:{...React,useState:initial=>[typeof initial==='function'?initial():initial],useRef:current=>({current})}});
+ globalThis.document={activeElement:null,body:{},getElementById:()=>null};
+ try{
+  const focused=[];
+  const field=name=>({focus(){focused.push(name);}});
+  const useOpened=queries=>{const event={defaultPrevented:false,preventDefault(){this.defaultPrevented=true;},currentTarget:{querySelector:selector=>queries(selector)}};useReturnFocus().onOpenAutoFocus(event);return event;};
+  useOpened(selector=>selector.startsWith('[data-autofocus]')?field('name'):field('first'));
+  useOpened(selector=>selector.startsWith('[data-autofocus]')?null:(assert.match(selector,/:not\(\[readonly\]\)/),field('first')));
+  assert.deepEqual(focused,['name','first']);
+  assert.equal(useOpened(()=>null).defaultPrevented,false,'a dialog of choices keeps Radix\'s own focus');
+ }finally{delete globalThis.document;}
+});

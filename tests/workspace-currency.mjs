@@ -92,25 +92,26 @@ test('expense uses one category above amount, including user categories and safe
  let updated;
  const props={editing,setEditing:value=>{updated=value;},rows:[editing],currencies:['USD'],recordKinds:[],planning:{data:{records:[],categories:[category]}}};
  const tree=expenseForm(props);
- const selector=find(tree,node=>node.props?.value===category.id&&node.props?.onChange);
- assert.ok(selector);
- assert.ok(React.Children.toArray(selector.props.children).some(node=>node.props.children===category.name));
+ // Category is a searchable picker holding the built-in kinds and the person's own categories.
+ const selector=find(tree,node=>node.type?.name==='GroupedPicker'&&node.props?.label==='Category');
+ assert.equal(selector.props.value,category.id);
+ assert.ok(selector.props.items.some(item=>item.id===category.id&&item.name===category.name&&item.group==='added'));
  const labels=[];
- const visit=node=>{if(!node||typeof node!=='object')return;if(['AmountCurrencyFields','CategoryAmount','DateDetails','PaymentNameDetails','OptionalDetails','DebtPayment','ExpenseActions'].includes(node.type?.name))return visit(node.type(node.props));if(node.type==='label')labels.push(React.Children.toArray(node.props.children)[0]);for(const child of React.Children.toArray(node.props?.children))visit(child);};
+ const visit=node=>{if(!node||typeof node!=='object')return;if(['AmountCurrencyFields','CategoryAmount','DateDetails','PaymentNameDetails','OptionalDetails','DebtPayment','ExpenseActions'].includes(node.type?.name))return visit(node.type(node.props));if(node.type?.name==='GroupedPicker')labels.push(node.props.label);if(node.type==='label')labels.push(React.Children.toArray(node.props.children)[0]);for(const child of React.Children.toArray(node.props?.children))visit(child);};
  visit(tree);
  assert.equal(labels.filter(label=>label==='Category').length,1);
  // The amount someone came to enter leads the form; its category follows.
  assert.ok(labels.indexOf('Amount')<labels.indexOf('Category'));
  assert.ok(!labels.includes('Custom category'));
- selector.props.onChange({target:{value:'Other expense'}});
+ selector.props.onChange('Other expense');
  assert.equal(updated.custom_category_id,null);assert.equal(updated.kind,'Other expense');assert.equal(updated.amount,12.125);
- selector.props.onChange({target:{value:category.id}});
+ selector.props.onChange(category.id);
  assert.equal(updated.custom_category_id,category.id);assert.equal(updated.kind,'Other expense');
- selector.props.onChange({target:{value:'unknown-category'}});assert.deepEqual(updated,props.editing);
+ selector.props.onChange('unknown-category');assert.deepEqual(updated,props.editing);
  assert.equal(find(tree,node=>node.props?.href==='/settings#categories').props.children,'Manage categories in Settings');
  for(const state of [{loading:true},{error:'Unable to load'}]){
   const unavailable=expenseForm({...props,planning:{...props.planning,...state}});
-  assert.equal(find(unavailable,node=>node.props?.value===category.id&&node.props?.onChange).props.disabled,true);
+  assert.equal(find(unavailable,node=>node.type?.name==='GroupedPicker'&&node.props?.label==='Category').props.disabled,true);
  }
 });
 test('Settings exposes added categories beside the category creation form',()=>{

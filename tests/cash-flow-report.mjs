@@ -91,7 +91,7 @@ test('the last quarter or year bar is "to date" while it is not over, so it is n
  assert.equal(partialBar('2026-09', 'month', '2026-10-09'), null);
 });
 
-test('Cash flow shows its four tiles for a month, and a dash with the shared note where an amount could not be converted', () => {
+test('Cash flow adds its four tiles for a quarter or a year (a month has the page\'s own), and a dash with the shared note where an amount could not be converted', () => {
  const r = createRenderer();
  const modules = {
   'recharts': hostModule(), '@/components/language-provider': language('en-US'),
@@ -108,13 +108,18 @@ test('Cash flow shows its four tiles for a month, and a dash with the shared not
  const tiles = () => r.all(node => node.type === 'StatTile').map(node => [node.props.label, node.props.value]);
  const note = () => r.all(node => node.type === 'p' && node.props.className === 'partial-total');
  open([record('a', 'Pay', 'Salary', 1000, month + '-01'), record('b', 'Shop', 'Living expense', 250, month + '-01')], { rates: { USD: 1 }, quotes: {} });
- // d8226de: the Month view lost its tiles.
- assert.deepEqual(tiles(), [['Income', '$1,000'], ['Expenses', '$250'], ['Total savings', '$750'], ['Savings rate', '75%']]);
- assert.equal(note().length, 0);
+ // A month's income, spending, net and savings rate are the page's headline tiles, so the report adds none (the user's
+ // choice, 20 October 2026, replacing d8226de); a quarter or a year shows its own.
+ const period = value => { r.update(); r.find(node => node.type === 'Segmented' && node.props.label === 'Period').props.onChange(value); r.update(); };
+ assert.deepEqual(tiles(), []);
  const tooltip = r.find(node => node.type === 'Tooltip' && node.props.labelFormatter);
  assert.equal(tooltip.props.labelFormatter(month), formatMonthYear(month, 'en-US') + ' to date', 'the running month is to date');
  assert.equal(tooltip.props.formatter(null, 'Income')[0], '—');
+ period('quarter');
+ assert.deepEqual(tiles(), [['Income', '$1,000'], ['Expenses', '$250'], ['Total savings', '$750'], ['Savings rate', '75%']]);
+ assert.equal(note().length, 0);
  open([record('a', 'Pay', 'Salary', 1000, month + '-01'), record('x', 'Bonus', 'Salary', 5, month + '-01', { currency: 'EUR' })], { rates: { USD: 1 }, quotes: {} });
+ period('year');
  assert.deepEqual(tiles(), [['Income', '—'], ['Expenses', '—'], ['Total savings', '—'], ['Savings rate', '—']], 'never $1,000 as if complete');
  assert.equal(text(note()), 'Some transactions could not be converted. Current or previous month totals are incomplete.');
  assert.deepEqual(r.find(node => node.type === 'BarChart').props.data.at(-1).income, null, 'the bar is missing, not too low');

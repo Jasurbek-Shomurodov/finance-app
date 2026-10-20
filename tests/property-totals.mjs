@@ -40,3 +40,14 @@ test('the sample workspace\'s rentals pay for their condo and studio', () => {
  assert.ok(totals.get('demo-condo').income > 0 && totals.get('demo-condo').costs > 0);
  assert.ok(totals.get('demo-studio').costs > 0);
 });
+
+test('a transaction names the property it was paid for or received from, by id, also through its schedule',()=>{
+ const {propertyNameOf}=loadTS('lib/property-totals.ts');
+ const row=(id,kind,extra={})=>({id,name:id,kind,amount:1,currency:'USD',frequency:'Once',date:'2026-10-01',notes:'',quantity:1,cost:0,rate:0,...extra});
+ const condo=row('condo','Property',{name:'Lakeside condo'}),records=[condo,row('bill','Other expense',{frequency:'Monthly',property_id:'condo'}),row('car','Vehicle')];
+ assert.equal(propertyNameOf(row('fix','Other expense',{property_id:'condo'}),records),'Lakeside condo');
+ assert.equal(propertyNameOf(row('rent','Rent income',{income_source_id:'condo'}),records),'Lakeside condo');
+ assert.equal(propertyNameOf(row('paid','Other expense',{occurrence_record_id:'bill'}),records),'Lakeside condo','through the bill it pays');
+ assert.equal(propertyNameOf(row('x','Other expense',{property_id:'car'}),records),undefined,'only a property is named');
+ assert.equal(propertyNameOf(row('lunch','Living expense'),records),undefined);
+});

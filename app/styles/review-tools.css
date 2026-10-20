@@ -193,9 +193,10 @@
 .monthly-review-help-close:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 .monthly-review-help-done{justify-self:end;min-width:100px;border-radius:12px}
 
-.income-source-field { display: grid; gap: 8px; }
-.income-source-trigger { width: 100%; min-height: 48px; justify-content: space-between; text-align: start; }
-.income-source-trigger span { overflow: hidden; text-overflow: ellipsis; }
+.income-source-field { display: grid; gap: 8px; min-width: 0; }
+/* In a half-width column (Cash account beside Record date) a long choice shortens with an ellipsis, as a select's does. */
+.income-source-trigger { width: 100%; min-width: 0; min-height: 48px; justify-content: space-between; text-align: start; }
+.income-source-trigger span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .income-source-popover { width: min(680px, calc(100vw - 32px)); padding: 0; overflow: hidden; border-radius: 18px; }
 .income-source-search { display: flex; align-items: center; gap: 10px; padding: 12px; border-bottom: 1px solid var(--border); }
 .income-source-search input { min-width: 0; }

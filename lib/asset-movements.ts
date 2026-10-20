@@ -23,3 +23,12 @@ export function movementSources(kind: MovementKind, records: Entry[]) {
 export function movementTargets(kind: MovementKind, source: Entry | undefined, records: Entry[]) {
  return records.filter(record => record.id !== source?.id && (kind === 'transfer' ? isBalanceAccount(record) : kind === 'buy' ? isHolding(record) : (isBalanceAccount(record) || isHolding(record))));
 }
+/** Where `sourceId` last sent money: the target of its newest transfer, so Transfer money opens on the usual pair.
+ * Undefined when it has sent none, or that account can no longer receive one. */
+export function lastTransferTarget(movements: readonly { kind: MovementKind; source_id: string; target_id: string; occurred_on?: string; date?: string }[], sourceId: string | undefined, records: Entry[]): string | undefined {
+ if (!sourceId) return undefined;
+ const source = records.find(record => record.id === sourceId);
+ const targets = new Set(movementTargets('transfer', source, records).map(record => record.id));
+ return movements.filter(movement => movement.kind === 'transfer' && movement.source_id === sourceId && targets.has(movement.target_id))
+  .sort((a, b) => (b.occurred_on ?? b.date ?? '').localeCompare(a.occurred_on ?? a.date ?? ''))[0]?.target_id;
+}

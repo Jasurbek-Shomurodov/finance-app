@@ -2638,5 +2638,9 @@
   "Business or property": "事業または不動産",
   "No account": "口座なし",
   "Not traced": "追跡不可",
-  "This period": "今期"
+  "This period": "今期",
+  "All accounts": "すべての口座",
+  "Built-in categories": "標準のカテゴリ",
+  "Your categories": "あなたのカテゴリ",
+  "Due in 7 days": "7日以内の支払い"
 }

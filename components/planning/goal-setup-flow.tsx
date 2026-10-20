@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useStepFocus } from '@/hooks/use-step-focus';
 import { useLanguage } from '@/components/language-provider';
-import { CurrencySelect } from '@/components/presentation-foundation/currency-select';
+import { AmountCurrencyFields } from '@/components/presentation-foundation/amount-currency-fields';
 import { DatePicker } from '@/components/presentation-foundation/date-picker';
 import { ErrorPopup } from '@/components/presentation-foundation/error-popup';
 import { FormattedNumberInput } from '@/components/presentation-foundation/formatted-number-input';
@@ -108,10 +108,11 @@ export function GoalSetupFlow({ goals, accounts, currency, currencies, netWorth,
      {list.map(goal => <article key={goal.id} className="panel goal-setup-card">
       <header><span className="goal-row-cover" aria-hidden="true">{goalEmoji(goal)}</span><label className="goal-setup-name">{t('Name')}<Input required maxLength={120} value={goal.name} onChange={event => update(goal.id, { name: event.target.value })}/></label></header>
       <div className="goal-setup-fields">
-       <label>{t('Target amount')} ({goal.currency})<FormattedNumberInput max={1e15} value={goal.target} onValueChange={target => update(goal.id, { target, allocated: Math.min(goal.allocated, target) })}/></label>
+       {/* The target and its currency are one pair, as in every amount field; the date follows. */}
+       <AmountCurrencyFields label={t('Target amount')} amount={goal.target} currency={goal.currency ?? currency} currencies={goal.kind === 'net_worth' ? currencies : savingsCurrencies(accounts, currencies)}
+        onAmountChange={target => update(goal.id, { target, allocated: Math.min(goal.allocated, target) })}
+        onCurrencyChange={code => goal.kind === 'net_worth' ? update(goal.id, { currency: code }) : setDrafts(previous => previous.map(draft => draft.goal.id === goal.id ? { ...draft, goal: withSavingsCurrency(draft.goal, code, accounts) } : draft))}/>
        <label>{t(goal.kind === 'net_worth' ? 'Target date' : 'Target date (optional)')}<DatePicker required={goal.kind === 'net_worth'} value={goal.target_date ?? ''} min={today} max={maxDate} onChange={date => update(goal.id, { target_date: date || null })}/></label>
-       {goal.kind === 'net_worth' ? <CurrencySelect value={goal.currency ?? currency} currencies={currencies} onChange={code => update(goal.id, { currency: code })}/>
-       : <CurrencySelect value={goal.currency ?? currency} currencies={savingsCurrencies(accounts, currencies)} onChange={code => setDrafts(previous => previous.map(draft => draft.goal.id === goal.id ? { ...draft, goal: withSavingsCurrency(draft.goal, code, accounts) } : draft))}/>}
       </div>
       {problems(goal).map(problem => <p key={problem} role="alert" className="goal-row-alert">{t(problem)}</p>)}
      </article>)}
