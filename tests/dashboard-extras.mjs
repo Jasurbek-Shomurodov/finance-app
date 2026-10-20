@@ -6,9 +6,9 @@ const { normalizeLayout, dashboardColumns, dropCard, placeCard, toggleCard, defa
 const { workspacePreferenceSchema } = loadTS('lib/workspace-preferences.ts');
 
 test('dashboard cards drag within and across columns, old saves load and every card can be hidden', () => {
- assert.deepEqual(dashboardColumns(defaultDashboardLayout), { left: ['net_worth', 'spending', 'budget', 'commitments', 'allocation', 'business'], right: ['goals', 'transactions', 'upcoming', 'forecast', 'income'] });
+ assert.deepEqual(dashboardColumns(defaultDashboardLayout), { left: ['net_worth', 'spending', 'budget', 'commitments', 'allocation'], right: ['goals', 'transactions', 'upcoming', 'forecast', 'income', 'business'] });
  const old = normalizeLayout({ order: ['upcoming', 'recap', 'removed_card', 'allocation', 'upcoming'], hidden: ['goals', 'recap', 'nope'] });
- assert.deepEqual(old.columns.right, ['upcoming', 'goals', 'transactions', 'forecast', 'income'], 'a single-list save keeps its columns, new cards appended, removed cards dropped');
+ assert.deepEqual(old.columns.right, ['upcoming', 'goals', 'transactions', 'forecast', 'income', 'business'], 'a single-list save keeps its columns, new cards appended, removed cards dropped');
  assert.equal(old.columns.left[0], 'allocation');
  assert.equal(old.columns.left.length + old.columns.right.length, 11);
  assert.deepEqual(old.hidden, ['goals']);
@@ -23,12 +23,12 @@ test('dashboard cards drag within and across columns, old saves load and every c
  assert.equal(dropCard(layout, 'budget', 'budget'), layout);
  // Across columns: the card lands before the one it was dropped on, or at the end of an empty column.
  layout = dropCard(layout, 'net_worth', 'goals');
- assert.deepEqual(layout.columns.right, ['net_worth', 'goals', 'transactions', 'upcoming', 'forecast', 'income']);
+ assert.deepEqual(layout.columns.right, ['net_worth', 'goals', 'transactions', 'upcoming', 'forecast', 'income', 'business']);
  assert.ok(!layout.columns.left.includes('net_worth'));
  layout = dropCard(layout, 'transactions', 'left');
  assert.equal(layout.columns.left.at(-1), 'transactions');
  let empty = defaultDashboardLayout;
- for (const card of ['goals', 'transactions', 'upcoming', 'forecast', 'income']) empty = dropCard(empty, card, 'left');
+ for (const card of ['goals', 'transactions', 'upcoming', 'forecast', 'income', 'business']) empty = dropCard(empty, card, 'left');
  assert.deepEqual(empty.columns.right, []);
  assert.deepEqual(dropCard(empty, 'budget', 'right').columns.right, ['budget'], 'an empty column still takes a card');
  assert.deepEqual(placeCard(defaultDashboardLayout, 'goals', 'left', 99).columns.left.at(-1), 'goals', 'an index past the end is clamped');

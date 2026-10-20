@@ -6,10 +6,13 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {loadTS} from './helpers/load-ts.mjs';
 const language={useLanguage:()=>({locale:'en-US',t:(text,values={})=>text.replace(/\{(\w+)\}/g,(_,key)=>values[key]??key)})};
 const overrides={'@/components/language-provider':language};
-test('filters expose an accessible mobile disclosure and preserve the search outside it',()=>{
+test('filters sit behind an accessible Filters disclosure at every width, with the search outside it',()=>{
  const {RecordFilters}=loadTS('components/record-filters.tsx',overrides);
  const html=renderToStaticMarkup(React.createElement(RecordFilters,{value:{query:'shop',category:'all',from:'',to:'',order:'newest'},onChange:()=>{},categories:[],kinds:[]}));
  assert.match(html,/aria-expanded="false"/);assert.match(html,/aria-controls=/);assert.match(html,/data-expanded="false"/);assert.match(html,/value="shop"/);assert.match(html,/Filters.*1/);
+ // A filter already set opens the disclosure, so it is never hidden while it narrows the list; a search alone does not.
+ const set=renderToStaticMarkup(React.createElement(RecordFilters,{value:{query:'',category:'Loan',from:'',to:'',order:'newest'},onChange:()=>{},categories:[],kinds:['Loan']}));
+ assert.match(set,/aria-expanded="true"/);assert.match(set,/data-expanded="true"/);
 });
 test('failed settings render a retry control and prevent saving fallback preferences',()=>{
  const {SettingsPanel}=loadTS('components/settings-panel.tsx',{...overrides,'@/components/investment-comparison-settings':{InvestmentComparisonSettings:()=>null}});

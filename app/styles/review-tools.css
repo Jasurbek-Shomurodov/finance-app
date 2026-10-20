@@ -33,19 +33,16 @@
 /* Category, dates and sort wrap onto another line rather than shrink until "Select date" reads "Select…" (RESP-023). */
 .record-filter-options{min-width:0;display:flex;flex-wrap:wrap;gap:12px;align-items:end}
 .record-filter-options>label{flex:1 1 11rem;max-width:16rem}
-.record-filters .mobile-filter-toggle{display:none}
-/* Narrow pages (a phone, or a tablet beside the drawer) keep only search visible; the other filters open from Filters. */
+/* Search stays visible; the other filters open from Filters (n), at every width. */
+.record-filter-options{grid-column:1/-1}
+.record-filter-options[data-expanded=false]{display:none}
+.record-filter-options>button{margin-inline-start:auto}
+/* Narrow pages (a phone, or a tablet beside the drawer). */
 @container content (max-width:720px){
- .workspace .content .records .record-filters{grid-template-columns:minmax(0,1fr) auto;padding:0 16px 16px}
- .workspace .content .record-filters .record-filter-search{grid-column:auto}
+ .workspace .content .records .record-filters{padding:0 16px 16px}
  .workspace .content .record-filters :is(input,select){font-size:var(--type-body)}
- .record-filters .mobile-filter-toggle{display:inline-flex}
- .record-filter-options{grid-column:1/-1}
- .record-filter-options[data-expanded=false]{display:none}
  .record-filter-options>button{flex:1 1 100%}
 }
-/* Search takes its own line when the page itself is narrow (the sidebar counts), not at a window width. */
-@container content (max-width:900px){.workspace .content .records .record-filters{grid-template-columns:1fr}.record-filter-options>button{margin-inline-start:auto}}
 @media(max-width:640px){
  .tools-panel{padding:18px}
  .goal-projection-chart{height:300px;overflow:visible}

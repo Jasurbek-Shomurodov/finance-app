@@ -105,3 +105,14 @@ test('the dashboard Goals card follows the goal order and shows a net-worth goal
  assert.match(html,/\$2,500/);assert.match(html,/\$10,000 target</);
  assert.match(html,/width:0%/,'a negative net worth shows no progress');
 });
+
+test('the dashboard allocation lists the five largest kinds, then the rest as one Other row that keeps the total',()=>{
+ const {allocationRows}=loadTS('lib/overview.ts');
+ const {otherShareKey}=loadTS('lib/cash-flow-report.ts');
+ const items=[['Property',600],['Stock',200],['Crypto',80],['Bond',50],['Vehicle',40],['Cash',20],['Valuables',10]].map(([kind,total])=>({kind,total,share:total/10}));
+ const rows=allocationRows(items);
+ assert.deepEqual(rows.map(row=>row.kind),['Property','Stock','Crypto','Bond','Vehicle',otherShareKey]);
+ assert.deepEqual(rows.at(-1),{kind:otherShareKey,total:30,share:3});
+ assert.equal(rows.reduce((sum,row)=>sum+row.total,0),1000);
+ assert.ok(!allocationRows(items.slice(0,6)).some(row=>row.kind===otherShareKey),'one kind left over is named, not an Other row of one');
+});

@@ -97,8 +97,8 @@ test('Budget compares this month’s spending with the plan and lists the catego
  const list=html.slice(html.indexOf('dashboard-budget-list'));
  assert.ok(list.indexOf('Pets')<list.indexOf('Living expense')&&list.indexOf('Living expense')<list.indexOf('Rent expense'));
  assert.doesNotMatch(list,/Charity/,'three at most');
- assert.ok(list.includes(`data-tone="negative">${formatMoney(-120,'USD','en-US')}</strong>`),'an overspent category');
- assert.ok(list.includes(`<strong data-tone="neutral">${formatMoney(0,'USD','en-US')}</strong>`),'a category spent exactly to its limit');
+ assert.ok(list.includes(`data-tone="negative">${formatMoney(120,'USD','en-US')} over</strong>`),'an overspent category says how far over');
+ assert.ok(list.includes(`<strong data-tone="neutral">${formatMoney(0,'USD','en-US')} left</strong>`),'a category spent exactly to its limit');
  // Six months of history are read for the averages.
  assert.equal(resources[0].url,'/api/planning?scope=budget&month=2026-10&from=2026-04');
 });

@@ -14,7 +14,8 @@ import { useDisplayMoney } from '@/components/display-money';
 import { categoryColor } from '@/lib/category-colors';
 import { estimatedCashFlow, financialTotals, income, type Entry } from '@/lib/finance';
 import { formatDate, formatMoney, formatNumber, formatPercent } from '@/lib/format';
-import { assetAllocation, nextPayments } from '@/lib/overview';
+import { allocationRows, assetAllocation, nextPayments } from '@/lib/overview';
+import { otherShareKey } from '@/lib/cash-flow-report';
 import { upcomingPayments, type PlanningData } from '@/lib/planning';
 
 /** `firstVisit` greets a brand-new account with "Welcome" instead of "Welcome back". */
@@ -57,7 +58,7 @@ export function useOverviewCards({ entries, currency, excludedCurrencies, foreca
   <PartialTotal currencies={excludedCurrencies}/>
   {allocation.length ? <>
    <div className="allocation-bar" role="img" aria-label={t("Asset allocation")}>{allocation.map(item => <div key={item.kind} style={{ width: `${item.share}%`, background: categoryColor(item.kind) }}/>)}</div>
-   <ul className="overview-list">{allocation.map(item => <li key={item.kind}><i style={{ background: categoryColor(item.kind) }}/><span>{t(item.kind)}</span><strong>{money(item.total)}</strong><small>{percent(item.share)}</small></li>)}</ul>
+   <ul className="overview-list">{allocationRows(allocation).map(item => <li key={item.kind}><i style={{ background: item.kind === otherShareKey ? 'var(--muted-foreground)' : categoryColor(item.kind) }}/><span>{item.kind === otherShareKey ? t('Other') : t(item.kind)}</span><strong>{money(item.total)}</strong><small>{percent(item.share)}</small></li>)}</ul>
   </> : <EmptyState icon={<Landmark/>} description={t("Add your first asset to see its allocation.")}/>}
  </section>;
  const upcoming = <section className="panel overview-panel" key="upcoming">

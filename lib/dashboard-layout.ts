@@ -1,7 +1,8 @@
 /** Dashboard cards and where they start: two columns. Any card can be dragged to either column or hidden. */
 const dashboardCards = {
- left: ['net_worth', 'spending', 'budget', 'commitments', 'allocation', 'business'],
- right: ['goals', 'transactions', 'upcoming', 'forecast', 'income'],
+ left: ['net_worth', 'spending', 'budget', 'commitments', 'allocation'],
+ // Business tracking only shows for someone with a business; at the end of the right column it evens the two out.
+ right: ['goals', 'transactions', 'upcoming', 'forecast', 'income', 'business'],
 } as const;
 export type DashboardCard = (typeof dashboardCards)[keyof typeof dashboardCards][number];
 export type DashboardColumn = 'left' | 'right';

@@ -108,7 +108,7 @@ export function BudgetCard({ owner = null, demo = false, revision = 0, budget, d
   <PanelTitle title={<>{t('Budget')} <span className="panel-figure">{formatMonthYear(month, locale)}</span></>}><DrawerLink href="/budget">{t('View all')}</DrawerLink></PanelTitle>
   {loading ? <LoadingPlaceholder label={t('Loading records…')} rows={3}/> : plan === null || plan > 0 ? <>
    <BudgetCardTotal plan={plan} spent={spent} currency={currency}/>
-   <ul className="overview-list dashboard-budget-list">{watched.map(row => <li key={row.key}><CategoryIcon kind={row.custom ? row.name : row.key} size="sm"/><span>{row.custom ? row.name : t(row.name)}<BudgetProgress row={row}/></span><strong data-tone={remainingTone(row.remaining)}>{row.remaining === null ? '—' : money(row.remaining)}</strong></li>)}</ul>
+   <ul className="overview-list dashboard-budget-list">{watched.map(row => <li key={row.key}><CategoryIcon kind={row.custom ? row.name : row.key} size="sm"/><span>{row.custom ? row.name : t(row.name)}<BudgetProgress row={row}/></span><strong data-tone={remainingTone(row.remaining)}>{row.remaining === null ? '—' : t(row.remaining < 0 ? '{amount} over' : '{amount} left', { amount: money(Math.abs(row.remaining)) })}</strong></li>)}</ul>
   </> : <EmptyState icon={<ChartPie/>} description={t('Plan this month’s spending to track it here.')}><DrawerLink href="/budget">{t('Set up a budget')}</DrawerLink></EmptyState>}
  </section>;
 }
