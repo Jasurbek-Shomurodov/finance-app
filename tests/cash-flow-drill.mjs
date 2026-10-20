@@ -835,3 +835,14 @@ test('a Budget row opens its category’s Sankey for the month or the year to da
  const dialog = r.find(node => node.type === 'CashFlowDrillDialog').props;
  assert.deepEqual([dialog.period, dialog.context.months, dialog.onDetails], ['2026', ['2026-01', '2026-02', '2026-08'], sankey.onDetails], 'the year to date, labelled by its year, with the category’s details');
 });
+
+test('a Reports row narrows the transactions and opens its Sankey for the report’s period', () => {
+ const { reportDrillTarget } = loadTS('lib/cash-flow-link.ts');
+ assert.deepEqual(reportDrillTarget({ direction: 'expense', category: 'groceries', business: 'shop' }), { side: 'expense', key: 'groceries' }, 'a category, from any tab');
+ assert.deepEqual(reportDrillTarget({ direction: 'income', merchant: 'EPAM' }), { side: 'merchant', key: 'EPAM', income: true });
+ assert.deepEqual(reportDrillTarget({ direction: 'expense', categories: ['a', 'b'] }), { side: 'group', income: false, keys: ['a', 'b'], by: 'category' }, 'a merged Other');
+ assert.equal(reportDrillTarget({ business: 'shop' }), null, 'a business alone only narrows');
+ assert.equal(reportDrillTarget({ direction: 'expense', categories: [] }), null);
+ const screen = fs.readFileSync('components/workspace/screens/reports-screen.tsx', 'utf8');
+ assert.match(screen, /if \(target\) setSankey\(\{ target, title: label, month: end\.slice\(0, 7\), months: monthsBetween\(range\.from\.slice\(0, 7\), end\.slice\(0, 7\)\), period: rangeLabel \}\);/);
+});

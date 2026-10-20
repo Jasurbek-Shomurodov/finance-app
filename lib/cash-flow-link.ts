@@ -1,5 +1,6 @@
 import { monthsBetween } from './budget';
 import { trendMonths } from './cash-flow-report';
+import type { Drill } from './business-report';
 import type { DrillTarget } from './cash-flow-drill-types';
 import type { Entry } from './finance';
 import type { PlanningData } from './planning';
@@ -42,4 +43,14 @@ export function readRange(month: string, today: string, linked?: string | null) 
  const readTo = month < now && monthsBetween(trend, now).length <= 24 ? now : month;
  const first = linked && linked < trend && monthsBetween(linked, readTo).length <= 24 ? linked : trend;
  return { first, readTo, throughToday: readTo >= now };
+}
+
+/** The Sankey a Reports row opens beside narrowing the transactions: a category, several categories together, or a
+ * payer or merchant. A business alone has no drill-down view; it only narrows. */
+export function reportDrillTarget(drill: Drill): DrillTarget | null {
+ if (!drill.direction) return null;
+ const income = drill.direction === 'income';
+ if (drill.merchant !== undefined) return { side: 'merchant', key: drill.merchant, income };
+ if (drill.category !== undefined) return { side: income ? 'income' : 'expense', key: drill.category };
+ return drill.categories?.length ? { side: 'group', income, keys: [...drill.categories], by: 'category' } : null;
 }

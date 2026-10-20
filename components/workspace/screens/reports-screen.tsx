@@ -18,6 +18,8 @@ import { HOUSEHOLD } from '@/lib/business';
 import { drillMatches, filterLines, rangeFor, rangeMonths, readableRange, reportLedger, type Drill, type LedgerLine, type ReportRange } from '@/lib/business-report';
 import { depositToday } from '@/lib/deposit-interest';
 import { formatDate } from '@/lib/format';
+import { monthsBetween } from '@/lib/budget';
+import { reportDrillTarget } from '@/lib/cash-flow-link';
 import { inOwnerFilter, ownerOf, SHARED, workspaceOwners } from '@/lib/household';
 import { describeDrill, groupFinder, reportNames, reportTabsFor, tabLines, type ReportTab } from '@/lib/report-view';
 import { marketRates } from '@/lib/market';
@@ -28,7 +30,7 @@ const tabLabels: Record<ReportTab, string> = { cash_flow: 'Cash flow', spending:
  * profit and loss table, and business tax prep. Every chart narrows the transactions below it. */
 export function ReportsScreen() {
  const { t, locale } = useLanguage();
- const { currency, market, budget, transactionTools, businessList, workspacePreferences, setDrilling, storedRecord, household } = useWorkspace();
+ const { currency, market, budget, transactionTools, businessList, workspacePreferences, setDrilling, storedRecord, household, setSankey } = useWorkspace();
  // In a shared household, reports narrow to what one person owns or to what is shared.
  const homes = household.state;
  const owners = workspaceOwners(homes, { shared: t('Shared'), unnamed: t('Partner') });
@@ -48,7 +50,12 @@ export function ReportsScreen() {
  const groupOf = groupFinder(groups, data.categories);
  const names = reportNames(data.categories, businessList, t);
  const [drill, setDrill] = useState<{ drill: Drill; label: string } | null>(null);
- const narrow = (next: Drill) => setDrill({ drill: next, label: describeDrill(next, names, t) });
+ // A row narrows the transactions and opens its Sankey for the report's period over the page.
+ const narrow = (next: Drill) => {
+  const label = describeDrill(next, names, t), target = reportDrillTarget(next);
+  setDrill({ drill: next, label });
+  if (target) setSankey({ target, title: label, month: end.slice(0, 7), months: monthsBetween(range.from.slice(0, 7), end.slice(0, 7)), period: rangeLabel });
+ };
  // Changing what the page shows starts again from every transaction.
  const reset = <T,>(set: (value: T) => void) => (value: T) => { set(value); setDrill(null); };
  const visibleTabs = reportTabsFor(businessList.length > 0);

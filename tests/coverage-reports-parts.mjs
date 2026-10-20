@@ -40,7 +40,8 @@ test('report names translate built-in categories, keep custom names, and call no
 // The screen with its tabs, against stand-ins for the workspace, the charts and the data reads.
 const r = createRenderer();
 const ui = stubs();
-const workspace = { user: { id: 'me' }, demo: true, reload() {}, currency: 'USD', market: null, transactionTools: { data: { splits: [] } }, businessList: [], workspacePreferences: { data: { preferences: [] }, save: async preference => saved.push(preference) }, setViewing: record => viewed.push(record.id), setDrilling: record => viewed.push(record.id), storedRecord: record => record, household: { state: null }, planning: { data: null, loading: false, error: '' }, budget: { state: { categories: [] } } };
+const sankeys = [];
+const workspace = { user: { id: 'me' }, demo: true, reload() {}, currency: 'USD', market: null, transactionTools: { data: { splits: [] } }, businessList: [], workspacePreferences: { data: { preferences: [] }, save: async preference => saved.push(preference) }, setViewing: record => viewed.push(record.id), setDrilling: record => viewed.push(record.id), setSankey: request => sankeys.push(request.title), storedRecord: record => record, household: { state: null }, planning: { data: null, loading: false, error: '' }, budget: { state: { categories: [] } } };
 const saved = [], viewed = [];
 let search = '', range = { data: null, loading: false, error: '', retry() { range.retried = true; } };
 const charts = hostModule({ attributeColor: (attribute, key) => attribute + ':' + key });
@@ -95,6 +96,9 @@ test('a chart click narrows the transactions, and changing a filter shows them a
  r.fire(r.find(byType('BusinessSankeyChart')), 'onDrill', { direction: 'expense', category: 'Living expense' });
  let list = r.find(byType('ReportTransactions')).props;
  assert.equal(list.label, 'Living expense');assert.deepEqual(list.lines.map(line => line.id), ['f']);
+ assert.deepEqual(sankeys, ['Living expense'], 'the row also opens its Sankey over the page');
+ r.fire(r.find(byType('BusinessSankeyChart')), 'onDrill', { business: 'b1' });
+ assert.deepEqual(sankeys, ['Living expense'], 'a business alone only narrows');
  r.fire(r.find(byType('ReportTransactions')), 'onOpen', list.lines[0]);
  assert.deepEqual(viewed, ['f']);
  r.fire(r.find(byType('BusinessFilter')), 'onChange', ['b1']);
