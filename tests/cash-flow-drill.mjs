@@ -686,7 +686,7 @@ test('a transaction row opens its Sankey over the page: its payer or merchant fo
  const workspace = () => ({ drilling, setDrilling: value => { closed += value === null ? 1 : 0; drilling = value; }, setViewing: item => opened.push(item.id), storedRecord: item => item, user: null, demo: true, reload: 0,
   planning: { data: { records: [...accounts, drilling ?? record('x', 'x', 'Cash', 0, '2026-01-01')], activity: [], investmentLinks: [], categories: [{ id: 'groceries', name: 'Groceries' }], goals: [], occurrences: [] } },
   transactionTools: { data: { splits: [] } }, currency: 'USD', market: { rates: { USD: 1 }, quotes: {} } });
- const modules = { '@/components/language-provider': language('en-US'), '@/components/workspace/workspace-provider': { useWorkspace: workspace },
+ const modules = { '@/components/language-provider': language('en-US'), '@/components/workspace/workspace-provider': { useWorkspace: workspace }, 'next/navigation': { useRouter: () => router },
   '@/components/cash-flow-drill-lazy': hostModule(), '@/hooks/use-owner-resource': { useOwnerResource: url => { read.push(url); return { data: { records: [], events: [] } }; } } };
  const { TransactionSankey } = r.load('components/workspace/transaction-sankey.tsx', modules);
  r.mount(React.createElement(TransactionSankey));
@@ -727,4 +727,67 @@ test('a recent transaction on the dashboard opens its Sankey by click, Enter or 
  r.mount(React.createElement(RecentTransactionsCard, { data }));
  assert.equal(r.all(node => node.type === 'li' && node.props.role === 'button').length, 0);
  assert.match(fs.readFileSync('components/workspace/screens/overview-screen.tsx', 'utf8'), /<RecentTransactionsCard [^\n]*onOpen=\{record => setDrilling\(storedRecord\(record\)\)\}\/>/, 'the dashboard opens the shared transaction Sankey');
+});
+
+test('an upcoming or recurring payment opens its schedule’s Sankey: what paid it and what is still due, its details from there', () => {
+ const rent = record('rent', 'Rent', 'Rent expense', 1000, '2026-01-05', { frequency: 'Monthly' });
+ const salary = record('sal', 'EPAM', 'Salary', 3000, '2026-01-01', { frequency: 'Monthly' });
+ const records = [...accounts, rent, salary,
+  record('p1', 'Rent', 'Rent expense', 600, '2026-08-05', { account_id: 'card', occurrence_record_id: 'rent', occurrence_due_on: '2026-08-05' }),
+  record('p2', 'Rent', 'Rent expense', 100, '2026-08-07', { occurrence_record_id: 'rent', occurrence_due_on: '2026-08-05' }),
+  record('p3', 'Rent', 'Rent expense', 999, '2026-07-05', { account_id: 'card', occurrence_record_id: 'rent', occurrence_due_on: '2026-07-05' }),
+  record('s1', 'EPAM', 'Salary', 3000, '2026-08-01', { account_id: 'save', occurrence_record_id: 'sal', occurrence_due_on: '2026-08-01' })];
+ const ctx = { ...context([]), data: { records, activity: [], investmentLinks: [] } };
+ const { scheduleFlows, schedulePayments, recurringTarget, dueTarget } = loadTS('lib/cash-flow-schedule.ts');
+ const due = recurringTarget({ record: rent, date: '2026-08-05', amount: 1000, direction: 'expense', status: 'due' });
+ assert.deepEqual(due, { side: 'schedule', key: 'rent', date: '2026-08-05', due: { amount: 1000, currency: 'USD' }, direction: 'expense', open: true });
+ const bill = scheduleFlows(due, ctx);
+ assert.deepEqual(shape(bill), [['Card', 'Rent', 600], ['No account', 'Rent', 100], ['Remaining', 'Rent', 300], ['Rent', 'Rent expense', 1000]], 'its own due date only, by account, with what is still due');
+ assert.deepEqual(bill.nodes.map(node => node.open?.side ?? null), ['account', 'account', 'details', 'details', 'expense'], 'the schedule and what is still due open its details');
+ assert.deepEqual(schedulePayments(due, ctx).map(item => item.id), ['p2', 'p1']);
+ const paid = scheduleFlows({ ...due, open: false }, ctx);
+ assert.ok(!paid.nodes.some(node => node.name === 'Remaining'), 'paid or skipped: nothing remains');
+ const pay = scheduleFlows(recurringTarget({ record: salary, date: '2026-08-01', amount: 3000, direction: 'income', status: 'paid' }), ctx);
+ assert.deepEqual(shape(pay), [['Salary', 'EPAM', 3000], ['EPAM', 'Savings account', 3000]], 'income: its category in, the account it reached out');
+ assert.deepEqual(recurringTarget({ record: accounts[2], date: '2026-08-10', amount: 300, direction: 'expense', status: 'due', installment: true }), { side: 'account', key: 'loan' }, 'a loan’s payment opens the loan');
+ assert.deepEqual(dueTarget({ record: rent, date: '2026-08-05', amount: 1000, type: 'scheduled' }).side, 'schedule');
+ assert.deepEqual(dueTarget({ record: accounts[2], date: '2026-08-10', amount: 300, type: 'repayment' }), { side: 'account', key: 'loan' });
+ const noRate = scheduleFlows(due, { ...ctx, currency: 'GBP' });
+ assert.deepEqual([noRate.links.length, noRate.missing], [0, 1], 'without a rate for the due amount nothing is drawn, and it is counted as missing');
+
+ const r = createRenderer();
+ const modules = { 'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), 'next/navigation': { useRouter: () => router }, '@/components/ui/button': hostModule(), '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
+ const { CashFlowDrillDialog } = r.load('components/cash-flow-sankey.tsx', modules);
+ let details = 0;
+ r.mount(React.createElement(CashFlowDrillDialog, { target: due, title: 'Rent', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord() {}, onDetails: () => { details += 1; } }));
+ const sankey = r.find(node => node.type === 'Sankey').props, hub = sankey.data.nodes.findIndex(node => node.name === 'Rent');
+ sankey.node({ x: 0, y: 0, width: 10, height: 20, index: hub, payload: { name: 'Rent', value: 1 } }).props.onClick();
+ assert.equal(details, 1, 'the schedule opens its details');
+ assert.equal(r.all(node => node.type === 'button' && node.props['aria-label'] === 'View details for Rent').length, 2, 'its payments are listed');
+ r.mount(React.createElement(CashFlowDrillDialog, { target: due, title: 'Rent', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord() {} }));
+ const plain = r.find(node => node.type === 'Sankey').props;
+ assert.equal(plain.node({ x: 0, y: 0, width: 10, height: 20, index: hub, payload: { name: 'Rent', value: 1 } }).props.role, undefined, 'without details to open, the schedule is plain');
+ const page = fs.readFileSync('components/planning/upcoming-page.tsx', 'utf8');
+ assert.match(page, /const open = \(item: RecurringItem\) => onSankey \? onSankey\(\{ target: recurringTarget\(item\), title: item\.record\.name, month: item\.date\.slice\(0, 7\), onDetails: \(\) => details\.open\(item\) \}\) : details\.open\(item\);/);
+ assert.match(page, /<tr key=\{item\.key\} \{\.\.\.reminderRow\(onSankey, item\)\}>/, 'debt repayments and deposit maturities open their account');
+ assert.match(fs.readFileSync('components/overview-page.tsx', 'utf8'), /<li key=\{item\.key\} \{\.\.\.dueRow\(onSankey, item, /, 'the dashboard’s upcoming payments too');
+});
+
+test('a schedule opened from the dashboard, where its history is not at hand, opens Recurring from its own node', () => {
+ const r = createRenderer();
+ let sankey = { target: { side: 'schedule', key: 'rent', date: '2026-08-05', due: { amount: 1000, currency: 'USD' }, direction: 'expense', open: true }, title: 'Rent', month: '2026-08' }, closed = 0;
+ const workspace = () => ({ drilling: null, sankey, setSankey: value => { closed += value === null ? 1 : 0; sankey = value; }, setViewing() {}, storedRecord: item => item, user: null, demo: true, reload: 0,
+  planning: { data: { records: accounts, activity: [], investmentLinks: [], categories: [], goals: [], occurrences: [] } }, transactionTools: { data: { splits: [] } }, currency: 'USD', market: { rates: { USD: 1 }, quotes: {} } });
+ const modules = { '@/components/language-provider': language('en-US'), '@/components/workspace/workspace-provider': { useWorkspace: workspace }, 'next/navigation': { useRouter: () => router },
+  '@/components/cash-flow-drill-lazy': hostModule(), '@/hooks/use-owner-resource': { useOwnerResource: () => ({ data: { records: [], events: [] } }) } };
+ const { TransactionSankey } = r.load('components/workspace/transaction-sankey.tsx', modules);
+ r.mount(React.createElement(TransactionSankey));
+ const dialog = r.find(node => node.type === 'CashFlowDrillDialog').props;
+ assert.deepEqual([dialog.title, dialog.period], ['Rent', 'August 2026']);
+ router.pushed.length = 0;
+ dialog.onDetails();
+ assert.deepEqual([router.pushed, closed], [['/upcoming'], 1]);
+ sankey = { target: { side: 'account', key: 'loan' }, title: 'Car loan', month: '2026-08', onDetails: () => {} };
+ r.mount(React.createElement(TransactionSankey));
+ assert.equal(r.find(node => node.type === 'CashFlowDrillDialog').props.onDetails, sankey.onDetails, 'a page that has the details opens them itself');
 });

@@ -29,6 +29,11 @@ export type DrillTarget = { side: 'income' | 'expense'; key: string } | { side: 
  | { side: 'goal'; key: string }
  /** A page of the app: the dialog closes and the page opens. */
  | { side: 'link'; href: string }
+ /** One scheduled bill or income on its due date: its payments and what is still due (`lib/cash-flow-schedule.ts`).
+  * `due` is the scheduled amount in its currency; `open` while it is not paid or skipped. */
+ | { side: 'schedule'; key: string; date: string; due: { amount: number; currency: string }; direction: 'income' | 'expense'; open: boolean }
+ /** The details the dialog's opener offers for what it opened (a schedule's history): it opens over the Sankey. */
+ | { side: 'details' }
  /** One transaction by its id: it opens the shared transaction details rather than a Sankey. */
  | { side: 'record'; key: string };
 /** A node of a drill-down Sankey; `open` is what a tap on it opens next. */

@@ -24,9 +24,9 @@ import { marketRates } from '@/lib/market';
 
 export function OverviewScreen() {
  const { t } = useLanguage();
- const { user, demo, rows, addCashFlow, current, currency, market, budget, forecastBudget, forecastBudgetState, reload, preferencesData, excludedCurrencies, snapshots, forecast, forecastReady, planning, transactionTools, workspacePreferences, workspaceLoading, businessList, setSettingUpBusinesses, setDrilling, storedRecord } = useWorkspace();
+ const { user, demo, rows, addCashFlow, current, currency, market, budget, forecastBudget, forecastBudgetState, reload, preferencesData, excludedCurrencies, snapshots, forecast, forecastReady, planning, transactionTools, workspacePreferences, workspaceLoading, businessList, setSettingUpBusinesses, setDrilling, storedRecord, setSankey } = useWorkspace();
  const planningReady = demo || (!planning.loading && !planning.error);
- const cards = useOverviewCards({ entries: current, currency, excludedCurrencies, forecast, forecastReady, planning: planningReady ? planning.data : null });
+ const cards = useOverviewCards({ entries: current, currency, excludedCurrencies, forecast, forecastReady, planning: planningReady ? planning.data : null, onSankey: setSankey });
  const { layout, change } = useDashboardLayout(workspacePreferences, demo);
  const [customizing, setCustomizing] = useState(false);
  // Rearrange mode: handles show and the cards wiggle until Done.

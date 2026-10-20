@@ -1,4 +1,8 @@
 "use client";
+import { recurringTarget } from '@/lib/cash-flow-schedule';
+import type { DrillTarget } from '@/lib/cash-flow-drill-types';
+import type { Entry } from '@/lib/finance';
+import type { KeyboardEvent, MouseEvent } from 'react';
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { CategoryIcon } from '@/components/presentation-foundation/category-icon';
@@ -28,6 +32,7 @@ import { AddRecurringMenu, type RecurringKind } from './add-recurring-menu';
 /** The Recurring page's views, switched from tabs beside its title: the month as a list or a calendar, subscriptions and reminders. */
 export type RecurringView = 'list' | 'calendar' | 'subscriptions' | 'reminders';
 type Props = { data: PlanningData; save: (action: string, data: unknown) => Promise<void>; currency: string; /** Preferred currencies a scheduled payment may arrive in. */ currencies?: readonly string[]; rates?: number | Record<string, number>; view: RecurringView; onView: (view: RecurringView) => void; onEdit?: (record: RecurringItem['record']) => void; onAddRecurring?: (kind: RecurringKind) => void;
+ /** Opens a row's Sankey over the page (the workspace's); without it a row opens its details. */ onSankey?: Sankey;
  /** Archiving moves a schedule out of the month and back. */
  onArchive?: (target: ArchiveTarget, archived: boolean) => Promise<void>;
  /** Moves a schedule to Recently deleted, keeping its recorded payments in history or deleting them too. */
@@ -46,7 +51,16 @@ function SummaryBar({ label, done, remaining, doneLabel, currency, tone, pressed
 }
 
 /** The month's incomes and bills, as a list or a calendar, with what came in and went out. */
-export function UpcomingPage({ data, save, currency, currencies = [], rates, view, onView, onEdit, onAddRecurring, onArchive, onDelete }: Props) {
+/** A row's Sankey, asked of the workspace: a schedule's due date or a loan's payment, its details from the Sankey. */
+type Sankey = (request: { target: DrillTarget; title: string; month: string; onDetails?: () => void }) => void;
+/** A debt repayment or deposit maturity row opens its account's Sankey for its month, unless the tap was on a button. */
+const reminderRow = (onSankey: Sankey | undefined, item: { record: Entry; date: string }) => {
+ if (!onSankey) return {};
+ const open = () => onSankey({ target: { side: 'account', key: item.record.id }, title: item.record.name, month: item.date.slice(0, 7) });
+ return { className: 'clickable-row', tabIndex: 0, onClick: (event: MouseEvent) => { if (!(event.target as HTMLElement).closest('button')) open(); }, onKeyDown: (event: KeyboardEvent) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); open(); } } };
+};
+
+export function UpcomingPage({ data, save, currency, currencies = [], rates, view, onView, onEdit, onAddRecurring, onArchive, onDelete, onSankey }: Props) {
  const { t, locale } = useLanguage(), today = depositToday();
  const { entered } = useDisplayMoney();
  const dueLabel = useDueLabel();
@@ -76,7 +90,9 @@ export function UpcomingPage({ data, save, currency, currencies = [], rates, vie
  // Rows stay on one line while their name keeps room beside status, amount and actions; two lines only when this month's content needs it.
  const rows = useColumnsFit<HTMLUListElement>('.recurring-row');
  const skip = (item: RecurringItem, skipped = true) => run(() => save('exception', { target_id: item.record.id, date: item.date, skip: skipped }));
- const row = (item: RecurringItem, dated = false, grouped = false) => <OccurrenceRow key={item.key} item={item} dated={dated} grouped={grouped} today={today} busy={busy} categories={data.categories} onEdit={onEdit} onOpen={details.open} onPay={pay} onSkip={skip} onRestore={item => skip(item, false)} onArchive={archive && (() => archive({ source: 'record', record: item.record }))} onDelete={deletion.open}/>;
+ // A row opens its Sankey; its history (the details) opens from the Sankey's schedule.
+ const open = (item: RecurringItem) => onSankey ? onSankey({ target: recurringTarget(item), title: item.record.name, month: item.date.slice(0, 7), onDetails: () => details.open(item) }) : details.open(item);
+ const row = (item: RecurringItem, dated = false, grouped = false) => <OccurrenceRow key={item.key} item={item} dated={dated} grouped={grouped} today={today} busy={busy} categories={data.categories} onEdit={onEdit} onOpen={open} onPay={pay} onSkip={skip} onRestore={item => skip(item, false)} onArchive={archive && (() => archive({ source: 'record', record: item.record }))} onDelete={deletion.open}/>;
  return <>
   <PageHeader title={t('Recurring')} tabs={<Segmented className="page-tabs" as="nav" label={t('Recurring view')} options={[{ value: 'list', label: t('List') }, { value: 'calendar', label: t('Calendar') }, { value: 'subscriptions', label: t('Subscriptions') }, { value: 'reminders', label: t('Reminders') }] as const} value={view} onChange={onView}/>} hint={<><p>{t('Every scheduled income and bill, month by month. Record a payment only after it happens; a reminder never moves money.')}</p><p>{t('Debt amounts show the outstanding balance; enter the actual principal and interest when paying.')}</p></>}>
    {scheduled && <div className="budget-month-nav">
@@ -98,7 +114,7 @@ export function UpcomingPage({ data, save, currency, currencies = [], rates, vie
   {/* Only when a debt payment or deposit maturity is due this month; an empty card is just noise. */}
   {reminders.length > 0 && <section className="panel upcoming-section" aria-labelledby="upcoming-reminders">
    <header className="upcoming-section-heading"><h2 id="upcoming-reminders">{t('Debt repayments and deposit maturities')}<Count value={reminders.length}/></h2></header>
-   <div className="table-scroll"><table><thead><tr><th>{t('Name')}</th><th>{t('Date')}</th><th>{t('Amount')}</th><th>{t('Actions')}</th></tr></thead><tbody>{reminders.map(item => <tr key={item.key}>
+   <div className="table-scroll"><table><thead><tr><th>{t('Name')}</th><th>{t('Date')}</th><th>{t('Amount')}</th><th>{t('Actions')}</th></tr></thead><tbody>{reminders.map(item => <tr key={item.key} {...reminderRow(onSankey, item)}>
     <td><div className="record-name"><CategoryIcon kind={item.record.kind}/><div><strong>{item.record.name}</strong><small>{t(item.record.kind)}</small></div></div></td>
     <td className={item.overdue ? 'negative' : 'muted'}>{formatDate(item.date, locale)}<small className="block">{dueLabel(today, item.date)}</small></td>
     <td className="amount">{entered(item.amount, item.record.currency)}</td>

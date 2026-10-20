@@ -12,6 +12,7 @@ import { accountOperations, operationFlows, type Operation } from '@/lib/cash-fl
 import { useRouter } from 'next/navigation';
 import { balanceFlows } from '@/lib/cash-flow-balance';
 import { goalEventsIn, goalFlows } from '@/lib/cash-flow-goal';
+import { scheduleFlows, schedulePayments } from '@/lib/cash-flow-schedule';
 import { mainFlows } from '@/lib/cash-flow-main';
 import { untracedFlows, untracedTransfers } from '@/lib/cash-flow-untraced';
 import { interestFlows, mortgageTransactions, paymentFlows, principalFlows, principalPayments } from '@/lib/cash-flow-principal';
@@ -62,7 +63,8 @@ function DrillTransactions({ target: shown, context, onOpenRecord, onOpenOperati
  const records = target.side === 'principal' ? principalPayments(target.key, context).flatMap(payment => payment.record ? [payment.record] : [])
   // A mortgage payment lists its own transaction, one tap from its details.
   : target.side === 'payment' ? (context.data.records as Entry[]).filter(record => record.id === target.key)
-  : target.side === 'interest' ? mortgageTransactions(target.key, context) : drillTransactions(target, context);
+  : target.side === 'interest' ? mortgageTransactions(target.key, context)
+  : target.side === 'schedule' ? schedulePayments(target, context) : drillTransactions(target, context);
  // An account also lists its transfers, repayments, buys and sales, in date order among its transactions.
  const operations = target.side === 'untraced' ? untracedTransfers(target.key, context).map(item => item.operation) : target.side === 'account' ? accountOperations(target.key, context) : target.side === 'principal' ? accountOperations(target.key, context).filter(row => row.kind === 'repayment' && row.target_id === target.key) : [];
  const rows = [...records.map(record => ({ date: record.date, record, operation: null })), ...operations.map(operation => ({ date: operation.date, record: null, operation }))].sort((a, b) => b.date.localeCompare(a.date));
@@ -102,15 +104,16 @@ function GoalEvents({ id, context, onOpen }: { id: string; context: DrillContext
 /** The Sankey behind a tapped node, in a dialog over Cash flow: a category by payer or merchant, where the savings went,
  * one account, or one payer, merchant or account; each with its transactions. An account, category or merchant in it opens its own
  * Sankey in the same dialog; Back returns to the one before. A transaction opens its details over it (`onOpenRecord`). */
-export function CashFlowDrillDialog({ target, title, period, savings, context, onClose, onOpenRecord }: { target: DrillTarget; title: string; period: string; savings: number; context: DrillContext; onClose: () => void; onOpenRecord?: (record: Entry) => void }) {
+export function CashFlowDrillDialog({ target, title, period, savings, context, onClose, onOpenRecord, onDetails }: { target: DrillTarget; title: string; period: string; savings: number; context: DrillContext; onClose: () => void; onOpenRecord?: (record: Entry) => void;
+ /** Opens the details of what the dialog was opened for (a schedule's history), over the dialog. */onDetails?: () => void }) {
  const { t } = useLanguage();
  const router = useRouter();
  const [trail, setTrail] = useState([{ target, title }]);
  const current = trail.at(-1)!;
- const flows = current.target.side === 'operation' ? operationFlows(current.target.key, context) : current.target.side === 'principal' ? principalFlows(current.target.key, context) : current.target.side === 'payment' ? paymentFlows(current.target.key, context) : current.target.side === 'interest' ? interestFlows(current.target.key, context) : current.target.side === 'balance' ? balanceFlows(current.target.key, context) : current.target.side === 'cashflow' ? mainFlows(context) : current.target.side === 'goal' ? goalFlows(current.target.key, context) : current.target.side === 'untraced' ? untracedFlows(current.target.key, savings, context) : drillFlows(current.target, current.title, savings, context);
+ const flows = current.target.side === 'operation' ? operationFlows(current.target.key, context) : current.target.side === 'principal' ? principalFlows(current.target.key, context) : current.target.side === 'payment' ? paymentFlows(current.target.key, context) : current.target.side === 'interest' ? interestFlows(current.target.key, context) : current.target.side === 'balance' ? balanceFlows(current.target.key, context) : current.target.side === 'cashflow' ? mainFlows(context) : current.target.side === 'goal' ? goalFlows(current.target.key, context) : current.target.side === 'schedule' ? scheduleFlows(current.target, context) : current.target.side === 'untraced' ? untracedFlows(current.target.key, savings, context) : drillFlows(current.target, current.title, savings, context);
  // A transaction opens its shared details over the dialog; anything else opens in the dialog, with Back to return.
  const record = (id: string) => (context.data.records as Entry[]).find(item => item.id === id);
- const canOpen = (index: number) => { const open = flows.nodes[index]?.open; return !!open && (open.side !== 'record' || (!!onOpenRecord && !!record(open.key))); };
+ const canOpen = (index: number) => { const open = flows.nodes[index]?.open; return !!open && (open.side !== 'record' || (!!onOpenRecord && !!record(open.key))) && (open.side !== 'details' || !!onDetails); };
  // A page link closes the dialog and opens the page.
  const openNode = (index: number) => {
   const node = flows.nodes[index];
@@ -118,6 +121,7 @@ export function CashFlowDrillDialog({ target, title, period, savings, context, o
  };
  function go(open: DrillTarget, name: string) {
   if (open.side === 'link') { onClose(); router.push(open.href); return; }
+  if (open.side === 'details') { onDetails?.(); return; }
   if (open.side === 'record') { const found = record(open.key); if (found) onOpenRecord?.(found); return; }
   setTrail([...trail, { target: open, title: name }]);
  }

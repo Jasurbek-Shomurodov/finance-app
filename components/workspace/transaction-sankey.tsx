@@ -1,29 +1,38 @@
 "use client";
+import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/components/language-provider';
 import { useCashFlowData } from '@/components/cash-flow-data';
 import { CashFlowDrillDialog } from '@/components/cash-flow-drill-lazy';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
 import { depositToday } from '@/lib/deposit-interest';
-import { income, type Entry } from '@/lib/finance';
+import { income } from '@/lib/finance';
+import type { SankeyRequest } from '@/components/workspace/state/use-open-dialogs';
 import { formatMonthYear } from '@/lib/format';
 import { marketRates } from '@/lib/market';
 
-/** The Sankey a transaction row opens, over the page it is on: the transaction's payer or merchant for the month it
- * happened, with the transaction listed below, one tap from its details. Nothing is read until a row opens it. */
+/** The Sankey a row opens over the page it is on. A transaction row opens its payer or merchant for the month it happened,
+ * with the transaction listed below, one tap from its details; other rows (a schedule, a loan) ask for theirs. Nothing
+ * is read until a row opens one. */
 export function TransactionSankey() {
- const { drilling } = useWorkspace();
- return drilling ? <Drill key={drilling.id} record={drilling}/> : null;
+ const { t } = useLanguage();
+ const { drilling, setDrilling, sankey, setSankey } = useWorkspace();
+ if (drilling) {
+  const merchant = drilling.name.trim() || t(drilling.kind);
+  return <Drill key={drilling.id} request={{ target: { side: 'merchant', key: merchant, income: income.includes(drilling.kind) }, title: merchant, month: drilling.date.slice(0, 7) }} onClose={() => setDrilling(null)}/>;
+ }
+ return sankey ? <Drill key={JSON.stringify(sankey.target) + sankey.month} request={sankey} onClose={() => setSankey(null)}/> : null;
 }
 
-/** It reads what Cash flow reads, back to the transaction's month, so every view it leads to is complete. */
-function Drill({ record }: { record: Entry }) {
+/** It reads what Cash flow reads, back to the month asked for, so every view it leads to is complete. */
+function Drill({ request, onClose }: { request: SankeyRequest; onClose: () => void }) {
  const { t, locale } = useLanguage();
- const { setDrilling, setViewing, storedRecord, user, demo, reload, planning, transactionTools, currency, market } = useWorkspace();
- const month = record.date.slice(0, 7), today = depositToday();
- const { data, goalEvents, throughToday } = useCashFlowData({ owner: user, demo, revision: reload, provided: planning.data, month: today.slice(0, 7), today, linked: month });
- const merchant = record.name.trim() || t(record.kind);
+ const { setViewing, storedRecord, user, demo, reload, planning, transactionTools, currency, market } = useWorkspace();
+ // A schedule opened where its history is not at hand (the dashboard) shows it on Recurring.
+ const router = useRouter();
+ const today = depositToday();
+ const { data, goalEvents, throughToday } = useCashFlowData({ owner: user, demo, revision: reload, provided: planning.data, month: today.slice(0, 7), today, linked: request.month });
  const categoryName = (key: string) => data.categories.find(category => category.id === key)?.name ?? t(key);
- return <CashFlowDrillDialog target={{ side: 'merchant', key: merchant, income: income.includes(record.kind) }} title={merchant} period={formatMonthYear(month, locale)} savings={0}
-  context={{ data, splits: transactionTools.data.splits, months: [month], currency, today, rates: marketRates(market), t, label: categoryName, locale, throughToday, goalEvents }}
-  onClose={() => setDrilling(null)} onOpenRecord={found => setViewing(storedRecord(found))}/>;
+ return <CashFlowDrillDialog target={request.target} title={request.title} period={formatMonthYear(request.month, locale)} savings={0}
+  context={{ data, splits: transactionTools.data.splits, months: [request.month], currency, today, rates: marketRates(market), t, label: categoryName, locale, throughToday, goalEvents }}
+  onClose={onClose} onOpenRecord={found => setViewing(storedRecord(found))} onDetails={request.onDetails ?? (request.target.side === 'schedule' ? () => { onClose(); router.push('/upcoming'); } : undefined)}/>;
 }
