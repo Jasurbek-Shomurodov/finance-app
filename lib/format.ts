@@ -14,7 +14,9 @@ export function formatPercent(value: number, locale: string, maximumFractionDigi
   return Number.isFinite(value) ? trueMinus(new Intl.NumberFormat(locale, { minimumFractionDigits, maximumFractionDigits }).format(value)) + "%" : "\u2014";
 }
 export function formatMoney(value: number, currency: string, locale: string, unitPrice = false) {
-  if (!Number.isFinite(value)) return '—';
+  return Number.isFinite(value) ? oneRun(plainMoney(value, currency, locale, unitPrice), locale) : '—';
+}
+function plainMoney(value: number, currency: string, locale: string, unitPrice = false) {
   // Round balances for display only. Unit quotes retain small crypto prices,
   // while neither mode pads whole amounts with unnecessary decimal zeros.
   const displayed = !unitPrice && Math.abs(value) < 0.5 ? 0 : value;
@@ -27,6 +29,13 @@ export function formatConvertedQuote(value: number, currency: string, locale: st
   const minor = 10 ** (new Intl.NumberFormat('en', { style: 'currency', currency }).resolvedOptions().maximumFractionDigits ?? 2);
   return formatMoney(Math.abs(value) >= 1 ? Math.round(value * minor) / minor : Number(value.toPrecision(4)), currency, locale, true);
 }
+/** Right-to-left languages, whose page direction would otherwise split an amount ("$US 22,000" for "22,000 US$"). */
+const rightToLeft = /^(ar|fa|he|ur)(-|$)/i;
+/** In a right-to-left language an amount is one isolated left-to-right run, with the locale's own direction marks taken
+ * out, so its sign, figure and symbol stay together in the order the formatter wrote them. Elsewhere it is unchanged. */
+function oneRun(formatted: string, locale: string) {
+  return rightToLeft.test(locale) ? '\u2066' + formatted.replace(/[\u200e\u200f\u061c]/g, '') + '\u2069' : formatted;
+}
 /** Negative amounts always carry a true minus sign (U+2212), never a hyphen, so "−$5" reads the same on every screen. */
 function trueMinus(formatted: string) {
   return formatted.replace(/-/g, '\u2212');
@@ -38,14 +47,14 @@ export function formatAccountOption(account: { name: string; amount: number | st
 /** A whole amount with its direction: "+$1,200" in, "−$13" out (a true minus sign, U+2212), "$0" for nothing. */
 export function formatSignedMoney(value: number, currency: string, locale: string) {
   if (!Number.isFinite(value)) return '—';
-  const shown = formatMoney(Math.abs(value), currency, locale);
-  return Math.abs(value) < 0.5 ? shown : (value > 0 ? '+' : '\u2212') + shown;
+  const shown = plainMoney(Math.abs(value), currency, locale);
+  return oneRun(Math.abs(value) < 0.5 ? shown : (value > 0 ? '+' : '\u2212') + shown, locale);
 }
 // Short axis labels ("$1.2M"); tooltips and totals keep formatMoney precision.
 export function formatCompactMoney(value: number, currency: string, locale: string) {
   if (!Number.isFinite(value)) return '—';
   // Below a thousand nothing is abbreviated, so the amount stays whole ("$13", never "$12.8").
-  return Math.abs(value) < 999.5 ? formatMoney(value, currency, locale) : trueMinus(new Intl.NumberFormat(locale, { style: 'currency', currency, notation: 'compact', maximumFractionDigits: 1 }).format(value));
+  return Math.abs(value) < 999.5 ? formatMoney(value, currency, locale) : oneRun(trueMinus(new Intl.NumberFormat(locale, { style: 'currency', currency, notation: 'compact', maximumFractionDigits: 1 }).format(value)), locale);
 }
 /** Monday-first weekday labels for the calendar grid, in the locale's language. */
 export function weekdayLabels(locale: string): string[] {

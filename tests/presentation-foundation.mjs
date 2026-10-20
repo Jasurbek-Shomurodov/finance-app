@@ -164,6 +164,8 @@ test('animated money rolls each digit on its own 0–9 strip and keeps the amoun
  // Keys count from the right, so units stay units when the amount gains a digit and roll instead of jumping.
  assert.deepEqual(rollingColumns('$9').map(item=>item.key),[2,1]);
  assert.deepEqual(rollingColumns('$10').map(item=>[item.key,item.digit]),[[3,null],[2,1],[1,0]]);
+ // A right-to-left amount's isolate marks take no column of their own.
+ assert.deepEqual(rollingColumns('\u20665 US$\u2069').map(item=>item.char),['5',' ','U','S','$']);
  assert.deepEqual(rollingColumns('€1,655').filter(item=>item.digit===null).map(item=>item.char),['€',',']);
 });
 

@@ -216,3 +216,17 @@ test('a decimal typed with the grouping key is read as a decimal, never as thous
  assert.equal(formatNumberInput('9.5%','en-US','').value,9.5);
  assert.equal(formatNumberInput('7,5 %','ru-RU','').value,7.5);
 });
+test('in right-to-left languages an amount is one isolated left-to-right run, so the symbol never splits from its figure', () => {
+ const run = (text) => text.startsWith('⁦') && text.endsWith('⁩') && !/[‎‏؜]/.test(text);
+ for (const locale of ['ar-AE', 'he-IL', 'fa-IR-u-nu-latn', 'ur-PK']) {
+  assert.ok(run(formatMoney(22000, 'USD', locale)), locale);
+  assert.ok(run(formatMoney(-22000, 'UZS', locale)), locale);
+  assert.ok(run(formatCompactMoney(1250000, 'USD', locale)), locale);
+  const signed = formatSignedMoney(-13, 'USD', locale);
+  assert.ok(run(signed) && signed[1] === '−', `${locale} keeps the sign inside the run`);
+ }
+ assert.equal(formatMoney(22000, 'USD', 'ar-AE'), '⁦22,000 US$⁩');
+ // Left-to-right languages are unchanged.
+ assert.equal(formatMoney(22000, 'USD', 'en-US'), '$22,000');
+ assert.equal(formatSignedMoney(-13, 'USD', 'en-US'), '−$13');
+});

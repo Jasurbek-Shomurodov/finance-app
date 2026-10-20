@@ -22,7 +22,8 @@ const digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 /** The characters of a formatted figure, keyed from the right so a digit keeps its column when the figure grows or shrinks. */
 export function rollingColumns(text: string) {
- const chars = [...text];
+ // The figure is already isolated left to right by the stylesheet, so the formatter's isolate marks have no column.
+ const chars = [...text.replace(/[\u2066-\u2069]/g, '')];
  return chars.map((char, index) => ({ key: chars.length - index, char, digit: /[0-9]/.test(char) ? Number(char) : null }));
 }
 
