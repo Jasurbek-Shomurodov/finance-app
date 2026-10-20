@@ -111,3 +111,17 @@ test('responsive rules keep fieldsets full-width and exclude checkboxes from but
  assert.match(css, /@container\(min-width:740px\)\{\.goal-funding-editors\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
  assert.match(css, /\.goal-funding-fields\{grid-template-columns:minmax\(0,1fr\)\}/);
 });
+
+test('History can show one goal’s activity, with a chip that shows every goal again', () => {
+ const events = [{ id: 'a', goal_id: 'savings', event_type: 'contribution', delta: 100, occurred_on: '2026-09-01', notes: '', source_name: 'Card' }, { id: 'b', goal_id: 'other', event_type: 'contribution', delta: 50, occurred_on: '2026-09-02', notes: '', source_name: 'Card' }];
+ const { component } = setup({ data: { events } });
+ const goals = [goal(), goal('savings', { id: 'other', name: 'Other goal' })];
+ let shownAll = 0;
+ const html = renderToStaticMarkup(React.createElement(component, { ...props(goals), part: 'activity', goal: 'savings', onShowAll: () => { shownAll += 1; } }));
+ assert.equal((html.match(/<li>/g) ?? []).length, 1, 'only the chosen goal');
+ assert.match(html, /aria-label="savings goal · Clear filter"/);
+ const all = renderToStaticMarkup(React.createElement(component, { ...props(goals), part: 'activity' }));
+ assert.equal((all.match(/<li>/g) ?? []).length, 2);
+ assert.doesNotMatch(all, /Clear filter/);
+ assert.equal(shownAll, 0);
+});

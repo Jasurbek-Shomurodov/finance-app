@@ -94,7 +94,9 @@ test('the Goals page switches Overview, Goal planner and History from the top ba
  assert.match(page,/<PageHeader title=\{t\('Goals'\)\} tabs=\{<Segmented className="page-tabs"[^\n]*value:'overview'[^\n]*value:'planner'[^\n]*value:'history'/);
  // Overview: the list, then the chosen goal beside what is free for goals; the other views stand alone.
  assert.match(page,/\{view==='overview'&&<>[\s\S]*goals-list[\s\S]*<div className="goals-split">[\s\S]*<GoalDetail[\s\S]*part="funding"\/>/);
- assert.match(page,/\{view==='planner'&&\(active\?/);assert.match(page,/\{view==='history'&&<GoalFundingPanel[^\n]*part="activity"\/>\}/);
+ assert.match(page,/\{view==='planner'&&\(active\?/);assert.match(page,/\{view==='history'&&<GoalFundingPanel[^\n]*part="activity" goal=\{historyGoal\} onShowAll=\{\(\)=>setHistoryGoal\(null\)\}\/>\}/);
+ // /goals?view=history&goal=… (from the Cash flow drill-down) opens History showing that goal.
+ assert.match(page,/if\(params\.get\('view'\)==='history'\)\{setView\('history'\);setHistoryGoal\(params\.get\('goal'\)\);\}/);
  assert.match(panel,/part !== 'activity' && activeGoals\.length > 0/);assert.match(panel,/part !== 'funding' && savingsGoals\.length > 0/);
  assert.match(css,/\.goals-split\{[^}]*align-items:stretch/);
  assert.match(css,/\.segmented\.page-tabs>button\[aria-pressed=true\]\{[^}]*border-block-end-color:var\(--primary\)/);

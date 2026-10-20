@@ -5,14 +5,16 @@ import type { GoalEvent } from './goal-funding';
 import { convertAmount } from './market';
 
 type Part = { node: DrillNode; value: number };
+/** Goals › History showing one goal's activity. */
+export const goalHistory = (id: string): DrillTarget => ({ side: 'link', href: `/goals?view=history&goal=${encodeURIComponent(id)}` });
 
 /** A goal's additions and withdrawals by the account they came from or went to (which opens it); one without an account
- * by its name or kind, opening Goals, where the goal's history is. */
-function bySource(events: GoalEvent[], byId: Map<string, Entry>, t: (key: string) => string, value: (amount: number) => number) {
+ * by its name or kind, opening the goal's history. */
+function bySource(events: GoalEvent[], byId: Map<string, Entry>, t: (key: string) => string, value: (amount: number) => number, history: DrillTarget) {
  const sides = { in: new Map<string, Part>(), out: new Map<string, Part>() };
  for (const event of events) {
   const delta = Number(event.delta), side = delta >= 0 ? sides.in : sides.out, key = event.source_id ?? event.source_name ?? event.event_type;
-  const node: DrillNode = event.source_id && byId.has(event.source_id) ? accountNode(event.source_id, byId, t) : { name: event.source_name?.trim() || t(event.event_type), kind: delta >= 0 ? 'income' : 'expense', open: { side: 'link', href: '/goals' } };
+  const node: DrillNode = event.source_id && byId.has(event.source_id) ? accountNode(event.source_id, byId, t) : { name: event.source_name?.trim() || t(event.event_type), kind: delta >= 0 ? 'income' : 'expense', open: history };
   const part = side.get(key) ?? { node, value: 0 };
   part.value += value(delta);
   side.set(key, part);
@@ -34,8 +36,9 @@ export function goalFlows(id: string, context: DrillContext): DrillFlows {
  const after = events.filter(event => event.occurred_on > to).reduce((sum, event) => sum + Number(event.delta), 0);
  const within = events.filter(event => event.occurred_on >= from && event.occurred_on <= to);
  const ended = Number(goal.allocated) - after, started = ended - within.reduce((sum, event) => sum + Number(event.delta), 0);
- const sides = bySource(within, byId, t, amount => Math.abs(convert(amount)!));
- const page: DrillNode['open'] = { side: 'link', href: '/goals' };
+ const sides = bySource(within, byId, t, amount => Math.abs(convert(amount)!), goalHistory(id));
+ // Its balances and the goal itself open its history on Goals.
+ const page = goalHistory(id);
  const left = [{ node: { name: t('Opening balance'), kind: 'savings', open: page } as DrillNode, value: convert(started)! }, ...sides.in.values()].filter(part => part.value >= .5);
  const right = [...sides.out.values(), { node: { name: t('Saved'), kind: 'savings', open: page } as DrillNode, value: convert(ended)! }].filter(part => part.value >= .5);
  const hub: DrillNode = { name: goal.name, kind: 'savings', open: page };
@@ -47,7 +50,7 @@ export function goalFlows(id: string, context: DrillContext): DrillFlows {
 }
 
 /** A goal's additions and withdrawals in the period, newest first, each as it was entered in the goal's currency, with
- * what a tap opens: the account it came from or went to, else Goals. */
+ * what a tap opens: the goal's history on Goals. */
 export function goalEventsIn(id: string, context: DrillContext) {
  const { from, to } = span(context.months, context.today);
  const goal = (context.data.goals ?? []).find(item => item.id === id);
@@ -57,7 +60,6 @@ export function goalEventsIn(id: string, context: DrillContext) {
   .sort((a, b) => b.occurred_on.localeCompare(a.occurred_on) || a.id.localeCompare(b.id))
   .map(event => {
    const account = event.source_id ? byId.get(event.source_id) : undefined;
-   const open: DrillTarget = account ? { side: 'account', key: account.id } : { side: 'link', href: '/goals' };
-   return { event, currency, source: account?.name.trim() || event.source_name?.trim() || '', open };
+   return { event, currency, source: account?.name.trim() || event.source_name?.trim() || '', open: goalHistory(id) };
   });
 }

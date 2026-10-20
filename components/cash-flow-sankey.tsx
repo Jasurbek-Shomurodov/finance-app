@@ -81,8 +81,8 @@ function DrillTransactions({ target: shown, context, onOpenRecord, onOpenOperati
  </section>;
 }
 
-/** A goal's additions and withdrawals under its Sankey, as entered in the goal's currency; a tap opens the account the
- * money came from or went to, or Goals. */
+/** A goal's additions and withdrawals under its Sankey, as entered in the goal's currency; a tap opens the goal's history
+ * on Goals. */
 function GoalEvents({ id, context, onOpen }: { id: string; context: DrillContext; onOpen: (target: DrillTarget, title: string) => void }) {
  const { t, locale } = useLanguage();
  const rows = goalEventsIn(id, context);

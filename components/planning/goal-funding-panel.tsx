@@ -6,7 +6,7 @@ import { useId, useState } from 'react';
 import { ErrorPopup } from '@/components/presentation-foundation/error-popup';
 import { ResourceState } from '@/components/presentation-foundation/resource-state';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
-import { ChevronDown, History, Plus, SlidersHorizontal } from 'lucide-react';
+import { ChevronDown, History, Plus, SlidersHorizontal, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
 import { PanelTitle } from '@/components/presentation-foundation/panel-title';
@@ -28,9 +28,11 @@ import { Textarea } from '@/components/ui/textarea';
 const empty = { events: [] as GoalEvent[] };
 type Props = { data: PlanningData; currency: string; surplus: number | null; today: string; rates?: Record<string, number>; owner: string | null; demo: boolean; revision: number; onSaved: () => void;
  /** One of the two panels: what is free for goals (on the page) or the cash goal activity (in the History window). Both when left out. */
- part?: 'funding' | 'activity' };
+ part?: 'funding' | 'activity';
+ /** Shows one goal's activity only, with a chip that shows them all again (`onShowAll`). */
+ goal?: string | null; onShowAll?: () => void };
 
-export function GoalFundingPanel({ data, currency, surplus, today, rates, owner, demo, revision, onSaved, part }: Props) {
+export function GoalFundingPanel({ data, currency, surplus, today, rates, owner, demo, revision, onSaved, part, goal: only, onShowAll }: Props) {
  const { t, locale } = useLanguage();
  const savingsGoals = data.goals.filter(goal => (goal.kind ?? 'savings') === 'savings');
  const activeSavings = savingsGoals.filter(goal => !goal.archived);
@@ -40,7 +42,8 @@ export function GoalFundingPanel({ data, currency, surplus, today, rates, owner,
  const [busy, setBusy] = useState(false), [error, setError] = useState('');
  const [activityOpen, setActivityOpen] = useState(false), [planning, setPlanning] = useState(false);
  const incomeHistory=useOwnerResource('/api/planning?scope=insights',owner,!demo&&activityOpen,revision,emptyPlanning);
- const events = activity.data.events.filter(event => event.event_type !== 'opening' || Number(event.delta) !== 0);
+ const events = activity.data.events.filter(event => (event.event_type !== 'opening' || Number(event.delta) !== 0) && (!only || event.goal_id === only));
+ const shown = only ? savingsGoals.find(item => item.id === only) : undefined;
  const activityId = useId();
  const money = (value: number | null) => value === null ? '—' : formatMoney(value, currency, locale);
 
@@ -80,6 +83,7 @@ export function GoalFundingPanel({ data, currency, surplus, today, rates, owner,
   </section>}
   {part !== 'funding' && savingsGoals.length > 0 && <section className="panel goal-cash-activity" aria-labelledby={activityId}>
    <PanelTitle title={<span id={activityId}>{t('Cash goal activity')}</span>} hint={t('Contributions, withdrawals and transfers for your cash savings goals.')}>
+    {shown && <Button type="button" variant="outline" size="sm" className="goal-history-filter" aria-label={`${shown.name} · ${t('Clear filter')}`} onClick={onShowAll}>{shown.name}<X size={14} aria-hidden="true"/></Button>}
     {activeSavings.length > 0 && <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => setActivityOpen(true)}><Plus size={16} aria-hidden="true"/>{t('Record')}</Button>}
    </PanelTitle>
    {activeSavings.length > 0 && <Dialog open={activityOpen} onOpenChange={setActivityOpen}><DialogContent className="record-dialog sm:max-w-2xl">
