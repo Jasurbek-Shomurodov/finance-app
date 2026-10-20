@@ -107,8 +107,8 @@
 .cashflow-view-history{display:flex;margin:4px 16px 12px auto;font-size:var(--type-small)}
 @container content (max-width:900px){.cashflow-preview-grid{grid-template-columns:minmax(0,1fr)}}
 
-.records tr.clickable-row { cursor: pointer; }
-.records tr.clickable-row:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+:is(.records, .account-activity) tr.clickable-row { cursor: pointer; }
+:is(.records, .account-activity) tr.clickable-row:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
 
 /* QA responsive polish: compact phone summaries, single-row controls and no clipped actions. */
 .cashflow-action{white-space:nowrap}

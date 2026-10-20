@@ -641,3 +641,39 @@ test('a goal history row links to Cash flow, which opens the goal’s Sankey for
  const title = r.find(node => node.type === 'DialogTitle').props.children;
  assert.deepEqual([title[0], text(title[2])], ['Holiday', 'August 2026'], 'the goal’s Sankey for the row’s month, not the page’s');
 });
+
+test('every Accounts › Recent activity row opens its Sankey in the Cash flow drill-down, for its month', () => {
+ const { drillHref, drillLink, linkedTitle, readRange } = loadTS('lib/cash-flow-link.ts');
+ for (const target of [{ side: 'goal', key: 'g' }, { side: 'account', key: 'card' }, { side: 'merchant', key: 'EPAM', income: true }, { side: 'merchant', key: 'Cafe', income: false }, { side: 'operation', key: 't' }, { side: 'payment', key: 'mp' }]) {
+  const href = drillHref(target, '2026-08');
+  assert.deepEqual(drillLink(href.slice(href.indexOf('?'))), { target, month: '2026-08' }, target.side + ' survives the link');
+ }
+ assert.equal(drillLink('?open=savings&key=x&month=2026-08'), null, 'only what another page links to');
+ const data = { records: [...accounts, record('mp', 'Mortgage payment', 'Other expense', 1000, '2026-08-20')], goals: [], activity: [{ id: 'r', action: 'repayment' }], movements: [{ id: 'm', kind: 'buy' }] };
+ assert.deepEqual([{ side: 'account', key: 'card' }, { side: 'payment', key: 'mp' }, { side: 'operation', key: 'r' }, { side: 'operation', key: 'm' }, { side: 'merchant', key: 'Cafe', income: false }].map(target => linkedTitle(target, data, key => key)), ['Card', 'Mortgage payment', 'Repayment', 'Buy holding', 'Cafe']);
+ assert.deepEqual(readRange('2026-10', '2026-10-20'), { first: '2025-01', readTo: '2026-10', throughToday: true }, 'the year view’s two calendar years');
+ assert.deepEqual(readRange('2026-10', '2026-10-20', '2024-12'), { first: '2024-12', readTo: '2026-10', throughToday: true }, 'back to a linked month');
+ assert.deepEqual(readRange('2026-10', '2026-10-20', '2024-10'), { first: '2025-01', readTo: '2026-10', throughToday: true }, 'never past two years');
+ assert.deepEqual(readRange('2025-03', '2026-10-20'), { first: '2024-01', readTo: '2025-03', throughToday: false }, 'an early month reads to itself when today is too far');
+
+ const r = createRenderer();
+ const pushed = [];
+ const modules = { '@/components/language-provider': language('en-US'), 'next/navigation': { useRouter: () => ({ push: href => pushed.push(href) }) }, 'next/link': hostModule(), '@/hooks/use-owner-resource': { useOwnerResource: () => ({ data: { records: [] }, initialLoading: false, error: '' }) }, ...Object.fromEntries(['resource-state', 'panel-title', 'pagination'].map(name => ['@/components/presentation-foundation/' + name, { [name === 'resource-state' ? 'ResourceState' : name === 'panel-title' ? 'PanelTitle' : 'Pagination']: ({ children }) => children ?? null }])) };
+ const { AccountActivity } = r.load('components/planning/accounts/account-activity.tsx', modules);
+ const op = (id, action, extra = {}) => ({ id, action, account_id: 'card', target_id: 'save', amount: 10, received: 10, fee: 0, occurred_on: '2026-08-10', notes: '', before_balance: 0, after_balance: 0, ...extra });
+ const planning = { records: [...accounts, record('pay', 'EPAM', 'Salary', 100, '2026-07-05', { account_id: 'card' })], categories: [], goals: [], occurrences: [],
+  activity: [op('t', 'transfer'), op('mp', 'mortgage', { target_id: 'home' }), op('x', 'reconcile', { target_id: null })],
+  movements: [{ id: 'm', kind: 'buy', source_id: 'card', target_id: 'save', sent: 5, received: 5, source_value: 5, target_value: 5, fee: 0, occurred_on: '2026-08-11', notes: '', realized_gain: null }, { id: 'i', kind: 'interest', source_id: 'save', target_id: 'save', sent: 0, received: 1, source_value: 0, target_value: 1, fee: 0, occurred_on: '2026-08-12', notes: '', realized_gain: null }],
+  investmentLinks: [{ id: 'l', account_id: 'card', amount: -50, investment_history: { occurred_on: '2026-06-03', record_id: 'save', event_type: 'buy' } }] };
+ r.mount(React.createElement(AccountActivity, { data: planning, owner: null, currency: 'USD' }));
+ const rows = r.all(node => node.type === 'tr' && node.props.className === 'clickable-row');
+ for (const row of rows) row.props.onClick();
+ assert.deepEqual(pushed.sort(), [
+  '/income-expenses?open=account&key=card&month=2026-08', '/income-expenses?open=account&key=save&month=2026-06', '/income-expenses?open=account&key=save&month=2026-08',
+  '/income-expenses?open=merchant&key=EPAM&month=2026-07&income=1', '/income-expenses?open=operation&key=m&month=2026-08', '/income-expenses?open=operation&key=t&month=2026-08', '/income-expenses?open=payment&key=mp&month=2026-08',
+ ], 'a transfer and a buy their transfer view, a mortgage payment its Sankey, a reconciliation and capitalized interest their account, income its payer, cash for an investment its holding');
+ pushed.length = 0;
+ rows[0].props.onKeyDown({ key: 'Enter', preventDefault() {} });
+ rows[0].props.onKeyDown({ key: 'Tab', preventDefault() {} });
+ assert.equal(pushed.length, 1, 'Enter opens a row; other keys do not');
+});

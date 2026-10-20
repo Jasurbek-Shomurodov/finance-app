@@ -5,11 +5,10 @@ import { useLanguage } from '@/components/language-provider';
 import { chartAxis, chartColors, chartGrid, chartHeight, chartLegend, chartMargin, chartTooltip, chartValueAxis, groupedBar, intervalLabel, moneyTick } from '@/components/presentation-foundation/chart';
 import { CashFlowDrillDialog, FlowSankey } from '@/components/cash-flow-sankey';
 import type { DrillTarget } from '@/lib/cash-flow-drill';
-import { drillLink } from '@/lib/cash-flow-link';
+import { drillLink, linkedTitle, readRange } from '@/lib/cash-flow-link';
 import { mainTarget } from '@/lib/cash-flow-main';
 import { useLocationSearch } from '@/hooks/use-location-search';
 import type { GoalEvent } from '@/lib/goal-funding';
-import { monthsBetween } from '@/lib/budget';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
 import { ChartSkeleton } from '@/components/presentation-foundation/loading-placeholder';
 import { PanelTitle } from '@/components/presentation-foundation/panel-title';
@@ -65,15 +64,14 @@ function CashFlowTiles({ report, currency }: { report: ReturnType<typeof cashFlo
 }
 
 type Drill = { target: DrillTarget; title: string; months?: string[] };
-/** The open drill-down. A link from elsewhere (a goal's history row on Goals) opens its Sankey for its month, once per
- * distinct link; its title is the goal's name once the goals are read. */
-function useDrill(goals: ReadonlyArray<{ id: string; name: string }>, t: (key: string) => string, period: { months: string[]; label: string; locale: string }) {
+/** The open drill-down. A link from elsewhere (a row of Goals › History or Accounts › Recent activity) opens its Sankey
+ * for its month, once per distinct link; its title follows from the workspace once it is read. */
+function useDrill(data: PlanningData, t: (key: string) => string, search: string, period: { months: string[]; label: string; locale: string }) {
  const [drill, setDrill] = useState<Drill | null>(null);
- const search = useLocationSearch(), [appliedSearch, setAppliedSearch] = useState('');
+ const [appliedSearch, setAppliedSearch] = useState('');
  if (search !== appliedSearch) { setAppliedSearch(search); const link = drillLink(search); if (link) setDrill({ target: link.target, title: '', months: [link.month] }); }
- const goal = drill?.target.side === 'goal' ? drill.target.key : null;
  return {
-  drill, setDrill, drillTitle: drill?.title || (goal === null ? '' : goals.find(item => item.id === goal)?.name ?? t('Goal')),
+  drill, setDrill, drillTitle: drill ? drill.title || linkedTitle(drill.target, data, t) : '',
   // A linked drill-down is for its own month; one opened here for the chosen period.
   drillMonths: drill?.months ?? period.months, drillPeriod: drill?.months ? formatMonthYear(drill.months[0], period.locale) : period.label,
  };
@@ -88,7 +86,7 @@ export function CashFlowReport({ onOpenRecord, owner, demo, revision, data: prov
  const [view, setView] = useState<'bars' | 'sankey'>('sankey');
  const live = !!owner && !demo;
  // The read runs through this month when it can (two years at most), so a drill-down can tell a past balance from today's.
- const first = trendMonths(month, 'year')[0], now = today.slice(0, 7), readTo = month < now && monthsBetween(first, now).length <= 24 ? now : month;
+ const search = useLocationSearch(), { first, readTo, throughToday } = readRange(month, today, drillLink(search)?.month);
  const remote = useOwnerResource(`/api/planning?scope=budget&month=${readTo}&from=${first}`, owner, live, revision, emptyPlanning);
  // Goals' histories, for a goal's own Sankey in the drill-down; the sample workspace has none.
  const goalHistory = useOwnerResource('/api/goal-tools', owner, live, revision, noGoalEvents);
@@ -110,7 +108,7 @@ export function CashFlowReport({ onOpenRecord, owner, demo, revision, data: prov
  // total (every income source).
  const drillOf = (index: number): DrillTarget | null => mainTarget(flows.nodes[index]);
  const periodName = period === 'month' ? formatMonthYear(month, locale) : `${formatMonthYear(periodMonths(month, period)[0], locale)} – ${formatMonthYear(month, locale)}`;
- const { drill, setDrill, drillTitle, drillMonths, drillPeriod } = useDrill(data.goals, t, { months: periodMonths(month, period), label: periodName, locale });
+ const { drill, setDrill, drillTitle, drillMonths, drillPeriod } = useDrill(data, t, search, { months: periodMonths(month, period), label: periodName, locale });
  if (live && remote.initialLoading) return <section className="panel cash-flow-report"><ChartSkeleton label={t('Loading records…')}/></section>;
  if (live && remote.error) return <section className="panel cash-flow-report"><InlineError message={t(remote.error)} onRetry={remote.retry}/></section>;
  return <section className="cash-flow-report" aria-label={t('Cash flow')}>
@@ -145,6 +143,6 @@ export function CashFlowReport({ onOpenRecord, owner, demo, revision, data: prov
     <div><h3>{t('Expenses')}</h3><ShareBars items={report[grouping === 'category' ? 'categories' : 'merchants'].expense} label={label} colorKey={colorKey} currency={currency}/></div>
    </div> : flows.links.length ? <FlowSankey flows={flows} currency={currency} canOpen={index => !!drillOf(index)} onOpen={index => { const target = drillOf(index); if (target) setDrill({ target, title: flows.nodes[index].name }); }}/> : <p className="budget-left-empty">{t('Nothing recorded in this period.')}</p>}
   </section>
-  {drill && <CashFlowDrillDialog target={drill.target} title={drillTitle} period={drillPeriod} savings={report.savings} context={{ data, splits, months: drillMonths, currency, today, rates, t, label: categoryName, locale, throughToday: !live || readTo >= now, goalEvents: goalHistory.data.events }} onClose={() => setDrill(null)} onOpenRecord={onOpenRecord}/>}
+  {drill && <CashFlowDrillDialog target={drill.target} title={drillTitle} period={drillPeriod} savings={report.savings} context={{ data, splits, months: drillMonths, currency, today, rates, t, label: categoryName, locale, throughToday: !live || throughToday, goalEvents: goalHistory.data.events }} onClose={() => setDrill(null)} onOpenRecord={onOpenRecord}/>}
  </section>;
 }

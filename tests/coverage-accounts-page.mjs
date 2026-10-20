@@ -19,6 +19,8 @@ const { AccountsPage } = r.load('components/planning/accounts-page.tsx', {
  '@/components/ui/dialog': { ...ui.modules['@/components/ui/dialog'], DialogTrigger: 'DialogTrigger' },
  '@/components/ui/dropdown-menu': hostModule(), '@/components/ui/input': hostModule(), 'lucide-react': hostModule(),
  'next/link': { __esModule: true, default: 'a' },
+ // Recent activity rows open their Sankey in Cash flow.
+ 'next/navigation': { useRouter: () => ({ push() {} }) },
  ...Object.fromEntries(['page-header', 'segmented', 'empty-state', 'panel-title', 'stat-tile', 'animated-money', 'business-filter', 'business-mark', 'owner-filter', 'person-avatar', 'category-icon', 'count', 'sortable', 'pagination']
   .map(name => ['@/components/presentation-foundation/' + name, hostModule()])),
  ...Object.fromEntries(['./statement-reconciliation', './corporate-event-dialog', './asset-movement-dialog', './account-operation', './holding-account-dialog', '@/components/account-businesses-dialog', '@/components/account-owners-dialog']
