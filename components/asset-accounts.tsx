@@ -12,9 +12,10 @@ import { formatMoney, formatNumber } from '@/lib/format';
 import { value, type Entry } from '@/lib/finance';
 import { convertAmount, marketEntry, type MarketData, marketRates } from '@/lib/market';
 
-export function AssetAccounts({accounts,records,market,loading,error,onRetry,onAdd,children,accountCount,onEdit,onTrack,demo,currency,portfolioTotal}: {
+export function AssetAccounts({accounts,records,market,loading,error,onRetry,onAdd,children,accountCount,onEdit,onTrack,demo,currency,portfolioTotal,onOpen}: {
  currency:string;portfolioTotal:number;onEdit:(record:Entry)=>void;onTrack:(record:Entry)=>void;demo:boolean;children:ReactNode;accountCount:number;accounts:HoldingAccount[];records:Entry[];market:MarketData|null;loading:boolean;error:string;
  onRetry:()=>void;onAdd:(kind:'Cash'|'Stock'|'Crypto',accountId:string)=>void;
+ /** Opens a holding account's Sankey with its holdings' ids. */onOpen?:(account:HoldingAccount,holdings:string[])=>void;
 }) {
  const {t,locale}=useLanguage();
  return <section className="asset-account-section">
@@ -25,7 +26,7 @@ export function AssetAccounts({accounts,records,market,loading,error,onRetry,onA
    // Each holding in the display currency too; one without a rate reads "—", never its own currency.
    const holdingValues=holdings.map(record=>{const priced=marketEntry(record,currency,market);return priced&&value(priced);});
    const share=converted!==null&&portfolioTotal>0?converted/portfolioTotal*100:null;
-   return <AssetCard key={account.id} record={account} label={t(holdingAccountLabel(account.kind))} worth={converted===null?'—':formatMoney(converted,currency,locale)}
+   return <AssetCard key={account.id} record={account} onOpen={onOpen&&(()=>onOpen(account,holdings.map(record=>record.id)))} label={t(holdingAccountLabel(account.kind))} worth={converted===null?'—':formatMoney(converted,currency,locale)}
     fact={{label:t('Holdings'),value:formatNumber(holdings.filter(record=>record.kind===account.kind).length,locale,0)}} share={share}
     note={(converted===null||holdingValues.includes(null))&&<small>{t(total===null?'Exchange rates are missing. The account total is unavailable.':'Exchange rate unavailable.')}</small>}
     detailsLabel={t('Account details')}

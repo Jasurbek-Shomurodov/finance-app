@@ -853,3 +853,32 @@ test('a Loans & debts row opens its Sankey for this month, its Details editing i
  assert.match(table, /:\{className:'clickable-row',tabIndex:0,'aria-label':t\('Open \{name\}'[^}]*\}\),onClick:\(event:ReactMouseEvent\)=>\{const target=event\.target as HTMLElement;if\(event\.currentTarget\.contains\(target\)&&!target\.closest\('button,a,input'\)\)openRecord\(r\);\}/, 'by click, never from its menu or buttons');
  assert.match(table, /openRecord\(r\);\}\}\}\)\}>/, 'and by Enter or Space');
 });
+
+test('an Investments card opens its holding’s Sankey, a holding account its holdings together', () => {
+ const vt = record('vt', 'VT', 'Stock', 120, '2026-01-01', { frequency: 'Monthly', quantity: 5, cost: 100, holding_account_id: 'broker' });
+ const btc = record('btc', 'Bitcoin', 'Crypto', 60000, '2026-01-01', { frequency: 'Monthly', quantity: 0.01, holding_account_id: 'broker' });
+ const movement = (id, kind, source_id, target_id, value, occurred_on) => ({ id, kind, source_id, target_id, sent: value, received: value, source_value: value, target_value: value, fee: 0, occurred_on, notes: '', realized_gain: null });
+ const movements = [movement('m1', 'buy', 'card', 'vt', 300, '2026-08-10'), movement('m2', 'buy', 'save', 'btc', 200, '2026-08-11'), movement('m3', 'transfer', 'vt', 'btc', 50, '2026-08-12'), movement('m4', 'sell', 'btc', 'card', 80, '2026-08-13')];
+ const ctx = { ...context([]), data: { records: [...accounts, vt, btc], activity: [], investmentLinks: [], movements } };
+ const { holdingsFlows } = loadTS('lib/cash-flow-holdings.ts');
+ const broker = holdingsFlows({ side: 'holdings', keys: ['vt', 'btc'] }, 'Broker', ctx);
+ assert.deepEqual(shape(broker), [['Card', 'Broker', 220], ['Savings account', 'Broker', 200], ['Broker', 'VT', 250], ['Broker', 'Bitcoin', 170]], 'bought $500, sold $80 back to the card; the $50 between its own holdings stays inside');
+ assert.deepEqual(broker.nodes.map(node => node.open?.side ?? null), ['account', 'account', 'link', 'account', 'account'], 'each source and holding opens; the account itself opens Accounts');
+
+ const r = createRenderer();
+ const { AssetCard } = r.load('components/presentation-foundation/asset-card.tsx', { '@/components/language-provider': language('en-US'), 'lucide-react': hostModule(), '@/components/presentation-foundation/asset-icon': hostModule(), '@/components/presentation-foundation/category-badge': hostModule() });
+ let opened = 0;
+ r.mount(React.createElement(AssetCard, { record: vt, label: 'Stock', worth: '$600', share: 50, detailsLabel: 'Details', details: null, onOpen: () => { opened += 1; } }));
+ const card = r.find(node => node.type === 'article').props;
+ assert.equal(card['aria-label'], 'Open VT');
+ card.onClick({ target: { closest: () => null } });
+ card.onClick({ target: { closest: () => ({}) } });
+ card.onKeyDown({ key: ' ', target: 1, currentTarget: 1, preventDefault() {} });
+ assert.equal(opened, 2, 'a tap on the card and Space open it; one on its menu, details or buttons does not');
+ r.mount(React.createElement(AssetCard, { record: vt, label: 'Stock', worth: '$600', share: 50, detailsLabel: 'Details', details: null }));
+ assert.equal(r.find(node => node.type === 'article').props['data-clickable'], undefined, 'without onOpen it only shows');
+ const screen = fs.readFileSync('components/workspace/screens/assets-screen.tsx', 'utf8');
+ assert.match(screen, /const openHolding = \(record: Entry\) => setSankey\(\{ target: \{ side: 'account', key: record\.id \}, title: record\.name, month, onDetails: \(\) => editRecord\(record\) \}\);/);
+ assert.match(screen, /const openAccount = \(account: HoldingAccount, holdings: string\[\]\) => setSankey\(\{ target: \{ side: 'holdings', keys: holdings \}, title: account\.name, month \}\);/);
+ assert.match(screen, /onOpen=\{openHolding\} onOpenAccount=\{openAccount\}/);
+});
