@@ -42,7 +42,7 @@ export function RecordsTable({ title, transactions = false, limit, pagination = 
  const { t, locale } = useLanguage();
  const { filters, setFilters, filtersActive, historyOnly, useFilteredRecords, remoteHistory, historyPage, visible, totalRecords, pageCount, tablePage, tableLoading, recordsLoading, showPage,
   sectionKey, planning, transactionTools, demo, busy, currency, money, storedRecord,
-  addRecord, editRecord, requestDelete, setViewing, setStopping, setTracking, setPayingMortgage, setDebtPayment, setSplitting } = useWorkspace();
+  addRecord, editRecord, requestDelete, setDrilling, setStopping, setTracking, setPayingMortgage, setDebtPayment, setSplitting } = useWorkspace();
  const date = (day: string) => formatDate(day, locale);
  const shown = limit === undefined ? visible : visible.slice(0, limit);
  // One line of context under each name: the fact that tells this record apart, or nothing.
@@ -62,7 +62,7 @@ export function RecordsTable({ title, transactions = false, limit, pagination = 
   {useFilteredRecords&&planning.error&&<InlineError message={t(planning.error)}/>}
   {tableLoading ? <LoadingPlaceholder label={t("Loading records…")}/> : visible.length ? <div className="table-scroll"><table>
    <thead><tr><th>{t("Name")}</th><th>{t("Category")}</th><th>{transactions ? t("Date") : t("Date / due date")}</th><th>{transactions ? t("Amount") : t("Value")}</th><th>{t("Actions")}</th></tr></thead>
-   <tbody>{shown.map(r => <tr key={r.id} {...(transactions?{className:'clickable-row',tabIndex:0,'aria-label':t('View details for {name}',{name:shownName(r, t, categoryOf(r))}),onClick:(event:ReactMouseEvent)=>{const target=event.target as HTMLElement;/* Menu items are portaled out of the row, but React still bubbles their clicks here. */if(event.currentTarget.contains(target)&&!target.closest('button,a,input'))setViewing(storedRecord(r));},onKeyDown:(event:ReactKeyboardEvent)=>{if(event.target===event.currentTarget&&(event.key==='Enter'||event.key===' ')){event.preventDefault();setViewing(storedRecord(r));}}}:{})}>
+   <tbody>{shown.map(r => <tr key={r.id} {...(transactions?{className:'clickable-row',tabIndex:0,'aria-label':t('Open {name}',{name:shownName(r, t, categoryOf(r))}),onClick:(event:ReactMouseEvent)=>{const target=event.target as HTMLElement;/* Menu items are portaled out of the row, but React still bubbles their clicks here. */if(event.currentTarget.contains(target)&&!target.closest('button,a,input'))setDrilling(storedRecord(r));},onKeyDown:(event:ReactKeyboardEvent)=>{if(event.target===event.currentTarget&&(event.key==='Enter'||event.key===' ')){event.preventDefault();setDrilling(storedRecord(r));}}}:{})}>
     <td><div className="record-name"><RecordIcon record={r} /><div><strong>{shownName(r, t, categoryOf(r))}</strong>{detail(r)&&<small>{detail(r)}</small>}</div></div></td>
     <td><CategoryBadge kind={r.kind} label={t(r.payment_type==='bonus'?'Bonus':r.kind)}/>{r.custom_category_id&&<CategoryBadge kind={r.custom_category_id} label={planning.data.categories.find(c=>c.id===r.custom_category_id)?.name??t('Custom category')}/>}</td>
     <td className="muted">{r.kind === 'Money lent' ? <><div>{t("Lent: {date}", { date: date(r.lent_date || '') })}</div><small>{r.date ? t("Due: {date}", { date: date(r.date) }) : t("No due date")}</small></> : liabilities.includes(r.kind)?<>{r.opened_on&&<div>{t('Started: {date}',{date:date(r.opened_on)})}</div>}<small>{t('Due: {date}',{date:date(r.date)})}</small></>:date(r.date)}</td>

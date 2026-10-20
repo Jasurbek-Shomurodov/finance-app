@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
@@ -676,4 +677,33 @@ test('every Accounts › Recent activity row opens its Sankey in the Cash flow d
  rows[0].props.onKeyDown({ key: 'Enter', preventDefault() {} });
  rows[0].props.onKeyDown({ key: 'Tab', preventDefault() {} });
  assert.equal(pushed.length, 1, 'Enter opens a row; other keys do not');
+});
+
+test('a transaction row opens its Sankey over the page: its payer or merchant for its month, its details one tap away', () => {
+ const r = createRenderer();
+ const opened = [], read = [];
+ let drilling = record('food', 'Market', 'Living expense', 120, '2026-08-06', { account_id: 'card', custom_category_id: 'groceries' }), closed = 0;
+ const workspace = () => ({ drilling, setDrilling: value => { closed += value === null ? 1 : 0; drilling = value; }, setViewing: item => opened.push(item.id), storedRecord: item => item, user: null, demo: true, reload: 0,
+  planning: { data: { records: [...accounts, drilling ?? record('x', 'x', 'Cash', 0, '2026-01-01')], activity: [], investmentLinks: [], categories: [{ id: 'groceries', name: 'Groceries' }], goals: [], occurrences: [] } },
+  transactionTools: { data: { splits: [] } }, currency: 'USD', market: { rates: { USD: 1 }, quotes: {} } });
+ const modules = { '@/components/language-provider': language('en-US'), '@/components/workspace/workspace-provider': { useWorkspace: workspace },
+  '@/components/cash-flow-drill-lazy': hostModule(), '@/hooks/use-owner-resource': { useOwnerResource: url => { read.push(url); return { data: { records: [], events: [] } }; } } };
+ const { TransactionSankey } = r.load('components/workspace/transaction-sankey.tsx', modules);
+ r.mount(React.createElement(TransactionSankey));
+ const dialog = r.find(node => node.type === 'CashFlowDrillDialog').props;
+ assert.deepEqual([dialog.target, dialog.title, dialog.period, dialog.context.months], [{ side: 'merchant', key: 'Market', income: false }, 'Market', 'August 2026', ['2026-08']]);
+ assert.equal(dialog.context.label('groceries'), 'Groceries');
+ dialog.onOpenRecord({ id: 'food' });
+ assert.deepEqual(opened, ['food'], 'the transaction in its list opens the details');
+ dialog.onClose();
+ assert.equal(closed, 1);
+ const lazy = fs.readFileSync('components/cash-flow-drill-lazy.tsx', 'utf8');
+ assert.match(lazy, /dynamic\(\(\) => import\('@\/components\/cash-flow-sankey'\)/, 'the shell loads the charts only when a row opens one');
+ r.mount(React.createElement(TransactionSankey));
+ assert.equal(r.all(node => node.type === 'CashFlowDrillDialog').length, 0, 'nothing open, nothing drawn');
+ const { useCashFlowData } = loadTS('components/cash-flow-data.ts', { react: r.react, '@/hooks/use-owner-resource': { useOwnerResource: url => { read.push(url); return { data: { records: [], events: [] } }; } } });
+ read.length = 0;
+ const Probe = () => { useCashFlowData({ owner: 'me', demo: false, revision: 0, provided: { records: [] }, month: '2026-10', today: '2026-10-20', linked: '2025-06' }); return null; };
+ r.mount(React.createElement(Probe));
+ assert.deepEqual(read, ['/api/planning?scope=budget&month=2026-10&from=2025-01', '/api/goal-tools'], 'signed in, it reads the budget read for the bars and the goals’ history');
 });

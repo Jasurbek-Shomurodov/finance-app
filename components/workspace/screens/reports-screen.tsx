@@ -28,7 +28,7 @@ const tabLabels: Record<ReportTab, string> = { cash_flow: 'Cash flow', spending:
  * profit and loss table, and business tax prep. Every chart narrows the transactions below it. */
 export function ReportsScreen() {
  const { t, locale } = useLanguage();
- const { currency, market, budget, transactionTools, businessList, workspacePreferences, setViewing, storedRecord, household } = useWorkspace();
+ const { currency, market, budget, transactionTools, businessList, workspacePreferences, setDrilling, storedRecord, household } = useWorkspace();
  // In a shared household, reports narrow to what one person owns or to what is shared.
  const homes = household.state;
  const owners = workspaceOwners(homes, { shared: t('Shared'), unnamed: t('Partner') });
@@ -55,7 +55,8 @@ export function ReportsScreen() {
  const shownTab = visibleTabs.includes(tab) ? tab : 'cash_flow';
  const end = range.to < today ? range.to : today;
  const rangeLabel = `${formatDate(range.from, locale)} – ${formatDate(end, locale)}`;
- const open = (line: LedgerLine) => line.record && setViewing(storedRecord(line.record));
+ // A ledger line opens its transaction's Sankey; its details are one tap away there.
+ const open = (line: LedgerLine) => line.record && setDrilling(storedRecord(line.record));
  const tabProps = { range, rangeLabel, names, groupOf, currency, onDrill: narrow };
 
  return <div data-page="Reports" className="content reports-content">

@@ -5,28 +5,26 @@ import { useLanguage } from '@/components/language-provider';
 import { chartAxis, chartColors, chartGrid, chartHeight, chartLegend, chartMargin, chartTooltip, chartValueAxis, groupedBar, intervalLabel, moneyTick } from '@/components/presentation-foundation/chart';
 import { CashFlowDrillDialog, FlowSankey } from '@/components/cash-flow-sankey';
 import type { DrillTarget } from '@/lib/cash-flow-drill';
-import { drillLink, linkedTitle, readRange } from '@/lib/cash-flow-link';
+import { drillLink, linkedTitle } from '@/lib/cash-flow-link';
+import { useCashFlowData } from '@/components/cash-flow-data';
 import { mainTarget } from '@/lib/cash-flow-main';
 import { useLocationSearch } from '@/hooks/use-location-search';
-import type { GoalEvent } from '@/lib/goal-funding';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
 import { ChartSkeleton } from '@/components/presentation-foundation/loading-placeholder';
 import { PanelTitle } from '@/components/presentation-foundation/panel-title';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { StatTile, StatTiles } from '@/components/presentation-foundation/stat-tile';
 import { signTone } from '@/components/presentation-foundation/tone';
-import { useOwnerResource } from '@/hooks/use-owner-resource';
 import { cashFlowReport, partialBar, periodMonths, reportPeriods, sankeyFlows, topShares, otherShareKey, trendBarsBy, trendMonths, type ReportPeriod, type Share } from '@/lib/cash-flow-report';
 import { hueColor } from '@/lib/category-colors';
 import { useCategoryHue } from '@/components/category-icons-context';
 import { depositToday } from '@/lib/deposit-interest';
-import { normalizeEntry, type Entry } from '@/lib/finance';
+import type { Entry } from '@/lib/finance';
 import { formatMoney, formatMonthYear, formatPercent } from '@/lib/format';
 import { marketRates, type MarketData } from '@/lib/market';
-import { emptyPlanning, type PlanningData } from '@/lib/planning';
+import type { PlanningData } from '@/lib/planning';
 import type { TransactionSplit } from '@/lib/transaction-tools';
 
-const noGoalEvents = { events: [] as GoalEvent[] };
 const periodLabels: Record<ReportPeriod, string> = { month: 'Month', quarter: 'Quarter', year: 'Year' };
 const trendTitles: Record<ReportPeriod, string> = { month: 'Income and spending by month', quarter: 'Income and spending by quarter', year: 'Income and spending by year' };
 type Props = { /** Opens a transaction's details, as a row on Transactions does. */onOpenRecord?: (record: Entry) => void; owner: string | null; demo: boolean; revision: number; data: PlanningData; splits: TransactionSplit[]; month: string; currency: string; market: MarketData | null };
@@ -84,13 +82,8 @@ export function CashFlowReport({ onOpenRecord, owner, demo, revision, data: prov
  const [period, setPeriod] = useState<ReportPeriod>('month');
  const [grouping, setGrouping] = useState<'category' | 'merchant'>('category');
  const [view, setView] = useState<'bars' | 'sankey'>('sankey');
- const live = !!owner && !demo;
- // The read runs through this month when it can (two years at most), so a drill-down can tell a past balance from today's.
- const search = useLocationSearch(), { first, readTo, throughToday } = readRange(month, today, drillLink(search)?.month);
- const remote = useOwnerResource(`/api/planning?scope=budget&month=${readTo}&from=${first}`, owner, live, revision, emptyPlanning);
- // Goals' histories, for a goal's own Sankey in the drill-down; the sample workspace has none.
- const goalHistory = useOwnerResource('/api/goal-tools', owner, live, revision, noGoalEvents);
- const data = useMemo(() => live ? { ...remote.data, records: remote.data.records.map(normalizeEntry) } : provided, [live, remote.data, provided]);
+ const search = useLocationSearch();
+ const { live, data, remote, goalEvents, throughToday } = useCashFlowData({ owner, demo, revision, provided, month, today, linked: drillLink(search)?.month });
  const rates = marketRates(market);
  const report = useMemo(() => cashFlowReport(data, splits, periodMonths(month, period), currency, today, rates), [data, splits, month, period, currency, today, rates]);
  const trend = useMemo(() => trendBarsBy(cashFlowReport(data, splits, trendMonths(month, period), currency, today, rates).series, period), [data, splits, month, period, currency, today, rates]);
@@ -143,6 +136,6 @@ export function CashFlowReport({ onOpenRecord, owner, demo, revision, data: prov
     <div><h3>{t('Expenses')}</h3><ShareBars items={report[grouping === 'category' ? 'categories' : 'merchants'].expense} label={label} colorKey={colorKey} currency={currency}/></div>
    </div> : flows.links.length ? <FlowSankey flows={flows} currency={currency} canOpen={index => !!drillOf(index)} onOpen={index => { const target = drillOf(index); if (target) setDrill({ target, title: flows.nodes[index].name }); }}/> : <p className="budget-left-empty">{t('Nothing recorded in this period.')}</p>}
   </section>
-  {drill && <CashFlowDrillDialog target={drill.target} title={drillTitle} period={drillPeriod} savings={report.savings} context={{ data, splits, months: drillMonths, currency, today, rates, t, label: categoryName, locale, throughToday: !live || throughToday, goalEvents: goalHistory.data.events }} onClose={() => setDrill(null)} onOpenRecord={onOpenRecord}/>}
+  {drill && <CashFlowDrillDialog target={drill.target} title={drillTitle} period={drillPeriod} savings={report.savings} context={{ data, splits, months: drillMonths, currency, today, rates, t, label: categoryName, locale, throughToday, goalEvents }} onClose={() => setDrill(null)} onOpenRecord={onOpenRecord}/>}
  </section>;
 }
