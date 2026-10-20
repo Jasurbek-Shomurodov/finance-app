@@ -205,7 +205,7 @@ function merchantFlows(target: { key: string; income: boolean }, title: string, 
 
 /** Views other modules draw (`cash-flow-operations`, `cash-flow-principal`, `cash-flow-balance`) or that open details:
  * they list their own transactions. */
-const elsewhere = new Set<DrillTarget['side']>(['operation', 'principal', 'interest', 'payment', 'balance', 'cashflow', 'untraced', 'goal', 'schedule', 'holdings', 'details', 'link', 'record']);
+const elsewhere = new Set<DrillTarget['side']>(['operation', 'principal', 'interest', 'payment', 'balance', 'cashflow', 'untraced', 'goal', 'schedule', 'holdings', 'set', 'details', 'link', 'record']);
 
 /** The transactions behind a category, payer, merchant or account Sankey, newest first: each as it was entered, in its own amount
  * and currency. A transaction split over several categories is listed once. Tracker expenses have no record, and

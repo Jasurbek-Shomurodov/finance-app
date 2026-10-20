@@ -911,3 +911,33 @@ test('a goal row on Goals still selects it, and opens its Sankey for this month 
  assert.match(page, /className="goal-row-main" aria-current=\{active\?\.id===goal\.id\|\|undefined\} onClick=\{\(\)=>pick\(goal\)\}/);
  assert.match(fs.readFileSync('components/workspace/screens/goals-screen.tsx', 'utf8'), /<GoalsPage onSankey=\{setSankey\}/);
 });
+
+test('a Settings category, business or tag opens its Sankey for the last twelve months', () => {
+ const records = [...accounts,
+  record('sale', 'Etsy payout', 'Business income', 900, '2026-08-03', { business_id: 'shop', account_id: 'card' }),
+  record('wax', 'CandleScience', 'Other expense', 300, '2026-08-04', { business_id: 'shop', custom_category_id: 'supplies' }),
+  record('trip1', 'Hotel', 'Living expense', 200, '2026-08-05'), record('trip2', 'Train', 'Other expense', 50, '2026-08-06'), record('home', 'Rent', 'Rent expense', 1000, '2026-08-01')];
+ const ctx = { ...context(records), label: key => key === 'supplies' ? 'Supplies' : key };
+ const { setFlows, setTransactions } = loadTS('lib/cash-flow-set.ts');
+ const shop = setFlows({ side: 'set', of: 'business', key: 'shop' }, 'Candle shop', ctx);
+ assert.deepEqual(shape(shop), [['Business income', 'Candle shop', 900], ['Candle shop', 'Supplies', 300], ['Candle shop', 'Net', 600]], 'its income by category in, its spending out, its net');
+ assert.deepEqual(shop.nodes.map(node => node.open?.side ?? null), ['income', 'link', 'expense', 'link'], 'categories open; the business and its net open its P&L');
+ assert.equal(shop.nodes[1].open.href, '/reports?tab=cash_flow&business=shop&view=pnl');
+ const trip = setFlows({ side: 'set', of: 'tag', key: 'trip', ids: ['trip1', 'trip2'] }, 'Trip', ctx);
+ assert.deepEqual(shape(trip), [['Net', 'Trip', 250], ['Trip', 'Living expense', 200], ['Trip', 'Other expense', 50]], 'only what the tag labels; spending with no income is all net out');
+ assert.equal(trip.nodes[1].open.href, '/transactions?tag=trip');
+ assert.deepEqual(setTransactions({ side: 'set', of: 'tag', key: 'trip', ids: ['trip1', 'trip2'] }, ctx).map(item => item.id), ['trip2', 'trip1']);
+ const screen = fs.readFileSync('components/workspace/screens/settings-screen.tsx', 'utf8');
+ assert.match(screen, /const now = depositToday\(\)\.slice\(0, 7\), months = monthsBetween\(shiftMonth\(now, -11\), now\)/);
+ assert.match(screen, /<TransactionToolsPanel onOpen=\{\(item, edit\) => sankey\(\{ side: item\.direction, key: item\.key \}, item\.name, edit\)\}/, 'a category’s Details is its editor');
+ assert.match(screen, /<BusinessSettings onOpen=\{business => sankey\(\{ side: 'set', of: 'business', key: business\.id \}, business\.name, \(\) => editRecord\(business\)\)\}/);
+ assert.match(screen, /<TagSettings onOpen=\{\(tag, ids\) => sankey\(\{ side: 'set', of: 'tag', key: tag\.id, ids \}, tag\.name\)\}/);
+ const r = createRenderer();
+ const { SortableItem } = r.load('components/presentation-foundation/sortable.tsx', { '@/components/language-provider': language('en-US'), 'lucide-react': hostModule(), '@dnd-kit/sortable': { useSortable: () => ({ attributes: {}, listeners: {}, setNodeRef() {}, setActivatorNodeRef() {}, transform: null, transition: undefined, isDragging: false }) }, '@dnd-kit/utilities': { CSS: { Translate: { toString: () => undefined } } } });
+ let opened = 0;
+ r.mount(React.createElement(SortableItem, { id: 'shop', label: 'Candle shop', as: 'li', onOpen: () => { opened += 1; } }, 'x'));
+ const item = r.find(node => node.type === 'li').props;
+ item.onClick({ target: { closest: () => null }, currentTarget: { contains: () => true } });
+ item.onClick({ target: { closest: () => ({}) }, currentTarget: { contains: () => true } });
+ assert.deepEqual([item['aria-label'], opened], ['Open Candle shop', 1], 'never from its drag handle');
+});

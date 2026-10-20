@@ -27,7 +27,7 @@ import { tagCounts, type Tag } from '@/lib/tags';
 
 /** Settings › Businesses: each business with its structure and how many accounts and transactions it has, in the
  * person's own order. Editing opens the business's record; setup walks through adding businesses and accounts. */
-export function BusinessSettings({ businesses, records, preferences, owner, demo, onEdit, onDelete, onSetup, onGuide }: { businesses: Entry[]; records: readonly Entry[]; preferences: PreferenceResource; owner: string | null; demo: boolean; onEdit: (business: Entry) => void; onDelete: (business: Entry) => void; onSetup: () => void; onGuide: () => void }) {
+export function BusinessSettings({ businesses, records, preferences, owner, demo, onEdit, onDelete, onSetup, onGuide, onOpen }: { /** Opens a business's Sankey. */ onOpen?: (business: Entry) => void; businesses: Entry[]; records: readonly Entry[]; preferences: PreferenceResource; owner: string | null; demo: boolean; onEdit: (business: Entry) => void; onDelete: (business: Entry) => void; onSetup: () => void; onGuide: () => void }) {
  const { t, locale } = useLanguage();
  const order = useDisplayOrder('business_order', businesses, preferences, owner, demo);
  return <section className="panel tools-panel business-settings">
@@ -38,7 +38,7 @@ export function BusinessSettings({ businesses, records, preferences, owner, demo
   {order.items.length ? <SortableList id="business-order" items={order.items.map(item => item.id)} nameOf={id => businesses.find(item => item.id === id)?.name ?? ''} onMove={(moved, over) => void order.reorder(moved, over)} disabled={order.disabled}>
    <ul className="settings-list">{order.items.map(business => {
     const accounts = records.filter(record => record.business_id === business.id && isBusinessAccount(record)).length;
-    return <SortableItem as="li" key={business.id} id={business.id} label={business.name}>
+    return <SortableItem as="li" key={business.id} id={business.id} label={business.name} onOpen={onOpen && (() => onOpen(business))}>
      <BusinessMark name={business.name} color={business.business_color} logo={business.business_logo}/>
      <span className="settings-list-name">{business.name}<small>{[business.business_structure ? t(businessStructureLabels[business.business_structure as BusinessStructure]) : null, t('{count} accounts', { count: formatNumber(accounts, locale, 0) })].filter(Boolean).join(' · ')}</small></span>
      <Link className="panel-link" href={`/reports?tab=cash_flow&business=${business.id}&view=pnl`}>{t('View P&L')}</Link>
@@ -71,7 +71,7 @@ function TagDialog({ tag, onSave, onClose }: { tag: Tag; onSave: (tag: Tag) => P
 
 /** Settings › Tags: every tag in the person's order, with how many transactions carry it; the count opens those
  * transactions, ready to select and move to a business. */
-export function TagSettings({ tags, preferences, owner, demo }: { tags: TagsResource; preferences: PreferenceResource; owner: string | null; demo: boolean }) {
+export function TagSettings({ tags, preferences, owner, demo, onOpen }: { tags: TagsResource; preferences: PreferenceResource; owner: string | null; demo: boolean; /** Opens a tag's Sankey with the ids it labels. */ onOpen?: (tag: { id: string; name: string }, ids: string[]) => void }) {
  const { t, locale } = useLanguage();
  const order = useDisplayOrder('tag_order', tags.data.tags, preferences, owner, demo);
  const counts = tagCounts(tags.data.links);
@@ -86,7 +86,7 @@ export function TagSettings({ tags, preferences, owner, demo }: { tags: TagsReso
    <Button variant="outline" onClick={() => setEditing({ id: crypto.randomUUID(), name: '', color: nextPaletteColor(tags.data.tags.map(tag => tag.color)) })}><Plus size={16} aria-hidden="true"/>{t('Add tag')}</Button>
   </PanelTitle>
   {tags.error ? <InlineError message={t(tags.error)} onRetry={tags.retry}/> : order.items.length ? <SortableList id="tag-order" items={order.items.map(item => item.id)} nameOf={id => tags.data.tags.find(item => item.id === id)?.name ?? ''} onMove={(moved, over) => void order.reorder(moved, over)} disabled={order.disabled}>
-   <ul className="settings-list">{order.items.map(tag => <SortableItem as="li" key={tag.id} id={tag.id} label={tag.name}>
+   <ul className="settings-list">{order.items.map(tag => <SortableItem as="li" key={tag.id} id={tag.id} label={tag.name} onOpen={onOpen && (() => onOpen(tag, tags.data.links.filter(link => link.tag_id === tag.id).map(link => link.record_id)))}>
     <TagChip name={tag.name} color={tag.color}/>
     <span className="settings-list-name"/>
     <Link className="panel-link" href={`/transactions?tag=${tag.id}`}>{t('{count} transactions', { count: formatNumber(counts.get(tag.id) ?? 0, locale, 0) })}</Link>

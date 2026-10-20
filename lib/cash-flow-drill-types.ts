@@ -34,6 +34,9 @@ export type DrillTarget = { side: 'income' | 'expense'; key: string } | { side: 
  | { side: 'schedule'; key: string; date: string; due: { amount: number; currency: string }; direction: 'income' | 'expense'; open: boolean }
  /** A holding account's holdings together (a brokerage, a wallet), by their ids (`lib/cash-flow-holdings.ts`). */
  | { side: 'holdings'; keys: string[] }
+ /** A business's or a tag's transactions (`of`), by its id; a tag names the transactions it labels (`ids`)
+  * (`lib/cash-flow-set.ts`). */
+ | { side: 'set'; of: 'business' | 'tag'; key: string; ids?: string[] }
  /** The details the dialog's opener offers for what it opened (a schedule's history): it opens over the Sankey. */
  | { side: 'details' }
  /** One transaction by its id: it opens the shared transaction details rather than a Sankey. */

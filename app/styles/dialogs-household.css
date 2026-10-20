@@ -98,6 +98,9 @@
 @container goal-setup (max-width:520px){.business-setup-accounts>li{grid-template-columns:auto minmax(0,1fr)}.business-setup-accounts>li>[data-slot=native-select-wrapper]{grid-column:2}.business-setup-guidance>li{flex-wrap:wrap}.business-setup-guidance>li>a{margin-inline-start:58px}}
 /* Settings lists the person orders: businesses and tags. */
 .settings-list{display:flex;flex-direction:column;margin:0;padding:0;list-style:none}
+/* A business or tag in Settings opens its Sankey. */
+.settings-list>li[data-clickable]{cursor:pointer}
+.settings-list>li[data-clickable]:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
 .settings-list>li{display:flex;align-items:center;gap:10px;padding:10px 0;font-size:var(--type-small);background:var(--card)}
 .settings-list>li+li{border-top:1px solid var(--hairline)}
 .settings-list>li[data-dragging]{box-shadow:var(--shadow-card)}
