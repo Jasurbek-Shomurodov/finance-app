@@ -198,7 +198,11 @@ test('a merchant Sankey lists its transactions as entered, newest first, and a t
  rows[1].props.onClick();
  assert.deepEqual(opened, ['a']);
  r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'expense', key: 'groceries' }, title: 'Groceries', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord() {} }));
- assert.equal(r.all(node => node.props?.className === 'drill-transactions').length, 0, 'a category lists none');
+ // A category lists its transactions too: the merchant's name first, then the date.
+ assert.deepEqual(r.all(node => node.type === 'button' && node.props['aria-label']?.startsWith('View details')).map(node => node.props['aria-label']), ['View details for Costco'], 'only the transaction in the category');
+ assert.match(r.html(), /<strong>Costco<\/strong><small>2 August 2026<\/small>/);
+ assert.deepEqual(drillTransactions({ side: 'expense', key: 'Living expense' }, ctx).map(item => item.id), ['c', 'b'], 'a built-in category by kind, newest first');
+ assert.deepEqual(drillTransactions({ side: 'income', key: 'Other income' }, ctx).map(item => item.id), ['d']);
  // A payer lists its income the same way, in green with a plus, and a tap opens it.
  assert.deepEqual(drillTransactions({ side: 'merchant', key: 'Costco', income: true }, ctx).map(item => item.id), ['d'], 'a payer lists its income, never spending under the same name');
  r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'merchant', key: 'Costco', income: true }, title: 'Costco', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord: item => opened.push(item.id) }));

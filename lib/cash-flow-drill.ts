@@ -220,14 +220,19 @@ function merchantFlows(target: { key: string; income: boolean }, title: string, 
  return { nodes, links: [...left.map((entry, index) => ({ source: index, target: hub, value: entry.value })), ...right.map((entry, index) => ({ source: hub, target: hub + 1 + index, value: entry.value }))], missing };
 }
 
-/** The transactions behind a payer, merchant or account Sankey, newest first: each as it was entered, in its own amount
+/** The transactions behind a category, payer, merchant or account Sankey, newest first: each as it was entered, in its own amount
  * and currency. A transaction split over several categories is listed once. Tracker expenses have no record, and
- * transfers and repayments are account operations rather than transactions, so they are left out. Other Sankeys list none. */
+ * transfers and repayments are account operations rather than transactions, so they are left out. Savings lists none. */
 export function drillTransactions(target: DrillTarget, context: DrillContext): Entry[] {
- if (target.side !== 'merchant' && target.side !== 'account') return [];
+ if (target.side === 'savings') return [];
  const { data, splits, months, today, t } = context, { from, to } = span(months, today);
  const activityAccount = new Map((data.activity ?? []).map(row => [row.id, row.account_id]));
- const matches = (item: Item) => target.side === 'merchant' ? item.income === target.income && merchantOf(item, t) === target.key : accountOf(item, activityAccount) === target.key;
+ const matches = (item: Item) => {
+  if (target.side === 'merchant') return item.income === target.income && merchantOf(item, t) === target.key;
+  if (target.side === 'account') return accountOf(item, activityAccount) === target.key;
+  // A category: income by its category, spending by any part of it (a split transaction is listed once).
+  return target.side === 'income' ? item.income && (item.record?.custom_category_id ?? item.record?.kind) === target.key : !item.income && item.parts.some(part => part.category === target.key);
+ };
  const found: Entry[] = [];
  for (const item of cashFlowItems(data.records as Entry[], from, to, { splits, investmentLinks: data.investmentLinks })) if (item.record && matches(item)) found.push(item.record);
  return found.sort((a, b) => b.date.localeCompare(a.date) || a.id.localeCompare(b.id));
