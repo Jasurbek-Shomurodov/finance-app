@@ -132,12 +132,17 @@ test('TX-019 TX-020 an expense needs an amount above zero and cannot be dated in
 
 test('TX-022 editing an expense moves its account once', async ({ page }) => {
   await page.goto('/transactions');
-  await page.getByRole('listitem', { name: /View details for E2E Lunch/ }).getByText('E2E Lunch', { exact: true }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Edit E2E Lunch', exact: true }).click();
-  const dialog = page.getByRole('dialog');
+  // A row opens the transaction's Sankey; its details are one tap away there.
+  await page.getByRole('listitem', { name: /Open E2E Lunch/ }).getByText('E2E Lunch', { exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'View details for E2E Lunch', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit E2E Lunch', exact: true }).click();
+  const dialog = page.getByRole('dialog').filter({ has: page.getByRole('button', { name: /^Save/ }) });
   await dialog.getByPlaceholder('0').first().fill('30');
   await dialog.getByRole('button', { name: /^Save/ }).click();
   await expect(dialog).toBeHidden();
+  // The Sankey it was opened from stays open underneath.
+  await page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   await open(page, 'Accounts');
   await expect.poll(() => accountBalance(page, 'E2E Checking')).toBe(dollars(expected.checking - (30 - 12.75)));
 });
