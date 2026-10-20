@@ -1,5 +1,6 @@
 "use client";
-import { useState, type KeyboardEvent, type MouseEvent } from 'react';
+import { useState } from 'react';
+import { openProps } from '@/lib/row-open';
 import { CreditCard } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { useDisplayMoney } from '@/components/display-money';
@@ -27,12 +28,8 @@ type Props = {
  onOpen?: (record: Entry) => void;
 };
 
-/** A subscription row opens its Sankey by click, Enter or Space; a tap on its menu or button does only that. */
-const openRow = (onOpen: Props['onOpen'], record: Entry, label: string) => onOpen ? {
- tabIndex: 0, 'aria-label': label, 'data-clickable': true,
- onClick: (event: MouseEvent) => { if ((event.currentTarget as HTMLElement).contains(event.target as Node) && !(event.target as HTMLElement).closest('button,a')) onOpen(record); },
- onKeyDown: (event: KeyboardEvent) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); onOpen(record); } },
-} : {};
+/** A subscription row opens its Sankey; a tap on its menu or button does only that. */
+const openRow = (onOpen: Props['onOpen'], record: Entry, label: string) => openProps(onOpen && (() => onOpen(record)), label);
 
 /** Subscriptions found in recorded spending, with their monthly and yearly cost per currency. */
 export function SubscriptionsPanel({ records, decisions, loading, error, onRetry, decide, restore, onTrack, onOpen }: Props) {

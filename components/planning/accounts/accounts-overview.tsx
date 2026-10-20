@@ -44,7 +44,7 @@ export function AccountsOverview({ items, data, filters, order, businesses, card
    </div>
   </div>}
   {!balances.length&&!investmentAccounts.length&&<EmptyState className="panel" icon={<Wallet aria-hidden="true"/>} description={t('Add a cash, deposit, stock or crypto account to get started.')}><Button onClick={onAddAccount}><Plus size={17} aria-hidden="true"/>{t('Add account')}</Button></EmptyState>}
-  {businessHoldings.length>0&&<BusinessHoldings records={businessHoldings} market={market}/>}
+  {businessHoldings.length>0&&<BusinessHoldings records={businessHoldings} market={market} onOpen={holdingActions.onOpen}/>}
   {!!unassigned.length&&<section className="panel account-unassigned"><PanelTitle title={t('Holdings without an account')} hint={t('Assign existing holdings to an account without changing their value or cash balances.')}/><HoldingRows records={unassigned} {...holdingActions}/></section>}
  </>;
 }

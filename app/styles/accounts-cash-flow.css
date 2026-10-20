@@ -109,6 +109,9 @@
 
 :is(.records, .account-activity, .upcoming-section) tr.clickable-row { cursor: pointer; }
 :is(.records, .account-activity, .upcoming-section) tr.clickable-row:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+/* Account holdings and a business's other assets open their Sankey. */
+:is(.account-holding-row, .account-business-holdings li)[data-clickable] { cursor: pointer; }
+:is(.account-holding-row, .account-business-holdings li)[data-clickable]:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
 
 /* QA responsive polish: compact phone summaries, single-row controls and no clipped actions. */
 .cashflow-action{white-space:nowrap}

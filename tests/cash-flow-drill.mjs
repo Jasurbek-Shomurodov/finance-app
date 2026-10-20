@@ -871,8 +871,9 @@ test('an Investments card opens its holding’s Sankey, a holding account its ho
  r.mount(React.createElement(AssetCard, { record: vt, label: 'Stock', worth: '$600', share: 50, detailsLabel: 'Details', details: null, onOpen: () => { opened += 1; } }));
  const card = r.find(node => node.type === 'article').props;
  assert.equal(card['aria-label'], 'Open VT');
- card.onClick({ target: { closest: () => null } });
- card.onClick({ target: { closest: () => ({}) } });
+ const inCard = { contains: () => true };
+ card.onClick({ target: { closest: () => null }, currentTarget: inCard });
+ card.onClick({ target: { closest: () => ({}) }, currentTarget: inCard });
  card.onKeyDown({ key: ' ', target: 1, currentTarget: 1, preventDefault() {} });
  assert.equal(opened, 2, 'a tap on the card and Space open it; one on its menu, details or buttons does not');
  r.mount(React.createElement(AssetCard, { record: vt, label: 'Stock', worth: '$600', share: 50, detailsLabel: 'Details', details: null }));
@@ -881,4 +882,25 @@ test('an Investments card opens its holding’s Sankey, a holding account its ho
  assert.match(screen, /const openHolding = \(record: Entry\) => setSankey\(\{ target: \{ side: 'account', key: record\.id \}, title: record\.name, month, onDetails: \(\) => editRecord\(record\) \}\);/);
  assert.match(screen, /const openAccount = \(account: HoldingAccount, holdings: string\[\]\) => setSankey\(\{ target: \{ side: 'holdings', keys: holdings \}, title: account\.name, month \}\);/);
  assert.match(screen, /onOpen=\{openHolding\} onOpenAccount=\{openAccount\}/);
+});
+
+test('an Accounts row, holding or other asset opens its Sankey; picking an account in the directory keeps it selected', () => {
+ const { openProps } = loadTS('lib/row-open.ts');
+ let opened = 0;
+ const props = openProps(() => { opened += 1; }, 'Open Card');
+ const inRow = { contains: () => true }, outside = { contains: () => false };
+ props.onClick({ target: { closest: () => null }, currentTarget: inRow });
+ props.onClick({ target: { closest: selector => selector.includes('select') ? {} : null }, currentTarget: inRow });
+ props.onClick({ target: { closest: () => null }, currentTarget: outside });
+ props.onKeyDown({ key: 'Enter', target: 1, currentTarget: 1, preventDefault() {} });
+ props.onKeyDown({ key: 'Enter', target: 1, currentTarget: 2, preventDefault() {} });
+ assert.equal(opened, 2, 'a tap on the row and Enter on it; never from its own controls, a portaled menu, or a key meant for a control inside');
+ assert.deepEqual(openProps(undefined, 'x'), {});
+ const page = fs.readFileSync('components/planning/accounts-page.tsx', 'utf8');
+ assert.match(page, /const select=\(key:string\)=>\{\n  setSelected\(key\);/, 'the directory still selects the account');
+ assert.match(page, /if\(key\.startsWith\('investment:'\)\)onSankey\(\{target:\{side:'holdings',keys:data\.records\.filter\(record=>record\.holding_account_id===item\.id\)\.map\(record=>record\.id\)\}/, 'an investment account opens its holdings together');
+ assert.match(page, /onAccountOwner, onSankey \}: Props\)/);
+ assert.match(fs.readFileSync('components/planning/accounts/holding-rows.tsx', 'utf8'), /<li className="account-holding-row" \{\.\.\.openProps\(onOpen && \(\(\) => onOpen\(record\)\)/);
+ assert.match(fs.readFileSync('components/planning/accounts/accounts-overview.tsx', 'utf8'), /<BusinessHoldings records=\{businessHoldings\} market=\{market\} onOpen=\{holdingActions\.onOpen\}\/>/);
+ assert.match(fs.readFileSync('components/workspace/screens/accounts-screen.tsx', 'utf8'), /<AccountsPage onSankey=\{setSankey\}/);
 });
