@@ -363,7 +363,15 @@ test('a debt’s principal opens the payments that paid it down; a mortgage paym
  const { paymentFlows } = loadTS('lib/cash-flow-principal.ts');
  const payment = paymentFlows('mp1', ctx);
  assert.deepEqual(shape(payment), [['Card', 'Mortgage payment', 1000], ['Mortgage payment', 'Principal', 600], ['Mortgage payment', 'Interest', 400]]);
- assert.deepEqual(payment.nodes.map(node => node.open ?? null), [{ side: 'account', key: 'card' }, null, { side: 'account', key: 'home' }, { side: 'expense', key: 'Other expense' }], 'the account, the mortgage and the interest category open');
+ assert.deepEqual(payment.nodes.map(node => node.open ?? null), [{ side: 'account', key: 'card' }, null, { side: 'account', key: 'home' }, { side: 'interest', key: 'home' }], 'the account, the mortgage and the mortgage’s interest open');
+ const { interestFlows, mortgageTransactions } = loadTS('lib/cash-flow-principal.ts');
+ const interest = interestFlows('home', ctx);
+ assert.deepEqual(shape(interest), [['20 August 2026 · Card', 'Interest', 400], ['5 August 2026 · Savings account', 'Interest', 410]], 'each payment’s interest in the period, newest first');
+ assert.deepEqual(interest.nodes.map(node => node.open ?? null), [{ side: 'payment', key: 'mp1' }, { side: 'payment', key: 'mp2' }, { side: 'expense', key: 'Other expense' }], 'a payment opens its Sankey; the total opens the category the payments share');
+ assert.deepEqual(mortgageTransactions('home', ctx).map(item => item.id), ['mp1', 'mp2']);
+ const split = interestFlows('home', { ...ctx, data: { ...ctx.data, records: ctx.data.records.map(item => item.id === 'mp2' ? { ...item, custom_category_id: 'housing' } : item) } });
+ assert.equal(split.nodes.at(-1).open, undefined, 'payments in two categories: the total opens neither');
+ assert.equal(interestFlows('home', { ...ctx, currency: 'GBP' }).missing, 2);
  assert.deepEqual([shape(paymentFlows('mp1', { ...ctx, currency: 'GBP' })), paymentFlows('mp1', { ...ctx, currency: 'GBP' }).missing], [[], 1]);
  assert.deepEqual(shape(paymentFlows('r1', ctx)), [], 'a repayment is not a mortgage payment');
  const loan = principalFlows('loan', ctx);
@@ -387,6 +395,10 @@ test('a debt’s principal opens the payments that paid it down; a mortgage paym
  assert.equal(details.length, 1, 'its transaction is listed below, one tap from its details');
  details[0].props.onClick();
  assert.deepEqual(opened, ['mp1']);
+ tap('Interest');
+ assert.equal(r.find(node => node.type === 'DialogTitle').props.children[0], 'Interest', 'the interest opens the mortgage’s interest for the period');
+ assert.deepEqual(shape(sankey().data), [['20 August 2026 · Card', 'Interest', 400], ['5 August 2026 · Savings account', 'Interest', 410]]);
+ assert.equal(r.all(node => node.type === 'button' && node.props['aria-label'] === 'View details for Mortgage payment').length, 2, 'with its payments listed');
  r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'principal', key: 'loan' }, title: 'Principal', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord() {} }));
  assert.match(r.html(), /<strong>Repayment<\/strong><small>15 August 2026 · ← Card<\/small>/);
  tap('15 August 2026 · Card');

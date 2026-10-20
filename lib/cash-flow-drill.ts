@@ -258,7 +258,7 @@ export function drillTransactions(target: DrillTarget, context: DrillContext): E
  const paidDebt = new Map((data.activity ?? []).filter(row => row.action === 'mortgage' && row.target_id).map(row => [row.id, row.target_id!]));
  const matches = (item: Item) => {
   if (target.side === 'savings') return true;
-  if (target.side === 'operation' || target.side === 'principal' || target.side === 'payment' || target.side === 'record') return false;
+  if (target.side === 'operation' || target.side === 'principal' || target.side === 'interest' || target.side === 'payment' || target.side === 'record') return false;
   if (target.side === 'merchant') return item.income === target.income && merchantOf(item, t) === target.key;
   if (target.side === 'account') return accountOf(item, activityAccount) === target.key || (!!item.record && paidDebt.get(item.record.id) === target.key);
   // A category: income by its category, spending by any part of it (a split transaction is listed once).
@@ -274,7 +274,7 @@ export function drillTransactions(target: DrillTarget, context: DrillContext): E
 export function drillFlows(target: DrillTarget, title: string, savings: number, context: DrillContext): DrillFlows {
  if (target.side === 'savings') return savingsFlows(savings, context);
  // A transfer, a debt's principal and a transaction are drawn by their own modules or open their details.
- if (target.side === 'operation' || target.side === 'principal' || target.side === 'payment' || target.side === 'record') return { nodes: [], links: [], missing: 0 };
+ if (target.side === 'operation' || target.side === 'principal' || target.side === 'interest' || target.side === 'payment' || target.side === 'record') return { nodes: [], links: [], missing: 0 };
  if (target.side === 'account') return accountFlows(target.key, title, context);
  if (target.side === 'merchant') return merchantFlows(target, title, context);
  return categoryFlows(target, title, context);
