@@ -24,7 +24,7 @@ import { marketRates } from '@/lib/market';
 
 export function OverviewScreen() {
  const { t } = useLanguage();
- const { user, demo, rows, addCashFlow, current, currency, market, budget, forecastBudget, forecastBudgetState, reload, preferencesData, excludedCurrencies, snapshots, forecast, forecastReady, planning, transactionTools, workspacePreferences, workspaceLoading, businessList, setSettingUpBusinesses } = useWorkspace();
+ const { user, demo, rows, addCashFlow, current, currency, market, budget, forecastBudget, forecastBudgetState, reload, preferencesData, excludedCurrencies, snapshots, forecast, forecastReady, planning, transactionTools, workspacePreferences, workspaceLoading, businessList, setSettingUpBusinesses, setDrilling, storedRecord } = useWorkspace();
  const planningReady = demo || (!planning.loading && !planning.error);
  const cards = useOverviewCards({ entries: current, currency, excludedCurrencies, forecast, forecastReady, planning: planningReady ? planning.data : null });
  const { layout, change } = useDashboardLayout(workspacePreferences, demo);
@@ -39,7 +39,8 @@ export function OverviewScreen() {
   commitments: cards.commitments,
   allocation: cards.allocation,
   goals: planningReady && <GoalsCard goals={planning.data.goals} order={savedGoalOrder(workspacePreferences.data.preferences)} data={planning.data} currency={currency} netWorth={code => goalFinancials(planning.data.records, depositToday().slice(0, 7), code, market).netWorth}/>,
-  transactions: planningReady && <RecentTransactionsCard owner={user} demo={demo} revision={reload} data={planning.data}/>,
+  // A recent transaction opens its Sankey, as a transaction row does everywhere.
+  transactions: planningReady && <RecentTransactionsCard owner={user} demo={demo} revision={reload} data={planning.data} onOpen={record => setDrilling(storedRecord(record))}/>,
   upcoming: cards.upcoming,
   forecast: planningReady && <LowestBalanceCard data={planning.data} budget={forecastBudget} budgetState={forecastBudgetState} currency={currency} rates={marketRates(market)}/>,
   income,

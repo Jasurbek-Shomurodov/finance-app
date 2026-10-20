@@ -707,3 +707,24 @@ test('a transaction row opens its Sankey over the page: its payer or merchant fo
  r.mount(React.createElement(Probe));
  assert.deepEqual(read, ['/api/planning?scope=budget&month=2026-10&from=2025-01', '/api/goal-tools'], 'signed in, it reads the budget read for the bars and the goals’ history');
 });
+
+test('a recent transaction on the dashboard opens its Sankey by click, Enter or Space; without a handler it stays plain', () => {
+ const r = createRenderer();
+ const modules = { '@/components/language-provider': language('en-US'), '@/lib/deposit-interest': { ...loadTS('lib/deposit-interest.ts'), depositToday: () => '2026-08-31' },
+  '@/hooks/use-owner-resource': { useOwnerResource: (url, owner, enabled, revision, empty) => ({ data: empty, loading: false }) }, 'next/link': hostModule(), 'lucide-react': hostModule(),
+  '@/components/display-money': { useDisplayMoney: () => ({ entered: (amount, currency) => `${currency} ${amount}` }) } };
+ const { RecentTransactionsCard } = r.load('components/dashboard-cards.tsx', modules);
+ const data = { records: [record('pay', 'EPAM', 'Salary', 3000, '2026-08-05'), record('food', 'Market', 'Living expense', 50, '2026-08-06')], categories: [], goals: [], occurrences: [], activity: [] };
+ const opened = [];
+ r.mount(React.createElement(RecentTransactionsCard, { data, onOpen: item => opened.push(item.id) }));
+ const rows = r.all(node => node.type === 'li' && node.props.role === 'button');
+ assert.deepEqual(rows.map(row => row.props['aria-label']), ['Open Market', 'Open EPAM'], 'newest first, each a button');
+ rows[0].props.onClick();
+ rows[1].props.onKeyDown({ key: 'Enter', preventDefault() {} });
+ rows[1].props.onKeyDown({ key: ' ', preventDefault() {} });
+ rows[1].props.onKeyDown({ key: 'Tab', preventDefault() {} });
+ assert.deepEqual(opened, ['food', 'pay', 'pay']);
+ r.mount(React.createElement(RecentTransactionsCard, { data }));
+ assert.equal(r.all(node => node.type === 'li' && node.props.role === 'button').length, 0);
+ assert.match(fs.readFileSync('components/workspace/screens/overview-screen.tsx', 'utf8'), /<RecentTransactionsCard [^\n]*onOpen=\{record => setDrilling\(storedRecord\(record\)\)\}\/>/, 'the dashboard opens the shared transaction Sankey');
+});

@@ -98,6 +98,10 @@
 .overview-list:is(.overview-due,.overview-commitments) li{grid-template-columns:auto minmax(0,1fr) auto}
 .overview-due li>span:nth-child(2){display:grid;min-width:0;overflow-wrap:anywhere}
 .overview-due small{min-width:0;text-align:start}
+/* A recent transaction on the dashboard opens its Sankey. */
+.dashboard-transactions li[role=button]{cursor:pointer;border-radius:var(--radius-control)}
+.dashboard-transactions li[role=button]:hover{background:color-mix(in srgb,var(--foreground) 4%,transparent)}
+.dashboard-transactions li[role=button]:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
 .overview-panel .cash-footer{margin-top:0;padding-top:16px;font-size:var(--type-small);font-weight:600}
 .overview-panel .cash-footer strong{font-variant-numeric:tabular-nums}
 .overview-panel .empty{padding:24px 8px;font-size:var(--type-small)}

@@ -1,4 +1,5 @@
 "use client";
+import type { KeyboardEvent } from 'react';
 import { ChartPie, Goal as GoalIcon, ReceiptText } from 'lucide-react';
 import { BudgetProgress } from '@/components/budget/budget-rows';
 import type { WorkspaceBudget } from '@/hooks/use-budget';
@@ -31,7 +32,8 @@ export function recentTransactions(records: Entry[], today: string, limit = 5) {
   .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id)).slice(0, limit);
 }
 
-export function RecentTransactionsCard({ owner = null, demo = false, revision = 0, data: provided }: { owner?: string | null; demo?: boolean; revision?: number; data: PlanningData }) {
+/** With `onOpen`, a row opens its transaction (by click, Enter or Space): the dashboard opens its Sankey. */
+export function RecentTransactionsCard({ owner = null, demo = false, revision = 0, data: provided, onOpen }: { owner?: string | null; demo?: boolean; revision?: number; data: PlanningData; onOpen?: (record: Entry) => void }) {
  const { t, locale } = useLanguage();
  const { entered } = useDisplayMoney();
  const today = depositToday();
@@ -42,7 +44,8 @@ export function RecentTransactionsCard({ owner = null, demo = false, revision = 
   <PanelTitle title={t('Transactions')}><DrawerLink href="/transactions">{t('View all')}</DrawerLink></PanelTitle>
   {owner && !demo && remote.loading ? <LoadingPlaceholder label={t('Loading records…')} rows={4}/> : recent.length ? <ul className="overview-list overview-due">{recent.map(record => {
    const incoming = income.includes(record.kind);
-   return <li key={record.id}><CategoryIcon kind={record.kind}/><span>{shownName(record, t)}<small>{t(record.kind)} · {formatDate(record.date, locale)}</small></span><strong className={incoming ? 'positive' : undefined}>{incoming ? '+' : ''}{entered(Math.abs(signedAmount(record)), record.currency)}</strong></li>;
+   const open = onOpen ? { role: 'button', tabIndex: 0, 'aria-label': t('Open {name}', { name: shownName(record, t) }), onClick: () => onOpen(record), onKeyDown: (event: KeyboardEvent) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen(record); } } } : {};
+   return <li key={record.id} {...open}><CategoryIcon kind={record.kind}/><span>{shownName(record, t)}<small>{t(record.kind)} · {formatDate(record.date, locale)}</small></span><strong className={incoming ? 'positive' : undefined}>{incoming ? '+' : ''}{entered(Math.abs(signedAmount(record)), record.currency)}</strong></li>;
   })}</ul> : <EmptyState icon={<ReceiptText/>} description={t('No transactions recorded this month or last.')}/>}
  </section>;
 }
