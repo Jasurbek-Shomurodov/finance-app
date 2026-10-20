@@ -29,3 +29,13 @@ export function isPreviewReady(data: unknown) {
  const message = data as Partial<PreviewMessage> | null;
  return !!message && message.source === 'hoggish-preview' && message.type === 'ready';
 }
+
+/** Resolves on the first frame the screen shows no loading placeholder, or after `limit` milliseconds at the latest:
+ * the preview says it is ready only then, so visitors never watch a chart load. */
+export function whenLoaded(root: ParentNode, limit = 5000) {
+ const until = performance.now() + limit;
+ return new Promise<void>(done => {
+  const check = () => root.querySelector('.chart-skeleton, .loading-placeholder') && performance.now() < until ? requestAnimationFrame(check) : done();
+  check();
+ });
+}

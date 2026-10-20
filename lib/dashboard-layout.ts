@@ -15,7 +15,8 @@ export const dashboardCardLabels: Record<DashboardCard, string> = {
  goals: 'Goals', transactions: 'Transactions', upcoming: 'Upcoming payments', forecast: 'Lowest balance ahead', income: 'Income over time',
 };
 export type DashboardLayout = { columns: Record<DashboardColumn, DashboardCard[]>; hidden: DashboardCard[] };
-export const defaultDashboardLayout: DashboardLayout = { columns: { left: [...dashboardCards.left], right: [...dashboardCards.right] }, hidden: [] };
+// Income over time starts hidden: it is the tallest card and Cash flow shows the same. Customize turns it on.
+export const defaultDashboardLayout: DashboardLayout = { columns: { left: [...dashboardCards.left], right: [...dashboardCards.right] }, hidden: ['income'] };
 
 const defaultColumn = (card: DashboardCard): DashboardColumn => (dashboardCards.left as readonly string[]).includes(card) ? 'left' : 'right';
 const isCard = (id: unknown): id is DashboardCard => (dashboardCardIds as readonly unknown[]).includes(id);
@@ -30,7 +31,8 @@ export function normalizeLayout(saved: unknown): DashboardLayout {
   ? { left: take(value.columns.left), right: take(value.columns.right) }
   : (() => { const order = take(value.order); return { left: order.filter(card => defaultColumn(card) === 'left'), right: order.filter(card => defaultColumn(card) === 'right') }; })();
  for (const card of dashboardCardIds) if (!seen.has(card)) columns[defaultColumn(card)].push(card);
- return { columns, hidden: [...new Set((value.hidden ?? []).filter(isCard))] };
+ // Nothing saved yet starts with the default hidden cards; a saved layout keeps exactly what its owner hid.
+ return { columns, hidden: value.hidden ? [...new Set(value.hidden.filter(isCard))] : [...defaultDashboardLayout.hidden] };
 }
 
 /** The visible cards of each column, in the saved order. */

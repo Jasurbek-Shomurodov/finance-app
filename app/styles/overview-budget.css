@@ -16,8 +16,6 @@
 .overview-chart-heading h3{font-size:var(--type-body);font-weight:600;letter-spacing:-.01em}
 .overview-chart-heading .comparison-legend{margin-top:0}
 .overview-chart-title{display:flex;flex-direction:column;gap:8px}
-.tracking-start{display:flex;align-items:center;gap:10px;font-size:var(--type-caption);color:var(--muted-foreground)}
-.tracking-start .date-picker-trigger{width:auto;min-height:36px;padding:6px 10px;gap:8px}
 .tracking-start[aria-busy=true]{opacity:.6}
 .overview-content .comparison-legend button{min-height:32px;padding:4px 10px;border-radius:999px;font-size:var(--type-caption)}
 .overview-content .portfolio-chart{margin:12px 0 0}

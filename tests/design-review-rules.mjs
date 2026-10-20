@@ -272,7 +272,7 @@ test('Reports keeps the 8 October 2026 review fixes (SCR-095, SCR-096, HEAD-011,
 
 test('every Sankey keeps room for its columns on a phone and scrolls instead of squeezing them (17 October 2026)', () => {
  // On Cash flow the label margins took the whole phone width: the flows bent into blobs and the middle label ran over the bars.
- for(const file of ['components/cash-flow-report.tsx','components/business-reports.tsx']){
+ for(const file of ['components/cash-flow-sankey.tsx','components/business-reports.tsx']){
   const source=fs.readFileSync(file,'utf8'),charts=source.match(/<ResponsiveContainer[^>]*>\s*<Sankey/g)??[];
   assert.ok(charts.length,file+' draws a Sankey');
   for(const chart of charts)assert.match(chart,/minWidth=\{sankeyMinWidth\(/,file+': the Sankey sets its narrowest width from its labels and columns');

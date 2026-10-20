@@ -175,6 +175,7 @@ test('BudgetGroupCard: no unbudgeted toggle when every row has a budget',()=>{
  const view=mount(React.createElement(page.BudgetGroupCard,{group,currency:'USD',open:true,onToggle(){},showUnbudgeted:false,onShowUnbudgeted(){},renderPlanned:()=>null,onOpen(){}}));
  assert.equal(byClass(view,'budget-unbudgeted').length,0);
  assert.deepEqual(byClass(view,'budget-pill').map(pill=>pill.props['data-tone']),['positive','positive'],'income above plan is green');
+ assert.deepEqual(byClass(view,'budget-pill').map(text),['+$200','+$200'],'income above plan shows the extra as a plus, not a negative remainder');
 });
 
 test('BudgetGroupCard: a bare card lists only its categories, always open',()=>{

@@ -2635,5 +2635,7 @@
   "Swap accounts": "口座を入れ替える",
   "Linked to (optional)": "関連先（任意）",
   "Not linked": "関連なし",
-  "Business or property": "事業または不動産"
+  "Business or property": "事業または不動産",
+  "No account": "口座なし",
+  "Not traced": "追跡不可"
 }

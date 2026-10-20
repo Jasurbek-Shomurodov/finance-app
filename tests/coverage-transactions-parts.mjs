@@ -77,7 +77,7 @@ test('CategoryPicker shows a plain pill when disabled and a searchable list othe
  const changes=[];
  const disabled=expand(h(page.CategoryPicker,{record:entry({kind:'Other expense',custom_category_id:'c-food'}),categories,disabled:true,onChange:c=>changes.push(c)}),'x');
  assert.equal(text(disabled),'Food');
- assert.equal(findAll(disabled,n=>n.type==='CategoryIcon')[0].props.kind,'Food');
+ assert.equal(findAll(disabled,n=>n.type==='CategoryIcon').length,0,'the row shows the category icon already; the pill names it only');
  assert.equal(popover(disabled).length,0);
 
  const render=mount(h(page.CategoryPicker,{record:entry(),categories,onChange:c=>changes.push(c)}));

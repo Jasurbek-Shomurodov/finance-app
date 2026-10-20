@@ -20,8 +20,10 @@ export function PageHeader({ title, hint, eyebrow, tabs, className, children }: 
   </div>
   {actions}
  </header>;
+ // Tabs stay beside the title while the bar has room for them, even when the actions do not fit and open the page.
+ const tabsInBar = slot.tabsInBar || !!slot.actions;
  return <>
-  {createPortal(<>{heading}{eyebrow && <p className="page-eyebrow">{eyebrow}</p>}{slot.actions && tabs}</>, slot.title)}
-  {slot.actions ? actions && createPortal(actions, slot.actions) : (tabs || actions) && <header className={`${classes} page-heading-actions`}>{tabs}{actions}</header>}
+  {createPortal(<>{heading}{eyebrow && <p className="page-eyebrow">{eyebrow}</p>}{tabsInBar && tabs}</>, slot.title)}
+  {slot.actions ? actions && createPortal(actions, slot.actions) : ((!tabsInBar && tabs) || actions) && <header className={`${classes} page-heading-actions`}>{!tabsInBar && tabs}{actions}</header>}
  </>;
 }

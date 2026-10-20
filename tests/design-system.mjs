@@ -148,7 +148,7 @@ test('page titles and actions sit in the top bar, as in a desktop app',()=>{
  assert.match(bar,/<div className="topbar-page-title" ref=\{slot\?\.titleRef\}\/><span className="topbar-title">/,'the section name stands in until the page puts its title there');
  assert.match(bar,/\{roomy && !crowded && <div className="topbar-page-actions" ref=\{slot\?\.actionsRef\}\/>\}/,'actions join the bar only where it has room');
  assert.match(header,/createPortal\(<>\{heading\}/);
- assert.match(header,/slot\.actions \? actions && createPortal\(actions, slot\.actions\) : \(tabs \|\| actions\) && <header/,'actions stay on the page on phones');
+ assert.match(header,/slot\.actions \? actions && createPortal\(actions, slot\.actions\) : \(\(!tabsInBar && tabs\) \|\| actions\) && <header/,'actions stay on the page on phones');
  assert.match(css,/\.topbar-page-title:not\(:empty\)\+\.topbar-title\{display:none\}/);
  assert.match(fs.readFileSync('components/workspace/top-bar.tsx','utf8'),/\{!readOnly && section === 'Income & expenses' && <Button size="sm" className="quick-expense"/,'Add expense sits in the bar on Cash flow only');
  assert.doesNotMatch(fs.readFileSync('components/presentation-foundation/loading-placeholder.tsx','utf8'),/className="page-heading"/,'no heading placeholder under a bar that already names the page');
@@ -191,10 +191,12 @@ test('Goals, Reports and Cash flow switch their views from tabs beside the title
  assert.match(budgetScreen,/archiveSchedule\(\{ source: 'record', record: bill \}, true\)/,'stopping archives the bills, as Recurring does');
  assert.match(budgetScreen,/onOpen=\{setViewing\}/);assert.match(budgetScreen,/<CategoryDetailsDialog /);assert.match(budgetScreen,/addCashFlow\([^\n]*'Monthly', \{ name: name\(row\), amount: Math\.round\(row\.budget \|\| row\.actual\)/);assert.match(recurringScreen,/addCashFlow\('Other expense', 'Monthly'\)/);assert.doesNotMatch(recurringScreen,/ExpensePlan/,'spending plans are Budget categories now');
  const header=fs.readFileSync('components/presentation-foundation/page-header.tsx','utf8'),bar=fs.readFileSync('components/workspace/top-bar.tsx','utf8'),css=stylesheet();
- assert.match(header,/\{slot\.actions && tabs\}<\/>, slot\.title\)/,'tabs join the title only when the actions do');
- assert.match(header,/\(tabs \|\| actions\) && <header className=\{`\$\{classes\} page-heading-actions`\}>\{tabs\}\{actions\}<\/header>/,'otherwise they open the page');
+ assert.match(header,/\{tabsInBar && tabs\}<\/>, slot\.title\)/,'tabs join the title while the bar has room for them');
+ assert.match(header,/const tabsInBar = slot\.tabsInBar \|\| !!slot\.actions;/,'tabs stay in the bar when only the actions are crowded out');
+ assert.match(fs.readFileSync('components/workspace/top-bar.tsx','utf8'),/barWidthNeeded\(node, false\) \+ \(previous >= 2 \? 8 : 0\) > room \? 2/,'the tabs leave the bar only when they do not fit without the actions');
+ assert.match(header,/\(\(!tabsInBar && tabs\) \|\| actions\) && <header className=\{`\$\{classes\} page-heading-actions`\}>\{!tabsInBar && tabs\}\{actions\}<\/header>/,'otherwise they open the page');
  assert.match(bar,/\{roomy && !crowded && <div className="topbar-page-actions"/,'a bar that overflowed keeps only the title');
- assert.match(bar,/setCrowded\(previous => previous \? needed \+ 8 > room : needed > room\)/,'the same widths always give the same answer');
+ assert.match(bar,/setCrowded\(previous => barWidthNeeded\(node, false\) \+ \(previous >= 2 \? 8 : 0\) > room \? 2 : barWidthNeeded\(node\) \+ \(previous >= 1 \? 8 : 0\) > room \? 1 : 0\)/,'the same widths always give the same answer, with a little slack before each level clears');
  assert.match(css,/\.segmented:not\(\.page-tabs\)\{display:flex;width:100%;flex-wrap:wrap/,'page tabs stay on one scrolling line on phones');
  assert.match(css,/\.segmented\.page-tabs>button:focus-visible\{outline:2px solid var\(--ring\);outline-offset:-2px/,'focus shows inside the tab, never clipped to a line');
 });

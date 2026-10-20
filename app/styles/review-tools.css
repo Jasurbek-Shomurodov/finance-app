@@ -199,8 +199,10 @@
 .income-source-popover { width: min(680px, calc(100vw - 32px)); padding: 0; overflow: hidden; border-radius: 18px; }
 .income-source-search { display: flex; align-items: center; gap: 10px; padding: 12px; border-bottom: 1px solid var(--border); }
 .income-source-search input { min-width: 0; }
-.income-source-columns { display: grid; grid-template-columns: 210px minmax(0, 1fr); }
-.income-source-categories, .income-source-results { min-height: 0; max-height: min(360px, 45vh); overflow-y: auto; overscroll-behavior-y: contain; padding: 8px; }
+/* A fixed height: hovering a group or typing a search changes what is listed, never the popover's size, so it does not
+   jump (or re-measure in a loop) when it opens above its field. */
+.income-source-columns { display: grid; grid-template-columns: 210px minmax(0, 1fr); height: min(360px, 45vh); }
+.income-source-categories, .income-source-results { min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; padding: 8px; }
 .income-source-categories { background: var(--muted); border-inline-end: 1px solid var(--border); }
 .income-source-categories button, .income-source-results button { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 12px; border-radius: 12px; text-align: start; min-height: 44px; }
 .income-source-categories button[aria-pressed="true"], .income-source-results button:hover { background: var(--background); color: var(--primary); }
@@ -211,10 +213,9 @@
 .income-source-categories button:focus-visible, .income-source-results button:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
 .income-source-results button:disabled { opacity: .5; }
 @media (max-width: 520px) {
- .income-source-columns { grid-template-columns: 1fr; }
+ .income-source-columns { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); height: min(calc(28vh + 110px), 60vh); }
  .income-source-categories { display: flex; max-height: 110px; flex-wrap: wrap; border-inline-end: 0; border-bottom: 1px solid var(--border); }
  .income-source-categories button { width: auto; padding: 8px 10px; }
- .income-source-results { max-height: 28vh; }
 }
 
 .scheduled-payment-summary { display: flex; align-items: flex-start; gap: 12px; padding: 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--muted); }

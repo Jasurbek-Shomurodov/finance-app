@@ -2635,5 +2635,7 @@
   "Swap accounts": "สลับบัญชี",
   "Linked to (optional)": "เชื่อมโยงกับ (ไม่บังคับ)",
   "Not linked": "ไม่ได้เชื่อมโยง",
-  "Business or property": "ธุรกิจหรืออสังหาริมทรัพย์"
+  "Business or property": "ธุรกิจหรืออสังหาริมทรัพย์",
+  "No account": "ไม่มีบัญชี",
+  "Not traced": "ติดตามไม่ได้"
 }

@@ -101,6 +101,23 @@ test('the hero and the pillars show the real app in its sample workspace, not a 
  assert.ok(!render().includes('<iframe'));
 });
 
+test('an app preview shows itself only once its charts have loaded',async()=>{
+ const frames=[];
+ globalThis.requestAnimationFrame=callback=>{frames.push(callback);return frames.length;};
+ const {whenLoaded}=loadTS('lib/app-preview.ts');
+ let placeholders=2,settled=false;
+ const root={querySelector:selector=>{assert.equal(selector,'.chart-skeleton, .loading-placeholder');return placeholders?{}:null;}};
+ const ready=whenLoaded(root).then(()=>{settled=true;});
+ while(placeholders){await Promise.resolve();assert.equal(settled,false,'it waits while a chart is still loading');placeholders--;frames.shift()();}
+ await ready;assert.equal(settled,true);
+ let late=false;
+ const capped=whenLoaded({querySelector:()=>({})},0).then(()=>{late=true;});
+ await capped;assert.equal(late,true,'a placeholder that never goes away does not hide the preview for good');
+ delete globalThis.requestAnimationFrame;
+ const provider=workspaceSource();
+ assert.match(provider,/preloadCharts\(\)\.catch\(\(\) => undefined\)\.then\(\(\) => whenLoaded\(document\)\)/);
+});
+
 test('an app preview opens only the sample workspace and only drawer screens',()=>{
  const {isPreviewFrame,previewPath,isPreviewReady,previewOpen,previewReady,previewSource}=loadTS('lib/app-preview.ts');
  assert.equal(previewSource,'/?preview=1');

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { isPreviewFrame, previewPath, previewReady } from '@/lib/app-preview';
+import { preloadCharts } from '@/components/charts-lazy';
+import { isPreviewFrame, previewPath, previewReady, whenLoaded } from '@/lib/app-preview';
 import { signInPath } from '@/lib/sign-in-path';
 
 type Router = { push: (path: string) => void; replace: (path: string) => void };
@@ -16,8 +17,10 @@ export function useSessionRouting({ ready, user, demo, pathname, router, pending
         if (!preview || !demo) return;
         const open = (event: MessageEvent) => { const path = event.origin === window.location.origin ? previewPath(event.data) : null; if (path) router.push(path); };
         window.addEventListener('message', open);
-        window.parent.postMessage(previewReady, window.location.origin);
-        return () => window.removeEventListener('message', open);
+        // The page shows the preview once it is ready: after the charts have arrived and the screen has drawn them.
+        let live = true;
+        void preloadCharts().catch(() => undefined).then(() => whenLoaded(document)).then(() => { if (live) window.parent.postMessage(previewReady, window.location.origin); });
+        return () => { live = false; window.removeEventListener('message', open); };
     }, [preview, demo, router]);
     useEffect(() => {
         // Signed out, only the product tour and the sign-in page are open; signed in, the sign-in page has nothing to show.

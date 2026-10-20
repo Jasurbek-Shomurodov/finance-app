@@ -13,6 +13,9 @@
 .sankey-link[data-clickable],.sankey-node[data-clickable]{cursor:pointer}
 .sankey-link[data-clickable]:hover{stroke:color-mix(in srgb,var(--mark-bg) 38%,transparent)}
 .sankey-node[data-clickable]:hover .sankey-label{text-decoration:underline}
+.sankey-node[data-clickable]:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+/* A tapped Cash flow Sankey node opens its own Sankey: wide enough for three columns and their labels. */
+.record-dialog.cash-flow-drill-dialog{max-width:min(960px,calc(100vw - 32px))!important}
 .share-bar-button{display:flex;min-width:0;padding:0;border-radius:6px;text-align:start}
 .share-bar-button:hover .share-bar{filter:brightness(.96)}
 .share-bar-button:focus-visible{outline:2px solid var(--ring);outline-offset:2px}

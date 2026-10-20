@@ -47,7 +47,8 @@ export function CategoryPicker({ record, categories, removed, disabled, onChange
  const direction = directionOf(record.kind) ?? 'expense';
  const choice = { kind: record.kind, category_id: record.custom_category_id ?? null };
  const label = useChoiceName(categories)(choice);
- const pill = <span className="transaction-category"><CategoryIcon kind={record.custom_category_id ? label : record.kind} size="sm"/><span>{label}</span></span>;
+ // The row already shows the category's icon beside its name, so the pill names it only.
+ const pill = <span className="transaction-category"><span>{label}</span></span>;
  if (disabled) return pill;
  return <Popover open={open} onOpenChange={setOpen}>
   <PopoverTrigger asChild><button type="button" className="transaction-category-button" aria-label={t('Change category for {name}', { name: record.name })}>{pill}</button></PopoverTrigger>

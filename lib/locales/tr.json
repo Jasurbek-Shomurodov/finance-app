@@ -2635,5 +2635,7 @@
   "Swap accounts": "Hesapları değiştir",
   "Linked to (optional)": "Bağlantılı (isteğe bağlı)",
   "Not linked": "Bağlantı yok",
-  "Business or property": "İşletme veya mülk"
+  "Business or property": "İşletme veya mülk",
+  "No account": "Hesap yok",
+  "Not traced": "İzlenemeyen"
 }

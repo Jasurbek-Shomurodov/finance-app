@@ -16,11 +16,12 @@ export function useCategoryName() {
  return (category: Pick<BudgetCategory, 'name' | 'custom'>) => category.custom ? category.name : t(category.name);
 }
 
-/** Remaining money as a pill: green when money is left, red when overspent, grey at zero. */
+/** Remaining money as a pill: green when money is left, red when overspent, grey at zero. Income that came in above its
+ * plan is the extra, +$1,443, not a negative amount still to come. */
 function RemainingPill({ value, direction, currency }: { value: number | null; direction: BudgetRow['direction']; currency: string }) {
  const { locale } = useLanguage();
  if (value === null) return <span className="budget-pill">—</span>;
- return <span className="budget-pill" data-tone={remainingTone(value, direction)}>{formatMoney(value, currency, locale)}</span>;
+ return <span className="budget-pill" data-tone={remainingTone(value, direction)}>{direction === 'income' && value < 0 ? formatSignedMoney(-value, currency, locale) : formatMoney(value, currency, locale)}</span>;
 }
 
 /** The progress line under a row: how much of the planned amount is used. */

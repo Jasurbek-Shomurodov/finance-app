@@ -1,8 +1,10 @@
 "use client";
 import { useMemo, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Sankey, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useLanguage } from '@/components/language-provider';
-import { chartAxis, chartColors, chartGrid, chartHeight, chartLegend, chartMargin, chartSankey, chartTooltip, chartValueAxis, groupedBar, intervalLabel, moneyTick, sankeyLink, sankeyNodeRadius } from '@/components/presentation-foundation/chart';
+import { chartAxis, chartColors, chartGrid, chartHeight, chartLegend, chartMargin, chartTooltip, chartValueAxis, groupedBar, intervalLabel, moneyTick } from '@/components/presentation-foundation/chart';
+import { CashFlowDrillDialog, FlowSankey } from '@/components/cash-flow-sankey';
+import type { DrillTarget } from '@/lib/cash-flow-drill';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
 import { ChartSkeleton } from '@/components/presentation-foundation/loading-placeholder';
 import { PanelTitle } from '@/components/presentation-foundation/panel-title';
@@ -15,11 +17,10 @@ import { hueColor } from '@/lib/category-colors';
 import { useCategoryHue } from '@/components/category-icons-context';
 import { depositToday } from '@/lib/deposit-interest';
 import { normalizeEntry } from '@/lib/finance';
-import { formatCompactMoney, formatMoney, formatMonthYear, formatPercent } from '@/lib/format';
+import { formatMoney, formatMonthYear, formatPercent } from '@/lib/format';
 import { marketRates, type MarketData } from '@/lib/market';
 import { emptyPlanning, type PlanningData } from '@/lib/planning';
 import type { TransactionSplit } from '@/lib/transaction-tools';
-import { measureLabel, sankeyLabelMargins, sankeyMinWidth } from '@/lib/sankey-labels';
 
 const periodLabels: Record<ReportPeriod, string> = { month: 'Month', quarter: 'Quarter', year: 'Year' };
 const trendTitles: Record<ReportPeriod, string> = { month: 'Income and spending by month', quarter: 'Income and spending by quarter', year: 'Income and spending by year' };
@@ -80,9 +81,10 @@ export function CashFlowReport({ owner, demo, revision, data: provided, splits, 
  const categoryHue = useCategoryHue();
  const colorKey = (key: string) => grouping === 'category' ? hueColor(categoryHue(data.categories.find(category => category.id === key)?.name ?? key)) : 'var(--foreground)';
  const flows = sankeyFlows(report, categoryName);
- const sankeyLabel = (name: string, value: number) => `${name} · ${formatCompactMoney(value, currency, locale)}`;
- // Each side gets exactly the room its longest label needs; on a narrow screen the chart scrolls rather than squeezing its columns.
- const room = sankeyLabelMargins(flows, sankeyLabel, measureLabel);
+ // A tap on a category or on Savings opens its own Sankey in a dialog; the total and the merged "Other" open nothing.
+ const [drill, setDrill] = useState<{ target: DrillTarget; title: string } | null>(null);
+ const drillOf = (index: number): DrillTarget | null => { const node = flows.nodes[index]; return node?.kind === 'savings' ? { side: 'savings' } : node?.key && node.kind !== 'total' ? { side: node.kind === 'income' ? 'income' : 'expense', key: node.key } : null; };
+ const periodName = period === 'month' ? formatMonthYear(month, locale) : `${formatMonthYear(periodMonths(month, period)[0], locale)} – ${formatMonthYear(month, locale)}`;
  if (live && remote.initialLoading) return <section className="panel cash-flow-report"><ChartSkeleton label={t('Loading records…')}/></section>;
  if (live && remote.error) return <section className="panel cash-flow-report"><InlineError message={t(remote.error)} onRetry={remote.retry}/></section>;
  return <section className="cash-flow-report" aria-label={t('Cash flow')}>
@@ -106,7 +108,7 @@ export function CashFlowReport({ owner, demo, revision, data: provided, splits, 
    </ResponsiveContainer></div>
   </section>
   <section className="panel">
-   <PanelTitle title={<>{t('Breakdown')} <span className="panel-figure">{period === 'month' ? formatMonthYear(month, locale) : `${formatMonthYear(periodMonths(month, period)[0], locale)} – ${formatMonthYear(month, locale)}`}</span></>}>
+   <PanelTitle title={<>{t('Breakdown')} <span className="panel-figure">{periodName}</span></>}>
     <div className="cash-flow-switches">
      {view === 'bars' && <Segmented label={t('Group by')} options={[{ value: 'category', label: t('Category') }, { value: 'merchant', label: t('Merchant') }] as const} value={grouping} onChange={setGrouping}/>}
      <Segmented label={t('Chart type')} options={[{ value: 'bars', label: t('Bars') }, { value: 'sankey', label: t('Sankey') }] as const} value={view} onChange={setView}/>
@@ -115,16 +117,8 @@ export function CashFlowReport({ owner, demo, revision, data: provided, splits, 
    {view === 'bars' ? <div className="cash-flow-breakdown">
     <div><h3>{t('Income')}</h3><ShareBars items={report[grouping === 'category' ? 'categories' : 'merchants'].income} label={label} colorKey={() => 'var(--positive)'} currency={currency}/></div>
     <div><h3>{t('Expenses')}</h3><ShareBars items={report[grouping === 'category' ? 'categories' : 'merchants'].expense} label={label} colorKey={colorKey} currency={currency}/></div>
-   </div> : flows.links.length ? <div className="cash-flow-sankey"><ResponsiveContainer width="100%" minWidth={sankeyMinWidth(flows, room)} height={Math.max(280, flows.nodes.length * 34)}>
-    <Sankey data={flows} {...chartSankey} margin={{ top: 8, right: room.right, bottom: 8, left: room.left }} link={sankeyLink} node={({ x, y, width, height, index, payload }: { x: number; y: number; width: number; height: number; index: number; payload: { name: string; value: number } }) => {
-     const kind = flows.nodes[index]?.kind;
-     const fill = kind === 'income' || kind === 'savings' ? chartColors.income : kind === 'total' ? 'var(--mark-bg)' : chartColors.expense;
-     const left = kind === 'income';
-     return <g><rect x={x} y={y} width={width} height={Math.max(2, height)} rx={sankeyNodeRadius} fill={fill}/><text x={left ? x - 8 : x + width + 8} y={y + height / 2} dy="0.35em" textAnchor={left ? 'end' : 'start'} className="sankey-label">{sankeyLabel(payload.name, payload.value)}</text></g>;
-    }}>
-     <Tooltip {...chartTooltip} formatter={value => money(Number(value))}/>
-    </Sankey>
-   </ResponsiveContainer></div> : <p className="budget-left-empty">{t('Nothing recorded in this period.')}</p>}
+   </div> : flows.links.length ? <FlowSankey flows={flows} currency={currency} canOpen={index => !!drillOf(index)} onOpen={index => { const target = drillOf(index); if (target) setDrill({ target, title: flows.nodes[index].name }); }}/> : <p className="budget-left-empty">{t('Nothing recorded in this period.')}</p>}
   </section>
+  {drill && <CashFlowDrillDialog target={drill.target} title={drill.title} period={periodName} savings={report.savings} context={{ data, splits, months: periodMonths(month, period), currency, today, rates, t }} onClose={() => setDrill(null)}/>}
  </section>;
 }

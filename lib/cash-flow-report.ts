@@ -95,12 +95,13 @@ export function partialBar(month: string, period: ReportPeriod, today: string) {
  return last > month || month >= today.slice(0, 7) ? intervalOf(month + '-01', period) : null;
 }
 
-export type SankeyData = { nodes: Array<{ name: string; kind: 'income' | 'total' | 'expense' | 'savings' }>; links: Array<{ source: number; target: number; value: number }> };
+export type SankeyData = { nodes: Array<{ name: string; kind: 'income' | 'total' | 'expense' | 'savings'; /** The category behind an income or expense node; none for the merged "Other". */key?: string }>; links: Array<{ source: number; target: number; value: number }> };
 /** Income sources flow into one total, which flows out to spending categories and savings. Small flows merge into "Other". */
 export function sankeyFlows(report: Pick<ReturnType<typeof cashFlowReport>, 'categories' | 'savings'>, label: (key: string) => string, limit = 8): SankeyData {
- const top = (items: Share[], other: string) => items.length <= limit ? items.map(item => ({ name: label(item.key), amount: item.amount })) : [...items.slice(0, limit - 1).map(item => ({ name: label(item.key), amount: item.amount })), { name: other, amount: items.slice(limit - 1).reduce((sum, item) => sum + item.amount, 0) }];
+ const named = (item: Share) => ({ name: label(item.key), amount: item.amount, key: item.key as string | undefined });
+ const top = (items: Share[], other: string) => items.length <= limit ? items.map(named) : [...items.slice(0, limit - 1).map(named), { name: other, amount: items.slice(limit - 1).reduce((sum, item) => sum + item.amount, 0), key: undefined }];
  const sources = top(report.categories.income, label('Other income')), outflows = top(report.categories.expense, label('Other expense'));
- const nodes: SankeyData['nodes'] = [...sources.map(item => ({ name: item.name, kind: 'income' as const })), { name: label('Income'), kind: 'total' }, ...outflows.map(item => ({ name: item.name, kind: 'expense' as const }))];
+ const nodes: SankeyData['nodes'] = [...sources.map(item => ({ name: item.name, kind: 'income' as const, key: item.key })), { name: label('Income'), kind: 'total' }, ...outflows.map(item => ({ name: item.name, kind: 'expense' as const, key: item.key }))];
  const total = sources.length;
  const links = [...sources.map((item, index) => ({ source: index, target: total, value: item.amount })), ...outflows.map((item, index) => ({ source: total, target: total + 1 + index, value: item.amount }))];
  if (report.savings > 0) { nodes.push({ name: label('Savings'), kind: 'savings' }); links.push({ source: total, target: nodes.length - 1, value: report.savings }); }

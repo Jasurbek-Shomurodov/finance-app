@@ -28,10 +28,10 @@ function rowWidth(elements: readonly Element[], gap: number) {
 
 /** The width the bar's one line needs for the page's title, tabs and actions beside its own controls, measured from
  * wherever the tabs and actions are now: in the bar, or opening the page. */
-function barWidthNeeded(node: HTMLElement) {
+function barWidthNeeded(node: HTMLElement, withActions = true) {
  const page = document.querySelector('.workspace .page-heading-actions');
  const tabs = node.querySelector('.page-tabs') ?? page?.querySelector('.page-tabs');
- const actions = node.querySelector('.topbar-page-actions .entry-actions') ?? page?.querySelector('.entry-actions');
+ const actions = withActions ? node.querySelector('.topbar-page-actions .entry-actions') ?? page?.querySelector('.entry-actions') : null;
  const location = node.querySelector('.topbar-location'), own = node.querySelector('.topbar-actions');
  const extras = [...location?.children ?? []].filter(child => !child.matches('.topbar-page-title, .topbar-title'));
  const title = node.querySelector('.topbar-page-title h1')?.scrollWidth ?? 0;
@@ -57,22 +57,25 @@ export function TopBar({ pendingSection }: { pendingSection?: string | null }) {
  // The open page puts its title and actions here; the section name stands in while it loads.
  const slot = useTopBarSlot();
  const roomy = useRoomyBar();
- // Whether the page's tabs and actions would overflow the bar's one line. It is worked out from the widths everything
- // needs, wherever it sits now, so the answer does not depend on where it was; a little slack stops it flickering.
- const bar = useRef<HTMLElement>(null), [crowded, setCrowded] = useState(false);
+ // How crowded the bar's one line would be: 0 everything fits, 1 the page's actions do not (they open the page and the
+ // tabs stay), 2 not even the tabs do (both open the page). It is worked out from the widths everything needs, wherever it
+ // sits now, so the answer does not depend on where it was; a little slack stops it flickering.
+ const bar = useRef<HTMLElement>(null), [crowded, setCrowded] = useState(0);
  useEffect(() => {
   const node = bar.current;
   if (!roomy || !node) return;
   const check = () => {
-   const needed = barWidthNeeded(node), style = getComputedStyle(node);
+   const style = getComputedStyle(node);
    const room = node.clientWidth - parseFloat(style.paddingInlineStart) - parseFloat(style.paddingInlineEnd);
-   setCrowded(previous => previous ? needed + 8 > room : needed > room);
+   setCrowded(previous => barWidthNeeded(node, false) + (previous >= 2 ? 8 : 0) > room ? 2 : barWidthNeeded(node) + (previous >= 1 ? 8 : 0) > room ? 1 : 0);
   };
   const resized = new ResizeObserver(check), changed = new MutationObserver(check);
   resized.observe(node); changed.observe(node, { childList: true, subtree: true });
   check();
   return () => { resized.disconnect(); changed.disconnect(); };
  }, [roomy]);
+ const setTabsInBar = slot?.setTabsInBar;
+ useEffect(() => { setTabsInBar?.(roomy && crowded < 2); }, [setTabsInBar, roomy, crowded]);
  const section = pendingSection ?? current;
  const currentLabel = t(sectionLabel(current));
  // Each screen names its browser tab, so history and tab switchers tell the pages apart.

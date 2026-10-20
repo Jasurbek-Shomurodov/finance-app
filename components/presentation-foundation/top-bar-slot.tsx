@@ -8,6 +8,9 @@ type Slot = {
  actions: HTMLElement | null;
  titleRef: (element: HTMLElement | null) => void;
  actionsRef: (element: HTMLElement | null) => void;
+ /** Whether the page's view tabs sit in the bar: they stay there when only the actions lack room. */
+ tabsInBar: boolean;
+ setTabsInBar: (inBar: boolean) => void;
 };
 
 const TopBarSlotContext = createContext<Slot | null>(null);
@@ -16,7 +19,8 @@ const TopBarSlotContext = createContext<Slot | null>(null);
 export function TopBarSlotProvider({ children }: { children: ReactNode }) {
  const [title, titleRef] = useState<HTMLElement | null>(null);
  const [actions, actionsRef] = useState<HTMLElement | null>(null);
- const slot = useMemo(() => ({ title, actions, titleRef, actionsRef }), [title, actions]);
+ const [tabsInBar, setTabsInBar] = useState(false);
+ const slot = useMemo(() => ({ title, actions, titleRef, actionsRef, tabsInBar, setTabsInBar }), [title, actions, tabsInBar]);
  return <TopBarSlotContext.Provider value={slot}>{children}</TopBarSlotContext.Provider>;
 }
 
