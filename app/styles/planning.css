@@ -310,9 +310,12 @@ input[type="checkbox"] {width:18px!important;height:18px!important;min-width:18p
 .amount-currency-row>.amount-value-field:only-child{grid-column:1/-1}
 .amount-currency-row>label{min-width:0}
 .amount-currency-row :is(input,select){height:46px;min-height:46px!important;font-size:var(--type-body)}
-.expense-optional-details{border-top:1px solid var(--border);padding-top:12px}
-.expense-optional-details>h3{margin:0;font-size:inherit;font-weight:500;min-height:44px;align-content:center}
-.expense-optional-fields{display:grid;gap:18px;padding:12px 0 4px}
+.record-optional-details{border-top:1px solid var(--border)}
+.record-optional-details>summary{padding-top:8px;font-size:var(--type-compact);color:var(--muted-foreground)}
+.record-optional-details>summary:hover{color:var(--foreground)}
+.record-optional-fields{display:grid;gap:18px;padding:12px 0 4px}
+.field-with-links{display:grid;gap:4px}
+.field-links{display:flex;flex-wrap:wrap;column-gap:16px}
 
 .expense-mode-tabs{min-height:0;overflow:hidden;gap:16px}
 .expense-mode-tabs>[data-slot="tabs-list"]{width:100%;height:auto;min-height:48px;flex-shrink:0;flex-wrap:wrap;padding:4px}

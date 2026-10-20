@@ -96,10 +96,11 @@ test('expense uses one category above amount, including user categories and safe
  assert.ok(selector);
  assert.ok(React.Children.toArray(selector.props.children).some(node=>node.props.children===category.name));
  const labels=[];
- const visit=node=>{if(!node||typeof node!=='object')return;if(['AmountCurrencyFields','CategoryAmount','DateDetails','DebtPayment','ExpenseActions'].includes(node.type?.name))return visit(node.type(node.props));if(node.type==='label')labels.push(React.Children.toArray(node.props.children)[0]);for(const child of React.Children.toArray(node.props?.children))visit(child);};
+ const visit=node=>{if(!node||typeof node!=='object')return;if(['AmountCurrencyFields','CategoryAmount','DateDetails','PaymentNameDetails','OptionalDetails','DebtPayment','ExpenseActions'].includes(node.type?.name))return visit(node.type(node.props));if(node.type==='label')labels.push(React.Children.toArray(node.props.children)[0]);for(const child of React.Children.toArray(node.props?.children))visit(child);};
  visit(tree);
  assert.equal(labels.filter(label=>label==='Category').length,1);
- assert.ok(labels.indexOf('Category')<labels.indexOf('Amount'));
+ // The amount someone came to enter leads the form; its category follows.
+ assert.ok(labels.indexOf('Amount')<labels.indexOf('Category'));
  assert.ok(!labels.includes('Custom category'));
  selector.props.onChange({target:{value:'Other expense'}});
  assert.equal(updated.custom_category_id,null);assert.equal(updated.kind,'Other expense');assert.equal(updated.amount,12.125);
@@ -244,14 +245,13 @@ test('editing an existing linked receipt preserves its source without duplicate 
  assert.equal(editing.income_source_id,'rental');assert.equal(editing.kind,'Rent income');assert.equal(editing.name,'Apartment');
 });
 
-test('manage income sources is a prominent navigation button that closes the dialog and respects busy state',()=>{
+test('manage income sources is a link beside the source picker that closes the dialog and respects busy state',()=>{
  const render=component('components/income-record-form.tsx','IncomeRecordForm');
  let closed=0,prevented=0;const paths=[];
  const props={editing:{id:'new',kind:'Other income',frequency:'Once',currency:'USD',amount:0,name:'',notes:''},currencies:['USD'],rows:[],planning:{data:{records:[],categories:[]}},earningSources:{sources:[],loading:false,error:''},onLeave(event,path){closed++;paths.push(path);},setEditing(){throw Error('Navigation should close directly, not invoke the cancel guard');}};
  const tree=render.tree(props);
- const button=find(tree,node=>node.props?.asChild&&node.props?.variant==='outline');
- assert.ok(button.props.className.includes('min-h-11'));
- const link=find(button,node=>node.props?.href==='/income-expenses#income-sources');
+ const links=find(tree,node=>node.props?.className==='field-links');
+ const link=find(links,node=>node.props?.href==='/income-expenses#income-sources');
  link.props.onNavigate({preventDefault(){prevented++;}});
  assert.equal(closed,1);assert.equal(prevented,0);
  const busyTree=render.tree({...props,busy:true});

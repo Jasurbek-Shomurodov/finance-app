@@ -131,7 +131,7 @@ test('opening focuses the expense amount, else the form\'s first field, and othe
  const d=dialog(t,record('cash','Cash'));
  const content=d.r.find(byType('DialogContent'));
  let focused=0;const input={focus(){focused++;}};
- const withInput=event({currentTarget:{querySelector:selector=>{assert.equal(selector,'.expense-form .amount-value-field input:not([disabled])');return input;}}});
+ const withInput=event({currentTarget:{querySelector:selector=>{assert.equal(selector,':is(.expense-form,.income-form) .amount-value-field input:not([disabled])');return input;}}});
  content.props.onOpenAutoFocus(withInput);
  assert.equal(withInput.defaultPrevented,true);assert.equal(focused,1);
  const asked=[];const firstField=event({currentTarget:{querySelector:selector=>{asked.push(selector);return asked.length===2?input:null;}}});
@@ -382,7 +382,11 @@ test('an expense opens on the expense tab with its category, amount, date and ac
  assert.equal(date.props.max,'2026-09-30','a one-time expense cannot be dated after today');
  d.r.fire(date,'onChange','2026-09-20');assert.equal(d.state.editing.date,'2026-09-20');
  d.r.fire(d.r.find(byType('CashAccountField')),'onChange','acct');assert.equal(d.state.editing.account_id,'acct');
- d.r.fire(d.labelled('Linked business (optional)','NativeSelect'),'onChange',{target:{value:''}});assert.equal(d.state.editing.business_id,null);
+ // A business is offered only to someone who has one; the details fold away behind Optional details.
+ assert.ok(!d.r.all(node=>node.type==='label'&&node.children[0]==='Linked business (optional)').length);
+ assert.equal(d.r.find(node=>node.type==='details').props.open,false,'empty details start folded');
+ const owner=dialog(t,expense(),{editingCashFlow:true,planning:planning({categories,records:[record('acct','Cash'),record('shop','Business')]})});
+ owner.r.fire(owner.labelled('Linked business (optional)','NativeSelect'),'onChange',{target:{value:'shop'}});assert.equal(owner.state.editing.business_id,'shop');
  d.r.fire(d.labelled('Notes (optional)','textarea'),'onChange',{target:{value:'Lunch'}});assert.equal(d.state.editing.notes,'Lunch');
  assert.equal(text(d.r.find(node=>node.type==='Button'&&node.props.className==='primary')),'Save expense');
  d.r.fire(d.r.find(byType('form')),'onSubmit',event());

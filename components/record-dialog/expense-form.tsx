@@ -44,40 +44,56 @@ function DebtPayment({form}:{form:ExpenseContext}){
      {selectedDebt?.kind==='Mortgage'&&onMortgageSave?<MortgagePaymentDialog inline key={selectedDebt.id} mortgage={selectedDebt} accounts={planning.data.records} onClose={()=>onMortgageDone?.()} onSave={onMortgageSave} onDraftState={onPaymentDraftState}/>:selectedDebt&&!demo?<InvestmentTracker inline key={selectedDebt.id} initialType="withdrawal" record={selectedDebt} accounts={planning.data.records} accountsReady={!planning.loading&&!planning.error} onClose={()=>onMortgageDone?.()} onSaved={()=>onDebtSaved?.()} onPayment={()=>{}} onDraftState={onPaymentDraftState}/>:<Button type="button" disabled={busy||!selectedDebt||(demo&&selectedDebt.kind!=='Mortgage')} onClick={()=>{if(selectedDebt)onDebtPayment?.(selectedDebt);}}>{t('Record payment')}</Button>}
     </>:<p className="muted">{t('No outstanding debts. Add one in Loans & debts first.')}</p>}</>;
 }
-/** The category of a plain expense, and the amount spent in its currency. */
+/** The amount spent and its category: what someone came to enter, first. A schedule leads with its name. */
 function CategoryAmount({form}:{form:ExpenseContext}){
  const {t}=useLanguage();
  const {editing,setEditing,busy,planning,currencies,mode,update,savedCurrency,onLeave,schedule,original}=form;
  const removed=planning.data.removedKinds??[];
- // A one-time expense may be named; left blank it stands in with its category, which the field shows as empty.
- const categoryName=planning.data.categories.find(category=>category.id===editing.custom_category_id)?.name;
- return <>   {schedule?<RecordNameInput label={t('Name')} entry={editing} rows={planning.data.records} original={original} placeholder={t('e.g. Rent or internet subscription')} onChange={name=>update({name})}/>
-   :mode==='expense'&&<RecordNameInput optional label={t('Name (optional)')} entry={isStandInName(editing,categoryName)?{...editing,name:''}:editing} rows={planning.data.records} original={original} placeholder={t('e.g. Groceries or Mum’s allowance')} onChange={name=>update({name})}/>}
-   {mode==='expense'&&<div><label>{t('Category')}<NativeSelect disabled={busy||planning.loading||!!planning.error} value={editing.custom_category_id??editing.kind} onChange={event=>{
+ return <>   {schedule&&<RecordNameInput label={t('Name')} entry={editing} rows={planning.data.records} original={original} placeholder={t('e.g. Rent or internet subscription')} onChange={name=>update({name})}/>}
+   <AmountCurrencyFields amount={editing.amount} currency={editing.currency} currencies={currencies} savedCurrency={savedCurrency} disabled={busy} onAmountChange={amount=>update({amount})} onCurrencyChange={currency=>update({currency,account_exchange_rate:null,account_rate_date:null,account_currency:null})}/>
+   {mode==='expense'&&<div className="field-with-links"><label>{t('Category')}<NativeSelect disabled={busy||planning.loading||!!planning.error} value={editing.custom_category_id??editing.kind} onChange={event=>{
     const selected=event.target.value;
     setEditing(selectTransactionCategory(editing,selected,planning.data.categories,'expense'));
-   }}>{offeredKinds('expense',removed,editing.kind).map(kind=><option key={kind} value={kind}>{t(kind)}</option>)}{planning.data.categories.filter(category=>category.direction==='expense').map(category=><option key={category.id} value={category.id}>{category.name}</option>)}</NativeSelect></label><Link className="panel-link" href="/settings#categories" onNavigate={event=>{if(busy){event.preventDefault();return;}if(onLeave)onLeave(event,'/settings#categories');else setEditing(null);}}>{t('Manage categories in Settings')}</Link></div>}
-   {/* A one-time expense may pay a recurring bill, named by its id, also a saved one that named none yet. Otherwise nothing is offered and a choice made earlier is cleared; a saved payment keeps its schedule. */}
-   <ScheduledPaymentField schedules={mode==='expense'&&editing.frequency==='Once'&&(savedCurrency===undefined||!original?.occurrence_record_id)?paymentSchedules(planning.data.records,editing):[]} value={editing.occurrence_record_id} saved={!!original?.occurrence_record_id} disabled={busy||planning.loading} onChange={schedule=>update(chooseSchedule(editing,schedule))}/>
-   <AmountCurrencyFields amount={editing.amount} currency={editing.currency} currencies={currencies} savedCurrency={savedCurrency} disabled={busy} onAmountChange={amount=>update({amount})} onCurrencyChange={currency=>update({currency,account_exchange_rate:null,account_rate_date:null,account_currency:null})}/></>;
+   }}>{offeredKinds('expense',removed,editing.kind).map(kind=><option key={kind} value={kind}>{t(kind)}</option>)}{planning.data.categories.filter(category=>category.direction==='expense').map(category=><option key={category.id} value={category.id}>{category.name}</option>)}</NativeSelect></label><div className="field-links"><Link className="panel-link" href="/settings#categories" onNavigate={event=>{if(busy){event.preventDefault();return;}if(onLeave)onLeave(event,'/settings#categories');else setEditing(null);}}>{t('Manage categories in Settings')}</Link></div></div>}</>;
 }
-/** The day, and for a plain expense the optional details: how it repeats, a business, a property, an end date and notes. */
+/** The day and the cash account, or how a schedule repeats; then the bill it pays, a name and the folded details. */
 function DateDetails({form}:{form:ExpenseContext}){
  const {t}=useLanguage();
- const {household,editing,setEditing,busy,planning,locale,mode,update,schedule,original}=form;
+ const {household,editing,setEditing,busy,planning,locale,update,schedule,original}=form;
  // A saved schedule keeps its start date; an every-month one may move to another day of its month.
  const started=schedule&&!!original&&original.frequency!=='Once';
- // Repairs, tax or a service charge may be paid for one of the person's properties.
- const properties=planning.data.records.filter(record=>record.kind==='Property');
  return <>   <div className="form-grid"><label>{t(editing.frequency==='Once'?'Record date':'Start date')}<DatePicker value={editing.date} disabled={started} max={editing.frequency==='Once'?today():undefined} onChange={date=>update({date})}/></label>{schedule?<><ScheduleFields frequency={editing.frequency} days={editing.recurrence_days} disabled={busy} onChange={(frequency,recurrence_days)=>update({frequency,recurrence_days})}/>{editing.frequency==='Monthly'&&<MonthDayField date={editing.date} disabled={busy} onChange={date=>update({date})}/>}</>:<CashAccountField entry={editing} records={planning.data.records} loading={planning.loading} error={planning.error} busy={busy} onChange={account_id=>setEditing(withAccountAndOwner(editing,account_id,planning.data.records,household))}/>}</div>
    {planning.error&&<p className="error" role="alert">{t(planning.error)}</p>}
-   {mode==='expense'&&<section className="expense-optional-details"><h3>{t('Optional details')}</h3><div className="expense-optional-fields">
-    <label>{t('Linked business (optional)')}<NativeSelect value={editing.business_id||''} onChange={event=>update({business_id:event.target.value||null})}><option value="">{t('No linked business')}</option>{planning.data.records.filter(record=>record.kind==='Business').map(business=><option key={business.id} value={business.id}>{business.name}</option>)}</NativeSelect></label>
+   <PaymentNameDetails form={form}/>
+   {editing.frequency!=='Once'&&<p className="muted">{t('{amount} {frequency} from {date}. This is a recurring plan; it does not automatically create transactions or change account balances.',{amount:formatMoney(editing.amount,editing.currency,locale),frequency:t(frequencyLabels[editing.frequency]),date:sharedFormatDate(editing.date,locale)})}</p>}</>;
+}
+/** The optional details, folded away: a business, a property, an end date and notes. */
+function OptionalDetails({form}:{form:ExpenseContext}){
+ const {t}=useLanguage();
+ const {editing,busy,planning,update}=form;
+ // Repairs, tax or a service charge may be paid for one of the person's properties.
+ const properties=planning.data.records.filter(record=>record.kind==='Property');
+ const businesses=planning.data.records.filter(record=>record.kind==='Business');
+ // The details open by themselves only when one of them is already filled in.
+ const [detailsOpen]=useState(()=>!!(editing.business_id||editing.property_id||editing.notes||editing.end_date));
+ return <details className="record-optional-details" open={detailsOpen}><summary>{t('Optional details')}</summary><div className="record-optional-fields">
+    {(businesses.length>0||!!editing.business_id)&&<label>{t('Linked business (optional)')}<NativeSelect value={editing.business_id||''} disabled={busy} onChange={event=>update({business_id:event.target.value||null})}><option value="">{t('No linked business')}</option>{businesses.map(business=><option key={business.id} value={business.id}>{business.name}</option>)}</NativeSelect></label>}
     {(properties.length>0||!!editing.property_id)&&<label>{t('Linked property (optional)')}<NativeSelect value={editing.property_id||''} disabled={busy} onChange={event=>update({property_id:event.target.value||null})}><option value="">{t('No linked property')}</option>{properties.map(property=><option key={property.id} value={property.id}>{property.name}</option>)}</NativeSelect></label>}
     {editing.frequency!=='Once'&&<label>{t('End date (optional)')}<DatePicker value={editing.end_date||''} required={false} min={editing.date} onChange={end_date=>update({end_date:end_date||null})}/></label>}
     <label>{t('Notes (optional)')}<Textarea value={editing.notes} maxLength={2000} rows={2} onChange={event=>update({notes:event.target.value})}/></label>
-   </div></section>}
-   {editing.frequency!=='Once'&&<p className="muted">{t('{amount} {frequency} from {date}. This is a recurring plan; it does not automatically create transactions or change account balances.',{amount:formatMoney(editing.amount,editing.currency,locale),frequency:t(frequencyLabels[editing.frequency]),date:sharedFormatDate(editing.date,locale)})}</p>}</>;
+   </div></details>;
+}
+/** The bill a payment settles, its name, and the optional details. */
+function PaymentNameDetails({form}:{form:ExpenseContext}){
+ const {t}=useLanguage();
+ const {editing,busy,planning,mode,update,schedule,original,savedCurrency}=form;
+ // A one-time expense may be named; left blank it stands in with its category, which the field shows as empty.
+ const categoryName=planning.data.categories.find(category=>category.id===editing.custom_category_id)?.name;
+ return <>   {/* A one-time expense may pay a recurring bill, named by its id, also a saved one that named none yet. Otherwise nothing is offered and a choice made earlier is cleared; a saved payment keeps its schedule. */}
+   <ScheduledPaymentField schedules={mode==='expense'&&editing.frequency==='Once'&&(savedCurrency===undefined||!original?.occurrence_record_id)?paymentSchedules(planning.data.records,editing):[]} value={editing.occurrence_record_id} saved={!!original?.occurrence_record_id} disabled={busy||planning.loading} onChange={schedule=>update(chooseSchedule(editing,schedule))}/>
+   {!schedule&&mode==='expense'&&<RecordNameInput optional label={t('Name (optional)')} entry={isStandInName(editing,categoryName)?{...editing,name:''}:editing} rows={planning.data.records} original={original} placeholder={t('e.g. Groceries or Mum’s allowance')} onChange={name=>update({name})}/>}
+   {mode==='expense'&&<OptionalDetails form={form}/>}
+</>;
 }
 /** The error and the Save and Cancel buttons; a debt payment that saves on its own shows none. */
 function ExpenseActions({form}:{form:ExpenseContext}){
