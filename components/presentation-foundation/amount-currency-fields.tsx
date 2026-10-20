@@ -3,9 +3,9 @@ import { useLanguage } from '@/components/language-provider';
 import { FormattedNumberInput } from '@/components/presentation-foundation/formatted-number-input';
 import { CurrencySelect } from '@/components/presentation-foundation/currency-select';
 
-type Props={amount:number;currency:string;currencies:string[];savedCurrency?:string;disabled?:boolean;label?:string;amountPlaceholder?:string;currencyLocked?:boolean;onAmountChange:(amount:number)=>void;onCurrencyChange:(currency:string)=>void};
+type Props={amount:number;currency:string;currencies:string[];savedCurrency?:string;disabled?:boolean;label?:string;amountPlaceholder?:string;currencyLocked?:boolean;/** The figure a transaction form is about: drawn larger, ahead of its currency. */prominent?:boolean;onAmountChange:(amount:number)=>void;onCurrencyChange:(currency:string)=>void};
 
-export function AmountCurrencyFields({amount,currency,currencies,savedCurrency,disabled,label,amountPlaceholder,currencyLocked=false,onAmountChange,onCurrencyChange}:Props){
+export function AmountCurrencyFields({amount,currency,currencies,savedCurrency,disabled,label,amountPlaceholder,currencyLocked=false,prominent=false,onAmountChange,onCurrencyChange}:Props){
  const {t}=useLanguage();
- return <div className="form-grid amount-currency-row"><label className="amount-value-field">{label??t('Amount')}{currencyLocked?` · ${currency}`:''}<FormattedNumberInput placeholder={amountPlaceholder} value={amount} max={1e15} requireEntry onValueChange={amount=>onAmountChange(amount)}/></label>{!currencyLocked&&<CurrencySelect value={currency} currencies={currencies} savedCurrency={savedCurrency} disabled={disabled} onChange={onCurrencyChange}/>}</div>;
+ return <div className={prominent?"form-grid amount-currency-row is-prominent":"form-grid amount-currency-row"}><label className="amount-value-field">{label??t('Amount')}{currencyLocked?` · ${currency}`:''}<FormattedNumberInput placeholder={amountPlaceholder} value={amount} max={1e15} requireEntry onValueChange={amount=>onAmountChange(amount)}/></label>{!currencyLocked&&<CurrencySelect value={currency} currencies={currencies} savedCurrency={savedCurrency} disabled={disabled} onChange={onCurrencyChange}/>}</div>;
 }

@@ -310,6 +310,15 @@ input[type="checkbox"] {width:18px!important;height:18px!important;min-width:18p
 .amount-currency-row>.amount-value-field:only-child{grid-column:1/-1}
 .amount-currency-row>label{min-width:0}
 .amount-currency-row :is(input,select){height:46px;min-height:46px!important;font-size:var(--type-body)}
+.record-dialog .record-form .amount-currency-row.is-prominent{grid-template-columns:minmax(0,3fr) minmax(0,2fr)}
+.amount-currency-row.is-prominent :is(input,select){height:56px;min-height:56px!important}
+.amount-currency-row.is-prominent .amount-value-field input{font-size:var(--type-stat);font-weight:500;font-variant-numeric:tabular-nums}
+.recent-categories{display:flex;flex-wrap:wrap;gap:8px;padding-top:6px}
+.recent-categories>button{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:3px 10px 3px 4px;border:1px solid var(--hairline);border-radius:999px;background:var(--card);font-size:var(--type-small);font-weight:500;color:var(--foreground);cursor:pointer}
+.recent-categories>button:hover{background:var(--accent)}
+.recent-categories>button[aria-pressed=true]{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 12%,transparent)}
+.recent-categories>button:disabled{opacity:.5;cursor:default}
+@media(pointer:coarse){.recent-categories>button{min-height:44px}}
 .record-optional-details{border-top:1px solid var(--border)}
 .record-optional-details>summary{padding-top:8px;font-size:var(--type-compact);color:var(--muted-foreground)}
 .record-optional-details>summary:hover{color:var(--foreground)}

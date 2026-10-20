@@ -373,6 +373,12 @@ test('an expense opens on the expense tab with its category, amount, date and ac
  const untouched=dialog(t,expense(),{editingCashFlow:true,planning:planning({categories,records:[record('acct','Cash')]})});
  const follow=event();untouched.r.fire(untouched.r.find(byType('Link')),'onNavigate',follow);
  assert.equal(untouched.state.editing,null);assert.equal(follow.defaultPrevented,false);
+ // A suggested cash account is part of the draft as opened: an otherwise untouched form still closes without asking.
+ const fresh=dialog(t,expense({account_id:null}),{editingCashFlow:true,planning:planning({categories,records:[record('acct','Cash')]})});
+ fresh.r.fire(fresh.r.find(byType('CashAccountField')),'onSuggest','acct');
+ assert.equal(fresh.state.editing.account_id,'acct');
+ fresh.r.fire(fresh.r.find(byType('FormFooter')),'onCancel');
+ assert.equal(fresh.state.editing,null);
  const amount=d.r.find(byType('AmountCurrencyFields'));
  assert.equal(amount.props.currencyLocked,undefined);assert.equal(amount.props.savedCurrency,undefined);
  d.r.fire(amount,'onAmountChange',12.75);assert.equal(d.state.editing.amount,12.75);

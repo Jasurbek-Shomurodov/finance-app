@@ -1,14 +1,21 @@
 "use client";
+import { useEffect, useRef } from 'react';
 import { requiresCashAccount } from '@/lib/cash-account-required';
+import { suggestedCashAccount } from '@/lib/form-suggestions';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useLanguage } from '@/components/language-provider';
 import { ExchangeRatePreview } from '@/components/presentation-foundation/exchange-rate-preview';
 import { useDatedExchangeRate } from '@/hooks/use-dated-exchange-rate';
 import { formatAccountOption, formatMoney } from '@/lib/format';
-import type { Entry } from '@/lib/finance';
+import { income, type Entry } from '@/lib/finance';
 
-export function CashAccountField({entry,records,loading,error,busy,onChange}:{entry:Entry;records:Entry[];loading:boolean;error:string;busy:boolean;onChange:(id:string|null)=>void}){
+/** `onSuggest`, for a new transaction: once the accounts have loaded, a blank account starts as the one last used in its
+ * currency (or the only one), and the person can change it. */
+export function CashAccountField({entry,records,loading,error,busy,onSuggest,onChange}:{entry:Entry;records:Entry[];loading:boolean;error:string;busy:boolean;onSuggest?:(id:string)=>void;onChange:(id:string|null)=>void}){
  const {t,locale}=useLanguage();
+ const suggestion=onSuggest&&!loading&&!error&&!entry.account_id&&entry.frequency==='Once'?suggestedCashAccount(records,entry.currency,income.includes(entry.kind)?'income':'expense'):null;
+ const suggested=useRef(false);
+ useEffect(()=>{if(suggestion&&!suggested.current){suggested.current=true;onSuggest?.(suggestion);}},[suggestion,onSuggest]);
  const accounts=records.filter(record=>record.kind==='Cash');
  const account=accounts.find(record=>record.id===entry.account_id);
  const original=records.find(record=>record.id===entry.id);

@@ -177,7 +177,7 @@
 }
 
 
-@media(max-width:540px){.record-dialog .record-form .amount-currency-row{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:540px){.record-dialog .record-form .amount-currency-row,.record-dialog .record-form .amount-currency-row.is-prominent{grid-template-columns:minmax(0,1fr)}}
 
 .finance-month-picker{width:min(440px,calc(100vw - 24px));padding:16px}.month-selection-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.month-selection-grid .pos-day{height:auto;min-height:48px;padding:8px;text-align:center}
 

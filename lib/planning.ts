@@ -1,7 +1,7 @@
 import { archivedIn, budgetKey, scheduleDates, income, expenses, interestKinds, type Entry } from './finance';
 import type { AssetMovement } from './asset-movements';
 import type { HoldingAccount } from './holding-accounts';
-import { shiftDay, withMonthDay } from './calendar-days';
+import { monthEnd, shiftDay, withMonthDay } from './calendar-days';
 import { depositToday } from './deposit-interest';
 import { amountIn, type Money } from './money';
 import { sharedDayRate, type DayRate } from './day-rates';
@@ -131,6 +131,15 @@ export function paymentSchedules(records:Entry[],payment:SchedulePayment):Entry[
   &&budgetKey(record)===budgetKey({kind:payment.kind,custom_category_id:payment.custom_category_id})&&income.includes(record.kind)===income.includes(payment.kind)
   &&(record.kind!=='Business income'||!payment.business_id||record.business_id===payment.business_id)
   &&(record.kind!=='Rent income'||!payment.income_source_id||record.income_source_id===payment.income_source_id));
+}
+/** The schedules a one-time payment can still settle: those `paymentSchedules` offers that have a due date open on or
+ * before the end of the payment's month. `anyCategory` offers the open schedules of every category of its direction; the
+ * form then moves the payment into the chosen schedule's category. */
+export function openPaymentSchedules(records:Entry[],occurrences:Occurrence[],payment:SchedulePayment&{date:string},anyCategory=false):Entry[]{
+ const offered=anyCategory?records.filter(record=>isRecurringCashFlow(record)&&!record.archived&&!record.source_paused&&!!payment.kind&&income.includes(record.kind)===income.includes(payment.kind)):paymentSchedules(records,payment);
+ if(!offered.length)return [];
+ const open=new Set(upcomingPayments(records,occurrences,payment.date,monthEnd(payment.date)).filter(item=>item.type==='scheduled').map(item=>item.record.id));
+ return offered.filter(record=>open.has(record.id));
 }
 /** A payment naming `schedule` by id, or none. It takes the schedule's name when it has none, its amount when it has none and
  * is in the schedule's currency, and rent its property. A payment in another currency keeps its own: the schedule counts it at the day's rate. */
