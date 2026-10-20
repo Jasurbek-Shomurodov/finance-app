@@ -14,6 +14,7 @@ import { RecordIcon } from '@/components/presentation-foundation/record-icon';
 import { RowMenu } from '@/components/presentation-foundation/row-menu';
 import { Button } from '@/components/ui/button';
 import { expenses, income, kinds, lendingRecordKinds, liabilities, unitPricedKinds, value, type Entry } from '@/lib/finance'
+import { depositToday } from '@/lib/deposit-interest';
 import { metalWeight } from '@/lib/precious-metals';
 import { formatDate, formatNumber, formatSignedMoney } from '@/lib/format';
 import { signedAmount } from '@/lib/transaction-list';
@@ -42,7 +43,9 @@ export function RecordsTable({ title, transactions = false, limit, pagination = 
  const { t, locale } = useLanguage();
  const { filters, setFilters, filtersActive, historyOnly, useFilteredRecords, remoteHistory, historyPage, visible, totalRecords, pageCount, tablePage, tableLoading, recordsLoading, showPage,
   sectionKey, planning, transactionTools, demo, busy, currency, money, storedRecord,
-  addRecord, editRecord, requestDelete, setDrilling, setStopping, setTracking, setPayingMortgage, setDebtPayment, setSplitting } = useWorkspace();
+  addRecord, editRecord, requestDelete, setDrilling, setSankey, setStopping, setTracking, setPayingMortgage, setDebtPayment, setSplitting } = useWorkspace();
+  // A loan, debt or money lent opens its Sankey for this month (what paid it down, its principal); its Details edit it.
+  const openRecord = (r: Entry) => setSankey({ target: { side: 'account', key: r.id }, title: shownName(r, t, categoryOf(r)), month: depositToday().slice(0, 7), onDetails: () => editRecord(r) });
  const date = (day: string) => formatDate(day, locale);
  const shown = limit === undefined ? visible : visible.slice(0, limit);
  // One line of context under each name: the fact that tells this record apart, or nothing.
@@ -62,7 +65,7 @@ export function RecordsTable({ title, transactions = false, limit, pagination = 
   {useFilteredRecords&&planning.error&&<InlineError message={t(planning.error)}/>}
   {tableLoading ? <LoadingPlaceholder label={t("Loading records…")}/> : visible.length ? <div className="table-scroll"><table>
    <thead><tr><th>{t("Name")}</th><th>{t("Category")}</th><th>{transactions ? t("Date") : t("Date / due date")}</th><th>{transactions ? t("Amount") : t("Value")}</th><th>{t("Actions")}</th></tr></thead>
-   <tbody>{shown.map(r => <tr key={r.id} {...(transactions?{className:'clickable-row',tabIndex:0,'aria-label':t('Open {name}',{name:shownName(r, t, categoryOf(r))}),onClick:(event:ReactMouseEvent)=>{const target=event.target as HTMLElement;/* Menu items are portaled out of the row, but React still bubbles their clicks here. */if(event.currentTarget.contains(target)&&!target.closest('button,a,input'))setDrilling(storedRecord(r));},onKeyDown:(event:ReactKeyboardEvent)=>{if(event.target===event.currentTarget&&(event.key==='Enter'||event.key===' ')){event.preventDefault();setDrilling(storedRecord(r));}}}:{})}>
+   <tbody>{shown.map(r => <tr key={r.id} {...(transactions?{className:'clickable-row',tabIndex:0,'aria-label':t('Open {name}',{name:shownName(r, t, categoryOf(r))}),onClick:(event:ReactMouseEvent)=>{const target=event.target as HTMLElement;/* Menu items are portaled out of the row, but React still bubbles their clicks here. */if(event.currentTarget.contains(target)&&!target.closest('button,a,input'))setDrilling(storedRecord(r));},onKeyDown:(event:ReactKeyboardEvent)=>{if(event.target===event.currentTarget&&(event.key==='Enter'||event.key===' ')){event.preventDefault();setDrilling(storedRecord(r));}}}:{className:'clickable-row',tabIndex:0,'aria-label':t('Open {name}',{name:shownName(r, t, categoryOf(r))}),onClick:(event:ReactMouseEvent)=>{const target=event.target as HTMLElement;if(event.currentTarget.contains(target)&&!target.closest('button,a,input'))openRecord(r);},onKeyDown:(event:ReactKeyboardEvent)=>{if(event.target===event.currentTarget&&(event.key==='Enter'||event.key===' ')){event.preventDefault();openRecord(r);}}})}>
     <td><div className="record-name"><RecordIcon record={r} /><div><strong>{shownName(r, t, categoryOf(r))}</strong>{detail(r)&&<small>{detail(r)}</small>}</div></div></td>
     <td><CategoryBadge kind={r.kind} label={t(r.payment_type==='bonus'?'Bonus':r.kind)}/>{r.custom_category_id&&<CategoryBadge kind={r.custom_category_id} label={planning.data.categories.find(c=>c.id===r.custom_category_id)?.name??t('Custom category')}/>}</td>
     <td className="muted">{r.kind === 'Money lent' ? <><div>{t("Lent: {date}", { date: date(r.lent_date || '') })}</div><small>{r.date ? t("Due: {date}", { date: date(r.date) }) : t("No due date")}</small></> : liabilities.includes(r.kind)?<>{r.opened_on&&<div>{t('Started: {date}',{date:date(r.opened_on)})}</div>}<small>{t('Due: {date}',{date:date(r.date)})}</small></>:date(r.date)}</td>

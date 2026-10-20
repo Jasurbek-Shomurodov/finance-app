@@ -846,3 +846,10 @@ test('a Reports row narrows the transactions and opens its Sankey for the report
  const screen = fs.readFileSync('components/workspace/screens/reports-screen.tsx', 'utf8');
  assert.match(screen, /if \(target\) setSankey\(\{ target, title: label, month: end\.slice\(0, 7\), months: monthsBetween\(range\.from\.slice\(0, 7\), end\.slice\(0, 7\)\), period: rangeLabel \}\);/);
 });
+
+test('a Loans & debts row opens its Sankey for this month, its Details editing it', () => {
+ const table = fs.readFileSync('components/workspace/records-table.tsx', 'utf8');
+ assert.match(table, /const openRecord = \(r: Entry\) => setSankey\(\{ target: \{ side: 'account', key: r\.id \}, title: shownName\(r, t, categoryOf\(r\)\), month: depositToday\(\)\.slice\(0, 7\), onDetails: \(\) => editRecord\(r\) \}\);/);
+ assert.match(table, /:\{className:'clickable-row',tabIndex:0,'aria-label':t\('Open \{name\}'[^}]*\}\),onClick:\(event:ReactMouseEvent\)=>\{const target=event\.target as HTMLElement;if\(event\.currentTarget\.contains\(target\)&&!target\.closest\('button,a,input'\)\)openRecord\(r\);\}/, 'by click, never from its menu or buttons');
+ assert.match(table, /openRecord\(r\);\}\}\}\)\}>/, 'and by Enter or Space');
+});
