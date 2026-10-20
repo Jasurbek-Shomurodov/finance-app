@@ -269,9 +269,13 @@
 .goal-funding-plan{width:100%;margin-top:12px}
 .goal-funding-panel>.goal-funding-notice{margin:8px 0 0;font-size:var(--type-small)}
 .goal-activity-list{display:flex;flex-direction:column;margin:0;padding:0;list-style:none}
-.goal-activity-list>li{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:10px 0;border-top:1px solid var(--hairline);font-size:var(--type-small)}
+.goal-activity-list>li{border-top:1px solid var(--hairline);font-size:var(--type-small)}
+/* A row opens the goal's Sankey in the Cash flow drill-down. */
+.goal-activity-link{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:10px 0;color:inherit;text-decoration:none;border-radius:var(--radius-control)}
+.goal-activity-link:hover{background:color-mix(in srgb,var(--foreground) 4%,transparent)}
+.goal-activity-link:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
 .goal-activity-list>li:first-child{border-top:0}
-.goal-activity-list>li>div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.goal-activity-link>div{display:flex;flex-direction:column;gap:2px;min-width:0}
 .goal-activity-list small{font-size:var(--type-caption);color:var(--muted-foreground)}
 .goal-dialog-title{display:flex;align-items:center;gap:8px}
 .record-dialog.goal-funding-dialog{max-width:880px!important}

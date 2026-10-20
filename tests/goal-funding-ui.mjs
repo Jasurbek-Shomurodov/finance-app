@@ -125,3 +125,10 @@ test('History can show one goal’s activity, with a chip that shows every goal 
  assert.doesNotMatch(all, /Clear filter/);
  assert.equal(shownAll, 0);
 });
+
+test('a History row opens the goal’s Sankey in the Cash flow drill-down, for the month it happened', () => {
+ const events = [{ id: 'a', goal_id: 'savings', event_type: 'contribution', delta: 100, occurred_on: '2026-08-14', notes: '', source_name: 'Card' }];
+ const { component } = setup({ data: { events } });
+ const html = renderToStaticMarkup(React.createElement(component, { ...props([goal()]), part: 'activity' }));
+ assert.match(html, /<li><a class="goal-activity-link" aria-label="Open savings goal · 14 August 2026" href="\/income-expenses\?open=goal&amp;key=savings&amp;month=2026-08">/);
+});

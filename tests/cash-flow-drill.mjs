@@ -615,3 +615,29 @@ test('a goal lists its additions and withdrawals as entered; a row opens the goa
  const holiday = r.find(node => node.type === 'Sankey').props.data.nodes;
  assert.deepEqual(holiday.filter(node => node.open?.side === 'link').map(node => node.open.href), Array(holiday.filter(node => node.open?.side === 'link').length).fill('/goals?view=history&goal=g'), 'the goal, its balances and accountless sources open its history too');
 });
+
+test('a goal history row links to Cash flow, which opens the goal’s Sankey for that month', () => {
+ const { goalSankeyHref, drillLink } = loadTS('lib/cash-flow-link.ts');
+ const href = goalSankeyHref('g 1', '2026-08');
+ assert.equal(href, '/income-expenses?open=goal&key=g%201&month=2026-08');
+ assert.deepEqual(drillLink(href.slice(href.indexOf('?'))), { target: { side: 'goal', key: 'g 1' }, month: '2026-08' });
+ assert.equal(drillLink('?open=goal&key=g&month=2026-13'), null, 'never an impossible month');
+ assert.equal(drillLink('?tag=x'), null);
+
+ const r = createRenderer();
+ const modules = {
+  'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), 'next/navigation': { useRouter: () => router },
+  ...Object.fromEntries(['stat-tile', 'segmented', 'panel-title', 'inline-error', 'loading-placeholder'].map(name => ['@/components/presentation-foundation/' + name, hostModule()])),
+  '@/components/ui/dialog': hostModule(), '@/components/ui/button': hostModule(),
+  '@/components/category-icons-context': { useCategoryHue: () => key => key },
+  '@/hooks/use-owner-resource': { useOwnerResource: () => ({ data: { records: [], events: [] } }) },
+  '@/hooks/use-location-search': { useLocationSearch: () => '?open=goal&key=g&month=2026-08' },
+  '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 },
+ };
+ const { CashFlowReport } = r.load('components/cash-flow-report.tsx', modules);
+ const goals = [{ id: 'g', name: 'Holiday', account_id: 'card', allocated: 700, target: 1000, target_date: null, archived: false }];
+ r.mount(React.createElement(CashFlowReport, { owner: null, demo: true, revision: 0, data: { categories: [], activity: [], investmentLinks: [], records: accounts, goals }, splits: [], month: '2026-10', currency: 'USD', market: { rates: { USD: 1 }, quotes: {} } }));
+ r.update();
+ const title = r.find(node => node.type === 'DialogTitle').props.children;
+ assert.deepEqual([title[0], text(title[2])], ['Holiday', 'August 2026'], 'the goal’s Sankey for the row’s month, not the page’s');
+});
