@@ -1,7 +1,8 @@
 "use client";
 import { ResponsiveContainer, Sankey, Tooltip } from 'recharts';
+import type { LinkProps } from 'recharts/types/chart/Sankey';
 import { useLanguage } from '@/components/language-provider';
-import { chartColors, chartSankey, chartTooltip, sankeyLink, sankeyNodeRadius } from '@/components/presentation-foundation/chart';
+import { chartColors, chartSankey, chartTooltip, sankeyNodeRadius } from '@/components/presentation-foundation/chart';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { drillFlows, type DrillContext, type DrillTarget } from '@/lib/cash-flow-drill';
 import { formatCompactMoney, formatMoney } from '@/lib/format';
@@ -11,16 +12,22 @@ type Kind = 'income' | 'total' | 'expense' | 'savings' | 'account' | 'debt' | 'u
 type Flows = { nodes: ReadonlyArray<{ name: string; kind: Kind }>; links: Array<{ source: number; target: number; value: number }> };
 const fills: Record<Kind, string> = { income: chartColors.income, savings: chartColors.income, total: 'var(--mark-bg)', account: 'var(--mark-bg)', expense: chartColors.expense, debt: 'var(--caution)', untraced: chartColors.other };
 
-/** A Cash flow Sankey. With `onOpen`, a node it returns true for is a button (click, Enter or Space) that opens its own Sankey. */
+/** A Cash flow Sankey. With `onOpen`, a node it returns true for is a button (click, Enter or Space) that opens its own
+ * Sankey, and a tap on a flow opens the node it leads to (or, from a node that cannot open, the one it comes from). */
 export function FlowSankey({ flows, currency, onOpen, canOpen }: { flows: Flows; currency: string; onOpen?: (index: number) => void; canOpen?: (index: number) => boolean }) {
  const { t, locale } = useLanguage();
  const label = (name: string, value: number) => `${name} · ${formatCompactMoney(value, currency, locale)}`;
  // Each side gets exactly the room its longest label needs; on a narrow screen the chart scrolls rather than squeezing its columns.
  const room = sankeyLabelMargins(flows, label, measureLabel);
+ const opens = (index: number) => !!onOpen && (canOpen?.(index) ?? true);
+ const flowTarget = (index: number) => { const link = flows.links[index]; return !link ? null : opens(link.target) ? link.target : opens(link.source) ? link.source : null; };
  return <div className="cash-flow-sankey"><ResponsiveContainer width="100%" minWidth={sankeyMinWidth(flows, room)} height={Math.max(280, flows.nodes.length * 34)}>
-  <Sankey data={{ nodes: [...flows.nodes], links: flows.links }} {...chartSankey} margin={{ top: 8, right: room.right, bottom: 8, left: room.left }} link={sankeyLink} node={({ x, y, width, height, index, payload }: { x: number; y: number; width: number; height: number; index: number; payload: { name: string; value: number } }) => {
+  <Sankey data={{ nodes: [...flows.nodes], links: flows.links }} {...chartSankey} margin={{ top: 8, right: room.right, bottom: 8, left: room.left }} link={({ sourceX, targetX, sourceY, targetY, sourceControlX, targetControlX, linkWidth, index }: LinkProps) => {
+   const node = flowTarget(index);
+   return <path className="sankey-link" d={`M${sourceX},${sourceY} C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}`} strokeWidth={Math.max(1, linkWidth)} onClick={node === null ? undefined : () => onOpen!(node)} data-clickable={node === null ? undefined : true}/>;
+  }} node={({ x, y, width, height, index, payload }: { x: number; y: number; width: number; height: number; index: number; payload: { name: string; value: number } }) => {
    const kind = flows.nodes[index]?.kind ?? 'expense', left = !flows.links.some(link => link.target === index);
-   const open = onOpen && (canOpen?.(index) ?? true) ? () => onOpen(index) : undefined;
+   const open = opens(index) ? () => onOpen!(index) : undefined;
    return <g className="sankey-node" data-clickable={open ? true : undefined} role={open ? 'button' : undefined} tabIndex={open ? 0 : undefined} aria-label={open ? t('Open {name}', { name: payload.name }) : undefined}
     onClick={open} onKeyDown={open ? event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); } } : undefined}>
     <rect x={x} y={y} width={width} height={Math.max(2, height)} rx={sankeyNodeRadius} fill={fills[kind]}/>

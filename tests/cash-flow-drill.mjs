@@ -89,6 +89,13 @@ test('the Cash flow Sankey opens a category or Savings in a dialog; the total an
  salary.props.onKeyDown({ key: 'Tab', preventDefault() {} });
  assert.deepEqual(opened, [0, 0], 'click and Enter open it; other keys do not');
  assert.equal(total.props.role, undefined, 'the total is not a button');
+ // 20 October 2026: a tap on the wide grey flow did nothing; only the thin bar and its label opened.
+ const link = r.find(item => item.type === 'Sankey').props.link;
+ const flow = index => link({ sourceX: 0, targetX: 100, sourceY: 0, targetY: 10, sourceControlX: 50, targetControlX: 50, linkWidth: 8, index });
+ flow(0).props.onClick();
+ flow(1).props.onClick();
+ assert.deepEqual(opened, [0, 0, 0, 2], 'Salary → Income opens Salary (the total cannot open); Income → A opens A');
+ assert.equal(flow(3).props.onClick, undefined, 'a flow into the merged Other opens nothing');
  let closed = false;
  r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'expense', key: 'Living expense' }, title: 'Living expense', period: 'August 2026', savings: 0, context: context([record('a', 'Market', 'Living expense', 120, '2026-08-02'), record('f', 'Bonus', 'Living expense', 100, '2026-08-25', { currency: 'GBP' })]), onClose: () => { closed = true; } }));
  assert.ok(r.find(item => item.type === 'FlowSankey' || item.type === 'Sankey'), 'the drill-down Sankey is drawn');

@@ -58,7 +58,6 @@ export const chartColors = { income: 'var(--positive)', expense: 'color-mix(in s
 export const chartDonut = { innerRadius: '58%', outerRadius: '92%', paddingAngle: 1, stroke: 'var(--card)' } as const;
 /** A Sankey of flows: thin nodes with rounded ends, grey links. */
 export const chartSankey = { nodePadding: 16, nodeWidth: 10 } as const;
-export const sankeyLink = { stroke: 'var(--border)', strokeOpacity: .9 } as const;
 export const sankeyNodeRadius = 3;
 
 /** Tick and tooltip labels through the shared formatters. */
