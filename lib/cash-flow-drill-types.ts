@@ -9,6 +9,8 @@ export type DrillTarget = { side: 'income' | 'expense'; key: string } | { side: 
  | { side: 'merchant'; key: string; income: boolean }
  /** The payments that paid down one debt's principal, by the debt's id (`lib/cash-flow-principal.ts`). */
  | { side: 'principal'; key: string }
+ /** One mortgage payment by its id: the paying account, then its principal and interest (`lib/cash-flow-principal.ts`). */
+ | { side: 'payment'; key: string }
  /** One transaction by its id: it opens the shared transaction details rather than a Sankey. */
  | { side: 'record'; key: string };
 /** A node of a drill-down Sankey; `open` is what a tap on it opens next. */

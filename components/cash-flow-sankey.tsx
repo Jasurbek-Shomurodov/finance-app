@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { OperationDetails, OperationRow, operationTitle } from '@/components/cash-flow-operation';
 import { accountOperations, operationFlows, type Operation } from '@/lib/cash-flow-operations';
-import { principalFlows, principalPayments } from '@/lib/cash-flow-principal';
+import { paymentFlows, principalFlows, principalPayments } from '@/lib/cash-flow-principal';
 import { drillFlows, drillTransactions, type DrillContext, type DrillTarget } from '@/lib/cash-flow-drill';
 import { income, type Entry } from '@/lib/finance';
 import { formatCompactMoney, formatDate, formatMoney } from '@/lib/format';
@@ -51,7 +51,9 @@ function DrillTransactions({ target, context, onOpenRecord, onOpenOperation }: {
  const { t, locale } = useLanguage();
  const name = context.label ?? t;
  // A debt's principal lists the payments that paid it down: mortgage payments and loan repayments.
- const records = target.side === 'principal' ? principalPayments(target.key, context).flatMap(payment => payment.record ? [payment.record] : []) : drillTransactions(target, context);
+ const records = target.side === 'principal' ? principalPayments(target.key, context).flatMap(payment => payment.record ? [payment.record] : [])
+  // A mortgage payment lists its own transaction, one tap from its details.
+  : target.side === 'payment' ? (context.data.records as Entry[]).filter(record => record.id === target.key) : drillTransactions(target, context);
  // An account also lists its transfers, repayments, buys and sales, in date order among its transactions.
  const operations = target.side === 'account' ? accountOperations(target.key, context) : target.side === 'principal' ? accountOperations(target.key, context).filter(row => row.kind === 'repayment' && row.target_id === target.key) : [];
  const rows = [...records.map(record => ({ date: record.date, record, operation: null })), ...operations.map(operation => ({ date: operation.date, record: null, operation }))].sort((a, b) => b.date.localeCompare(a.date));
@@ -77,7 +79,7 @@ export function CashFlowDrillDialog({ target, title, period, savings, context, o
  const { t } = useLanguage();
  const [trail, setTrail] = useState([{ target, title }]);
  const current = trail.at(-1)!;
- const flows = current.target.side === 'operation' ? operationFlows(current.target.key, context) : current.target.side === 'principal' ? principalFlows(current.target.key, context) : drillFlows(current.target, current.title, savings, context);
+ const flows = current.target.side === 'operation' ? operationFlows(current.target.key, context) : current.target.side === 'principal' ? principalFlows(current.target.key, context) : current.target.side === 'payment' ? paymentFlows(current.target.key, context) : drillFlows(current.target, current.title, savings, context);
  // A transaction opens its shared details over the dialog; anything else opens in the dialog, with Back to return.
  const record = (id: string) => (context.data.records as Entry[]).find(item => item.id === id);
  const canOpen = (index: number) => { const open = flows.nodes[index]?.open; return !!open && (open.side !== 'record' || (!!onOpenRecord && !!record(open.key))); };

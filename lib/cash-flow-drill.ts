@@ -22,7 +22,7 @@ const merchantOf = (item: Item, t: (key: string) => string) => item.record ? ite
 /** The account a transaction was recorded against, or the account of the operation that made it; '' for none. */
 const accountOf = (item: Item, activityAccount: Map<string, string>) => (item.record ? item.record.account_id ?? activityAccount.get(item.record.id) : item.link?.account_id) ?? '';
 /** A category node; a tap on it opens that category's Sankey. */
-const categoryNode = (key: string, income: boolean, context: DrillContext): DrillNode => ({ name: (context.label ?? context.t)(key), kind: income ? 'income' : 'expense', open: { side: income ? 'income' : 'expense', key } });
+export const categoryNode = (key: string, income: boolean, context: DrillContext): DrillNode => ({ name: (context.label ?? context.t)(key), kind: income ? 'income' : 'expense', open: { side: income ? 'income' : 'expense', key } });
 
 /** One category's payers (income) or merchants (spending), from the same transactions Cash flow counts, so the flows add
  * up to the category's total there. The nine largest are named; the rest share "Other". */
@@ -258,7 +258,7 @@ export function drillTransactions(target: DrillTarget, context: DrillContext): E
  const paidDebt = new Map((data.activity ?? []).filter(row => row.action === 'mortgage' && row.target_id).map(row => [row.id, row.target_id!]));
  const matches = (item: Item) => {
   if (target.side === 'savings') return true;
-  if (target.side === 'operation' || target.side === 'principal' || target.side === 'record') return false;
+  if (target.side === 'operation' || target.side === 'principal' || target.side === 'payment' || target.side === 'record') return false;
   if (target.side === 'merchant') return item.income === target.income && merchantOf(item, t) === target.key;
   if (target.side === 'account') return accountOf(item, activityAccount) === target.key || (!!item.record && paidDebt.get(item.record.id) === target.key);
   // A category: income by its category, spending by any part of it (a split transaction is listed once).
@@ -274,7 +274,7 @@ export function drillTransactions(target: DrillTarget, context: DrillContext): E
 export function drillFlows(target: DrillTarget, title: string, savings: number, context: DrillContext): DrillFlows {
  if (target.side === 'savings') return savingsFlows(savings, context);
  // A transfer, a debt's principal and a transaction are drawn by their own modules or open their details.
- if (target.side === 'operation' || target.side === 'principal' || target.side === 'record') return { nodes: [], links: [], missing: 0 };
+ if (target.side === 'operation' || target.side === 'principal' || target.side === 'payment' || target.side === 'record') return { nodes: [], links: [], missing: 0 };
  if (target.side === 'account') return accountFlows(target.key, title, context);
  if (target.side === 'merchant') return merchantFlows(target, title, context);
  return categoryFlows(target, title, context);
