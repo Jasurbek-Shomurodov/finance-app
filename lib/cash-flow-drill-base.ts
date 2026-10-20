@@ -1,5 +1,5 @@
 import { monthEnd } from './calendar-days';
-import type { DrillContext, DrillNode } from './cash-flow-drill-types';
+import type { DrillContext, DrillNode, DrillTarget } from './cash-flow-drill-types';
 import type { Share } from './cash-flow-report';
 import { assets, liabilities, type Entry } from './finance';
 import type { CashFlowItem } from './spending';
@@ -31,3 +31,7 @@ export function accountNode(key: string, byId: Map<string, Entry>, t: (key: stri
  const record = byId.get(key);
  return { name: record?.name.trim() || t(record?.kind ?? 'Other'), kind: nodeKind(record), open: { side: 'account', key } };
 }
+
+/** The page a view's own node opens, so every node of every Sankey responds: an account's on Accounts, a holding's on
+ * Investments, a debt's on Loans & debts, and transactions (no account, a category, a merchant) on Transactions. */
+export const pageOf = (kind: DrillNode['kind'] | 'transactions'): DrillTarget => ({ side: 'link', href: kind === 'holding' ? '/assets' : kind === 'debt' ? '/loans-debts' : kind === 'account' ? '/accounts' : kind === 'savings' ? '/goals' : '/transactions' });

@@ -2,7 +2,7 @@ import { type Entry } from './finance';
 import { convertAmount } from './market';
 import type { PlanningData } from './planning';
 import type { DrillContext, DrillFlows, DrillNode, DrillTarget } from './cash-flow-drill-types';
-import { accountNode, accountOf, add, categoryNode, merchantOf, span, type Item } from './cash-flow-drill-base';
+import { accountNode, accountOf, add, categoryNode, merchantOf, pageOf, span, type Item } from './cash-flow-drill-base';
 import { categoryGroup, groupFlows, groupTransactions } from './cash-flow-group';
 import { cashFlowItems, spendingAmount, transferAmount } from './spending';
 
@@ -113,7 +113,7 @@ function savingsFlows(savings: number, context: DrillContext): DrillFlows {
  if (gap >= .5) right.push({ node: notTraced, value: gap });
  if (gap <= -.5) left.push({ node: notTraced, value: -gap });
  // Savings sit in the middle: the period's cash flow and any account drawn down feed it; it flows out to where the money is now.
- const middle: DrillNode = { name: t('Savings'), kind: 'savings' };
+ const middle: DrillNode = { name: t('Savings'), kind: 'savings', open: { side: 'cashflow' } };
  const feeds = left.length ? [{ node: { name: t('Cash flow'), kind: 'income', open: { side: 'cashflow' } } as DrillNode, value: savings }, ...left] : [];
  const nodes = [...feeds.map(item => item.node), middle, ...right.map(item => item.node)];
  const hub = feeds.length;
@@ -169,10 +169,11 @@ function accountFlows(key: string, title: string, context: DrillContext): DrillF
  const kept = t(self.kind === 'holding' ? 'Money invested' : self.kind === 'debt' ? 'Principal' : 'Balance');
  // A debt's principal opens the payments that paid it down; an account's balance where it stands today, when the period
  // runs to this month (an earlier one would need what moved since).
- const open: DrillTarget | undefined = self.kind === 'debt' ? { side: 'principal', key } : key && context.throughToday !== false ? { side: 'balance', key } : undefined;
+ // Without an account, or when the data stops before today, there is no balance to work back: it opens the page instead.
+ const open: DrillTarget = self.kind === 'debt' ? { side: 'principal', key } : key && context.throughToday !== false ? { side: 'balance', key } : pageOf(self.kind);
  if (change >= .5) right.push({ node: { name: kept, kind: 'savings', open }, value: change });
  if (change <= -.5) left.push({ node: { name: kept, kind: 'savings', open }, value: -change });
- const nodes: DrillNode[] = [...left.map(entry => entry.node), { ...self, name: title, open: undefined }, ...right.map(entry => entry.node)];
+ const nodes: DrillNode[] = [...left.map(entry => entry.node), { ...self, name: title, open: pageOf(self.kind) }, ...right.map(entry => entry.node)];
  const hub = left.length;
  return { nodes, links: [...left.map((entry, index) => ({ source: index, target: hub, value: entry.value })), ...right.map((entry, index) => ({ source: hub, target: hub + 1 + index, value: entry.value }))], missing: missing + interest.missing };
 }
@@ -198,7 +199,7 @@ function merchantFlows(target: { key: string; income: boolean }, title: string, 
  const accountSide = [...accounts].filter(([, value]) => value > 0).sort((a, b) => b[1] - a[1]).map(([key, value]) => ({ node: accountNode(key, byId, t), value }));
  const categorySide = [...categories].filter(([, value]) => value > 0).sort((a, b) => b[1] - a[1]).map(([key, value]) => ({ node: categoryNode(key, target.income, context), value }));
  const [left, right] = target.income ? [categorySide, accountSide] : [accountSide, categorySide];
- const hub = left.length, nodes = [...left.map(entry => entry.node), { name: title, kind: target.income ? 'income' : 'expense' } as DrillNode, ...right.map(entry => entry.node)];
+ const hub = left.length, nodes = [...left.map(entry => entry.node), { name: title, kind: target.income ? 'income' : 'expense', open: pageOf('transactions') } as DrillNode, ...right.map(entry => entry.node)];
  return { nodes, links: [...left.map((entry, index) => ({ source: index, target: hub, value: entry.value })), ...right.map((entry, index) => ({ source: hub, target: hub + 1 + index, value: entry.value }))], missing };
 }
 

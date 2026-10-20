@@ -120,10 +120,10 @@ test('an account in the savings Sankey opens its own: income and transfers in, s
  ];
  const ctx = { ...context(records, activity), label: key => key === 'groceries' ? 'Groceries' : key };
  const savings = drillFlows({ side: 'savings' }, 'Savings', 2450, ctx);
- assert.deepEqual(savings.nodes.filter(node => node.open).map(node => [node.name, node.open]), [['Savings account', { side: 'account', key: 'save' }], ['Card', { side: 'account', key: 'card' }], ['Car loan', { side: 'account', key: 'loan' }], ['Not traced', { side: 'untraced' }]], 'every account and debt opens its own Sankey, Not traced its transfers');
+ assert.deepEqual(savings.nodes.filter(node => node.open).map(node => [node.name, node.open]), [['Savings', { side: 'cashflow' }], ['Savings account', { side: 'account', key: 'save' }], ['Card', { side: 'account', key: 'card' }], ['Car loan', { side: 'account', key: 'loan' }], ['Not traced', { side: 'untraced' }]], 'Savings opens the cash flow, every account and debt its own Sankey, Not traced its transfers');
  const card = drillFlows({ side: 'account', key: 'card' }, 'Card', 0, ctx);
  assert.deepEqual(shape(card), [['EPAM', 'Card', 3000], ['Card', 'Savings account', 1490], ['Card', 'Groceries', 500], ['Card', 'Car loan', 300], ['Card', 'Not traced', 10], ['Card', 'Balance', 700]]);
- assert.deepEqual(card.nodes.map(node => node.open?.side ?? null), ['merchant', null, 'account', 'expense', 'account', 'untraced', 'balance'], 'everything but the account itself opens: sources, categories, other accounts, the transfer fee and its balance');
+ assert.deepEqual(card.nodes.map(node => node.open?.side ?? null), ['merchant', 'link', 'account', 'expense', 'account', 'untraced', 'balance'], 'everything opens: sources, the account (Accounts), categories, other accounts, the transfer fee and its balance');
  // 20 October 2026: income came in by category (Rent income) rather than by its source (Airbnb payout).
  assert.deepEqual(card.nodes[0].open, { side: 'merchant', key: 'EPAM', income: true }, 'an income source opens its own Sankey');
  const save = drillFlows({ side: 'account', key: 'save' }, 'Savings account', 0, ctx);
@@ -167,11 +167,11 @@ test('a merchant in a category Sankey opens its own: the accounts it was paid fr
  ];
  const ctx = { ...context(records), label: key => ({ groceries: 'Groceries', household: 'Household' })[key] ?? key };
  const groceries = drillFlows({ side: 'expense', key: 'groceries' }, 'Groceries', 0, ctx);
- assert.deepEqual(groceries.nodes.map(node => node.open ?? null), [null, { side: 'merchant', key: 'Costco', income: false }, { side: 'merchant', key: 'Cafe', income: false }], 'each merchant opens; the category itself does not');
+ assert.deepEqual(groceries.nodes.map(node => node.open ?? null), [{ side: 'link', href: '/transactions' }, { side: 'merchant', key: 'Costco', income: false }, { side: 'merchant', key: 'Cafe', income: false }], 'each merchant opens its Sankey, the category Transactions');
  const costco = drillFlows({ side: 'merchant', key: 'Costco', income: false }, 'Costco', 0, ctx);
  assert.deepEqual(shape(costco), [['Card', 'Costco', 120], ['No account', 'Costco', 80], ['Costco', 'Groceries', 120], ['Costco', 'Household', 80]], 'across every category, never the GBP amount without a rate');
  assert.equal(costco.missing, 1);
- assert.deepEqual(costco.nodes.map(node => node.open?.side ?? null), ['account', 'account', null, 'expense', 'expense'], 'its accounts (No account too) and categories open; the merchant itself does not');
+ assert.deepEqual(costco.nodes.map(node => node.open?.side ?? null), ['account', 'account', 'link', 'expense', 'expense'], 'its accounts (No account too) and categories open, the merchant Transactions');
  const epam = drillFlows({ side: 'merchant', key: 'EPAM', income: true }, 'EPAM', 0, ctx);
  assert.deepEqual(shape(epam), [['Salary', 'EPAM', 2000], ['EPAM', 'Savings account', 2000]], 'a payer: its income category on the left, the account it landed in on the right');
  assert.deepEqual(shape(drillFlows({ side: 'merchant', key: 'Costco', income: true }, 'Costco', 0, ctx)), [], 'a merchant is never read as a payer');
@@ -337,7 +337,7 @@ test('a debt in the savings Sankey opens its own: what paid it down, as principa
  // The whole payment passes through the mortgage: its principal stays as principal, its interest flows on to its category.
  const home = drillFlows({ side: 'account', key: 'home' }, 'Home', 0, ctx);
  assert.deepEqual(shape(home), [['Card', 'Home', 1000], ['Home', 'Other expense', 400], ['Home', 'Principal', 600]]);
- assert.deepEqual(home.nodes.map(node => node.open ?? null), [{ side: 'account', key: 'card' }, null, { side: 'expense', key: 'Other expense' }, { side: 'principal', key: 'home' }], 'the interest category opens its own Sankey');
+ assert.deepEqual(home.nodes.map(node => node.open ?? null), [{ side: 'account', key: 'card' }, { side: 'link', href: '/loans-debts' }, { side: 'expense', key: 'Other expense' }, { side: 'principal', key: 'home' }], 'the interest category opens its own Sankey');
  const noRate = drillFlows({ side: 'account', key: 'home' }, 'Home', 0, { ...ctx, currency: 'GBP' });
  assert.deepEqual([shape(noRate), noRate.missing], [[], 5], 'without a rate nothing is drawn: the period’s four flows and the interest are missing, never shown under the wrong currency');
  assert.deepEqual(Object.fromEntries(accountChanges(ctx).changes).home, 600, 'Savings still counts only the principal against the mortgage');
@@ -361,11 +361,11 @@ test('a debt’s principal opens the payments that paid it down; a mortgage paym
  assert.deepEqual(principalPayments('home', ctx).map(payment => [payment.id, payment.principal.amount]), [['mp1', 600], ['mp2', 590]], 'newest first, only the period');
  const home = principalFlows('home', ctx);
  assert.deepEqual(shape(home), [['20 August 2026 · Card', 'Principal', 600], ['5 August 2026 · Savings account', 'Principal', 590]]);
- assert.deepEqual(home.nodes.map(node => node.open ?? null), [{ side: 'payment', key: 'mp1' }, { side: 'payment', key: 'mp2' }, null], 'a mortgage payment opens its own Sankey');
+ assert.deepEqual(home.nodes.map(node => node.open ?? null), [{ side: 'payment', key: 'mp1' }, { side: 'payment', key: 'mp2' }, { side: 'account', key: 'home' }], 'a mortgage payment opens its own Sankey, the principal its mortgage');
  const { paymentFlows } = loadTS('lib/cash-flow-principal.ts');
  const payment = paymentFlows('mp1', ctx);
  assert.deepEqual(shape(payment), [['Card', 'Mortgage payment', 1000], ['Mortgage payment', 'Principal', 600], ['Mortgage payment', 'Interest', 400]]);
- assert.deepEqual(payment.nodes.map(node => node.open ?? null), [{ side: 'account', key: 'card' }, null, { side: 'account', key: 'home' }, { side: 'interest', key: 'home' }], 'the account, the mortgage and the mortgage’s interest open');
+ assert.deepEqual(payment.nodes.map(node => node.open ?? null), [{ side: 'account', key: 'card' }, { side: 'record', key: 'mp1' }, { side: 'account', key: 'home' }, { side: 'interest', key: 'home' }], 'the account, the payment (its details), the mortgage and the mortgage’s interest open');
  const { interestFlows, mortgageTransactions } = loadTS('lib/cash-flow-principal.ts');
  const interest = interestFlows('home', ctx);
  assert.deepEqual(shape(interest), [['20 August 2026 · Card', 'Interest', 400], ['5 August 2026 · Savings account', 'Interest', 410]], 'each payment’s interest in the period, newest first');
@@ -453,7 +453,7 @@ test('an account’s balance opens where it stands today: opening balance and th
  const ctx = { ...context([]), data: { records, activity: [], investmentLinks: [], goals } };
  const account = drillFlows({ side: 'account', key: 'card' }, 'Card', 0, ctx);
  assert.deepEqual(account.nodes.find(node => node.name === 'Balance').open, { side: 'balance', key: 'card' }, 'Balance opens, in a period running to this month');
- assert.equal(drillFlows({ side: 'account', key: 'card' }, 'Card', 0, { ...ctx, today: '2026-10-20', throughToday: false }).nodes.find(node => node.name === 'Balance').open, undefined, 'not when the data stops before today: the balance at the period’s end cannot be told');
+ assert.deepEqual(drillFlows({ side: 'account', key: 'card' }, 'Card', 0, { ...ctx, today: '2026-10-20', throughToday: false }).nodes.find(node => node.name === 'Balance').open, { side: 'link', href: '/accounts' }, 'when the data stops before today the balance at the period’s end cannot be told: it opens Accounts');
  const { balanceFlows } = loadTS('lib/cash-flow-balance.ts');
  assert.deepEqual(shape(balanceFlows('card', ctx)), [['Opening balance', 'Card', 1700], ['This period', 'Card', 800], ['Card', 'Holiday', 600], ['Card', 'Euro trip', 200], ['Card', 'Available', 1700]], '$2,500 today: $1,700 before the period’s $800; goals hold $800 (EUR 100 at 0.5), archived ones nothing');
  const spent = { ...ctx, data: { ...ctx.data, records: [card, record('food', 'Market', 'Living expense', 300, '2026-08-06', { account_id: 'card' })], goals: [] } };
@@ -480,7 +480,7 @@ test('money invested opens where the holding stands: what it cost, what the peri
  const { balanceFlows } = loadTS('lib/cash-flow-balance.ts');
  const stood = balanceFlows('vt', ctx);
  assert.deepEqual(shape(stood), [['Purchase cost', 'VT', 300], ['This period', 'VT', 200], ['Gain/loss', 'VT', 100], ['VT', 'Current value', 600]], '5 units cost $500, $200 of it this period; at $120 they are worth $600');
- assert.deepEqual(stood.nodes.map(node => node.open?.side ?? null), ['link', 'account', 'link', null, 'link'], 'the period opens the holding’s flows; cost, gain and value open Investments');
+ assert.deepEqual(stood.nodes.map(node => node.open?.side ?? null), ['link', 'account', 'link', 'link', 'link'], 'the period opens the holding’s flows; the holding, its cost, gain and value open Investments');
  const fallen = balanceFlows('vt', { ...ctx, data: { ...ctx.data, records: [...accounts, { ...vt, amount: 80 }] } });
  assert.deepEqual(shape(fallen), [['Purchase cost', 'VT', 300], ['This period', 'VT', 200], ['VT', 'Current value', 400], ['VT', 'Gain/loss', 100]], 'a loss flows out');
 });
@@ -540,7 +540,43 @@ test('a goal in the balance Sankey opens its own: its balance at the start, what
  const { goalFlows } = loadTS('lib/cash-flow-goal.ts');
  const holiday = goalFlows('g', ctx);
  assert.deepEqual(shape(holiday), [['Opening balance', 'Holiday', 300], ['Card', 'Holiday', 300], ['Savings account', 'Holiday', 150], ['Holiday', 'Old wallet', 100], ['Holiday', 'Saved', 650]], 'August: it held $300, took $450 in and $100 out, and held $650 (today’s $700 less September’s $50)');
- assert.deepEqual(holiday.nodes.map(node => node.open?.side ?? null), ['link', 'account', 'account', null, 'link', 'link'], 'the accounts open; its balances open Goals');
+ assert.deepEqual(holiday.nodes.map(node => node.open?.side ?? null), ['link', 'account', 'account', 'link', 'link', 'link'], 'the accounts open; the goal and its balances open Goals');
  assert.equal(goalFlows('g', { ...ctx, currency: 'GBP' }).missing, 1, 'no rate: missing');
  assert.deepEqual(shape(goalFlows('g', { ...ctx, goalEvents: [] })), [['Opening balance', 'Holiday', 700], ['Holiday', 'Saved', 700]], 'without a history it held the same all along');
+});
+
+test('every node of every drill-down Sankey opens something', () => {
+ // 20 October 2026: the user asked node by node for the Sankeys to respond; this walks every view a tap can reach.
+ const { operationFlows } = loadTS('lib/cash-flow-operations.ts');
+ const { principalFlows, paymentFlows, interestFlows } = loadTS('lib/cash-flow-principal.ts');
+ const { balanceFlows } = loadTS('lib/cash-flow-balance.ts');
+ const { mainFlows } = loadTS('lib/cash-flow-main.ts');
+ const { untracedFlows } = loadTS('lib/cash-flow-untraced.ts');
+ const { goalFlows } = loadTS('lib/cash-flow-goal.ts');
+ const holding = record('vt', 'VT', 'Stock', 120, '2026-01-01', { frequency: 'Monthly', quantity: 5, cost: 100 });
+ const records = [...accounts.map(item => item.id === 'card' ? { ...item, amount: 2500 } : item), holding,
+  record('pay', 'EPAM', 'Salary', 3000, '2026-08-05', { account_id: 'card' }), record('gig', 'Upwork', 'Other income', 300, '2026-08-06'),
+  record('food', 'Market', 'Living expense', 500, '2026-08-06', { account_id: 'card', custom_category_id: 'groceries' }), record('cash', 'Taxi', 'Living expense', 100, '2026-08-07'),
+  record('mp', 'Mortgage payment', 'Other expense', 1000, '2026-08-20', { mortgage_payment_id: 'mp', payment_interest: 400, payment_principal: 600 }),
+  ...Array.from({ length: 11 }, (_, index) => record('s' + index, 'Shop ' + index, 'Charity', 20 - index, '2026-08-10'))];
+ const op = (id, action, account_id, target_id, amount, received, occurred_on, fee = 0) => ({ id, action, account_id, target_id, amount, received, fee, occurred_on, notes: '', before_balance: 0, after_balance: 0 });
+ const activity = [op('t', 'transfer', 'card', 'save', 500, 490, '2026-08-10', 10), op('r', 'repayment', 'card', 'loan', 300, 300, '2026-08-15'), op('mp', 'mortgage', 'card', 'home', 1000, 1000, '2026-08-20')];
+ const movements = [{ id: 'm', kind: 'buy', source_id: 'save', target_id: 'vt', sent: 200, received: 2, source_value: 200, target_value: 200, fee: 0, occurred_on: '2026-08-12', notes: '', realized_gain: null }];
+ const goals = [{ id: 'g', name: 'Holiday', account_id: 'card', allocated: 700, target: 1000, target_date: null, archived: false }];
+ const goalEvents = [{ id: 'e', goal_id: 'g', operation_id: null, occurred_on: '2026-08-05', delta: 300, balance: 700, event_type: 'contribution', notes: '', source_name: null, source_id: 'card' }];
+ const ctx = { ...context([]), label: key => key, goalEvents, data: { records, activity, investmentLinks: [], movements, goals, categories: [] } };
+ const savings = 3000 + 300 - 500 - 100 - 400 - 155;
+ const view = target => target.side === 'operation' ? operationFlows(target.key, ctx) : target.side === 'principal' ? principalFlows(target.key, ctx) : target.side === 'payment' ? paymentFlows(target.key, ctx)
+  : target.side === 'interest' ? interestFlows(target.key, ctx) : target.side === 'balance' ? balanceFlows(target.key, ctx) : target.side === 'cashflow' ? mainFlows(ctx)
+  : target.side === 'untraced' ? untracedFlows(target.key, savings, ctx) : target.side === 'goal' ? goalFlows(target.key, ctx) : drillFlows(target, 'View', savings, ctx);
+ const seen = new Set(), queue = [{ side: 'cashflow' }, { side: 'savings' }], silent = [];
+ while (queue.length) {
+  const target = queue.shift(), id = JSON.stringify(target);
+  if (seen.has(id) || target.side === 'link' || target.side === 'record') continue;
+  seen.add(id);
+  const flows = view(target);
+  for (const node of flows.nodes) if (node.open) queue.push(node.open); else silent.push(`${target.side} ${target.key ?? ''}: ${node.name}`);
+ }
+ assert.deepEqual(silent, [], 'nodes that open nothing');
+ for (const side of ['savings', 'cashflow', 'account', 'income', 'expense', 'group', 'merchant', 'operation', 'principal', 'payment', 'interest', 'balance', 'untraced', 'goal']) assert.ok([...seen].some(id => JSON.parse(id).side === side), 'reached a ' + side + ' view');
 });

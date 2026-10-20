@@ -1,6 +1,7 @@
 import { monthsBetween } from './budget';
 import { shiftMonth } from './calendar-days';
 import { accountChanges, accountNode } from './cash-flow-drill';
+import { pageOf } from './cash-flow-drill-base';
 import type { DrillContext, DrillFlows, DrillNode } from './cash-flow-drill-types';
 import { unitPricedKinds, value, type Entry } from './finance';
 import { convertAmount } from './market';
@@ -40,7 +41,7 @@ function accountBalance(account: Entry, now: number, change: number, ended: numb
  const held = goals.reduce((sum, goal) => sum + goal.value, 0);
  const left: Part[] = [{ node: { name: t('Opening balance'), kind: 'account', open: accounts }, value: ended - change }, { node: back, value: change }];
  const rest: DrillNode = { name: t(!current ? 'Balance' : goals.length ? 'Available' : 'Current balance'), kind: 'account', open: accounts };
- return draw(left, { ...accountNode(account.id, new Map([[account.id, account]]), t), open: undefined }, [{ node: back, value: -change }, ...goals, { node: rest, value: ended - held }], unknown);
+ return draw(left, { ...accountNode(account.id, new Map([[account.id, account]]), t), open: pageOf('account') }, [{ node: back, value: -change }, ...goals, { node: rest, value: ended - held }], unknown);
 }
 
 /** A holding at the period's end: what it cost before the period and what the period invested, plus any gain, flow in;
@@ -54,7 +55,7 @@ function holdingBalance(holding: Entry, now: number, change: number, ended: numb
  const page: DrillNode['open'] = { side: 'link', href: '/assets' };
  const left: Part[] = [{ node: { name: t(paid > 0 ? 'Purchase cost' : 'Opening balance'), kind: 'holding', open: page }, value: before }, { node: { name: t('This period'), kind: 'income', open: { side: 'account', key: holding.id } }, value: change }, { node: { name: t('Gain/loss'), kind: 'income', open: page }, value: gain }];
  const right: Part[] = [{ node: { name: t('This period'), kind: 'expense', open: { side: 'account', key: holding.id } }, value: -change }, { node: { name: t('Current value'), kind: 'holding', open: page }, value: ended }, { node: { name: t('Gain/loss'), kind: 'expense', open: page }, value: -gain }];
- return draw(left, { ...accountNode(holding.id, new Map([[holding.id, holding]]), t), open: undefined }, right, 0);
+ return draw(left, { ...accountNode(holding.id, new Map([[holding.id, holding]]), t), open: pageOf('holding') }, right, 0);
 }
 
 /** Where one account or holding stood at the period's end, in the display currency: today's balance less what moved

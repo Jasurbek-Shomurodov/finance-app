@@ -38,7 +38,7 @@ export function goalFlows(id: string, context: DrillContext): DrillFlows {
  const page: DrillNode['open'] = { side: 'link', href: '/goals' };
  const left = [{ node: { name: t('Opening balance'), kind: 'savings', open: page } as DrillNode, value: convert(started)! }, ...sides.in.values()].filter(part => part.value >= .5);
  const right = [...sides.out.values(), { node: { name: t('Saved'), kind: 'savings', open: page } as DrillNode, value: convert(ended)! }].filter(part => part.value >= .5);
- const hub: DrillNode = { name: goal.name, kind: 'savings' };
+ const hub: DrillNode = { name: goal.name, kind: 'savings', open: page };
  return {
   nodes: [...left.map(part => part.node), hub, ...right.map(part => part.node)],
   links: [...left.map((part, index) => ({ source: index, target: left.length, value: part.value })), ...right.map((part, index) => ({ source: left.length, target: left.length + 1 + index, value: part.value }))],

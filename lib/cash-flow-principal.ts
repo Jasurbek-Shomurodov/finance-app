@@ -44,7 +44,7 @@ export function principalFlows(debt: string, context: DrillContext): DrillFlows 
   const from = accountNode(payment.account, byId, context.t);
   paid.push({ value, node: { name: `${formatDate(payment.date, context.locale ?? 'en-US')} · ${from.name}`, kind: from.kind, open: payment.record ? { side: 'payment', key: payment.id } : { side: 'operation', key: payment.id } } });
  }
- const nodes: DrillNode[] = [...paid.map(item => item.node), { name: context.t('Principal'), kind: 'savings' }];
+ const nodes: DrillNode[] = [...paid.map(item => item.node), { name: context.t('Principal'), kind: 'savings', open: { side: 'account', key: debt } }];
  return { nodes, links: paid.map((item, index) => ({ source: index, target: paid.length, value: item.value })), missing };
 }
 
@@ -66,7 +66,7 @@ export function paymentFlows(id: string, context: DrillContext): DrillFlows {
   { node: principalNode, value: principal },
   { node: interestNode, value: interest },
  ].filter(part => part.value > 0);
- const nodes: DrillNode[] = [accountNode(row.account_id, byId, context.t), { name: payment.name.trim() || context.t('Mortgage payment'), kind: 'debt' }, ...parts.map(part => part.node)];
+ const nodes: DrillNode[] = [accountNode(row.account_id, byId, context.t), { name: payment.name.trim() || context.t('Mortgage payment'), kind: 'debt', open: { side: 'record', key: id } }, ...parts.map(part => part.node)];
  return { nodes, links: [{ source: 0, target: 1, value: principal + interest }, ...parts.map((part, index) => ({ source: 1, target: 2 + index, value: part.value }))], missing: 0 };
 }
 
@@ -87,6 +87,6 @@ export function interestFlows(debt: string, context: DrillContext): DrillFlows {
  }
  const [category] = categories;
  // Payments in several categories open those categories together.
- const total: DrillNode = { name: context.t('Interest'), kind: 'expense', open: categories.size === 1 ? categoryNode(category, false, context).open : categories.size ? { side: 'group', income: false, keys: [...categories], by: 'category' } : undefined };
+ const total: DrillNode = { name: context.t('Interest'), kind: 'expense', open: categories.size === 1 ? categoryNode(category, false, context).open : categories.size ? { side: 'group', income: false, keys: [...categories], by: 'category' } : { side: 'account', key: debt } };
  return { nodes: [...paid.map(item => item.node), total], links: paid.map((item, index) => ({ source: index, target: paid.length, value: item.value })), missing };
 }

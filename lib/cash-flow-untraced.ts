@@ -25,6 +25,6 @@ export function untracedFlows(key: string | undefined, savings: number, context:
  const total = key === undefined ? Math.abs(savings - [...accountChanges(context).changes.values()].reduce((sum, value) => sum + value, 0)) : null;
  const parts = untracedTransfers(key, context).map(({ operation, value }) => ({ value, node: { name: `${formatDate(operation.date, context.locale ?? 'en-US')} · ${t(titles[operation.kind])}`, kind: 'untraced', open: { side: 'operation', key: operation.id } } as DrillNode }));
  const explained = parts.reduce((sum, part) => sum + part.value, 0);
- if (total !== null && total - explained >= .5) parts.push({ value: total - explained, node: { name: t('Other'), kind: 'untraced' } });
- return { nodes: [...parts.map(part => part.node), { name: t('Not traced'), kind: 'untraced' }], links: parts.map((part, index) => ({ source: index, target: parts.length, value: part.value })), missing: 0 };
+ if (total !== null && total - explained >= .5) parts.push({ value: total - explained, node: { name: t('Other'), kind: 'untraced', open: { side: 'link', href: '/transactions' } } });
+ return { nodes: [...parts.map(part => part.node), { name: t('Not traced'), kind: 'untraced', open: { side: 'link', href: '/accounts' } }], links: parts.map((part, index) => ({ source: index, target: parts.length, value: part.value })), missing: 0 };
 }
