@@ -26,6 +26,7 @@ import { depositMonth, depositToday } from '@/lib/deposit-interest';
 import { normalizeEntry, type Entry } from '@/lib/finance';
 import { showError } from '@/lib/feedback';
 import { formatMoney, formatMonthShort, formatMonthYear, formatNumber, formatYear } from '@/lib/format';
+import { periodMonths } from '@/lib/cash-flow-report';
 import { convertAmount, marketRates } from '@/lib/market';
 import { emptyPlanning } from '@/lib/planning';
 
@@ -33,7 +34,7 @@ export function BudgetScreen() {
  const { t, locale } = useLanguage();
  const name = useCategoryName();
  // The workspace's one Budget: a change here reaches the forecasts on Overview, Cash flow and Goals at once.
- const { user, demo, reload, currency, market, planning, transactionTools, workspaceLoading, budget, addCashFlow, editRecord, archiveSchedule, readOnly } = useWorkspace();
+ const { user, demo, reload, currency, market, planning, transactionTools, workspaceLoading, budget, addCashFlow, editRecord, archiveSchedule, readOnly, setSankey } = useWorkspace();
  const today = depositToday(), thisMonth = depositMonth();
  const [month, setMonth] = useState(thisMonth);
  const [view, setView] = useState<'month' | 'year'>('month');
@@ -80,6 +81,12 @@ export function BudgetScreen() {
   return budgetHistory(keys, month, history, past => flexPlan(plan, categories, past, currency, rates));
  };
  // In flex mode a flexible category has no plan of its own; the bucket above it holds the amount.
+ // A row opens its category's Sankey for the month (or the year to date) over the page; its own node opens its details.
+ // The flexible bucket is its categories together.
+ const openSankey = (row: BudgetRow) => setSankey({
+  target: row.key === flexBucketKey ? { side: 'group', income: false, keys: categories.filter(item => item.direction === 'expense' && item.type === 'flexible' && !item.excluded).map(item => item.key), by: 'category' } : { side: row.direction === 'income' ? 'income' : 'expense', key: row.key },
+  title: name(row), month, months: view === 'year' ? periodMonths(month, 'year') : undefined, period: view === 'year' ? formatYear(Number(month.slice(0, 4)), locale) : undefined, onDetails: () => setViewing(row),
+ });
  const planned = (row: BudgetRow) => flex && row.direction === 'expense' && row.type === 'flexible' ? <span className="budget-pill">—</span> : <PlannedInput key={row.key + month + (row.budget ?? 0)} label={t('Planned for {name}', { name: name(row) })} value={knownPlan(row)} history={historyOf(row.key)} direction={row.direction} currency={currency} defaultForward={budget.state.applyForward} appliesForward={appliesToFutureMonths(budget.state.amounts, row.key, month)} onSave={save(row.key)} onRepeat={repeat(row.key)}/>;
  // A custom category has at most one recurring bill (migration 137): its details list it, Make recurring creates it
  // in this category at this month's planned amount (else what it spent), starting at the first of the payments already
@@ -113,7 +120,7 @@ export function BudgetScreen() {
   // Only the Flexible bucket keeps a heading row: it carries the plan its categories share.
   return <BudgetGroupCard key={id} bare={!isBucket} group={bucketRow ? { ...group, budget: bucketRow.budget ?? 0, remaining: bucketRow.remaining ?? 0, missing: group.missing + (bucketMissing ? 1 : 0) } : group} currency={currency}
    open={!isBucket || !closed.has(id)} onToggle={() => toggle(closed, setClosed, id)} showUnbudgeted={unbudgeted.has(id)} onShowUnbudgeted={() => toggle(unbudgeted, setUnbudgeted, id)}
-   renderPlanned={planned} rowMenu={rowMenu} onOpen={setViewing}
+   renderPlanned={planned} rowMenu={rowMenu} onOpen={openSankey}
    rolloverIn={bucketRow?.rolloverIn} onGroupSettings={bucketRow ? () => setEditing({ category: bucket, figures: bucketRow }) : undefined}
    header={bucketRow ? <PlannedInput key={'flex' + month + (flexBudget ?? 0)} label={t('Planned for {name}', { name: t('Flexible') })} value={flexBudget} history={historyOf(flexBucketKey)} direction="expense" currency={currency} defaultForward={budget.state.applyForward} appliesForward={appliesToFutureMonths(budget.state.amounts, flexBucketKey, month)} onSave={save(flexBucketKey)} onRepeat={repeat(flexBucketKey)}/> : undefined}/>;
  };

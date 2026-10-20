@@ -763,6 +763,8 @@ test('an upcoming or recurring payment opens its schedule’s Sankey: what paid 
  const sankey = r.find(node => node.type === 'Sankey').props, hub = sankey.data.nodes.findIndex(node => node.name === 'Rent');
  sankey.node({ x: 0, y: 0, width: 10, height: 20, index: hub, payload: { name: 'Rent', value: 1 } }).props.onClick();
  assert.equal(details, 1, 'the schedule opens its details');
+ r.fire(r.all(node => node.type === 'Button' && node.props.className === 'cash-flow-drill-details')[0], 'onClick');
+ assert.equal(details, 2, 'and so does the Details button, there even when nothing was paid or recorded');
  assert.equal(r.all(node => node.type === 'button' && node.props['aria-label'] === 'View details for Rent').length, 2, 'its payments are listed');
  r.mount(React.createElement(CashFlowDrillDialog, { target: due, title: 'Rent', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord() {} }));
  const plain = r.find(node => node.type === 'Sankey').props;
@@ -814,4 +816,22 @@ test('a subscription row opens its merchant’s Sankey; its menu and Restore but
  r.mount(React.createElement(SubscriptionsPanel, { records: [], decisions: [], loading: false, onRetry() {}, decide: async () => {}, restore: async () => {}, onTrack() {} }));
  assert.equal(r.all(node => node.type === 'li' && node.props['data-clickable']).length, 0, 'without a handler the rows stay plain');
  assert.match(fs.readFileSync('components/workspace/screens/upcoming-screen.tsx', 'utf8'), /<SubscriptionsPanel [^\n]*onOpen=\{record => setDrilling\(record\)\}\/>/);
+});
+
+test('a Budget row opens its category’s Sankey for the month or the year to date, its details from the category', () => {
+ const screen = fs.readFileSync('components/workspace/screens/budget-screen.tsx', 'utf8');
+ assert.match(screen, /onOpen=\{openSankey\}/);
+ assert.match(screen, /target: row\.key === flexBucketKey \? \{ side: 'group', income: false, keys: categories\.filter\(item => item\.direction === 'expense' && item\.type === 'flexible' && !item\.excluded\)\.map\(item => item\.key\), by: 'category' \} : \{ side: row\.direction === 'income' \? 'income' : 'expense', key: row\.key \}/, 'the flexible bucket opens its categories together');
+ assert.match(screen, /months: view === 'year' \? periodMonths\(month, 'year'\) : undefined/);
+ const r = createRenderer();
+ let sankey = { target: { side: 'expense', key: 'Living expense' }, title: 'Living expense', month: '2026-08', months: ['2026-01', '2026-02', '2026-08'], period: '2026', onDetails() {} };
+ const workspace = () => ({ drilling: null, sankey, setSankey: value => { sankey = value; }, setViewing() {}, storedRecord: item => item, user: null, demo: true, reload: 0,
+  planning: { data: { records: accounts, activity: [], investmentLinks: [], categories: [], goals: [], occurrences: [] } }, transactionTools: { data: { splits: [] } }, currency: 'USD', market: { rates: { USD: 1 }, quotes: {} } });
+ const reads = [];
+ const modules = { '@/components/language-provider': language('en-US'), '@/components/workspace/workspace-provider': { useWorkspace: workspace }, 'next/navigation': { useRouter: () => router },
+  '@/components/cash-flow-drill-lazy': hostModule(), '@/hooks/use-owner-resource': { useOwnerResource: url => { reads.push(url); return { data: { records: [], events: [] } }; } } };
+ const { TransactionSankey } = r.load('components/workspace/transaction-sankey.tsx', modules);
+ r.mount(React.createElement(TransactionSankey));
+ const dialog = r.find(node => node.type === 'CashFlowDrillDialog').props;
+ assert.deepEqual([dialog.period, dialog.context.months, dialog.onDetails], ['2026', ['2026-01', '2026-02', '2026-08'], sankey.onDetails], 'the year to date, labelled by its year, with the category’s details');
 });

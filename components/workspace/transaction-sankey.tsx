@@ -30,9 +30,9 @@ function Drill({ request, onClose }: { request: SankeyRequest; onClose: () => vo
  // A schedule opened where its history is not at hand (the dashboard) shows it on Recurring.
  const router = useRouter();
  const today = depositToday();
- const { data, goalEvents, throughToday } = useCashFlowData({ owner: user, demo, revision: reload, provided: planning.data, month: today.slice(0, 7), today, linked: request.month });
+ const { data, goalEvents, throughToday } = useCashFlowData({ owner: user, demo, revision: reload, provided: planning.data, month: today.slice(0, 7), today, linked: request.months?.[0] ?? request.month });
  const categoryName = (key: string) => data.categories.find(category => category.id === key)?.name ?? t(key);
- return <CashFlowDrillDialog target={request.target} title={request.title} period={formatMonthYear(request.month, locale)} savings={0}
-  context={{ data, splits: transactionTools.data.splits, months: [request.month], currency, today, rates: marketRates(market), t, label: categoryName, locale, throughToday, goalEvents }}
+ return <CashFlowDrillDialog target={request.target} title={request.title} period={request.period ?? formatMonthYear(request.month, locale)} savings={0}
+  context={{ data, splits: transactionTools.data.splits, months: request.months ?? [request.month], currency, today, rates: marketRates(market), t, label: categoryName, locale, throughToday, goalEvents }}
   onClose={onClose} onOpenRecord={found => setViewing(storedRecord(found))} onDetails={request.onDetails ?? (request.target.side === 'schedule' ? () => { onClose(); router.push('/upcoming'); } : undefined)}/>;
 }

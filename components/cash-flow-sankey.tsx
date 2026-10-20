@@ -127,6 +127,8 @@ export function CashFlowDrillDialog({ target, title, period, savings, context, o
  }
  return <Dialog open onOpenChange={open => { if (!open) onClose(); }}><DialogContent className="record-dialog cash-flow-drill-dialog" aria-describedby={undefined}>
   {trail.length > 1 && <Button type="button" variant="ghost" size="sm" className="cash-flow-drill-back" onClick={() => setTrail(trail.slice(0, -1))}><ArrowLeft aria-hidden="true"/>{t('Back')}</Button>}
+  {/* The details of what it was opened for, also when its Sankey has nothing to draw this month. */}
+  {onDetails && trail.length === 1 && <Button type="button" variant="outline" size="sm" className="cash-flow-drill-details" onClick={onDetails}>{t('Details')}</Button>}
   <DialogTitle>{current.title} <span className="panel-figure">{period}</span></DialogTitle>
   {flows.missing > 0 && <p className="partial-total" role="status">{t('Some transactions could not be converted. Current or previous month totals are incomplete.')}</p>}
   {flows.links.length ? <FlowSankey key={trail.length} flows={flows} currency={context.currency} canOpen={canOpen} onOpen={openNode}/> : <p className="budget-left-empty">{t('Nothing recorded in this period.')}</p>}
