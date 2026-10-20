@@ -3,7 +3,7 @@ import { assets, liabilities, type Entry } from './finance';
 import { convertAmount } from './market';
 import type { PlanningData } from './planning';
 import { otherShareKey, topShares, type Share } from './cash-flow-report';
-import { cashFlowItems, transferAmount, type CashFlowItem } from './spending';
+import { cashFlowItems, spendingAmount, transferAmount, type CashFlowItem } from './spending';
 import type { TransactionSplit } from './transaction-tools';
 
 /** What a tap on the Cash flow Sankey opens: one income or spending category, the period's savings, or one account. */
@@ -183,6 +183,23 @@ function savingsFlows(savings: number, context: DrillContext): DrillFlows {
 /** One account's period: what came in (income by source, transfers from other accounts, sales of holdings) on the
  * left, what went out (spending by category, transfers, debt payments, purchases) on the right. The difference is the
  * change in its balance, shown as "Balance" on whichever side balances the account. Every other node opens its own Sankey. */
+/** The interest of each mortgage payment to `debt` in the period, by the account that paid it and the spending category
+ * it counts in. The period's flows leave it with the paying account, where it is spending; a debt's own Sankey shows the
+ * whole payment passing through the debt, so its interest flows on to its category there. */
+function mortgageInterest(debt: string, context: DrillContext, byId: Map<string, Entry>) {
+ const { data, months, today, currency, rates } = context, { from, to } = span(months, today);
+ const paid: Array<{ account: string; category: string; value: number }> = [];
+ let missing = 0;
+ for (const row of data.activity ?? []) {
+  const payment = byId.get(row.id);
+  if (row.action !== 'mortgage' || row.target_id !== debt || row.occurred_on < from || row.occurred_on > to || !payment) continue;
+  const value = convertAmount(spendingAmount(payment), payment.currency, currency, rates);
+  if (value === null || value === undefined) { missing += 1; continue; }
+  if (value > 0) paid.push({ account: row.account_id, category: payment.custom_category_id ?? payment.kind, value });
+ }
+ return { paid, missing };
+}
+
 function accountFlows(key: string, title: string, context: DrillContext): DrillFlows {
  const { t } = context;
  const { flows, missing, byId } = periodFlows(context);
@@ -200,6 +217,8 @@ function accountFlows(key: string, title: string, context: DrillContext): DrillF
   if ('account' in flow.to && flow.to.account === key) tally(flow.from, 'inflow', flow.value);
   if ('account' in flow.from && flow.from.account === key) tally(flow.to, 'outflow', flow.value);
  }
+ const interest = self.kind === 'debt' ? mortgageInterest(key, context, byId) : { paid: [], missing: 0 };
+ for (const item of interest.paid) { tally({ account: item.account }, 'inflow', item.value); tally({ expense: item.category }, 'outflow', item.value); }
  // A counterpart both sending and receiving (two transfers back and forth) shows on the side of its net.
  const nets = [...ends.values()].map(entry => ({ node: entry.node, value: entry.inflow - entry.outflow })).filter(entry => Math.abs(entry.value) >= .5);
  const left = nets.filter(entry => entry.value > 0).sort((a, b) => b.value - a.value), right = nets.filter(entry => entry.value < 0).map(entry => ({ ...entry, value: -entry.value })).sort((a, b) => b.value - a.value);
@@ -210,7 +229,7 @@ function accountFlows(key: string, title: string, context: DrillContext): DrillF
  if (change <= -.5) left.push({ node: { name: kept, kind: 'savings' }, value: -change });
  const nodes: DrillNode[] = [...left.map(entry => entry.node), { ...self, name: title, open: undefined }, ...right.map(entry => entry.node)];
  const hub = left.length;
- return { nodes, links: [...left.map((entry, index) => ({ source: index, target: hub, value: entry.value })), ...right.map((entry, index) => ({ source: hub, target: hub + 1 + index, value: entry.value }))], missing };
+ return { nodes, links: [...left.map((entry, index) => ({ source: index, target: hub, value: entry.value })), ...right.map((entry, index) => ({ source: hub, target: hub + 1 + index, value: entry.value }))], missing: missing + interest.missing };
 }
 
 /** One payer or merchant: a merchant is paid from accounts (left) and spent on categories (right); a payer's income

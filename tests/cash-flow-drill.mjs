@@ -332,7 +332,12 @@ test('a debt in the savings Sankey opens its own: what paid it down, as principa
  const savings = drillFlows({ side: 'savings' }, 'Savings', 2600, ctx);
  assert.deepEqual(savings.nodes.filter(node => node.kind === 'debt').map(node => [node.name, node.open]), [['Home', { side: 'account', key: 'home' }], ['Car loan', { side: 'account', key: 'loan' }]], 'every debt opens its own Sankey');
  assert.deepEqual(shape(drillFlows({ side: 'account', key: 'loan' }, 'Car loan', 0, ctx)), [['Card', 'Car loan', 300], ['Car loan', 'Principal', 300]]);
- assert.deepEqual(shape(drillFlows({ side: 'account', key: 'home' }, 'Home', 0, ctx)), [['Card', 'Home', 600], ['Home', 'Principal', 600]], 'only the principal reaches the mortgage; the interest is spending');
+ // The whole payment passes through the mortgage: its principal stays as principal, its interest flows on to its category.
+ const home = drillFlows({ side: 'account', key: 'home' }, 'Home', 0, ctx);
+ assert.deepEqual(shape(home), [['Card', 'Home', 1000], ['Home', 'Other expense', 400], ['Home', 'Principal', 600]]);
+ assert.deepEqual(home.nodes.map(node => node.open ?? null), [{ side: 'account', key: 'card' }, null, { side: 'expense', key: 'Other expense' }, null], 'the interest category opens its own Sankey');
+ assert.equal(drillFlows({ side: 'account', key: 'home' }, 'Home', 0, { ...ctx, currency: 'GBP' }).missing, 2, 'principal and interest without a rate are missing');
+ assert.deepEqual(Object.fromEntries(accountChanges(ctx).changes).home, 600, 'Savings still counts only the principal against the mortgage');
  const { drillTransactions } = loadTS('lib/cash-flow-drill.ts');
  const { accountOperations } = loadTS('lib/cash-flow-operations.ts');
  assert.deepEqual(drillTransactions({ side: 'account', key: 'home' }, ctx).map(item => item.id), ['mp'], 'the mortgage lists its payment');
