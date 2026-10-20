@@ -207,6 +207,17 @@ test('the investment tracker loads in the browser when a payment opens it',async
  assert.equal(await InvestmentTracker.load(),Tracker);
 });
 
+test('the Cash flow drill-down loads its Sankeys in the browser when a row opens it',async()=>{
+ const Dialog=()=>null,calls=[];
+ const {CashFlowDrillDialog}=loadTS('components/cash-flow-drill-lazy.tsx',{
+  'next/dynamic':{__esModule:true,default:(load,options)=>{calls.push(options);return {load};}},
+  '@/components/cash-flow-sankey':{CashFlowDrillDialog:Dialog},
+ });
+ assert.deepEqual(calls,[{ssr:false}]);
+ assert.equal(await CashFlowDrillDialog.load(),Dialog);
+ assert.deepEqual(Object.keys(loadTS('lib/cash-flow-drill-types.ts')),[],'the drill-down types carry no runtime code');
+});
+
 test('watchlist and goal forms let the user pick any preferred currency',()=>{
  for(const file of ['components/spending-watchlists.tsx','components/planning/goals-page.tsx']){
   const source=read(file);
