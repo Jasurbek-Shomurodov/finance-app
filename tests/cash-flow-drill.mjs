@@ -304,3 +304,17 @@ test('transfers, buys and sales recorded on Accounts count in the Sankeys and op
  r.fire(r.all(node => node.type === 'button' && node.props['aria-label'] === 'View details for Transfer')[0], 'onClick');
  assert.match(r.html(), /<dt>Amount<\/dt><dd>\$500<\/dd><dt>Received<\/dt><dd>\$495<\/dd><dt>Transfer fee<\/dt><dd>\$5<\/dd>/);
 });
+
+test('a holding in the savings Sankey is marked as one and opens its own: what was bought from where, kept as money invested', () => {
+ const holding = (id, name, kind) => record(id, name, kind, 0, '2026-01-01', { frequency: 'Monthly' });
+ const movements = [{ id: 'm', kind: 'buy', source_id: 'card', target_id: 'vt', sent: 300, received: 3, source_value: 300, target_value: 300, fee: 0, occurred_on: '2026-08-12', notes: '', realized_gain: null }];
+ const investmentLinks = [{ id: 'l', account_id: 'card', account_currency: 'USD', amount: -200, investment_history: { occurred_on: '2026-08-13', record_id: 'btc', event_type: 'buy' } }];
+ const ctx = { ...context([]), data: { records: [...accounts, holding('vt', 'VT', 'Stock'), holding('btc', 'Bitcoin', 'Crypto'), record('cd', 'CD', 'Deposit', 0, '2026-01-01', { frequency: 'Monthly' }), record('pay', 'EPAM', 'Salary', 1000, '2026-08-05', { account_id: 'card' })], activity: [], investmentLinks, movements } };
+ const savings = drillFlows({ side: 'savings' }, 'Savings', 1000, ctx);
+ assert.deepEqual(savings.nodes.map(node => [node.name, node.kind, node.open?.key ?? null]), [['Savings', 'savings', null], ['Card', 'account', 'card'], ['VT', 'holding', 'vt'], ['Bitcoin', 'holding', 'btc']], 'holdings open their own Sankey; cash stays an account');
+ assert.deepEqual(shape(drillFlows({ side: 'account', key: 'vt' }, 'VT', 0, ctx)), [['Card', 'VT', 300], ['VT', 'Money invested', 300]]);
+ assert.deepEqual(shape(drillFlows({ side: 'account', key: 'btc' }, 'Bitcoin', 0, ctx)), [['Card', 'Bitcoin', 200], ['Bitcoin', 'Money invested', 200]], 'a buy recorded in the Tracker too');
+ const { accountNode } = loadTS('lib/cash-flow-drill.ts');
+ assert.equal(accountNode('cd', new Map([['cd', { kind: 'Deposit', name: 'CD' }]]), key => key).kind, 'account', 'a deposit is where money is kept, not a holding');
+ assert.equal(accountNode('home', new Map([['home', { kind: 'Mortgage', name: 'Home' }]]), key => key).kind, 'debt');
+});

@@ -1,5 +1,5 @@
 import { monthEnd } from './calendar-days';
-import { liabilities, type Entry } from './finance';
+import { assets, liabilities, type Entry } from './finance';
 import { convertAmount } from './market';
 import type { PlanningData } from './planning';
 import { otherShareKey, topShares, type Share } from './cash-flow-report';
@@ -13,7 +13,7 @@ export type DrillTarget = { side: 'income' | 'expense'; key: string } | { side: 
  /** One payer (`income`) or merchant, by the name its transactions carry. */
  | { side: 'merchant'; key: string; income: boolean };
 /** A node of a drill-down Sankey; `open` is the Sankey a tap on it opens next. */
-export type DrillNode = { name: string; kind: 'income' | 'expense' | 'savings' | 'account' | 'debt' | 'untraced'; open?: DrillTarget };
+export type DrillNode = { name: string; kind: 'income' | 'expense' | 'savings' | 'account' | 'holding' | 'debt' | 'untraced'; open?: DrillTarget };
 export type DrillFlows = { nodes: DrillNode[]; links: Array<{ source: number; target: number; value: number }>; missing: number };
 type Rates = number | Record<string, number> | undefined;
 /** `label` names a category key (an added category's id or a built-in kind). */
@@ -146,11 +146,14 @@ export function accountChanges(context: DrillContext) {
  return { changes, missing };
 }
 
+/** Where money is kept to spend: cash and deposits. Any other asset is a holding (stocks, crypto, bonds, property…). */
+const balanceKinds = new Set(['Cash', 'Deposit']);
+const nodeKind = (record: Entry | undefined): DrillNode['kind'] => !record ? 'account' : liabilities.includes(record.kind) ? 'debt' : assets.includes(record.kind) && !balanceKinds.has(record.kind) ? 'holding' : 'account';
 /** The node for an account, holding or debt; a tap on it opens that account's own Sankey. */
 export function accountNode(key: string, byId: Map<string, Entry>, t: (key: string) => string): DrillNode {
  if (!key) return { name: t('No account'), kind: 'untraced' };
  const record = byId.get(key);
- return { name: record?.name.trim() || t(record?.kind ?? 'Other'), kind: record && liabilities.includes(record.kind) ? 'debt' : 'account', open: { side: 'account', key } };
+ return { name: record?.name.trim() || t(record?.kind ?? 'Other'), kind: nodeKind(record), open: { side: 'account', key } };
 }
 
 /** Where the period's savings went: the accounts and holdings that grew and the debts paid down, fed by the savings and by
@@ -201,8 +204,10 @@ function accountFlows(key: string, title: string, context: DrillContext): DrillF
  const nets = [...ends.values()].map(entry => ({ node: entry.node, value: entry.inflow - entry.outflow })).filter(entry => Math.abs(entry.value) >= .5);
  const left = nets.filter(entry => entry.value > 0).sort((a, b) => b.value - a.value), right = nets.filter(entry => entry.value < 0).map(entry => ({ ...entry, value: -entry.value })).sort((a, b) => b.value - a.value);
  const change = left.reduce((sum, entry) => sum + entry.value, 0) - right.reduce((sum, entry) => sum + entry.value, 0);
- if (change >= .5) right.push({ node: { name: t('Balance'), kind: 'savings' }, value: change });
- if (change <= -.5) left.push({ node: { name: t('Balance'), kind: 'savings' }, value: -change });
+ // What stays in a holding is money invested; in an account or debt it is the balance.
+ const kept = t(self.kind === 'holding' ? 'Money invested' : 'Balance');
+ if (change >= .5) right.push({ node: { name: kept, kind: 'savings' }, value: change });
+ if (change <= -.5) left.push({ node: { name: kept, kind: 'savings' }, value: -change });
  const nodes: DrillNode[] = [...left.map(entry => entry.node), { ...self, name: title, open: undefined }, ...right.map(entry => entry.node)];
  const hub = left.length;
  return { nodes, links: [...left.map((entry, index) => ({ source: index, target: hub, value: entry.value })), ...right.map((entry, index) => ({ source: hub, target: hub + 1 + index, value: entry.value }))], missing };

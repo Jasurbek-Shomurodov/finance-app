@@ -14,9 +14,9 @@ import { income, type Entry } from '@/lib/finance';
 import { formatCompactMoney, formatDate, formatMoney } from '@/lib/format';
 import { measureLabel, sankeyLabelMargins, sankeyMinWidth } from '@/lib/sankey-labels';
 
-type Kind = 'income' | 'total' | 'expense' | 'savings' | 'account' | 'debt' | 'untraced';
+type Kind = 'income' | 'total' | 'expense' | 'savings' | 'account' | 'holding' | 'debt' | 'untraced';
 type Flows = { nodes: ReadonlyArray<{ name: string; kind: Kind }>; links: Array<{ source: number; target: number; value: number }> };
-const fills: Record<Kind, string> = { income: chartColors.income, savings: chartColors.income, total: 'var(--mark-bg)', account: 'var(--mark-bg)', expense: chartColors.expense, debt: 'var(--caution)', untraced: chartColors.other };
+const fills: Record<Kind, string> = { income: chartColors.income, savings: chartColors.income, total: 'var(--mark-bg)', account: 'var(--mark-bg)', holding: chartColors.holding, expense: chartColors.expense, debt: 'var(--caution)', untraced: chartColors.other };
 
 /** A Cash flow Sankey. With `onOpen`, a node it returns true for is a button (click, Enter or Space) that opens its own
  * Sankey, and a tap on a flow opens the node it leads to (or, from a node that cannot open, the one it comes from). */
