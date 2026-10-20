@@ -1,6 +1,6 @@
 import type { Goal } from './planning';
 import { convertAmount } from './market';
-export type GoalEvent={id:string;goal_id:string;operation_id:string|null;occurred_on:string;delta:number;balance:number;event_type:string;notes:string;source_name:string|null};
+export type GoalEvent={id:string;goal_id:string;operation_id:string|null;occurred_on:string;delta:number;balance:number;event_type:string;notes:string;source_name:string|null;/** The account money came from or went to, when it still exists. */source_id?:string|null};
 /** Whether a goal takes part in monthly funding: included, active, not completed (unless it refills) and not paused. */
 export const inFundingPlan=(goal:Goal,today:string)=>!goal.archived&&!!goal.funding_enabled&&!(goal.funding_mode!=='refill'&&goal.completed_on)&&(!goal.paused_until||goal.paused_until<today);
 /** A funded goal's monthly budget in its own currency, never more than a savings goal still needs; null when unknown. */

@@ -520,3 +520,27 @@ test('a past period’s balance is today’s less what moved since; Cash flow an
  r.mount(React.createElement(CashFlowDrillDialog, { target: { side: 'untraced', key: 'card' }, title: 'Not traced', period: 'August 2026', savings: 0, context: ctx, onClose() {}, onOpenRecord() {} }));
  assert.match(r.html(), /<strong>Transfer<\/strong><small>20 August 2026 · → Savings account<\/small>/, 'Not traced lists its transfers');
 });
+
+test('a goal in the balance Sankey opens its own: its balance at the start, what each account added or took, what it holds at the end', () => {
+ const card = record('card', 'Card', 'Cash', 2500, '2026-01-01', { frequency: 'Monthly' });
+ const goals = [{ id: 'g', name: 'Holiday', account_id: 'card', allocated: 700, target: 1000, target_date: null, archived: false }];
+ const event = (id, occurred_on, delta, event_type, extra = {}) => ({ id, goal_id: 'g', operation_id: null, occurred_on, delta, balance: 0, event_type, notes: '', source_name: null, ...extra });
+ const goalEvents = [
+  event('e0', '2026-01-01', 300, 'opening'),
+  event('e1', '2026-07-10', 200, 'contribution', { source_id: 'card' }),
+  event('e2', '2026-08-05', 300, 'contribution', { source_id: 'card' }),
+  event('e3', '2026-08-09', 150, 'contribution', { source_id: 'save' }),
+  event('e4', '2026-08-20', -100, 'withdrawal', { source_name: 'Old wallet' }),
+  event('e5', '2026-09-02', 50, 'contribution', { source_id: 'card' }),
+ ];
+ const ctx = { ...context([]), today: '2026-09-20', goalEvents, data: { records: [card, ...accounts.filter(item => item.id !== 'card')], activity: [], investmentLinks: [], goals } };
+ const { balanceFlows } = loadTS('lib/cash-flow-balance.ts');
+ const current = balanceFlows('card', { ...ctx, months: ['2026-09'] });
+ assert.deepEqual(current.nodes.find(node => node.name === 'Holiday').open, { side: 'goal', key: 'g' }, 'a goal opens its own Sankey');
+ const { goalFlows } = loadTS('lib/cash-flow-goal.ts');
+ const holiday = goalFlows('g', ctx);
+ assert.deepEqual(shape(holiday), [['Opening balance', 'Holiday', 300], ['Card', 'Holiday', 300], ['Savings account', 'Holiday', 150], ['Holiday', 'Old wallet', 100], ['Holiday', 'Saved', 650]], 'August: it held $300, took $450 in and $100 out, and held $650 (today’s $700 less September’s $50)');
+ assert.deepEqual(holiday.nodes.map(node => node.open?.side ?? null), ['link', 'account', 'account', null, 'link', 'link'], 'the accounts open; its balances open Goals');
+ assert.equal(goalFlows('g', { ...ctx, currency: 'GBP' }).missing, 1, 'no rate: missing');
+ assert.deepEqual(shape(goalFlows('g', { ...ctx, goalEvents: [] })), [['Opening balance', 'Holiday', 700], ['Holiday', 'Saved', 700]], 'without a history it held the same all along');
+});

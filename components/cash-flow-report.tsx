@@ -6,6 +6,7 @@ import { chartAxis, chartColors, chartGrid, chartHeight, chartLegend, chartMargi
 import { CashFlowDrillDialog, FlowSankey } from '@/components/cash-flow-sankey';
 import type { DrillTarget } from '@/lib/cash-flow-drill';
 import { mainTarget } from '@/lib/cash-flow-main';
+import type { GoalEvent } from '@/lib/goal-funding';
 import { monthsBetween } from '@/lib/budget';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
 import { ChartSkeleton } from '@/components/presentation-foundation/loading-placeholder';
@@ -24,6 +25,7 @@ import { marketRates, type MarketData } from '@/lib/market';
 import { emptyPlanning, type PlanningData } from '@/lib/planning';
 import type { TransactionSplit } from '@/lib/transaction-tools';
 
+const noGoalEvents = { events: [] as GoalEvent[] };
 const periodLabels: Record<ReportPeriod, string> = { month: 'Month', quarter: 'Quarter', year: 'Year' };
 const trendTitles: Record<ReportPeriod, string> = { month: 'Income and spending by month', quarter: 'Income and spending by quarter', year: 'Income and spending by year' };
 type Props = { /** Opens a transaction's details, as a row on Transactions does. */onOpenRecord?: (record: Entry) => void; owner: string | null; demo: boolean; revision: number; data: PlanningData; splits: TransactionSplit[]; month: string; currency: string; market: MarketData | null };
@@ -71,6 +73,8 @@ export function CashFlowReport({ onOpenRecord, owner, demo, revision, data: prov
  // The read runs through this month when it can (two years at most), so a drill-down can tell a past balance from today's.
  const first = trendMonths(month, 'year')[0], now = today.slice(0, 7), readTo = month < now && monthsBetween(first, now).length <= 24 ? now : month;
  const remote = useOwnerResource(`/api/planning?scope=budget&month=${readTo}&from=${first}`, owner, live, revision, emptyPlanning);
+ // Goals' histories, for a goal's own Sankey in the drill-down; the sample workspace has none.
+ const goalHistory = useOwnerResource('/api/goal-tools', owner, live, revision, noGoalEvents);
  const data = useMemo(() => live ? { ...remote.data, records: remote.data.records.map(normalizeEntry) } : provided, [live, remote.data, provided]);
  const rates = marketRates(market);
  const report = useMemo(() => cashFlowReport(data, splits, periodMonths(month, period), currency, today, rates), [data, splits, month, period, currency, today, rates]);
@@ -124,6 +128,6 @@ export function CashFlowReport({ onOpenRecord, owner, demo, revision, data: prov
     <div><h3>{t('Expenses')}</h3><ShareBars items={report[grouping === 'category' ? 'categories' : 'merchants'].expense} label={label} colorKey={colorKey} currency={currency}/></div>
    </div> : flows.links.length ? <FlowSankey flows={flows} currency={currency} canOpen={index => !!drillOf(index)} onOpen={index => { const target = drillOf(index); if (target) setDrill({ target, title: flows.nodes[index].name }); }}/> : <p className="budget-left-empty">{t('Nothing recorded in this period.')}</p>}
   </section>
-  {drill && <CashFlowDrillDialog target={drill.target} title={drill.title} period={periodName} savings={report.savings} context={{ data, splits, months: periodMonths(month, period), currency, today, rates, t, label: categoryName, locale, throughToday: !live || readTo >= now }} onClose={() => setDrill(null)} onOpenRecord={onOpenRecord}/>}
+  {drill && <CashFlowDrillDialog target={drill.target} title={drill.title} period={periodName} savings={report.savings} context={{ data, splits, months: periodMonths(month, period), currency, today, rates, t, label: categoryName, locale, throughToday: !live || readTo >= now, goalEvents: goalHistory.data.events }} onClose={() => setDrill(null)} onOpenRecord={onOpenRecord}/>}
  </section>;
 }

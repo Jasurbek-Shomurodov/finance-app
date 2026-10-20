@@ -35,7 +35,7 @@ function accountBalance(account: Entry, now: number, change: number, ended: numb
  const goals = current ? (context.data.goals ?? []).filter(goal => goal.account_id === account.id && !goal.archived && Number(goal.allocated) > 0).flatMap(goal => {
   const held = convertAmount(Number(goal.allocated), goal.currency ?? account.currency, currency, rates);
   if (held === null || held === undefined) { unknown += 1; return []; }
-  return [{ node: { name: goal.name, kind: 'savings', open: { side: 'link', href: '/goals' } } as DrillNode, value: held }];
+  return [{ node: { name: goal.name, kind: 'savings', open: { side: 'goal', key: goal.id } } as DrillNode, value: held }];
  }) : [];
  const held = goals.reduce((sum, goal) => sum + goal.value, 0);
  const left: Part[] = [{ node: { name: t('Opening balance'), kind: 'account', open: accounts }, value: ended - change }, { node: back, value: change }];

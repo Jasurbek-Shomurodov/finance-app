@@ -11,6 +11,7 @@ import { OperationDetails, OperationRow, operationTitle } from '@/components/cas
 import { accountOperations, operationFlows, type Operation } from '@/lib/cash-flow-operations';
 import { useRouter } from 'next/navigation';
 import { balanceFlows } from '@/lib/cash-flow-balance';
+import { goalFlows } from '@/lib/cash-flow-goal';
 import { mainFlows } from '@/lib/cash-flow-main';
 import { untracedFlows, untracedTransfers } from '@/lib/cash-flow-untraced';
 import { interestFlows, mortgageTransactions, paymentFlows, principalFlows, principalPayments } from '@/lib/cash-flow-principal';
@@ -88,7 +89,7 @@ export function CashFlowDrillDialog({ target, title, period, savings, context, o
  const router = useRouter();
  const [trail, setTrail] = useState([{ target, title }]);
  const current = trail.at(-1)!;
- const flows = current.target.side === 'operation' ? operationFlows(current.target.key, context) : current.target.side === 'principal' ? principalFlows(current.target.key, context) : current.target.side === 'payment' ? paymentFlows(current.target.key, context) : current.target.side === 'interest' ? interestFlows(current.target.key, context) : current.target.side === 'balance' ? balanceFlows(current.target.key, context) : current.target.side === 'cashflow' ? mainFlows(context) : current.target.side === 'untraced' ? untracedFlows(current.target.key, savings, context) : drillFlows(current.target, current.title, savings, context);
+ const flows = current.target.side === 'operation' ? operationFlows(current.target.key, context) : current.target.side === 'principal' ? principalFlows(current.target.key, context) : current.target.side === 'payment' ? paymentFlows(current.target.key, context) : current.target.side === 'interest' ? interestFlows(current.target.key, context) : current.target.side === 'balance' ? balanceFlows(current.target.key, context) : current.target.side === 'cashflow' ? mainFlows(context) : current.target.side === 'goal' ? goalFlows(current.target.key, context) : current.target.side === 'untraced' ? untracedFlows(current.target.key, savings, context) : drillFlows(current.target, current.title, savings, context);
  // A transaction opens its shared details over the dialog; anything else opens in the dialog, with Back to return.
  const record = (id: string) => (context.data.records as Entry[]).find(item => item.id === id);
  const canOpen = (index: number) => { const open = flows.nodes[index]?.open; return !!open && (open.side !== 'record' || (!!onOpenRecord && !!record(open.key))); };

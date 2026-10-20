@@ -1,3 +1,4 @@
+import type { GoalEvent } from './goal-funding';
 import type { PlanningData } from './planning';
 import type { TransactionSplit } from './transaction-tools';
 
@@ -23,6 +24,9 @@ export type DrillTarget = { side: 'income' | 'expense'; key: string } | { side: 
  | { side: 'cashflow' }
  /** The fees and exchange differences of transfers, of one account (`key`) or all (`lib/cash-flow-untraced.ts`). */
  | { side: 'untraced'; key?: string }
+ /** One savings goal by its id: its balance at the start, what was added and taken out, and what it holds at the end
+  * (`lib/cash-flow-goal.ts`). */
+ | { side: 'goal'; key: string }
  /** A page of the app: the dialog closes and the page opens. */
  | { side: 'link'; href: string }
  /** One transaction by its id: it opens the shared transaction details rather than a Sankey. */
@@ -33,4 +37,4 @@ export type DrillFlows = { nodes: DrillNode[]; links: Array<{ source: number; ta
 type Rates = number | Record<string, number> | undefined;
 /** `label` names a category key (an added category's id or a built-in kind); `locale` writes the dates of payments. */
 /** `throughToday` is false when the data stops before today, so an account's balance at the period's end cannot be told. */
-export type DrillContext = { throughToday?: boolean; data: Pick<PlanningData, 'records' | 'activity' | 'investmentLinks' | 'movements'> & Partial<Pick<PlanningData, 'goals' | 'categories'>>; splits: TransactionSplit[]; months: string[]; currency: string; today: string; rates: Rates; t: (key: string) => string; label?: (key: string) => string; locale?: string };
+export type DrillContext = { /** Every goal's history (`/api/goal-tools`). */goalEvents?: GoalEvent[]; throughToday?: boolean; data: Pick<PlanningData, 'records' | 'activity' | 'investmentLinks' | 'movements'> & Partial<Pick<PlanningData, 'goals' | 'categories'>>; splits: TransactionSplit[]; months: string[]; currency: string; today: string; rates: Rates; t: (key: string) => string; label?: (key: string) => string; locale?: string };
