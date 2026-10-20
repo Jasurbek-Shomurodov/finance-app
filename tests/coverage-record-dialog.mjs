@@ -29,7 +29,8 @@ function dialog(t,start,props={}){
   return r.react.createElement(RecordDialog,{...settings,editingCashFlow:!!editing&&settings.editingCashFlow,editing,setEditing,field:(key,value)=>setEditing(current=>({...current,[key]:value}))});
  }
  r.render(r.react.createElement(Host));
- const labelled=(name,type)=>{const label=r.find(node=>node.type==='label'&&node.children[0]===name);return type?r.find(byType(type),label):label;};
+ // A field's name is its label's first text, or the text beside a hinted label's ⓘ.
+ const labelled=(name,type)=>{const label=r.find(node=>node.type==='label'&&(node.children[0]===name||(node.children[0]?.props?.className==='hinted-label-text'&&text(node.children[0])===name)));return type?r.find(byType(type),label):label;};
  const select=(...values)=>r.find(node=>node.type==='NativeSelect'&&values.every(value=>node.children.some(option=>option.type==='option'&&option.props.value===value)));
  return {r,state,settings,saves,fetches,debtPayments,navigations,labelled,select,
   title:()=>text(r.find(byType('DialogTitle')).children.filter(node=>node?.type!=='InfoHint')),hint:()=>text(r.find(byType('InfoHint'),r.find(byType('DialogTitle')))),description:()=>text(r.find(byType('DialogDescription'))),
@@ -217,7 +218,8 @@ test('stocks and crypto take an instrument, price, quantity and cost, and fetch 
 
 test('a business takes its value, profile, income estimate and ownership, with the share through the money formatter',t=>{
  const d=dialog(t,record('cafe','Business',{amount:200000,ownership_percentage:25}));
- assert.ok(d.r.find(node=>text(node).startsWith('Enter the full business value')&&node.type==='p'));
+ // How to enter a business sits behind the ownership field's ⓘ.
+ assert.ok(d.r.find(node=>node.type==='InfoHint'&&text(node).startsWith('Enter the full business value'),d.labelled('Ownership (%)')));
  d.r.fire(d.r.find(byType('BusinessProfileFields')),'onChange',{business_industry:'Food'});
  assert.equal(d.state.editing.business_industry,'Food');
  assert.equal(d.labelled('Full business value').children[0],'Full business value');
@@ -281,7 +283,7 @@ test('debts take a start date, which a saved debt can still set or correct: its 
  const existing=dialog(t,saved,{rows:[saved]});
  const editable=existing.labelled('Start date','DatePicker');
  assert.equal(editable.props.value,'2025-03-04');
- assert.match(text(existing.r.find(byType('small','Monthly payments fall'))),/It cannot be after a recorded payment\./);
+ assert.match(text(existing.r.find(byType('InfoHint'),existing.labelled('Start date'))),/Monthly payments fall.*It cannot be after a recorded payment\./);
  existing.r.fire(editable,'onChange','2024-03-17');assert.equal(existing.state.editing.opened_on,'2024-03-17');
  assert.equal(existing.labelled('Due / maturity date','DatePicker').props.min,'2024-03-17');
  const undated=dialog(t,{...saved,opened_on:null},{rows:[saved]});

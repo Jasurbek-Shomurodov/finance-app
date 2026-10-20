@@ -47,3 +47,12 @@ export function scheduleChoice(payment: Entry, schedule: Entry | null, currencie
 export function changedFields(before: Entry, after: Entry): Partial<Entry> {
  return Object.fromEntries(Object.entries(after).filter(([key, value]) => before[key as keyof Entry] !== value)) as Partial<Entry>;
 }
+
+/** A normal month's mortgage payment, for Record mortgage payment to start from: interest on the balance at the annual
+ * rate, and the rest of the estimated monthly payment as principal. Whole amounts; null without an estimate. */
+export function typicalMortgagePayment(mortgage: Pick<Entry, 'amount' | 'rate' | 'estimated_monthly_payment'>): { principal: number; interest: number } | null {
+ const payment = Math.round(Number(mortgage.estimated_monthly_payment) || 0);
+ if (!(payment > 0) || !(mortgage.amount > 0)) return null;
+ const interest = Math.min(payment, Math.round(mortgage.amount * Math.max(0, Number(mortgage.rate) || 0) / 1200));
+ return { principal: Math.min(payment - interest, Math.floor(mortgage.amount)), interest };
+}

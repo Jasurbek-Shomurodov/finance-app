@@ -34,9 +34,11 @@ export function recordForms({ editable, setError, setRecordKinds, setEditing, se
         if (cashFlowSection) { addCashFlow('Other expense'); return; }
         setError('');
         setRecordKinds(section === 'Assets & investments' ? assetRecordKinds : section === 'Loans & debts' ? lendingRecordKinds : kinds);
-        // Investments' Add asset starts on a property: cash and deposits are added as accounts.
+        // Investments' Add asset chooses a kind first (addAsset); elsewhere a new asset starts on a property, not cash.
         setEditing({ ...fresh(), currency, kind: section === 'Loans & debts' ? 'Mortgage' : section === 'Assets & investments' ? 'Property' : 'Cash' });
     };
+    /** Investments' Add asset, once a kind is chosen: the asset form on that kind, offering every asset kind. */
+    const addAsset = (kind: Entry['kind']) => { if (!editable()) return; setError(''); setRecordKinds(assetRecordKinds); setEditing({ ...fresh(), currency, kind }); };
     const addAccountRecord = (kind: 'Cash'|'Deposit'|'Stock'|'Crypto', holdingAccountId?: string) => {
         if (!editable()) return;
         setError(''); setRecordKinds(holdingAccountId ? [kind] : kind==='Cash'||kind==='Deposit' ? ['Cash','Deposit'] : ['Stock','Crypto']);
@@ -62,5 +64,5 @@ export function recordForms({ editable, setError, setRecordKinds, setEditing, se
     const closeDeleting = () => { setError(''); setDeleting(null); };
     const field = (key: keyof Entry, v: string | number) => setEditing(p => p ? { ...p, [key]: v, ...(key === 'currency' ? {account_id: null} : {}) } : p);
     const newBusiness = (name = ''): Entry => ({ ...fresh(), name, kind: 'Business', currency, amount: 0 });
-    return { addCashFlow, addRecurringIncome, addRecord, addAccountRecord, editRecord, quickExpense, recordFromSource, reviewRecurring, requestDelete, closeEditing, closeDeleting, field, newBusiness };
+    return { addCashFlow, addRecurringIncome, addRecord, addAsset, addAccountRecord, editRecord, quickExpense, recordFromSource, reviewRecurring, requestDelete, closeEditing, closeDeleting, field, newBusiness };
 }

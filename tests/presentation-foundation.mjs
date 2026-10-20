@@ -470,3 +470,10 @@ test('the history chart draws what was recorded inside an outline named by its c
  r.mount(h(HistoryChart,{points,currency:'USD',fill:'red',done:'Paid'}));
  assert.equal(r.find(node=>Array.isArray(node.props?.items)&&node.props.onToggle).props.items[1].label,'Scheduled payment','a schedule is the outline by default');
 });
+
+test('a hinted field keeps its explanation behind an ⓘ on the label line, after the control so the label still focuses it',()=>{
+ const {HintedLabel}=load('hinted-label.tsx',{'@/components/presentation-foundation/info-hint':{InfoHint:({children})=>React.createElement('i',{className:'info-hint'},children)}});
+ const html=render(HintedLabel,{label:'Start date',hint:'When this debt began.'},React.createElement('input'));
+ assert.equal(html,'<label class="hinted-label"><span class="hinted-label-text">Start date</span><input/><i class="info-hint">When this debt began.</i></label>');
+ assert.match(render(HintedLabel,{label:'Rate',hint:'x',className:'record-amount'},React.createElement('input')),/^<label class="hinted-label record-amount">/);
+});

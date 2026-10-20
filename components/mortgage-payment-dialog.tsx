@@ -16,12 +16,13 @@ import { formatAccountOption, formatMoney } from '@/lib/format';
 import type { Entry } from '@/lib/finance';
 import { Textarea } from '@/components/ui/textarea';
 import { InfoHint } from '@/components/presentation-foundation/info-hint';
-import { suggestedCashAccount } from '@/lib/form-suggestions';
+import { suggestedCashAccount, typicalMortgagePayment } from '@/lib/form-suggestions';
 export type MortgagePayment = { id: string; mortgage_id: string; principal: number; interest: number; date: string; notes: string; account_id?:string;exchange_rate?:number };
 export function MortgagePaymentDialog({ mortgage, accounts = [], onClose, onSave, inline=false, onDraftState }: { inline?:boolean;onDraftState?:(dirty:boolean,busy:boolean)=>void; accounts?:Entry[]; mortgage: Entry; onClose: () => void; onSave: (payment: MortgagePayment) => Promise<void> }) {
  const { t, locale } = useLanguage();
- // It starts from the cash account last used in the mortgage's currency, or the only one; that is not a change to discard.
- const [payment, setPayment] = useState<MortgagePayment>(() => ({ id: crypto.randomUUID(), mortgage_id: mortgage.id, principal: 0, interest: 0, date: depositToday(), notes: '', account_id: suggestedCashAccount(accounts, mortgage.currency, 'expense') ?? undefined }));
+ // It starts as a normal month (the estimated payment split into interest and principal) from the cash account last used in
+ // the mortgage's currency, or the only one; that is not a change to discard.
+ const [payment, setPayment] = useState<MortgagePayment>(() => ({ id: crypto.randomUUID(), mortgage_id: mortgage.id, principal: 0, interest: 0, ...typicalMortgagePayment(mortgage), date: depositToday(), notes: '', account_id: suggestedCashAccount(accounts, mortgage.currency, 'expense') ?? undefined }));
  const [busy, setBusy] = useState(false);
  const [error, setError] = useState('');
  const [submitted, setSubmitted] = useState(false);

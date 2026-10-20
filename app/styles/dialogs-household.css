@@ -178,7 +178,7 @@ summary.tax-line-heading>svg{flex-shrink:0;color:var(--muted-foreground);transit
 @container content (max-width:520px){.household-people>li{flex-wrap:wrap}.household-people>li>small{flex-basis:100%;padding-inline-start:44px}}
 
 /* Reduced motion for transitions defined across the stylesheets (MOT-008). Last in the cascade, so it wins over each rule it switches off. */
-@media(prefers-reduced-motion:reduce){.sankey-link,.switch,.switch-thumb,.goal-method summary>svg:last-child,.goal-row>.drag-handle,.account-sortable-row>.drag-handle,.pos-day,.account-type-options>button,.goal-target-progress::-webkit-progress-value{transition:none}}
+@media(prefers-reduced-motion:reduce){.sankey-link,.switch,.switch-thumb,.goal-method summary>svg:last-child,.goal-row>.drag-handle,.account-sortable-row>.drag-handle,.pos-day,.account-type-options>button,.asset-type-options>button,.goal-target-progress::-webkit-progress-value{transition:none}}
 
 /* A scheduled income or bill at a glance (Recurring: tap a row). */
 .recurring-details{gap:20px}

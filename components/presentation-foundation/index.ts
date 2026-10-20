@@ -12,6 +12,7 @@ export { TopBarSlotProvider, useTopBarSlot } from './top-bar-slot';
 export { StatTile, StatTiles, type StatTone } from './stat-tile';
 export { PanelTitle } from './panel-title';
 export { InfoHint } from './info-hint';
+export { HintedLabel } from './hinted-label';
 export { Count } from './count';
 export { EmptyState } from './empty-state';
 export { InlineError } from './inline-error';

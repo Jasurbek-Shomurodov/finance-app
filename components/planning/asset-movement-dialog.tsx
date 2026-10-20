@@ -5,6 +5,7 @@ import { ErrorPopup } from '@/components/presentation-foundation/error-popup';
 import { ExchangeRatePreview } from '@/components/presentation-foundation/exchange-rate-preview';
 import { useDiscardChanges } from '@/components/discard-changes';
 import { useState } from 'react';
+import { ArrowLeftRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -50,6 +51,11 @@ export function AssetMovementDialog({initial,records,accounts=[],save,onClose}:{
  const units=(record:Entry,amount:number)=>isHolding(record)?holdingQuantity(t,record,amount,locale):formatMoney(amount,record.currency,locale);
  const blockedReason=!blocked?undefined:source?t(blocked,{amount:units(source,available)}):t(blocked);
  const change=(name:keyof typeof draft,value:string|number)=>setDraft({...draft,[name]:value});
+ // The fee and the notes fold away; they open by themselves when there is a fee or a note, or the fee is the problem.
+ const [detailsOpen]=useState(()=>draft.fee>0||!!draft.notes);
+ // Swapping sends the money the other way; amounts start again, since they were in the old source's currency.
+ const canSwap=!!source&&!!target&&movementSources('transfer',records).some(record=>record.id===target.id);
+ const swap=()=>setDraft({...draft,source_id:draft.target_id,target_id:draft.source_id,sent:0,received:0,source_value:0,target_value:0,fee:0});
  const [initialDraft]=useState(()=>JSON.stringify(draft));
  const guard=useDiscardChanges(JSON.stringify(draft)!==initialDraft,onClose,busy);
  return <><Dialog open onOpenChange={open=>{if(!open&&!busy)guard.close();}}><DialogContent className="record-dialog" showCloseButton={!busy}>
@@ -61,8 +67,9 @@ export function AssetMovementDialog({initial,records,accounts=[],save,onClose}:{
    finally{setBusy(false);}
   }}>
    <fieldset className="tracker-fields" disabled={busy||submitted}>
-    <label>{t(interest?'Deposit':'From')}<NativeSelect required value={draft.source_id} onChange={event=>setDraft({...draft,source_id:event.target.value,target_id:draft.target_id===event.target.value?'':draft.target_id,sent:0,received:0,source_value:0,target_value:0})}><option value="">{t('Select account')}</option>{movementSources(draft.kind,records).map(record=><option key={record.id} value={record.id}>{accountName(record)}</option>)}</NativeSelect></label>
-    {!interest&&<label>{t('To')}<NativeSelect required value={draft.target_id} onChange={event=>setDraft({...draft,target_id:event.target.value,received:0,source_value:0,target_value:0})}><option value="">{t('Select account')}</option>{movementTargets(draft.kind,source,records).map(record=><option key={record.id} value={record.id}>{accountName(record)}</option>)}</NativeSelect></label>}
+    <div className={draft.kind==='transfer'?'transfer-accounts':'contents'}><label>{t(interest?'Deposit':'From')}<NativeSelect required value={draft.source_id} onChange={event=>setDraft({...draft,source_id:event.target.value,target_id:draft.target_id===event.target.value?'':draft.target_id,sent:0,received:0,source_value:0,target_value:0})}><option value="">{t('Select account')}</option>{movementSources(draft.kind,records).map(record=><option key={record.id} value={record.id}>{accountName(record)}</option>)}</NativeSelect></label>
+    {draft.kind==='transfer'&&<Button type="button" variant="outline" size="icon" className="transfer-swap" aria-label={t('Swap accounts')} title={t('Swap accounts')} disabled={!canSwap} onClick={swap}><ArrowLeftRight aria-hidden="true"/></Button>}
+    {!interest&&<label>{t('To')}<NativeSelect required value={draft.target_id} onChange={event=>setDraft({...draft,target_id:event.target.value,received:0,source_value:0,target_value:0})}><option value="">{t('Select account')}</option>{movementTargets(draft.kind,source,records).map(record=><option key={record.id} value={record.id}>{accountName(record)}</option>)}</NativeSelect></label>}</div>
     {source&&!interest&&<><p className="muted">{t(isHolding(source)?'Available':'Balance')}: {units(source,available)}</p><label>{t(isHolding(source)?'Quantity sent':'Total amount debited')} {isHolding(source)?source.name:source.currency}<FormattedNumberInput value={draft.sent} max={available} maxMessage={t('Only {amount} available',{amount:units(source,available)})} onValueChange={amount=>change('sent',amount)}/></label></>}
     {target&&draft.kind!=='transfer'&&<label>{t(interest?'Interest credited':isHolding(target)?'Quantity received':'Net amount received')} {isHolding(target)?target.name:target.currency}<FormattedNumberInput value={draft.received} onValueChange={amount=>change('received',amount)}/></label>}
     {trade&&source&&target&&<>
@@ -70,11 +77,13 @@ export function AssetMovementDialog({initial,records,accounts=[],save,onClose}:{
      {isHolding(target)&&!sameCurrency&&<label>{t('Total purchase cost (including fees)')} {target.currency}<FormattedNumberInput value={draft.target_value} onValueChange={amount=>change('target_value',amount)}/></label>}
      {(source.kind==='Crypto'||target.kind==='Crypto')&&<p className="muted">{t('USDT and USDC are crypto holdings. Enter the actual quantity and fiat value; no exchange rate is assumed.')}</p>}
     </>}
-    {!interest&&<label>{t('Fee included in these amounts')} {draft.kind==='buy'?target?.currency:source?.currency}<FormattedNumberInput value={draft.fee} required={false} onValueChange={amount=>change('fee',amount)}/><small className="muted">{t('This records the fee as an expense without deducting it again.')}</small>{feeTooHigh&&<small role="alert" className="negative">{t('The transfer fee must be less than the amount sent.')}</small>}</label>}
     {crossTransfer&&<ExchangeRatePreview fx={fx}/>}
     {draft.kind==='transfer'&&target&&rate&&<p>{t('Net amount received')}: {formatMoney(received,target.currency,locale)}</p>}
     <label>{t('Date')}<DatePicker value={draft.date} max={depositToday()} onChange={date=>change('date',date)}/></label>
-    <label>{t('Notes (optional)')}<Textarea rows={2} maxLength={2000} value={draft.notes} onChange={event=>change('notes',event.target.value)}/></label>
+    <details className="record-optional-details" open={detailsOpen}><summary>{t('Optional details')}</summary><div className="record-optional-fields">
+     {!interest&&<label>{t('Fee included in these amounts')} {draft.kind==='buy'?target?.currency:source?.currency}<FormattedNumberInput value={draft.fee} required={false} onValueChange={amount=>change('fee',amount)}/><small className="muted">{t('This records the fee as an expense without deducting it again.')}</small>{feeTooHigh&&<small role="alert" className="negative">{t('The transfer fee must be less than the amount sent.')}</small>}</label>}
+     <label>{t('Notes (optional)')}<Textarea rows={2} maxLength={2000} value={draft.notes} onChange={event=>change('notes',event.target.value)}/></label>
+    </div></details>
    </fieldset>
    {source&&target&&valid&&<div className="ownership-summary">{!interest&&<p>{source.name}: {units(source,available-draft.sent)}</p>}<p>{target.name}: {units(target,(isHolding(target)?target.quantity:target.amount)+received)}</p><small>{t('Balances after this transaction')}</small></div>}
    {!interest&&(!movementSources(draft.kind,records).length||!movementTargets(draft.kind,source,records).length)&&<p className="muted">{t('Add the source and destination first. For a new holding or proceeds balance, start at zero.')}</p>}

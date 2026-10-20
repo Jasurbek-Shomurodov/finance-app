@@ -108,10 +108,11 @@ export function BudgetSettingsDialog({ mode, applyForward, onSave, onRecalculate
       <label className="budget-choice"><input type="radio" name="budget-scope" checked={!forward} onChange={() => setForward(false)}/><span><strong>{t('This month only')}</strong><small>{t('A change applies to the month you are editing. You can still apply one change to all future months from its History.')}</small></span></label>
       <label className="budget-choice"><input type="radio" name="budget-scope" checked={forward} onChange={() => setForward(true)}/><span><strong>{t('All future months')}</strong><small>{t('A change applies to the month you are editing and every month after it. You can untick this for a single change.')}</small></span></label>
      </div>
-     <div className="budget-recalculate">
-      <span><strong>{t('Recalculate default budgets')}</strong><small>{t('Sets each category to its six-month average, rounded up to a whole amount, from this month on. Amounts you typed are replaced.')}</small></span>
+     {/* Rarely needed, and it replaces typed amounts: folded away under its own name. */}
+     <details className="record-optional-details"><summary>{t('Recalculate default budgets')}</summary><div className="budget-recalculate">
+      <span><small>{t('Sets each category to its six-month average, rounded up to a whole amount, from this month on. Amounts you typed are replaced.')}</small></span>
       <Button type="button" variant="outline" onClick={() => run(onRecalculate)}>{t('Recalculate')}</Button>
-     </div>
+     </div></details>
     </fieldset>
     <FormFooter busy={busy} onCancel={onClose}><Button disabled={busy}>{t(busy ? 'Saving…' : 'Save')}</Button></FormFooter>
    </form>

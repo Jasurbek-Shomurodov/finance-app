@@ -36,7 +36,8 @@ function open(initial, props = {}) {
  const field = label => view.find(element => element.type === 'label' && text(element).startsWith(label)).props.children.find(child => child?.type === ui.FormattedNumberInput);
  const enter = (label, value) => { field(label).props.onValueChange(value); view.update(); };
  const submit = async () => { await view.find(byType('form')).props.onSubmit({ preventDefault() {} }); view.update(); };
- const save = () => view.find(byType(ui.Button));
+ // The submit button; a transfer's swap button is type="button".
+ const save = () => view.find(element => element.type === ui.Button && element.props.type !== 'button');
  return { view, calls, selects, choose, field, enter, submit, save };
 }
 const optionTexts = select => [...walk(select)].filter(element => element.type === 'option').map(text);
@@ -274,4 +275,18 @@ test('the dialog closes through the discard guard', () => {
  view.find(byType(ui.FormFooter)).props.onCancel();
  assert.equal(calls.closed, 2);
  assert.match(view.html(), /Fee included in these amounts <span/);
+});
+
+test('a transfer starts from the account it was opened on and swaps its two accounts, starting the amounts again', () => {
+ const { view, choose, enter, selects } = open({ kind: 'transfer', source_id: 'cash' });
+ const swap = () => view.find(element => element.type === ui.Button && element.props.className === 'transfer-swap');
+ assert.equal(selects()[0].props.value, 'cash');
+ assert.equal(swap().props.disabled, true, 'nothing to swap until both accounts are chosen');
+ choose(1, 'dep'); enter('Total amount debited', 200);
+ assert.equal(swap().props.disabled, false);
+ swap().props.onClick(); view.update();
+ assert.deepEqual(selects().slice(0, 2).map(select => select.props.value), ['dep', 'cash']);
+ assert.equal(view.find(element => element.type === 'label' && text(element).startsWith('Total amount debited')).props.children.find(child => child?.type === ui.FormattedNumberInput).props.value, 0);
+ // The fee and notes fold away under Optional details.
+ assert.equal(view.find(element => element.type === 'details').props.open, false);
 });

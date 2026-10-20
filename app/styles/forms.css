@@ -72,6 +72,11 @@
 .record-dialog [data-slot=dialog-description]{font-size:var(--type-compact);line-height:1.6;margin:0 0 12px;max-width:440px}
 .record-dialog .record-form{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;margin:0}
 .record-dialog .record-form label{min-width:0;margin:0;gap:8px;font-size:var(--type-compact);font-weight:500}
+/* A field with its explanation behind an ⓘ on the label's line (HintedLabel); the control spans the row below. */
+label.hinted-label{grid-template-columns:minmax(0,max-content) minmax(0,1fr);align-items:center;column-gap:6px}
+label.hinted-label>*{grid-column:1/-1}
+label.hinted-label>.hinted-label-text{grid-column:1}
+label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 .record-dialog .record-form .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
 .record-dialog .record-form .form-grid>:only-child{grid-column:1/-1}
 .record-dialog .record-name-field{gap:8px}

@@ -56,3 +56,13 @@ test('only schedules with a due date still open by the end of the payment\'s mon
  assert.deepEqual(openPaymentSchedules(records,[],entry('p','Living expense',{date:'2026-09-20'}),true).map(r=>r.id),['rent'],'a bill not yet started is not due');
  assert.deepEqual(openPaymentSchedules([{...rent,archived:true}],[],payment).length,0);
 });
+
+test('a normal mortgage month splits the estimated payment into whole interest and principal',()=>{
+ const {typicalMortgagePayment}=loadTS('lib/form-suggestions.ts');
+ assert.deepEqual(typicalMortgagePayment({amount:182000,rate:6.5,estimated_monthly_payment:1900.4}),{principal:914,interest:986});
+ assert.deepEqual(typicalMortgagePayment({amount:182000,rate:0,estimated_monthly_payment:1900}),{principal:1900,interest:0});
+ assert.deepEqual(typicalMortgagePayment({amount:500,rate:5,estimated_monthly_payment:1900}),{principal:500,interest:2},'never more principal than is owed');
+ assert.deepEqual(typicalMortgagePayment({amount:182000,rate:20,estimated_monthly_payment:1000}),{principal:0,interest:1000},'interest above the payment leaves no principal');
+ assert.equal(typicalMortgagePayment({amount:182000,rate:6.5}),null);
+ assert.equal(typicalMortgagePayment({amount:0,rate:6.5,estimated_monthly_payment:1900}),null);
+});

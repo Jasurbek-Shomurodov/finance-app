@@ -1,5 +1,4 @@
 "use client";
-import { useState } from 'react';
 import { Plus, Wallet } from 'lucide-react';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
 import { PanelTitle } from '@/components/presentation-foundation/panel-title';
@@ -19,15 +18,17 @@ import { HoldingRows, type HoldingActions } from './holding-rows';
 import { BusinessHoldings } from './business-holdings';
 import type { useAccountFilters } from './use-account-filters';
 
+/** The account shown beside the directory: the one picked, else the first one listed. */
+export const selectedItem=(visible:DirectoryItem[],selected:string|null)=>visible.find(item=>item.key===selected)??visible[0];
+
 /** The Overview view of Accounts: the total in the display currency, the filters, the directory beside the selected account, and
  * the holdings that belong to no account yet. */
-export function AccountsOverview({ items, data, filters, order, businesses, cardActions, holdingActions, onEditAccount, onAdd, onAddAccount }: { items: DirectoryItem[]; data: PlanningData; filters: ReturnType<typeof useAccountFilters>; order: Parameters<typeof AccountDirectory>[0]['order']; businesses: readonly BusinessOption[]; cardActions: BalanceCardActions; holdingActions: HoldingActions; onEditAccount: (account: HoldingAccount) => void; onAdd: (kind: HoldingAccount['kind'], accountId: string) => void; onAddAccount: () => void }) {
+export function AccountsOverview({ items, data, filters, order, businesses, cardActions, holdingActions, onEditAccount, onAdd, onAddAccount, selected, onSelect }: { /** The account picked in the directory; the page keeps it, so Transfer money can start from it. */selected: string|null; onSelect: (key: string) => void; items: DirectoryItem[]; data: PlanningData; filters: ReturnType<typeof useAccountFilters>; order: Parameters<typeof AccountDirectory>[0]['order']; businesses: readonly BusinessOption[]; cardActions: BalanceCardActions; holdingActions: HoldingActions; onEditAccount: (account: HoldingAccount) => void; onAdd: (kind: HoldingAccount['kind'], accountId: string) => void; onAddAccount: () => void }) {
  const { t } = useLanguage();
  const display = useDisplayMoney();
  const totals = currencyTotals(items), total = totals.every(item => item.total !== null) ? display.sum(totals.map(item => ({ amount: item.total!, currency: item.currency }))) : null;
  const { query, setQuery, businessFilter, setBusinessFilter, owners, ownerFilter, setOwnerFilter, visible, details, businessHoldings } = filters;
- const [selected,setSelected]=useState<string|null>(null);
- const active=visible.find(item=>item.key===selected)??visible[0];
+ const active=selectedItem(visible,selected);
  const balances=balanceAccounts(data.records), investmentAccounts=data.holdingAccounts??[], unassigned=unassignedHoldings(data.records);
  const market=holdingActions.market;
  return <>
@@ -36,7 +37,7 @@ export function AccountsOverview({ items, data, filters, order, businesses, card
   </StatTiles>}
   {(businesses.length>0||owners.length>0)&&!!items.length&&<div className="transactions-tools">{businesses.length>0&&<BusinessFilter businesses={businesses} value={businessFilter} onChange={setBusinessFilter}/>}{owners.length>0&&<OwnerFilter owners={owners} value={ownerFilter} onChange={setOwnerFilter}/>}</div>}
   {!!items.length&&<div className="accounts-master-detail">
-   <AccountDirectory count={items.length} visible={visible} activeKey={active?.key} query={query} onQuery={setQuery} onSelect={setSelected} order={order} details={details}/>
+   <AccountDirectory count={items.length} visible={visible} activeKey={active?.key} query={query} onQuery={setQuery} onSelect={onSelect} order={order} details={details}/>
    <div className="account-selected-panel">
    {balances.filter(account=>active?.key===`record:${account.id}`).map(account=><BalanceAccountCard key={account.id} account={account} goals={data.goals} {...cardActions}/>)}
    {investmentAccounts.filter(account=>active?.key===`investment:${account.id}`).map(account=><InvestmentAccountCard key={account.id} account={account} records={data.records} onEditAccount={onEditAccount} onAdd={onAdd} holdingActions={holdingActions}/>)}
