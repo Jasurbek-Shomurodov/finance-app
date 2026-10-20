@@ -336,7 +336,8 @@ test('a debt in the savings Sankey opens its own: what paid it down, as principa
  const home = drillFlows({ side: 'account', key: 'home' }, 'Home', 0, ctx);
  assert.deepEqual(shape(home), [['Card', 'Home', 1000], ['Home', 'Other expense', 400], ['Home', 'Principal', 600]]);
  assert.deepEqual(home.nodes.map(node => node.open ?? null), [{ side: 'account', key: 'card' }, null, { side: 'expense', key: 'Other expense' }, null], 'the interest category opens its own Sankey');
- assert.equal(drillFlows({ side: 'account', key: 'home' }, 'Home', 0, { ...ctx, currency: 'GBP' }).missing, 2, 'principal and interest without a rate are missing');
+ const noRate = drillFlows({ side: 'account', key: 'home' }, 'Home', 0, { ...ctx, currency: 'GBP' });
+ assert.deepEqual([shape(noRate), noRate.missing], [[], 5], 'without a rate nothing is drawn: the period’s four flows and the interest are missing, never shown under the wrong currency');
  assert.deepEqual(Object.fromEntries(accountChanges(ctx).changes).home, 600, 'Savings still counts only the principal against the mortgage');
  const { drillTransactions } = loadTS('lib/cash-flow-drill.ts');
  const { accountOperations } = loadTS('lib/cash-flow-operations.ts');
