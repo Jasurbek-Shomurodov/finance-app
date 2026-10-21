@@ -11,6 +11,7 @@ import { BusinessCard } from '@/components/business-card';
 import { LowestBalanceCard } from '@/components/cash-forecast';
 import { Button } from '@/components/ui/button';
 import { useDashboardLayout } from '@/hooks/use-dashboard-layout';
+import { usePortfolioHistory } from '@/hooks/use-portfolio-history';
 import { dashboardColumns, type DashboardCard } from '@/lib/dashboard-layout';
 import { depositToday } from '@/lib/deposit-interest';
 import { savedGoalOrder } from '@/lib/goal-order';
@@ -30,6 +31,8 @@ export function OverviewScreen() {
  const cards = useOverviewCards({ entries: current, currency, excludedCurrencies, forecast, forecastReady, planning: planningReady ? planning.data : null, onSankey: setSankey });
  const { layout, change } = useDashboardLayout(workspacePreferences, demo);
  const monthBudget = useMonthBudget({ owner: user, demo, revision: reload, budget, data: planning.data, currency, market, splits: transactionTools.data.splits });
+ // The net worth history is read now, beside the workspace reads, not once they have finished.
+ const portfolioHistory = usePortfolioHistory(user, demo, reload);
  const [customizing, setCustomizing] = useState(false);
  // Rearrange mode: handles show and the cards wiggle until Done.
  const [arranging, setArranging] = useState(false);
@@ -53,7 +56,7 @@ export function OverviewScreen() {
    <ScreenNotices/>
    {!workspaceLoading&&<TelegramNudge demo={demo}/>}
    {!workspaceLoading&&<DashboardHeadline netWorth={netWorth} budget={monthBudget} data={planningReady ? planning.data : null} currency={currency} market={market}/>}
-   {workspaceLoading ? <WorkspaceSkeleton label={t("Loading your workspace…")} section="Overview" columns={dashboardColumns(layout)}/> : <PortfolioOverview excludedCurrencies={excludedCurrencies} snapshots={snapshots.snapshots} snapshotError={snapshots.error} onSnapshotRetry={snapshots.retry} key={demo ? 'demo' : user} entries={current} demoRecords={demo ? rows : undefined} currency={currency} market={market} demo={demo} revision={reload} onAddIncome={() => addCashFlow('Other income')} board={nodes => <DashboardBoard layout={layout} cards={card(nodes)} arranging={arranging} onChange={change}/>}/>}
+   {workspaceLoading ? <WorkspaceSkeleton label={t("Loading your workspace…")} section="Overview" columns={dashboardColumns(layout)}/> : <PortfolioOverview excludedCurrencies={excludedCurrencies} snapshots={snapshots.snapshots} snapshotError={snapshots.error} onSnapshotRetry={snapshots.retry} key={demo ? 'demo' : user} entries={current} demoRecords={demo ? rows : undefined} currency={currency} market={market} demo={demo} savedHistory={portfolioHistory.history} historyError={portfolioHistory.error} onHistoryRetry={portfolioHistory.retry} onAddIncome={() => addCashFlow('Other income')} board={nodes => <DashboardBoard layout={layout} cards={card(nodes)} arranging={arranging} onChange={change}/>}/>}
   </div>
   {customizing&&<CustomizeDashboardDialog layout={layout} onChange={change} onRearrange={() => { setCustomizing(false); setArranging(true); }} onClose={() => setCustomizing(false)}/>}
   {(workspacePreferences.error||planning.error||transactionTools.error)&&<ToolsUnavailable/>}

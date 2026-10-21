@@ -1,15 +1,13 @@
 "use client";
 import { InlineError } from '@/components/presentation-foundation/inline-error';
 import { Segmented } from '@/components/presentation-foundation/segmented';
-import type { BenchmarkMovement } from '@/lib/investment-benchmarks';
 import { demoHistory } from '@/lib/demo-finance';
 import { InvestmentPeriodSummary } from '@/components/investment-period-summary';
 import { InvestmentComparison } from '@/components/investment-comparison';
 import { investmentValueChange } from '@/lib/investment-portfolio';
-import { refreshRead } from '@/lib/refresh-read';
 import { PartialTotal } from '@/components/presentation-foundation/partial-total';
 import { IncomeHistoryChart } from '@/components/charts-lazy';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { InfoHint } from '@/components/presentation-foundation/info-hint';
 import { signTone } from '@/components/presentation-foundation/tone';
 import type { PeriodGrowth } from '@/lib/period-growth';
@@ -23,30 +21,17 @@ import { depositToday } from '@/lib/deposit-interest';
 import { mergePortfolioPoints, type PortfolioSnapshot } from '@/lib/portfolio-snapshots';
 import { portfolioHistory, portfolioWindow, trackingWindowStart } from '@/lib/portfolio-history';
 import { useComparisonProfile } from '@/hooks/use-comparison-profile';
-import { type HistoryEvent } from '@/lib/investment-history';
 import { type MarketData, marketRates } from '@/lib/market';
+import type { PortfolioHistory } from '@/hooks/use-portfolio-history';
 
-type History = { movements?:BenchmarkMovement[]; records: Entry[]; events: HistoryEvent[]; cashflows?: Entry[]; incomeRecords?: Entry[] };
-export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecords, currency, market, demo, revision, onAddIncome, board }: { board: (cards: { netWorth: ReactNode; income: ReactNode }) => ReactNode; onAddIncome?: () => void; demoRecords?: Entry[]; excludedCurrencies?:string[]; snapshots: PortfolioSnapshot[]; snapshotError: string; onSnapshotRetry: () => void; entries: Entry[]; currency: string; market: MarketData | null; demo: boolean; revision: number }) {
+/** `savedHistory` is the screen's read (`usePortfolioHistory`), started before this card mounts; the sample workspace builds its own. */
+export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecords, currency, market, demo, savedHistory, historyError: error, onHistoryRetry, onAddIncome, board }: { savedHistory: PortfolioHistory | null; historyError: boolean; onHistoryRetry: () => void; board: (cards: { netWorth: ReactNode; income: ReactNode }) => ReactNode; onAddIncome?: () => void; demoRecords?: Entry[]; excludedCurrencies?:string[]; snapshots: PortfolioSnapshot[]; snapshotError: string; onSnapshotRetry: () => void; entries: Entry[]; currency: string; market: MarketData | null; demo: boolean }) {
  const { t, locale } = useLanguage();
- const [savedHistory, setHistory] = useState<History | null>(null);
- const [error, setError] = useState(false);
- const [retry, setRetry] = useState(0);
  const [range, setRange] = useState<number | null>(null);
  const [growth, setGrowth] = useState<PeriodGrowth | null>(null);
  const comparison = useComparisonProfile(demo);
- useEffect(() => {
-  if (demo) return;
-  const controller = new AbortController();
-  refreshRead('/api/portfolio-history', { signal: controller.signal }).then(async response => {
-   if (!response.ok) throw Error();
-   const data = await response.json() as History;
-   if (!controller.signal.aborted) { setHistory(data); setError(false); }
-  }).catch(() => { if (!controller.signal.aborted) setError(true); });
-  return () => controller.abort();
- }, [demo, revision, retry]);
  const today = depositToday();
- const history: History | null = useMemo(() => demo ? demoHistory(demoRecords ?? [], today) : savedHistory, [demo, demoRecords, today, savedHistory]);
+ const history: PortfolioHistory | null = useMemo(() => demo ? demoHistory(demoRecords ?? [], today) : savedHistory, [demo, demoRecords, today, savedHistory]);
  const money = (amount: number) => formatMoney(amount, currency, locale);
  const {totalAssets:assetTotal,totalDebt:debt}=financialTotals(entries);
  const allRecords = history?.records ?? [];
@@ -74,7 +59,7 @@ export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecord
     </div>
     <Segmented label={t('History period')} options={[30, 90, 365, null].map(days => ({ value: days, label: days === null ? t('All history') : t('{days} days', { days: formatNumber(days, locale, 0) }) }))} value={range} onChange={setRange}/>
    </header>
-   {loading ? <NetWorthBodySkeleton label={t('Loading history…')}/> : error ? <InlineError message={t('Could not load portfolio history.')} onRetry={() => { setError(false); setHistory(null); setRetry(n => n + 1); }}/> : <>
+   {loading ? <NetWorthBodySkeleton label={t('Loading history…')}/> : error ? <InlineError message={t('Could not load portfolio history.')} onRetry={onHistoryRetry}/> : <>
     <InvestmentComparison history={history??{records:[],events:[]}} today={today} currency={currency} market={market} demo={demo} windowStart={windowStart} points={visible} profile={comparison.profile} profileError={comparison.error} trackingStart={comparison.trackingStart} onTrackingStartChange={comparison.saveTrackingStart} onGrowth={setGrowth} summary={fx=><InvestmentPeriodSummary input={{records:allRecords,events:history?.events??[],cashflows:history?.cashflows,movements:history?.movements,market,currency,today,fx}} start={windowStart}/>}/>
     {recorded.missing > 0 && <p className="muted overview-hero-note">{t('Some holdings have no recorded history yet.')}</p>}
     {excludedCurrencies.length > 0 && <p className="muted overview-hero-note">{t('Some currencies could not be converted and are excluded from totals.')}</p>}

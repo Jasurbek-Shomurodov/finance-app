@@ -368,3 +368,13 @@ test('a form finds the saved record outside the open page, so an edit in a filte
  assert.equal(savedRecord('rent', [], [], rent), undefined);
  assert.equal(savedRecord('other', [], [], opened), undefined);
 });
+
+test('the record page is read unfiltered until the market answers, so the first read is not repeated',()=>{
+ const {recordsCurrencyFilter}=loadTS('lib/record-table.ts');
+ const filter=(market,marketFailed=false,sectionKey='all',currency='EUR')=>recordsCurrencyFilter({sectionKey,currency,market,marketFailed});
+ assert.equal(filter(null),'','rates not known yet');
+ assert.equal(filter({rates:{EUR:0.9}}),'','a rate exists');
+ assert.equal(filter({rates:{USD:1}}),'EUR','no rate for the display currency');
+ assert.equal(filter(null,true),'EUR','the market read failed');
+ assert.equal(filter(null,true,'assets'),'','holdings are never filtered');
+});

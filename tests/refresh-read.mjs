@@ -16,3 +16,9 @@ test('aborting while waiting prevents stale account retries',async()=>{
  globalThis.fetch=async()=>{calls++;return new Response(null,{status:503});};
  try{const pending=refreshRead('/api/planning',{signal:controller.signal},[10000]);await new Promise(resolve=>setImmediate(resolve));controller.abort();await assert.rejects(pending,{name:'AbortError'});assert.equal(calls,1);}finally{globalThis.fetch=original;}
 });
+
+test('a read may opt into the browser cache its answer allows; the default stays no-store',async()=>{
+ const original=globalThis.fetch;const modes=[];
+ globalThis.fetch=async(url,options)=>{modes.push(options.cache);return Response.json({});};
+ try{await refreshRead('/api/benchmarks',{cache:'default'});await refreshRead('/api/planning');assert.deepEqual(modes,['default','no-store']);}finally{globalThis.fetch=original;}
+});

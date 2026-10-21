@@ -139,7 +139,7 @@ function useWorkspaceState() {
     const forecastReady = !planning.loading && !planning.error && budgetForecast.ready && estimateConverted(monthBudget.missing, unconvertedPlanning, variableIncome.missing);
     // Full planning rows, as on Goals: summary rows leave out loan and debt payments.
     const forecast = estimatedCashFlow(monthlyIncomeEntries, planningMonth, monthBudget.lines, variableIncome.amount);
-    const table = useRecordTable({ user, demo, section, locale, currency, market, reload, rows, setRows, setSummary, setError, current, planning });
+    const table = useRecordTable({ user, demo, section, locale, currency, market, marketFailed: !!marketError, reload, rows, setRows, setSummary, setError, current, planning });
     const { sectionKey, historyPage, tableLoading, summaryLoaded } = table;
     // Viewing someone's household as a viewer records no daily snapshot; wait to know the role first.
     const snapshots = usePortfolioSnapshots(demo ? null : user, market, summaryLoaded && !marketLoading && (household.state ? !readOnly : !household.loading), reload);

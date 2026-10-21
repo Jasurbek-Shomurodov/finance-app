@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import { after } from 'next/server';
 import { z } from 'zod';
 import { authSession,uuid } from '@/lib/api-validation';
 import { workspaceCookie } from '@/lib/household';
@@ -8,7 +9,9 @@ import { config,saveSession,session,supa,sameOrigin } from '@/lib/supabase';
 import { connectCookie,connectPage,isConnectToken } from '@/lib/telegram-connect';
 /** Where to go after signing in: a Telegram chat waiting to be connected returns to its confirmation page, whichever sign-in method was used. */
 async function afterSignIn(){return isConnectToken((await cookies()).get(connectCookie)?.value)?{next:connectPage}:{};}
-export async function GET(){try{config();const s=await session();if(s)await supa('/rest/v1/rpc/mark_app_started',{method:'POST',body:'{}'},s.token).catch(()=>null);return Response.json({configured:true,user:s?.user?{email:s.user.email||s.user.phone||''}:null,...(s?await afterSignIn():{})});}catch{return Response.json({configured:false,user:null});}}
+// Every workspace read waits for this answer, so the app-start mark is written after it, not before.
+const later=(work:()=>Promise<unknown>)=>{try{after(work);}catch{void work();}};
+export async function GET(){try{config();const s=await session();if(s)later(()=>supa('/rest/v1/rpc/mark_app_started',{method:'POST',body:'{}'},s.token).catch(()=>null));return Response.json({configured:true,user:s?.user?{email:s.user.email||s.user.phone||''}:null,...(s?await afterSignIn():{})});}catch{return Response.json({configured:false,user:null});}}
 const credentials=z.object({email:z.string().max(254),password:z.string().max(1024)});
 /** The token answer, checked before anything from it is saved: a session with the account's email. */
 const passwordSession=authSession.extend({user:z.object({id:uuid,email:z.string().max(254)})});

@@ -1,8 +1,13 @@
 import { shiftDay } from './calendar-days';
-import { assets, liabilities, valuedKinds, type Entry } from './finance';
+import { assets, income, liabilities, valuedKinds, type Entry } from './finance';
 import type { HistoryEvent } from './investment-history';
 import { convertAmount } from './market';
 
+/** The income the Overview's income chart reads: the receipts among the cash flows, then the income schedules. The sample
+ * workspace's history names its own `incomeRecords`, which are kept. */
+export function historyIncomeRecords(history: { cashflows?: Entry[]; recurringIncome?: Entry[]; incomeRecords?: Entry[] }): Entry[] {
+ return history.incomeRecords ?? [...(history.cashflows ?? []).filter(record => income.includes(record.kind)), ...(history.recurringIncome ?? [])];
+}
 export type PortfolioPoint = { date: string; assets: number; debt: number; net: number; partial?: boolean };
 // Require known balances; an explicit zero opening contributes nothing before it opens.
 export function portfolioHistory(records: Entry[], events: HistoryEvent[], currency: string, rates: number | Record<string, number> | undefined, today: string, includePartial = false) {

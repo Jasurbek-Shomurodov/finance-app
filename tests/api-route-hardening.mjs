@@ -199,3 +199,12 @@ test('forecast assignments accept only known currencies, and month and date sche
  assert.ok(!earningSourceSchema.safeParse({...source,currency:'ZZZ'}).success);
  assert.ok(!earningSourceSchema.safeParse({...source,start_date:'2026-02-30'}).success);
 });
+
+test('the session check answers before the app-start mark is written',async()=>{
+ const calls=[],later=[];
+ const route=loadTS('app/api/auth/route.ts',{'next/headers':{cookies:async()=>({get:()=>undefined})},'next/server':{after:work=>{later.push(work);}},'@/lib/supabase':{config:()=>({}),sameOrigin:()=>true,saveSession:async()=>{},session:async()=>({token:'access',user:{id:'owner',email:'me@example.com'}}),supa:async path=>{calls.push(path);return Response.json({});}}});
+ assert.deepEqual(await (await route.GET()).json(),{configured:true,user:{email:'me@example.com'}});
+ assert.deepEqual(calls,[],'nothing is written before the answer');
+ assert.equal(later.length,1);await later[0]();
+ assert.deepEqual(calls,['/rest/v1/rpc/mark_app_started']);
+});

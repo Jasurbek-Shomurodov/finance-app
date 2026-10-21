@@ -11,6 +11,12 @@ export const recordsPerPage = 10;
 /** The record table's slice of the workspace for a drawer section. */
 export const sectionKeyOf = (section: string): SectionKey => section === 'Assets & investments' ? 'assets' : section === 'Income & expenses' ? 'cashflow' : section === 'Loans & debts' ? 'debts' : 'all';
 
+/** The currency the server filters the record page to: only in a display currency without a rate, and never for
+ * holdings. Until the market answers, the rate is unknown and the page is read unfiltered, the usual outcome, so the
+ * first read is not repeated once the rates arrive; a failed market read filters, as a missing rate does. */
+export const recordsCurrencyFilter = ({ sectionKey, currency, market, marketFailed }: { sectionKey: SectionKey; currency: string; market: MarketData | null; marketFailed: boolean }) =>
+ sectionKey === 'assets' || market?.rates?.[currency] || (!market && !marketFailed) ? '' : currency;
+
 /** Newest first; money lent counts from the day it was lent. */
 export const sortRecords = (entries: Entry[]) => [...entries].sort((a, b) => compareRecordDates(a.kind === 'Money lent' ? a.lent_date || a.date : a.date, b.kind === 'Money lent' ? b.lent_date || b.date : b.date) || b.id.localeCompare(a.id));
 

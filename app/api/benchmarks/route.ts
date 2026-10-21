@@ -51,12 +51,15 @@ async function cryptoProviderHistory(start: string, end: string, provider: 'coin
    try {
   const last = shiftDay(cursor, 299) < shiftDay(end, 1) ? shiftDay(cursor, 299) : shiftDay(end, 1);
   let candles: unknown;
+  // Closed days never change: a window ending three days or more before `end` is the same request on every load and may
+  // come from the fetch cache. Only the window with the latest candles is read fresh.
+  const fresh = last > shiftDay(end, -3);
   if (provider === 'coinbase') {
    const params = new URLSearchParams({ granularity: '86400', start: cursor + 'T00:00:00Z', end: last + 'T00:00:00Z' });
-   candles = await read('https://api.exchange.coinbase.com/products/'+symbol+'-USD/candles?' + params, true);
+   candles = await read('https://api.exchange.coinbase.com/products/'+symbol+'-USD/candles?' + params, fresh);
   } else {
    const params = new URLSearchParams({ start: String(dateMillis(cursor)), end: String(dateMillis(last) - 1), limit: '299', sort: '1' });
-   candles = await read('https://api-pub.bitfinex.com/v2/candles/trade:1D:t'+symbol+'USD/hist?' + params, true);
+   candles = await read('https://api-pub.bitfinex.com/v2/candles/trade:1D:t'+symbol+'USD/hist?' + params, fresh);
   }
   if (!Array.isArray(candles)) throw Error('Unavailable');
   for (const row of candles) {

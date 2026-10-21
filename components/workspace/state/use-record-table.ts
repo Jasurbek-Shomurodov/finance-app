@@ -5,13 +5,15 @@ import { useRecordFilters } from '@/hooks/use-record-filters';
 import type { Entry } from '@/lib/finance';
 import type { MarketData } from '@/lib/market';
 import { activeFilterCount, recordsRequestKey, type RecordFiltersValue } from '@/lib/record-filters';
-import { recordTableView, sectionKeyOf } from '@/lib/record-table';
+import { recordsCurrencyFilter, recordTableView, sectionKeyOf } from '@/lib/record-table';
 import { useRecordReads } from './use-record-reads';
 
 const emptyHistoryPage={records:[] as Entry[],total:0,page:1};
 
 export type RecordTableInput = {
     user: string | null; demo: boolean; section: string; locale: string; currency: string; market: MarketData | null; reload: number;
+    /** The market read failed: no rates are coming, so a currency without one is filtered. */
+    marketFailed: boolean;
     rows: Entry[]; setRows: Dispatch<SetStateAction<Entry[]>>; setSummary: Dispatch<SetStateAction<Entry[]>>; setError: Dispatch<SetStateAction<string>>;
     /** Every record in the display currency, which the sample workspace's table pages through. */
     current: Entry[];
@@ -21,7 +23,7 @@ export type RecordTableInput = {
 /** The record table of the open section: its filters and page, the reads behind it, and the rows it shows. Filtered
  * views and Cash flow search the full record list; signed in, Cash flow pages through the transaction history read.
  * In another currency without a rate, the server sends only the workspace currency's records. */
-export function useRecordTable({ user, demo, section, locale, currency, market, reload, rows, setRows, setSummary, setError, current, planning }: RecordTableInput) {
+export function useRecordTable({ user, demo, section, locale, currency, market, marketFailed, reload, rows, setRows, setSummary, setError, current, planning }: RecordTableInput) {
     const [pageState, setPageState] = useState({ key: '', page: 1 });
     const sectionKey = sectionKeyOf(section);
     const {filters,setFilters:updateFilters}=useRecordFilters(sectionKey,demo?'demo':user);
@@ -30,7 +32,7 @@ export function useRecordTable({ user, demo, section, locale, currency, market, 
     const historyOnly = sectionKey === 'cashflow';
     const useFilteredRecords = filtersActive || historyOnly;
     const remoteHistory = historyOnly && !demo;
-    const currencyFilter = sectionKey === 'assets' || market?.rates?.[currency] ? '' : currency;
+    const currencyFilter = recordsCurrencyFilter({ sectionKey, currency, market, marketFailed });
     const paginationKey = user + ':' + sectionKey + ':' + currencyFilter + ':' + JSON.stringify(filters);
     const page = pageState.key === paginationKey ? pageState.page : 1;
     const serverPage = useFilteredRecords ? 1 : page;

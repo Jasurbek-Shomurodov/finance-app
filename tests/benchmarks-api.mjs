@@ -294,3 +294,22 @@ test('signed-in comparison loads are counted per person and refused over the lim
  finally{limited=false;}
  assert.deepEqual(counted,[['benchmarks','owner-id']]);
 });
+
+test('BTC windows of closed days may come from the fetch cache; only the newest is read fresh',async()=>{
+ const original=globalThis.fetch;const windows=[];
+ try{
+  globalThis.fetch=async(raw,options)=>{
+   const url=new URL(raw);
+   if(url.hostname!=='api.exchange.coinbase.com')return new Response('',{status:404});
+   const from=url.searchParams.get('start').slice(0,10),to=url.searchParams.get('end').slice(0,10);
+   windows.push({to,fresh:options.cache==='no-store',revalidate:options.next?.revalidate});
+   const days=[];for(let day=from;day<to;day=dates.shiftDay(day,1))days.push([dates.dateMillis(day)/1000,0,0,0,50000,1]);
+   return Response.json(days);
+  };
+  const data=await(await GET(request('start=2025-06-01&end=2026-09-17&benchmarks=BTC'))).json();
+  assert.equal(data.errors.BTC,undefined);assert.ok(windows.length>=2);
+  const newest=windows.reduce((a,b)=>a.to>b.to?a:b);
+  assert.ok(newest.fresh,'the window with the latest candles is fresh');
+  assert.ok(windows.filter(item=>item!==newest).every(item=>!item.fresh&&item.revalidate===3600),'closed windows are cacheable');
+ }finally{globalThis.fetch=original;}
+});

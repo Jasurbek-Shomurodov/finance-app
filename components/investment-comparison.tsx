@@ -87,7 +87,7 @@ export function InvestmentComparison({history,today,currency,market,demo,windowS
   if(symbol)params.set('symbol',symbol);
   if(portfolioCrypto)params.set('portfolioCrypto',portfolioCrypto);
   if(portfolioStock)params.set('portfolioStock',portfolioStock);
-  refreshRead(demo?'/api/benchmarks?demo=1':'/api/benchmarks?'+params,{signal:controller.signal}).then(async response=>{const result=await response.json() as BenchmarkData&{error?:string};if(!response.ok)throw Error(result.error);if(!controller.signal.aborted){setData(result);setLoadedKey(requestKey);setError('');}}).catch(reason=>{if(!controller.signal.aborted){setError(reason.message);setLoadedKey(requestKey);setData(null);}});
+  refreshRead(demo?'/api/benchmarks?demo=1':'/api/benchmarks?'+params,{signal:controller.signal,cache:'default'}).then(async response=>{const result=await response.json() as BenchmarkData&{error?:string};if(!response.ok)throw Error(result.error);if(!controller.signal.aborted){setData(result);setLoadedKey(requestKey);setError('');}}).catch(reason=>{if(!controller.signal.aborted){setError(reason.message);setLoadedKey(requestKey);setData(null);}});
   return()=>controller.abort();
  },[demo,requestKey,start,today,selectionKey,symbol,portfolioCrypto,portfolioStock,portfolioConfig,retry,canLoad]);
  const comparisonsLoading=!!requestKey&&((!demo&&!profile&&!profileError)||loadedKey!==requestKey);
