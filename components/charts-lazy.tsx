@@ -14,3 +14,4 @@ export const InvestmentValueChart = dynamic(() => import('@/components/investmen
 /** Fetches every chart above at once. The app preview on the public pages waits for this before it shows itself, so
  * visitors see finished charts rather than their placeholders. */
 export const preloadCharts = () => Promise.all([import('@/components/cash-forecast-chart'), import('@/components/spending-pace-chart'), import('@/components/income-history-chart'), import('@/components/investment-value-chart')]);
+export const AllocationDonut = dynamic(() => import('@/components/allocation-donut').then(module => module.AllocationDonut), { ssr: false, loading: () => <ChartSkeleton height={200}/> });

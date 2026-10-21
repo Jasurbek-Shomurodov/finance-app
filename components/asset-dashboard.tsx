@@ -1,4 +1,5 @@
 "use client";
+import { AllocationDonut } from '@/components/charts-lazy';
 import { PartialTotal } from '@/components/presentation-foundation/partial-total';
 import { Count } from '@/components/presentation-foundation/count';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
@@ -111,8 +112,9 @@ export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoadin
    </div>
    <div className="portfolio-summary-allocation">
     <h3>{t('Asset allocation')}</h3>
-    <div className="allocation-bar" aria-hidden="true">{categories.filter(group=>group.amount>0).map(group=><span key={group.kind} style={{flexGrow:group.amount,background:categoryColor(group.kind)}}/>)}</div>
-    <ul className="overview-list">{categories.map(group=><li key={group.kind}><button type="button" className="allocation-option" aria-pressed={category===group.kind} onClick={() => showCategory(group.kind)}><i style={{background:categoryColor(group.kind)}} aria-hidden="true"/><span>{t(group.kind)}</span><strong>{loading ? '—' : <AnimatedMoney value={group.amount} currency={currency}/>}</strong><small>{loading || total<=0 ? '—' : formatPercent(group.amount/total*100,locale,1,1)}</small></button></li>)}</ul>
+    {/* A donut beside the list, so the split reads at a glance; a slice opens its kind like a row does. */}
+    <div className="portfolio-allocation-body">{total > 0 && <AllocationDonut slices={categories} total={total} currency={currency} onSelect={showCategory}/>}
+    <ul className="overview-list">{categories.map(group=><li key={group.kind}><button type="button" className="allocation-option" aria-pressed={category===group.kind} onClick={() => showCategory(group.kind)}><i style={{background:categoryColor(group.kind)}} aria-hidden="true"/><span>{t(group.kind)}</span><strong>{loading ? '—' : <AnimatedMoney value={group.amount} currency={currency}/>}</strong><small>{loading || total<=0 ? '—' : formatPercent(group.amount/total*100,locale,1,1)}</small></button></li>)}</ul></div>
    </div>
   </section>
 
