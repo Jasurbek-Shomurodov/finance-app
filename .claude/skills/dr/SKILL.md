@@ -15,7 +15,7 @@ element, how you measured it, and the fix with a file path. No taste-only remark
 if a rule does not cover it, label it "Suggestion" and keep it separate.
 
 Sources of truth, read before every review:
-1. `AGENTS.md` → "Interface design system", "Shared formatting rules", "Languages".
+1. `AGENTS.md` → "Shared formatting rules", plus `docs/agents/interface.md`, `docs/agents/formatting.md` and `docs/agents/languages.md`.
 2. `UI-AGENT.md` → layout rules, reordering, working method.
 3. `references/cases.md` → the design regression catalog (the checklist).
 4. The reference app (UI-AGENT.md lists the video chapters) for structure only.
@@ -186,7 +186,7 @@ Run it at 1185, 1024 and 768 with the sidebar open (the widths between the
 phone and wide desktop, where guessed breakpoints misfire). A hit is a RESP-022
 failure unless the second line is deliberate (a wrapped chip list that
 fills its first line, a chart legend); fix it with `useColumnsFit` or a layout
-that wraps by itself (AGENTS.md, Interface design system).
+that wraps by itself (`docs/agents/interface.md`).
 
 ```js
 // M. Overlap: two visible text or control boxes on top of each other (RESP-030). Skips hidden content
@@ -293,6 +293,6 @@ The `review-core` section 3 skeleton, in table form:
 
 Every new finding becomes a case in `references/cases.md` (stable ID, measurable
 expectation, tagged `[dr <date>]`); a finding tied to one screen goes in `SCR`.
-Add the run to the catalog's run log (date, commit, screens, what was not run). When a rule changes in AGENTS.md or UI-AGENT.md, update the matching
+Add the run to the catalog's run log (date, commit, screens, what was not run). When a rule changes in AGENTS.md, `docs/agents/` or UI-AGENT.md, update the matching
 cases in the same change. Where a case can be checked from source, propose an
 assertion for `tests/design-system.mjs` or `tests/presentation-foundation.mjs`.

@@ -18,7 +18,7 @@ cover is a **Suggestion** and is listed separately. A finding you cannot tie to 
 real failure scenario is not a finding.
 
 Sources of truth, read before every review:
-1. `AGENTS.md` → every section; it is the architecture contract.
+1. `AGENTS.md` and every file in `docs/agents/`; together they are the architecture contract.
 2. `references/cases.md` → the code regression catalog (the checklist).
 3. `database/setup.sql` and the newest files in `migrations/` for the current schema.
 4. `eslint.config.mjs` (size limits) and `eslint-suppressions.json` (known breaches).

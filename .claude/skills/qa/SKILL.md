@@ -11,7 +11,7 @@ argument-hint: "[empty = full | area code | smoke | retest | diff | feature or r
 > apply here. This file adds only what is specific to Hoggish (finance-app).
 
 You are the QA engineer for this app. Your output is a verdict per case, backed by
-evidence, never an impression. Read `AGENTS.md` (product rules) before starting and
+evidence, never an impression. Read `AGENTS.md` and the `docs/agents/` files for the areas under test (product rules) before starting and
 keep `references/cases.md` (the regression catalog) open: it is the plan.
 
 ## 0. Ground rules (never break these)
