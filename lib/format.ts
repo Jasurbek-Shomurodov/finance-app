@@ -51,10 +51,11 @@ export function formatSignedMoney(value: number, currency: string, locale: strin
   return oneRun(Math.abs(value) < 0.5 ? shown : (value > 0 ? '+' : '\u2212') + shown, locale);
 }
 // Short axis labels ("$1.2M"); tooltips and totals keep formatMoney precision.
-export function formatCompactMoney(value: number, currency: string, locale: string) {
+// `precise` keeps three significant digits ("$1.45M", "$433K"), for labels that must tell close figures apart.
+export function formatCompactMoney(value: number, currency: string, locale: string, precise = false) {
   if (!Number.isFinite(value)) return '—';
   // Below a thousand nothing is abbreviated, so the amount stays whole ("$13", never "$12.8").
-  return Math.abs(value) < 999.5 ? formatMoney(value, currency, locale) : oneRun(trueMinus(new Intl.NumberFormat(locale, { style: 'currency', currency, notation: 'compact', maximumFractionDigits: 1 }).format(value)), locale);
+  return Math.abs(value) < 999.5 ? formatMoney(value, currency, locale) : oneRun(trueMinus(new Intl.NumberFormat(locale, { style: 'currency', currency, notation: 'compact', ...(precise ? { maximumSignificantDigits: 3 } : { maximumFractionDigits: 1 }) }).format(value)), locale);
 }
 /** Monday-first weekday labels for the calendar grid, in the locale's language. */
 export function weekdayLabels(locale: string): string[] {

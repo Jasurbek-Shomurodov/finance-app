@@ -16,3 +16,16 @@ export function niceAxis(values:readonly number[],count=5):{domain:[number,numbe
  for(let index=0;index<=steps;index++)ticks.push(Number((start+index*step).toPrecision(12)));
  return {domain:[ticks[0],ticks.at(-1)!],ticks};
 }
+
+// Where each line's end label sits on the value axis: at its last value, pushed apart so no two are closer than
+// `gap` (a value distance), and kept inside the axis. Labels keep the order of their values.
+export function spreadLabels<T extends {value:number}>(items:readonly T[],domain:[number,number],gap:number):(T&{at:number})[]{
+ const sorted=[...items].sort((a,b)=>b.value-a.value).map(item=>({...item,at:Math.min(domain[1],Math.max(domain[0],item.value))}));
+ for(let index=1;index<sorted.length;index++)sorted[index].at=Math.min(sorted[index].at,sorted[index-1].at-gap);
+ const last=sorted.length-1;
+ if(last>=0&&sorted[last].at<domain[0]){
+  sorted[last].at=domain[0];
+  for(let index=last-1;index>=0;index--)sorted[index].at=Math.max(sorted[index].at,sorted[index+1].at+gap);
+ }
+ return sorted;
+}

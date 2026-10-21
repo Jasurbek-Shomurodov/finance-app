@@ -51,6 +51,22 @@ export function ChartGradient({ id, color = 'var(--primary)' }: { id: string; co
  return <defs><linearGradient id={id} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity={.22}/><stop offset="100%" stopColor={color} stopOpacity={0}/></linearGradient></defs>;
 }
 
+/** End labels: each line's latest figure on a second value axis at the right, as a pill in the line's colour. Pass the
+ * label positions from `spreadLabels` as `ticks` and render them with `EndLabelTick`. */
+export const chartEndAxis = { axisLine: false, tickLine: false, tickMargin: 6, orientation: 'right', interval: 0, allowDataOverflow: true } as const;
+export type EndLabel = { at: number; text: string; color: string };
+/** Room the end-label axis needs for its longest label. */
+export const endLabelWidth = (labels: readonly EndLabel[]) => labels.length ? Math.ceil(Math.max(...labels.map(label => label.text.length)) * 7.4 + 22) : 0;
+export function EndLabelTick({ x, y, payload, labels }: { x?: number; y?: number; payload?: { value: number }; labels: readonly EndLabel[] }) {
+ const label = labels.find(item => item.at === payload?.value);
+ if (!label || x === undefined || y === undefined) return null;
+ const width = endLabelWidth([label]) - 8;
+ return <g className="chart-end-label" transform={`translate(${x},${y})`}>
+  <rect x={0} y={-11} width={width} height={22} rx={11} style={{ fill: `color-mix(in srgb, ${label.color} 16%, var(--card))`, stroke: `color-mix(in srgb, ${label.color} 40%, transparent)` }}/>
+  <text x={width / 2} y={0} dy="0.35em" textAnchor="middle" style={{ fill: label.color }}>{label.text}</text>
+ </g>;
+}
+
 /** Money in and money out, wherever both are drawn. */
 export const chartColors = { income: 'var(--positive)', expense: 'color-mix(in srgb, var(--foreground) 55%, transparent)', other: 'var(--muted-foreground)', /** An investment beside cash accounts: a lighter shade of the account colour. */holding: 'color-mix(in srgb, var(--mark-bg) 45%, var(--card))' } as const;
 
@@ -62,6 +78,8 @@ export const sankeyNodeRadius = 3;
 
 /** Tick and tooltip labels through the shared formatters. */
 export const moneyTick = (currency: string, locale: string) => (value: unknown) => formatCompactMoney(Number(value), currency, locale);
+/** A line's end label: compact, but precise enough to tell close lines apart. */
+export const endLabelMoney = (currency: string, locale: string) => (value: number) => formatCompactMoney(value, currency, locale, true);
 export const monthTick = (locale: string) => (month: unknown) => formatMonthShort(String(month), locale);
 export const monthLabel = (locale: string) => (month: unknown) => formatMonthYear(String(month), locale);
 /** An interval key (`2026-07`, `2026-Q3` or `2026`) as a tick, or with `long` as a tooltip label; `t` translates "Q{quarter} {year}". */

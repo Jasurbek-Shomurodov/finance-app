@@ -44,3 +44,10 @@ test('money axis never shows negative ticks for positive balances',()=>{
  const axis=result.props.children.find(child=>child.type==='YAxis');
  assert.ok(axis.props.ticks.every(tick=>tick>=0));assert.equal(axis.props.domain[0],0);
 });
+test('each shown line ends in a label with its latest figure on a right-hand axis',()=>{
+ const result=InvestmentValueChart({points:[{date:'2026-09-17',actual:400000,SPY:401000},{date:'2026-09-18',actual:410000,SPY:433000,BTC:null}],currency:'USD',series:[{key:'actual',label:'Investments',color:'green',primary:true},{key:'SPY',label:'SPY',color:'blue'},{key:'BTC',label:'BTC',color:'orange'}]}).props.children.props.children;
+ const ends=result.props.children.find(child=>child&&child.type==='YAxis'&&child.props.yAxisId==='ends');
+ assert.equal(ends.props.orientation,'right');
+ assert.deepEqual(ends.props.tick.props.labels.map(label=>[label.text,label.color]),[["$433K","blue"],["$410K","green"]]);
+ assert.deepEqual(ends.props.ticks,[433000,410000]);
+});

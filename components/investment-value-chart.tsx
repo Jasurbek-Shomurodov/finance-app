@@ -4,8 +4,8 @@ import { useId, type ReactElement } from 'react';
 import { Area, CartesianGrid, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useLanguage } from '@/components/language-provider';
 import { formatDate, formatMoney } from '@/lib/format';
-import { ChartGradient, chartAxis, chartGrid, chartLine, chartTooltip, chartValueAxis, leadArea, moneyTick } from '@/components/presentation-foundation/chart';
-import { niceAxis } from '@/lib/chart-scale';
+import { ChartGradient, EndLabelTick, chartAxis, chartEndAxis, chartGrid, chartLine, chartTooltip, chartValueAxis, endLabelMoney, endLabelWidth, leadArea, moneyTick } from '@/components/presentation-foundation/chart';
+import { niceAxis, spreadLabels } from '@/lib/chart-scale';
 import { historyChartDate } from '@/lib/investment-history';
 
 type Series={key:string;label:string;color:string;dash?:string;primary?:boolean};
@@ -25,6 +25,9 @@ export function InvestmentValueChart({points,series,currency,tooltip,onPointSele
  const values=points.flatMap(point=>series.map(item=>point[item.key])).filter((value):value is number=>typeof value==='number'&&Number.isFinite(value));
  const axis=niceAxis(values);
  const money=(amount:number)=>formatMoney(amount,currency,locale);
+ // Each line's latest figure sits at its right end, spread so close lines keep readable labels (about 24px apart).
+ const endMoney=endLabelMoney(currency,locale),lastPoint=points.at(-1);
+ const ends=spreadLabels(series.flatMap(item=>{const value=lastPoint?.[item.key];return typeof value==='number'&&Number.isFinite(value)?[{value,color:item.color}]:[];}),axis.domain,(axis.domain[1]-axis.domain[0])*24/Math.max(1,height-65)).map(item=>({at:item.at,color:item.color,text:endMoney(item.value)}));
  return <div className="portfolio-chart" aria-label={t(label)}><ResponsiveContainer width="100%" height={height}><ComposedChart data={data} accessibilityLayer onClick={state=>{
    // Clicks in the axis margins report a stale index; only open the hovered point.
    if(!state.isTooltipActive)return;
@@ -37,6 +40,7 @@ export function InvestmentValueChart({points,series,currency,tooltip,onPointSele
   <CartesianGrid {...chartGrid}/>
   <XAxis dataKey="timestamp" type="number" scale="time" domain={first===undefined?['dataMin','dataMax']:[first,single?first+86400000:last!]} ticks={single?[first!]:undefined} tickFormatter={date=>formatDate(historyChartDate(Number(date)),locale)} minTickGap={80} {...chartAxis}/>
   <YAxis domain={axis.domain} ticks={axis.ticks} allowDataOverflow tickFormatter={moneyTick(currency,locale)} {...chartValueAxis}/>
+  {ends.length>0&&<YAxis yAxisId="ends" domain={axis.domain} ticks={ends.map(item=>item.at)} width={endLabelWidth(ends)} tick={<EndLabelTick labels={ends}/>} {...chartEndAxis}/>}
   <Tooltip {...chartTooltip} position={mobile?{x:0,y:40}:undefined} offset={{x:0,y:20}} allowEscapeViewBox={{x:false,y:true}} content={tapOpensDetails?noTooltip:tooltip} labelFormatter={date=>formatDate(historyChartDate(Number(date)),locale)} formatter={amount=>money(Number(amount))} wrapperStyle={{zIndex:20,pointerEvents:'auto',maxWidth:'100%',...(mobile?{width:'100%',whiteSpace:'normal' as const}:{})}}/>
   {series.map(item=><Area key={item.key} type="monotone" dataKey={item.key} name={item.label} baseValue="dataMin" {...(item.primary?leadArea(id):{...chartLine,fill:'none'})} stroke={item.color} strokeDasharray={item.dash} connectNulls={false} activeDot={false}/>)}
  </ComposedChart></ResponsiveContainer></div>;

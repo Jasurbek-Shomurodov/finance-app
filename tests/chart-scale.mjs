@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {niceAxis} from '../lib/chart-scale.ts';
+import {niceAxis,spreadLabels} from '../lib/chart-scale.ts';
 test('money axes use round ticks and never show negative values for non-negative data',()=>{
  assert.deepEqual(niceAxis([49645,3105952]),{domain:[0,4000000],ticks:[0,1000000,2000000,3000000,4000000]});
  assert.deepEqual(niceAxis([148480,901509]).ticks,[0,250000,500000,750000,1000000]);
@@ -27,4 +27,13 @@ test('money axes never step by fractions, even for an empty or tiny range',()=>{
   const {ticks}=niceAxis(values);
   assert.ok(ticks.every(Number.isInteger),JSON.stringify(values)+' '+JSON.stringify(ticks));
  }
+});
+
+test('end labels sit at their values, spread apart in value order and kept inside the axis',()=>{
+ const at=items=>spreadLabels(items,[400,440],5).map(item=>[item.key,item.at]);
+ assert.deepEqual(at([{key:'a',value:410},{key:'b',value:430}]),[['b',430],['a',410]]);
+ assert.deepEqual(at([{key:'a',value:427},{key:'b',value:428},{key:'c',value:426}]),[['b',428],['a',423],['c',418]]);
+ assert.deepEqual(at([{key:'a',value:401},{key:'b',value:402},{key:'c',value:399}]),[['b',410],['a',405],['c',400]]);
+ assert.deepEqual(at([{key:'a',value:999}]),[['a',440]]);
+ assert.deepEqual(spreadLabels([],[0,1],1),[]);
 });

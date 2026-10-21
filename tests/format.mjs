@@ -230,3 +230,12 @@ test('in right-to-left languages an amount is one isolated left-to-right run, so
  assert.equal(formatMoney(22000, 'USD', 'en-US'), '$22,000');
  assert.equal(formatSignedMoney(-13, 'USD', 'en-US'), '−$13');
 });
+
+test('precise compact money keeps three significant digits so close end labels differ in EN, RU and UZ',()=>{
+ assert.equal(formatCompactMoney(1445355,'USD','en-US',true),'$1.45M');
+ assert.equal(formatCompactMoney(1484820,'USD','en-US',true),'$1.48M');
+ assert.equal(formatCompactMoney(433212,'USD','en-US',true),'$433K');
+ assert.equal(formatCompactMoney(1445355,'USD','en-US'),'$1.4M');
+ assert.equal(formatCompactMoney(812,'USD','en-US',true),'$812');
+ for(const locale of ['ru-RU','uz-UZ'])assert.match(formatCompactMoney(1445355,'USD',locale,true),/1[,.]45/);
+});
