@@ -24,7 +24,7 @@ import type { PortfolioSnapshot } from '@/lib/portfolio-snapshots';
 /** The compact Cash flow summary while its month loads: same tiles and note line, so nothing below it moves. */
 export function CashflowSummarySkeleton(){
  const {t}=useLanguage();
- return <section className="cashflow-summary" aria-label={t('Monthly review')}><StatTilesSkeleton label={t('Loading records…')}/><Skeleton aria-hidden="true" className="h-4 w-80 max-w-full"/></section>;
+ return <section className="cashflow-summary" aria-label={t('Monthly review')}><StatTilesSkeleton label={t('Loading records…')} columns={4}/><Skeleton aria-hidden="true" className="h-4 w-80 max-w-full"/></section>;
 }
 
 export function MonthlyReview({data:providedData,owner,demo=false,revision=0,tools,snapshots,historyError,currency,market,compact=false,selectedMonth,estimates}:{compact?:boolean;selectedMonth?:string;estimates?:{income:number;spending:number;net:number}|null;data:PlanningData;owner?:string|null;demo?:boolean;revision?:number;tools:ToolsController;snapshots:PortfolioSnapshot[];historyError:string;currency:string;market?:MarketData|null}){

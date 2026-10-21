@@ -6,7 +6,7 @@ import { useDisplayMoney } from '@/components/display-money';
 import { CategoryIcon } from '@/components/presentation-foundation/category-icon';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
-import { PanelSkeleton } from '@/components/presentation-foundation/loading-placeholder';
+import { TransactionsSkeleton } from '@/components/presentation-foundation/screen-skeletons';
 import { DateRangePicker, type DateRange } from '@/components/presentation-foundation/date-range-picker';
 import { PageHeader } from '@/components/presentation-foundation/page-header';
 import { Pagination } from '@/components/presentation-foundation/pagination';
@@ -171,7 +171,7 @@ export function TransactionsScreen() {
    {owners.length > 0 && <OwnerFilter owners={owners} value={ownerFilter} onChange={setOwnerFilter}/>}
   </div>
   {selecting && <BulkEditBar count={chosen.length} total={records.length} onAll={select => setSelected(new Set(select ? records.map(record => record.id) : []))} onEdit={() => setEditingMany(true)} onCancel={() => { setSelecting(false); setSelected(new Set()); }}/>}
-  {error ? <InlineError message={t(error)} onRetry={live ? remote.retry : refreshRecords}/> : loading ? <PanelSkeleton label={t('Loading records…')} rows={6}/> : <div className="transactions-layout">
+  {error ? <InlineError message={t(error)} onRetry={live ? remote.retry : refreshRecords}/> : loading ? <TransactionsSkeleton label={t('Loading records…')} tools={false}/> : <div className="transactions-layout">
    <section className="panel transactions-list" aria-label={t('Transactions')}>
     {days.length ? days.map(day => <DayGroup key={day.date} date={day.date} total={day.total} currency={currency} today={today}>
      {day.records.map(record => {

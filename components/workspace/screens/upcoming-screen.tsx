@@ -1,7 +1,8 @@
 "use client";
 import { useState } from 'react';
 import { useLanguage } from '@/components/language-provider';
-import { LoadingPlaceholder, PanelSkeleton } from '@/components/presentation-foundation/loading-placeholder';
+import { PanelSkeleton } from '@/components/presentation-foundation/loading-placeholder';
+import { RecurringSkeleton } from '@/components/presentation-foundation/screen-skeletons';
 import { SubscriptionsPanel } from '@/components/planning/subscriptions-panel';
 import { UpcomingPage, type RecurringView } from '@/components/planning/upcoming-page';
 import { ReminderPanel } from '@/components/reminder-panel';
@@ -21,7 +22,7 @@ export function UpcomingScreen() {
  return <>
   <div data-page="Upcoming payments" className="content">
    <PlanningError/>
-   {planning.loading ? <LoadingPlaceholder label={t('Loading records…')}/> : <UpcomingPage data={planning.data} save={planning.save} currency={currency} currencies={preferencesData.currencies} rates={marketRates(market)} view={view} onView={setView} onEdit={editRecord} onAddRecurring={readOnly ? undefined : addRecurring} onArchive={archiveSchedule} onDelete={deleteSchedule} onSankey={setSankey}/>}
+   {planning.loading ? <RecurringSkeleton label={t('Loading records…')}/> : <UpcomingPage data={planning.data} save={planning.save} currency={currency} currencies={preferencesData.currencies} rates={marketRates(market)} view={view} onView={setView} onEdit={editRecord} onAddRecurring={readOnly ? undefined : addRecurring} onArchive={archiveSchedule} onDelete={deleteSchedule} onSankey={setSankey}/>}
    {view === 'subscriptions' && !planning.loading && <SubscriptionsPanel records={subscriptions.records} decisions={subscriptions.decisions} loading={subscriptions.loading} error={subscriptions.error} onRetry={subscriptions.retry} decide={subscriptions.decide} restore={subscriptions.restore} onTrack={reviewRecurring} onOpen={record => setDrilling(record)}/>}
   </div>
   {(workspacePreferences.error||planning.error)&&<ToolsUnavailable/>}

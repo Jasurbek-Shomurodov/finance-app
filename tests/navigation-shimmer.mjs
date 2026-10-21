@@ -5,7 +5,7 @@ import fs from 'node:fs';
 // Rule: the full "Loading your workspace…" layout appears only on the first load and on a reload. A drawer tap
 // (a tab or page change inside the signed-in app) shows shimmer, never the workspace layout or its banner.
 const shell = fs.readFileSync('components/workspace/workspace-shell.tsx', 'utf8');
-const placeholders = fs.readFileSync('components/presentation-foundation/loading-placeholder.tsx', 'utf8');
+const placeholders = fs.readFileSync('components/presentation-foundation/screen-skeletons.tsx', 'utf8');
 
 test('a drawer tap shows the navigation shimmer, not the workspace layout', () => {
  const navigating = shell.match(/\{destination \? (.+?) : children\}/);
@@ -21,9 +21,10 @@ test('the workspace layout and its banner stay on first load only', () => {
  assert.match(shell, /!ready \|\| !signedIn[\s\S]*?Loading your workspace/);
 });
 
-test('the navigation shimmer is shimmer only, with a screen-reader label and no banner', () => {
+test('the navigation shimmer is the destination layout, never the workspace banner', () => {
  const shimmer = placeholders.slice(placeholders.indexOf('export function NavigationShimmer'));
- assert.match(shimmer, /role="status" aria-busy="true"/);
- assert.match(shimmer, /<Skeleton/);
- assert.doesNotMatch(shimmer.slice(0, shimmer.indexOf('\n}\n') + 2), /Loading your workspace|WorkspaceSkeleton/);
+ assert.match(shell, /<NavigationShimmer label=\{t\("Loading records…"\)\} path=\{destination\}\/>/, 'the shimmer is drawn for the tapped destination');
+ assert.match(shimmer, /screenSkeletons\[path\]/);
+ assert.match(placeholders, /function Loading\(.*\n.*role="status" aria-busy="true"/);
+ assert.doesNotMatch(placeholders, /Loading your workspace/);
 });

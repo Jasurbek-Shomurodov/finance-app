@@ -10,6 +10,7 @@ import { useLanguage } from '@/components/language-provider';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
 import { TodayButton } from '@/components/presentation-foundation/today-button';
 import { PanelSkeleton } from '@/components/presentation-foundation/loading-placeholder';
+import { BudgetSkeleton } from '@/components/presentation-foundation/screen-skeletons';
 import { PageHeader } from '@/components/presentation-foundation/page-header';
 import { RowMenu } from '@/components/presentation-foundation/row-menu';
 import { StatTile } from '@/components/presentation-foundation/stat-tile';
@@ -149,7 +150,7 @@ export function BudgetScreen() {
    <Button variant="outline" onClick={() => setSettingsOpen(true)}><Settings size={16} aria-hidden="true"/>{t('Settings')}</Button>
   </PageHeader>
   <BudgetRateNotice planned={left.missing} actual={history.get(month)?.missing ?? 0}/>
-  {error ? <InlineError message={t(error)} onRetry={() => { budget.retry(); remote.retry(); }}/> : loading ? <PanelSkeleton label={t('Loading records…')} rows={6}/> : view === 'year' ? <BudgetYear rows={categories} month={month} history={history} amounts={budget.state.amounts} schedules={planning.data.records} currency={currency} rates={rates} today={today}/> : <div className="budget-layout">
+  {error ? <InlineError message={t(error)} onRetry={() => { budget.retry(); remote.retry(); }}/> : loading ? (view === 'year' ? <PanelSkeleton label={t('Loading records…')} rows={6}/> : <BudgetSkeleton label={t('Loading records…')}/>) : view === 'year' ? <BudgetYear rows={categories} month={month} history={history} amounts={budget.state.amounts} schedules={planning.data.records} currency={currency} rates={rates} today={today}/> : <div className="budget-layout">
    {/* Summary shows every section; Income or Expenses in the Left to budget card narrows the list to that side. */}
    <div className="budget-table" data-focus={focus}>
     <div className="budget-section" data-section="income">

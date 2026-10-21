@@ -13,7 +13,7 @@ function panel(t,props={},{reply}={}){
  const {SettingsPanel}=r.load('components/settings-panel.tsx',{
   '@/components/language-provider':language('en'),
   '@/components/ui/button':hostModule(),'@/components/ui/input':hostModule(),'@/components/ui/native-select':hostModule(),'@/components/ui/dialog':hostModule(),'@/components/ui/alert-dialog':hostModule(),'lucide-react':hostModule(),
-  '@/components/presentation-foundation/inline-error':hostModule(),'@/components/presentation-foundation/info-hint':hostModule(),'@/components/presentation-foundation/loading-placeholder':hostModule(),
+  '@/components/presentation-foundation/inline-error':hostModule(),'@/components/presentation-foundation/info-hint':hostModule(),'@/components/presentation-foundation/screen-skeletons':hostModule(),
   '@/lib/feedback':{showError:message=>errors.push(message),showSaved:language=>savedNotices.push(language)},
   '@/lib/api-client':{requestJson:async(url,options)=>{requests.push([url,options]);const next=replies.shift()??reply;if(next instanceof Error)throw next;return typeof next==='function'?next(options.body):next??options.body;}},
  });
@@ -25,9 +25,9 @@ function panel(t,props={},{reply}={}){
  return {r,view,saved,errors,savedNotices,requests,retries,replies,select,settle};
 }
 
-test('loading shows a placeholder instead of the form',t=>{
+test('loading shows the preference cards shimmering instead of the form',t=>{
  const {r}=panel(t,{loading:true});
- assert.equal(r.find(byType('LoadingPlaceholder')).props.label,'Loading settings…');
+ assert.equal(r.find(byType('PreferencesSkeleton')).props.label,'Loading settings…');
  assert.equal(r.all(byType('form')).length,0);
  assert.equal(text(r.find(byType('h2'))),'Profile & preferences'+'Keep your profile details, language, and currency preferences up to date.');
 });

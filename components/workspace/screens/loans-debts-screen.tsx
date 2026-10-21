@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { DebtSummary } from '@/components/debt-summary';
 import { useLanguage } from '@/components/language-provider';
-import { PanelSkeleton, WorkspaceSkeleton } from '@/components/presentation-foundation/loading-placeholder';
+import { PanelSkeleton } from '@/components/presentation-foundation/loading-placeholder';
+import { LoansSkeleton } from '@/components/presentation-foundation/screen-skeletons';
 import { PageHeader } from '@/components/presentation-foundation/page-header';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { DebtPayoffPanel } from '@/components/planning/debt-payoff-panel';
@@ -22,7 +23,7 @@ export function LoansDebtsScreen() {
   <div data-page="Loans & debts" className="content">
    <PageHeader title={t('Loans & debts')} tabs={<Segmented className="page-tabs" as="nav" label={t('Loans & debts')} options={[{ value: 'overview', label: t('Overview') }, { value: 'payoff', label: t('Debt payoff planner') }] as const} value={view} onChange={setView}/>}><Button onClick={addRecord}><Plus size={17} aria-hidden="true"/>{t("Add loan or debt")}</Button></PageHeader>
    <ScreenNotices/>
-   {view === 'overview' && (workspaceLoading ? <WorkspaceSkeleton label={t("Loading your workspace…")} section="Loans & debts"/> : <>
+   {view === 'overview' && (workspaceLoading ? <LoansSkeleton label={t("Loading your workspace…")}/> : <>
     <DebtSummary entries={current} currency={currency}/>
     <RecordsTable title={t('Loans & debts')}/>
    </>)}

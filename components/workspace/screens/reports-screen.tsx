@@ -3,7 +3,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { ReportSummary, ReportTransactions, type ReportNames } from '@/components/business-reports';
 import { useLanguage } from '@/components/language-provider';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
-import { PanelSkeleton } from '@/components/presentation-foundation/loading-placeholder';
+import { ReportsSkeleton } from '@/components/presentation-foundation/screen-skeletons';
 import { PageHeader } from '@/components/presentation-foundation/page-header';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { AttributeTab } from '@/components/reports/attribute-tab';
@@ -72,7 +72,7 @@ export function ReportsScreen() {
    {shownTab !== 'tax' && <ReportFilters businesses={businessList} business={businesses} onBusiness={reset(setBusinesses)} owners={owners} owner={ownerFilter} onOwner={reset(setOwnerFilter)} interval={interval} onInterval={reset(setInterval)} period={period} today={today} onStep={reset((steps: number) => setAnchor(shiftPeriod(period.from, interval, steps)))} onToday={() => reset(setAnchor)(today)}/>}
   </PageHeader>
   {shownTab === 'tax' ? <TaxTab preferences={workspacePreferences.data.preferences} save={workspacePreferences.save} names={names} onOpen={open}/>
-   : error ? <InlineError message={t(error)} onRetry={retry}/> : loading ? <PanelSkeleton label={t('Loading records…')} rows={6}/> : <ReportBody tab={shownTab} lines={lines} names={names} currency={currency} drill={drill} onClear={() => setDrill(null)} missing={ledger.missing} fileName={`${shownTab.replace('_', '-')}-${period.from}-${period.to}`} onOpen={open}>
+   : error ? <InlineError message={t(error)} onRetry={retry}/> : loading ? <ReportsSkeleton label={t('Loading records…')} donut={shownTab !== 'cash_flow'}/> : <ReportBody tab={shownTab} lines={lines} names={names} currency={currency} drill={drill} onClear={() => setDrill(null)} missing={ledger.missing} fileName={`${shownTab.replace('_', '-')}-${period.from}-${period.to}`} onOpen={open}>
     {shownTab === 'cash_flow' ? <CashFlowTab {...tabProps} lines={lines} includeHousehold={!businesses.length || businesses.includes(HOUSEHOLD)} businessIds={businessList.map(item => item.id).filter(id => businesses.includes(id) || (!businesses.length && (cashMode === 'trends' ? trendLines : lines).some(line => line.business === id)))} view={cashView} onView={setCashView} mode={cashMode} onMode={setCashMode}/>
      : <AttributeTab {...tabProps} key={shownTab} direction={shownTab === 'spending' ? 'expense' : 'income'} lines={tabLines(shownTab, lines)} trendLines={tabLines(shownTab, trendLines)} hasBusinesses={businessList.length > 0}/>}
    </ReportBody>}

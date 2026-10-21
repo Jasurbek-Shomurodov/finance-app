@@ -2,7 +2,7 @@
 import { InlineError } from '@/components/presentation-foundation/inline-error';
 import { InfoHint } from '@/components/presentation-foundation/info-hint';
 import { showError, showSaved } from '@/lib/feedback';
-import { LoadingPlaceholder } from '@/components/presentation-foundation/loading-placeholder';
+import { PreferencesSkeleton } from '@/components/presentation-foundation/screen-skeletons';
 import { useEffect, useState } from 'react';
 
 import { countryOptions } from '@/lib/countries';
@@ -56,7 +56,7 @@ export function SettingsPanel({ initial, demo, onSaved, loading, loadError, onRe
   return <section className="settings-page">
     <header className="preferences-heading"><h2>{t('Profile & preferences')}<InfoHint>{t('Keep your profile details, language, and currency preferences up to date.')}</InfoHint></h2></header>
     {loadError && <InlineError message={t(loadError)}><Button type="button" variant="outline" onClick={onRetry}>{t('Retry loading settings')}</Button></InlineError>}
-    {loading ? <LoadingPlaceholder label={t('Loading settings…')}/> : <form onSubmit={event => { event.preventDefault(); setCommitted(serialized); }} className="settings-form preferences-form">
+    {loading ? <PreferencesSkeleton label={t('Loading settings…')}/> : <form onSubmit={event => { event.preventDefault(); setCommitted(serialized); }} className="settings-form preferences-form">
       <fieldset disabled={!!loadError} className="preferences-fields">
         <section className="panel preferences-card"><header><h3>{t('About you')}<InfoHint>{t('Personal details for your profile.')}</InfoHint></h3></header>
           <div className="preferences-profile-grid"><label htmlFor="profile-name">{t('Your name (optional)')}<Input id="profile-name" name="name" autoComplete="given-name" maxLength={80} placeholder={t('What should we call you?')} value={draft.display_name ?? ''} onChange={event => setDraft({ ...draft, display_name: event.target.value })} onBlur={() => setCommitted(serialized)}/></label>

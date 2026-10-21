@@ -12,7 +12,8 @@ import { BudgetCard } from '@/components/dashboard-cards';
 import { CashflowSummarySkeleton, MonthlyReview } from '@/components/financial-review';
 import { IncomeSourcesPanel } from '@/components/income-sources-panel';
 import { useLanguage } from '@/components/language-provider';
-import { LoadingPlaceholder, PanelSkeleton, WorkspaceSkeleton } from '@/components/presentation-foundation/loading-placeholder';
+import { LoadingPlaceholder, PanelSkeleton } from '@/components/presentation-foundation/loading-placeholder';
+import { CashFlowSkeleton } from '@/components/presentation-foundation/screen-skeletons';
 import { MonthlyMortgagePayments } from '@/components/monthly-mortgage-payments';
 import { PageHeader } from '@/components/presentation-foundation/page-header';
 import { SpendingWatchlists } from '@/components/spending-watchlists';
@@ -47,7 +48,7 @@ export function CashFlowScreen() {
     {/* Expenses are added from the top bar's Add expense, the same form on every page. */}
    </PageHeader>
    <ScreenNotices/>
-   {workspaceLoading ? <WorkspaceSkeleton label={t("Loading your workspace…")} section="Income & expenses"/> : <>
+   {workspaceLoading ? (tab==='Overview' ? <CashFlowSkeleton label={t("Loading your workspace…")}/> : <PanelSkeleton label={t("Loading your workspace…")} rows={4}/>) : <>
     {tab!=='Forecast'&&(planning.loading?<CashflowSummarySkeleton/>:!planning.error&&<MonthlyReview compact selectedMonth={forecastMonth} estimates={forecastReady?{income:forecast.plannedIncome,spending:forecast.monthlyExpenses+forecast.mortgagePayments+forecast.loanPayments,net:forecast.forecast}:null} owner={user} demo={demo} revision={reload} market={market} data={planning.data} tools={transactionTools} snapshots={snapshots.snapshots} historyError={snapshots.error} currency={currency}/>)}
     {transactionTools.error&&<InlineError message={t(transactionTools.error)} onRetry={transactionTools.retry}/>}
     {tab==='Overview'&&<CashFlowReport onOpenRecord={record => setViewing(storedRecord(record))} owner={user} demo={demo} revision={reload} data={planning.data} splits={transactionTools.data.splits} month={forecastMonth} currency={currency} market={market}/>}

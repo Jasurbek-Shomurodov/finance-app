@@ -48,7 +48,7 @@ const charts = hostModule({ attributeColor: (attribute, key) => attribute + ':' 
 const modules = {
  ...ui.modules,
  'lucide-react': hostModule(), '@/components/business-reports': charts, '@/components/cash-flow-report': hostModule(), '@/components/tax-prep-sheet': hostModule(),
- ...Object.fromEntries(['page-header', 'segmented', 'panel-title', 'stat-tile', 'business-filter', 'owner-filter', 'inline-error', 'loading-placeholder', 'today-button'].map(name => ['@/components/presentation-foundation/' + name, hostModule()])),
+ ...Object.fromEntries(['page-header', 'segmented', 'panel-title', 'stat-tile', 'business-filter', 'owner-filter', 'inline-error', 'loading-placeholder', 'screen-skeletons', 'today-button'].map(name => ['@/components/presentation-foundation/' + name, hostModule()])),
  '@/components/presentation-foundation/chart': hostModule({ intervalLabel: interval => key => `${interval}:${key}` }),
  '@/components/presentation-foundation/tone': { signTone: value => value > 0 ? 'positive' : value < 0 ? 'negative' : undefined },
  '@/components/workspace/workspace-provider': { useWorkspace: () => workspace },
@@ -175,7 +175,7 @@ test('the period is a month, quarter or year the arrows move, and loading or fai
  pick('Report view', 'trends');
  assert.equal(r.find(byType('TrendChart')).props.interval, 'year', 'trends follow the page interval');
  range = { ...range, loading: true };r.update();
- assert.ok(r.find(byType('PanelSkeleton')));
+ assert.ok(r.find(byType('ReportsSkeleton')));
  range = { ...range, loading: false, error: 'Could not load records.' };r.update();
  r.fire(r.find(byType('InlineError')), 'onRetry');
  assert.equal(range.retried, true);

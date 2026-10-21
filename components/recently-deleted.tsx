@@ -11,7 +11,7 @@ import { categoryColor } from '@/lib/category-colors';
 import { useLanguage } from '@/components/language-provider';
 import { useDisplayMoney } from '@/components/display-money';
 import { Button } from '@/components/ui/button';
-import { LoadingPlaceholder } from '@/components/presentation-foundation/loading-placeholder';
+import { RecoveryRowsSkeleton } from '@/components/presentation-foundation/screen-skeletons';
 import { Pagination } from '@/components/presentation-foundation/pagination';
 import { formatDate, formatDateTime, formatNumber } from '@/lib/format';
 import { requestJson } from '@/lib/api-client';
@@ -39,7 +39,7 @@ export function RecentlyDeleted({demo,demoItems,onRestore,onDelete,onSaved}:{dem
  const visible=demo?demoItems.slice((page-1)*10,page*10):items;
  return <><PageHeader title={t('Recently deleted')} hint={<>{t('Restore deleted items to bring them back, or permanently delete them to remove their recovery data.')} {t('Items deleted before recovery was enabled cannot be recovered here.')}</>}/><section className="panel records recovery-panel">
  {error&&!restoring&&!loading&&<InlineError as="div" message={t(error)} onRetry={()=>setReload(n=>n+1)}/>}
- {loading?<LoadingPlaceholder label={t('Loading records…')}/>:!visible.length?<EmptyState icon={<ArchiveRestore aria-hidden="true"/>} title={t('No deleted items')} description={t('Your deleted records will appear here for recovery.')}/>:<ul className="recovery-list">{visible.map(item=><li className="recovery-row" key={item.id} style={{'--recovery-color':categoryColor(deletedItemColorKind(item))} as CSSProperties}>
+ {loading?<RecoveryRowsSkeleton label={t('Loading records…')}/>:!visible.length?<EmptyState icon={<ArchiveRestore aria-hidden="true"/>} title={t('No deleted items')} description={t('Your deleted records will appear here for recovery.')}/>:<ul className="recovery-list">{visible.map(item=><li className="recovery-row" key={item.id} style={{'--recovery-color':categoryColor(deletedItemColorKind(item))} as CSSProperties}>
   <span className="recovery-icon"><ArchiveRestore size={20} aria-hidden="true"/></span>
   <div className="recovery-info"><strong>{item.data.name}</strong><p><CategoryBadge kind={deletedItemColorKind(item)} label={t(deletedItemLabel(item))}/>{item.source==='finance_records'&&item.data.date&&<span>{formatDate(item.data.date,locale)}</span>}</p></div>
   <div className="recovery-value">{item.source==='finance_records'&&<strong>{entered(Number(item.data.amount)*(unitPricedKinds.includes(String(item.data.kind))?Number(item.data.quantity||1):1),String(item.data.currency))}</strong>}{item.source==='savings_goals'&&<strong>{t('Target amount')}: {entered(Number(item.data.target),String(item.data.currency??'USD'))}</strong>}<small>{t('Deleted on')} · {formatDateTime(item.deleted_at,locale)}</small></div>

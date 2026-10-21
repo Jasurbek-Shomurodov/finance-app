@@ -7,7 +7,8 @@ export function LoadingPlaceholder({ label, rows = 4 }: { label: string; rows?: 
   </div>;
 }
 
-function SkeletonRows({ rows }: { rows: number }) {
+/** Icon, two lines and a figure per row: the shape of a record list. */
+export function SkeletonRows({ rows }: { rows: number }) {
   return <div aria-hidden="true" className="loading-lines">{Array.from({ length: rows }, (_, index) =>
     <div className="loading-row" key={index}><Skeleton className="loading-icon"/><div className="loading-copy"><Skeleton className="loading-line"/><Skeleton className="loading-detail"/></div><Skeleton className="loading-value"/></div>
   )}</div>;
@@ -24,21 +25,6 @@ export function PanelSkeleton({ label, rows = 3, className }: { label: string; r
   return <section className={className ? 'panel ' + className : 'panel'}><Skeleton aria-hidden="true" className="mb-4 h-5 w-1/3"/><LoadingPlaceholder label={label} rows={rows}/></section>;
 }
 
-/** A destination opened from the drawer while its route loads: the page's own skeleton (the top bar already names it). */
-export function PageSkeleton({ label, section }: { label: string; section: string }) {
-  return <div className="content page-loading">
-    <WorkspaceSkeleton label={label} section={section}/>
-  </div>;
-}
-
-/** Shimmer for a drawer tap: a title bar and rows only. The full workspace layout is for the first load and reloads. */
-export function NavigationShimmer({ label }: { label: string }) {
-  return <div className="content page-loading" role="status" aria-busy="true">
-    <span className="sr-only">{label}</span>
-    <div aria-hidden="true"><Skeleton className="mb-6 h-8 w-1/3"/><SkeletonRows rows={4}/></div>
-  </div>;
-}
-
 /** The dashboard board's two columns of cards, in the person's saved order. */
 export type DashboardSkeletonColumns = { left: readonly string[]; right: readonly string[] };
 const defaultDashboardSkeleton: DashboardSkeletonColumns = { left: ['net_worth', 'spending'], right: ['goals', 'transactions', 'upcoming'] };
@@ -50,28 +36,21 @@ function DashboardCardSkeleton({ card }: { card: string }) {
   return <section className="panel overview-panel"><Skeleton className="mb-6 h-8 w-1/3"/>{chartCards.has(card) ? <Skeleton className="h-52 w-full"/> : <SkeletonRows rows={3}/>}</section>;
 }
 
-export function WorkspaceSkeleton({ label, section, columns = defaultDashboardSkeleton }: { label: string; section: string; columns?: DashboardSkeletonColumns }) {
+/** The dashboard while the workspace loads: its headline tiles over the board's two columns. */
+export function WorkspaceSkeleton({ label, columns = defaultDashboardSkeleton }: { label: string; columns?: DashboardSkeletonColumns }) {
   // The first few cards of each column fill the screen; drawing every card would only make the page longer than it loads.
-  if (section === 'Overview') return <div role="status" aria-busy="true" className="overview-content-loading">
+  return <div role="status" aria-busy="true" className="overview-content-loading">
     <span className="sr-only">{label}</span>
+    <StatTilesSkeleton columns={4}/>
     <div aria-hidden="true" className="dashboard-grid">{[columns.left, columns.right].map((cards, index) => <div className="dashboard-column" key={index}>{cards.slice(0, 3).map(card => <DashboardCardSkeleton card={card} key={card}/>)}</div>)}</div>
-  </div>;
-  return <div role="status" aria-busy="true">
-    <span className="sr-only">{label}</span>
-    <div aria-hidden="true" className="overview-content-loading">
-      {section !== 'Assets & investments' && <StatTilesSkeleton/>}
-      {section === 'Income & expenses' ? <CashflowPreviewSkeleton/>
-        : section !== 'Loans & debts' && <section className="panel"><Skeleton className="mb-6 h-5 w-1/3"/><Skeleton className="h-52 w-full"/></section>}
-      <section className="panel records"><Skeleton className="mb-6 h-5 w-1/3"/><LoadingPlaceholder label={label}/></section>
-    </div>
   </div>;
 }
 
-/** Accounts while records load, in the loaded page's shape: a balance tile per preferred currency, one account group with its cards, and the selected account's card beside it. */
-export function AccountsSkeleton({ label, currencies = 1, filters = false }: { label: string; currencies?: number; filters?: boolean }) {
+/** Accounts while records load, in the loaded page's shape: the Total tile, one account group with its cards, and the selected account's card beside it. */
+export function AccountsSkeleton({ label, filters = false }: { label: string; filters?: boolean }) {
   return <div role="status" aria-busy="true" className="overview-content-loading">
     <span className="sr-only">{label}</span>
-    <div aria-hidden="true" className="stat-tiles" data-columns="auto">{Array.from({ length: Math.max(1, currencies) }, (_, index) => <article className="stat-tile" key={index}><Skeleton className="h-4 w-28"/><Skeleton className="h-8 w-36"/></article>)}</div>
+    <div aria-hidden="true" className="stat-tiles" data-columns="auto"><article className="stat-tile"><Skeleton className="h-4 w-28"/><Skeleton className="h-8 w-36"/></article></div>
     {filters && <div aria-hidden="true" className="transactions-tools"><Skeleton className="h-11 w-44 rounded-xl"/><Skeleton className="h-11 w-36 rounded-xl"/></div>}
     <div aria-hidden="true" className="accounts-master-detail">
       <section className="account-directory"><div className="panel account-group">
@@ -97,13 +76,17 @@ export function CashflowPreviewSkeleton({ label }: { label?: string }) {
   return label ? <div role="status" aria-busy="true"><span className="sr-only">{label}</span>{grid}</div> : grid;
 }
 
-/** A chart while its data loads. Without a label it is decoration inside a larger loading region. */
-export function ChartSkeleton({ label, height = 310 }: { label?: string; height?: number }) {
-  return <div role={label ? 'status' : undefined} aria-busy={label ? true : undefined} aria-hidden={label ? undefined : true} className="chart-skeleton shimmer" style={{ height }}>
+// Twelve months of bars, a pair a month, as the Cash flow chart draws income and spending.
+const skeletonBars = [52, 38, 60, 44, 70, 48, 58, 40, 66, 50, 74, 46];
+
+/** A chart while its data loads: a line, or with `bars` monthly bars. Without a label it is decoration inside a larger loading region. */
+export function ChartSkeleton({ label, height = 310, bars = false }: { label?: string; height?: number; bars?: boolean }) {
+  return <div role={label ? 'status' : undefined} aria-busy={label ? true : undefined} aria-hidden={label ? undefined : true} className="chart-skeleton skeleton-sheen" style={{ height }}>
     {label && <span className="sr-only">{label}</span>}
     <svg aria-hidden="true" viewBox="0 0 400 100" preserveAspectRatio="none">
       {[20, 45, 70].map(y => <line key={y} x1="0" x2="400" y1={y} y2={y}/>)}
-      <path d="M0 82 C40 78 60 60 100 64 S160 40 200 46 S260 28 300 34 S360 14 400 18"/>
+      {bars ? skeletonBars.map((value, month) => <rect key={month} x={10 + month * 33} y={92 - value} width="14" height={value} rx="2"/>)
+        : <path d="M0 82 C40 78 60 60 100 64 S160 40 200 46 S260 28 300 34 S360 14 400 18"/>}
     </svg>
   </div>;
 }
@@ -118,7 +101,7 @@ export function SankeySkeleton({ label, height = 280, rows = 0 }: { label?: stri
   const into = sankeySlots(sankeySources, 24), out = sankeySlots(sankeyTargets, 24);
   return <div role={label ? 'status' : undefined} aria-busy={label ? true : undefined} aria-hidden={label ? undefined : true}>
     {label && <span className="sr-only">{label}</span>}
-    <div className="sankey-skeleton shimmer" style={{ height }}>
+    <div className="sankey-skeleton skeleton-sheen" style={{ height }}>
       <svg aria-hidden="true" viewBox="0 0 400 128" preserveAspectRatio="none">
         {sankeySources.map((node, index) => <path key={'in' + index} d={sankeyBand(node, into[index], 70, 194)}/>)}
         {sankeyTargets.map((node, index) => <path key={'out' + index} d={sankeyBand(out[index], node, 202, 326)}/>)}

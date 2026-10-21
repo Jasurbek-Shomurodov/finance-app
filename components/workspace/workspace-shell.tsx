@@ -3,7 +3,8 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Brand } from '@/components/presentation-foundation/brand';
 import { DatabaseStatus } from '@/components/database-status';
 import { LanguageProvider, useLanguage } from '@/components/language-provider';
-import { LoadingPlaceholder, NavigationShimmer } from '@/components/presentation-foundation/loading-placeholder';
+import { LoadingPlaceholder } from '@/components/presentation-foundation/loading-placeholder';
+import { NavigationShimmer } from '@/components/presentation-foundation/screen-skeletons';
 import { OnboardingScreen } from '@/components/onboarding-screen';
 import { LandingPage } from '@/components/landing-page';
 import { SignInScreen } from '@/components/sign-in-screen';
@@ -61,7 +62,7 @@ function WorkspaceShell({ children }: { children: ReactNode }) {
   <TopBarSlotProvider><main className="workspace">
    <DatabaseStatus owner={user} demo={demo}/>
    <TopBar pendingSection={destination && sectionFor(destination)}/>
-   {destination ? <NavigationShimmer label={t("Loading records…")}/> : children}
+   {destination ? <NavigationShimmer label={t("Loading records…")} path={destination}/> : children}
   </main></TopBarSlotProvider>
   <WorkspaceDialogs/>
  </SidebarProvider>;

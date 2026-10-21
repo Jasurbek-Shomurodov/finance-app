@@ -148,8 +148,10 @@ label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 @media(max-width:600px){.tracker-metrics{grid-template-columns:1fr}.tracker-metrics>div{display:flex;align-items:center;justify-content:space-between;gap:12px}.tracker-metrics small{margin:0}.tracker-history li{flex-direction:column;gap:4px}.tracker-history li>div:last-child{text-align:start}}
 
 /* Shared loading placeholders use theme colors and respect reduced motion. */
-.shimmer{position:relative;overflow:hidden;isolation:isolate}
-.shimmer::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--foreground) 9%,transparent),transparent);animation:loading-shimmer 1.6s ease-in-out infinite}
+.skeleton-sheen{position:relative;overflow:hidden;isolation:isolate}
+/* A skeleton bar is a tone of the muted text, so it reads on white cards, grey rows and dark mode alike. */
+[data-slot=skeleton]{background-color:color-mix(in srgb,var(--muted-foreground) 16%,transparent)}
+.skeleton-sheen::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--foreground) 9%,transparent),transparent);animation:loading-shimmer 1.6s ease-in-out infinite}
 @keyframes loading-shimmer{to{transform:translateX(100%)}}
 .loading-placeholder{width:100%;min-width:0}
 .loading-row{display:flex;align-items:center;gap:16px;padding:18px 0;border-bottom:1px solid var(--border)}
@@ -168,11 +170,25 @@ label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 .sankey-skeleton .sankey-skeleton-label{fill:color-mix(in srgb,var(--muted-foreground) 22%,transparent)}
 .drill-skeleton-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 4px;border-block-end:1px solid var(--hairline)}
 .drill-skeleton-row>span{display:grid;gap:6px}
-.drill-skeleton .shimmer{background:color-mix(in srgb,var(--muted-foreground) 22%,transparent)}
+.drill-skeleton .skeleton-sheen{background:color-mix(in srgb,var(--muted-foreground) 22%,transparent)}
 .chart-skeleton svg{width:100%;height:100%;display:block}
 .chart-skeleton line{stroke:var(--border);stroke-width:1;vector-effect:non-scaling-stroke}
 .chart-skeleton path{fill:none;stroke:color-mix(in srgb,var(--muted-foreground) 35%,transparent);stroke-width:3;stroke-linecap:round;vector-effect:non-scaling-stroke}
-@media(prefers-reduced-motion:reduce){.shimmer::after{animation:none;display:none}}
+.chart-skeleton rect{fill:color-mix(in srgb,var(--muted-foreground) 22%,transparent)}
+/* A screen's loading shape (screen-skeletons.tsx): its blocks spaced like .content, and nothing in it answers a click. */
+.screen-skeleton-region{min-width:0}
+.screen-skeleton{display:flex;flex-direction:column;gap:var(--space-page);min-width:0;pointer-events:none}
+.panel-title-skeleton{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.budget-skeleton-section{display:flex;flex-direction:column;gap:8px}
+.recurring-bar-skeleton{display:flex;flex-direction:column;gap:8px}
+.recurring-bar-skeleton>div,.goal-row-skeleton-body>div{display:flex;justify-content:space-between;gap:12px}
+.goal-row-skeleton{gap:12px;padding:12px 16px}
+.goal-row-skeleton-body{display:grid;flex:1;gap:6px;min-width:0}
+.asset-card-skeleton{display:grid;gap:16px}
+/* Skeleton rows wrap by themselves: the name keeps 10rem and the figures move under it when the row runs out of room. */
+:is(li,div).skeleton-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:10px 16px}
+.skeleton-row>:first-child{flex:1 1 10rem;min-width:0}
+@media(prefers-reduced-motion:reduce){.skeleton-sheen::after{animation:none;display:none}}
 
 .portfolio-trend{margin-bottom:18px;min-width:0}
 .portfolio-trend .panel-title{gap:18px;align-items:flex-start;flex-wrap:wrap}

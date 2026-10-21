@@ -71,35 +71,61 @@ test('loading skeletons keep the shape of the content they replace, so the page 
  const preview=render(CashflowPreviewSkeleton,{label:'Loading records…'});
  assert.match(preview,/class="cashflow-preview-grid"/);
  assert.equal(preview.match(/class="panel"/g).length,2);
- const cashflow=render(WorkspaceSkeleton,{label:'Loading',section:'Income & expenses'});
- assert.ok(cashflow.indexOf('stat-tiles')<cashflow.indexOf('cashflow-preview-grid')&&cashflow.indexOf('cashflow-preview-grid')<cashflow.indexOf('panel records'));
  const {NetWorthBodySkeleton,ChartSkeleton,SankeySkeleton}=load('loading-placeholder.tsx',{'@/components/ui/skeleton':{Skeleton:element('span')}});
  const body=render(NetWorthBodySkeleton,{label:'Loading history…'});
  assert.match(body,/^<div role="status" aria-busy="true"><span class="sr-only">Loading history…<\/span><div aria-hidden="true">/);
  const order=['overview-chart-heading','comparison-legend','chart-skeleton','portfolio-headline','overview-details'].map(name=>body.indexOf(name));
  assert.ok(order.every((at,i)=>at>0&&(i===0||at>order[i-1])),'heading, legend, chart, the three totals and the settings row, in the card\'s order');
  assert.equal(body.match(/role="status"/g).length,1,'one announcement for the whole card');
- assert.match(render(ChartSkeleton,{}),/^<div aria-hidden="true" class="chart-skeleton shimmer"/);
+ assert.match(render(ChartSkeleton,{}),/^<div aria-hidden="true" class="chart-skeleton skeleton-sheen"/);
  // A Sankey shimmers as a Sankey: bands between nodes, and the transaction rows it lists below it.
  const sankey=render(SankeySkeleton,{label:'Loading chart…',rows:3});
- assert.match(sankey,/^<div role="status" aria-busy="true"><span class="sr-only">Loading chart…<\/span><div class="sankey-skeleton shimmer"/);
+ assert.match(sankey,/^<div role="status" aria-busy="true"><span class="sr-only">Loading chart…<\/span><div class="sankey-skeleton skeleton-sheen"/);
  assert.equal(sankey.match(/<path /g).length,8);assert.equal(sankey.match(/<rect /g).length,17);
  assert.equal(sankey.match(/drill-skeleton-row/g).length,3);
  assert.ok(!render(SankeySkeleton,{}).includes('drill-transactions'),'no rows unless asked');
- const board=render(WorkspaceSkeleton,{label:'Loading',section:'Overview'});
+ const board=render(WorkspaceSkeleton,{label:'Loading'});
  assert.match(board,/class="dashboard-grid"><div class="dashboard-column"><section class="panel overview-hero">.*portfolio-headline.*overview-details/,'Net worth leads the left column in its full shape');
- assert.equal(board.match(/class="dashboard-column"/g).length,2);assert.ok(!board.includes('stat-tiles'),'the dashboard has no tile row');
- const custom=render(WorkspaceSkeleton,{label:'Loading',section:'Overview',columns:{left:['goals'],right:['net_worth','a','b','c']}});
+ assert.equal(board.match(/class="dashboard-column"/g).length,2);
+ assert.ok(board.indexOf('data-columns="4"')>0&&board.indexOf('data-columns="4"')<board.indexOf('dashboard-grid'),'the four headline tiles over the board');
+ const custom=render(WorkspaceSkeleton,{label:'Loading',columns:{left:['goals'],right:['net_worth','a','b','c']}});
  const [left,right]=custom.split('class="dashboard-column"').slice(1);
  assert.ok(!left.includes('overview-hero')&&right.includes('overview-hero'),'follows the saved layout');
  assert.equal(right.match(/<section/g).length,3,'at most three cards a column');
  const {AccountsSkeleton}=load('loading-placeholder.tsx',{'@/components/ui/skeleton':{Skeleton:element('span')}});
- const accounts=render(AccountsSkeleton,{label:'Loading records…',currencies:2});
+ const accounts=render(AccountsSkeleton,{label:'Loading records…'});
  assert.match(accounts,/^<div role="status" aria-busy="true" class="overview-content-loading"><span class="sr-only">Loading records…<\/span>/);
- assert.equal(accounts.match(/class="stat-tile"/g).length,2,'a balance tile per preferred currency');
+ assert.equal(accounts.match(/class="stat-tile"/g).length,1,'the Total tile');
  assert.ok(accounts.indexOf('account-group')<accounts.indexOf('account-selected-panel'),'the account list with the selected account beside it');
  assert.equal(accounts.match(/class="account-list-row"/g).length,5);
  assert.ok(!accounts.includes('transactions-tools'));assert.ok(render(AccountsSkeleton,{label:'L',filters:true}).includes('transactions-tools'),'filters only for a shared workspace');
+});
+
+test('every drawer destination shimmers in its own layout',()=>{
+ const skeleton={'@/components/ui/skeleton':{Skeleton:element('span')}};
+ const {screenSkeletons,NavigationShimmer,TransactionsSkeleton,ReportsSkeleton,RecoveryRowsSkeleton,PreferencesSkeleton}=load('screen-skeletons.tsx',{...skeleton,'./loading-placeholder':load('loading-placeholder.tsx',skeleton)});
+ const paths=[...fs.readFileSync('components/workspace/navigation.ts','utf8').matchAll(/path: '([^']+)'/g)].map(match=>match[1]);
+ assert.deepEqual(Object.keys(screenSkeletons).sort(),[...paths].sort(),'one skeleton per destination');
+ // What each loaded screen is built from, so its shimmer stands where the records will.
+ const shapes={'/':['stat-tiles','dashboard-grid'],'/assistant':['assistant-panel','assistant-form'],'/accounts':['accounts-master-detail','account-selected-panel'],
+  '/transactions':['transactions-tools','transactions-layout','transaction-day-heading','transaction-row','transactions-summary'],
+  '/income-expenses':['cashflow-summary','chart-skeleton','sankey-skeleton','cashflow-preview-grid'],'/reports':['data-columns="4"','sankey-skeleton','report-transactions','transactions-summary'],
+  '/budget':['budget-layout','budget-section-header','budget-row','budget-side','budget-left-figure'],'/upcoming':['recurring-summary','recurring-list','recurring-row'],
+  '/goals':['goals-list','goal-row','goals-split','goal-detail'],'/assets':['portfolio-summary','portfolio-allocation-body','asset-card-grid'],
+  '/loans-debts':['data-columns="3"','panel records'],'/recently-deleted':['recovery-panel','recovery-row'],'/settings':['settings-columns','settings-nav','preferences-card']};
+ for(const path of paths){
+  const html=render(NavigationShimmer,{label:'Loading records…',path});
+  assert.match(html,/^<div class="content page-loading"><div role="status" aria-busy="true"[^>]*><span class="sr-only">Loading records…<\/span>/,path);
+  assert.equal(html.match(/role="status"/g).length,1,path+': one announcement');
+  let at=-1;for(const name of shapes[path]){const next=html.indexOf(name,at+1);assert.ok(next>at,`${path}: ${name} in order`);at=next;}
+ }
+ assert.equal(render(NavigationShimmer,{label:'L',path:'/nowhere'}),render(NavigationShimmer,{label:'L',path:'/'}),'an unknown path shimmers as the dashboard');
+ // A screen that already drew its filters asks for the rest; the drawer draws them too.
+ assert.ok(!render(TransactionsSkeleton,{label:'L',tools:false}).includes('transactions-tools'));
+ const donut=render(ReportsSkeleton,{label:'L',donut:true});
+ assert.ok(donut.includes('portfolio-allocation-body')&&!donut.includes('sankey-skeleton')&&donut.match(/class="stat-tile"/g).length===2,'Spending and Income: two figures and a donut');
+ assert.equal(render(RecoveryRowsSkeleton,{label:'L',rows:3}).match(/class="recovery-row skeleton-row"/g).length,3);
+ assert.equal(render(PreferencesSkeleton,{label:'L'}).match(/class="panel preferences-card"/g).length,4);
 });
 
 test('row menu keeps rare actions behind one labelled ⋯ button and disappears when there are none',()=>{
