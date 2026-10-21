@@ -284,17 +284,6 @@
       "count": 1
     }
   },
-  "lib/financial-report-pdf.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-depth": {
-      "count": 2
-    },
-    "max-statements": {
-      "count": 1
-    }
-  },
   "lib/goal-funding.ts": {
     "max-params": {
       "count": 1

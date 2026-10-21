@@ -1,91 +1,66 @@
-import { PDFDocument, rgb } from 'pdf-lib';
+import { PDFDocument, popGraphicsState, pushGraphicsState, rgb, setLineWidth, setStrokingColor, setTextRenderingMode, TextRenderingMode, type PDFFont, type PDFImage, type PDFPage } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import { formatNumber } from './format';
 import type { FinancialReport } from './financial-report';
+import { layoutReport } from './report-pdf-layout';
+import { colors, hueHex, margin, pageHeight, pageWidth, roundedRect, type Fonts, type Op } from './report-pdf-kit';
 
-/** Searchable Unicode PDF with measured cells, repeated headers and untruncated rows. */
-export async function renderFinancialReportPdf(report:FinancialReport,fontBytes:Uint8Array):Promise<Uint8Array>{
+/** Draws an emoji as a PNG (the browser's emoji font on a canvas); null when it cannot, and the icon shows its letter. */
+export type EmojiImage=(emoji:string)=>Promise<Uint8Array|null>;
+
+const color=(hex:string)=>rgb(parseInt(hex.slice(1,3),16)/255,parseInt(hex.slice(3,5),16)/255,parseInt(hex.slice(5,7),16)/255);
+/** Emoji and their joiners and variation selectors: the icons draw them, the text font cannot. */
+const pictographs=/[\p{Extended_Pictographic}\p{Emoji_Modifier}\p{Regional_Indicator}‍️⃣]/gu;
+/** The bundled font has one weight; medium figures are filled and lightly stroked, as fontconfig emboldens the report cards. */
+const mediumStroke=.28;
+
+/** Text as the bundled font can draw it: emoji removed (the icon beside it shows them), other missing characters as "?". */
+export function fontText(supported:ReadonlySet<number>){
+ return (text:string)=>Array.from(text.normalize('NFC').replace(pictographs,'').replace(/\t/g,'  ')).filter(char=>char==='\n'||char.charCodeAt(0)>=32).map(char=>char==='\n'||supported.has(char.codePointAt(0)!)?char:'?').join('').replace(/^ +/,'');
+}
+
+function paint(page:PDFPage,op:Op,font:PDFFont,images:ReadonlyMap<string,PDFImage|null>){
+ const flip=(y:number)=>pageHeight-y;
+ switch(op.op){
+  case 'text':
+   if(op.medium)page.pushOperators(pushGraphicsState(),setTextRenderingMode(TextRenderingMode.FillAndOutline),setLineWidth(mediumStroke*op.size/10),setStrokingColor(color(op.color)));
+   page.drawText(op.text,{x:op.x,y:flip(op.y),size:op.size,font,color:color(op.color)});
+   if(op.medium)page.pushOperators(popGraphicsState());
+   return;
+  case 'rect':
+   page.drawSvgPath(roundedRect(op.x,op.y,op.w,op.h,op.radius??0),{x:0,y:pageHeight,...(op.fill?{color:color(op.fill)}:{}),...(op.stroke?{borderColor:color(op.stroke),borderWidth:.6}:{}),opacity:op.opacity??1});
+   return;
+  case 'line':page.drawLine({start:{x:op.x1,y:flip(op.y1)},end:{x:op.x2,y:flip(op.y2)},thickness:op.width,color:color(op.color)});return;
+  case 'path':page.drawSvgPath(op.d,{x:0,y:pageHeight,color:color(op.fill),opacity:op.opacity??1});return;
+  default:{
+   // The tile is the light tint of the category's hue, as CategoryIcon shows it in the light theme.
+   page.drawSvgPath(roundedRect(op.x,op.y,op.size,op.size,op.size*.27),{x:0,y:pageHeight,color:color(hueHex(op.hue,70,92))});
+   const image=images.get(op.emoji),inner=op.size*.66;
+   if(image)page.drawImage(image,{x:op.x+(op.size-inner)/2,y:flip(op.y+(op.size+inner)/2),width:inner,height:inner});
+   else if(op.letter){const size=op.size*.5;page.drawText(op.letter,{x:op.x+(op.size-font.widthOfTextAtSize(op.letter,size))/2,y:flip(op.y+op.size/2+size*.36),size,font,color:color(hueHex(op.hue,60,32))});}
+  }
+ }
+}
+
+/** Searchable Unicode PDF on the app's warm grey page: cover, key figures and charts, then every section on white cards,
+ * with measured cells, repeated table headers and untruncated rows. */
+export async function renderFinancialReportPdf(report:FinancialReport,fontBytes:Uint8Array,{emojiImage}:{emojiImage?:EmojiImage}={}):Promise<Uint8Array>{
  const doc=await PDFDocument.create();doc.registerFontkit(fontkit);
  const font=await doc.embedFont(fontBytes,{subset:true});
- doc.setTitle(report.title);doc.setSubject('Personal financial data for review');doc.setCreator('Personal Finance');doc.setLanguage(report.locale);
- const width=595.28,height=841.89,margin=40,bottom=52,contentWidth=width-margin*2;
- const ink=rgb(.12,.18,.14),muted=rgb(.35,.42,.37),green=rgb(.23,.39,.24),rule=rgb(.8,.85,.81),wash=rgb(.94,.96,.94);
- let page=doc.addPage([width,height]),y=height-margin;
- const supported=new Set(font.getCharacterSet());
- const clean=(text:string)=>Array.from(text.normalize('NFC').replace(/\t/g,'  ')).filter(char=>char==='\n'||char.charCodeAt(0)>=32).map(char=>char==='\n'||supported.has(char.codePointAt(0)!)?char:'?').join('');
- function nextPage(){page=doc.addPage([width,height]);y=height-margin;}
- function lines(text:string,size:number,maxWidth=contentWidth):string[]{
-  const result:string[]=[];
-  for(const paragraph of clean(text).split('\n')){
-   let line='';
-   for(const word of paragraph.split(/\s+/)){
-    const candidate=line?line+' '+word:word;
-    if(font.widthOfTextAtSize(candidate,size)<=maxWidth){line=candidate;continue;}
-    if(line){result.push(line);line='';}
-    for(const char of word){if(font.widthOfTextAtSize(line+char,size)>maxWidth&&line){result.push(line);line='';}line+=char;}
-   }
-   result.push(line);
-  }
-  return result;
+ doc.setTitle(report.title);doc.setSubject('Personal financial data for review');doc.setCreator('Hoggish');doc.setLanguage(report.locale);
+ const fonts:Fonts={width:(text,size,medium)=>font.widthOfTextAtSize(text,size)+(medium?mediumStroke*size/10*Math.max(1,Array.from(text).length)/4:0),clean:fontText(new Set(font.getCharacterSet()))};
+ const pages=layoutReport(report.blocks,fonts,report.title);
+ const images=new Map<string,PDFImage|null>();
+ for(const emoji of new Set(pages.flatMap(page=>page.ops.flatMap(op=>op.op==='icon'?[op.emoji]:[])))){
+  const png=await emojiImage?.(emoji).catch(()=>null);
+  images.set(emoji,png?await doc.embedPng(png).catch(()=>null):null);
  }
- function drawText(text:string,x:number,baseline:number,size:number,color=ink){page.drawText(text,{x,y:baseline,size,font,color});}
- for(let index=0;index<report.blocks.length;index++){
-  const block=report.blocks[index];
-  if(block.kind==='pageBreak'){if(y<height-margin)nextPage();continue;}
-  if(block.kind==='table'){
-   y-=5;
-   const size=8.5,leading=11.5,pad=4;
-   const widths=block.widths.map(w=>w*contentWidth);
-   const wrap=(cells:string[])=>cells.map((cell,i)=>lines(cell,size,widths[i]-pad*2));
-   const header=wrap(block.headers),headerHeight=Math.max(...header.map(c=>c.length))*leading+pad*2;
-   function drawRow(cells:string[][],isHeader:boolean){
-    const h=Math.max(...cells.map(c=>c.length),1)*leading+pad*2;
-    if(isHeader)page.drawRectangle({x:margin,y:y-h,width:contentWidth,height:h,color:wash});
-    let x=margin;
-    cells.forEach((cell,i)=>{
-     cell.forEach((line,j)=>{const right=!isHeader&&block.kind==='table'&&block.numeric?.includes(i);drawText(line,right?x+widths[i]-pad-font.widthOfTextAtSize(line,size):x+pad,y-pad-size-j*leading,size,isHeader?green:ink);});
-     x+=widths[i];
-    });
-    y-=h;page.drawLine({start:{x:margin,y},end:{x:margin+contentWidth,y},thickness:.4,color:rule});
-   }
-   const first=block.rows.length?Math.max(...wrap(block.rows[0]).map(c=>c.length))*leading+pad*2:0;
-   const totalHeight=headerHeight+block.rows.reduce((sum,row)=>sum+Math.max(...wrap(row).map(c=>c.length))*leading+pad*2,0);
-   if(y-headerHeight-Math.min(first,120)<bottom||(totalHeight<220&&y-totalHeight<bottom))nextPage();
-   drawRow(header,true);
-   for(const row of block.rows){
-    let cells=wrap(row);
-    const h=Math.max(...cells.map(c=>c.length))*leading+pad*2;
-    if(y-h<bottom&&h<height-margin-bottom-headerHeight){nextPage();drawRow(header,true);}
-    // Oversized paragraphs span pages by line, without clipping or dropped text.
-    while(cells.some(c=>c.length)){
-     let capacity=Math.floor((y-bottom-pad*2)/leading);
-     if(capacity<1){nextPage();drawRow(header,true);capacity=Math.floor((y-bottom-pad*2)/leading);}
-     const chunk=cells.map(c=>c.slice(0,capacity));drawRow(chunk,false);
-     cells=cells.map(c=>c.slice(capacity));
-     if(cells.some(c=>c.length)){nextPage();drawRow(header,true);}
-    }
-   }
-   y-=6;continue;
-  }
-  const size=block.kind==='title'?23:block.kind==='heading'?14:block.kind==='subheading'?10:9;
-  const leading=size*1.3,space=block.kind==='heading'?12:block.kind==='subheading'?7:4;
-  const wrapped=lines(block.text,size);
-  const next=report.blocks[index+1];
-  const tableReserve=(candidate:typeof next)=>{
-   if(candidate?.kind!=='table')return 0;
-   const rowHeight=(cells:string[])=>Math.max(...cells.map((cell,i)=>lines(cell,8.5,candidate.widths[i]*contentWidth-8).length))*11.5+8;
-   const header=rowHeight(candidate.headers),total=header+candidate.rows.reduce((sum,row)=>sum+rowHeight(row),0);
-   return 5+(total<220?total:header+Math.min(candidate.rows.length?rowHeight(candidate.rows[0]):0,120));
-  };
-  const keep=next?.kind==='table'?tableReserve(next):block.kind==='heading'&&next?.kind==='subheading'?24+tableReserve(report.blocks[index+2]):block.kind==='text'?0:30;
-  if(y-space-Math.min(leading*wrapped.length+keep,300)<bottom)nextPage();else y-=space;
-  for(const line of wrapped){if(y-leading<bottom)nextPage();y-=leading;drawText(line,margin,y,size,block.kind==='heading'||block.kind==='title'?green:ink);}
- }
- const pages=doc.getPages();
- for(const [index,current] of pages.entries()){
-  const footer=`${formatNumber(index+1,report.locale,0)} / ${formatNumber(pages.length,report.locale,0)}`;
-  current.drawLine({start:{x:margin,y:36},end:{x:width-margin,y:36},thickness:.5,color:rule});
-  current.drawText(footer,{x:width-margin-font.widthOfTextAtSize(footer,8),y:22,size:8,font,color:muted});
- }
+ pages.forEach((laid,index)=>{
+  const page=doc.addPage([pageWidth,pageHeight]);
+  for(const op of [...laid.back,...laid.ops])paint(page,op,font,images);
+  const footer=`${formatNumber(index+1,report.locale,0)} / ${formatNumber(pages.length,report.locale,0)}`,generated=fonts.clean(report.generated);
+  page.drawText(footer,{x:pageWidth-margin-font.widthOfTextAtSize(footer,7.5),y:22,size:7.5,font,color:color(colors.muted)});
+  page.drawText(generated,{x:margin,y:22,size:7.5,font,color:color(colors.muted)});
+ });
  return doc.save();
 }

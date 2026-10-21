@@ -221,3 +221,17 @@ test('INV-003 selling part of a holding adds the proceeds to cash and keeps the 
   await expect.poll(() => accountBalance(page, 'E2E Checking')).toBe(dollars(expected.checking + 250));
   await expect.poll(async () => /AAPL\n\n?1 unit/.test(await pageText(page))).toBe(true);
 });
+
+test('SET-011 the financial report downloads as a multi-page PDF built from the owner\'s backup', async ({ page }, testInfo) => {
+  await page.goto('/settings#data-tools');
+  const button = page.getByRole('button', { name: 'Download financial report (PDF)' });
+  const [download] = await Promise.all([page.waitForEvent('download'), button.click()]);
+  expect(download.suggestedFilename()).toBe('personal-financial-report.pdf');
+  const file = testInfo.outputPath('personal-financial-report.pdf');
+  await download.saveAs(file);
+  const { PDFDocument } = await import('pdf-lib');
+  const pdf = await PDFDocument.load(await (await import('node:fs/promises')).readFile(file));
+  expect(pdf.getTitle()).toBe('Personal financial report');
+  expect(pdf.getPageCount()).toBeGreaterThan(3);
+  await expect(page.getByRole('status').filter({ hasText: 'Your PDF is ready.' })).toBeVisible();
+});

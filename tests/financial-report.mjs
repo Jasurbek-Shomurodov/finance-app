@@ -2,17 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {loadTS} from './helpers/load-ts.mjs';
+import {entry,reportFixture,reportMarket} from './helpers/report-fixture.mjs';
 const {buildFinancialReport,parseFinanceBackup}=loadTS('lib/financial-report.ts');
-const entry=(id,kind,amount,currency='USD',extra={})=>({id,name:id,kind,amount,currency,quantity:1,cost:0,rate:0,ownership_percentage:100,frequency:'Once',date:'2026-09-01',notes:'',...extra});
-export const reportFixture={version:1,exported_at:'2026-09-18T10:30:00Z',tables:{
- finance_records:[entry('Cash account','Cash',1000),entry('Business share','Business',10000,'USD',{ownership_percentage:25,estimated_monthly_income:125.55}),entry('Loan','Loan',300),entry('UZS bank','Cash',2000000,'UZS'),entry('Salary received','Salary',500),entry('Salary schedule','Salary',9000,'USD',{frequency:'Monthly'}),entry('Leisure','Other expense',25.123456789),entry('BTC','Crypto',100,'USD',{quantity:2,cost:80}),entry('Deposit','Deposit',1000,'USD',{rate:21,date:'2027-01-01'})],
- savings_goals:[{id:'goal',name:'Emergency fund',kind:'savings',target:3000.12345678,allocated:300.12345678,currency:'USD',target_date:'2027-01-01',notes:'PRIVATE NOTE'},{id:'net',name:'Millionaire Net Worth',kind:'net_worth',allocated:0,target:1000000,currency:'USD',target_date:'2030-12-01',annual_return:0}],
- account_activity:[],investment_history:[],transaction_splits:[],investment_account_links:[],
- deleted_items:[{id:'deleted',source:'finance_records',data:entry('SECRET DELETED','Cash',99000)}],user_preferences:[{language:'en',currencies:['USD','UZS']}],portfolio_snapshots:[],transaction_categories:[{id:'leisure',name:'Leisure custom',direction:'expense'}],
- budget_amounts:[{category_key:'leisure',month:'2026-01-01',amount:20,currency:'USD',applies_forward:true},{category_key:'leisure',month:'2026-09-01',amount:25,currency:'USD',applies_forward:false}]
- },income_sources:[{id:'source',name:'Freelance',kind:'Other income',mode:'variable',currency:'USD',amount:null,frequency:null}]};
-export const reportMarket={rates:{USD:1,UZS:10000},ratesDate:'2026-09-18',fx:{rate:10000,date:'2026-09-18',source:'CBU'},quotes:{'Crypto:BTC':{usd:150,source:'Test market',fetchedAt:'2026-09-18T10:00:00Z'}},errors:{},stocksConfigured:false};
-const text=r=>r.blocks.map(b=>b.kind==='table'?[b.headers.join(' | '),...b.rows.map(r=>r.join(' | '))].join('\n'):b.text).join('\n');
+const text=r=>r.blocks.map(b=>b.kind==='table'?[b.headers.join(' | '),...b.rows.map(r=>r.join(' | '))].join('\n'):[b.text,...(b.lines??[])].join('\n')).join('\n');
 const tables=(r,header)=>r.blocks.filter(b=>b.kind==='table'&&b.headers.includes(header));
 test('report reconciles native and consolidated wealth, preserves precision, and excludes private technical/deleted fields',()=>{
  const before=JSON.stringify(reportFixture),r=buildFinancialReport(reportFixture,'en','Enjoy travel',reportMarket,{currency:'USD'}),s=text(r);

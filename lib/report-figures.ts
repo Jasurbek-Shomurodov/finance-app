@@ -26,6 +26,14 @@ export function parseFinanceBackup(signed: unknown): FinanceBackup {
  if (!valid) throw Error('Could not read the complete backup.');
  return data;
 }
+/** The sample workspace in the shape of a backup, so its report is built exactly as a signed-in owner's is: its
+ * records, categories, goals, scheduled payments, account activity and splits, and the category looks chosen this visit. */
+export function sampleBackup(data: PlanningData, splits: readonly TransactionSplit[], looks: { icons: Record<string, string>; colors: Record<string, string> }, exportedAt = new Date().toISOString()): FinanceBackup {
+ return { version: 1, exported_at: exportedAt, tables: {
+  finance_records: data.records, savings_goals: data.goals, transaction_categories: data.categories, payment_occurrences: data.occurrences, account_activity: data.activity,
+  holding_accounts: data.holdingAccounts ?? [], transaction_splits: [...splits], workspace_preferences: [{ key: 'category_icons', data: looks }],
+ } as unknown as FinanceBackup['tables'] };
+}
 /** A saved number, or null when it is missing or not a number (never zero in its place). */
 export const reportNumber = (v: unknown): number | null => v === null || v === undefined || v === '' || !Number.isFinite(Number(v)) ? null : Number(v);
 /** The sum, or null when any part is unknown. */
