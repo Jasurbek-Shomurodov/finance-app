@@ -11,6 +11,9 @@ export const CashFlowDrillDialog = dynamic(() => import('@/components/cash-flow-
 /** How the monthly surplus is worked out, as a Sankey; loaded when someone taps a surplus. */
 export const SurplusBreakdownDialog = dynamic(() => import('@/components/surplus-breakdown').then(module => module.SurplusBreakdownDialog), { ssr: false, loading: DrillDialogLoading });
 
+/** Any Sankey in a dialog (`components/flow-dialog`), loaded when it opens. */
+export const FlowDialog = dynamic(() => import('@/components/flow-dialog').then(module => module.FlowDialog), { ssr: false, loading: DrillDialogLoading });
+
 /** While the chart code arrives, the dialog is already open with its chart shimmering in place. */
 function DrillDialogLoading() {
  const { t } = useLanguage();

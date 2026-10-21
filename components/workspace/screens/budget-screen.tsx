@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, Workflow } from 'lucide-react';
 import { BudgetGroupCard, BudgetProgress, BudgetRateNotice, BudgetSectionHeader, BudgetTotalRow, ContributionRows, useCategoryName } from '@/components/budget/budget-rows';
 import { LeftToBudgetCard, type BudgetFocus } from '@/components/budget/left-to-budget-card';
 import { PlannedInput } from '@/components/budget/planned-input';
@@ -144,6 +144,8 @@ export function BudgetScreen() {
     <Button variant="outline" size="icon" aria-label={t(view === 'year' ? 'Next year' : 'Next month')} onClick={() => setMonth(shiftMonth(month, view === 'year' ? 12 : 1))}><ChevronRight size={16}/></Button>
     <TodayButton current={month === thisMonth} onClick={() => setMonth(thisMonth)}/>
    </div>
+   {/* The period's money as a Sankey: income by category into what was spent and what is left. */}
+   <Button variant="outline" onClick={() => setSankey({ target: { side: 'cashflow' }, title: t('Money flow'), month, months: view === 'year' ? periodMonths(month, 'year') : undefined, period: view === 'year' ? formatYear(Number(month.slice(0, 4)), locale) : undefined })}><Workflow size={16} aria-hidden="true"/>{t('Money flow')}</Button>
    <Button variant="outline" onClick={() => setSettingsOpen(true)}><Settings size={16} aria-hidden="true"/>{t('Settings')}</Button>
   </PageHeader>
   <BudgetRateNotice planned={left.missing} actual={history.get(month)?.missing ?? 0}/>

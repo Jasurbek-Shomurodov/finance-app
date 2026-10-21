@@ -29,6 +29,7 @@ import { useColumnsFit } from '@/hooks/use-columns-fit';
 import { useRecurringDetails } from './recurring-details';
 import { paymentsFrom } from '@/lib/payment-account';
 import { AddRecurringMenu, type RecurringKind } from './add-recurring-menu';
+import { RecurringFlowButton } from './recurring-flow-button';
 
 /** The Recurring page's views, switched from tabs beside its title: the month as a list or a calendar, subscriptions and reminders. */
 export type RecurringView = 'list' | 'calendar' | 'subscriptions' | 'reminders';
@@ -120,7 +121,7 @@ export function UpcomingPage({ data, save, currency, currencies = [], rates, vie
   <ErrorPopup message={error}/>
   {scheduled && <>
   <section className="panel recurring-summary" aria-label={formatMonthYear(month, locale)}>
-   <h2>{formatMonthYear(month, locale)}</h2>
+   <div className="recurring-summary-head"><h2>{formatMonthYear(month, locale)}</h2><RecurringFlowButton items={items} month={month} currency={currency} convert={(amount, unit) => convertAmount(amount, unit, currency, rates)}/></div>
    <SummaryBar label={t('Income')} done={summary.income.done} remaining={summary.income.remaining} doneLabel="{amount} received" currency={currency} tone="income" pressed={only === 'income'} onPress={() => toggle('income')}/>
    <SummaryBar label={t('Expenses')} done={summary.expense.done} remaining={summary.expense.remaining} doneLabel="{amount} paid" currency={currency} tone="expense" pressed={only === 'expense'} onPress={() => toggle('expense')}/>
   </section>

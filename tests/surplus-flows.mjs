@@ -31,7 +31,7 @@ test('the surplus dialog draws the Sankey and writes out the sum; the figure ope
  const {renderToStaticMarkup}=await import('react-dom/server');
  const language={useLanguage:()=>({locale:'en-US',t:(text,values={})=>text.replace(/\{(\w+)\}/g,(_,key)=>values[key]??key)})};
  const host=name=>{const Host=({children,...props})=>React.createElement('div',{'data-host':name,...(props.flows?{'data-links':props.flows.links.length}:{})},children);Host.displayName=name;return Host;};
- const {SurplusBreakdownDialog}=loadTS('components/surplus-breakdown.tsx',{'@/components/language-provider':language,'@/components/cash-flow-sankey':{FlowSankey:host('FlowSankey')},'@/components/ui/dialog':{Dialog:host('Dialog'),DialogContent:host('DialogContent'),DialogTitle:host('DialogTitle')}});
+ const {SurplusBreakdownDialog}=loadTS('components/surplus-breakdown.tsx',{'@/components/language-provider':language,'@/components/flow-dialog':loadTS('components/flow-dialog.tsx',{'@/components/language-provider':language,'@/components/cash-flow-sankey':{FlowSankey:host('FlowSankey')},'@/components/ui/dialog':{Dialog:host('Dialog'),DialogContent:host('DialogContent'),DialogTitle:host('DialogTitle')}})});
  const html=renderToStaticMarkup(React.createElement(SurplusBreakdownDialog,{parts,currency:'USD',goalFunding:4000,onClose(){}}));
  assert.match(html,/Monthly surplus <span class="panel-figure">\$9,863<\/span>/);
  assert.match(html,/data-host="FlowSankey" data-links="5"/);

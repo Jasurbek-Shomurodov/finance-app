@@ -55,7 +55,8 @@
 
 /* Recurring: month summary bars, a dated list with "in N days", and a calendar. */
 .recurring-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 24px;width:100%}
-.recurring-summary>h2{grid-column:1/-1;margin:0;font-size:var(--type-title);font-weight:600}
+.recurring-summary-head{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:8px 16px;flex-wrap:wrap}
+.recurring-summary-head>h2{margin:0;font-size:var(--type-title);font-weight:600}
 .recurring-bar{display:flex;flex-direction:column;gap:6px;margin:-8px;padding:8px;border:1px solid transparent;border-radius:var(--radius-control);background:none;color:inherit;font:inherit;font-size:var(--type-small);text-align:start;cursor:pointer}
 .recurring-bar:hover{background:color-mix(in srgb,var(--accent) 35%,transparent)}
 .recurring-bar[aria-pressed=true]{border-color:var(--hairline);background:var(--muted)}

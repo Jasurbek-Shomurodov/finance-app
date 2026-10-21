@@ -1,7 +1,6 @@
 "use client";
-import { FlowSankey } from '@/components/cash-flow-sankey';
+import { FlowDialog } from '@/components/flow-dialog';
 import { useLanguage } from '@/components/language-provider';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { formatMoney } from '@/lib/format';
 import { surplusFlows, surplusLines, type SurplusParts } from '@/lib/surplus-flows';
 
@@ -12,9 +11,7 @@ export function SurplusBreakdownDialog({ parts, currency, goalFunding = 0, onClo
  const flows = surplusFlows(parts, key => t(key), goalFunding);
  const { incoming, outgoing } = surplusLines(parts, goalFunding);
  const spent = outgoing.filter(line => line.kind !== 'savings');
- return <Dialog open onOpenChange={open => { if (!open) onClose(); }}><DialogContent className="record-dialog cash-flow-drill-dialog" aria-describedby={undefined}>
-  <DialogTitle>{t('Monthly surplus')} <span className="panel-figure">{money(parts.forecast)}</span></DialogTitle>
-  {flows.links.length ? <FlowSankey flows={flows} currency={currency}/> : <p className="budget-left-empty">{t('Nothing recorded in this period.')}</p>}
+ return <FlowDialog title={t('Monthly surplus')} figure={money(parts.forecast)} flows={flows} currency={currency} onClose={onClose}>
   <dl className="surplus-sum">
    {incoming.filter(line => line.kind === 'income').map(line => <div key={line.key}><dt>{t(line.key)}</dt><dd className="positive">{money(line.amount)}</dd></div>)}
    {spent.map(line => <div key={line.key}><dt>{t(line.key)}</dt><dd>−{money(line.amount)}</dd></div>)}
@@ -25,5 +22,5 @@ export function SurplusBreakdownDialog({ parts, currency, goalFunding = 0, onClo
    </>}
   </dl>
   <p className="comparison-note">{t("Yearly records are divided by 12. A category's budget counts when it is more than the bills in that category. One-time records are excluded.")}</p>
- </DialogContent></Dialog>;
+ </FlowDialog>;
 }
