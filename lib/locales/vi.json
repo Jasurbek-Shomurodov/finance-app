@@ -1454,7 +1454,6 @@
   "Goal deletion needs the latest database update.": "Việc xóa mục tiêu cần bản cập nhật cơ sở dữ liệu mới nhất.",
   "Could not delete the goal. Please try again.": "Không thể xóa mục tiêu. Vui lòng thử lại.",
   "View all": "Xem tất cả",
-  "Comparison settings": "Cài đặt so sánh",
   "Income by source": "Thu nhập theo nguồn",
   "Nothing is due in the next 31 days.": "Không có khoản nào đến hạn trong 31 ngày tới.",
   "Money": "Tiền",
@@ -2716,5 +2715,6 @@
   "Spending by category": "Chi tiêu theo danh mục",
   "Net worth if spending had been invested": "Tài sản ròng nếu chi tiêu được đầu tư",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Tài sản ròng hôm nay của bạn nếu các khoản đầu tư và mọi chi tiêu đã ghi được đưa vào từng chỉ số tham chiếu. Chi tiêu không làm tăng tài sản ròng, nên phần chênh lệch là cái giá của nó.",
-  "{amount} vs today": "{amount} so với hôm nay"
+  "{amount} vs today": "{amount} so với hôm nay",
+  "Tracking since {date}": "Theo dõi từ {date}"
 }

@@ -1454,7 +1454,6 @@
   "Goal deletion needs the latest database update.": "목표를 삭제하려면 최신 데이터베이스 업데이트가 필요해요.",
   "Could not delete the goal. Please try again.": "목표를 삭제하지 못했어요. 다시 시도해 주세요.",
   "View all": "전체 보기",
-  "Comparison settings": "비교 설정",
   "Income by source": "수입원별 수입",
   "Nothing is due in the next 31 days.": "앞으로 31일 동안 만기인 항목이 없어요.",
   "Money": "자금",
@@ -2716,5 +2715,6 @@
   "Spending by category": "카테고리별 지출",
   "Net worth if spending had been invested": "지출을 투자했다면의 순자산",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "투자와 기록된 모든 지출을 각 벤치마크에 넣었다면 오늘의 순자산입니다. 지출은 순자산에 더해지지 않으므로 차이가 그 비용입니다.",
-  "{amount} vs today": "오늘 대비 {amount}"
+  "{amount} vs today": "오늘 대비 {amount}",
+  "Tracking since {date}": "{date}부터 추적"
 }

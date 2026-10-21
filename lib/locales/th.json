@@ -1454,7 +1454,6 @@
   "Goal deletion needs the latest database update.": "การลบเป้าหมายต้องใช้การอัปเดตฐานข้อมูลล่าสุด",
   "Could not delete the goal. Please try again.": "ไม่สามารถลบเป้าหมายได้ โปรดลองอีกครั้ง",
   "View all": "ดูทั้งหมด",
-  "Comparison settings": "การตั้งค่าการเปรียบเทียบ",
   "Income by source": "รายได้ตามแหล่งที่มา",
   "Nothing is due in the next 31 days.": "ไม่มีรายการครบกำหนดใน 31 วันข้างหน้า",
   "Money": "เงิน",
@@ -2716,5 +2715,6 @@
   "Spending by category": "รายจ่ายตามหมวดหมู่",
   "Net worth if spending had been invested": "มูลค่าสุทธิหากนำรายจ่ายไปลงทุน",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "มูลค่าสุทธิของคุณวันนี้ หากนำเงินลงทุนและรายจ่ายทุกรายการที่บันทึกไว้ไปลงในแต่ละเกณฑ์อ้างอิง รายจ่ายไม่ได้เพิ่มมูลค่าสุทธิ ส่วนต่างจึงคือต้นทุนของมัน",
-  "{amount} vs today": "{amount} เทียบกับวันนี้"
+  "{amount} vs today": "{amount} เทียบกับวันนี้",
+  "Tracking since {date}": "ติดตามตั้งแต่ {date}"
 }

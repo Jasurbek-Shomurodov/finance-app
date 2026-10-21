@@ -1454,7 +1454,6 @@
   "Goal deletion needs the latest database update.": "La suppression d’un objectif nécessite la dernière mise à jour de la base de données.",
   "Could not delete the goal. Please try again.": "Impossible de supprimer l’objectif. Veuillez réessayer.",
   "View all": "Tout voir",
-  "Comparison settings": "Paramètres de comparaison",
   "Income by source": "Revenus par source",
   "Nothing is due in the next 31 days.": "Rien n’est dû dans les 31 prochains jours.",
   "Money": "Argent",
@@ -2716,5 +2715,6 @@
   "Spending by category": "Dépenses par catégorie",
   "Net worth if spending had been invested": "Patrimoine si les dépenses avaient été investies",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Votre patrimoine net actuel si vos investissements et chaque dépense enregistrée avaient été placés dans chaque indice de référence. Les dépenses n’ajoutent rien à votre patrimoine : l’écart montre ce qu’elles ont coûté.",
-  "{amount} vs today": "{amount} par rapport à aujourd’hui"
+  "{amount} vs today": "{amount} par rapport à aujourd’hui",
+  "Tracking since {date}": "Suivi depuis le {date}"
 }

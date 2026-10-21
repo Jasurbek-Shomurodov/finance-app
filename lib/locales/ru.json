@@ -1454,7 +1454,6 @@
   "Goal deletion needs the latest database update.": "Для удаления целей нужно последнее обновление базы данных.",
   "Could not delete the goal. Please try again.": "Не удалось удалить цель. Попробуйте ещё раз.",
   "View all": "Показать все",
-  "Comparison settings": "Настройки сравнения",
   "Income by source": "Доход по источникам",
   "Nothing is due in the next 31 days.": "В ближайшие 31 день платежей нет.",
   "Money": "Деньги",
@@ -2716,5 +2715,6 @@
   "Spending by category": "Расходы по категориям",
   "Net worth if spending had been invested": "Капитал, если бы расходы были инвестированы",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Ваш капитал сегодня, если бы инвестиции и каждый записанный расход были вложены в каждый ориентир. Расходы ничего не добавляют к капиталу, поэтому разница — их цена.",
-  "{amount} vs today": "{amount} к сегодняшнему"
+  "{amount} vs today": "{amount} к сегодняшнему",
+  "Tracking since {date}": "Отслеживание с {date}"
 }

@@ -1454,7 +1454,6 @@
   "Goal deletion needs the latest database update.": "删除目标需要最新的数据库更新。",
   "Could not delete the goal. Please try again.": "无法删除该目标，请重试。",
   "View all": "查看全部",
-  "Comparison settings": "对比设置",
   "Income by source": "按来源划分的收入",
   "Nothing is due in the next 31 days.": "未来 31 天内没有到期项目。",
   "Money": "资金",
@@ -2716,5 +2715,6 @@
   "Spending by category": "按类别的支出",
   "Net worth if spending had been invested": "若支出用于投资的净资产",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "如果把您的投资和每笔记录的支出都投入各个基准，您今天的净资产。支出不会增加净资产，因此差额就是它的代价。",
-  "{amount} vs today": "与今天相比 {amount}"
+  "{amount} vs today": "与今天相比 {amount}",
+  "Tracking since {date}": "自 {date} 起跟踪"
 }

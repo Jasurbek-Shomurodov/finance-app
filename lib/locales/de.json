@@ -1454,7 +1454,6 @@
   "Goal deletion needs the latest database update.": "Das Löschen von Zielen erfordert das neueste Datenbank-Update.",
   "Could not delete the goal. Please try again.": "Das Ziel konnte nicht gelöscht werden. Bitte versuchen Sie es erneut.",
   "View all": "Alle anzeigen",
-  "Comparison settings": "Vergleichseinstellungen",
   "Income by source": "Einnahmen nach Quelle",
   "Nothing is due in the next 31 days.": "In den nächsten 31 Tagen ist nichts fällig.",
   "Money": "Geld",
@@ -2716,5 +2715,6 @@
   "Spending by category": "Ausgaben nach Kategorie",
   "Net worth if spending had been invested": "Nettovermögen, wenn Ausgaben investiert worden wären",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Ihr heutiges Nettovermögen, wenn Ihre Investitionen und jede erfasste Ausgabe stattdessen in die jeweilige Benchmark geflossen wären. Ausgaben erhöhen Ihr Vermögen nicht, die Differenz zeigt also, was sie gekostet haben.",
-  "{amount} vs today": "{amount} gegenüber heute"
+  "{amount} vs today": "{amount} gegenüber heute",
+  "Tracking since {date}": "Erfasst seit {date}"
 }

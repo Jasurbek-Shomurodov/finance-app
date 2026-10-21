@@ -64,7 +64,7 @@ signed out.
 **Overlays are part of their screen; open each one.** Shell (every screen): Add
 expense / record dialog (`components/record-dialog.tsx` and `components/record-dialog/`, income, expense, transfer
 tabs), discard prompt, display-currency menu, drawer sheet on mobile, date picker.
-Dashboard: Customize, Money invested popover, Comparison settings, Tracking since
+Dashboard: Customize, Money invested popover, "Tracking since {date}" settings
 picker. Accounts: add / edit account, Adjust balance, Transfer, Reconcile statement,
 account ⋯ menu, delete confirm. Transactions: details (`transaction-details-dialog.tsx`),
 Add transaction menu, Edit multiple, Rules, Create rule toast, rule delete confirm.

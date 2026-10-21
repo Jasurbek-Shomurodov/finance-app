@@ -1454,7 +1454,6 @@
   "Goal deletion needs the latest database update.": "Kufuta lengo kunahitaji usasishaji wa hivi karibuni wa hifadhidata.",
   "Could not delete the goal. Please try again.": "Imeshindwa kufuta lengo. Tafadhali jaribu tena.",
   "View all": "Tazama zote",
-  "Comparison settings": "Mipangilio ya ulinganisho",
   "Income by source": "Mapato kwa chanzo",
   "Nothing is due in the next 31 days.": "Hakuna kinachostahili kulipwa katika siku 31 zijazo.",
   "Money": "Pesa",
@@ -2716,5 +2715,6 @@
   "Spending by category": "Matumizi kwa kategoria",
   "Net worth if spending had been invested": "Thamani halisi kama matumizi yangewekezwa",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Thamani yako halisi leo kama uwekezaji wako na kila matumizi yaliyorekodiwa yangewekwa kwenye kila kigezo. Matumizi hayaongezi chochote kwenye thamani yako, kwa hiyo tofauti ndiyo gharama yake.",
-  "{amount} vs today": "{amount} ukilinganisha na leo"
+  "{amount} vs today": "{amount} ukilinganisha na leo",
+  "Tracking since {date}": "Inafuatiliwa tangu {date}"
 }

@@ -176,7 +176,7 @@ currencies (USD primary). Compute every expected figure yourself first.
 | DASH-008 | P1 | Expenses paid | Read | Spending definition (see XAPP-001) since tracking start |
 | DASH-009 | P1 | Tracking since picker | Open | Days from the first investment activity to today are pickable; earlier days and later days disabled (by design, comment in `components/investment-comparison.tsx`); presets Today / Start of this month / Start of this year / Clear date |
 | DASH-010 | P1 | Tracking start persists | Pick Start of this month; reload | Same date shown |
-| DASH-011 | P2 | Settings text vs picker | Comparison settings with a chosen day before first investment | Explains comparisons start on the first investment day; never contradicts picker `[bug 2026-10-02]` |
+| DASH-011 | P2 | Settings text vs picker | "Tracking since {date}" settings with a chosen day before first investment | Explains comparisons start on the first investment day; never contradicts picker `[bug 2026-10-02]` |
 | DASH-012 | P1 | Benchmark funding | Switch Excluding / Including expenses | Chart and summary recompute; choice remembered |
 | DASH-013 | P0 | Spending card | Read | Equals Cash flow actual spending this month; last-month line correct `[e2e]` |
 | DASH-014 | P2 | Empty spending card | New account, no spending | Empty state, not a "$0–$1" axis `[bug 2026-10-02]` |

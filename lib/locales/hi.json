@@ -1454,7 +1454,6 @@
   "Goal deletion needs the latest database update.": "लक्ष्य हटाने के लिए नवीनतम डेटाबेस अपडेट चाहिए।",
   "Could not delete the goal. Please try again.": "लक्ष्य नहीं हटाया जा सका। कृपया फिर से कोशिश करें।",
   "View all": "सभी देखें",
-  "Comparison settings": "तुलना सेटिंग्स",
   "Income by source": "स्रोत के अनुसार आय",
   "Nothing is due in the next 31 days.": "अगले 31 दिनों में कुछ भी देय नहीं है।",
   "Money": "पैसा",
@@ -2716,5 +2715,6 @@
   "Spending by category": "श्रेणी के अनुसार खर्च",
   "Net worth if spending had been invested": "अगर खर्च निवेश किया होता तो कुल संपत्ति",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "आज आपकी कुल संपत्ति, अगर आपके निवेश और हर दर्ज खर्च हर बेंचमार्क में लगाए गए होते। खर्च आपकी संपत्ति में कुछ नहीं जोड़ता, इसलिए अंतर उसकी कीमत है।",
-  "{amount} vs today": "आज की तुलना में {amount}"
+  "{amount} vs today": "आज की तुलना में {amount}",
+  "Tracking since {date}": "{date} से ट्रैकिंग"
 }

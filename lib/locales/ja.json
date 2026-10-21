@@ -1454,7 +1454,6 @@
   "Goal deletion needs the latest database update.": "目標を削除するには、最新のデータベース更新が必要です。",
   "Could not delete the goal. Please try again.": "目標を削除できませんでした。もう一度お試しください。",
   "View all": "すべて表示",
-  "Comparison settings": "比較の設定",
   "Income by source": "収入源別の収入",
   "Nothing is due in the next 31 days.": "今後31日間に期限の項目はありません。",
   "Money": "お金",
@@ -2716,5 +2715,6 @@
   "Spending by category": "カテゴリ別の支出",
   "Net worth if spending had been invested": "支出を投資していた場合の純資産",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "投資と記録したすべての支出を各ベンチマークに投じていた場合の今日の純資産。支出は純資産を増やさないため、その差が支出のコストです。",
-  "{amount} vs today": "今日と比べて {amount}"
+  "{amount} vs today": "今日と比べて {amount}",
+  "Tracking since {date}": "{date} から追跡"
 }

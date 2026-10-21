@@ -1454,7 +1454,6 @@
   "Goal deletion needs the latest database update.": "حذف هدف به جدیدترین به‌روزرسانی پایگاه داده نیاز دارد.",
   "Could not delete the goal. Please try again.": "هدف حذف نشد. لطفاً دوباره تلاش کنید.",
   "View all": "مشاهدهٔ همه",
-  "Comparison settings": "تنظیمات مقایسه",
   "Income by source": "درآمد بر اساس منبع",
   "Nothing is due in the next 31 days.": "در 31 روز آینده موردی سررسید نمی‌شود.",
   "Money": "پول",
@@ -2716,5 +2715,6 @@
   "Spending by category": "هزینه بر اساس دسته",
   "Net worth if spending had been invested": "دارایی خالص اگر هزینه‌ها سرمایه‌گذاری می‌شد",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "دارایی خالص امروز شما اگر سرمایه‌گذاری‌ها و هر هزینهٔ ثبت‌شده در هر شاخص مرجع گذاشته می‌شد. هزینه چیزی به دارایی اضافه نمی‌کند، پس تفاوت همان بهای آن است.",
-  "{amount} vs today": "{amount} نسبت به امروز"
+  "{amount} vs today": "{amount} نسبت به امروز",
+  "Tracking since {date}": "پیگیری از {date}"
 }

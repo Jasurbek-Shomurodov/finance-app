@@ -1454,7 +1454,6 @@
   "Goal deletion needs the latest database update.": "লক্ষ্য মুছতে সর্বশেষ ডেটাবেস হালনাগাদ প্রয়োজন।",
   "Could not delete the goal. Please try again.": "লক্ষ্য মুছে ফেলা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।",
   "View all": "সব দেখুন",
-  "Comparison settings": "তুলনার সেটিংস",
   "Income by source": "উৎস অনুযায়ী আয়",
   "Nothing is due in the next 31 days.": "আগামী 31 দিনে কিছুই বকেয়া নেই।",
   "Money": "অর্থ",
@@ -2716,5 +2715,6 @@
   "Spending by category": "বিভাগ অনুযায়ী ব্যয়",
   "Net worth if spending had been invested": "খরচ বিনিয়োগ করলে নিট সম্পদ",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "আজ আপনার নিট সম্পদ, যদি আপনার বিনিয়োগ ও প্রতিটি লেখা খরচ প্রতিটি বেঞ্চমার্কে রাখা হতো। খরচ আপনার সম্পদে কিছু যোগ করে না, তাই পার্থক্যটাই তার মূল্য।",
-  "{amount} vs today": "আজকের তুলনায় {amount}"
+  "{amount} vs today": "আজকের তুলনায় {amount}",
+  "Tracking since {date}": "{date} থেকে ট্র্যাকিং"
 }

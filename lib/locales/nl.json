@@ -1454,7 +1454,6 @@
   "Goal deletion needs the latest database update.": "Het verwijderen van doelen vereist de nieuwste database-update.",
   "Could not delete the goal. Please try again.": "Kan het doel niet verwijderen. Probeer het opnieuw.",
   "View all": "Alles bekijken",
-  "Comparison settings": "Vergelijkingsinstellingen",
   "Income by source": "Inkomsten per bron",
   "Nothing is due in the next 31 days.": "Er is niets verschuldigd in de komende 31 dagen.",
   "Money": "Geld",
@@ -2716,5 +2715,6 @@
   "Spending by category": "Uitgaven per categorie",
   "Net worth if spending had been invested": "Vermogen als uitgaven waren belegd",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Uw nettovermogen vandaag als uw beleggingen en elke geregistreerde uitgave in elke benchmark waren gestoken. Uitgaven voegen niets toe aan uw vermogen, dus het verschil is wat ze kostten.",
-  "{amount} vs today": "{amount} ten opzichte van vandaag"
+  "{amount} vs today": "{amount} ten opzichte van vandaag",
+  "Tracking since {date}": "Gevolgd sinds {date}"
 }

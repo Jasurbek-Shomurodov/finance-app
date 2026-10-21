@@ -1454,7 +1454,6 @@
   "Goal deletion needs the latest database update.": "Usunięcie celu wymaga najnowszej aktualizacji bazy danych.",
   "Could not delete the goal. Please try again.": "Nie udało się usunąć celu. Spróbuj ponownie.",
   "View all": "Zobacz wszystko",
-  "Comparison settings": "Ustawienia porównania",
   "Income by source": "Przychody według źródła",
   "Nothing is due in the next 31 days.": "Nic nie przypada w ciągu najbliższych 31 dni.",
   "Money": "Pieniądze",
@@ -2716,5 +2715,6 @@
   "Spending by category": "Wydatki według kategorii",
   "Net worth if spending had been invested": "Majątek, gdyby wydatki zostały zainwestowane",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Twój dzisiejszy majątek netto, gdyby inwestycje i każdy zapisany wydatek trafiły do każdego wskaźnika odniesienia. Wydatki nic nie dodają do majątku, więc różnica to ich koszt.",
-  "{amount} vs today": "{amount} względem dziś"
+  "{amount} vs today": "{amount} względem dziś",
+  "Tracking since {date}": "Śledzone od {date}"
 }

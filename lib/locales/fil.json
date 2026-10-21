@@ -1454,7 +1454,6 @@
   "Goal deletion needs the latest database update.": "Kailangan ng pinakabagong update sa database ang pagbura ng layunin.",
   "Could not delete the goal. Please try again.": "Hindi mabura ang layunin. Pakisubukang muli.",
   "View all": "Tingnan lahat",
-  "Comparison settings": "Mga setting ng paghahambing",
   "Income by source": "Kita ayon sa pinagmulan",
   "Nothing is due in the next 31 days.": "Walang takda sa susunod na 31 araw.",
   "Money": "Pera",
@@ -2716,5 +2715,6 @@
   "Spending by category": "Gastos ayon sa kategorya",
   "Net worth if spending had been invested": "Net worth kung ininvest ang mga gastos",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Ang net worth mo ngayon kung inilagay sa bawat benchmark ang iyong mga investment at bawat naitalang gastos. Walang idinadagdag ang gastos sa net worth mo, kaya ang diperensiya ang halaga nito.",
-  "{amount} vs today": "{amount} kumpara ngayon"
+  "{amount} vs today": "{amount} kumpara ngayon",
+  "Tracking since {date}": "Sinusubaybayan mula {date}"
 }

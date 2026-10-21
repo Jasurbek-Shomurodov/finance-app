@@ -1454,7 +1454,6 @@
   "Goal deletion needs the latest database update.": "La eliminación de metas necesita la última actualización de la base de datos.",
   "Could not delete the goal. Please try again.": "No se pudo eliminar la meta. Inténtalo de nuevo.",
   "View all": "Ver todo",
-  "Comparison settings": "Ajustes de comparación",
   "Income by source": "Ingresos por fuente",
   "Nothing is due in the next 31 days.": "No hay nada por pagar en los próximos 31 días.",
   "Money": "Dinero",
@@ -2716,5 +2715,6 @@
   "Spending by category": "Gastos por categoría",
   "Net worth if spending had been invested": "Patrimonio si el gasto se hubiera invertido",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Tu patrimonio neto de hoy con tus inversiones y cada gasto registrado puestos en cada referencia. El gasto no suma nada a tu patrimonio, así que la diferencia es lo que costó.",
-  "{amount} vs today": "{amount} frente a hoy"
+  "{amount} vs today": "{amount} frente a hoy",
+  "Tracking since {date}": "Seguimiento desde el {date}"
 }

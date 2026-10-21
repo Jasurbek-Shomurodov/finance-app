@@ -1454,7 +1454,6 @@
   "Goal deletion needs the latest database update.": "يتطلب حذف الهدف أحدث تحديث لقاعدة البيانات.",
   "Could not delete the goal. Please try again.": "تعذّر حذف الهدف. يُرجى المحاولة مرة أخرى.",
   "View all": "اعرض الكل",
-  "Comparison settings": "إعدادات المقارنة",
   "Income by source": "الدخل حسب المصدر",
   "Nothing is due in the next 31 days.": "لا شيء مستحق خلال الـ 31 يومًا القادمة.",
   "Money": "المال",
@@ -2716,5 +2715,6 @@
   "Spending by category": "الإنفاق حسب الفئة",
   "Net worth if spending had been invested": "صافي الثروة لو استُثمر الإنفاق",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "صافي ثروتك اليوم لو وُضعت استثماراتك وكل مصروف مسجّل في كل مؤشر مرجعي بدلًا من ذلك. الإنفاق لا يضيف شيئًا إلى ثروتك، لذا فالفرق هو ما كلّفك.",
-  "{amount} vs today": "{amount} مقارنةً باليوم"
+  "{amount} vs today": "{amount} مقارنةً باليوم",
+  "Tracking since {date}": "التتبع منذ {date}"
 }

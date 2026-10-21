@@ -1454,7 +1454,6 @@
   "Goal deletion needs the latest database update.": "Maqsadlarni o‘chirish uchun ma’lumotlar bazasining so‘nggi yangilanishi kerak.",
   "Could not delete the goal. Please try again.": "Maqsadni o‘chirib bo‘lmadi. Qayta urinib ko‘ring.",
   "View all": "Hammasini ko‘rish",
-  "Comparison settings": "Taqqoslash sozlamalari",
   "Income by source": "Manbalar bo‘yicha daromad",
   "Nothing is due in the next 31 days.": "Keyingi 31 kun ichida to‘lovlar yo‘q.",
   "Money": "Pul",
@@ -2716,5 +2715,6 @@
   "Spending by category": "Toifalar bo‘yicha xarajatlar",
   "Net worth if spending had been invested": "Xarajatlar investitsiya qilinganida sof boylik",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Investitsiyalaringiz va har bir yozilgan xarajat har bir taqqoslash ko‘rsatkichiga qo‘yilganida bugungi sof boyligingiz. Xarajat boylikka hech narsa qo‘shmaydi, shuning uchun farq uning narxidir.",
-  "{amount} vs today": "bugunga nisbatan {amount}"
+  "{amount} vs today": "bugunga nisbatan {amount}",
+  "Tracking since {date}": "{date} dan beri kuzatilmoqda"
 }

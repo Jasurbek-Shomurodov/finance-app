@@ -1454,7 +1454,6 @@
   "Goal deletion needs the latest database update.": "ہدف حذف کرنے کے لیے تازہ ترین ڈیٹا بیس اپ ڈیٹ درکار ہے۔",
   "Could not delete the goal. Please try again.": "ہدف حذف نہیں ہو سکا۔ براہ کرم دوبارہ کوشش کریں۔",
   "View all": "سب دیکھیں",
-  "Comparison settings": "موازنے کی ترتیبات",
   "Income by source": "ذریعے کے لحاظ سے آمدنی",
   "Nothing is due in the next 31 days.": "اگلے 31 دنوں میں کچھ واجب الادا نہیں۔",
   "Money": "پیسہ",
@@ -2716,5 +2715,6 @@
   "Spending by category": "زمرے کے لحاظ سے اخراجات",
   "Net worth if spending had been invested": "اگر خرچ کی رقم سرمایہ کاری کی جاتی تو خالص مالیت",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "آج آپ کی خالص مالیت اگر آپ کی سرمایہ کاری اور ہر درج خرچ ہر معیار میں لگایا جاتا۔ خرچ آپ کی مالیت میں کچھ نہیں جوڑتا، اس لیے فرق اس کی قیمت ہے۔",
-  "{amount} vs today": "آج کے مقابلے میں {amount}"
+  "{amount} vs today": "آج کے مقابلے میں {amount}",
+  "Tracking since {date}": "{date} سے ٹریکنگ"
 }

@@ -1454,7 +1454,6 @@
   "Goal deletion needs the latest database update.": "Ștergerea obiectivului necesită ultima actualizare a bazei de date.",
   "Could not delete the goal. Please try again.": "Obiectivul nu a putut fi șters. Încearcă din nou.",
   "View all": "Vezi tot",
-  "Comparison settings": "Setări de comparație",
   "Income by source": "Venituri pe surse",
   "Nothing is due in the next 31 days.": "Nimic nu este scadent în următoarele 31 de zile.",
   "Money": "Bani",
@@ -2716,5 +2715,6 @@
   "Spending by category": "Cheltuieli pe categorii",
   "Net worth if spending had been invested": "Avere netă dacă cheltuielile ar fi fost investite",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Averea ta netă de azi dacă investițiile și fiecare cheltuială înregistrată ar fi mers în fiecare reper. Cheltuielile nu adaugă nimic averii, deci diferența este costul lor.",
-  "{amount} vs today": "{amount} față de azi"
+  "{amount} vs today": "{amount} față de azi",
+  "Tracking since {date}": "Urmărit din {date}"
 }

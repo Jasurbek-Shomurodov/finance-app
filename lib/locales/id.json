@@ -1454,7 +1454,6 @@
   "Goal deletion needs the latest database update.": "Penghapusan tujuan memerlukan pembaruan database terbaru.",
   "Could not delete the goal. Please try again.": "Tidak dapat menghapus tujuan. Silakan coba lagi.",
   "View all": "Lihat semua",
-  "Comparison settings": "Pengaturan perbandingan",
   "Income by source": "Pemasukan menurut sumber",
   "Nothing is due in the next 31 days.": "Tidak ada yang jatuh tempo dalam 31 hari ke depan.",
   "Money": "Uang",
@@ -2716,5 +2715,6 @@
   "Spending by category": "Pengeluaran per kategori",
   "Net worth if spending had been invested": "Kekayaan bersih jika pengeluaran diinvestasikan",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Kekayaan bersih Anda hari ini jika investasi dan setiap pengeluaran yang dicatat dimasukkan ke tiap tolok ukur. Pengeluaran tidak menambah kekayaan, jadi selisihnya adalah biayanya.",
-  "{amount} vs today": "{amount} dibanding hari ini"
+  "{amount} vs today": "{amount} dibanding hari ini",
+  "Tracking since {date}": "Dilacak sejak {date}"
 }
