@@ -2713,5 +2713,8 @@
   "Hand-poured candles sold online and at markets.": "شموع مصبوبة يدويًا تُباع عبر الإنترنت وفي الأسواق.",
   "Where your money went": "أين ذهبت أموالك",
   "Income and spending": "الدخل والإنفاق",
-  "Spending by category": "الإنفاق حسب الفئة"
+  "Spending by category": "الإنفاق حسب الفئة",
+  "Net worth if spending had been invested": "صافي الثروة لو استُثمر الإنفاق",
+  "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "صافي ثروتك اليوم لو وُضعت استثماراتك وكل مصروف مسجّل في كل مؤشر مرجعي بدلًا من ذلك. الإنفاق لا يضيف شيئًا إلى ثروتك، لذا فالفرق هو ما كلّفك.",
+  "{amount} vs today": "{amount} مقارنةً باليوم"
 }

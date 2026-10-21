@@ -1,7 +1,9 @@
 "use client";
 import { pastDatePresets } from '@/lib/date-picker-calendar';
 import { DatePicker } from '@/components/presentation-foundation/date-picker';
-import { NativeSelect } from '@/components/ui/native-select';
+import { Segmented } from '@/components/presentation-foundation/segmented';
+import { HypotheticalNetWorthCards } from '@/components/hypothetical-net-worth';
+import { hypotheticalNetWorth } from '@/lib/hypothetical-net-worth';
 import { benchmarkMethodStorageKey, readBenchmarkScope, investmentComparisonCoverage, investmentDecisionComparison, purchaseComparisonStart, comparisonMethod, type ComparisonMethod, type BenchmarkMovement, type FundingScope } from '@/lib/investment-benchmarks';
 import { showError } from '@/lib/feedback';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -101,6 +103,9 @@ export function InvestmentComparison({history,today,currency,market,demo,windowS
  const chartPoints=(overviewResult?.points??[]).filter(point=>point.date>=windowStart);
  const chartSeries=visibleSeries;
  const detailPoint=chartPoints.find(point=>point.date===detailDate);
+ // Net worth today, and what it would be had investments and spending gone into each shown benchmark.
+ const netWorth=points.at(-1)?.net;
+ const whatIf=scope==='expenses'?hypotheticalNetWorth(netWorth,overviewResult?.points.at(-1),visibleSeries.filter(item=>item.key!=='actual').map(item=>item.key)):[];
  // Without any investment, or with only ones worth nothing and never paid into (a $0 business), there is nothing to
  // compare: invite the first one instead of drawing a flat line at zero.
  const nothingInvested=!history.records.some(isInvestmentRecord)||(!!decision&&chartPoints.length>0&&chartPoints.every(point=>!point.actual&&!point.contributed));
@@ -110,13 +115,14 @@ export function InvestmentComparison({history,today,currency,market,demo,windowS
   {summaryNode}
  </>;
  return <>
-  <div className="overview-chart-heading"><div className="overview-chart-title"><h3>{t('Portfolio over time')}</h3></div><div className="comparison-legend" aria-busy={comparisonsLoading}>{displayed.map(item=><button key={item.key} type="button" aria-pressed={visibleKeys.has(item.key)} disabled={!overviewOwner} onClick={()=>toggleOverview(item.key)}><i style={{background:item.color}}/>{item.label}</button>)}</div></div>
+  <div className="overview-chart-heading"><div className="overview-chart-title"><h3>{t('Portfolio over time')}</h3><Segmented className="funding-switch" label={t('Benchmark funding')} options={[{value:'investments' as FundingScope,label:t('Excluding expenses')},{value:'expenses' as FundingScope,label:t('Including expenses')}]} value={scope} onChange={next=>{if(overviewOwner)chooseScope(next);}}/></div><div className="comparison-legend" aria-busy={comparisonsLoading}>{displayed.map(item=><button key={item.key} type="button" aria-pressed={visibleKeys.has(item.key)} disabled={!overviewOwner} onClick={()=>toggleOverview(item.key)}><i style={{background:item.color}}/>{item.label}</button>)}</div></div>
   {ready&&!decision&&<p className="comparison-notice">{t('Investment history or exchange rates are incomplete for this comparison.')}</p>}
   {ready&&visibleSeries.filter(item=>item.key!=='actual').map(item=>{const reason=ready.errors[item.key]??ready.errors.fx??(overviewResult?.unavailable.includes(item.key)?'Price data, exchange rates or funds needed for a matching withdrawal are unavailable.':null);return reason?<p key={item.key} className="comparison-note">{item.label}: {t(reason)}</p>:null;})}
   {comparisonsLoading?<ChartSkeleton label={t('Loading comparisons…')}/>:!!chartPoints.length&&<><InvestmentValueChart onPointSelect={setDetailDate} label={t('Investments')} points={chartPoints} currency={currency} series={chartSeries.map(item=>({...item,primary:item.key==='actual'}))} tooltip={<BenchmarkTooltip marketHistory={ready} fundingDetails={decision?.details} receipts={[]} currency={currency} series={chartSeries}/>}/></>}
+  {scope==='expenses'&&netWorth!==undefined&&<HypotheticalNetWorthCards netWorth={netWorth} rows={whatIf} series={visibleSeries} currency={currency}/>}
   {summaryNode}
   <details className="overview-details"><summary>{t('Comparison settings')}</summary>
-   <div className="form-grid"><label className="tracking-start" aria-busy={savingStart}>{t('Tracking since')}{/* The picker shows the day the chart starts from and offers no day before the first investment activity: there is no value to compare from earlier. */}<DatePicker value={trackingFrom??''} required={false} min={earliestStart} max={today} presets={pastDatePresets} onChange={date=>{if(!savingStart)void chooseTrackingStart(date||null);}}/></label><label>{t('Benchmark funding')}<NativeSelect value={scope} disabled={!overviewOwner} onChange={event=>chooseScope(event.target.value as FundingScope)}><option value="investments">{t('Excluding expenses')}</option><option value="expenses">{t('Including expenses')}</option></NativeSelect></label></div>
+   <div className="form-grid"><label className="tracking-start" aria-busy={savingStart}>{t('Tracking since')}{/* The picker shows the day the chart starts from and offers no day before the first investment activity: there is no value to compare from earlier. */}<DatePicker value={trackingFrom??''} required={false} min={earliestStart} max={today} presets={pastDatePresets} onChange={date=>{if(!savingStart)void chooseTrackingStart(date||null);}}/></label></div>
    <p className="comparison-note">{chosenEarlier?t('Comparisons start on {date}, the day of your first investment, because nothing was invested before the tracking start you chose.',{date:formatDate(method.date,locale)}):trackingFrom?t('Tracking starts on {date}. Benchmarks start from your investment value that day, and nothing earlier is shown. Clear the date to track from your first investment.',{date:formatDate(trackingFrom,locale)}):t('Tracking starts with your first investment activity. Choose a tracking start date to begin later, for example after you finished entering existing holdings.')}</p>
    <p className="comparison-note">{t(scope==='expenses'?'Investment purchases, principal repayments and every recorded expense fund benchmarks. Spending adds nothing to your investment value, so the gap shows what it cost. Transfers between your accounts and income receipts are not counted.':'Investment purchases and principal repayments fund benchmarks. Explicit transfers between investments are not counted again. Cash balances and income receipts are excluded.')}</p>
    {beforeMarketHistory&&<p className="comparison-note">{t('Market history starts on {date}. Earlier purchases are compared from their recorded values on that day.',{date:formatDate(earliestStart,locale)})}</p>}

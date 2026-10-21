@@ -2713,5 +2713,8 @@
   "Hand-poured candles sold online and at markets.": "Свечи ручной работы: продажи онлайн и на ярмарках.",
   "Where your money went": "Куда ушли ваши деньги",
   "Income and spending": "Доходы и расходы",
-  "Spending by category": "Расходы по категориям"
+  "Spending by category": "Расходы по категориям",
+  "Net worth if spending had been invested": "Капитал, если бы расходы были инвестированы",
+  "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Ваш капитал сегодня, если бы инвестиции и каждый записанный расход были вложены в каждый ориентир. Расходы ничего не добавляют к капиталу, поэтому разница — их цена.",
+  "{amount} vs today": "{amount} к сегодняшнему"
 }

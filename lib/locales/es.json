@@ -2713,5 +2713,8 @@
   "Hand-poured candles sold online and at markets.": "Velas artesanales vendidas en línea y en mercados.",
   "Where your money went": "A dónde fue tu dinero",
   "Income and spending": "Ingresos y gastos",
-  "Spending by category": "Gastos por categoría"
+  "Spending by category": "Gastos por categoría",
+  "Net worth if spending had been invested": "Patrimonio si el gasto se hubiera invertido",
+  "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Tu patrimonio neto de hoy con tus inversiones y cada gasto registrado puestos en cada referencia. El gasto no suma nada a tu patrimonio, así que la diferencia es lo que costó.",
+  "{amount} vs today": "{amount} frente a hoy"
 }

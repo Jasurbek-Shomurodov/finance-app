@@ -2713,5 +2713,8 @@
   "Hand-poured candles sold online and at markets.": "Mga kandilang gawang-kamay na ibinebenta online at sa mga palengke.",
   "Where your money went": "Saan napunta ang pera mo",
   "Income and spending": "Kita at gastos",
-  "Spending by category": "Gastos ayon sa kategorya"
+  "Spending by category": "Gastos ayon sa kategorya",
+  "Net worth if spending had been invested": "Net worth kung ininvest ang mga gastos",
+  "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Ang net worth mo ngayon kung inilagay sa bawat benchmark ang iyong mga investment at bawat naitalang gastos. Walang idinadagdag ang gastos sa net worth mo, kaya ang diperensiya ang halaga nito.",
+  "{amount} vs today": "{amount} kumpara ngayon"
 }

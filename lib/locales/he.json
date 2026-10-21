@@ -2713,5 +2713,8 @@
   "Hand-poured candles sold online and at markets.": "נרות יצוקים בעבודת יד הנמכרים ברשת ובשווקים.",
   "Where your money went": "לאן הלך הכסף שלך",
   "Income and spending": "הכנסות והוצאות",
-  "Spending by category": "הוצאות לפי קטגוריה"
+  "Spending by category": "הוצאות לפי קטגוריה",
+  "Net worth if spending had been invested": "שווי נקי אילו ההוצאות היו מושקעות",
+  "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "השווי הנקי שלך היום אילו ההשקעות וכל הוצאה רשומה היו מושקעות בכל מדד ייחוס. הוצאות לא מוסיפות לשווי, ולכן ההפרש הוא המחיר שלהן.",
+  "{amount} vs today": "{amount} לעומת היום"
 }

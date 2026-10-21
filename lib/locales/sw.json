@@ -2713,5 +2713,8 @@
   "Hand-poured candles sold online and at markets.": "Mishumaa ya kumiminwa kwa mkono inayouzwa mtandaoni na sokoni.",
   "Where your money went": "Pesa zako zilikoenda",
   "Income and spending": "Mapato na matumizi",
-  "Spending by category": "Matumizi kwa kategoria"
+  "Spending by category": "Matumizi kwa kategoria",
+  "Net worth if spending had been invested": "Thamani halisi kama matumizi yangewekezwa",
+  "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Thamani yako halisi leo kama uwekezaji wako na kila matumizi yaliyorekodiwa yangewekwa kwenye kila kigezo. Matumizi hayaongezi chochote kwenye thamani yako, kwa hiyo tofauti ndiyo gharama yake.",
+  "{amount} vs today": "{amount} ukilinganisha na leo"
 }

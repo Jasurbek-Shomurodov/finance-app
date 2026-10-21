@@ -2713,5 +2713,8 @@
   "Hand-poured candles sold online and at markets.": "Lilin tuang tangan dijual dalam talian dan di pasar.",
   "Where your money went": "Ke mana wang anda pergi",
   "Income and spending": "Pendapatan dan perbelanjaan",
-  "Spending by category": "Perbelanjaan mengikut kategori"
+  "Spending by category": "Perbelanjaan mengikut kategori",
+  "Net worth if spending had been invested": "Nilai bersih jika perbelanjaan dilaburkan",
+  "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Nilai bersih anda hari ini jika pelaburan dan setiap perbelanjaan yang direkod dimasukkan ke setiap penanda aras. Perbelanjaan tidak menambah nilai bersih, jadi bezanya ialah kosnya.",
+  "{amount} vs today": "{amount} berbanding hari ini"
 }

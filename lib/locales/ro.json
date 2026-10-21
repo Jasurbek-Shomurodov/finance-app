@@ -2713,5 +2713,8 @@
   "Hand-poured candles sold online and at markets.": "Lumânări turnate manual, vândute online și în piețe.",
   "Where your money went": "Unde s-au dus banii tăi",
   "Income and spending": "Venituri și cheltuieli",
-  "Spending by category": "Cheltuieli pe categorii"
+  "Spending by category": "Cheltuieli pe categorii",
+  "Net worth if spending had been invested": "Avere netă dacă cheltuielile ar fi fost investite",
+  "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Averea ta netă de azi dacă investițiile și fiecare cheltuială înregistrată ar fi mers în fiecare reper. Cheltuielile nu adaugă nimic averii, deci diferența este costul lor.",
+  "{amount} vs today": "{amount} față de azi"
 }

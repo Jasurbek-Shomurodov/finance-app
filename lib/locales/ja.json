@@ -2713,5 +2713,8 @@
   "Hand-poured candles sold online and at markets.": "手作りのキャンドルをオンラインとマーケットで販売。",
   "Where your money went": "お金の行き先",
   "Income and spending": "収入と支出",
-  "Spending by category": "カテゴリ別の支出"
+  "Spending by category": "カテゴリ別の支出",
+  "Net worth if spending had been invested": "支出を投資していた場合の純資産",
+  "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "投資と記録したすべての支出を各ベンチマークに投じていた場合の今日の純資産。支出は純資産を増やさないため、その差が支出のコストです。",
+  "{amount} vs today": "今日と比べて {amount}"
 }

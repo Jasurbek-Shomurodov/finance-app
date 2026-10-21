@@ -16,6 +16,24 @@
 .overview-chart-heading .comparison-legend{margin-top:0}
 .overview-chart-title{display:flex;flex-direction:column;gap:8px}
 .tracking-start[aria-busy=true]{opacity:.6}
+.segmented.funding-switch{align-self:flex-start}
+.segmented.funding-switch>button{height:30px;padding-inline:12px;font-size:var(--type-caption)}
+/* "Including expenses": today's net worth beside what it would be had that money gone into each benchmark. */
+.what-if{display:grid;gap:12px;margin-top:20px;padding-top:20px;border-top:1px solid var(--border)}
+.what-if h4{display:flex;align-items:center;gap:6px;font-size:var(--type-small);font-weight:600}
+.what-if-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,140px),1fr));gap:10px}
+.what-if-card{--what-if-color:var(--primary);position:relative;display:grid;gap:4px;align-content:start;min-width:0;padding:14px 16px;border:1px solid var(--border);border-radius:var(--radius-control);background:linear-gradient(160deg,color-mix(in srgb,var(--what-if-color) 9%,transparent),transparent 65%);overflow:hidden;animation:what-if-in .35s ease both}
+.what-if-card::before{content:"";position:absolute;inset-block:0;inset-inline-start:0;width:3px;background:var(--what-if-color)}
+.what-if-card span{display:flex;align-items:center;gap:7px;font-size:var(--type-caption);color:var(--muted-foreground);overflow-wrap:anywhere}
+.what-if-card i{width:8px;height:8px;flex-shrink:0;border-radius:50%;background:var(--what-if-color)}
+.what-if-card strong{font-size:var(--type-heading);font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.what-if-card em{font-style:normal;font-size:var(--type-caption);font-weight:500;font-variant-numeric:tabular-nums;color:var(--muted-foreground)}
+.what-if-card em.positive{color:var(--positive)}
+.what-if-card em.negative{color:var(--negative)}
+.what-if-card[data-best]{border-color:color-mix(in srgb,var(--what-if-color) 55%,var(--border))}
+.what-if-actual{background:var(--muted)}
+@keyframes what-if-in{from{opacity:0;transform:translateY(4px)}}
+@media(prefers-reduced-motion:reduce){.what-if-card{animation:none}}
 .overview-content .comparison-legend button{min-height:32px;padding:4px 10px;border-radius:999px;font-size:var(--type-caption)}
 .overview-content .portfolio-chart{margin:12px 0 0}
 .overview-content .portfolio-chart+.comparison-note{font-size:var(--type-caption);margin:4px 0 0}

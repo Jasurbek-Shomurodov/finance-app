@@ -2713,5 +2713,8 @@
   "Hand-poured candles sold online and at markets.": "Nến đổ thủ công, bán trực tuyến và tại chợ.",
   "Where your money went": "Tiền của bạn đã đi đâu",
   "Income and spending": "Thu nhập và chi tiêu",
-  "Spending by category": "Chi tiêu theo danh mục"
+  "Spending by category": "Chi tiêu theo danh mục",
+  "Net worth if spending had been invested": "Tài sản ròng nếu chi tiêu được đầu tư",
+  "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Tài sản ròng hôm nay của bạn nếu các khoản đầu tư và mọi chi tiêu đã ghi được đưa vào từng chỉ số tham chiếu. Chi tiêu không làm tăng tài sản ròng, nên phần chênh lệch là cái giá của nó.",
+  "{amount} vs today": "{amount} so với hôm nay"
 }

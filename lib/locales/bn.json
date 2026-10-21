@@ -2713,5 +2713,8 @@
   "Hand-poured candles sold online and at markets.": "হাতে ঢালা মোমবাতি, অনলাইনে ও বাজারে বিক্রি হয়।",
   "Where your money went": "আপনার টাকা কোথায় গেল",
   "Income and spending": "আয় ও ব্যয়",
-  "Spending by category": "বিভাগ অনুযায়ী ব্যয়"
+  "Spending by category": "বিভাগ অনুযায়ী ব্যয়",
+  "Net worth if spending had been invested": "খরচ বিনিয়োগ করলে নিট সম্পদ",
+  "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "আজ আপনার নিট সম্পদ, যদি আপনার বিনিয়োগ ও প্রতিটি লেখা খরচ প্রতিটি বেঞ্চমার্কে রাখা হতো। খরচ আপনার সম্পদে কিছু যোগ করে না, তাই পার্থক্যটাই তার মূল্য।",
+  "{amount} vs today": "আজকের তুলনায় {amount}"
 }

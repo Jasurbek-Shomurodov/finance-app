@@ -2713,5 +2713,8 @@
   "Hand-poured candles sold online and at markets.": "شمع‌های دست‌ریز که آنلاین و در بازارها فروخته می‌شوند.",
   "Where your money went": "پول شما کجا رفت",
   "Income and spending": "درآمد و هزینه",
-  "Spending by category": "هزینه بر اساس دسته"
+  "Spending by category": "هزینه بر اساس دسته",
+  "Net worth if spending had been invested": "دارایی خالص اگر هزینه‌ها سرمایه‌گذاری می‌شد",
+  "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "دارایی خالص امروز شما اگر سرمایه‌گذاری‌ها و هر هزینهٔ ثبت‌شده در هر شاخص مرجع گذاشته می‌شد. هزینه چیزی به دارایی اضافه نمی‌کند، پس تفاوت همان بهای آن است.",
+  "{amount} vs today": "{amount} نسبت به امروز"
 }

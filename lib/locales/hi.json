@@ -2713,5 +2713,8 @@
   "Hand-poured candles sold online and at markets.": "हाथ से ढली मोमबत्तियाँ, जो ऑनलाइन और बाज़ारों में बिकती हैं।",
   "Where your money went": "आपका पैसा कहाँ गया",
   "Income and spending": "आय और खर्च",
-  "Spending by category": "श्रेणी के अनुसार खर्च"
+  "Spending by category": "श्रेणी के अनुसार खर्च",
+  "Net worth if spending had been invested": "अगर खर्च निवेश किया होता तो कुल संपत्ति",
+  "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "आज आपकी कुल संपत्ति, अगर आपके निवेश और हर दर्ज खर्च हर बेंचमार्क में लगाए गए होते। खर्च आपकी संपत्ति में कुछ नहीं जोड़ता, इसलिए अंतर उसकी कीमत है।",
+  "{amount} vs today": "आज की तुलना में {amount}"
 }

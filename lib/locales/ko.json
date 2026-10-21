@@ -2713,5 +2713,8 @@
   "Hand-poured candles sold online and at markets.": "직접 부어 만든 양초를 온라인과 마켓에서 판매합니다.",
   "Where your money went": "돈이 어디로 갔는지",
   "Income and spending": "수입과 지출",
-  "Spending by category": "카테고리별 지출"
+  "Spending by category": "카테고리별 지출",
+  "Net worth if spending had been invested": "지출을 투자했다면의 순자산",
+  "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "투자와 기록된 모든 지출을 각 벤치마크에 넣었다면 오늘의 순자산입니다. 지출은 순자산에 더해지지 않으므로 차이가 그 비용입니다.",
+  "{amount} vs today": "오늘 대비 {amount}"
 }

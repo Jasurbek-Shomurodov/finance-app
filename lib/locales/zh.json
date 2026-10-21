@@ -2713,5 +2713,8 @@
   "Hand-poured candles sold online and at markets.": "手工浇筑蜡烛，在网上和集市销售。",
   "Where your money went": "你的钱去了哪里",
   "Income and spending": "收入与支出",
-  "Spending by category": "按类别的支出"
+  "Spending by category": "按类别的支出",
+  "Net worth if spending had been invested": "若支出用于投资的净资产",
+  "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "如果把您的投资和每笔记录的支出都投入各个基准，您今天的净资产。支出不会增加净资产，因此差额就是它的代价。",
+  "{amount} vs today": "与今天相比 {amount}"
 }

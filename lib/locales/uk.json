@@ -2713,5 +2713,8 @@
   "Hand-poured candles sold online and at markets.": "Свічки ручної роботи: продаж онлайн і на ярмарках.",
   "Where your money went": "Куди пішли ваші гроші",
   "Income and spending": "Доходи й витрати",
-  "Spending by category": "Витрати за категоріями"
+  "Spending by category": "Витрати за категоріями",
+  "Net worth if spending had been invested": "Капітал, якби витрати було інвестовано",
+  "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Ваш капітал сьогодні, якби інвестиції та кожну записану витрату було вкладено в кожен орієнтир. Витрати нічого не додають до капіталу, тож різниця — їхня ціна.",
+  "{amount} vs today": "{amount} порівняно з сьогодні"
 }

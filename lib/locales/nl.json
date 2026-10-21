@@ -2713,5 +2713,8 @@
   "Hand-poured candles sold online and at markets.": "Handgegoten kaarsen, online en op markten verkocht.",
   "Where your money went": "Waar je geld naartoe ging",
   "Income and spending": "Inkomsten en uitgaven",
-  "Spending by category": "Uitgaven per categorie"
+  "Spending by category": "Uitgaven per categorie",
+  "Net worth if spending had been invested": "Vermogen als uitgaven waren belegd",
+  "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Uw nettovermogen vandaag als uw beleggingen en elke geregistreerde uitgave in elke benchmark waren gestoken. Uitgaven voegen niets toe aan uw vermogen, dus het verschil is wat ze kostten.",
+  "{amount} vs today": "{amount} ten opzichte van vandaag"
 }
