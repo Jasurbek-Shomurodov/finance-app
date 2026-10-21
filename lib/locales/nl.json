@@ -2731,5 +2731,8 @@
   "Shortfall": "Tekort",
   "Money flow": "Geldstroom",
   "Previous quarter": "Vorig kwartaal",
-  "Next quarter": "Volgend kwartaal"
+  "Next quarter": "Volgend kwartaal",
+  "Borrower group (optional)": "Lenersgroep (optioneel)",
+  "e.g. Family": "bijv. Familie",
+  "Borrower group is too long.": "De groepsnaam is te lang."
 }

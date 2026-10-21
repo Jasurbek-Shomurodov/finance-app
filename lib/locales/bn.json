@@ -2731,5 +2731,8 @@
   "Shortfall": "ঘাটতি",
   "Money flow": "টাকার প্রবাহ",
   "Previous quarter": "আগের ত্রৈমাসিক",
-  "Next quarter": "পরের ত্রৈমাসিক"
+  "Next quarter": "পরের ত্রৈমাসিক",
+  "Borrower group (optional)": "ঋণগ্রহীতার দল (ঐচ্ছিক)",
+  "e.g. Family": "যেমন পরিবার",
+  "Borrower group is too long.": "দলের নাম খুব লম্বা।"
 }

@@ -2731,5 +2731,8 @@
   "Shortfall": "Upungufu",
   "Money flow": "Mtiririko wa pesa",
   "Previous quarter": "Robo iliyopita",
-  "Next quarter": "Robo inayofuata"
+  "Next quarter": "Robo inayofuata",
+  "Borrower group (optional)": "Kikundi cha wakopaji (si lazima)",
+  "e.g. Family": "mf. Familia",
+  "Borrower group is too long.": "Jina la kikundi ni refu mno."
 }

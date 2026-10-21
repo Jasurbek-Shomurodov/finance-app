@@ -2731,5 +2731,8 @@
   "Shortfall": "कमी",
   "Money flow": "पैसों का प्रवाह",
   "Previous quarter": "पिछली तिमाही",
-  "Next quarter": "अगली तिमाही"
+  "Next quarter": "अगली तिमाही",
+  "Borrower group (optional)": "उधार लेने वालों का समूह (वैकल्पिक)",
+  "e.g. Family": "जैसे परिवार",
+  "Borrower group is too long.": "समूह का नाम बहुत लंबा है।"
 }

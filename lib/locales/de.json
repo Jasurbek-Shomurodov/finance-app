@@ -2731,5 +2731,8 @@
   "Shortfall": "Fehlbetrag",
   "Money flow": "Geldfluss",
   "Previous quarter": "Vorheriges Quartal",
-  "Next quarter": "Nächstes Quartal"
+  "Next quarter": "Nächstes Quartal",
+  "Borrower group (optional)": "Schuldnergruppe (optional)",
+  "e.g. Family": "z. B. Familie",
+  "Borrower group is too long.": "Der Gruppenname ist zu lang."
 }

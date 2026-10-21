@@ -2731,5 +2731,8 @@
   "Shortfall": "Нехватка",
   "Money flow": "Движение денег",
   "Previous quarter": "Предыдущий квартал",
-  "Next quarter": "Следующий квартал"
+  "Next quarter": "Следующий квартал",
+  "Borrower group (optional)": "Группа заёмщиков (необязательно)",
+  "e.g. Family": "например, Семья",
+  "Borrower group is too long.": "Название группы слишком длинное."
 }

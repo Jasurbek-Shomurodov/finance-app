@@ -2731,5 +2731,8 @@
   "Shortfall": "Kakulangan",
   "Money flow": "Daloy ng pera",
   "Previous quarter": "Nakaraang quarter",
-  "Next quarter": "Susunod na quarter"
+  "Next quarter": "Susunod na quarter",
+  "Borrower group (optional)": "Grupo ng nangutang (opsyonal)",
+  "e.g. Family": "hal. Pamilya",
+  "Borrower group is too long.": "Masyadong mahaba ang pangalan ng grupo."
 }

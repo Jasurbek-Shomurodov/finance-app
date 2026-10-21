@@ -42,6 +42,8 @@ roll-strip>roll-char{display:block;height:1lh}
 @media (prefers-reduced-motion:reduce){roll-strip{transition:none}}
 .tools-panel :is(th,td).amount{text-align:end}
 .table-group-row th{padding:20px 0 6px;border-bottom:0;color:var(--foreground);font-size:var(--type-compact);font-weight:600;letter-spacing:0;text-transform:none}
+.lending-group-row .table-group-label>span:first-child{display:inline-flex;align-items:center;gap:8px}
+.lending-group-row .table-group-label>span:last-child{font-variant-numeric:tabular-nums}
 .table-group-label{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 16px;padding:10px 16px;border-radius:var(--radius-control);background:var(--muted)}
 /* Rows under a group heading sit indented, so the heading reads as their parent. */
 @container content (min-width:721px){tbody:has(>.table-group-row) tr:not(.table-group-row) td:first-child{padding-inline-start:32px}tbody:has(>.table-group-row) tr:not(.table-group-row) td:last-child{padding-inline-end:16px}}
@@ -97,6 +99,10 @@ roll-strip>roll-char{display:block;height:1lh}
  .records table td:last-child{order:4;flex:1 0 100%;width:auto;padding:0}
  .records table td:last-child .row-actions{justify-content:flex-end}
  .records table td:last-child:empty,.records table td:last-child:has(.row-actions:empty){display:none}
+ /* A borrower's heading spans the card list, above that borrower's loans. */
+ .records table tbody tr.table-group-row{padding:16px 16px 4px;border-bottom:0}
+ .records table tbody tr.table-group-row::after{content:none}
+ .records table tbody tr.table-group-row th{display:block;flex:1 1 100%;padding:0}
 }
 /* Narrow columns: upcoming payments and small summary tables become cards instead of sideways-scrolling rows. */
 @container content (max-width:720px){

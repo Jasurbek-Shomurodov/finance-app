@@ -2731,5 +2731,8 @@
   "Shortfall": "Kekurangan",
   "Money flow": "Aliran uang",
   "Previous quarter": "Kuartal sebelumnya",
-  "Next quarter": "Kuartal berikutnya"
+  "Next quarter": "Kuartal berikutnya",
+  "Borrower group (optional)": "Grup peminjam (opsional)",
+  "e.g. Family": "mis. Keluarga",
+  "Borrower group is too long.": "Nama grup terlalu panjang."
 }

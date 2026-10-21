@@ -4,7 +4,9 @@ import { EmptyState } from '@/components/presentation-foundation/empty-state';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
 import { PanelTitle } from '@/components/presentation-foundation/panel-title';
 import { Pagination } from '@/components/presentation-foundation/pagination';
-import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, ReactNode } from 'react';
+import { Fragment, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
+import { useDisplayMoney } from '@/components/display-money';
+import { lendingSequence } from '@/lib/lending-groups';
 import { Plus, Wallet } from 'lucide-react';
 import { CategoryBadge } from '@/components/presentation-foundation/category-badge';
 import { useLanguage } from '@/components/language-provider';
@@ -41,6 +43,7 @@ const paidByPayment = (record: Entry) => record.kind === 'Mortgage' || record.ki
 
 export function RecordsTable({ title, transactions = false, limit, pagination = true, children }: Props) {
  const { t, locale } = useLanguage();
+ const { showSum } = useDisplayMoney();
  const { filters, setFilters, filtersActive, historyOnly, useFilteredRecords, remoteHistory, historyPage, visible, totalRecords, pageCount, tablePage, tableLoading, recordsLoading, showPage,
   sectionKey, planning, transactionTools, demo, busy, currency, money, storedRecord,
   addRecord, editRecord, requestDelete, setDrilling, setSankey, setStopping, setTracking, setPayingMortgage, setDebtPayment, setSplitting } = useWorkspace();
@@ -57,15 +60,8 @@ export function RecordsTable({ title, transactions = false, limit, pagination = 
   : r.rate ? t('{rate}% annual interest', { rate: formatNumber(r.rate, locale) })
   : noteLine(r, categoryOf(r));
  const categoryOf = (r: Entry) => planning.data.categories.find(category => category.id === r.custom_category_id)?.name;
- return <section id="workspace-records" className={`panel records${historyOnly ? ' transaction-history' : ''}`}>
-  {/* A preview counts the rows it lists; the full list counts every matching record. */}
-  <PanelTitle title={title} count={<Count value={limit === undefined ? totalRecords : shown.length} loading={tableLoading}/>}/>
-  {(limit === undefined || filtersActive) && <RecordFilters value={filters} onChange={setFilters} categories={sectionKey === 'debts' ? [] : planning.data.categories} kinds={sectionKey === 'debts' ? lendingRecordKinds : sectionKey === 'cashflow' ? [...income,...expenses] : kinds}/>}
-  {remoteHistory&&historyPage.error&&<InlineError message={t(historyPage.error)} onRetry={historyPage.retry}/>}
-  {useFilteredRecords&&planning.error&&<InlineError message={t(planning.error)}/>}
-  {tableLoading ? <LoadingPlaceholder label={t("Loading records…")}/> : visible.length ? <div className="table-scroll"><table>
-   <thead><tr><th>{t("Name")}</th><th>{t("Category")}</th><th>{transactions ? t("Date") : t("Date / due date")}</th><th>{transactions ? t("Amount") : t("Value")}</th><th>{t("Actions")}</th></tr></thead>
-   <tbody>{shown.map(r => <tr key={r.id} {...(transactions?{className:'clickable-row',tabIndex:0,'aria-label':t('Open {name}',{name:shownName(r, t, categoryOf(r))}),onClick:(event:ReactMouseEvent)=>{const target=event.target as HTMLElement;/* Menu items are portaled out of the row, but React still bubbles their clicks here. */if(event.currentTarget.contains(target)&&!target.closest('button,a,input'))setDrilling(storedRecord(r));},onKeyDown:(event:ReactKeyboardEvent)=>{if(event.target===event.currentTarget&&(event.key==='Enter'||event.key===' ')){event.preventDefault();setDrilling(storedRecord(r));}}}:{className:'clickable-row',tabIndex:0,'aria-label':t('Open {name}',{name:shownName(r, t, categoryOf(r))}),onClick:(event:ReactMouseEvent)=>{const target=event.target as HTMLElement;if(event.currentTarget.contains(target)&&!target.closest('button,a,input'))openRecord(r);},onKeyDown:(event:ReactKeyboardEvent)=>{if(event.target===event.currentTarget&&(event.key==='Enter'||event.key===' ')){event.preventDefault();openRecord(r);}}})}>
+ // One record's row; Loans & debts gathers money lent of the same borrower group under a heading.
+ const row = (r: (typeof shown)[number]) => <tr key={r.id} {...(transactions?{className:'clickable-row',tabIndex:0,'aria-label':t('Open {name}',{name:shownName(r, t, categoryOf(r))}),onClick:(event:ReactMouseEvent)=>{const target=event.target as HTMLElement;/* Menu items are portaled out of the row, but React still bubbles their clicks here. */if(event.currentTarget.contains(target)&&!target.closest('button,a,input'))setDrilling(storedRecord(r));},onKeyDown:(event:ReactKeyboardEvent)=>{if(event.target===event.currentTarget&&(event.key==='Enter'||event.key===' ')){event.preventDefault();setDrilling(storedRecord(r));}}}:{className:'clickable-row',tabIndex:0,'aria-label':t('Open {name}',{name:shownName(r, t, categoryOf(r))}),onClick:(event:ReactMouseEvent)=>{const target=event.target as HTMLElement;if(event.currentTarget.contains(target)&&!target.closest('button,a,input'))openRecord(r);},onKeyDown:(event:ReactKeyboardEvent)=>{if(event.target===event.currentTarget&&(event.key==='Enter'||event.key===' ')){event.preventDefault();openRecord(r);}}})}>
     <td><div className="record-name"><RecordIcon record={r} /><div><strong>{shownName(r, t, categoryOf(r))}</strong>{detail(r)&&<small>{detail(r)}</small>}</div></div></td>
     <td><CategoryBadge kind={r.kind} label={t(r.payment_type==='bonus'?'Bonus':r.kind)}/>{r.custom_category_id&&<CategoryBadge kind={r.custom_category_id} label={planning.data.categories.find(c=>c.id===r.custom_category_id)?.name??t('Custom category')}/>}</td>
     <td className="muted">{r.kind === 'Money lent' ? <><div>{t("Lent: {date}", { date: date(r.lent_date || '') })}</div><small>{r.date ? t("Due: {date}", { date: date(r.date) }) : t("No due date")}</small></> : liabilities.includes(r.kind)?<>{r.opened_on&&<div>{t('Started: {date}',{date:date(r.opened_on)})}</div>}<small>{t('Due: {date}',{date:date(r.date)})}</small></>:date(r.date)}</td>
@@ -82,7 +78,20 @@ export function RecordsTable({ title, transactions = false, limit, pagination = 
        { label: t('Delete'), deletes: true, onSelect: () => requestDelete(r) },
       ] : []),
      ]}/></div></td>
-   </tr>)}</tbody>
+   </tr>;
+ return <section id="workspace-records" className={`panel records${historyOnly ? ' transaction-history' : ''}`}>
+  {/* A preview counts the rows it lists; the full list counts every matching record. */}
+  <PanelTitle title={title} count={<Count value={limit === undefined ? totalRecords : shown.length} loading={tableLoading}/>}/>
+  {(limit === undefined || filtersActive) && <RecordFilters value={filters} onChange={setFilters} categories={sectionKey === 'debts' ? [] : planning.data.categories} kinds={sectionKey === 'debts' ? lendingRecordKinds : sectionKey === 'cashflow' ? [...income,...expenses] : kinds}/>}
+  {remoteHistory&&historyPage.error&&<InlineError message={t(historyPage.error)} onRetry={historyPage.retry}/>}
+  {useFilteredRecords&&planning.error&&<InlineError message={t(planning.error)}/>}
+  {tableLoading ? <LoadingPlaceholder label={t("Loading records…")}/> : visible.length ? <div className="table-scroll"><table>
+   <thead><tr><th>{t("Name")}</th><th>{t("Category")}</th><th>{transactions ? t("Date") : t("Date / due date")}</th><th>{transactions ? t("Amount") : t("Value")}</th><th>{t("Actions")}</th></tr></thead>
+   <tbody>{sectionKey === 'debts' ? lendingSequence(shown, r => r).map(item => 'row' in item ? row(item.row) : <Fragment key={'borrower:' + item.borrower}>
+    {/* Loans of the same borrower group under one heading with what they owe together, in the display currency. */}
+    <tr className="table-group-row lending-group-row"><th colSpan={5}><div className="table-group-label"><span>{item.borrower}<Count value={item.rows.length}/></span><span>{showSum(item.rows.map(r => ({ amount: value(r), currency: r.currency })))}</span></div></th></tr>
+    {item.rows.map(row)}
+   </Fragment>) : shown.map(row)}</tbody>
   </table></div> : <EmptyState icon={<Wallet />} title={t(filtersActive?'No matching records':'A fresh start')} description={t(filtersActive?'Try another search or clear the filters.':'Add a record in {currency} to start building your overview.', { currency })}>{filtersActive&&<Button variant="outline" onClick={()=>setFilters(emptyRecordFilters)}>{t('Clear filters')}</Button>}<Button variant="outline" onClick={addRecord}><Plus />{transactions ? t("Add your first expense") : t("Add your first record")}</Button></EmptyState>}
   {children}
   {!tableLoading && pagination && <Pagination label={t('Record pages')} summary={t('Page {page} of {pages} · {count} records', { page: formatNumber(tablePage, locale, 0), pages: formatNumber(pageCount, locale, 0), count: formatNumber(totalRecords, locale, 0) })} page={tablePage} pageCount={pageCount} hasNext={tablePage < pageCount} disabled={recordsLoading || busy} onPage={showPage}/>}

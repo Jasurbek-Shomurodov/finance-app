@@ -2731,5 +2731,8 @@
   "Shortfall": "不足",
   "Money flow": "お金の流れ",
   "Previous quarter": "前の四半期",
-  "Next quarter": "次の四半期"
+  "Next quarter": "次の四半期",
+  "Borrower group (optional)": "借り手のグループ（任意）",
+  "e.g. Family": "例: 家族",
+  "Borrower group is too long.": "グループ名が長すぎます。"
 }

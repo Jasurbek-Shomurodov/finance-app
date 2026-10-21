@@ -2731,5 +2731,8 @@
   "Shortfall": "부족액",
   "Money flow": "돈의 흐름",
   "Previous quarter": "이전 분기",
-  "Next quarter": "다음 분기"
+  "Next quarter": "다음 분기",
+  "Borrower group (optional)": "빌린 사람 그룹 (선택)",
+  "e.g. Family": "예: 가족",
+  "Borrower group is too long.": "그룹 이름이 너무 깁니다."
 }

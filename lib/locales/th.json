@@ -2731,5 +2731,8 @@
   "Shortfall": "ส่วนขาด",
   "Money flow": "กระแสเงิน",
   "Previous quarter": "ไตรมาสก่อนหน้า",
-  "Next quarter": "ไตรมาสถัดไป"
+  "Next quarter": "ไตรมาสถัดไป",
+  "Borrower group (optional)": "กลุ่มผู้ยืม (ไม่บังคับ)",
+  "e.g. Family": "เช่น ครอบครัว",
+  "Borrower group is too long.": "ชื่อกลุ่มยาวเกินไป"
 }

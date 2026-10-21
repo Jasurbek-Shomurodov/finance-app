@@ -2731,5 +2731,8 @@
   "Shortfall": "Açık",
   "Money flow": "Para akışı",
   "Previous quarter": "Önceki çeyrek",
-  "Next quarter": "Sonraki çeyrek"
+  "Next quarter": "Sonraki çeyrek",
+  "Borrower group (optional)": "Borç alan grubu (isteğe bağlı)",
+  "e.g. Family": "ör. Aile",
+  "Borrower group is too long.": "Grup adı çok uzun."
 }

@@ -2731,5 +2731,8 @@
   "Shortfall": "גירעון",
   "Money flow": "תזרים כסף",
   "Previous quarter": "הרבעון הקודם",
-  "Next quarter": "הרבעון הבא"
+  "Next quarter": "הרבעון הבא",
+  "Borrower group (optional)": "קבוצת לווים (רשות)",
+  "e.g. Family": "למשל משפחה",
+  "Borrower group is too long.": "שם הקבוצה ארוך מדי."
 }

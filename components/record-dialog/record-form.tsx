@@ -18,6 +18,7 @@ import { holdingAccountLabel } from '@/lib/holding-accounts';
 import { lendingRecordKinds, interestKinds, liabilities, income, value, simpleInterestKinds, unitPricedKinds, valuedKinds, type Entry } from '@/lib/finance';
 import { MetalFields } from './metal-fields';
 import { LentFromField } from './lent-from-field';
+import { BorrowerField } from './borrower-field';
 import { depositToday as today } from '@/lib/deposit-interest';
 import { changeRecordKind } from '@/lib/record-kind';
 import { changeHoldingCost, holdingCostStart, shownHoldingTotal, type HoldingCost, type HoldingCostField } from '@/lib/holding-cost';
@@ -123,7 +124,7 @@ function BookingFields({form}:{form:FormContext}){
 
 /** The form for every record that is not income or an expense: assets, accounts and holdings, debts and money lent. */
 export function RecordForm({form}:{form:FormContext}){
- return <form className="record-form" onSubmit={form.save}><IdentityFields form={form}/><KindFields form={form}/>{form.editing.kind === 'Precious metals' && <MetalFields editing={form.editing} setEditing={form.setEditing} disabled={form.busy}/>}<LinkFields form={form}/><AmountFields form={form}/>{form.editing.kind === 'Money lent' && !form.existing && <LentFromField entry={form.editing} records={form.planning.data.records} loading={form.planning.loading} error={form.planning.error} busy={form.busy} onChange={lent_from => form.setEditing({ ...form.editing, lent_from })}/>}<HoldingFields form={form}/><InterestFields form={form}/><DateFields form={form}/><RecurrenceFields form={form}/><BookingFields form={form}/></form>;
+ return <form className="record-form" onSubmit={form.save}><IdentityFields form={form}/><KindFields form={form}/>{form.editing.kind === 'Money lent' && <BorrowerField entry={form.editing} records={form.rows} disabled={form.busy} onChange={value => form.field('borrower_group', value)}/>}{form.editing.kind === 'Precious metals' && <MetalFields editing={form.editing} setEditing={form.setEditing} disabled={form.busy}/>}<LinkFields form={form}/><AmountFields form={form}/>{form.editing.kind === 'Money lent' && !form.existing && <LentFromField entry={form.editing} records={form.planning.data.records} loading={form.planning.loading} error={form.planning.error} busy={form.busy} onChange={lent_from => form.setEditing({ ...form.editing, lent_from })}/>}<HoldingFields form={form}/><InterestFields form={form}/><DateFields form={form}/><RecurrenceFields form={form}/><BookingFields form={form}/></form>;
 }
 import type { RecordDialogProps } from '../record-dialog';
 import { Textarea } from '@/components/ui/textarea';

@@ -2731,5 +2731,8 @@
   "Shortfall": "Kamomad",
   "Money flow": "Pul oqimi",
   "Previous quarter": "Oldingi chorak",
-  "Next quarter": "Keyingi chorak"
+  "Next quarter": "Keyingi chorak",
+  "Borrower group (optional)": "Qarz oluvchilar guruhi (ixtiyoriy)",
+  "e.g. Family": "masalan, Oila",
+  "Borrower group is too long.": "Guruh nomi juda uzun."
 }

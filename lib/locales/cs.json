@@ -2731,5 +2731,8 @@
   "Shortfall": "Schodek",
   "Money flow": "Tok peněz",
   "Previous quarter": "Předchozí čtvrtletí",
-  "Next quarter": "Další čtvrtletí"
+  "Next quarter": "Další čtvrtletí",
+  "Borrower group (optional)": "Skupina dlužníků (nepovinné)",
+  "e.g. Family": "např. Rodina",
+  "Borrower group is too long.": "Název skupiny je příliš dlouhý."
 }

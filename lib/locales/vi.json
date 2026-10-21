@@ -2731,5 +2731,8 @@
   "Shortfall": "Thiếu hụt",
   "Money flow": "Dòng tiền",
   "Previous quarter": "Quý trước",
-  "Next quarter": "Quý sau"
+  "Next quarter": "Quý sau",
+  "Borrower group (optional)": "Nhóm người vay (không bắt buộc)",
+  "e.g. Family": "vd: Gia đình",
+  "Borrower group is too long.": "Tên nhóm quá dài."
 }

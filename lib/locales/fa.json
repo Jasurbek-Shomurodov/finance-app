@@ -2731,5 +2731,8 @@
   "Shortfall": "کسری",
   "Money flow": "جریان پول",
   "Previous quarter": "فصل قبل",
-  "Next quarter": "فصل بعد"
+  "Next quarter": "فصل بعد",
+  "Borrower group (optional)": "گروه وام‌گیرندگان (اختیاری)",
+  "e.g. Family": "مثلاً خانواده",
+  "Borrower group is too long.": "نام گروه خیلی طولانی است."
 }

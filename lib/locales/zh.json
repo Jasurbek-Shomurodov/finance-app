@@ -2731,5 +2731,8 @@
   "Shortfall": "缺口",
   "Money flow": "资金流向",
   "Previous quarter": "上一季度",
-  "Next quarter": "下一季度"
+  "Next quarter": "下一季度",
+  "Borrower group (optional)": "借款人分组（可选）",
+  "e.g. Family": "例如：家人",
+  "Borrower group is too long.": "分组名称太长。"
 }

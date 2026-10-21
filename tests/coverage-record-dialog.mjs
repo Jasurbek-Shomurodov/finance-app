@@ -263,6 +263,10 @@ test('money lent records the borrower, the date lent and an optional due date af
  const due=d.labelled('Due date (optional)','DatePicker');
  assert.equal(due.props.required,false);assert.equal(due.props.min,'2026-09-05');
  assert.equal(dialog(t,record('lent','Money lent',{lent_date:''})).labelled('Due date (optional)','DatePicker').props.min,undefined);
+ // 21 October 2026: several loans can share a borrower group, which gathers them in Loans & debts.
+ d.r.fire(d.labelled('Borrower group (optional)','input'),'onChange',{currentTarget:{value:'Family'}});
+ assert.equal(d.state.editing.borrower_group,'Family');
+ assert.ok(!dialog(t,record('loan','Loan')).r.html().includes('Borrower group'),'only money lent has a group');
  d.r.fire(d.r.find(byType('RecordNameInput')),'onChange','Grace');
  assert.equal(d.state.editing.name,'Grace');
 });

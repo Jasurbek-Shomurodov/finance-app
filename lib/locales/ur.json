@@ -2731,5 +2731,8 @@
   "Shortfall": "کمی",
   "Money flow": "پیسے کا بہاؤ",
   "Previous quarter": "پچھلی سہ ماہی",
-  "Next quarter": "اگلی سہ ماہی"
+  "Next quarter": "اگلی سہ ماہی",
+  "Borrower group (optional)": "قرض داروں کا گروپ (اختیاری)",
+  "e.g. Family": "مثلاً خاندان",
+  "Borrower group is too long.": "گروپ کا نام بہت لمبا ہے۔"
 }

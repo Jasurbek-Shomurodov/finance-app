@@ -2731,5 +2731,8 @@
   "Shortfall": "Shortfall",
   "Money flow": "Money flow",
   "Previous quarter": "Previous quarter",
-  "Next quarter": "Next quarter"
+  "Next quarter": "Next quarter",
+  "Borrower group (optional)": "Borrower group (optional)",
+  "e.g. Family": "e.g. Family",
+  "Borrower group is too long.": "Borrower group is too long."
 }

@@ -2731,5 +2731,8 @@
   "Shortfall": "Déficit",
   "Money flow": "Fluxo de dinheiro",
   "Previous quarter": "Trimestre anterior",
-  "Next quarter": "Próximo trimestre"
+  "Next quarter": "Próximo trimestre",
+  "Borrower group (optional)": "Grupo de devedores (opcional)",
+  "e.g. Family": "ex.: Família",
+  "Borrower group is too long.": "O nome do grupo é muito longo."
 }

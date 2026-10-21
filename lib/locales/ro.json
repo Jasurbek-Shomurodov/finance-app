@@ -2731,5 +2731,8 @@
   "Shortfall": "Deficit",
   "Money flow": "Fluxul banilor",
   "Previous quarter": "Trimestrul anterior",
-  "Next quarter": "Trimestrul următor"
+  "Next quarter": "Trimestrul următor",
+  "Borrower group (optional)": "Grup de împrumutați (opțional)",
+  "e.g. Family": "ex. Familie",
+  "Borrower group is too long.": "Numele grupului este prea lung."
 }

@@ -2731,5 +2731,8 @@
   "Shortfall": "عجز",
   "Money flow": "تدفق الأموال",
   "Previous quarter": "الربع السابق",
-  "Next quarter": "الربع التالي"
+  "Next quarter": "الربع التالي",
+  "Borrower group (optional)": "مجموعة المقترضين (اختياري)",
+  "e.g. Family": "مثل: العائلة",
+  "Borrower group is too long.": "اسم المجموعة طويل جدًا."
 }
