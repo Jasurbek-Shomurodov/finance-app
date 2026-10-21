@@ -2193,7 +2193,6 @@
   "Repairs and maintenance": "Reparaties en onderhoud",
   "Report view": "Rapportweergave",
   "Reports": "Rapporten",
-  "Reports cover up to 24 months.": "Rapporten beslaan maximaal 24 maanden.",
   "Reports show each business’s profit and loss; tax prep is ready when you need it.": "Rapporten tonen de winst en het verlies van elk bedrijf; belastingvoorbereiding staat klaar wanneer u die nodig heeft.",
   "Returns and allowances": "Retouren en kortingen",
   "Rows": "Rijen",
@@ -2730,5 +2729,7 @@
   "Estimated asset income": "Geschat inkomen uit bezittingen",
   "Other recurring income": "Ander terugkerend inkomen",
   "Shortfall": "Tekort",
-  "Money flow": "Geldstroom"
+  "Money flow": "Geldstroom",
+  "Previous quarter": "Vorig kwartaal",
+  "Next quarter": "Volgend kwartaal"
 }

@@ -2193,7 +2193,6 @@
   "Repairs and maintenance": "Ремонт и обслуживание",
   "Report view": "Вид отчёта",
   "Reports": "Отчёты",
-  "Reports cover up to 24 months.": "Отчёты охватывают до 24 месяцев.",
   "Reports show each business’s profit and loss; tax prep is ready when you need it.": "Отчёты показывают прибыли и убытки каждого бизнеса; подготовка налогов готова, когда понадобится.",
   "Returns and allowances": "Возвраты и скидки",
   "Rows": "Строки",
@@ -2730,5 +2729,7 @@
   "Estimated asset income": "Ожидаемый доход от активов",
   "Other recurring income": "Прочий регулярный доход",
   "Shortfall": "Нехватка",
-  "Money flow": "Движение денег"
+  "Money flow": "Движение денег",
+  "Previous quarter": "Предыдущий квартал",
+  "Next quarter": "Следующий квартал"
 }

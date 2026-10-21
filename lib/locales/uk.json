@@ -2193,7 +2193,6 @@
   "Repairs and maintenance": "Ремонт і обслуговування",
   "Report view": "Вигляд звіту",
   "Reports": "Звіти",
-  "Reports cover up to 24 months.": "Звіти охоплюють до 24 місяців.",
   "Reports show each business’s profit and loss; tax prep is ready when you need it.": "Звіти показують прибутки та збитки кожного бізнесу; підготовка податків готова, коли знадобиться.",
   "Returns and allowances": "Повернення та знижки",
   "Rows": "Рядки",
@@ -2730,5 +2729,7 @@
   "Estimated asset income": "Очікуваний дохід від активів",
   "Other recurring income": "Інший регулярний дохід",
   "Shortfall": "Нестача",
-  "Money flow": "Рух грошей"
+  "Money flow": "Рух грошей",
+  "Previous quarter": "Попередній квартал",
+  "Next quarter": "Наступний квартал"
 }

@@ -2193,7 +2193,6 @@
   "Repairs and maintenance": "Opravy a údržba",
   "Report view": "Zobrazení přehledu",
   "Reports": "Přehledy",
-  "Reports cover up to 24 months.": "Přehledy pokrývají až 24 měsíců.",
   "Reports show each business’s profit and loss; tax prep is ready when you need it.": "Přehledy ukazují zisk a ztrátu každého podnikání; daňová příprava je připravena, až ji budete potřebovat.",
   "Returns and allowances": "Vratky a slevy",
   "Rows": "Řádky",
@@ -2730,5 +2729,7 @@
   "Estimated asset income": "Odhadovaný příjem z majetku",
   "Other recurring income": "Jiný pravidelný příjem",
   "Shortfall": "Schodek",
-  "Money flow": "Tok peněz"
+  "Money flow": "Tok peněz",
+  "Previous quarter": "Předchozí čtvrtletí",
+  "Next quarter": "Další čtvrtletí"
 }

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadTS } from './helpers/load-ts.mjs';
-const { reportLedger, filterLines, profitAndLoss, businessSankey, cashFlowTrend, attributeTrend, rangeFor, readableRange, intervalOf, periodEnding, businessNetAssets, drillMatches, sharesBy } = loadTS('lib/business-report.ts');
+const { reportLedger, filterLines, profitAndLoss, businessSankey, cashFlowTrend, attributeTrend, rangeFor, readableRange, intervalOf, periodOf, shiftPeriod, trendWindow, businessNetAssets, drillMatches, sharesBy } = loadTS('lib/business-report.ts');
 const { taxSheet, defaultTaxLine, taxLineFor, taxPeriodRange, taxExportRows, defaultTaxSettings } = loadTS('lib/business-tax.ts');
 
 const record = (id, name, kind, amount, date, extra = {}) => ({ id, name, kind, currency: 'USD', amount, quantity: 1, cost: 0, rate: 0, date, frequency: 'Once', notes: '', ...extra });
@@ -80,12 +80,14 @@ test('trends, shares, drill-downs, ranges and net assets', () => {
  assert.equal(trend[0].expenses, 99);
  assert.deepEqual(cashFlowTrend(lines, { from: '2026-01-01', to: '2026-12-31' }, 'quarter').map(row => row.period), ['2026-Q1', '2026-Q2', '2026-Q3', '2026-Q4']);
  assert.equal(intervalOf('2026-09-30', 'quarter'), '2026-Q3');
- const year = { from: '2026-01-01', to: '2026-12-31' };
- assert.deepEqual(periodEnding(year, '2026-10-21', 'month'), { from: '2026-10-01', to: '2026-10-21' });
- assert.deepEqual(periodEnding(year, '2026-10-21', 'quarter'), { from: '2026-10-01', to: '2026-10-21' });
- assert.deepEqual(periodEnding(year, '2026-08-05', 'quarter'), { from: '2026-07-01', to: '2026-08-05' });
- assert.deepEqual(periodEnding(year, '2026-10-21', 'year'), { from: '2026-01-01', to: '2026-10-21' });
- assert.deepEqual(periodEnding({ from: '2026-08-15', to: '2026-12-31' }, '2026-09-30', 'quarter'), { from: '2026-08-15', to: '2026-09-30' });
+ assert.deepEqual(periodOf('month', '2026-10-21', '2026-10-21'), { from: '2026-10-01', to: '2026-10-21' });
+ assert.deepEqual(periodOf('quarter', '2026-08-05', '2026-10-21'), { from: '2026-07-01', to: '2026-09-30' });
+ assert.deepEqual(periodOf('year', '2025-03-01', '2026-10-21'), { from: '2025-01-01', to: '2025-12-31' });
+ assert.deepEqual(periodOf('year', '2026-10-21', '2026-10-21'), { from: '2026-01-01', to: '2026-10-21' });
+ assert.deepEqual([shiftPeriod('2026-10-21', 'month', -1), shiftPeriod('2026-10-01', 'quarter', -1), shiftPeriod('2026-01-01', 'year', 1)], ['2026-09-01', '2026-07-01', '2027-01-01']);
+ assert.deepEqual(trendWindow(periodOf('month', '2026-10-21', '2026-10-21'), 'month'), { from: '2025-11-01', to: '2026-10-21' });
+ assert.deepEqual(trendWindow(periodOf('quarter', '2026-10-21', '2026-10-21'), 'quarter'), { from: '2025-01-01', to: '2026-10-21' });
+ assert.deepEqual(trendWindow(periodOf('year', '2026-10-21', '2026-10-21'), 'year'), { from: '2025-01-01', to: '2026-10-21' });
  const spending = lines.filter(line => line.direction === 'expense');
  const byBusiness = attributeTrend(spending, { from: '2026-09-01', to: '2026-09-30' }, 'month', line => line.business ?? 'household', 2);
  assert.deepEqual(byBusiness.keys, ['candles', 'other']);

@@ -2193,7 +2193,6 @@
   "Repairs and maintenance": "Onarım ve bakım",
   "Report view": "Rapor görünümü",
   "Reports": "Raporlar",
-  "Reports cover up to 24 months.": "Raporlar en fazla 24 ayı kapsar.",
   "Reports show each business’s profit and loss; tax prep is ready when you need it.": "Raporlar her işletmenin kâr ve zararını gösterir; vergi hazırlığı ihtiyacınız olduğunda hazırdır.",
   "Returns and allowances": "İadeler ve indirimler",
   "Rows": "Satırlar",
@@ -2730,5 +2729,7 @@
   "Estimated asset income": "Tahmini varlık geliri",
   "Other recurring income": "Diğer düzenli gelir",
   "Shortfall": "Açık",
-  "Money flow": "Para akışı"
+  "Money flow": "Para akışı",
+  "Previous quarter": "Önceki çeyrek",
+  "Next quarter": "Sonraki çeyrek"
 }

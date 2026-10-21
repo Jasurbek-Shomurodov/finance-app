@@ -2193,7 +2193,6 @@
   "Repairs and maintenance": "维修和保养",
   "Report view": "报表视图",
   "Reports": "报表",
-  "Reports cover up to 24 months.": "报表最多涵盖 24 个月。",
   "Reports show each business’s profit and loss; tax prep is ready when you need it.": "报表显示每个企业的损益；需要时即可进行报税准备。",
   "Returns and allowances": "退货与折让",
   "Rows": "行",
@@ -2730,5 +2729,7 @@
   "Estimated asset income": "资产预计收入",
   "Other recurring income": "其他经常性收入",
   "Shortfall": "缺口",
-  "Money flow": "资金流向"
+  "Money flow": "资金流向",
+  "Previous quarter": "上一季度",
+  "Next quarter": "下一季度"
 }

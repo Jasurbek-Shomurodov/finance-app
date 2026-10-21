@@ -2193,7 +2193,6 @@
   "Repairs and maintenance": "Matengenezo na ukarabati",
   "Report view": "Mwonekano wa ripoti",
   "Reports": "Ripoti",
-  "Reports cover up to 24 months.": "Ripoti zinashughulikia hadi miezi 24.",
   "Reports show each business’s profit and loss; tax prep is ready when you need it.": "Ripoti zinaonyesha faida na hasara ya kila biashara; maandalizi ya kodi yako tayari unapoyahitaji.",
   "Returns and allowances": "Marejesho na punguzo",
   "Rows": "Safu",
@@ -2730,5 +2729,7 @@
   "Estimated asset income": "Mapato yanayokadiriwa ya mali",
   "Other recurring income": "Mapato mengine ya kawaida",
   "Shortfall": "Upungufu",
-  "Money flow": "Mtiririko wa pesa"
+  "Money flow": "Mtiririko wa pesa",
+  "Previous quarter": "Robo iliyopita",
+  "Next quarter": "Robo inayofuata"
 }

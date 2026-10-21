@@ -2193,7 +2193,6 @@
   "Repairs and maintenance": "الإصلاح والصيانة",
   "Report view": "عرض التقرير",
   "Reports": "التقارير",
-  "Reports cover up to 24 months.": "تغطي التقارير ما يصل إلى 24 شهرًا.",
   "Reports show each business’s profit and loss; tax prep is ready when you need it.": "تعرض التقارير أرباح وخسائر كل عمل تجاري؛ والتحضير الضريبي جاهز عندما تحتاج إليه.",
   "Returns and allowances": "المرتجعات والخصومات",
   "Rows": "الصفوف",
@@ -2730,5 +2729,7 @@
   "Estimated asset income": "دخل الأصول المقدّر",
   "Other recurring income": "دخل متكرر آخر",
   "Shortfall": "عجز",
-  "Money flow": "تدفق الأموال"
+  "Money flow": "تدفق الأموال",
+  "Previous quarter": "الربع السابق",
+  "Next quarter": "الربع التالي"
 }

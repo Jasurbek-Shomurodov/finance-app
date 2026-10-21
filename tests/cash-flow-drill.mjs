@@ -850,7 +850,7 @@ test('a Reports row narrows the transactions and opens its Sankey for the report
  assert.equal(reportDrillTarget({ business: 'shop' }), null, 'a business alone only narrows');
  assert.equal(reportDrillTarget({ direction: 'expense', categories: [] }), null);
  const screen = fs.readFileSync('components/workspace/screens/reports-screen.tsx', 'utf8');
- assert.match(screen, /if \(target\) setSankey\(\{ target, title: label, month: end\.slice\(0, 7\), months: monthsBetween\(range\.from\.slice\(0, 7\), end\.slice\(0, 7\)\), period: rangeLabel \}\);/);
+ assert.match(screen, /if \(target\) setSankey\(\{ target, title: label, month: period\.to\.slice\(0, 7\), months: monthsBetween\(period\.from\.slice\(0, 7\), period\.to\.slice\(0, 7\)\), period: rangeLabel \}\);/);
 });
 
 test('a Loans & debts row opens its Sankey for this month, its Details editing it', () => {

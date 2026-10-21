@@ -2193,7 +2193,6 @@
   "Repairs and maintenance": "Réparations et entretien",
   "Report view": "Vue du rapport",
   "Reports": "Rapports",
-  "Reports cover up to 24 months.": "Les rapports couvrent jusqu’à 24 mois.",
   "Reports show each business’s profit and loss; tax prep is ready when you need it.": "Les rapports présentent le compte de résultat de chaque entreprise ; la préparation fiscale est prête quand vous en avez besoin.",
   "Returns and allowances": "Retours et rabais",
   "Rows": "Lignes",
@@ -2730,5 +2729,7 @@
   "Estimated asset income": "Revenus estimés des actifs",
   "Other recurring income": "Autres revenus récurrents",
   "Shortfall": "Déficit",
-  "Money flow": "Flux d’argent"
+  "Money flow": "Flux d’argent",
+  "Previous quarter": "Trimestre précédent",
+  "Next quarter": "Trimestre suivant"
 }

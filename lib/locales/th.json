@@ -2193,7 +2193,6 @@
   "Repairs and maintenance": "ค่าซ่อมแซมและบำรุงรักษา",
   "Report view": "มุมมองรายงาน",
   "Reports": "รายงาน",
-  "Reports cover up to 24 months.": "รายงานครอบคลุมได้สูงสุด 24 เดือน",
   "Reports show each business’s profit and loss; tax prep is ready when you need it.": "รายงานแสดงกำไรขาดทุนของแต่ละธุรกิจ และพร้อมเตรียมภาษีเมื่อคุณต้องการ",
   "Returns and allowances": "รับคืนและส่วนลด",
   "Rows": "แถว",
@@ -2730,5 +2729,7 @@
   "Estimated asset income": "รายได้จากสินทรัพย์โดยประมาณ",
   "Other recurring income": "รายได้ประจำอื่น",
   "Shortfall": "ส่วนขาด",
-  "Money flow": "กระแสเงิน"
+  "Money flow": "กระแสเงิน",
+  "Previous quarter": "ไตรมาสก่อนหน้า",
+  "Next quarter": "ไตรมาสถัดไป"
 }

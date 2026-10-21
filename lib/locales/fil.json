@@ -2193,7 +2193,6 @@
   "Repairs and maintenance": "Pagkukumpuni at maintenance",
   "Report view": "View ng ulat",
   "Reports": "Mga ulat",
-  "Reports cover up to 24 months.": "Saklaw ng mga ulat ang hanggang 24 na buwan.",
   "Reports show each business’s profit and loss; tax prep is ready when you need it.": "Ipinapakita ng mga ulat ang tubo at lugi ng bawat negosyo; handa ang paghahanda ng buwis kapag kailangan mo.",
   "Returns and allowances": "Mga return at allowance",
   "Rows": "Mga hilera",
@@ -2730,5 +2729,7 @@
   "Estimated asset income": "Tinatayang kita mula sa ari-arian",
   "Other recurring income": "Iba pang paulit-ulit na kita",
   "Shortfall": "Kakulangan",
-  "Money flow": "Daloy ng pera"
+  "Money flow": "Daloy ng pera",
+  "Previous quarter": "Nakaraang quarter",
+  "Next quarter": "Susunod na quarter"
 }

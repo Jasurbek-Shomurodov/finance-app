@@ -2193,7 +2193,6 @@
   "Repairs and maintenance": "Repairs and maintenance",
   "Report view": "Report view",
   "Reports": "Reports",
-  "Reports cover up to 24 months.": "Reports cover up to 24 months.",
   "Reports show each business’s profit and loss; tax prep is ready when you need it.": "Reports show each business’s profit and loss; tax prep is ready when you need it.",
   "Returns and allowances": "Returns and allowances",
   "Rows": "Rows",
@@ -2730,5 +2729,7 @@
   "Estimated asset income": "Estimated asset income",
   "Other recurring income": "Other recurring income",
   "Shortfall": "Shortfall",
-  "Money flow": "Money flow"
+  "Money flow": "Money flow",
+  "Previous quarter": "Previous quarter",
+  "Next quarter": "Next quarter"
 }

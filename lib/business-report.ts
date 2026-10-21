@@ -168,11 +168,19 @@ export const intervals = ['month', 'quarter', 'year'] as const;
 export type Interval = typeof intervals[number];
 /** The interval a date falls in: `2026-07`, `2026-Q3` or `2026`. */
 export const intervalOf = (date: string, interval: Interval) => interval === 'month' ? date.slice(0, 7) : interval === 'year' ? date.slice(0, 4) : `${date.slice(0, 4)}-Q${Math.floor((Number(date.slice(5, 7)) - 1) / 3) + 1}`;
-/** The interval of the range that ends on `end`: this month, quarter or year so far, never outside the range. */
-export function periodEnding(range: ReportRange, end: string, interval: Interval): ReportRange {
- const month = end.slice(0, 7), first = interval === 'month' ? month : interval === 'year' ? `${month.slice(0, 4)}-01` : shiftMonth(month, -((Number(month.slice(5, 7)) - 1) % 3));
- const last = monthEnd(shiftMonth(first, interval === 'month' ? 0 : interval === 'quarter' ? 2 : 11));
- return { from: first + '-01' > range.from ? first + '-01' : range.from, to: last < end ? last : end };
+const intervalMonths: Record<Interval, number> = { month: 1, quarter: 3, year: 12 };
+/** The month, quarter or year that `date` falls in, ending today at the latest. */
+export function periodOf(interval: Interval, date: string, today: string): ReportRange {
+ const month = date.slice(0, 7), first = interval === 'month' ? month : interval === 'year' ? `${month.slice(0, 4)}-01` : shiftMonth(month, -((Number(month.slice(5, 7)) - 1) % 3));
+ const last = monthEnd(shiftMonth(first, intervalMonths[interval] - 1));
+ return { from: first + '-01', to: last < today ? last : today };
+}
+/** The first day of the period `steps` months, quarters or years away. */
+export const shiftPeriod = (date: string, interval: Interval, steps: number) => shiftMonth(date.slice(0, 7), steps * intervalMonths[interval]) + '-01';
+/** Trends end with the period: the last 12 months, 8 quarters or 2 years, within the 24 months a report reads. */
+export function trendWindow(period: ReportRange, interval: Interval): ReportRange {
+ const back = interval === 'month' ? 11 : interval === 'quarter' ? 21 : 12;
+ return { from: shiftMonth(period.from.slice(0, 7), -back) + '-01', to: period.to };
 }
 export const intervalsIn = (range: ReportRange, interval: Interval) => [...new Set(rangeMonths(range).map(month => intervalOf(month + '-01', interval)))];
 

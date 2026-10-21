@@ -2193,7 +2193,6 @@
   "Repairs and maintenance": "मरम्मत और रखरखाव",
   "Report view": "रिपोर्ट व्यू",
   "Reports": "रिपोर्ट",
-  "Reports cover up to 24 months.": "रिपोर्ट अधिकतम 24 महीनों को कवर करती हैं।",
   "Reports show each business’s profit and loss; tax prep is ready when you need it.": "रिपोर्ट हर बिज़नेस का लाभ और हानि दिखाती हैं; ज़रूरत पड़ने पर टैक्स की तैयारी तैयार है।",
   "Returns and allowances": "रिटर्न और छूट",
   "Rows": "पंक्तियां",
@@ -2730,5 +2729,7 @@
   "Estimated asset income": "संपत्ति से अनुमानित आय",
   "Other recurring income": "अन्य नियमित आय",
   "Shortfall": "कमी",
-  "Money flow": "पैसों का प्रवाह"
+  "Money flow": "पैसों का प्रवाह",
+  "Previous quarter": "पिछली तिमाही",
+  "Next quarter": "अगली तिमाही"
 }

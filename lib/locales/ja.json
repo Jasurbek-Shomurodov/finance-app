@@ -2193,7 +2193,6 @@
   "Repairs and maintenance": "修繕費",
   "Report view": "レポート表示",
   "Reports": "レポート",
-  "Reports cover up to 24 months.": "レポートは最大 24 か月を対象とします。",
   "Reports show each business’s profit and loss; tax prep is ready when you need it.": "レポートには各事業の損益が表示され、必要なときに税務準備ができます。",
   "Returns and allowances": "返品・値引き",
   "Rows": "行",
@@ -2730,5 +2729,7 @@
   "Estimated asset income": "資産からの見込み収入",
   "Other recurring income": "その他の定期収入",
   "Shortfall": "不足",
-  "Money flow": "お金の流れ"
+  "Money flow": "お金の流れ",
+  "Previous quarter": "前の四半期",
+  "Next quarter": "次の四半期"
 }

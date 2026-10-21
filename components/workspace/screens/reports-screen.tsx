@@ -8,7 +8,7 @@ import { PageHeader } from '@/components/presentation-foundation/page-header';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { AttributeTab } from '@/components/reports/attribute-tab';
 import { CashFlowTab } from '@/components/reports/cash-flow-tab';
-import { ReportFilters, type RangeChoice } from '@/components/reports/report-filters';
+import { ReportFilters } from '@/components/reports/report-filters';
 import { rangeText } from '@/components/reports/report-labels';
 import { TaxTab } from '@/components/reports/tax-tab';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
@@ -16,7 +16,7 @@ import { useReportLink } from '@/hooks/use-report-link';
 import { useRangeData } from '@/hooks/use-report-data';
 import { budgetCategories } from '@/lib/budget';
 import { HOUSEHOLD } from '@/lib/business';
-import { drillMatches, filterLines, rangeFor, rangeMonths, readableRange, reportLedger, type Drill, type LedgerLine, type ReportRange } from '@/lib/business-report';
+import { drillMatches, filterLines, periodOf, reportLedger, shiftPeriod, trendWindow, type Drill, type Interval, type LedgerLine } from '@/lib/business-report';
 import { depositToday } from '@/lib/deposit-interest';
 import { monthsBetween } from '@/lib/budget';
 import { reportDrillTarget } from '@/lib/cash-flow-link';
@@ -37,15 +37,17 @@ export function ReportsScreen() {
  const [ownerFilter, setOwnerFilter] = useState<string[]>([]);
  const today = depositToday();
  const { tab, setTab, businesses, setBusinesses, cashView, setCashView, cashMode, setCashMode } = useReportLink();
- const [preset, setPreset] = useState<RangeChoice>('this_year');
- const [custom, setCustom] = useState<ReportRange>(() => rangeFor('last_3_months', today));
- const range = preset === 'custom' ? readableRange(custom) : rangeFor(preset, today);
- const { data, loading, error, retry } = useRangeData(range);
+ // The page shows one month, quarter or year; Trends read back from it.
+ const [interval, setInterval] = useState<Interval>('month');
+ const [anchor, setAnchor] = useState(today);
+ const period = periodOf(interval, anchor, today), trendRange = trendWindow(period, interval);
+ const { data, loading, error, retry } = useRangeData(trendRange);
  const rates = marketRates(market);
  const splits = transactionTools.data.splits;
- const ledger = useMemo(() => reportLedger(data, splits, range, currency, today, rates), [data, splits, range, currency, today, rates]);
+ const ledger = useMemo(() => reportLedger(data, splits, { from: trendRange.from, to: trendRange.to }, currency, today, rates), [data, splits, trendRange.from, trendRange.to, currency, today, rates]);
  // Costs that come from an asset's history rather than a transaction belong to the household.
- const lines = useMemo(() => filterLines(ledger.lines, businesses).filter(line => !homes || inOwnerFilter(ownerFilter, line.record ? ownerOf(line.record, homes) : SHARED)), [ledger.lines, businesses, homes, ownerFilter]);
+ const trendLines = useMemo(() => filterLines(ledger.lines, businesses).filter(line => !homes || inOwnerFilter(ownerFilter, line.record ? ownerOf(line.record, homes) : SHARED)), [ledger.lines, businesses, homes, ownerFilter]);
+ const lines = useMemo(() => trendLines.filter(line => line.date >= period.from && line.date <= period.to), [trendLines, period.from, period.to]);
  const groups = useMemo(() => new Map(budgetCategories(data.categories, budget.state.categories).map(category => [category.key, category.group])), [data.categories, budget.state.categories]);
  const groupOf = groupFinder(groups, data.categories);
  const names = reportNames(data.categories, businessList, t);
@@ -54,27 +56,25 @@ export function ReportsScreen() {
  const narrow = (next: Drill) => {
   const label = describeDrill(next, names, t), target = reportDrillTarget(next);
   setDrill({ drill: next, label });
-  if (target) setSankey({ target, title: label, month: end.slice(0, 7), months: monthsBetween(range.from.slice(0, 7), end.slice(0, 7)), period: rangeLabel });
+  if (target) setSankey({ target, title: label, month: period.to.slice(0, 7), months: monthsBetween(period.from.slice(0, 7), period.to.slice(0, 7)), period: rangeLabel });
  };
  // Changing what the page shows starts again from every transaction.
  const reset = <T,>(set: (value: T) => void) => (value: T) => { set(value); setDrill(null); };
  const visibleTabs = reportTabsFor(businessList.length > 0);
  const shownTab = visibleTabs.includes(tab) ? tab : 'cash_flow';
- const end = range.to < today ? range.to : today;
- const rangeLabel = rangeText({ from: range.from, to: end }, locale);
+ const rangeLabel = rangeText(period, locale);
  // A ledger line opens its transaction's Sankey; its details are one tap away there.
  const open = (line: LedgerLine) => line.record && setDrilling(storedRecord(line.record));
- const tabProps = { range, end, names, groupOf, currency, onDrill: narrow };
+ const tabProps = { trendLines, trendRange, interval, names, groupOf, currency, onDrill: narrow };
 
  return <div data-page="Reports" className="content reports-content">
   <PageHeader title={t('Reports')} tabs={<Segmented as="nav" className="page-tabs" label={t('Reports')} options={visibleTabs.map(value => ({ value, label: t(tabLabels[value]) }))} value={shownTab} onChange={reset(setTab)}/>} hint={t('Cash flow, spending and income for your household and each business. Click any part of a chart or table to see its transactions.')}>
-   {shownTab !== 'tax' && <ReportFilters businesses={businessList} business={businesses} onBusiness={reset(setBusinesses)} owners={owners} owner={ownerFilter} onOwner={reset(setOwnerFilter)} preset={preset} range={preset === 'custom' ? custom : { from: range.from, to: range.to < today ? range.to : today }} today={today} onPreset={reset(setPreset)} onRange={reset((next: ReportRange) => { setCustom(next); setPreset('custom'); })}/>}
+   {shownTab !== 'tax' && <ReportFilters businesses={businessList} business={businesses} onBusiness={reset(setBusinesses)} owners={owners} owner={ownerFilter} onOwner={reset(setOwnerFilter)} interval={interval} onInterval={reset(setInterval)} period={period} today={today} onStep={reset((steps: number) => setAnchor(shiftPeriod(period.from, interval, steps)))} onToday={() => reset(setAnchor)(today)}/>}
   </PageHeader>
-  {shownTab !== 'tax' && preset === 'custom' && rangeMonths(custom).length > 24 && <p className="bulk-bar-note" role="status">{t('Reports cover up to 24 months.')}</p>}
   {shownTab === 'tax' ? <TaxTab preferences={workspacePreferences.data.preferences} save={workspacePreferences.save} names={names} onOpen={open}/>
-   : error ? <InlineError message={t(error)} onRetry={retry}/> : loading ? <PanelSkeleton label={t('Loading records…')} rows={6}/> : <ReportBody tab={shownTab} lines={lines} names={names} currency={currency} drill={drill} onClear={() => setDrill(null)} missing={ledger.missing} fileName={`${shownTab.replace('_', '-')}-${range.from}-${end}`} onOpen={open}>
-    {shownTab === 'cash_flow' ? <CashFlowTab {...tabProps} lines={lines} includeHousehold={!businesses.length || businesses.includes(HOUSEHOLD)} businessIds={businessList.map(item => item.id).filter(id => businesses.includes(id) || (!businesses.length && lines.some(line => line.business === id)))} view={cashView} onView={setCashView} mode={cashMode} onMode={setCashMode}/>
-     : <AttributeTab {...tabProps} key={shownTab} direction={shownTab === 'spending' ? 'expense' : 'income'} lines={tabLines(shownTab, lines)} hasBusinesses={businessList.length > 0}/>}
+   : error ? <InlineError message={t(error)} onRetry={retry}/> : loading ? <PanelSkeleton label={t('Loading records…')} rows={6}/> : <ReportBody tab={shownTab} lines={lines} names={names} currency={currency} drill={drill} onClear={() => setDrill(null)} missing={ledger.missing} fileName={`${shownTab.replace('_', '-')}-${period.from}-${period.to}`} onOpen={open}>
+    {shownTab === 'cash_flow' ? <CashFlowTab {...tabProps} lines={lines} includeHousehold={!businesses.length || businesses.includes(HOUSEHOLD)} businessIds={businessList.map(item => item.id).filter(id => businesses.includes(id) || (!businesses.length && (cashMode === 'trends' ? trendLines : lines).some(line => line.business === id)))} view={cashView} onView={setCashView} mode={cashMode} onMode={setCashMode}/>
+     : <AttributeTab {...tabProps} key={shownTab} direction={shownTab === 'spending' ? 'expense' : 'income'} lines={tabLines(shownTab, lines)} trendLines={tabLines(shownTab, trendLines)} hasBusinesses={businessList.length > 0}/>}
    </ReportBody>}
  </div>;
 }

@@ -2193,7 +2193,6 @@
   "Repairs and maintenance": "Pembaikan dan penyelenggaraan",
   "Report view": "Paparan laporan",
   "Reports": "Laporan",
-  "Reports cover up to 24 months.": "Laporan meliputi sehingga 24 bulan.",
   "Reports show each business’s profit and loss; tax prep is ready when you need it.": "Laporan menunjukkan untung dan rugi setiap perniagaan; persediaan cukai sedia apabila anda memerlukannya.",
   "Returns and allowances": "Pulangan dan elaun",
   "Rows": "Baris",
@@ -2730,5 +2729,7 @@
   "Estimated asset income": "Anggaran pendapatan aset",
   "Other recurring income": "Pendapatan berulang lain",
   "Shortfall": "Kekurangan",
-  "Money flow": "Aliran wang"
+  "Money flow": "Aliran wang",
+  "Previous quarter": "Suku sebelumnya",
+  "Next quarter": "Suku seterusnya"
 }

@@ -2193,7 +2193,6 @@
   "Repairs and maintenance": "Reparații și întreținere",
   "Report view": "Vizualizare raport",
   "Reports": "Rapoarte",
-  "Reports cover up to 24 months.": "Rapoartele acoperă până la 24 de luni.",
   "Reports show each business’s profit and loss; tax prep is ready when you need it.": "Rapoartele arată profitul și pierderea fiecărei afaceri; pregătirea fiscală e gata când ai nevoie de ea.",
   "Returns and allowances": "Retururi și reduceri",
   "Rows": "Rânduri",
@@ -2730,5 +2729,7 @@
   "Estimated asset income": "Venit estimat din active",
   "Other recurring income": "Alte venituri recurente",
   "Shortfall": "Deficit",
-  "Money flow": "Fluxul banilor"
+  "Money flow": "Fluxul banilor",
+  "Previous quarter": "Trimestrul anterior",
+  "Next quarter": "Trimestrul următor"
 }

@@ -2193,7 +2193,6 @@
   "Repairs and maintenance": "Sửa chữa và bảo trì",
   "Report view": "Chế độ xem báo cáo",
   "Reports": "Báo cáo",
-  "Reports cover up to 24 months.": "Báo cáo bao gồm tối đa 24 tháng.",
   "Reports show each business’s profit and loss; tax prep is ready when you need it.": "Báo cáo hiển thị lãi lỗ của từng doanh nghiệp; phần chuẩn bị thuế luôn sẵn sàng khi bạn cần.",
   "Returns and allowances": "Hàng bán bị trả lại và giảm giá",
   "Rows": "Hàng",
@@ -2730,5 +2729,7 @@
   "Estimated asset income": "Thu nhập ước tính từ tài sản",
   "Other recurring income": "Thu nhập định kỳ khác",
   "Shortfall": "Thiếu hụt",
-  "Money flow": "Dòng tiền"
+  "Money flow": "Dòng tiền",
+  "Previous quarter": "Quý trước",
+  "Next quarter": "Quý sau"
 }

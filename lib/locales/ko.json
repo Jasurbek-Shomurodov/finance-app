@@ -2193,7 +2193,6 @@
   "Repairs and maintenance": "수리 및 유지보수비",
   "Report view": "보고서 보기 방식",
   "Reports": "보고서",
-  "Reports cover up to 24 months.": "보고서는 최대 24개월까지 다룹니다.",
   "Reports show each business’s profit and loss; tax prep is ready when you need it.": "보고서에는 각 사업의 손익이 표시되며, 필요할 때 세금 준비를 할 수 있습니다.",
   "Returns and allowances": "반품 및 에누리",
   "Rows": "행",
@@ -2730,5 +2729,7 @@
   "Estimated asset income": "자산 예상 소득",
   "Other recurring income": "기타 정기 소득",
   "Shortfall": "부족액",
-  "Money flow": "돈의 흐름"
+  "Money flow": "돈의 흐름",
+  "Previous quarter": "이전 분기",
+  "Next quarter": "다음 분기"
 }

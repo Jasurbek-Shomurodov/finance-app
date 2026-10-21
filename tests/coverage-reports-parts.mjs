@@ -48,7 +48,8 @@ const charts = hostModule({ attributeColor: (attribute, key) => attribute + ':' 
 const modules = {
  ...ui.modules,
  'lucide-react': hostModule(), '@/components/business-reports': charts, '@/components/cash-flow-report': hostModule(), '@/components/tax-prep-sheet': hostModule(),
- ...Object.fromEntries(['page-header', 'segmented', 'panel-title', 'stat-tile', 'business-filter', 'owner-filter', 'inline-error', 'loading-placeholder', 'date-range-picker'].map(name => ['@/components/presentation-foundation/' + name, hostModule()])),
+ ...Object.fromEntries(['page-header', 'segmented', 'panel-title', 'stat-tile', 'business-filter', 'owner-filter', 'inline-error', 'loading-placeholder', 'today-button'].map(name => ['@/components/presentation-foundation/' + name, hostModule()])),
+ '@/components/presentation-foundation/chart': hostModule({ intervalLabel: interval => key => `${interval}:${key}` }),
  '@/components/presentation-foundation/tone': { signTone: value => value > 0 ? 'positive' : value < 0 ? 'negative' : undefined },
  '@/components/workspace/workspace-provider': { useWorkspace: () => workspace },
  '@/hooks/use-location-search': { useLocationSearch: () => search },
@@ -59,11 +60,13 @@ const salary = { id: 's', name: 'Payroll', kind: 'Salary', currency: 'USD', amou
 const food = { id: 'f', name: 'Market', kind: 'Living expense', currency: 'USD', amount: 400, date: day(6), frequency: 'Once', shared: true };
 const sale = { id: 'b', name: 'Bread stall', kind: 'Business income', currency: 'USD', amount: 900, date: day(7), frequency: 'Once', business_id: 'b1', shared: false, member_id: demoHousehold.people[1].id };
 const data = (records = [salary, food, sale]) => ({ records, categories: [], goals: [], occurrences: [], activity: [] });
-function open({ records, businesses = [{ id: 'b1', name: 'Bakery' }], link = '', household = null } = {}) {
+// The fixtures fall in January, so most tests look at the whole year.
+function open({ records, businesses = [{ id: 'b1', name: 'Bakery' }], link = '', household = null, interval = 'year' } = {}) {
  search = link;range = { ...range, data: data(records), loading: false, error: '' };
  workspace.businessList = businesses;workspace.household = { state: household };
  r.mount(React.createElement(ReportsScreen));
  search = '';
+ if (interval && r.all(node => node.type === 'Segmented' && node.props.label === 'Interval').length) r.fire(r.find(node => node.type === 'Segmented' && node.props.label === 'Interval'), 'onChange', interval);
 }
 const header = () => r.find(byType('PageHeader'));
 const switchTab = tab => r.fire(header().props.tabs, 'onChange', tab);
@@ -72,14 +75,12 @@ const pick = (label, value) => r.fire(segmented(label), 'onChange', value);
 const tile = label => r.find(node => node.type === 'StatTile' && node.props.label === label).props;
 
 test('Cash flow totals the period and switches between Sankey, profit and loss and trends', () => {
- open();
+ open({ interval: null });
+ const thisMonth = today.slice(5, 7) === '01';
+ assert.equal(tile('Income').value, thisMonth ? '$3,900' : '$0', 'the page opens on this month');
+ pick('Interval', 'year');
  assert.deepEqual(header().props.tabs.props.options.map(option => option.value), ['cash_flow', 'spending', 'income', 'tax']);
  assert.deepEqual([tile('Income').value, tile('Expenses').value, tile('Net income').value, tile('Net income').tone], ['$3,900', '$400', '$3,500', 'positive']);
- // The breakdown starts on this month alone; the tiles keep the whole period.
- assert.equal(segmented('Interval').props.value, 'month');
- const thisMonth = today.slice(5, 7) === '01';
- assert.equal(r.find(byType('BusinessSankeyChart')).props.data.links.length > 0, thisMonth, 'January records show only in January');
- pick('Interval', 'year');
  assert.ok(r.find(byType('BusinessSankeyChart')).props.data.links.length > 0);
  pick('Chart type', 'pnl');
  assert.equal(r.find(byType('ProfitLossTable')).props.breakdown, 'category');
@@ -117,15 +118,12 @@ test('Spending and Income break down by category, group, merchant or business, a
  open();
  switchTab('spending');
  assert.deepEqual([tile('Total spending').value, tile('Transactions').value], ['$400', '1']);
- assert.equal(segmented('Interval').props.value, 'month');
- pick('Interval', 'year');
  assert.deepEqual(r.find(byType('BreakdownDonut')).props.items.map(item => item.key), ['Living expense']);
  assert.equal(r.find(byType('BreakdownDonut')).props.label('Living expense'), 'Living expense', 'the donut is the default view');
  r.fire(r.find(byType('BreakdownDonut')), 'onSelect', 'Living expense');
  assert.equal(r.find(byType('ReportTransactions')).props.label, 'Living expense');
  switchTab('income');
  assert.equal(tile('Total income').tone, 'positive');
- pick('Interval', 'year');
  assert.equal(r.all(byType('ReportSummary'))[0].props.mixed, false);
  pick('Chart type', 'bars');
  const drills = {};
@@ -158,17 +156,24 @@ test('a link opens a tab, a business and a view; tax prep needs a business', () 
  assert.equal(r.all(byType('BusinessFilter')).length, 0);
 });
 
-test('a custom range picks its own days, and loading or failed reads show their state', () => {
- open();
- const picker = () => r.find(byType('DateRangePicker'));
- assert.deepEqual([picker().props.preset, picker().props.range], ['this_year', { from: `${year}-01-01`, to: today }], 'a preset shows its own days on the calendar');
- r.fire(picker(), 'onRange', { from: `${Number(year) - 3}-01-01`, to: today });
- assert.equal(picker().props.preset, 'custom');
- assert.deepEqual(picker().props.range, { from: `${Number(year) - 3}-01-01`, to: today });
- assert.ok(r.html().includes('Reports cover up to 24 months.'));
- r.fire(picker(), 'onPreset', 'last_month');
- assert.equal(picker().props.preset, 'last_month');
- assert.ok(!r.html().includes('Reports cover up to 24 months.'));
+test('the period is a month, quarter or year the arrows move, and loading or failed reads show their state', () => {
+ open({ interval: null });
+ const label = () => r.find(node => node.type === 'strong' && node.props.className === 'budget-period').props.children;
+ const step = name => r.find(node => node.type === ui.Button && node.props['aria-label'] === name);
+ assert.equal(label(), `month:${today.slice(0, 7)}`);
+ assert.equal(step('Next month').props.disabled, true, 'the future has nothing to show');
+ r.fire(step('Previous month'), 'onClick');
+ assert.notEqual(label(), `month:${today.slice(0, 7)}`);
+ assert.equal(step('Next month').props.disabled, false);
+ r.fire(r.find(byType('TodayButton')), 'onClick');
+ assert.equal(label(), `month:${today.slice(0, 7)}`);
+ pick('Interval', 'quarter');
+ assert.match(label(), new RegExp(`^quarter:${year}-Q[1-4]$`));
+ r.fire(step('Previous quarter'), 'onClick');
+ pick('Interval', 'year');
+ assert.equal(step('Previous year').props['aria-label'], 'Previous year');
+ pick('Report view', 'trends');
+ assert.equal(r.find(byType('TrendChart')).props.interval, 'year', 'trends follow the page interval');
  range = { ...range, loading: true };r.update();
  assert.ok(r.find(byType('PanelSkeleton')));
  range = { ...range, loading: false, error: 'Could not load records.' };r.update();

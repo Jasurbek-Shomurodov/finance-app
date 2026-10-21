@@ -2193,7 +2193,6 @@
   "Repairs and maintenance": "تعمیر و نگهداری",
   "Report view": "نمای گزارش",
   "Reports": "گزارش‌ها",
-  "Reports cover up to 24 months.": "گزارش‌ها حداکثر ۲۴ ماه را پوشش می‌دهند.",
   "Reports show each business’s profit and loss; tax prep is ready when you need it.": "گزارش‌ها سود و زیان هر کسب‌وکار را نشان می‌دهند؛ آماده‌سازی مالیات هر وقت لازم داشته باشید آماده است.",
   "Returns and allowances": "برگشتی‌ها و تخفیف‌ها",
   "Rows": "ردیف‌ها",
@@ -2730,5 +2729,7 @@
   "Estimated asset income": "درآمد تخمینی دارایی‌ها",
   "Other recurring income": "درآمد تکراری دیگر",
   "Shortfall": "کسری",
-  "Money flow": "جریان پول"
+  "Money flow": "جریان پول",
+  "Previous quarter": "فصل قبل",
+  "Next quarter": "فصل بعد"
 }
