@@ -262,7 +262,10 @@ test('Reports keeps the 8 October 2026 review fixes (SCR-095, SCR-096, HEAD-011,
  assert.doesNotMatch(reports,/minWidth=\{columns/,'the Sankey width follows its labels and columns, not a fixed guess');
  assert.match(reports,/<PanelTitle title=\{t\('Transactions'\)\} count=\{<Count/,'the transactions panel opens with PanelTitle and a Count pill');
  assert.doesNotMatch(reports,/budget-left-empty/,'report charts use EmptyState');
- assert.match(filters,/<DateRangePicker label=\{t\('Date range'\)\}/,'the range is the shared calendar, presets beside it');
+ // Since 21 October 2026 the period is a month, quarter or year between arrows, not a free date range.
+ assert.match(filters,/<Segmented label=\{t\('Interval'\)\}/,'the interval is a Segmented switch');
+ assert.match(filters,/className="budget-month-nav"[\s\S]*<ChevronLeft[\s\S]*intervalLabel\([\s\S]*<ChevronRight[\s\S]*<TodayButton/,'the period sits between the arrows, labelled by the chart kit, with Today beside it');
+ assert.doesNotMatch(filters,/DateRangePicker/,'no free date range');
  assert.doesNotMatch(filters,/NativeSelect/);
  assert.doesNotMatch(css,/\.business-mark[^{]*\{[^}]*border-radius:\d+px/,'business marks round in proportion to their size');
  const {sankeyColumns,sankeyMinWidth}=loadTS('lib/sankey-labels.ts');
