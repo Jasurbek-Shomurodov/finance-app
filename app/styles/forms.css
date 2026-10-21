@@ -161,6 +161,14 @@ label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 .loading-value{height:18px;width:18%;max-width:120px}
 .session-loading .loading-placeholder{max-width:360px}
 .chart-skeleton{width:100%;min-width:0;margin:16px 0;border-radius:12px;background:var(--accent)}
+.sankey-skeleton{width:100%;min-width:0;margin:8px 0}
+.sankey-skeleton svg{width:100%;height:100%;display:block}
+.sankey-skeleton path{fill:color-mix(in srgb,var(--muted-foreground) 14%,transparent)}
+.sankey-skeleton rect{fill:color-mix(in srgb,var(--muted-foreground) 35%,transparent)}
+.sankey-skeleton .sankey-skeleton-label{fill:color-mix(in srgb,var(--muted-foreground) 22%,transparent)}
+.drill-skeleton-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 4px;border-block-end:1px solid var(--hairline)}
+.drill-skeleton-row>span{display:grid;gap:6px}
+.drill-skeleton .shimmer{background:color-mix(in srgb,var(--muted-foreground) 22%,transparent)}
 .chart-skeleton svg{width:100%;height:100%;display:block}
 .chart-skeleton line{stroke:var(--border);stroke-width:1;vector-effect:non-scaling-stroke}
 .chart-skeleton path{fill:none;stroke:color-mix(in srgb,var(--muted-foreground) 35%,transparent);stroke-width:3;stroke-linecap:round;vector-effect:non-scaling-stroke}

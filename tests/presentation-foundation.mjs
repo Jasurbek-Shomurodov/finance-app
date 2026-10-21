@@ -73,13 +73,19 @@ test('loading skeletons keep the shape of the content they replace, so the page 
  assert.equal(preview.match(/class="panel"/g).length,2);
  const cashflow=render(WorkspaceSkeleton,{label:'Loading',section:'Income & expenses'});
  assert.ok(cashflow.indexOf('stat-tiles')<cashflow.indexOf('cashflow-preview-grid')&&cashflow.indexOf('cashflow-preview-grid')<cashflow.indexOf('panel records'));
- const {NetWorthBodySkeleton,ChartSkeleton}=load('loading-placeholder.tsx',{'@/components/ui/skeleton':{Skeleton:element('span')}});
+ const {NetWorthBodySkeleton,ChartSkeleton,SankeySkeleton}=load('loading-placeholder.tsx',{'@/components/ui/skeleton':{Skeleton:element('span')}});
  const body=render(NetWorthBodySkeleton,{label:'Loading history…'});
  assert.match(body,/^<div role="status" aria-busy="true"><span class="sr-only">Loading history…<\/span><div aria-hidden="true">/);
  const order=['overview-chart-heading','comparison-legend','chart-skeleton','portfolio-headline','overview-details'].map(name=>body.indexOf(name));
  assert.ok(order.every((at,i)=>at>0&&(i===0||at>order[i-1])),'heading, legend, chart, the three totals and the settings row, in the card\'s order');
  assert.equal(body.match(/role="status"/g).length,1,'one announcement for the whole card');
  assert.match(render(ChartSkeleton,{}),/^<div aria-hidden="true" class="chart-skeleton shimmer"/);
+ // A Sankey shimmers as a Sankey: bands between nodes, and the transaction rows it lists below it.
+ const sankey=render(SankeySkeleton,{label:'Loading chart…',rows:3});
+ assert.match(sankey,/^<div role="status" aria-busy="true"><span class="sr-only">Loading chart…<\/span><div class="sankey-skeleton shimmer"/);
+ assert.equal(sankey.match(/<path /g).length,8);assert.equal(sankey.match(/<rect /g).length,17);
+ assert.equal(sankey.match(/drill-skeleton-row/g).length,3);
+ assert.ok(!render(SankeySkeleton,{}).includes('drill-transactions'),'no rows unless asked');
  const board=render(WorkspaceSkeleton,{label:'Loading',section:'Overview'});
  assert.match(board,/class="dashboard-grid"><div class="dashboard-column"><section class="panel overview-hero">.*portfolio-headline.*overview-details/,'Net worth leads the left column in its full shape');
  assert.equal(board.match(/class="dashboard-column"/g).length,2);assert.ok(!board.includes('stat-tiles'),'the dashboard has no tile row');

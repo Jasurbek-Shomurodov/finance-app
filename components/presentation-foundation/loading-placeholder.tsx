@@ -108,6 +108,32 @@ export function ChartSkeleton({ label, height = 310 }: { label?: string; height?
   </div>;
 }
 
+// A Sankey's outline: sources on the left flow into one total, which flows out to the right, as the real chart lays them out.
+const sankeySources = [[2, 50], [66, 84], [100, 110], [122, 126]], sankeyTargets = [[2, 42], [58, 80], [96, 108], [120, 126]];
+const sankeyBand = (from: number[], to: number[], x1: number, x2: number) => { const middle = (x1 + x2) / 2; return `M${x1} ${from[0]} C${middle} ${from[0]} ${middle} ${to[0]} ${x2} ${to[0]} L${x2} ${to[1]} C${middle} ${to[1]} ${middle} ${from[1]} ${x1} ${from[1]} Z`; };
+const sankeySlots = (nodes: number[][], top: number) => nodes.reduce<number[][]>((slots, [start, end]) => [...slots, [slots.at(-1)?.[1] ?? top, (slots.at(-1)?.[1] ?? top) + end - start]], []);
+
+/** A Sankey loading in its place: nodes and bands in the chart's shape, and optionally the transaction rows listed under it. */
+export function SankeySkeleton({ label, height = 280, rows = 0 }: { label?: string; height?: number; rows?: number }) {
+  const into = sankeySlots(sankeySources, 24), out = sankeySlots(sankeyTargets, 24);
+  return <div role={label ? 'status' : undefined} aria-busy={label ? true : undefined} aria-hidden={label ? undefined : true}>
+    {label && <span className="sr-only">{label}</span>}
+    <div className="sankey-skeleton shimmer" style={{ height }}>
+      <svg aria-hidden="true" viewBox="0 0 400 128" preserveAspectRatio="none">
+        {sankeySources.map((node, index) => <path key={'in' + index} d={sankeyBand(node, into[index], 70, 194)}/>)}
+        {sankeyTargets.map((node, index) => <path key={'out' + index} d={sankeyBand(out[index], node, 202, 326)}/>)}
+        {sankeySources.map(([y1, y2]) => <rect key={'s' + y1} x="64" y={y1} width="6" height={y2 - y1} rx="2"/>)}
+        <rect x="194" y="24" width="8" height={into.at(-1)![1] - 24} rx="2"/>
+        {sankeyTargets.map(([y1, y2]) => <rect key={'t' + y1} x="326" y={y1} width="6" height={y2 - y1} rx="2"/>)}
+        {sankeySources.map(([y1, y2], index) => <rect key={'sl' + y1} className="sankey-skeleton-label" x={20 + index * 6} y={(y1 + y2) / 2 - 2} width={38 - index * 6} height="4" rx="2"/>)}
+        {sankeyTargets.map(([y1, y2], index) => <rect key={'tl' + y1} className="sankey-skeleton-label" x="338" y={(y1 + y2) / 2 - 2} width={44 - index * 5} height="4" rx="2"/>)}
+      </svg>
+    </div>
+    {rows > 0 && <div className="drill-transactions drill-skeleton" aria-hidden="true"><Skeleton className="h-4 w-24"/><ul>{Array.from({ length: rows }, (_, index) =>
+      <li className="drill-skeleton-row" key={index}><span><Skeleton className="h-4 w-36"/><Skeleton className="h-3 w-24"/></span><Skeleton className="h-4 w-20"/></li>)}</ul></div>}
+  </div>;
+}
+
 /** The Net worth card below its header while history loads: chart heading, tracking date, legend, chart, the three period totals and the settings row, in the card's final shape so nothing moves when they arrive. */
 export function NetWorthBodySkeleton({ label }: { label?: string }) {
   const body = <div aria-hidden="true">

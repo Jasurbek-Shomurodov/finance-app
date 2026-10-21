@@ -7,7 +7,7 @@ import { useLanguage } from '@/components/language-provider';
 import { chartColors, chartSankey, chartTooltip, sankeyNodeRadius } from '@/components/presentation-foundation/chart';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { ChartSkeleton } from '@/components/presentation-foundation/loading-placeholder';
+import { SankeySkeleton } from '@/components/presentation-foundation/loading-placeholder';
 import { OperationDetails, OperationRow, operationTitle } from '@/components/cash-flow-operation';
 import { accountOperations, operationFlows, type Operation } from '@/lib/cash-flow-operations';
 import { useRouter } from 'next/navigation';
@@ -41,7 +41,7 @@ export function FlowSankey({ flows, currency, onOpen, canOpen }: { flows: Flows;
  const [measured, setMeasured] = useState(false);
  const height = Math.max(280, flows.nodes.length * 34);
  const measure = (width: number) => { if (width > 0) setMeasured(true); };
- return <div className="cash-flow-sankey" data-measured={measured || undefined}>{!measured && <ChartSkeleton height={height}/>}<ResponsiveContainer width="100%" minWidth={sankeyMinWidth(flows, room)} height={height} onResize={measure}>
+ return <div className="cash-flow-sankey" data-measured={measured || undefined}>{!measured && <SankeySkeleton height={height}/>}<ResponsiveContainer width="100%" minWidth={sankeyMinWidth(flows, room)} height={height} onResize={measure}>
   <Sankey data={{ nodes: [...flows.nodes], links: flows.links }} {...chartSankey} margin={{ top: 8, right: room.right, bottom: 8, left: room.left }} link={({ sourceX, targetX, sourceY, targetY, sourceControlX, targetControlX, linkWidth, index }: LinkProps) => {
    const node = flowTarget(index);
    return <path className="sankey-link" d={`M${sourceX},${sourceY} C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}`} strokeWidth={Math.max(1, linkWidth)} onClick={node === null ? undefined : () => onOpen!(node)} data-clickable={node === null ? undefined : true}/>;
@@ -111,16 +111,33 @@ function GoalEvents({ id, context, onOpen }: { id: string; context: DrillContext
  </section>;
 }
 
+/** The flows of whatever a dialog Sankey was opened for. */
+function flowsFor(target: DrillTarget, title: string, savings: number, context: DrillContext) {
+ if (target.side === 'operation') return operationFlows(target.key, context);
+ if (target.side === 'principal') return principalFlows(target.key, context);
+ if (target.side === 'payment') return paymentFlows(target.key, context);
+ if (target.side === 'interest') return interestFlows(target.key, context);
+ if (target.side === 'balance') return balanceFlows(target.key, context);
+ if (target.side === 'cashflow') return mainFlows(context);
+ if (target.side === 'goal') return goalFlows(target.key, context);
+ if (target.side === 'schedule') return scheduleFlows(target, context);
+ if (target.side === 'holdings') return holdingsFlows(target, title, context);
+ if (target.side === 'set') return setFlows(target, title, context);
+ if (target.side === 'untraced') return untracedFlows(target.key, savings, context);
+ return drillFlows(target, title, savings, context);
+}
+
 /** The Sankey behind a tapped node, in a dialog over Cash flow: a category by payer or merchant, where the savings went,
  * one account, or one payer, merchant or account; each with its transactions. An account, category or merchant in it opens its own
  * Sankey in the same dialog; Back returns to the one before. A transaction opens its details over it (`onOpenRecord`). */
-export function CashFlowDrillDialog({ target, title, period, savings, context, onClose, onOpenRecord, onDetails }: { target: DrillTarget; title: string; period: string; savings: number; context: DrillContext; onClose: () => void; onOpenRecord?: (record: Entry) => void;
+export function CashFlowDrillDialog({ target, title, period, savings, context, loading = false, onClose, onOpenRecord, onDetails }: { target: DrillTarget; title: string; period: string; savings: number; context: DrillContext;
+ /** While the period's records are still being read: the chart and its rows shimmer instead of saying nothing was recorded. */loading?: boolean; onClose: () => void; onOpenRecord?: (record: Entry) => void;
  /** Opens the details of what the dialog was opened for (a schedule's history), over the dialog. */onDetails?: () => void }) {
  const { t } = useLanguage();
  const router = useRouter();
  const [trail, setTrail] = useState([{ target, title }]);
  const current = trail.at(-1)!;
- const flows = current.target.side === 'operation' ? operationFlows(current.target.key, context) : current.target.side === 'principal' ? principalFlows(current.target.key, context) : current.target.side === 'payment' ? paymentFlows(current.target.key, context) : current.target.side === 'interest' ? interestFlows(current.target.key, context) : current.target.side === 'balance' ? balanceFlows(current.target.key, context) : current.target.side === 'cashflow' ? mainFlows(context) : current.target.side === 'goal' ? goalFlows(current.target.key, context) : current.target.side === 'schedule' ? scheduleFlows(current.target, context) : current.target.side === 'holdings' ? holdingsFlows(current.target, current.title, context) : current.target.side === 'set' ? setFlows(current.target, current.title, context) : current.target.side === 'untraced' ? untracedFlows(current.target.key, savings, context) : drillFlows(current.target, current.title, savings, context);
+ const flows = flowsFor(current.target, current.title, savings, context);
  // A transaction opens its shared details over the dialog; anything else opens in the dialog, with Back to return.
  const record = (id: string) => (context.data.records as Entry[]).find(item => item.id === id);
  const canOpen = (index: number) => { const open = flows.nodes[index]?.open; return !!open && (open.side !== 'record' || (!!onOpenRecord && !!record(open.key))) && (open.side !== 'details' || !!onDetails); };
@@ -140,10 +157,12 @@ export function CashFlowDrillDialog({ target, title, period, savings, context, o
   {/* The details of what it was opened for, also when its Sankey has nothing to draw this month. */}
   {onDetails && trail.length === 1 && <Button type="button" variant="outline" size="sm" className="cash-flow-drill-details" onClick={onDetails}>{t('Details')}</Button>}
   <DialogTitle>{current.title} <span className="panel-figure">{period}</span></DialogTitle>
+  {loading ? <SankeySkeleton label={t('Loading chart…')} rows={onOpenRecord ? 4 : 0}/> : <>
   {flows.missing > 0 && <p className="partial-total" role="status">{t('Some transactions could not be converted. Current or previous month totals are incomplete.')}</p>}
   {flows.links.length ? <FlowSankey key={trail.length} flows={flows} currency={context.currency} canOpen={canOpen} onOpen={openNode}/> : <p className="budget-left-empty">{t('Nothing recorded in this period.')}</p>}
   {current.target.side === 'operation' && <OperationDetails id={current.target.key} context={context} onOpen={(open, name) => go(open, name)}/>}
   {current.target.side === 'goal' && <GoalEvents id={current.target.key} context={context} onOpen={(open, name) => go(open, name)}/>}
   {onOpenRecord && <DrillTransactions target={current.target} context={context} onOpenRecord={onOpenRecord} onOpenOperation={row => setTrail([...trail, { target: { side: 'operation', key: row.id }, title: operationTitle(row, t) }])}/>}
+  </>}
  </DialogContent></Dialog>;
 }
