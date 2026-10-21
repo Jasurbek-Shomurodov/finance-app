@@ -2721,5 +2721,7 @@
   "Colour of {name}": "لون {name}",
   "Investment returns": "عوائد الاستثمار",
   "Your own money": "أموالك الخاصة",
-  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "عوائد الاستثمار هي ما ربحته استثماراتك فوق المال الذي وضعته فيها. أموالك الخاصة هي بقية التغيّر: الدخل الذي احتفظت به بعد الإنفاق والديون التي سددتها. في هذه الفترة وضعت {amount} من أموالك الخاصة في الاستثمارات."
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "عوائد الاستثمار هي ما ربحته استثماراتك فوق المال الذي وضعته فيها. أموالك الخاصة هي بقية التغيّر: الدخل الذي احتفظت به بعد الإنفاق والديون التي سددتها. في هذه الفترة وضعت {amount} من أموالك الخاصة في الاستثمارات.",
+  "Budget left": "المتبقي من الميزانية",
+  "Over budget": "تجاوز الميزانية"
 }

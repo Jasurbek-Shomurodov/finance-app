@@ -525,3 +525,9 @@ test('colour choices mark the chosen swatch, offer Automatic only with a default
  automatic.props.onClick();swatches[0].props.onClick();
  assert.deepEqual(picked,[null,'blue']);
 });
+
+test('a tile aside sits at the end of the label line instead of adding a line under the figure',()=>{
+ const {StatTile}=load('stat-tile.tsx',{'@/components/presentation-foundation/drawer-link':{DrawerLink:({href,className,children})=>React.createElement('a',{href,className},children)},'@/components/presentation-foundation/rolling-text':{RollingText:({text})=>React.createElement('b',null,text)}});
+ assert.equal(render(StatTile,{label:'Due in 7 days',value:'$60',href:'/upcoming',aside:'1 due soon'}),'<a href="/upcoming" class="stat-tile stat-tile-link"><div class="stat-tile-head"><h3>Due in 7 days</h3><span>1 due soon</span></div><strong><b>$60</b></strong></a>');
+ assert.equal(render(StatTile,{label:'Net worth',value:'$1'}),'<article class="stat-tile"><h3>Net worth</h3><strong><b>$1</b></strong></article>');
+});

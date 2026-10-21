@@ -106,6 +106,8 @@ h2:has(>.info-hint){display:flex;align-items:center;gap:6px}
 .stat-tile-link:hover{border-color:color-mix(in srgb,var(--primary) 45%,var(--border))}
 .stat-tile-link:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 @media(prefers-reduced-motion:reduce){.stat-tile-link{transition:none}}
+.stat-tile-head{display:flex;align-items:baseline;justify-content:space-between;gap:4px 10px;flex-wrap:wrap}
+.stat-tile-head>span{font-size:var(--type-caption);line-height:1.4;color:var(--muted-foreground);white-space:nowrap}
 .stat-tile>p{margin-top:auto;font-size:var(--type-caption);line-height:1.5;color:var(--muted-foreground)}
 @container content (max-width:860px){.stat-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.stat-tiles[data-columns="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @container content (max-width:720px){.stat-tiles[data-columns="3"]{grid-template-columns:minmax(0,1fr)}.stat-tiles[data-columns="3"] .stat-tile{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 16px;padding:16px}.stat-tiles[data-columns="3"] .stat-tile>p{grid-column:1/-1;margin:0}}

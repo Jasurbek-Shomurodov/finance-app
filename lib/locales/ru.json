@@ -2721,5 +2721,7 @@
   "Colour of {name}": "Цвет: {name}",
   "Investment returns": "Доход от инвестиций",
   "Your own money": "Ваши собственные деньги",
-  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Доход от инвестиций — то, что инвестиции заработали сверх вложенных в них денег. Ваши собственные деньги — остальная часть изменения: доход, оставшийся после расходов, и погашенные долги. За этот период вы вложили в инвестиции {amount} собственных денег."
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Доход от инвестиций — то, что инвестиции заработали сверх вложенных в них денег. Ваши собственные деньги — остальная часть изменения: доход, оставшийся после расходов, и погашенные долги. За этот период вы вложили в инвестиции {amount} собственных денег.",
+  "Budget left": "Остаток бюджета",
+  "Over budget": "Бюджет превышен"
 }

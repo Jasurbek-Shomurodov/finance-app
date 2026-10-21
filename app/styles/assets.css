@@ -138,7 +138,7 @@
 .chart-planned-key{background:color-mix(in srgb,var(--primary) 12%,transparent);border:1px dashed var(--primary);border-radius:2px}
 /* The card can sit in either dashboard column, so it adapts to its own width. */
 .income-history-chart{container:income-card/inline-size}
-@container income-card (max-width:560px){.income-history-chart .panel-title{flex-direction:column;align-items:flex-start;gap:12px}.workspace .content.overview-content .income-history-chart .portfolio-headline>div{padding:4px 12px}.workspace .content.overview-content .income-history-chart .portfolio-headline>div:first-child{padding-inline-start:0}.income-history-chart .portfolio-headline strong{font-size:var(--type-title)}}
+@container income-card (max-width:560px){.income-history-chart .panel-title{flex-direction:column;align-items:flex-start;gap:12px}.income-history-chart .panel-title h2{flex:none}.workspace .content.overview-content .income-history-chart .portfolio-headline>div{padding:4px 12px}.workspace .content.overview-content .income-history-chart .portfolio-headline>div:first-child{padding-inline-start:0}.income-history-chart .portfolio-headline strong{font-size:var(--type-title)}}
 
 /* Larger type needs room to wrap, without shrinking on smaller screens. */
 [data-slot="button"] { font-size: var(--type-small); font-weight: 500; min-height: 40px; border-radius: var(--radius-control); }

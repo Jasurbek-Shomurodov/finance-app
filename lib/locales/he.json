@@ -2721,5 +2721,7 @@
   "Colour of {name}": "הצבע של {name}",
   "Investment returns": "תשואת השקעות",
   "Your own money": "הכסף שלך",
-  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "תשואת ההשקעות היא מה שההשקעות הרוויחו מעבר לכסף שהושקע בהן. הכסף שלך הוא שאר השינוי: הכנסה שנשארה אחרי הוצאות וחובות ששולמו. בתקופה זו השקעת {amount} מכספך."
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "תשואת ההשקעות היא מה שההשקעות הרוויחו מעבר לכסף שהושקע בהן. הכסף שלך הוא שאר השינוי: הכנסה שנשארה אחרי הוצאות וחובות ששולמו. בתקופה זו השקעת {amount} מכספך.",
+  "Budget left": "יתרת תקציב",
+  "Over budget": "חריגה מהתקציב"
 }

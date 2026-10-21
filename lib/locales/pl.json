@@ -2721,5 +2721,7 @@
   "Colour of {name}": "Kolor: {name}",
   "Investment returns": "Zyski z inwestycji",
   "Your own money": "Twoje własne pieniądze",
-  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Zyski z inwestycji to to, co inwestycje zarobiły ponad włożone w nie pieniądze. Twoje własne pieniądze to reszta zmiany: dochód zatrzymany po wydatkach i spłacone długi. W tym okresie włożyłeś w inwestycje {amount} własnych pieniędzy."
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Zyski z inwestycji to to, co inwestycje zarobiły ponad włożone w nie pieniądze. Twoje własne pieniądze to reszta zmiany: dochód zatrzymany po wydatkach i spłacone długi. W tym okresie włożyłeś w inwestycje {amount} własnych pieniędzy.",
+  "Budget left": "Pozostały budżet",
+  "Over budget": "Budżet przekroczony"
 }

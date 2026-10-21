@@ -19,7 +19,8 @@ export function DashboardHeadline({ netWorth, budget, data, currency, market }: 
  return <StatTiles columns={4} label={t('Overview')}>
   <StatTile label={t('Net worth')} value={netWorth === null ? '—' : money(netWorth)} href="/assets"/>
   <StatTile label={t('Spent this month')} value={budget.loading ? '—' : money(budget.spent)} href="/transactions"/>
-  <StatTile label={t('Budget')} value={budget.loading || left === null ? '—' : t(left < 0 ? '{amount} over' : '{amount} remaining', { amount: money(Math.abs(left)) })} tone={budget.loading || left === null ? undefined : signTone(left)} href="/budget"/>
-  <StatTile label={t('Due in 7 days')} value={due?.total == null ? '—' : money(due.total)} href="/upcoming">{due && <p>{t('{count} due soon', { count: formatNumber(due.count, locale, 0) })}</p>}</StatTile>
+  {/* The figure alone, so it fits the tile; whether it is left or over is in the label. */}
+  <StatTile label={t(left !== null && left < 0 ? 'Over budget' : 'Budget left')} value={budget.loading || left === null ? '—' : money(Math.abs(left))} tone={budget.loading || left === null ? undefined : signTone(left)} href="/budget"/>
+  <StatTile label={t('Due in 7 days')} value={due?.total == null ? '—' : money(due.total)} href="/upcoming" aside={due && t('{count} due soon', { count: formatNumber(due.count, locale, 0) })}/>
  </StatTiles>;
 }

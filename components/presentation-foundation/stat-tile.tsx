@@ -14,8 +14,10 @@ export function StatTiles({ children, label, columns = 4 }: { children: ReactNod
  * A text value rolls its digits into place; pass `rolling={false}` for one that is not a figure, such as a date. */
 /** With `href` the whole tile is a link to the page behind the figure (the dashboard's headline row); a linked tile keeps
  * its explanation off the tile, since an ⓘ inside a link would follow it. */
-export function StatTile({ label, value, tone, hint, rolling = true, href, children }: { label: string; value: ReactNode; tone?: StatTone; hint?: ReactNode; rolling?: boolean; href?: string; children?: ReactNode }) {
+/** `aside` is a short live figure (a count) at the end of the label line, where it takes no height of its own. */
+export function StatTile({ label, value, tone, hint, rolling = true, href, aside, children }: { label: string; value: ReactNode; tone?: StatTone; hint?: ReactNode; rolling?: boolean; href?: string; aside?: ReactNode; children?: ReactNode }) {
  const figure = <strong className={tone}>{rolling && typeof value === 'string' ? <RollingText text={value}/> : value}</strong>;
- if (href) return <DrawerLink href={href} className="stat-tile stat-tile-link"><h3>{label}</h3>{figure}{children}</DrawerLink>;
- return <article className="stat-tile"><h3>{label}{hint ? <InfoHint>{hint}</InfoHint> : null}</h3>{figure}{children}</article>;
+ const heading = (title: ReactNode) => aside ? <div className="stat-tile-head">{title}<span>{aside}</span></div> : title;
+ if (href) return <DrawerLink href={href} className="stat-tile stat-tile-link">{heading(<h3>{label}</h3>)}{figure}{children}</DrawerLink>;
+ return <article className="stat-tile">{heading(<h3>{label}{hint ? <InfoHint>{hint}</InfoHint> : null}</h3>)}{figure}{children}</article>;
 }
