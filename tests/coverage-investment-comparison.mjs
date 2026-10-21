@@ -20,7 +20,7 @@ function comparison(t,props={},{store=storage(),decide,respond}={}){
  const reply=respond??(()=>({ok:true,body:{errors:{}}}));
  const {InvestmentComparison}=r.load('components/investment-comparison.tsx',{
   '@/components/language-provider':language('en'),
-  '@/components/ui/native-select':hostModule(),'@/components/ui/dialog':hostModule(),'@/components/ui/button':hostModule(),'lucide-react':hostModule(),
+  '@/components/presentation-foundation/segmented':hostModule(),'@/components/hypothetical-net-worth':hostModule(),'@/components/ui/dialog':hostModule(),'@/components/ui/button':hostModule(),'lucide-react':hostModule(),
   '@/components/presentation-foundation/date-picker':hostModule(),'@/components/presentation-foundation/loading-placeholder':hostModule(),'@/components/presentation-foundation/inline-error':hostModule(),'@/components/presentation-foundation/empty-state':hostModule(),
   '@/components/benchmark-tooltip':hostModule(),'@/components/investment-value-chart':hostModule(),'@/components/charts-lazy':hostModule(),'next/link':{__esModule:true,default:'Link'},
   '@/lib/feedback':{showError:message=>errors.push(message)},
@@ -65,10 +65,10 @@ test('a saved legend and funding scope are restored, and the scope can be change
  const s=comparison(t,{},{store});
  await s.r.flush();
  assert.deepEqual(s.legend().map(button=>[text(button),button.props['aria-pressed']]),[['Investments',true],['Bitcoin · BTC',false],['S&P 500 · SPY',true],['USD deposit · 8%',false]]);
- const scope=()=>s.r.find(node=>node.type==='NativeSelect');
+ const scope=()=>s.r.find(node=>node.type==='Segmented');
  assert.equal(scope().props.value,'expenses');
  assert.ok(s.notes().some(note=>note.startsWith('Investment purchases, principal repayments and every recorded expense fund benchmarks.')));
- s.r.fire(scope(),'onChange',{target:{value:'investments'}});
+ s.r.fire(scope(),'onChange','investments');
  assert.equal(scope().props.value,'investments');
  assert.deepEqual(s.store.writes.at(-1),['finance:benchmark-method:owner-1',JSON.stringify({scope:'investments'})]);
  assert.ok(s.notes().some(note=>note.startsWith('Investment purchases and principal repayments fund benchmarks.')));
@@ -82,8 +82,8 @@ test('blocked browser storage still shows the headline benchmarks and accepts ch
  assert.ok(s.legend().every(button=>button.props['aria-pressed']));
  s.r.fire(s.legend()[2],'onClick');
  assert.equal(s.legend()[2].props['aria-pressed'],false);
- s.r.fire(s.r.find(node=>node.type==='NativeSelect'),'onChange',{target:{value:'expenses'}});
- assert.equal(s.r.find(node=>node.type==='NativeSelect').props.value,'expenses');
+ s.r.fire(s.r.find(node=>node.type==='Segmented'),'onChange','expenses');
+ assert.equal(s.r.find(node=>node.type==='Segmented').props.value,'expenses');
 });
 
 test('custom, stock and portfolio benchmarks are requested with their parameters and labelled',async t=>{
@@ -110,8 +110,8 @@ test('a missing profile waits; a profile error loads the default benchmarks with
  assert.ok(s.r.find(byType('ChartSkeleton')));
  assert.ok(s.legend().every(button=>button.props.disabled),'there is no owner to remember a choice for');
  s.r.fire(s.legend()[1],'onClick');
- s.r.fire(s.r.find(node=>node.type==='NativeSelect'),'onChange',{target:{value:'expenses'}});
- assert.equal(s.r.find(node=>node.type==='NativeSelect').props.value,'investments','without an owner nothing changes');
+ s.r.fire(s.r.find(node=>node.type==='Segmented'),'onChange','expenses');
+ assert.equal(s.r.find(node=>node.type==='Segmented').props.value,'investments','without an owner nothing changes');
  assert.deepEqual(s.store.writes,[]);
  s.view({profileError:'Could not load your comparison profile.'});
  await s.r.flush();
