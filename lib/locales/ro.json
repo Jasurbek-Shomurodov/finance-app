@@ -2723,5 +2723,7 @@
   "Your own money": "Banii tăi",
   "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Randamentul investițiilor este ce au câștigat investițiile peste banii puși în ele. Banii tăi sunt restul schimbării: venitul păstrat după cheltuieli și datoriile achitate. În această perioadă ai pus {amount} din banii tăi în investiții.",
   "Budget left": "Buget rămas",
-  "Over budget": "Peste buget"
+  "Over budget": "Peste buget",
+  "Custom colour": "Culoare personalizată",
+  "Loading chart…": "Se încarcă graficul…"
 }

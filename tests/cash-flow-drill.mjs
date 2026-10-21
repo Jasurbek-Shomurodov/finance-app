@@ -77,11 +77,17 @@ test('the Cash flow Sankey opens a category or Savings in a dialog; the total an
  const report = { savings: 300, categories: { income: [{ key: 'Salary', amount: 1000 }], expense: [{ key: 'A', amount: 400 }, { key: 'B', amount: 200 }, { key: 'C', amount: 60 }, { key: 'D', amount: 40 }] } };
  assert.deepEqual(sankeyFlows(report, key => key, 3).nodes.map(node => node.key), ['Salary', undefined, 'A', 'B', undefined, undefined], 'only real categories carry a key');
  const r = createRenderer();
- const modules = { 'recharts': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), 'next/navigation': { useRouter: () => router }, '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
+ const modules = { 'recharts': hostModule(), '@/components/language-provider': language('en-US'), '@/components/ui/dialog': hostModule(), '@/components/presentation-foundation/loading-placeholder': hostModule(), 'next/navigation': { useRouter: () => router }, '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 } };
  const { FlowSankey, CashFlowDrillDialog } = r.load('components/cash-flow-sankey.tsx', modules);
  const flows = sankeyFlows(report, key => key, 3);
  const opened = [];
  r.mount(React.createElement(FlowSankey, { flows, currency: 'USD', canOpen: index => !!flows.nodes[index].key, onOpen: index => opened.push(index) }));
+ // 21 October 2026: the dialog first opened on an empty box while the chart measured its width; it shimmers instead.
+ assert.ok(r.find(item => item.type === 'ChartSkeleton'), 'the chart shimmers until it has measured its width');
+ r.fire(r.find(item => item.type === 'ResponsiveContainer'), 'onResize', 0, 0);
+ assert.ok(r.find(item => item.type === 'ChartSkeleton'), 'a zero width is not a measurement');
+ r.fire(r.find(item => item.type === 'ResponsiveContainer'), 'onResize', 600, 280);
+ assert.throws(() => r.find(item => item.type === 'ChartSkeleton'), /No matching node/, 'the drawn chart replaces the shimmer');
  const node = r.find(item => item.type === 'Sankey').props.node;
  const draw = index => node({ x: 0, y: 0, width: 10, height: 20, index, payload: { name: flows.nodes[index].name, value: 100 } });
  const salary = draw(0), total = draw(1);

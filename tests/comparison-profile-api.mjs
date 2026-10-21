@@ -118,7 +118,8 @@ test('migration 073 adds an optional tracking start under the existing owner pol
 test('benchmark colours are saved and read back; unknown keys and colours are refused',async()=>{
  calls=[];assert.equal((await api.PUT(req({benchmarks:['BTC','STOCK:NVDA'],custom_symbol:'',colors:{BTC:'violet','STOCK:NVDA':'amber'}}))).status,200);
  assert.deepEqual(JSON.parse(calls.at(-1).init.body).colors,{BTC:'violet','STOCK:NVDA':'amber'});
- for(const colors of [{BTC:'purple'},{'bad key':'blue'},{BTC:1}]){calls=[];assert.equal((await api.PUT(req({benchmarks:['BTC'],custom_symbol:'',colors}))).status,400);assert.equal(calls.length,0);}
+ calls=[];assert.equal((await api.PUT(req({benchmarks:['BTC'],custom_symbol:'',colors:{BTC:'#1E40AF'}}))).status,200);
+ for(const colors of [{BTC:'purple'},{'bad key':'blue'},{BTC:1},{BTC:'#12345'},{BTC:'red; x'}]){calls=[];assert.equal((await api.PUT(req({benchmarks:['BTC'],custom_symbol:'',colors}))).status,400);assert.equal(calls.length,0);}
  rows=[{benchmarks:['BTC'],custom_symbol:'',colors:{BTC:'red'}}];
  assert.deepEqual((await (await api.GET()).json()).preferences.colors,{BTC:'red'});
  rows=[{benchmarks:['BTC'],custom_symbol:''}];

@@ -112,6 +112,12 @@
 .business-color-field button{width:26px;height:26px;border-radius:50%;background:var(--swatch);box-shadow:inset 0 0 0 2px color-mix(in srgb,#000 8%,transparent)}
 .business-color-field button[aria-checked=true]{box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--swatch)}
 .business-color-field button:focus-visible{outline:2px solid var(--ring);outline-offset:3px}
+.business-color-field .color-custom{position:relative;width:26px;height:26px;border-radius:50%;cursor:pointer;background:conic-gradient(from 0deg,hsl(0 80% 55%),hsl(60 80% 50%),hsl(120 70% 45%),hsl(180 70% 45%),hsl(240 75% 60%),hsl(300 75% 55%),hsl(360 80% 55%))}
+.business-color-field .color-custom::after{content:"+";position:absolute;inset:5px;display:grid;place-items:center;border-radius:50%;background:var(--card);font-size:14px;font-weight:600;line-height:1;color:var(--foreground)}
+.business-color-field .color-custom[data-chosen]{box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--swatch)}
+.business-color-field .color-custom[data-chosen]::after{content:"";background:var(--swatch)}
+.business-color-field .color-custom input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.business-color-field .color-custom:focus-within{outline:2px solid var(--ring);outline-offset:3px}
 .business-logo-field>div{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .account-businesses-dialog section{display:flex;flex-direction:column;gap:6px}
 .account-businesses-dialog h3{margin:8px 0 0;color:var(--muted-foreground);font-size:var(--type-caption);font-weight:500}

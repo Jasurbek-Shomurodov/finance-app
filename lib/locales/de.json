@@ -2723,5 +2723,7 @@
   "Your own money": "Ihr eigenes Geld",
   "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Anlageerträge sind das, was Ihre Anlagen über das eingezahlte Geld hinaus verdient haben. Ihr eigenes Geld ist der Rest der Veränderung: Einkommen, das nach Ausgaben übrig blieb, und getilgte Schulden. In diesem Zeitraum haben Sie {amount} eigenes Geld angelegt.",
   "Budget left": "Budget übrig",
-  "Over budget": "Budget überschritten"
+  "Over budget": "Budget überschritten",
+  "Custom colour": "Eigene Farbe",
+  "Loading chart…": "Diagramm wird geladen…"
 }

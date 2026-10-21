@@ -2723,5 +2723,7 @@
   "Your own money": "Tiền của chính bạn",
   "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Lợi nhuận đầu tư là phần các khoản đầu tư kiếm được vượt trên số tiền bạn bỏ vào. Tiền của chính bạn là phần còn lại của thay đổi: thu nhập giữ lại sau chi tiêu và các khoản nợ đã trả. Trong kỳ này bạn đã bỏ {amount} tiền của mình vào đầu tư.",
   "Budget left": "Ngân sách còn lại",
-  "Over budget": "Vượt ngân sách"
+  "Over budget": "Vượt ngân sách",
+  "Custom colour": "Màu tùy chọn",
+  "Loading chart…": "Đang tải biểu đồ…"
 }

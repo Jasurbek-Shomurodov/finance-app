@@ -49,7 +49,7 @@ export function EditCategoryDialog({item,icon,chosen,color,defaultHue,iconsDisab
     <CategoryIconPicker icon={shownIcon} label={t('Change icon for {name}',{name:item.label})} chosen={nextIcon===undefined?chosen:nextIcon!==null} disabled={busy||iconsDisabled} onChoose={setNextIcon}/>
     <label>{t('Name')}<Input required maxLength={80} value={name} disabled={busy||!item.category} aria-invalid={taken||undefined} onChange={event=>setName(event.target.value)}/></label>
    </div>
-   <ColorChoices className="category-color-field" disabled={busy||iconsDisabled} value={nextColor} colors={categoryPaletteColors} automatic={hueColor(defaultHue)} onChange={setNextColor}/>
+   <ColorChoices<PaletteColor> className="category-color-field" disabled={busy||iconsDisabled} value={nextColor} colors={categoryPaletteColors} automatic={hueColor(defaultHue)} onChange={setNextColor}/>
    {taken&&<p role="alert" className="error">{t(duplicateCategoryMessage)}</p>}
    <ErrorPopup message={error}/>
    <FormFooter busy={busy} onCancel={guard.close}>

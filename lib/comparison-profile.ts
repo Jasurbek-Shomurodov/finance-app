@@ -6,8 +6,12 @@ import { categoryColor } from './category-colors';
 export const investmentKinds = assetKinds;
 export const benchmarkKeys = ['BTC','SPY','HYG','BIL','depositUZS','depositUSD','CUSTOM','PORTFOLIO'] as const;
 export type BenchmarkKey = typeof benchmarkKeys[number] | `STOCK:${string}`;
-/** A colour the owner chose for a benchmark line, by benchmark key; a benchmark without one keeps its default colour. */
-export type BenchmarkColors = Partial<Record<string, PaletteColor>>;
+/** A colour the owner chose for a benchmark line, by benchmark key: a palette name or a `#rrggbb` colour. A benchmark
+ * without one keeps its default colour. */
+export type BenchmarkColors = Partial<Record<string, PaletteColor | string>>;
+export const customColorPattern = /^#[0-9a-fA-F]{6}$/;
+/** Ready-made colours offered beside the palette for benchmark lines. */
+export const benchmarkPresetColors = ['#0ea5e9','#06b6d4','#10b981','#84cc16','#eab308','#a16207','#f43f5e','#d946ef','#1e40af','#64748b'] as const;
 export type ComparisonPreferences = { benchmarks: BenchmarkKey[]; custom_symbol: string; portfolio?: DiversifiedPortfolio | null; colors?: BenchmarkColors };
 export type BaselineHolding = { id: string; kind: typeof investmentKinds[number]; currency: string; balance: number };
 export type ComparisonBaseline = { starting_amount: number; currency: string; capital_as_of: string; holdings: BaselineHolding[] };
@@ -23,5 +27,6 @@ export const defaultBenchmarkColor=(key:string)=>categoryColor(Object.hasOwn(def
 /** The colour a benchmark line is drawn in: the one chosen for it in Settings, else its default. */
 export function benchmarkColor(key:string,colors:BenchmarkColors|undefined,fallback=defaultBenchmarkColor(key)){
  const chosen=colors&&Object.hasOwn(colors,key)?colors[key]:undefined;
+ if(chosen&&customColorPattern.test(chosen))return chosen;
  return chosen&&(paletteColors as string[]).includes(chosen)?paletteColor(chosen):fallback;
 }

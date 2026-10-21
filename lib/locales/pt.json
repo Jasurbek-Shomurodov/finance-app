@@ -2723,5 +2723,7 @@
   "Your own money": "Seu próprio dinheiro",
   "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "O retorno dos investimentos é o que eles renderam além do dinheiro aplicado. Seu próprio dinheiro é o restante da variação: a renda que você guardou depois dos gastos e as dívidas que pagou. Neste período você aplicou {amount} do seu próprio dinheiro em investimentos.",
   "Budget left": "Orçamento restante",
-  "Over budget": "Acima do orçamento"
+  "Over budget": "Acima do orçamento",
+  "Custom colour": "Cor personalizada",
+  "Loading chart…": "Carregando gráfico…"
 }

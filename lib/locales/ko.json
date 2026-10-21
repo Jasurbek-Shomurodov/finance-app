@@ -2723,5 +2723,7 @@
   "Your own money": "본인 자금",
   "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "투자 수익은 투자에 넣은 돈을 넘어 투자가 벌어들인 금액입니다. 본인 자금은 나머지 변화로, 지출 후 남긴 소득과 갚은 부채입니다. 이 기간에 본인 자금 {amount}을 투자에 넣었습니다.",
   "Budget left": "남은 예산",
-  "Over budget": "예산 초과"
+  "Over budget": "예산 초과",
+  "Custom colour": "사용자 지정 색상",
+  "Loading chart…": "차트 불러오는 중…"
 }

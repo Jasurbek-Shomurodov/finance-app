@@ -2723,5 +2723,7 @@
   "Your own money": "O‘z pulingiz",
   "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Investitsiya daromadi — investitsiyalaringiz ularga kiritilgan puldan ortiq topgan qismi. O‘z pulingiz — o‘zgarishning qolgan qismi: xarajatlardan keyin saqlangan daromad va to‘langan qarzlar. Bu davrda siz o‘z pulingizdan {amount} ni investitsiyaga kiritdingiz.",
   "Budget left": "Byudjet qoldig‘i",
-  "Over budget": "Byudjetdan oshdi"
+  "Over budget": "Byudjetdan oshdi",
+  "Custom colour": "Boshqa rang",
+  "Loading chart…": "Diagramma yuklanmoqda…"
 }

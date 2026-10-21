@@ -2723,5 +2723,7 @@
   "Your own money": "আপনার নিজের টাকা",
   "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "বিনিয়োগের আয় হলো আপনার বিনিয়োগ তাতে রাখা টাকার বাইরে যা আয় করেছে। আপনার নিজের টাকা হলো বাকি পরিবর্তন: খরচের পর রাখা আয় ও শোধ করা ঋণ। এই সময়ে আপনি নিজের {amount} বিনিয়োগে রেখেছেন।",
   "Budget left": "বাজেট বাকি",
-  "Over budget": "বাজেটের বেশি"
+  "Over budget": "বাজেটের বেশি",
+  "Custom colour": "নিজের রং",
+  "Loading chart…": "চার্ট লোড হচ্ছে…"
 }

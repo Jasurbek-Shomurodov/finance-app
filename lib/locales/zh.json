@@ -2723,5 +2723,7 @@
   "Your own money": "您自己的钱",
   "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "投资收益是您的投资在投入资金之外赚到的部分。您自己的钱是变化中的其余部分：支出后留下的收入和还清的债务。在此期间，您把自己的 {amount} 投入了投资。",
   "Budget left": "预算剩余",
-  "Over budget": "超出预算"
+  "Over budget": "超出预算",
+  "Custom colour": "自定义颜色",
+  "Loading chart…": "正在加载图表…"
 }

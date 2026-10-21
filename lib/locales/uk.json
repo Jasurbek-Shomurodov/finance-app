@@ -2723,5 +2723,7 @@
   "Your own money": "Ваші власні гроші",
   "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Дохід від інвестицій — те, що інвестиції заробили понад вкладені в них гроші. Ваші власні гроші — решта зміни: дохід, що лишився після витрат, і погашені борги. За цей період ви вклали в інвестиції {amount} власних грошей.",
   "Budget left": "Залишок бюджету",
-  "Over budget": "Бюджет перевищено"
+  "Over budget": "Бюджет перевищено",
+  "Custom colour": "Власний колір",
+  "Loading chart…": "Завантаження діаграми…"
 }

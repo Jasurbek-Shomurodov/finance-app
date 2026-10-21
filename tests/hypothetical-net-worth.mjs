@@ -32,3 +32,11 @@ test('the cards show today’s net worth, each benchmark’s figure and how much
  assert.doesNotMatch(html,/gone/);
  assert.equal(renderToStaticMarkup(React.createElement(HypotheticalNetWorthCards,{netWorth:1,currency:'USD',series,rows:[]})),'');
 });
+
+test('a benchmark line takes its chosen palette or custom colour, else its own',()=>{
+ const {benchmarkColor,defaultBenchmarkColor}=loadTS('lib/comparison-profile.ts');
+ assert.equal(benchmarkColor('BTC',{BTC:'#1e40af'}),'#1e40af');
+ assert.match(benchmarkColor('BTC',{BTC:'violet'}),/^hsl\(270 /);
+ assert.equal(benchmarkColor('BTC',{BTC:'url(x)'}),defaultBenchmarkColor('BTC'));
+ assert.equal(benchmarkColor('SPY',undefined),defaultBenchmarkColor('SPY'));
+});

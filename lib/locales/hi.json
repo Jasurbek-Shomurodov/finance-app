@@ -2723,5 +2723,7 @@
   "Your own money": "आपका अपना पैसा",
   "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "निवेश से कमाई वह है जो आपके निवेश ने उनमें लगाए पैसे से ज़्यादा कमाया। आपका अपना पैसा बाकी बदलाव है: खर्च के बाद बचाई आय और चुकाए गए कर्ज़। इस अवधि में आपने अपने {amount} निवेश में लगाए।",
   "Budget left": "बचा बजट",
-  "Over budget": "बजट से ज़्यादा"
+  "Over budget": "बजट से ज़्यादा",
+  "Custom colour": "अपना रंग",
+  "Loading chart…": "चार्ट लोड हो रहा है…"
 }

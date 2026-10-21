@@ -2723,5 +2723,7 @@
   "Your own money": "Pesa yako mwenyewe",
   "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Faida ya uwekezaji ni kile uwekezaji wako ulichopata zaidi ya pesa uliyoweka. Pesa yako mwenyewe ni sehemu iliyobaki ya mabadiliko: mapato uliyobaki nayo baada ya matumizi na madeni uliyolipa. Katika kipindi hiki uliweka {amount} ya pesa yako kwenye uwekezaji.",
   "Budget left": "Bajeti iliyobaki",
-  "Over budget": "Zaidi ya bajeti"
+  "Over budget": "Zaidi ya bajeti",
+  "Custom colour": "Rangi maalum",
+  "Loading chart…": "Inapakia chati…"
 }

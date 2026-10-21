@@ -7,6 +7,7 @@ import { useLanguage } from '@/components/language-provider';
 import { chartColors, chartSankey, chartTooltip, sankeyNodeRadius } from '@/components/presentation-foundation/chart';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { ChartSkeleton } from '@/components/presentation-foundation/loading-placeholder';
 import { OperationDetails, OperationRow, operationTitle } from '@/components/cash-flow-operation';
 import { accountOperations, operationFlows, type Operation } from '@/lib/cash-flow-operations';
 import { useRouter } from 'next/navigation';
@@ -36,7 +37,11 @@ export function FlowSankey({ flows, currency, onOpen, canOpen }: { flows: Flows;
  const room = sankeyLabelMargins(flows, label, measureLabel);
  const opens = (index: number) => !!onOpen && (canOpen?.(index) ?? true);
  const flowTarget = (index: number) => { const link = flows.links[index]; return !link ? null : opens(link.target) ? link.target : opens(link.source) ? link.source : null; };
- return <div className="cash-flow-sankey"><ResponsiveContainer width="100%" minWidth={sankeyMinWidth(flows, room)} height={Math.max(280, flows.nodes.length * 34)}>
+ // The container draws nothing until it has measured its width; until then the chart's place shimmers.
+ const [measured, setMeasured] = useState(false);
+ const height = Math.max(280, flows.nodes.length * 34);
+ const measure = (width: number) => { if (width > 0) setMeasured(true); };
+ return <div className="cash-flow-sankey" data-measured={measured || undefined}>{!measured && <ChartSkeleton height={height}/>}<ResponsiveContainer width="100%" minWidth={sankeyMinWidth(flows, room)} height={height} onResize={measure}>
   <Sankey data={{ nodes: [...flows.nodes], links: flows.links }} {...chartSankey} margin={{ top: 8, right: room.right, bottom: 8, left: room.left }} link={({ sourceX, targetX, sourceY, targetY, sourceControlX, targetControlX, linkWidth, index }: LinkProps) => {
    const node = flowTarget(index);
    return <path className="sankey-link" d={`M${sourceX},${sourceY} C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}`} strokeWidth={Math.max(1, linkWidth)} onClick={node === null ? undefined : () => onOpen!(node)} data-clickable={node === null ? undefined : true}/>;

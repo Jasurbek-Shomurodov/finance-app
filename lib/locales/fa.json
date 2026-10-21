@@ -2723,5 +2723,7 @@
   "Your own money": "پول خودتان",
   "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "بازده سرمایه‌گذاری آن چیزی است که سرمایه‌گذاری‌ها بیش از پول گذاشته‌شده در آن‌ها به دست آوردند. پول خودتان بقیهٔ تغییر است: درآمدی که پس از هزینه نگه داشتید و بدهی‌هایی که پرداختید. در این دوره {amount} از پول خودتان را در سرمایه‌گذاری گذاشتید.",
   "Budget left": "باقی‌ماندهٔ بودجه",
-  "Over budget": "بیش از بودجه"
+  "Over budget": "بیش از بودجه",
+  "Custom colour": "رنگ دلخواه",
+  "Loading chart…": "در حال بارگذاری نمودار…"
 }

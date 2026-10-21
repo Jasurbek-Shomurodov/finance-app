@@ -10,7 +10,7 @@ import { benchmarkSelectionSchema } from '@/lib/benchmark-selection';
 import { paletteColors } from '@/lib/business';
 import { validDay } from '@/lib/benchmark-data';
 import { benchmarkHistoryStart } from '@/lib/investment-benchmarks';
-const benchmarkColors = z.record(z.string().regex(/^(BTC|SPY|HYG|BIL|depositUZS|depositUSD|CUSTOM|PORTFOLIO|STOCK:[A-Z][A-Z0-9.-]{0,14})$/),z.enum(paletteColors as [string,...string[]])).refine(value=>Object.keys(value).length<=30);
+const benchmarkColors = z.record(z.string().regex(/^(BTC|SPY|HYG|BIL|depositUZS|depositUSD|CUSTOM|PORTFOLIO|STOCK:[A-Z][A-Z0-9.-]{0,14})$/),z.union([z.enum(paletteColors as [string,...string[]]),z.string().regex(/^#[0-9a-fA-F]{6}$/)])).refine(value=>Object.keys(value).length<=30);
 const preferences = z.object({benchmarks:benchmarkSelectionSchema,colors:benchmarkColors.optional(),portfolio:diversifiedPortfolioSchema.nullable().optional(),custom_symbol:z.string().regex(/^$|^[A-Z][A-Z0-9.-]{0,14}$/)}).refine(value=>!value.benchmarks.includes('CUSTOM')||!!value.custom_symbol).refine(value=>!value.benchmarks.includes('PORTFOLIO')||!!value.portfolio).refine(value=>!value.portfolio?.assets?.some(asset=>asset.currency&&!isCurrency(asset.currency)));
 // Null returns to tracking from the first investment activity.
 const tracking = z.object({tracking_start:z.string().refine(date=>validDay(date)&&date>=benchmarkHistoryStart).nullable()});

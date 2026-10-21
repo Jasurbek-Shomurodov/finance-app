@@ -2723,5 +2723,7 @@
   "Your own money": "Kendi paranız",
   "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Yatırım getirisi, yatırımlarınızın içine konan paranın ötesinde kazandığıdır. Kendi paranız değişimin geri kalanıdır: harcamadan sonra kalan gelir ve ödenen borçlar. Bu dönemde kendi paranızdan {amount} yatırıma koydunuz.",
   "Budget left": "Kalan bütçe",
-  "Over budget": "Bütçe aşıldı"
+  "Over budget": "Bütçe aşıldı",
+  "Custom colour": "Özel renk",
+  "Loading chart…": "Grafik yükleniyor…"
 }

@@ -531,3 +531,16 @@ test('a tile aside sits at the end of the label line instead of adding a line un
  assert.equal(render(StatTile,{label:'Due in 7 days',value:'$60',href:'/upcoming',aside:'1 due soon'}),'<a href="/upcoming" class="stat-tile stat-tile-link"><div class="stat-tile-head"><h3>Due in 7 days</h3><span>1 due soon</span></div><strong><b>$60</b></strong></a>');
  assert.equal(render(StatTile,{label:'Net worth',value:'$1'}),'<article class="stat-tile"><h3>Net worth</h3><strong><b>$1</b></strong></article>');
 });
+
+test('colour choices can add fixed colours and the system picker, whose changes arrive live',()=>{
+ const {ColorChoices}=load('color-choices.tsx');
+ const html=render(ColorChoices,{value:'#123456',colors:['blue'],presets:['#0ea5e9'],custom:true,onChange(){}});
+ assert.match(html,/aria-checked="false" aria-label="#0ea5e9" style="--swatch:#0ea5e9"/);
+ assert.match(html,/<label class="color-custom" data-chosen="true" style="--swatch:#123456" title="Custom colour"><input type="color" aria-label="Custom colour" value="#123456"\/>/);
+ assert.match(render(ColorChoices,{value:'#0ea5e9',colors:[],presets:['#0ea5e9'],custom:true,onChange(){}}),/aria-checked="true" aria-label="#0ea5e9".*<label class="color-custom" title/);
+ const picked=[];
+ const tree=ColorChoices({value:null,colors:[],custom:true,onChange:(...args)=>picked.push(args)});
+ const label=tree.props.children[1].props.children.at(-1);
+ label.props.children.props.onChange({currentTarget:{value:'#abcdef'}});
+ assert.deepEqual(picked,[['#abcdef',true]]);
+});
