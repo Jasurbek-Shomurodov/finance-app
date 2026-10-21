@@ -25,8 +25,9 @@ test('the migration and the fresh-database script agree, and the wrapper is serv
 
 test('the bot saves an expense in another currency with its dated rate, and pays a USD loan from a UZS account',async()=>{
  const db=await database();try{
-  // Cash balances start on the database's today, so transactions are dated then and the rate the day before.
-  const {day,before,after}=(await db.query("SELECT current_date::text AS day,(current_date-1)::text AS before,(current_date+1)::text AS after")).rows[0];
+  // Cash balances start on the database's today in Tashkent (not UTC's current_date, a day behind from 19:00 UTC), so
+  // transactions are dated then and the rate the day before.
+  const {day,before,after}=(await db.query("WITH t AS (SELECT (now() AT TIME ZONE 'Asia/Tashkent')::date AS d) SELECT d::text AS day,(d-1)::text AS before,(d+1)::text AS after FROM t")).rows[0];
   await db.exec(asOwner);
   await db.query('SELECT save_finance_record($1,NULL)',[wallet]);
   await db.query('SELECT save_finance_record($1,NULL)',[loan]);
