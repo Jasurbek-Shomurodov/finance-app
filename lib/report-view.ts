@@ -46,6 +46,6 @@ export function reportNames<B extends { id: string; name: string }>(categories: 
 
 /** What a chart click narrowed the transactions to, in words: "Groceries · Household". */
 export function describeDrill(drill: Drill, names: Pick<ReturnType<typeof reportNames>, 'category' | 'business'>, t: Translate) {
- const what = drill.category ? names.category(drill.category) : drill.categories ? t('{count} categories', { count: drill.categories.length }) : drill.direction ? t(drill.direction === 'income' ? 'Income' : 'Expenses') : null;
+ const what = drill.savings !== undefined ? t('Net income') : drill.category ? names.category(drill.category) : drill.categories ? t('{count} categories', { count: drill.categories.length }) : drill.direction ? t(drill.direction === 'income' ? 'Income' : 'Expenses') : null;
  return [what, drill.merchant, drill.business !== undefined ? names.business(drill.business) : null].filter(Boolean).join(' · ');
 }

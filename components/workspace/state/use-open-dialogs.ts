@@ -7,7 +7,8 @@ import type { DrillTarget } from '@/lib/cash-flow-drill-types';
 
 /** A Sankey to open over the page: what, its title, the month it is for, and what its schedule's details open. */
 export type SankeyRequest = { target: DrillTarget; title: string; month: string; onDetails?: () => void;
- /** Several months (a year on Budget) with their label; otherwise `month` alone. */ months?: string[]; period?: string };
+ /** Several months (a year on Budget) with their label; otherwise `month` alone. */ months?: string[]; period?: string;
+ /** What was saved in the period, for a Savings Sankey (where it went). */ savings?: number };
 
 /** Which of the shell's dialogs is open, and for which record: ending a schedule, splitting, viewing, a transaction's
  * Sankey, tracking a

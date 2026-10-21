@@ -852,9 +852,11 @@ test('a Reports row narrows the transactions and opens its Sankey for the report
  assert.deepEqual(reportDrillTarget({ direction: 'income', merchant: 'EPAM' }), { side: 'merchant', key: 'EPAM', income: true });
  assert.deepEqual(reportDrillTarget({ direction: 'expense', categories: ['a', 'b'] }), { side: 'group', income: false, keys: ['a', 'b'], by: 'category' }, 'a merged Other');
  assert.equal(reportDrillTarget({ business: 'shop' }), null, 'a business alone only narrows');
+ // 21 October 2026: Net income narrowed to Household instead of showing where the money went.
+ assert.deepEqual(reportDrillTarget({ savings: 7535 }), { side: 'savings' }, 'Net income opens where the savings went');
  assert.equal(reportDrillTarget({ direction: 'expense', categories: [] }), null);
  const screen = fs.readFileSync('components/workspace/screens/reports-screen.tsx', 'utf8');
- assert.match(screen, /if \(target\) setSankey\(\{ target, title: label, month: period\.to\.slice\(0, 7\), months: monthsBetween\(period\.from\.slice\(0, 7\), period\.to\.slice\(0, 7\)\), period: rangeLabel \}\);/);
+ assert.match(screen, /if \(target\) setSankey\(\{ target, title: label, month: period\.to\.slice\(0, 7\), months: monthsBetween\(period\.from\.slice\(0, 7\), period\.to\.slice\(0, 7\)\), period: rangeLabel, savings: next\.savings \}\);/);
 });
 
 test('a Loans & debts row opens its Sankey for this month, its Details editing it', () => {

@@ -71,6 +71,8 @@ test('the Sankey feeds a profit into household income and shows a loss leaving t
  assert.ok(data.links.every(item => item.value > 0 && data.nodes[item.source] && data.nodes[item.target]));
  const alone = businessSankey(profitAndLoss(filterLines(lines, ['candles']), ['candles'], line => line.category, false), labels);
  assert.equal(alone.nodes[alone.links.find(item => alone.nodes[item.source].kind === 'loss').target].name, 'candles', 'without the household, the loss covers the business');
+ const net = businessSankey(profitAndLoss([{ id: 'p', record: null, name: 'Pay', date: '2026-10-01', direction: 'income', amount: 900, category: 'Salary', business: null }, { id: 'f', record: null, name: 'Food', date: '2026-10-02', direction: 'expense', amount: 300, category: 'Living expense', business: null }], [], line => line.category, true), labels);
+ assert.deepEqual(net.nodes.find(node => node.name === 'Savings').drill, { savings: 600 }, 'Net income carries what was saved, to open where it went');
 });
 
 test('trends, shares, drill-downs, ranges and net assets', () => {

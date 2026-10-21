@@ -109,7 +109,8 @@ export function profitAndLoss(lines: readonly LedgerLine[], businessIds: readonl
 }
 
 /** What a click on a chart narrows the transactions to. */
-export type Drill = { direction?: Direction; category?: string; categories?: readonly string[]; business?: string | null; merchant?: string };
+/** `savings` is the period's net income: it narrows nothing and opens where that money went. */
+export type Drill = { direction?: Direction; category?: string; categories?: readonly string[]; business?: string | null; merchant?: string; savings?: number };
 export const drillMatches = (drill: Drill | null, line: LedgerLine, keyOf: (line: LedgerLine) => string = line => line.category) => !drill || (
  (drill.direction === undefined || line.direction === drill.direction) && (drill.category === undefined || keyOf(line) === drill.category) && (drill.categories === undefined || drill.categories.includes(line.category))
  && (drill.business === undefined || line.business === drill.business) && (drill.merchant === undefined || line.name === drill.merchant));
@@ -156,7 +157,7 @@ export function businessSankey(pnl: ProfitAndLoss, labels: { category: (key: str
  }
  if (household) {
   for (const item of top(household.expenses, labels.otherExpense, 'expense', null)) links.push({ source: total, target: node({ name: item.name, kind: 'expense', drill: item.drill }), value: item.amount });
-  if (pnl.net > 0) links.push({ source: total, target: node({ name: labels.savings, kind: 'savings', drill: null }), value: pnl.net });
+  if (pnl.net > 0) links.push({ source: total, target: node({ name: labels.savings, kind: 'savings', drill: { savings: pnl.net } }), value: pnl.net });
  }
  const used = new Set(links.filter(link => link.value > 0).flatMap(link => [link.source, link.target]));
  nameEachOnce(nodes, used, (name, business) => labels.inBusiness(name, labels.business(business)));

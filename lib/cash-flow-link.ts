@@ -48,6 +48,7 @@ export function readRange(month: string, today: string, linked?: string | null) 
 /** The Sankey a Reports row opens beside narrowing the transactions: a category, several categories together, or a
  * payer or merchant. A business alone has no drill-down view; it only narrows. */
 export function reportDrillTarget(drill: Drill): DrillTarget | null {
+ if (drill.savings !== undefined) return { side: 'savings' };
  if (!drill.direction) return null;
  const income = drill.direction === 'income';
  if (drill.merchant !== undefined) return { side: 'merchant', key: drill.merchant, income };

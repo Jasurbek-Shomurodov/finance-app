@@ -56,7 +56,7 @@ export function ReportsScreen() {
  const narrow = (next: Drill) => {
   const label = describeDrill(next, names, t), target = reportDrillTarget(next);
   setDrill({ drill: next, label });
-  if (target) setSankey({ target, title: label, month: period.to.slice(0, 7), months: monthsBetween(period.from.slice(0, 7), period.to.slice(0, 7)), period: rangeLabel });
+  if (target) setSankey({ target, title: label, month: period.to.slice(0, 7), months: monthsBetween(period.from.slice(0, 7), period.to.slice(0, 7)), period: rangeLabel, savings: next.savings });
  };
  // Changing what the page shows starts again from every transaction.
  const reset = <T,>(set: (value: T) => void) => (value: T) => { set(value); setDrill(null); };
