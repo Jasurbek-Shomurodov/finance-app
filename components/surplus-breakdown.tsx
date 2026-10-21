@@ -1,6 +1,7 @@
 "use client";
 import { FlowDialog } from '@/components/flow-dialog';
 import { useLanguage } from '@/components/language-provider';
+import { signTone } from '@/components/presentation-foundation/tone';
 import { formatMoney } from '@/lib/format';
 import { surplusFlows, surplusLines, type SurplusParts } from '@/lib/surplus-flows';
 
@@ -15,7 +16,7 @@ export function SurplusBreakdownDialog({ parts, currency, goalFunding = 0, onClo
   <dl className="surplus-sum">
    {incoming.filter(line => line.kind === 'income').map(line => <div key={line.key}><dt>{t(line.key)}</dt><dd className="positive">{money(line.amount)}</dd></div>)}
    {spent.map(line => <div key={line.key}><dt>{t(line.key)}</dt><dd>−{money(line.amount)}</dd></div>)}
-   <div className="surplus-sum-total"><dt>{t('Left after expenses')}</dt><dd className={parts.forecast < 0 ? 'negative' : 'positive'}>{money(parts.forecast)}</dd></div>
+   <div className="surplus-sum-total"><dt>{t('Left after expenses')}</dt><dd className={signTone(parts.forecast)}>{money(parts.forecast)}</dd></div>
    {goalFunding > 0 && parts.forecast > 0 && <>
     <div><dt>{t('Planned goal funding')}</dt><dd>−{money(Math.min(goalFunding, parts.forecast))}</dd></div>
     <div className="surplus-sum-total"><dt>{t('Unassigned monthly surplus')}</dt><dd>{money(Math.max(0, parts.forecast - goalFunding))}</dd></div>
