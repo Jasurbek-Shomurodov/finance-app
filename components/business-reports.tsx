@@ -109,7 +109,8 @@ export function BusinessSankeyChart({ data, currency, onDrill }: { data: Busines
  const label = (name: string, value: number) => `${name} · ${formatCompactMoney(value, currency, locale)}`;
  // Each side gets exactly the room its longest label needs; the chart scrolls only when that and its columns do not fit.
  const room = sankeyLabelMargins(data, label, measureLabel);
- return <div className="cash-flow-sankey"><ResponsiveContainer width="100%" minWidth={sankeyMinWidth(data, room)} height={Math.max(300, data.nodes.length * 30)}>
+ // Drawn straight away, so it is measured from the start (the dialog Sankey shows a skeleton until it is).
+ return <div className="cash-flow-sankey" data-measured><ResponsiveContainer width="100%" minWidth={sankeyMinWidth(data, room)} height={Math.max(300, data.nodes.length * 30)}>
   <Sankey data={data} {...chartSankey} margin={{ top: 8, right: room.right, bottom: 8, left: room.left }}
    link={({ sourceX, targetX, sourceY, targetY, sourceControlX, targetControlX, linkWidth, index }: LinkProps) => {
     const link = data.links[index], drill = link && (drillOf(link.target) ?? drillOf(link.source));

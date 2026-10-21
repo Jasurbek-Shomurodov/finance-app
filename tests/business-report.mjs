@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadTS } from './helpers/load-ts.mjs';
-const { reportLedger, filterLines, profitAndLoss, businessSankey, cashFlowTrend, attributeTrend, rangeFor, readableRange, intervalOf, businessNetAssets, drillMatches, sharesBy } = loadTS('lib/business-report.ts');
+const { reportLedger, filterLines, profitAndLoss, businessSankey, cashFlowTrend, attributeTrend, rangeFor, readableRange, intervalOf, periodEnding, businessNetAssets, drillMatches, sharesBy } = loadTS('lib/business-report.ts');
 const { taxSheet, defaultTaxLine, taxLineFor, taxPeriodRange, taxExportRows, defaultTaxSettings } = loadTS('lib/business-tax.ts');
 
 const record = (id, name, kind, amount, date, extra = {}) => ({ id, name, kind, currency: 'USD', amount, quantity: 1, cost: 0, rate: 0, date, frequency: 'Once', notes: '', ...extra });
@@ -80,6 +80,12 @@ test('trends, shares, drill-downs, ranges and net assets', () => {
  assert.equal(trend[0].expenses, 99);
  assert.deepEqual(cashFlowTrend(lines, { from: '2026-01-01', to: '2026-12-31' }, 'quarter').map(row => row.period), ['2026-Q1', '2026-Q2', '2026-Q3', '2026-Q4']);
  assert.equal(intervalOf('2026-09-30', 'quarter'), '2026-Q3');
+ const year = { from: '2026-01-01', to: '2026-12-31' };
+ assert.deepEqual(periodEnding(year, '2026-10-21', 'month'), { from: '2026-10-01', to: '2026-10-21' });
+ assert.deepEqual(periodEnding(year, '2026-10-21', 'quarter'), { from: '2026-10-01', to: '2026-10-21' });
+ assert.deepEqual(periodEnding(year, '2026-08-05', 'quarter'), { from: '2026-07-01', to: '2026-08-05' });
+ assert.deepEqual(periodEnding(year, '2026-10-21', 'year'), { from: '2026-01-01', to: '2026-10-21' });
+ assert.deepEqual(periodEnding({ from: '2026-08-15', to: '2026-12-31' }, '2026-09-30', 'quarter'), { from: '2026-08-15', to: '2026-09-30' });
  const spending = lines.filter(line => line.direction === 'expense');
  const byBusiness = attributeTrend(spending, { from: '2026-09-01', to: '2026-09-30' }, 'month', line => line.business ?? 'household', 2);
  assert.deepEqual(byBusiness.keys, ['candles', 'other']);

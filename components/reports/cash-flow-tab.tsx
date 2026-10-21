@@ -9,15 +9,17 @@ import { signTone } from '@/components/presentation-foundation/tone';
 import { HOUSEHOLD } from '@/lib/business';
 import { businessKey, businessSankey, cashFlowTrend, intervals, netTrendBy, profitAndLoss, type Interval } from '@/lib/business-report';
 import { formatMoney, formatPercent } from '@/lib/format';
-import { intervalLabels, type TabProps } from './report-labels';
+import { breakdownPeriod, intervalLabels, rangeText, type TabProps } from './report-labels';
 
 /** Cash flow: the period's totals, its breakdown as a Sankey or a profit and loss table, and its trend over time. */
-export function CashFlowTab({ lines, range, rangeLabel, includeHousehold, businessIds, names, groupOf, currency, view, onView, mode, onMode: setMode, onDrill }: TabProps & { includeHousehold: boolean; businessIds: string[]; view: 'sankey' | 'pnl'; onView: (view: 'sankey' | 'pnl') => void; mode: 'breakdown' | 'trends'; onMode: (mode: 'breakdown' | 'trends') => void }) {
+export function CashFlowTab({ lines, range, end, includeHousehold, businessIds, names, groupOf, currency, view, onView, mode, onMode: setMode, onDrill }: TabProps & { includeHousehold: boolean; businessIds: string[]; view: 'sankey' | 'pnl'; onView: (view: 'sankey' | 'pnl') => void; mode: 'breakdown' | 'trends'; onMode: (mode: 'breakdown' | 'trends') => void }) {
  const { t, locale } = useLanguage();
  const [breakdown, setBreakdown] = useState<'category' | 'group' | 'both'>('category');
  const [stacked, setStacked] = useState(false), [interval, setInterval] = useState<Interval>('month');
  const [series, setSeries] = useState<'totals' | 'business'>('totals');
- const pnl = useMemo(() => profitAndLoss(lines, businessIds, line => line.category, includeHousehold), [lines, businessIds, includeHousehold]);
+ // Breakdown shows one month, quarter or year; Trends and the tiles cover the whole report period.
+ const shown = useMemo(() => breakdownPeriod(lines, range, end, interval), [lines, range, end, interval]);
+ const pnl = useMemo(() => profitAndLoss(shown.lines, businessIds, line => line.category, includeHousehold), [shown.lines, businessIds, includeHousehold]);
  const totals = lines.reduce((sum, line) => line.direction === 'income' ? { ...sum, income: sum.income + line.amount } : { ...sum, expenses: sum.expenses + line.amount }, { income: 0, expenses: 0 });
  const net = totals.income - totals.expenses;
  const money = (amount: number) => formatMoney(amount, currency, locale);
@@ -34,12 +36,12 @@ export function CashFlowTab({ lines, range, rangeLabel, includeHousehold, busine
    <StatTile label={t('Savings rate')} value={totals.income > 0 ? formatPercent(net / totals.income * 100, locale) : '—'} tone={totals.income > 0 ? signTone(net) : undefined}/>
   </StatTiles>
   <section className="panel">
-   <PanelTitle title={<>{t(mode === 'breakdown' ? 'Breakdown' : 'Trends')} <span className="panel-figure">{rangeLabel}</span></>} hint={mode === 'breakdown' && view === 'sankey' ? t('Net income is income less spending in this period: what stayed in your accounts or went to savings, investments or loan principal.') : undefined}>
+   <PanelTitle title={t(mode === 'breakdown' ? 'Breakdown' : 'Trends')} hint={mode === 'breakdown' ? `${rangeText(shown.period, locale)}${view === 'sankey' ? ` · ${t('Net income is income less spending in this period: what stayed in your accounts or went to savings, investments or loan principal.')}` : ''}` : rangeText({ from: range.from, to: end }, locale)}>
     <div className="cash-flow-switches">
      <Segmented label={t('Report view')} options={[{ value: 'breakdown', label: t('Breakdown') }, { value: 'trends', label: t('Trends') }] as const} value={mode} onChange={setMode}/>
+     <Segmented label={t('Interval')} options={intervals.map(value => ({ value, label: t(intervalLabels[value]) }))} value={interval} onChange={setInterval}/>
      {mode === 'breakdown' ? <Segmented label={t('Chart type')} options={[{ value: 'sankey', label: t('Sankey') }, { value: 'pnl', label: t('Profit & loss') }] as const} value={view} onChange={onView}/>
       : <><Segmented label={t('Chart type')} options={[{ value: 'grouped', label: t('Grouped') }, { value: 'stacked', label: t('Stacked') }] as const} value={stacked ? 'stacked' : 'grouped'} onChange={value => setStacked(value === 'stacked')}/>
-       <Segmented label={t('Interval')} options={intervals.map(value => ({ value, label: t(intervalLabels[value]) }))} value={interval} onChange={setInterval}/>
        {businessIds.length > 0 && <Segmented label={t('Series')} options={[{ value: 'totals', label: t('Income and expenses') }, { value: 'business', label: t('Net by business') }] as const} value={series} onChange={setSeries}/>}</>}
      {mode === 'breakdown' && view === 'pnl' && <Segmented label={t('Rows')} options={[{ value: 'category', label: t('Categories') }, { value: 'group', label: t('Groups') }, { value: 'both', label: t('Both') }] as const} value={breakdown} onChange={setBreakdown}/>}
     </div>

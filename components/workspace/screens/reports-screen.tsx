@@ -9,6 +9,7 @@ import { Segmented } from '@/components/presentation-foundation/segmented';
 import { AttributeTab } from '@/components/reports/attribute-tab';
 import { CashFlowTab } from '@/components/reports/cash-flow-tab';
 import { ReportFilters, type RangeChoice } from '@/components/reports/report-filters';
+import { rangeText } from '@/components/reports/report-labels';
 import { TaxTab } from '@/components/reports/tax-tab';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
 import { useReportLink } from '@/hooks/use-report-link';
@@ -17,7 +18,6 @@ import { budgetCategories } from '@/lib/budget';
 import { HOUSEHOLD } from '@/lib/business';
 import { drillMatches, filterLines, rangeFor, rangeMonths, readableRange, reportLedger, type Drill, type LedgerLine, type ReportRange } from '@/lib/business-report';
 import { depositToday } from '@/lib/deposit-interest';
-import { formatDate } from '@/lib/format';
 import { monthsBetween } from '@/lib/budget';
 import { reportDrillTarget } from '@/lib/cash-flow-link';
 import { inOwnerFilter, ownerOf, SHARED, workspaceOwners } from '@/lib/household';
@@ -61,10 +61,10 @@ export function ReportsScreen() {
  const visibleTabs = reportTabsFor(businessList.length > 0);
  const shownTab = visibleTabs.includes(tab) ? tab : 'cash_flow';
  const end = range.to < today ? range.to : today;
- const rangeLabel = `${formatDate(range.from, locale)} – ${formatDate(end, locale)}`;
+ const rangeLabel = rangeText({ from: range.from, to: end }, locale);
  // A ledger line opens its transaction's Sankey; its details are one tap away there.
  const open = (line: LedgerLine) => line.record && setDrilling(storedRecord(line.record));
- const tabProps = { range, rangeLabel, names, groupOf, currency, onDrill: narrow };
+ const tabProps = { range, end, names, groupOf, currency, onDrill: narrow };
 
  return <div data-page="Reports" className="content reports-content">
   <PageHeader title={t('Reports')} tabs={<Segmented as="nav" className="page-tabs" label={t('Reports')} options={visibleTabs.map(value => ({ value, label: t(tabLabels[value]) }))} value={shownTab} onChange={reset(setTab)}/>} hint={t('Cash flow, spending and income for your household and each business. Click any part of a chart or table to see its transactions.')}>

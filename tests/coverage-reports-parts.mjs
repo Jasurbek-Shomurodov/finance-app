@@ -75,7 +75,12 @@ test('Cash flow totals the period and switches between Sankey, profit and loss a
  open();
  assert.deepEqual(header().props.tabs.props.options.map(option => option.value), ['cash_flow', 'spending', 'income', 'tax']);
  assert.deepEqual([tile('Income').value, tile('Expenses').value, tile('Net income').value, tile('Net income').tone], ['$3,900', '$400', '$3,500', 'positive']);
- assert.ok(r.find(byType('BusinessSankeyChart')));
+ // The breakdown starts on this month alone; the tiles keep the whole period.
+ assert.equal(segmented('Interval').props.value, 'month');
+ const thisMonth = today.slice(5, 7) === '01';
+ assert.equal(r.find(byType('BusinessSankeyChart')).props.data.links.length > 0, thisMonth, 'January records show only in January');
+ pick('Interval', 'year');
+ assert.ok(r.find(byType('BusinessSankeyChart')).props.data.links.length > 0);
  pick('Chart type', 'pnl');
  assert.equal(r.find(byType('ProfitLossTable')).props.breakdown, 'category');
  pick('Rows', 'group');
@@ -112,11 +117,15 @@ test('Spending and Income break down by category, group, merchant or business, a
  open();
  switchTab('spending');
  assert.deepEqual([tile('Total spending').value, tile('Transactions').value], ['$400', '1']);
+ assert.equal(segmented('Interval').props.value, 'month');
+ pick('Interval', 'year');
+ assert.deepEqual(r.find(byType('BreakdownDonut')).props.items.map(item => item.key), ['Living expense']);
  assert.equal(r.find(byType('BreakdownDonut')).props.label('Living expense'), 'Living expense', 'the donut is the default view');
  r.fire(r.find(byType('BreakdownDonut')), 'onSelect', 'Living expense');
  assert.equal(r.find(byType('ReportTransactions')).props.label, 'Living expense');
  switchTab('income');
  assert.equal(tile('Total income').tone, 'positive');
+ pick('Interval', 'year');
  assert.equal(r.all(byType('ReportSummary'))[0].props.mixed, false);
  pick('Chart type', 'bars');
  const drills = {};

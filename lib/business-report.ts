@@ -168,6 +168,12 @@ export const intervals = ['month', 'quarter', 'year'] as const;
 export type Interval = typeof intervals[number];
 /** The interval a date falls in: `2026-07`, `2026-Q3` or `2026`. */
 export const intervalOf = (date: string, interval: Interval) => interval === 'month' ? date.slice(0, 7) : interval === 'year' ? date.slice(0, 4) : `${date.slice(0, 4)}-Q${Math.floor((Number(date.slice(5, 7)) - 1) / 3) + 1}`;
+/** The interval of the range that ends on `end`: this month, quarter or year so far, never outside the range. */
+export function periodEnding(range: ReportRange, end: string, interval: Interval): ReportRange {
+ const month = end.slice(0, 7), first = interval === 'month' ? month : interval === 'year' ? `${month.slice(0, 4)}-01` : shiftMonth(month, -((Number(month.slice(5, 7)) - 1) % 3));
+ const last = monthEnd(shiftMonth(first, interval === 'month' ? 0 : interval === 'quarter' ? 2 : 11));
+ return { from: first + '-01' > range.from ? first + '-01' : range.from, to: last < end ? last : end };
+}
 export const intervalsIn = (range: ReportRange, interval: Interval) => [...new Set(rangeMonths(range).map(month => intervalOf(month + '-01', interval)))];
 
 /** Income, expenses and net for each interval of the range. */
