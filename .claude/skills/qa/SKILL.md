@@ -27,8 +27,12 @@ keep `references/cases.md` (the regression catalog) open: it is the plan.
   `total`, request `ceil(total / pageSize)` pages, and deduplicate by `id`. Filter by `section` (and `currency`) to
   narrow the set; do not derive expected totals from one page or from the summary (the summary leaves out older rows).
 - **Credentials:** never type a password, create an account or share a phone number.
-  When a session is needed, front the tab and ask the user to sign in. Test account:
-  `user1@gmail.com` (the user signs in; never store its password anywhere).
+  QA always runs on the dedicated QA account `hoggish@gmail.com` (the user's rule,
+  21 October 2026; it holds test data only, so `QA` cleanup on it is safe). Before
+  asking anything, check whether the pane is already signed in: the footer's account
+  name shows the email, and pane sign-ins persist between runs. If it is signed out or
+  on another account, front the tab and ask the user to sign in as `hoggish@gmail.com`.
+  The password is never written into this repository, a memory file or a report.
 - **Data:** everything you create is prefixed `QA` (accounts, records, goals,
   categories). Never edit or delete anything without that prefix. Never use
   "Delete permanently", account deletion, backup restore or "Undo import" on real data.
@@ -78,7 +82,7 @@ SHELL, I18N and XAPP span every route; BOT is the Telegram chat.
 3. Browser pane: call `tabs_context`. If it says hidden, call `preview_start` with the
    production URL; that brings the pane back. Real clicks, typing, drags and
    Telegram sending all fail while the pane is hidden.
-4. Tabs: one app tab (signed in as the test account) and one Telegram Web tab
+4. Tabs: one app tab (signed in as `hoggish@gmail.com`, the QA account) and one Telegram Web tab
    (`https://web.telegram.org/k/#@hoggish_finance_bot`). Close stray tabs.
 
 ## 2. Browser mechanics (hard-won; follow exactly)
