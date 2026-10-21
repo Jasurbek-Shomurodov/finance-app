@@ -2715,6 +2715,11 @@
   "Spending by category": "Matumizi kwa kategoria",
   "Net worth if spending had been invested": "Thamani halisi kama matumizi yangewekezwa",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Thamani yako halisi leo kama uwekezaji wako na kila matumizi yaliyorekodiwa yangewekwa kwenye kila kigezo. Matumizi hayaongezi chochote kwenye thamani yako, kwa hiyo tofauti ndiyo gharama yake.",
-  "{amount} vs today": "{amount} ukilinganisha na leo",
-  "Tracking since {date}": "Inafuatiliwa tangu {date}"
+  "Tracking since {date}": "Inafuatiliwa tangu {date}",
+  "{amount} more than you have": "{amount} zaidi ya ulicho nacho",
+  "{amount} less than you have": "{amount} chini ya ulicho nacho",
+  "Colour of {name}": "Rangi ya {name}",
+  "Investment returns": "Faida ya uwekezaji",
+  "Your own money": "Pesa yako mwenyewe",
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Faida ya uwekezaji ni kile uwekezaji wako ulichopata zaidi ya pesa uliyoweka. Pesa yako mwenyewe ni sehemu iliyobaki ya mabadiliko: mapato uliyobaki nayo baada ya matumizi na madeni uliyolipa. Katika kipindi hiki uliweka {amount} ya pesa yako kwenye uwekezaji."
 }

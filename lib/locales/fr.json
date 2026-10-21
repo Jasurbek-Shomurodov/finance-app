@@ -2715,6 +2715,11 @@
   "Spending by category": "Dépenses par catégorie",
   "Net worth if spending had been invested": "Patrimoine si les dépenses avaient été investies",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Votre patrimoine net actuel si vos investissements et chaque dépense enregistrée avaient été placés dans chaque indice de référence. Les dépenses n’ajoutent rien à votre patrimoine : l’écart montre ce qu’elles ont coûté.",
-  "{amount} vs today": "{amount} par rapport à aujourd’hui",
-  "Tracking since {date}": "Suivi depuis le {date}"
+  "Tracking since {date}": "Suivi depuis le {date}",
+  "{amount} more than you have": "{amount} de plus que ce que vous avez",
+  "{amount} less than you have": "{amount} de moins que ce que vous avez",
+  "Colour of {name}": "Couleur de {name}",
+  "Investment returns": "Rendement des placements",
+  "Your own money": "Votre propre argent",
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Le rendement des placements est ce que vos placements ont gagné au-delà de l’argent que vous y avez mis. Votre propre argent est le reste de la variation : les revenus gardés après dépenses et les dettes remboursées. Sur cette période, vous avez placé {amount} de votre propre argent."
 }

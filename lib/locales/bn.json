@@ -2715,6 +2715,11 @@
   "Spending by category": "বিভাগ অনুযায়ী ব্যয়",
   "Net worth if spending had been invested": "খরচ বিনিয়োগ করলে নিট সম্পদ",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "আজ আপনার নিট সম্পদ, যদি আপনার বিনিয়োগ ও প্রতিটি লেখা খরচ প্রতিটি বেঞ্চমার্কে রাখা হতো। খরচ আপনার সম্পদে কিছু যোগ করে না, তাই পার্থক্যটাই তার মূল্য।",
-  "{amount} vs today": "আজকের তুলনায় {amount}",
-  "Tracking since {date}": "{date} থেকে ট্র্যাকিং"
+  "Tracking since {date}": "{date} থেকে ট্র্যাকিং",
+  "{amount} more than you have": "আপনার যা আছে তার চেয়ে {amount} বেশি",
+  "{amount} less than you have": "আপনার যা আছে তার চেয়ে {amount} কম",
+  "Colour of {name}": "{name}-এর রং",
+  "Investment returns": "বিনিয়োগের আয়",
+  "Your own money": "আপনার নিজের টাকা",
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "বিনিয়োগের আয় হলো আপনার বিনিয়োগ তাতে রাখা টাকার বাইরে যা আয় করেছে। আপনার নিজের টাকা হলো বাকি পরিবর্তন: খরচের পর রাখা আয় ও শোধ করা ঋণ। এই সময়ে আপনি নিজের {amount} বিনিয়োগে রেখেছেন।"
 }

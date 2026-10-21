@@ -2715,6 +2715,11 @@
   "Spending by category": "Wydatki według kategorii",
   "Net worth if spending had been invested": "Majątek, gdyby wydatki zostały zainwestowane",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Twój dzisiejszy majątek netto, gdyby inwestycje i każdy zapisany wydatek trafiły do każdego wskaźnika odniesienia. Wydatki nic nie dodają do majątku, więc różnica to ich koszt.",
-  "{amount} vs today": "{amount} względem dziś",
-  "Tracking since {date}": "Śledzone od {date}"
+  "Tracking since {date}": "Śledzone od {date}",
+  "{amount} more than you have": "o {amount} więcej, niż masz",
+  "{amount} less than you have": "o {amount} mniej, niż masz",
+  "Colour of {name}": "Kolor: {name}",
+  "Investment returns": "Zyski z inwestycji",
+  "Your own money": "Twoje własne pieniądze",
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Zyski z inwestycji to to, co inwestycje zarobiły ponad włożone w nie pieniądze. Twoje własne pieniądze to reszta zmiany: dochód zatrzymany po wydatkach i spłacone długi. W tym okresie włożyłeś w inwestycje {amount} własnych pieniędzy."
 }

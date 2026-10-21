@@ -1,6 +1,6 @@
 "use client";
 import { DeleteButton } from '@/components/presentation-foundation/delete-button';
-import { useState, type CSSProperties } from 'react';
+import { useState } from 'react';
 import { ErrorPopup } from '@/components/presentation-foundation/error-popup';
 import { FormFooter } from '@/components/presentation-foundation/form-footer';
 import { CategoryIconPicker } from '@/components/category-icon-picker';
@@ -12,7 +12,8 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { categoryNameTaken, duplicateCategoryMessage } from '@/lib/category-names';
 import type { Category } from '@/lib/planning';
 import { categoryPaletteColors, hueColor } from '@/lib/category-colors';
-import { paletteColor, paletteLabels, type PaletteColor } from '@/lib/business';
+import { type PaletteColor } from '@/lib/business';
+import { ColorChoices } from '@/components/presentation-foundation/color-choices';
 import type { CategoryLookChange } from '@/hooks/use-category-icons';
 
 type Props={
@@ -48,12 +49,7 @@ export function EditCategoryDialog({item,icon,chosen,color,defaultHue,iconsDisab
     <CategoryIconPicker icon={shownIcon} label={t('Change icon for {name}',{name:item.label})} chosen={nextIcon===undefined?chosen:nextIcon!==null} disabled={busy||iconsDisabled} onChoose={setNextIcon}/>
     <label>{t('Name')}<Input required maxLength={80} value={name} disabled={busy||!item.category} aria-invalid={taken||undefined} onChange={event=>setName(event.target.value)}/></label>
    </div>
-   <fieldset className="business-color-field category-color-field" disabled={busy||iconsDisabled}><legend>{t('Colour')}</legend>
-    <div role="radiogroup" aria-label={t('Colour')}>
-     <button type="button" role="radio" aria-checked={nextColor===null} aria-label={t('Automatic')} style={{'--swatch':hueColor(defaultHue)} as CSSProperties} onClick={()=>setNextColor(null)}/>
-     {categoryPaletteColors.map(option=><button key={option} type="button" role="radio" aria-checked={nextColor===option} aria-label={t(paletteLabels[option])} style={{'--swatch':paletteColor(option)} as CSSProperties} onClick={()=>setNextColor(option)}/>)}
-    </div>
-   </fieldset>
+   <ColorChoices className="category-color-field" disabled={busy||iconsDisabled} value={nextColor} colors={categoryPaletteColors} automatic={hueColor(defaultHue)} onChange={setNextColor}/>
    {taken&&<p role="alert" className="error">{t(duplicateCategoryMessage)}</p>}
    <ErrorPopup message={error}/>
    <FormFooter busy={busy} onCancel={guard.close}>

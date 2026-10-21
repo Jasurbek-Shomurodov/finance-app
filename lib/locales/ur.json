@@ -2715,6 +2715,11 @@
   "Spending by category": "زمرے کے لحاظ سے اخراجات",
   "Net worth if spending had been invested": "اگر خرچ کی رقم سرمایہ کاری کی جاتی تو خالص مالیت",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "آج آپ کی خالص مالیت اگر آپ کی سرمایہ کاری اور ہر درج خرچ ہر معیار میں لگایا جاتا۔ خرچ آپ کی مالیت میں کچھ نہیں جوڑتا، اس لیے فرق اس کی قیمت ہے۔",
-  "{amount} vs today": "آج کے مقابلے میں {amount}",
-  "Tracking since {date}": "{date} سے ٹریکنگ"
+  "Tracking since {date}": "{date} سے ٹریکنگ",
+  "{amount} more than you have": "آپ کے پاس موجود سے {amount} زیادہ",
+  "{amount} less than you have": "آپ کے پاس موجود سے {amount} کم",
+  "Colour of {name}": "{name} کا رنگ",
+  "Investment returns": "سرمایہ کاری کا منافع",
+  "Your own money": "آپ کی اپنی رقم",
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "سرمایہ کاری کا منافع وہ ہے جو آپ کی سرمایہ کاری نے لگائی گئی رقم سے زیادہ کمایا۔ آپ کی اپنی رقم باقی تبدیلی ہے: خرچ کے بعد بچائی گئی آمدنی اور ادا کیے گئے قرض۔ اس مدت میں آپ نے اپنی {amount} رقم سرمایہ کاری میں لگائی۔"
 }

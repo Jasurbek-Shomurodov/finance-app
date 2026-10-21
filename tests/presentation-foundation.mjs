@@ -512,3 +512,16 @@ test('a dialog opens on its field marked data-autofocus, else its first editable
   assert.equal(useOpened(()=>null).defaultPrevented,false,'a dialog of choices keeps Radix\'s own focus');
  }finally{delete globalThis.document;}
 });
+
+test('colour choices mark the chosen swatch, offer Automatic only with a default colour, and report the pick',()=>{
+ const {ColorChoices}=load('color-choices.tsx');
+ const picked=[];
+ const html=render(ColorChoices,{value:'green',colors:['blue','green'],automatic:'hsl(1 2% 3%)',onChange:color=>picked.push(color)});
+ assert.match(html,/aria-checked="false" aria-label="Automatic" style="--swatch:hsl\(1 2% 3%\)"/);
+ assert.match(html,/aria-checked="true" aria-label="Green"/);
+ assert.doesNotMatch(render(ColorChoices,{value:null,colors:['blue'],onChange(){}}),/Automatic/);
+ const tree=ColorChoices({value:null,colors:['blue'],automatic:'red',onChange:color=>picked.push(color)});
+ const [automatic,swatches]=tree.props.children[1].props.children;
+ automatic.props.onClick();swatches[0].props.onClick();
+ assert.deepEqual(picked,[null,'blue']);
+});

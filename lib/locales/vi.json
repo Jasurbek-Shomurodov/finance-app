@@ -2715,6 +2715,11 @@
   "Spending by category": "Chi tiêu theo danh mục",
   "Net worth if spending had been invested": "Tài sản ròng nếu chi tiêu được đầu tư",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Tài sản ròng hôm nay của bạn nếu các khoản đầu tư và mọi chi tiêu đã ghi được đưa vào từng chỉ số tham chiếu. Chi tiêu không làm tăng tài sản ròng, nên phần chênh lệch là cái giá của nó.",
-  "{amount} vs today": "{amount} so với hôm nay",
-  "Tracking since {date}": "Theo dõi từ {date}"
+  "Tracking since {date}": "Theo dõi từ {date}",
+  "{amount} more than you have": "Nhiều hơn số bạn có {amount}",
+  "{amount} less than you have": "Ít hơn số bạn có {amount}",
+  "Colour of {name}": "Màu của {name}",
+  "Investment returns": "Lợi nhuận đầu tư",
+  "Your own money": "Tiền của chính bạn",
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Lợi nhuận đầu tư là phần các khoản đầu tư kiếm được vượt trên số tiền bạn bỏ vào. Tiền của chính bạn là phần còn lại của thay đổi: thu nhập giữ lại sau chi tiêu và các khoản nợ đã trả. Trong kỳ này bạn đã bỏ {amount} tiền của mình vào đầu tư."
 }

@@ -2715,6 +2715,11 @@
   "Spending by category": "Uitgaven per categorie",
   "Net worth if spending had been invested": "Vermogen als uitgaven waren belegd",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Uw nettovermogen vandaag als uw beleggingen en elke geregistreerde uitgave in elke benchmark waren gestoken. Uitgaven voegen niets toe aan uw vermogen, dus het verschil is wat ze kostten.",
-  "{amount} vs today": "{amount} ten opzichte van vandaag",
-  "Tracking since {date}": "Gevolgd sinds {date}"
+  "Tracking since {date}": "Gevolgd sinds {date}",
+  "{amount} more than you have": "{amount} meer dan u hebt",
+  "{amount} less than you have": "{amount} minder dan u hebt",
+  "Colour of {name}": "Kleur van {name}",
+  "Investment returns": "Beleggingsrendement",
+  "Your own money": "Uw eigen geld",
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Beleggingsrendement is wat uw beleggingen verdienden bovenop het geld dat erin ging. Uw eigen geld is de rest van de verandering: inkomen dat u na uitgaven overhield en afgeloste schulden. In deze periode stak u {amount} eigen geld in beleggingen."
 }

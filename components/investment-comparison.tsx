@@ -4,6 +4,7 @@ import { DatePicker } from '@/components/presentation-foundation/date-picker';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { HypotheticalNetWorthCards } from '@/components/hypothetical-net-worth';
 import { hypotheticalNetWorth } from '@/lib/hypothetical-net-worth';
+import { periodGrowth,type PeriodGrowth } from '@/lib/period-growth';
 import { benchmarkMethodStorageKey, readBenchmarkScope, investmentComparisonCoverage, investmentDecisionComparison, purchaseComparisonStart, comparisonMethod, type ComparisonMethod, type BenchmarkMovement, type FundingScope } from '@/lib/investment-benchmarks';
 import { showError } from '@/lib/feedback';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -19,19 +20,18 @@ import { ChartSkeleton } from '@/components/presentation-foundation/loading-plac
 import { InlineError } from '@/components/presentation-foundation/inline-error';
 import { useLanguage } from '@/components/language-provider';
 import { formatDate,formatNumber } from '@/lib/format';
-import { categoryColor } from '@/lib/category-colors';
 import { type Entry } from '@/lib/finance';
 import { type MarketData } from '@/lib/market';
 import { type HistoryEvent } from '@/lib/investment-history';
 import { type BenchmarkData, type FxPoint } from '@/lib/benchmark-data';
-import { defaultComparisonPreferences,isInvestmentRecord,type ComparisonProfile } from '@/lib/comparison-profile';
+import { benchmarkColor,defaultBenchmarkColor,defaultComparisonPreferences,isInvestmentRecord,type ComparisonProfile } from '@/lib/comparison-profile';
 import Link from 'next/link';
 import { ChartNoAxesCombined } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
 
 type History={movements?:BenchmarkMovement[];records:Entry[];events:HistoryEvent[];cashflows?:Entry[]};
-export function InvestmentComparison({history,today,currency,market,demo,windowStart,points,summary,profile,profileError,trackingStart,onTrackingStartChange}:{windowStart:string;points:{date:string;net:number}[];summary?:ReactNode|((fx:FxPoint[]|undefined)=>ReactNode);history:History;today:string;currency:string;market:MarketData|null;demo:boolean;profile:ComparisonProfile|null;profileError:string;trackingStart:string|null;onTrackingStartChange:(date:string|null)=>Promise<void>}){
+export function InvestmentComparison({history,today,currency,market,demo,windowStart,points,summary,profile,profileError,trackingStart,onTrackingStartChange,onGrowth}:{onGrowth?:(growth:PeriodGrowth|null)=>void;windowStart:string;points:{date:string;net:number}[];summary?:ReactNode|((fx:FxPoint[]|undefined)=>ReactNode);history:History;today:string;currency:string;market:MarketData|null;demo:boolean;profile:ComparisonProfile|null;profileError:string;trackingStart:string|null;onTrackingStartChange:(date:string|null)=>Promise<void>}){
  const {t,locale}=useLanguage();
  const [data,setData]=useState<BenchmarkData|null>(null),[error,setError]=useState(''),[retry,setRetry]=useState(0),[loadedKey,setLoadedKey]=useState('');
  const [overviewSelection,setOverviewSelection]=useState<{owner:string;keys:string[]}|null>(null);
@@ -95,14 +95,19 @@ export function InvestmentComparison({history,today,currency,market,demo,windowS
  // The period summary converts with the same dated rates as the chart, so their funding totals agree.
  const summaryNode=typeof summary==='function'?summary(ready?.fx):summary;
  const decision=useMemo(()=>ready?investmentDecisionComparison({records:history.records,events:history.events,cashflows:history.cashflows,movements:history.movements,market,currency,today,method},ready,activeDiversified):null,[ready,history,market,currency,today,method,activeDiversified]);
- const definitions=[{key:'actual',label:t('Investments'),color:'var(--primary)',dash:undefined,quotes:undefined},...stockBenchmarks(profile?.preferences.benchmarks??[]).map(item=>({key:item.id,label:item.symbol,color:categoryColor(item.id),dash:'12 4',quotes:[{key:item.id,symbol:item.symbol}]})),{key:'BTC',label:'Bitcoin · BTC',color:categoryColor('Crypto'),dash:undefined,quotes:[{key:'BTC',symbol:'BTC'}]},{key:'SPY',label:'S&P 500 · SPY',color:categoryColor('Stock'),dash:'7 3',quotes:[{key:'SPY',symbol:'SPY'}]},{key:'HYG',label:t('High-yield bonds · HYG'),color:categoryColor('Property'),dash:'9 3 2 3',quotes:[{key:'HYG',symbol:'HYG'}]},{key:'BIL',label:t('US Treasury bills · BIL'),color:categoryColor('Treasury bill'),dash:'4 2',quotes:[{key:'BIL',symbol:'BIL'}]},{key:'depositUZS',label:t('{currency} deposit · {rate}%',{currency:'UZS',rate:formatNumber(21,locale)}),color:categoryColor('Deposit'),dash:'5 5'},{key:'depositUSD',label:t('{currency} deposit · {rate}%',{currency:'USD',rate:formatNumber(8,locale)}),color:categoryColor('Cash'),dash:'2 4'},{key:'CUSTOM',label:symbol,color:categoryColor('Business'),dash:'12 4',quotes:[{key:'CUSTOM',symbol}]},{key:'PORTFOLIO',label:t('Diversified portfolio'),color:categoryColor('Money lent'),dash:'8 3 2 3',quotes:activeDiversified?portfolioQuotes(activeDiversified):undefined}];
- const displayed=definitions.filter(item=>item.key==='actual'||selected.includes(item.key));
+ const definitions=[{key:'actual',label:t('Investments'),color:'var(--primary)',dash:undefined,quotes:undefined},...stockBenchmarks(profile?.preferences.benchmarks??[]).map(item=>({key:item.id,label:item.symbol,color:defaultBenchmarkColor(item.id),dash:'12 4',quotes:[{key:item.id,symbol:item.symbol}]})),{key:'BTC',label:'Bitcoin · BTC',color:defaultBenchmarkColor('BTC'),dash:undefined,quotes:[{key:'BTC',symbol:'BTC'}]},{key:'SPY',label:'S&P 500 · SPY',color:defaultBenchmarkColor('SPY'),dash:'7 3',quotes:[{key:'SPY',symbol:'SPY'}]},{key:'HYG',label:t('High-yield bonds · HYG'),color:defaultBenchmarkColor('HYG'),dash:'9 3 2 3',quotes:[{key:'HYG',symbol:'HYG'}]},{key:'BIL',label:t('US Treasury bills · BIL'),color:defaultBenchmarkColor('BIL'),dash:'4 2',quotes:[{key:'BIL',symbol:'BIL'}]},{key:'depositUZS',label:t('{currency} deposit · {rate}%',{currency:'UZS',rate:formatNumber(21,locale)}),color:defaultBenchmarkColor('depositUZS'),dash:'5 5'},{key:'depositUSD',label:t('{currency} deposit · {rate}%',{currency:'USD',rate:formatNumber(8,locale)}),color:defaultBenchmarkColor('depositUSD'),dash:'2 4'},{key:'CUSTOM',label:symbol,color:defaultBenchmarkColor('CUSTOM'),dash:'12 4',quotes:[{key:'CUSTOM',symbol}]},{key:'PORTFOLIO',label:t('Diversified portfolio'),color:defaultBenchmarkColor('PORTFOLIO'),dash:'8 3 2 3',quotes:activeDiversified?portfolioQuotes(activeDiversified):undefined}];
+ const colors=profile?.preferences.colors;
+ const displayed=definitions.filter(item=>item.key==='actual'||selected.includes(item.key)).map(item=>item.key==='actual'?item:{...item,color:benchmarkColor(item.key,colors)});
  const visibleSeries=displayed.filter(item=>overviewSeriesVisible(overviewKeys,item.key));
  const visibleKeys=new Set(visibleSeries.map(item=>item.key));
  const overviewResult=decision?.result;
  const chartPoints=(overviewResult?.points??[]).filter(point=>point.date>=windowStart);
  const chartSeries=visibleSeries;
  const detailPoint=chartPoints.find(point=>point.date===detailDate);
+ // The period's change in investments, split into money put in and returns, for the net worth headline.
+ const growth=comparisonsLoading?null:periodGrowth(chartPoints);
+ const growthReturns=growth?.returns,growthInvested=growth?.invested;
+ useEffect(()=>{onGrowth?.(growthReturns===undefined||growthInvested===undefined?null:{returns:growthReturns,invested:growthInvested});},[onGrowth,growthReturns,growthInvested]);
  // Net worth today, and what it would be had investments and spending gone into each shown benchmark.
  const netWorth=points.at(-1)?.net;
  const whatIf=scope==='expenses'?hypotheticalNetWorth(netWorth,overviewResult?.points.at(-1),visibleSeries.filter(item=>item.key!=='actual').map(item=>item.key)):[];

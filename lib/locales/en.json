@@ -2715,6 +2715,11 @@
   "Spending by category": "Spending by category",
   "Net worth if spending had been invested": "Net worth if spending had been invested",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.",
-  "{amount} vs today": "{amount} vs today",
-  "Tracking since {date}": "Tracking since {date}"
+  "Tracking since {date}": "Tracking since {date}",
+  "{amount} more than you have": "{amount} more than you have",
+  "{amount} less than you have": "{amount} less than you have",
+  "Colour of {name}": "Colour of {name}",
+  "Investment returns": "Investment returns",
+  "Your own money": "Your own money",
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments."
 }

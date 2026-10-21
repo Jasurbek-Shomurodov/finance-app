@@ -196,13 +196,14 @@ export function investmentDecisionComparison(input:DecisionInput,data:BenchmarkD
  // From a dated start, that day's holdings are in the starting value; a principal repayment that day is not, so it funds benchmarks.
  const counted=(date:string,repayment=false)=>date>start||((!dated||repayment)&&date===start);
  const balances=new Map<string,number>(),cost=new Map<string,number>();
- const flows:CashFlow[]=[],details:FundingDetail[]=[],points:WealthPoint[]=[];
+ // `own` is the money put in from outside the investments, without the spending that "Including expenses" also funds.
+ const flows:CashFlow[]=[],own:CashFlow[]=[],details:FundingDetail[]=[],points:WealthPoint[]=[];
  const observed=new Set<string>();let principal=0,payouts=0,cursor=0,next=0,spent=0,seeded=false;
  const usd=(amount:number,currency:string,date:string)=>{const converted=convertHistorical(amount,currency,'USD',date,data.fx);if(converted===null||!Number.isFinite(converted)){missing=true;return 0;}return converted;};
  const fund=(id:string,date:string,name:string,amount:number,currency:string,reused=0,principalPaid?:number,expenseKind?:string,opening=false)=>{
   if(!counted(date,principalPaid!==undefined))return;
   const converted=usd(Math.max(0,amount-reused),currency,date);
-  if(converted>0)flows.push({date,amount:converted});
+  if(converted>0){flows.push({date,amount:converted});if(expenseKind===undefined)own.push({date,amount:converted});}
   if(amount>0)details.push({id,date,name,amount:Math.max(0,amount-reused),currency,reused,...(principalPaid===undefined?{}:{principal:principalPaid}),...(expenseKind===undefined?{}:{source:'expense' as const,kind:expenseKind}),...(opening?{source:'opening' as const}:{})});
  };
  const openings=openingFunding(input.records,input.events,input.today);
@@ -250,12 +251,16 @@ export function investmentDecisionComparison(input:DecisionInput,data:BenchmarkD
    total+=usd(live?value(live):balance,r.currency,date);
   }
   if(dated&&!seeded){
-   flows.push({date,amount:total});details.push({id:'opening',date,name:'Starting investment value',amount:total,currency:'USD',reused:0});seeded=true;
+   flows.push({date,amount:total});own.push({date,amount:total});details.push({id:'opening',date,name:'Starting investment value',amount:total,currency:'USD',reused:0});seeded=true;
   }
   points.push({date,amount:total+principal+payouts});
  }
  if(missing)return null;
- const result=compareInvestments(0,flows,points,{...data,start},'USD',true,portfolio);
+ const compared=compareInvestments(0,flows,points,{...data,start},'USD',true,portfolio);
+ // Each day also carries `invested`: the money put in up to that day, for splitting a period's change into returns and new money.
+ own.sort((a,b)=>a.date.localeCompare(b.date));
+ let ownIndex=0,ownTotal=0;
+ const result={...compared,points:compared.points.map(point=>{while(ownIndex<own.length&&own[ownIndex].date<=point.date)ownTotal+=own[ownIndex++].amount;return {...point,invested:ownTotal};})};
  const rates=marketRates(input.market)??{};
  if(convertAmount(1,'USD',input.currency,rates)===null)return null;
  // Each day leaves USD at that day's rate, the one it entered at: a UZS deposit shown in UZS only grows,

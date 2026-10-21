@@ -97,6 +97,8 @@ test('including expenses invests spending on its date without adding it to actua
  const result=investmentDecisionComparison({...base,method:including,cashflows:[spend('watch','2026-09-03',300),{...spend('salary','2026-09-02',5000),kind:'Salary'}]},data);
  assert.deepEqual(result.result.points.map(p=>p.contributed),[1000,1000,1300,1300]);
  assert.deepEqual(result.result.points.map(p=>p.actual),[1000,1000,1000,1000]);
+ // The money put in never counts the spending, so a period's returns are not dragged down by it.
+ assert.deepEqual(result.result.points.map(p=>p.invested),[1000,1000,1000,1000]);
  // 10 BTC at 100 plus 1 BTC at 300, valued at 400.
  assert.equal(result.result.points.at(-1).BTC,4400);
  assert.deepEqual(result.details.find(row=>row.source==='expense'),{id:'expense:watch',date:'2026-09-03',name:'watch',amount:300,currency:'USD',reused:0,source:'expense',kind:'Living expense'});

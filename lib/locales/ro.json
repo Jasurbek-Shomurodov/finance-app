@@ -2715,6 +2715,11 @@
   "Spending by category": "Cheltuieli pe categorii",
   "Net worth if spending had been invested": "Avere netă dacă cheltuielile ar fi fost investite",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Averea ta netă de azi dacă investițiile și fiecare cheltuială înregistrată ar fi mers în fiecare reper. Cheltuielile nu adaugă nimic averii, deci diferența este costul lor.",
-  "{amount} vs today": "{amount} față de azi",
-  "Tracking since {date}": "Urmărit din {date}"
+  "Tracking since {date}": "Urmărit din {date}",
+  "{amount} more than you have": "cu {amount} mai mult decât ai",
+  "{amount} less than you have": "cu {amount} mai puțin decât ai",
+  "Colour of {name}": "Culoarea pentru {name}",
+  "Investment returns": "Randamentul investițiilor",
+  "Your own money": "Banii tăi",
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Randamentul investițiilor este ce au câștigat investițiile peste banii puși în ele. Banii tăi sunt restul schimbării: venitul păstrat după cheltuieli și datoriile achitate. În această perioadă ai pus {amount} din banii tăi în investiții."
 }

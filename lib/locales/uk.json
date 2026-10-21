@@ -2715,6 +2715,11 @@
   "Spending by category": "Витрати за категоріями",
   "Net worth if spending had been invested": "Капітал, якби витрати було інвестовано",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Ваш капітал сьогодні, якби інвестиції та кожну записану витрату було вкладено в кожен орієнтир. Витрати нічого не додають до капіталу, тож різниця — їхня ціна.",
-  "{amount} vs today": "{amount} порівняно з сьогодні",
-  "Tracking since {date}": "Відстеження з {date}"
+  "Tracking since {date}": "Відстеження з {date}",
+  "{amount} more than you have": "на {amount} більше, ніж у вас є",
+  "{amount} less than you have": "на {amount} менше, ніж у вас є",
+  "Colour of {name}": "Колір: {name}",
+  "Investment returns": "Дохід від інвестицій",
+  "Your own money": "Ваші власні гроші",
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Дохід від інвестицій — те, що інвестиції заробили понад вкладені в них гроші. Ваші власні гроші — решта зміни: дохід, що лишився після витрат, і погашені борги. За цей період ви вклали в інвестиції {amount} власних грошей."
 }

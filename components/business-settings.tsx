@@ -1,8 +1,9 @@
 "use client";
-import { useState, type CSSProperties } from 'react';
+import { useState } from 'react';
 import { Briefcase, Plus, Tag as TagIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useLanguage } from '@/components/language-provider';
+import { ColorChoices } from '@/components/presentation-foundation/color-choices';
 import { BusinessMark } from '@/components/presentation-foundation/business-mark';
 import { ConfirmDialog } from '@/components/presentation-foundation/confirm-dialog';
 import { Count } from '@/components/presentation-foundation/count';
@@ -20,7 +21,7 @@ import { Input } from '@/components/ui/input';
 import { useDisplayOrder } from '@/hooks/use-display-order';
 import type { PreferenceResource } from '@/hooks/use-workspace-preferences';
 import type { TagsResource } from '@/hooks/use-tags';
-import { businessStructureLabels, isBusinessAccount, nextPaletteColor, paletteColor, paletteColors, paletteLabels, type BusinessStructure, type PaletteColor } from '@/lib/business';
+import { businessStructureLabels, isBusinessAccount, nextPaletteColor, paletteColors, type BusinessStructure, type PaletteColor } from '@/lib/business';
 import type { Entry } from '@/lib/finance';
 import { formatNumber } from '@/lib/format';
 import { tagCounts, type Tag } from '@/lib/tags';
@@ -60,7 +61,7 @@ function TagDialog({ tag, onSave, onClose }: { tag: Tag; onSave: (tag: Tag) => P
    <form onSubmit={async event => { event.preventDefault(); setBusy(true); setError(''); try { await onSave({ ...tag, name: name.trim(), color }); onClose(); } catch (reason) { setError(t((reason as Error).message || 'Could not save changes.')); } finally { setBusy(false); } }}>
     <fieldset disabled={busy} className="budget-dialog-fields">
      <label className="budget-dialog-label">{t('Name')}<Input required autoFocus maxLength={60} value={name} onChange={event => setName(event.currentTarget.value)}/></label>
-     <fieldset className="business-color-field"><legend>{t('Colour')}</legend><div role="radiogroup" aria-label={t('Colour')}>{paletteColors.map(item => <button key={item} type="button" role="radio" aria-checked={color === item} aria-label={t(paletteLabels[item])} style={{ '--swatch': paletteColor(item) } as CSSProperties} onClick={() => setColor(item)}/>)}</div></fieldset>
+     <ColorChoices value={color} colors={paletteColors} onChange={item => { if (item) setColor(item); }}/>
      {error && <p className="form-error" role="alert">{error}</p>}
     </fieldset>
     <FormFooter busy={busy} onCancel={onClose}><Button disabled={busy || !name.trim()}>{t(busy ? 'Saving…' : 'Save tag')}</Button></FormFooter>

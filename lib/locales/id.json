@@ -2715,6 +2715,11 @@
   "Spending by category": "Pengeluaran per kategori",
   "Net worth if spending had been invested": "Kekayaan bersih jika pengeluaran diinvestasikan",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Kekayaan bersih Anda hari ini jika investasi dan setiap pengeluaran yang dicatat dimasukkan ke tiap tolok ukur. Pengeluaran tidak menambah kekayaan, jadi selisihnya adalah biayanya.",
-  "{amount} vs today": "{amount} dibanding hari ini",
-  "Tracking since {date}": "Dilacak sejak {date}"
+  "Tracking since {date}": "Dilacak sejak {date}",
+  "{amount} more than you have": "{amount} lebih banyak dari yang Anda miliki",
+  "{amount} less than you have": "{amount} lebih sedikit dari yang Anda miliki",
+  "Colour of {name}": "Warna {name}",
+  "Investment returns": "Imbal hasil investasi",
+  "Your own money": "Uang Anda sendiri",
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Imbal hasil investasi adalah yang dihasilkan investasi Anda di atas uang yang dimasukkan. Uang Anda sendiri adalah sisa perubahan: penghasilan yang Anda simpan setelah belanja dan utang yang Anda lunasi. Pada periode ini Anda memasukkan {amount} uang sendiri ke investasi."
 }

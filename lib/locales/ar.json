@@ -2715,6 +2715,11 @@
   "Spending by category": "الإنفاق حسب الفئة",
   "Net worth if spending had been invested": "صافي الثروة لو استُثمر الإنفاق",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "صافي ثروتك اليوم لو وُضعت استثماراتك وكل مصروف مسجّل في كل مؤشر مرجعي بدلًا من ذلك. الإنفاق لا يضيف شيئًا إلى ثروتك، لذا فالفرق هو ما كلّفك.",
-  "{amount} vs today": "{amount} مقارنةً باليوم",
-  "Tracking since {date}": "التتبع منذ {date}"
+  "Tracking since {date}": "التتبع منذ {date}",
+  "{amount} more than you have": "أكثر مما لديك بـ {amount}",
+  "{amount} less than you have": "أقل مما لديك بـ {amount}",
+  "Colour of {name}": "لون {name}",
+  "Investment returns": "عوائد الاستثمار",
+  "Your own money": "أموالك الخاصة",
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "عوائد الاستثمار هي ما ربحته استثماراتك فوق المال الذي وضعته فيها. أموالك الخاصة هي بقية التغيّر: الدخل الذي احتفظت به بعد الإنفاق والديون التي سددتها. في هذه الفترة وضعت {amount} من أموالك الخاصة في الاستثمارات."
 }

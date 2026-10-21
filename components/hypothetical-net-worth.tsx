@@ -2,7 +2,7 @@
 import { InfoHint } from '@/components/presentation-foundation/info-hint';
 import { signTone } from '@/components/presentation-foundation/tone';
 import { useLanguage } from '@/components/language-provider';
-import { formatMoney, formatSignedMoney } from '@/lib/format';
+import { formatMoney } from '@/lib/format';
 import type { HypotheticalNetWorth } from '@/lib/hypothetical-net-worth';
 import type { CSSProperties } from 'react';
 
@@ -23,7 +23,7 @@ export function HypotheticalNetWorthCards({ netWorth, rows, series, currency }: 
     return <article key={row.key} className="what-if-card" data-best={row.netWorth === best && row.difference > 0 || undefined} style={{ '--what-if-color': item.color } as CSSProperties}>
      <span><i/>{item.label}</span>
      <strong>{formatMoney(row.netWorth, currency, locale)}</strong>
-     <em className={signTone(row.difference)}>{t('{amount} vs today', { amount: formatSignedMoney(row.difference, currency, locale) })}</em>
+     <em className={signTone(row.difference)}>{t(row.difference < 0 ? '{amount} less than you have' : '{amount} more than you have', { amount: formatMoney(Math.abs(row.difference), currency, locale) })}</em>
     </article>;
    })}
   </div>

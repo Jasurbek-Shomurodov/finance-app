@@ -2715,6 +2715,11 @@
   "Spending by category": "هزینه بر اساس دسته",
   "Net worth if spending had been invested": "دارایی خالص اگر هزینه‌ها سرمایه‌گذاری می‌شد",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "دارایی خالص امروز شما اگر سرمایه‌گذاری‌ها و هر هزینهٔ ثبت‌شده در هر شاخص مرجع گذاشته می‌شد. هزینه چیزی به دارایی اضافه نمی‌کند، پس تفاوت همان بهای آن است.",
-  "{amount} vs today": "{amount} نسبت به امروز",
-  "Tracking since {date}": "پیگیری از {date}"
+  "Tracking since {date}": "پیگیری از {date}",
+  "{amount} more than you have": "{amount} بیشتر از آنچه دارید",
+  "{amount} less than you have": "{amount} کمتر از آنچه دارید",
+  "Colour of {name}": "رنگ {name}",
+  "Investment returns": "بازده سرمایه‌گذاری",
+  "Your own money": "پول خودتان",
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "بازده سرمایه‌گذاری آن چیزی است که سرمایه‌گذاری‌ها بیش از پول گذاشته‌شده در آن‌ها به دست آوردند. پول خودتان بقیهٔ تغییر است: درآمدی که پس از هزینه نگه داشتید و بدهی‌هایی که پرداختید. در این دوره {amount} از پول خودتان را در سرمایه‌گذاری گذاشتید."
 }

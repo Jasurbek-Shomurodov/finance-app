@@ -102,9 +102,9 @@ test('the category edit dialog saves only what changed (name, icon and colour), 
  find(tree,node=>node.type?.name==='Input').props.onChange({target:{value:' Hobbies '}});tree=h.render(props);
  find(tree,node=>node.type?.name==='CategoryIconPicker').props.onChoose('🎨');tree=h.render(props);
  assert.equal(find(tree,node=>node.type?.name==='CategoryIconPicker').props.icon,'🎨');
- const swatch=label=>find(tree,node=>node.props?.role==='radio'&&node.props['aria-label']===label);
- assert.equal(swatch('Automatic').props['aria-checked'],true,'no colour chosen yet');assert.equal(swatch('Grey'),undefined);
- swatch('Green').props.onClick();tree=h.render(props);assert.equal(swatch('Green').props['aria-checked'],true);
+ const colours=()=>find(tree,node=>node.type?.name==='ColorChoices');
+ assert.equal(colours().props.value,null,'no colour chosen yet');assert.ok(colours().props.automatic);assert.ok(!colours().props.colors.includes('slate'));
+ colours().props.onChange('green');tree=h.render(props);assert.equal(colours().props.value,'green');
  await find(tree,node=>node.type==='form').props.onSubmit({preventDefault(){}});
  assert.deepEqual(saved,[{name:'Hobbies',icon:'🎨',color:'green'}]);assert.equal(closed,1);
  find(tree,node=>node.props?.className==='category-edit-delete').props.onClick();assert.equal(deleted,1);

@@ -2715,6 +2715,11 @@
   "Spending by category": "Kategoriye göre harcama",
   "Net worth if spending had been invested": "Harcamalar yatırılsaydı net servet",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Yatırımlarınız ve kaydedilen her gider her bir karşılaştırma ölçütüne konsaydı bugünkü net servetiniz. Harcama servetinize bir şey eklemez; aradaki fark onun maliyetidir.",
-  "{amount} vs today": "bugüne göre {amount}",
-  "Tracking since {date}": "{date} tarihinden beri izleniyor"
+  "Tracking since {date}": "{date} tarihinden beri izleniyor",
+  "{amount} more than you have": "sahip olduğunuzdan {amount} fazla",
+  "{amount} less than you have": "sahip olduğunuzdan {amount} az",
+  "Colour of {name}": "{name} rengi",
+  "Investment returns": "Yatırım getirisi",
+  "Your own money": "Kendi paranız",
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Yatırım getirisi, yatırımlarınızın içine konan paranın ötesinde kazandığıdır. Kendi paranız değişimin geri kalanıdır: harcamadan sonra kalan gelir ve ödenen borçlar. Bu dönemde kendi paranızdan {amount} yatırıma koydunuz."
 }

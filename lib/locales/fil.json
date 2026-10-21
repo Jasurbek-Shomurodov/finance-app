@@ -2715,6 +2715,11 @@
   "Spending by category": "Gastos ayon sa kategorya",
   "Net worth if spending had been invested": "Net worth kung ininvest ang mga gastos",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Ang net worth mo ngayon kung inilagay sa bawat benchmark ang iyong mga investment at bawat naitalang gastos. Walang idinadagdag ang gastos sa net worth mo, kaya ang diperensiya ang halaga nito.",
-  "{amount} vs today": "{amount} kumpara ngayon",
-  "Tracking since {date}": "Sinusubaybayan mula {date}"
+  "Tracking since {date}": "Sinusubaybayan mula {date}",
+  "{amount} more than you have": "{amount} higit sa mayroon ka",
+  "{amount} less than you have": "{amount} kulang sa mayroon ka",
+  "Colour of {name}": "Kulay ng {name}",
+  "Investment returns": "Kita ng investment",
+  "Your own money": "Sarili mong pera",
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Ang kita ng investment ay ang kinita ng iyong mga investment higit sa perang inilagay mo. Ang sarili mong pera ang natitirang pagbabago: kitang naitabi mo pagkatapos gumastos at mga utang na nabayaran. Sa panahong ito, naglagay ka ng {amount} ng sarili mong pera sa investment."
 }

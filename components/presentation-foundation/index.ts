@@ -37,6 +37,7 @@ export { TodayButton } from './today-button';
 export { BusinessMark } from './business-mark';
 export { BusinessFilter, type BusinessOption } from './business-filter';
 export { TagChip } from './tag-chip';
+export { ColorChoices } from './color-choices';
 export { PersonAvatar, OwnerAvatar } from './person-avatar';
 export { OwnerFilter, type OwnerOption } from './owner-filter';
 export { Brand } from './brand';

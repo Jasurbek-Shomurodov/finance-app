@@ -2715,6 +2715,11 @@
   "Spending by category": "Výdaje podle kategorií",
   "Net worth if spending had been invested": "Čisté jmění, kdyby výdaje byly investovány",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Vaše dnešní čisté jmění, kdyby investice a každý zaznamenaný výdaj šly do každého srovnávacího indexu. Výdaje k jmění nic nepřidávají, rozdíl je tedy jejich cena.",
-  "{amount} vs today": "{amount} oproti dnešku",
-  "Tracking since {date}": "Sledováno od {date}"
+  "Tracking since {date}": "Sledováno od {date}",
+  "{amount} more than you have": "o {amount} více, než máte",
+  "{amount} less than you have": "o {amount} méně, než máte",
+  "Colour of {name}": "Barva: {name}",
+  "Investment returns": "Výnos investic",
+  "Your own money": "Vaše vlastní peníze",
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Výnos investic je to, co investice vydělaly nad vložené peníze. Vaše vlastní peníze jsou zbytek změny: příjem, který vám zůstal po výdajích, a splacené dluhy. V tomto období jste do investic vložili {amount} vlastních peněz."
 }

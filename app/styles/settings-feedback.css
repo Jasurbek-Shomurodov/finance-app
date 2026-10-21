@@ -149,6 +149,13 @@
 .benchmark-stocks-heading h3{margin:0;font-size:var(--type-body);font-weight:600}
 .benchmark-stock-count{font-size:var(--type-small);color:var(--muted-foreground);white-space:nowrap}
 .benchmark-stock-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+/* A benchmark's line colour: a swatch at the end of its row that opens the palette. */
+.benchmark-color{flex-shrink:0;width:22px;height:22px;margin-inline-start:auto;border-radius:50%;background:var(--swatch);box-shadow:0 0 0 2px var(--card),0 0 0 3px color-mix(in srgb,var(--swatch) 55%,transparent);cursor:pointer}
+.benchmark-color:hover{box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--swatch)}
+.benchmark-color:focus-visible{outline:2px solid var(--ring);outline-offset:4px}
+.benchmark-color:disabled{opacity:.5;cursor:not-allowed}
+.benchmark-color-menu{width:auto;max-width:min(320px,calc(100vw - 32px))}
+.benchmark-stock-row .benchmark-color{margin-inline-end:4px}
 .benchmark-stock-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--background)}
 .benchmark-stock-identity{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;min-width:0}
 .benchmark-stock-identity strong{font-size:var(--type-body)}

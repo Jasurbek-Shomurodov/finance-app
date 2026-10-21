@@ -245,7 +245,7 @@ test('migration 150 saves each transaction with its day\'s rates, whatever saves
   await d.query(`UPDATE finance_records SET notes='paid' WHERE id=$1`, [sqlId(12)]);
   assert.deepEqual(await ratesIn(d, 12), { USD: 1, UZS: 12001 });
   await d.exec('RESET ROLE');
-  assert.equal((await d.query('SELECT finance_capabilities() AS c')).rows[0].c.schema_version, 150);
+  assert.ok((await d.query('SELECT finance_capabilities() AS c')).rows[0].c.schema_version >= 150);
   await assert.rejects(d.query(`UPDATE finance_records SET day_rates='{"UZS":1}', frequency='Monthly' WHERE id=$1`, [sqlId(13)]).then(() => d.query(`ALTER TABLE finance_records DISABLE TRIGGER keep_transaction_day_rates`)).then(() => d.query(`UPDATE finance_records SET day_rates='{"UZS":1}' WHERE id=$1`, [sqlId(13)])), /finance_records_day_rates/, 'a table is in units per dollar');
  } finally { await d.close(); }
 });

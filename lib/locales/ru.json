@@ -2715,6 +2715,11 @@
   "Spending by category": "Расходы по категориям",
   "Net worth if spending had been invested": "Капитал, если бы расходы были инвестированы",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "Ваш капитал сегодня, если бы инвестиции и каждый записанный расход были вложены в каждый ориентир. Расходы ничего не добавляют к капиталу, поэтому разница — их цена.",
-  "{amount} vs today": "{amount} к сегодняшнему",
-  "Tracking since {date}": "Отслеживание с {date}"
+  "Tracking since {date}": "Отслеживание с {date}",
+  "{amount} more than you have": "на {amount} больше, чем у вас есть",
+  "{amount} less than you have": "на {amount} меньше, чем у вас есть",
+  "Colour of {name}": "Цвет: {name}",
+  "Investment returns": "Доход от инвестиций",
+  "Your own money": "Ваши собственные деньги",
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "Доход от инвестиций — то, что инвестиции заработали сверх вложенных в них денег. Ваши собственные деньги — остальная часть изменения: доход, оставшийся после расходов, и погашенные долги. За этот период вы вложили в инвестиции {amount} собственных денег."
 }

@@ -2715,6 +2715,11 @@
   "Spending by category": "カテゴリ別の支出",
   "Net worth if spending had been invested": "支出を投資していた場合の純資産",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "投資と記録したすべての支出を各ベンチマークに投じていた場合の今日の純資産。支出は純資産を増やさないため、その差が支出のコストです。",
-  "{amount} vs today": "今日と比べて {amount}",
-  "Tracking since {date}": "{date} から追跡"
+  "Tracking since {date}": "{date} から追跡",
+  "{amount} more than you have": "今の資産より {amount} 多い",
+  "{amount} less than you have": "今の資産より {amount} 少ない",
+  "Colour of {name}": "{name} の色",
+  "Investment returns": "投資のリターン",
+  "Your own money": "自己資金",
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "投資のリターンは、投資に入れたお金を超えて投資が生んだ分です。自己資金は変化の残りで、支出後に残った収入と返済した借入です。この期間、自己資金のうち {amount} を投資に回しました。"
 }

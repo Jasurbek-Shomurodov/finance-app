@@ -2715,6 +2715,11 @@
   "Spending by category": "카테고리별 지출",
   "Net worth if spending had been invested": "지출을 투자했다면의 순자산",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "투자와 기록된 모든 지출을 각 벤치마크에 넣었다면 오늘의 순자산입니다. 지출은 순자산에 더해지지 않으므로 차이가 그 비용입니다.",
-  "{amount} vs today": "오늘 대비 {amount}",
-  "Tracking since {date}": "{date}부터 추적"
+  "Tracking since {date}": "{date}부터 추적",
+  "{amount} more than you have": "현재보다 {amount} 많음",
+  "{amount} less than you have": "현재보다 {amount} 적음",
+  "Colour of {name}": "{name} 색상",
+  "Investment returns": "투자 수익",
+  "Your own money": "본인 자금",
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "투자 수익은 투자에 넣은 돈을 넘어 투자가 벌어들인 금액입니다. 본인 자금은 나머지 변화로, 지출 후 남긴 소득과 갚은 부채입니다. 이 기간에 본인 자금 {amount}을 투자에 넣었습니다."
 }

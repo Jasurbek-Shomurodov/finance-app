@@ -2715,6 +2715,11 @@
   "Spending by category": "รายจ่ายตามหมวดหมู่",
   "Net worth if spending had been invested": "มูลค่าสุทธิหากนำรายจ่ายไปลงทุน",
   "Your net worth today with your investments and every recorded expense put into each benchmark instead. Spending adds nothing to your net worth, so the difference is what it cost.": "มูลค่าสุทธิของคุณวันนี้ หากนำเงินลงทุนและรายจ่ายทุกรายการที่บันทึกไว้ไปลงในแต่ละเกณฑ์อ้างอิง รายจ่ายไม่ได้เพิ่มมูลค่าสุทธิ ส่วนต่างจึงคือต้นทุนของมัน",
-  "{amount} vs today": "{amount} เทียบกับวันนี้",
-  "Tracking since {date}": "ติดตามตั้งแต่ {date}"
+  "Tracking since {date}": "ติดตามตั้งแต่ {date}",
+  "{amount} more than you have": "มากกว่าที่คุณมี {amount}",
+  "{amount} less than you have": "น้อยกว่าที่คุณมี {amount}",
+  "Colour of {name}": "สีของ {name}",
+  "Investment returns": "ผลตอบแทนการลงทุน",
+  "Your own money": "เงินของคุณเอง",
+  "Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.": "ผลตอบแทนการลงทุนคือสิ่งที่การลงทุนทำได้เกินกว่าเงินที่ใส่เข้าไป เงินของคุณเองคือส่วนที่เหลือของการเปลี่ยนแปลง: รายได้ที่เก็บไว้หลังใช้จ่ายและหนี้ที่ชำระแล้ว ในช่วงนี้คุณใส่เงินของตัวเอง {amount} ในการลงทุน"
 }

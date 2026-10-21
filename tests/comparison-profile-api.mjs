@@ -10,11 +10,12 @@ import {isCurrency} from '../lib/currencies.ts';
 import {loadTS} from './helpers/load-ts.mjs';
 const {benchmarkKeys,investmentKinds,defaultComparisonPreferences}=loadTS('lib/comparison-profile.ts');
 const {validDay}=loadTS('lib/benchmark-data.ts');
+const {paletteColors}=loadTS('lib/business.ts');
 const benchmarkHistoryStart='2016-01-01';
 const compile=path=>ts.transpileModule(fs.readFileSync(path,'utf8').replace(/^import .*;\n/gm,'').replace(/export /g,''),{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
 let authenticated=true,calls=[],rows=[],updated=[];
 const supa=async(path,init,token)=>{calls.push({path,init,token});return Response.json(path.includes('mark_app_started')?{started_at:'2026-09-01T00:00:00Z',source:'first_visit'}:init?.method==='PATCH'?updated:path.includes('preferences?select')?rows:[]);};
-const deps={workspaceOwner:auth=>auth.owner??auth.user.id,validDay,benchmarkHistoryStart,benchmarkSelectionSchema,stockBenchmarks,diversifiedPortfolioSchema,z,isCurrency,benchmarkKeys,investmentKinds,defaultComparisonPreferences,session:async()=>authenticated?{user:{id:'owner'},token:'owner-token'}:null,supa,sameOrigin:req=>req.headers.get('origin')==='https://local'};
+const deps={workspaceOwner:auth=>auth.owner??auth.user.id,validDay,paletteColors,benchmarkHistoryStart,benchmarkSelectionSchema,stockBenchmarks,diversifiedPortfolioSchema,z,isCurrency,benchmarkKeys,investmentKinds,defaultComparisonPreferences,session:async()=>authenticated?{user:{id:'owner'},token:'owner-token'}:null,supa,sameOrigin:req=>req.headers.get('origin')==='https://local'};
 const api=apiFunction(...Object.keys(deps),compile('app/api/comparison-profile/route.ts')+';return {GET,PUT,POST,PATCH};')(...Object.values(deps));
 const req=body=>new Request('https://local',{method:'POST',headers:{origin:'https://local','Content-Type':'application/json'},body:JSON.stringify(body)});
 test('owner-scoped settings default to Bitcoin and first-use timestamp comes from the database',async()=>{
@@ -112,4 +113,15 @@ test('migration 073 adds an optional tracking start under the existing owner pol
  const sql=fs.readFileSync('migrations/073_portfolio_tracking_start.sql','utf8');
  assert.match(sql,/ADD COLUMN IF NOT EXISTS tracking_start date CHECK \(tracking_start IS NULL OR tracking_start >= DATE '2016-01-01'\)/);
  assert.ok(fs.readFileSync('database/setup.sql','utf8').includes('ADD COLUMN IF NOT EXISTS tracking_start date'));
+});
+
+test('benchmark colours are saved and read back; unknown keys and colours are refused',async()=>{
+ calls=[];assert.equal((await api.PUT(req({benchmarks:['BTC','STOCK:NVDA'],custom_symbol:'',colors:{BTC:'violet','STOCK:NVDA':'amber'}}))).status,200);
+ assert.deepEqual(JSON.parse(calls.at(-1).init.body).colors,{BTC:'violet','STOCK:NVDA':'amber'});
+ for(const colors of [{BTC:'purple'},{'bad key':'blue'},{BTC:1}]){calls=[];assert.equal((await api.PUT(req({benchmarks:['BTC'],custom_symbol:'',colors}))).status,400);assert.equal(calls.length,0);}
+ rows=[{benchmarks:['BTC'],custom_symbol:'',colors:{BTC:'red'}}];
+ assert.deepEqual((await (await api.GET()).json()).preferences.colors,{BTC:'red'});
+ rows=[{benchmarks:['BTC'],custom_symbol:''}];
+ assert.equal((await (await api.GET()).json()).preferences.colors,undefined);
+ rows=[];
 });

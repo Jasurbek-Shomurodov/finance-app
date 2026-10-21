@@ -1,11 +1,12 @@
 "use client";
-import { useRef, useState, type CSSProperties } from 'react';
+import { useRef, useState } from 'react';
 import { ImagePlus, X } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
+import { ColorChoices } from '@/components/presentation-foundation/color-choices';
 import { BusinessMark } from '@/components/presentation-foundation/business-mark';
 import { Button } from '@/components/ui/button';
 import { NativeSelect } from '@/components/ui/native-select';
-import { businessStructureLabels, businessStructures, paletteColor, paletteColors, paletteLabels, type BusinessStructure } from '@/lib/business';
+import { businessStructureLabels, businessStructures, paletteColors, type BusinessStructure, type PaletteColor } from '@/lib/business';
 import type { Entry } from '@/lib/finance';
 
 /** A picture shrunk to a small square data URL that fits the database limit, or an error message. */
@@ -38,9 +39,7 @@ export function BusinessProfileFields({ value, onChange, disabled }: { value: Pr
    <option value="">{t('Not set')}</option>
    {businessStructures.map(structure => <option key={structure} value={structure}>{t(businessStructureLabels[structure])}</option>)}
   </NativeSelect></label>
-  <fieldset className="business-color-field" disabled={disabled}><legend>{t('Colour')}</legend>
-   <div role="radiogroup" aria-label={t('Colour')}>{paletteColors.map(color => <button key={color} type="button" role="radio" aria-checked={(value.business_color ?? 'slate') === color} aria-label={t(paletteLabels[color])} style={{ '--swatch': paletteColor(color) } as CSSProperties} onClick={() => onChange({ business_color: color })}/>)}</div>
-  </fieldset>
+  <ColorChoices disabled={disabled} value={(value.business_color ?? 'slate') as PaletteColor} colors={paletteColors} onChange={color => { if (color) onChange({ business_color: color }); }}/>
   <div className="business-logo-field"><span>{t('Logo (optional)')}</span>
    <div><BusinessMark name={value.name || '?'} color={value.business_color} logo={value.business_logo} size="lg"/>
     <input ref={file} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={async event => { const picked = event.currentTarget.files?.[0]; event.currentTarget.value = ''; if (!picked) return; setError(''); try { onChange({ business_logo: await logoFrom(picked) }); } catch (reason) { setError(t((reason as Error).message || 'Could not read this image.')); } }}/>

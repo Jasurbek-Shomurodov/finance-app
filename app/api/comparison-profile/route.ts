@@ -7,9 +7,11 @@ import { session, supa, sameOrigin } from '@/lib/supabase';
 import { isCurrency } from '@/lib/currencies';
 import { investmentKinds, defaultComparisonPreferences } from '@/lib/comparison-profile';
 import { benchmarkSelectionSchema } from '@/lib/benchmark-selection';
+import { paletteColors } from '@/lib/business';
 import { validDay } from '@/lib/benchmark-data';
 import { benchmarkHistoryStart } from '@/lib/investment-benchmarks';
-const preferences = z.object({benchmarks:benchmarkSelectionSchema,portfolio:diversifiedPortfolioSchema.nullable().optional(),custom_symbol:z.string().regex(/^$|^[A-Z][A-Z0-9.-]{0,14}$/)}).refine(value=>!value.benchmarks.includes('CUSTOM')||!!value.custom_symbol).refine(value=>!value.benchmarks.includes('PORTFOLIO')||!!value.portfolio).refine(value=>!value.portfolio?.assets?.some(asset=>asset.currency&&!isCurrency(asset.currency)));
+const benchmarkColors = z.record(z.string().regex(/^(BTC|SPY|HYG|BIL|depositUZS|depositUSD|CUSTOM|PORTFOLIO|STOCK:[A-Z][A-Z0-9.-]{0,14})$/),z.enum(paletteColors as [string,...string[]])).refine(value=>Object.keys(value).length<=30);
+const preferences = z.object({benchmarks:benchmarkSelectionSchema,colors:benchmarkColors.optional(),portfolio:diversifiedPortfolioSchema.nullable().optional(),custom_symbol:z.string().regex(/^$|^[A-Z][A-Z0-9.-]{0,14}$/)}).refine(value=>!value.benchmarks.includes('CUSTOM')||!!value.custom_symbol).refine(value=>!value.benchmarks.includes('PORTFOLIO')||!!value.portfolio).refine(value=>!value.portfolio?.assets?.some(asset=>asset.currency&&!isCurrency(asset.currency)));
 // Null returns to tracking from the first investment activity.
 const tracking = z.object({tracking_start:z.string().refine(date=>validDay(date)&&date>=benchmarkHistoryStart).nullable()});
 const baseline = z.object({starting_amount:z.number().finite().min(0).max(1e27),currency:fiatCurrency,holdings:z.array(z.object({id:uuid,kind:z.enum(investmentKinds),currency:fiatCurrency,balance:z.number().finite().min(0).max(1e27)})).max(10000)}).refine(value=>new Set(value.holdings.map(holding=>holding.id)).size===value.holdings.length);
@@ -21,7 +23,7 @@ export async function GET() {
   if(!activity.ok||!saved.ok||!capital.ok)throw Error();
   const rows=await saved.json() as Array<Record<string,unknown>>,baselines=await capital.json() as unknown[];
   // Every column is read so the profile still loads before migration 073 adds tracking_start.
-  const row=rows[0],preferences=row?{benchmarks:row.benchmarks,custom_symbol:row.custom_symbol,...(row.portfolio===undefined?{}:{portfolio:row.portfolio})}:defaultComparisonPreferences;
+  const row=rows[0],preferences=row?{benchmarks:row.benchmarks,custom_symbol:row.custom_symbol,...(row.portfolio===undefined?{}:{portfolio:row.portfolio}),...(row.colors&&typeof row.colors==='object'?{colors:row.colors}:{})}:defaultComparisonPreferences;
   return Response.json({owner_id:workspaceOwner(auth),activity:await activity.json(),preferences,baseline:baselines[0]??null,tracking_start:typeof row?.tracking_start==='string'?row.tracking_start:null},{headers:{'Cache-Control':'no-store'}});
  }catch{return Response.json({error:'Investment comparisons are not set up for this account yet.'},{status:503});}
 }
