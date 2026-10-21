@@ -8,6 +8,9 @@ import { ChartSkeleton } from '@/components/presentation-foundation/loading-plac
  * the workspace shell stays without the charts until then. */
 export const CashFlowDrillDialog = dynamic(() => import('@/components/cash-flow-sankey').then(module => module.CashFlowDrillDialog), { ssr: false, loading: DrillDialogLoading });
 
+/** How the monthly surplus is worked out, as a Sankey; loaded when someone taps a surplus. */
+export const SurplusBreakdownDialog = dynamic(() => import('@/components/surplus-breakdown').then(module => module.SurplusBreakdownDialog), { ssr: false, loading: DrillDialogLoading });
+
 /** While the chart code arrives, the dialog is already open with its chart shimmering in place. */
 function DrillDialogLoading() {
  const { t } = useLanguage();

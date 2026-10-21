@@ -2725,5 +2725,9 @@
   "Budget left": "Zbývá z rozpočtu",
   "Over budget": "Rozpočet překročen",
   "Custom colour": "Vlastní barva",
-  "Loading chart…": "Načítání grafu…"
+  "Loading chart…": "Načítání grafu…",
+  "Monthly surplus": "Měsíční přebytek",
+  "Estimated asset income": "Odhadovaný příjem z majetku",
+  "Other recurring income": "Jiný pravidelný příjem",
+  "Shortfall": "Schodek"
 }

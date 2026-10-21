@@ -1,4 +1,5 @@
 "use client";
+import { SurplusButton } from '@/components/surplus-button';
 import type { KeyboardEvent, MouseEvent } from 'react';
 import { dueTarget } from '@/lib/cash-flow-schedule';
 import type { DrillTarget } from '@/lib/cash-flow-drill-types';
@@ -62,7 +63,7 @@ export function useOverviewCards({ entries, currency, excludedCurrencies, foreca
    <li><CategoryIcon kind="Mortgage"/><span>{t("Estimated mortgage payments")}</span><strong>{money(forecast.mortgagePayments)}</strong></li>
    {forecast.loanPayments > 0 && <li><CategoryIcon kind="Loan"/><span>{t("Estimated loan payments")}</span><strong>{money(forecast.loanPayments)}</strong></li>}
   </ul>
-  <div className="cash-footer"><span>{t("Left after expenses")}</span><strong className={forecastReady ? signTone(forecast.forecast, true) : undefined}>{forecastReady ? money(forecast.forecast) : '—'}</strong></div>
+  <div className="cash-footer"><span>{t("Left after expenses")}</span><strong className={forecastReady ? signTone(forecast.forecast, true) : undefined}><SurplusButton parts={forecastReady ? forecast : null} currency={currency} className="surplus-link">{forecastReady ? money(forecast.forecast) : '—'}</SurplusButton></strong></div>
  </section>;
  const allocationCard = <section className="panel overview-panel" key="allocation">
   <PanelTitle title={<>{t("Asset allocation")} {figure(money(totalAssets))}</>} hint={totalDebt > 0 ? <p>{t('Outstanding debt')}: {money(totalDebt)}</p> : undefined}><DrawerLink href="/assets">{t('View all')}</DrawerLink></PanelTitle>

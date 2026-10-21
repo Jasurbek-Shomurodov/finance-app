@@ -2725,5 +2725,9 @@
   "Budget left": "বাজেট বাকি",
   "Over budget": "বাজেটের বেশি",
   "Custom colour": "নিজের রং",
-  "Loading chart…": "চার্ট লোড হচ্ছে…"
+  "Loading chart…": "চার্ট লোড হচ্ছে…",
+  "Monthly surplus": "মাসিক উদ্বৃত্ত",
+  "Estimated asset income": "সম্পদ থেকে আনুমানিক আয়",
+  "Other recurring income": "অন্যান্য নিয়মিত আয়",
+  "Shortfall": "ঘাটতি"
 }

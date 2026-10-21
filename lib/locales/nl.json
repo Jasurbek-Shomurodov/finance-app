@@ -2725,5 +2725,9 @@
   "Budget left": "Budget over",
   "Over budget": "Budget overschreden",
   "Custom colour": "Eigen kleur",
-  "Loading chart…": "Grafiek laden…"
+  "Loading chart…": "Grafiek laden…",
+  "Monthly surplus": "Maandelijks overschot",
+  "Estimated asset income": "Geschat inkomen uit bezittingen",
+  "Other recurring income": "Ander terugkerend inkomen",
+  "Shortfall": "Tekort"
 }

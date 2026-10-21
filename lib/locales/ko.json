@@ -2725,5 +2725,9 @@
   "Budget left": "남은 예산",
   "Over budget": "예산 초과",
   "Custom colour": "사용자 지정 색상",
-  "Loading chart…": "차트 불러오는 중…"
+  "Loading chart…": "차트 불러오는 중…",
+  "Monthly surplus": "월 잉여금",
+  "Estimated asset income": "자산 예상 소득",
+  "Other recurring income": "기타 정기 소득",
+  "Shortfall": "부족액"
 }

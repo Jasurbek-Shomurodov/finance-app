@@ -2725,5 +2725,9 @@
   "Budget left": "预算剩余",
   "Over budget": "超出预算",
   "Custom colour": "自定义颜色",
-  "Loading chart…": "正在加载图表…"
+  "Loading chart…": "正在加载图表…",
+  "Monthly surplus": "每月盈余",
+  "Estimated asset income": "资产预计收入",
+  "Other recurring income": "其他经常性收入",
+  "Shortfall": "缺口"
 }

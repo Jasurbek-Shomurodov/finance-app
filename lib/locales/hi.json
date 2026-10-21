@@ -2725,5 +2725,9 @@
   "Budget left": "बचा बजट",
   "Over budget": "बजट से ज़्यादा",
   "Custom colour": "अपना रंग",
-  "Loading chart…": "चार्ट लोड हो रहा है…"
+  "Loading chart…": "चार्ट लोड हो रहा है…",
+  "Monthly surplus": "मासिक अधिशेष",
+  "Estimated asset income": "संपत्ति से अनुमानित आय",
+  "Other recurring income": "अन्य नियमित आय",
+  "Shortfall": "कमी"
 }

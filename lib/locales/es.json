@@ -2725,5 +2725,9 @@
   "Budget left": "Presupuesto restante",
   "Over budget": "Fuera de presupuesto",
   "Custom colour": "Color personalizado",
-  "Loading chart…": "Cargando gráfico…"
+  "Loading chart…": "Cargando gráfico…",
+  "Monthly surplus": "Excedente mensual",
+  "Estimated asset income": "Ingresos estimados de activos",
+  "Other recurring income": "Otros ingresos recurrentes",
+  "Shortfall": "Déficit"
 }

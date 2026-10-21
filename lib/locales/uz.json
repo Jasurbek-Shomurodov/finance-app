@@ -2725,5 +2725,9 @@
   "Budget left": "Byudjet qoldig‘i",
   "Over budget": "Byudjetdan oshdi",
   "Custom colour": "Boshqa rang",
-  "Loading chart…": "Diagramma yuklanmoqda…"
+  "Loading chart…": "Diagramma yuklanmoqda…",
+  "Monthly surplus": "Oylik ortiqcha",
+  "Estimated asset income": "Aktivlardan taxminiy daromad",
+  "Other recurring income": "Boshqa doimiy daromad",
+  "Shortfall": "Kamomad"
 }

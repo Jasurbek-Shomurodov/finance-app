@@ -2725,5 +2725,9 @@
   "Budget left": "Budget übrig",
   "Over budget": "Budget überschritten",
   "Custom colour": "Eigene Farbe",
-  "Loading chart…": "Diagramm wird geladen…"
+  "Loading chart…": "Diagramm wird geladen…",
+  "Monthly surplus": "Monatlicher Überschuss",
+  "Estimated asset income": "Geschätzte Vermögenserträge",
+  "Other recurring income": "Sonstige regelmäßige Einnahmen",
+  "Shortfall": "Fehlbetrag"
 }

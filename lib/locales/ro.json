@@ -2725,5 +2725,9 @@
   "Budget left": "Buget rămas",
   "Over budget": "Peste buget",
   "Custom colour": "Culoare personalizată",
-  "Loading chart…": "Se încarcă graficul…"
+  "Loading chart…": "Se încarcă graficul…",
+  "Monthly surplus": "Surplus lunar",
+  "Estimated asset income": "Venit estimat din active",
+  "Other recurring income": "Alte venituri recurente",
+  "Shortfall": "Deficit"
 }

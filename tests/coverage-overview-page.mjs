@@ -34,10 +34,10 @@ test('monthly commitments show whole amounts, the left-over figure and its sign'
  assert.match(plain(ready.commitments),/Expenses \$1,566/);
  assert.match(plain(ready.commitments),/Estimated mortgage payments \$0/);
  assert.doesNotMatch(ready.commitments,/Estimated loan payments/,'no loan row without loan payments');
- assert.match(ready.commitments,/Left after expenses<\/span><strong>\$1,235<\/strong><\/div>/,'a surplus is not coloured');
+ assert.match(ready.commitments,/Left after expenses<\/span><strong><button type="button" class="surplus-button surplus-link" title="How is this calculated\?">\$1,235<\/button><\/strong><\/div>/,'a surplus is not coloured, and a tap shows how it is worked out');
  const loans=cards({forecast:{...forecast,forecast:-420,loanPayments:510.2}});
  assert.match(plain(loans.commitments),/Estimated loan payments \$510/);
- assert.ok(loans.commitments.includes(`class="negative">${formatMoney(-420,'USD','en-US')}</strong>`),'a shortfall is red');
+ assert.ok(loans.commitments.includes(`class="negative"><button type="button" class="surplus-button surplus-link" title="How is this calculated?">${formatMoney(-420,'USD','en-US')}</button></strong>`),'a shortfall is red');
  const waiting=cards({forecastReady:false});
  assert.doesNotMatch(plain(waiting.commitments),/ left/,'no headline figure before the forecast is ready');
  assert.match(plain(waiting.commitments),/Expenses — /);

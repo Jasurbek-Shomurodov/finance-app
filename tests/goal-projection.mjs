@@ -34,8 +34,10 @@ test('zero return, negative net worth, reached targets and short or expired dead
 const record=(kind,amount,extra={})=>({id:kind,name:kind,kind,amount,cost:0,quantity:0,currency:'USD',date:'2026-01-01',frequency:'Once',...extra});
 test('goal baseline respects ownership, quantities, debt and complete FX coverage',()=>{
  const records=[record('Cash',100),record('Stock',10,{quantity:5}),record('Business',1000,{ownership_percentage:25}),record('Loan',200),record('Salary',500,{frequency:'Monthly'}),record('Living expense',100,{frequency:'Monthly'})];
- assert.deepEqual(goalFinancials(records,'2026-09','USD',null),{netWorth:200,surplus:400});
- assert.deepEqual(goalFinancials([...records,record('Property',100,{currency:'EUR'})],'2026-09','USD',null),{netWorth:null,surplus:null});
+ const known=goalFinancials(records,'2026-09','USD',null);
+ assert.equal(known.netWorth,200);assert.equal(known.surplus,400);
+ assert.deepEqual([known.parts.plannedIncome,known.parts.monthlyExpenses,known.parts.forecast],[500,100,400],'the parts the surplus is made of travel with it');
+ assert.deepEqual(goalFinancials([...records,record('Property',100,{currency:'EUR'})],'2026-09','USD',null),{netWorth:null,surplus:null,parts:null});
  assert.equal(goalFinancials([...records,record('Living expense',50,{currency:'EUR',frequency:'Monthly'})],'2026-09','USD',null).surplus,null,'spending that cannot be converted leaves the surplus unknown');
  assert.equal(goalFinancials(records,'2026-09','EUR',{rates:{EUR:.9},quotes:{},fx:null}).netWorth,180);
 });

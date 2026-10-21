@@ -26,15 +26,17 @@ import { emptyPlanning,type Goal,type PlanningData } from '@/lib/planning';
 import { useOwnerResource, saveOwnerResource } from '@/hooks/use-owner-resource';
 import { RollingText } from '@/components/presentation-foundation/rolling-text';
 import { Textarea } from '@/components/ui/textarea';
+import { SurplusButton } from '@/components/surplus-button';
+import type { SurplusParts } from '@/lib/surplus-flows';
 
 const empty = { events: [] as GoalEvent[] };
-type Props = { data: PlanningData; currency: string; surplus: number | null; today: string; rates?: Record<string, number>; owner: string | null; demo: boolean; revision: number; onSaved: () => void;
+type Props = { data: PlanningData; currency: string; surplus: number | null; /** What the surplus is made of; a tap on it shows them. */surplusParts?: SurplusParts | null; today: string; rates?: Record<string, number>; owner: string | null; demo: boolean; revision: number; onSaved: () => void;
  /** One of the two panels: what is free for goals (on the page) or the cash goal activity (in the History window). Both when left out. */
  part?: 'funding' | 'activity';
  /** Shows one goal's activity only, with a chip that shows them all again (`onShowAll`). */
  goal?: string | null; onShowAll?: () => void };
 
-export function GoalFundingPanel({ data, currency, surplus, today, rates, owner, demo, revision, onSaved, part, goal: only, onShowAll }: Props) {
+export function GoalFundingPanel({ data, currency, surplus, surplusParts, today, rates, owner, demo, revision, onSaved, part, goal: only, onShowAll }: Props) {
  const { t, locale } = useLanguage();
  const savingsGoals = data.goals.filter(goal => (goal.kind ?? 'savings') === 'savings');
  const activeSavings = savingsGoals.filter(goal => !goal.archived);
@@ -68,9 +70,9 @@ export function GoalFundingPanel({ data, currency, surplus, today, rates, owner,
  return <>
   {part !== 'activity' && activeGoals.length > 0 && <section className="panel goal-funding-panel" aria-labelledby={`${activityId}-funding`}>
    <PanelTitle title={<span id={`${activityId}-funding`}>{t('Available for goals')}</span>} hint={t('Plan how to divide your monthly surplus between goals. Money stays in your accounts until you move it.')}/>
-   <div className="goal-available"><strong><RollingText text={money(plan.remaining)}/></strong><span>{t('Unassigned monthly surplus')}</span></div>
+   <SurplusButton parts={surplusParts} currency={currency} goalFunding={plan.requested ?? 0} className="goal-available"><strong><RollingText text={money(plan.remaining)}/></strong><span>{t('Unassigned monthly surplus')}</span></SurplusButton>
    <dl className="goal-funding-figures">
-    <div><dt>{t('Available monthly surplus')}</dt><dd>{money(surplus)}</dd></div>
+    <div><dt>{t('Available monthly surplus')}</dt><dd><SurplusButton parts={surplusParts} currency={currency} className="surplus-link">{money(surplus)}</SurplusButton></dd></div>
     <div><dt>{t('Planned goal funding')}</dt><dd>{money(plan.requested)}</dd></div>
    </dl>
    {plan.shortfall !== null && plan.shortfall > 0 && <p className="goal-funding-notice negative" role="status">{t('Your funding plan exceeds your monthly surplus by {amount}.', { amount: money(plan.shortfall) })}</p>}

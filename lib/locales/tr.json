@@ -2725,5 +2725,9 @@
   "Budget left": "Kalan bütçe",
   "Over budget": "Bütçe aşıldı",
   "Custom colour": "Özel renk",
-  "Loading chart…": "Grafik yükleniyor…"
+  "Loading chart…": "Grafik yükleniyor…",
+  "Monthly surplus": "Aylık fazla",
+  "Estimated asset income": "Tahmini varlık geliri",
+  "Other recurring income": "Diğer düzenli gelir",
+  "Shortfall": "Açık"
 }

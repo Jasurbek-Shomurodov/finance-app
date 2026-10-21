@@ -109,7 +109,7 @@ export function GoalsPage({onSankey,preferences,owner,demo,revision,onSaved,data
   {/* The chosen goal beside what is free for goals; the two end together. */}
   <div className="goals-split">
    {active&&active.kind!=='investment'&&<GoalDetail goal={active} current={active.kind==='net_worth'?financials?.netWorth??null:Number(active.allocated)} currency={goalCurrency(active)} today={today}/>}
-   <GoalFundingPanel data={{...data,goals:order.goals}} currency={currency} surplus={totals.get(currency)?.surplus??null} today={today} rates={marketRates(market)} owner={owner} demo={demo} revision={revision} onSaved={onSaved} part="funding"/>
+   <GoalFundingPanel data={{...data,goals:order.goals}} currency={currency} surplus={totals.get(currency)?.surplus??null} surplusParts={totals.get(currency)?.parts} today={today} rates={marketRates(market)} owner={owner} demo={demo} revision={revision} onSaved={onSaved} part="funding"/>
   </div>
   </>}
   {view==='planner'&&(active?<>

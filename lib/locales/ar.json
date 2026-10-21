@@ -2725,5 +2725,9 @@
   "Budget left": "المتبقي من الميزانية",
   "Over budget": "تجاوز الميزانية",
   "Custom colour": "لون مخصص",
-  "Loading chart…": "جارٍ تحميل المخطط…"
+  "Loading chart…": "جارٍ تحميل المخطط…",
+  "Monthly surplus": "الفائض الشهري",
+  "Estimated asset income": "دخل الأصول المقدّر",
+  "Other recurring income": "دخل متكرر آخر",
+  "Shortfall": "عجز"
 }

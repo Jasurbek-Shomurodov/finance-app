@@ -2725,5 +2725,9 @@
   "Budget left": "งบประมาณคงเหลือ",
   "Over budget": "เกินงบประมาณ",
   "Custom colour": "สีที่กำหนดเอง",
-  "Loading chart…": "กำลังโหลดแผนภูมิ…"
+  "Loading chart…": "กำลังโหลดแผนภูมิ…",
+  "Monthly surplus": "เงินเหลือรายเดือน",
+  "Estimated asset income": "รายได้จากสินทรัพย์โดยประมาณ",
+  "Other recurring income": "รายได้ประจำอื่น",
+  "Shortfall": "ส่วนขาด"
 }

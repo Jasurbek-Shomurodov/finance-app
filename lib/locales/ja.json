@@ -2725,5 +2725,9 @@
   "Budget left": "予算の残り",
   "Over budget": "予算超過",
   "Custom colour": "カスタムカラー",
-  "Loading chart…": "グラフを読み込み中…"
+  "Loading chart…": "グラフを読み込み中…",
+  "Monthly surplus": "月間の余剰",
+  "Estimated asset income": "資産からの見込み収入",
+  "Other recurring income": "その他の定期収入",
+  "Shortfall": "不足"
 }

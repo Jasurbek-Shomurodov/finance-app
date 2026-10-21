@@ -2725,5 +2725,9 @@
   "Budget left": "Остаток бюджета",
   "Over budget": "Бюджет превышен",
   "Custom colour": "Свой цвет",
-  "Loading chart…": "Загрузка диаграммы…"
+  "Loading chart…": "Загрузка диаграммы…",
+  "Monthly surplus": "Месячный излишек",
+  "Estimated asset income": "Ожидаемый доход от активов",
+  "Other recurring income": "Прочий регулярный доход",
+  "Shortfall": "Нехватка"
 }

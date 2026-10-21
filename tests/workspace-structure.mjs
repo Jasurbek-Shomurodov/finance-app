@@ -212,9 +212,10 @@ test('the Cash flow drill-down loads its Sankeys in the browser when a row opens
  const {CashFlowDrillDialog}=loadTS('components/cash-flow-drill-lazy.tsx',{
   'next/dynamic':{__esModule:true,default:(load,options)=>{calls.push(options);return {load};}},
   '@/components/cash-flow-sankey':{CashFlowDrillDialog:Dialog},
+  '@/components/surplus-breakdown':{SurplusBreakdownDialog:Dialog},
  });
- assert.equal(calls.length,1);assert.equal(calls[0].ssr,false);
- assert.equal(typeof calls[0].loading,'function','the dialog opens at once with its chart shimmering while the code arrives');
+ assert.equal(calls.length,2,'the drill-down and the surplus breakdown');
+ for(const options of calls){assert.equal(options.ssr,false);assert.equal(typeof options.loading,'function','the dialog opens at once with its chart shimmering while the code arrives');}
  assert.equal(await CashFlowDrillDialog.load(),Dialog);
  assert.deepEqual(Object.keys(loadTS('lib/cash-flow-drill-types.ts')),[],'the drill-down types carry no runtime code');
 });

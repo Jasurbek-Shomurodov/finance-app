@@ -35,8 +35,9 @@ export function goalFinancials(records: Entry[], month: string, currency: string
  const netWorth=missingWealth?null:financialTotals(entries).netWorth;
  const lines=budget?.linesIn(month,currency,marketRates(market));
  const variable=approximateIncome(sources,currency,marketRates(market));
- const surplus=converted.some(entry=>entry===null)||lines?.missing||variable.missing?null:estimatedCashFlow(entries,month,lines?.lines,variable.amount).forecast;
- return {netWorth,surplus};
+ // The parts the surplus is made of travel with it, so a tap can show how it is worked out.
+ const parts=converted.some(entry=>entry===null)||lines?.missing||variable.missing?null:estimatedCashFlow(entries,month,lines?.lines,variable.amount);
+ return {netWorth,surplus:parts?parts.forecast:null,parts};
 }
 
 /** The currency a goal is measured in: an investment goal's holding account, a savings goal's cash account, otherwise its own currency. */
