@@ -2735,5 +2735,7 @@
   "{percent} funded": "ממומן {percent}",
   "Month-end forecast": "תחזית לסוף החודש",
   "Below zero on {date}": "מתחת לאפס ב-{date}",
-  "Totals are in {currency}": "הסכומים ב-{currency}"
+  "Totals are in {currency}": "הסכומים ב-{currency}",
+  "{spent} of {plan} spent": "הוצאו {spent} מתוך {plan}",
+  "Next: {name}": "הבא: {name}"
 }

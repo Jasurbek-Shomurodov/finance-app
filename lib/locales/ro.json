@@ -2735,5 +2735,7 @@
   "{percent} funded": "Finanțat {percent}",
   "Month-end forecast": "Prognoza de final de lună",
   "Below zero on {date}": "Sub zero pe {date}",
-  "Totals are in {currency}": "Totalurile sunt în {currency}"
+  "Totals are in {currency}": "Totalurile sunt în {currency}",
+  "{spent} of {plan} spent": "{spent} cheltuiți din {plan}",
+  "Next: {name}": "Următoarea: {name}"
 }

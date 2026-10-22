@@ -2735,5 +2735,7 @@
   "{percent} funded": "{percent} karşılandı",
   "Month-end forecast": "Ay sonu tahmini",
   "Below zero on {date}": "{date} tarihinde sıfırın altında",
-  "Totals are in {currency}": "Toplamlar {currency} cinsinden"
+  "Totals are in {currency}": "Toplamlar {currency} cinsinden",
+  "{spent} of {plan} spent": "{plan} bütçenin {spent} kadarı harcandı",
+  "Next: {name}": "Sıradaki: {name}"
 }

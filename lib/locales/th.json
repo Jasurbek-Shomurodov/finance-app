@@ -2735,5 +2735,7 @@
   "{percent} funded": "สะสมแล้ว {percent}",
   "Month-end forecast": "คาดการณ์สิ้นเดือน",
   "Below zero on {date}": "ต่ำกว่าศูนย์ใน {date}",
-  "Totals are in {currency}": "ยอดรวมเป็น {currency}"
+  "Totals are in {currency}": "ยอดรวมเป็น {currency}",
+  "{spent} of {plan} spent": "ใช้ไป {spent} จาก {plan}",
+  "Next: {name}": "ถัดไป: {name}"
 }

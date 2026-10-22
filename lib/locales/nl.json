@@ -2735,5 +2735,7 @@
   "{percent} funded": "{percent} gefinancierd",
   "Month-end forecast": "Verwachting eind van de maand",
   "Below zero on {date}": "Onder nul op {date}",
-  "Totals are in {currency}": "Totalen zijn in {currency}"
+  "Totals are in {currency}": "Totalen zijn in {currency}",
+  "{spent} of {plan} spent": "{spent} van {plan} uitgegeven",
+  "Next: {name}": "Volgende: {name}"
 }

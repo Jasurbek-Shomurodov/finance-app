@@ -41,5 +41,7 @@ export function dueSoon(data: Pick<PlanningData, 'records' | 'occurrences' | 'de
   const amount = amountIn({ amount: item.amount, currency: item.record.currency }, currency, rates);
   total = total === null || amount === null ? null : total + amount;
  }
- return { count: items.length, total };
+ // The first item is the next one due: upcomingPayments lists them by date.
+ const next = items[0] ? { name: items[0].record.name, date: items[0].date } : null;
+ return { count: items.length, total, next };
 }

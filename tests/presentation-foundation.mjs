@@ -87,7 +87,10 @@ test('loading skeletons keep the shape of the content they replace, so the page 
  const board=render(WorkspaceSkeleton,{label:'Loading'});
  assert.match(board,/class="dashboard-grid"><div class="dashboard-column"><section class="panel overview-hero">.*portfolio-headline.*overview-details/,'Net worth leads the left column in its full shape');
  assert.equal(board.match(/class="dashboard-column"/g).length,2);
- assert.ok(board.indexOf('data-columns="4"')>0&&board.indexOf('data-columns="4"')<board.indexOf('dashboard-grid'),'the four headline tiles over the board');
+ const [, rightColumn]=board.split('class="dashboard-column"').slice(1);
+ assert.match(rightColumn,/^><div class="dashboard-lead"><div aria-hidden="true" class="stat-tiles" data-columns="2">(<article class="stat-tile">.*?<\/article>){4}<\/div><\/div>/,'the four key figures, two by two, atop the column beside Net worth over time');
+ assert.ok(board.indexOf('class="dashboard-headline" data-beside="true"')<board.indexOf('dashboard-grid'),'and above the board for one column, where CSS shows that copy instead');
+ assert.match(render(WorkspaceSkeleton,{label:'Loading',columns:{left:['goals'],right:['budget']}}),/class="dashboard-headline"><div aria-hidden="true" class="stat-tiles" data-columns="4">/,'no net worth card: one row of four above the board');
  const custom=render(WorkspaceSkeleton,{label:'Loading',columns:{left:['goals'],right:['net_worth','a','b','c']}});
  const [left,right]=custom.split('class="dashboard-column"').slice(1);
  assert.ok(!left.includes('overview-hero')&&right.includes('overview-hero'),'follows the saved layout');

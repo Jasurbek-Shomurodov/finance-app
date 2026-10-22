@@ -50,14 +50,15 @@ function useBoardSensors() {
 }
 
 /** The dashboard's two columns. Cards only move in rearrange mode, where they wiggle and can be dragged anywhere in either column. */
-export function DashboardBoard({ layout, cards, arranging = false, onChange }: { layout: DashboardLayout; cards: Record<DashboardCard, ReactNode>; arranging?: boolean; onChange: (layout: DashboardLayout) => void }) {
+/** `lead` opens one column ahead of its cards and does not move with them: the key figures beside Net worth over time. */
+export function DashboardBoard({ layout, cards, lead, arranging = false, onChange }: { layout: DashboardLayout; cards: Record<DashboardCard, ReactNode>; lead?: { column: DashboardColumn; node: ReactNode }; arranging?: boolean; onChange: (layout: DashboardLayout) => void }) {
  const { t } = useLanguage();
  const { shown, context } = useCardDrag(layout, onChange, useBoardSensors());
  const columns = dashboardColumns(shown);
  return <DndContext id="dashboard-board" {...context}>
   <div className="dashboard-grid" data-arranging={arranging || undefined}>{dashboardColumnIds.map(column => {
    const placed = columns[column].filter(card => cards[card]);
-   return <DropColumn key={column} id={column} cards={placed} className="dashboard-column">{placed.map(card => <SortableItem key={card} id={card} label={t(dashboardCardLabels[card])} className="dashboard-card">{cards[card]}</SortableItem>)}</DropColumn>;
+   return <DropColumn key={column} id={column} cards={placed} className="dashboard-column">{lead?.column === column && <div className="dashboard-lead">{lead.node}</div>}{placed.map(card => <SortableItem key={card} id={card} label={t(dashboardCardLabels[card])} className="dashboard-card">{cards[card]}</SortableItem>)}</DropColumn>;
   })}</div>
  </DndContext>;
 }

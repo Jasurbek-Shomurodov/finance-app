@@ -2735,5 +2735,7 @@
   "{percent} funded": "ممول بنسبة {percent}",
   "Month-end forecast": "توقعات نهاية الشهر",
   "Below zero on {date}": "أقل من الصفر في {date}",
-  "Totals are in {currency}": "المجاميع بعملة {currency}"
+  "Totals are in {currency}": "المجاميع بعملة {currency}",
+  "{spent} of {plan} spent": "أُنفق {spent} من {plan}",
+  "Next: {name}": "التالي: {name}"
 }

@@ -2735,5 +2735,7 @@
   "{percent} funded": "Finanziato al {percent}",
   "Month-end forecast": "Previsione di fine mese",
   "Below zero on {date}": "Sotto zero il {date}",
-  "Totals are in {currency}": "I totali sono in {currency}"
+  "Totals are in {currency}": "I totali sono in {currency}",
+  "{spent} of {plan} spent": "{spent} spesi su {plan}",
+  "Next: {name}": "Prossimo: {name}"
 }

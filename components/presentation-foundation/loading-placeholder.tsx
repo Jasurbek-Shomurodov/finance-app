@@ -15,8 +15,9 @@ export function SkeletonRows({ rows }: { rows: number }) {
 }
 
 /** Placeholder tiles in the exact shape of a `StatTiles` row, so the figures do not push the page down when they arrive. */
-export function StatTilesSkeleton({ label, columns = 3 }: { label?: string; columns?: 3 | 4 }) {
-  const tiles = <div aria-hidden="true" className="stat-tiles" data-columns={columns}>{Array.from({ length: columns }, (_, index) => <article className="stat-tile" key={index}><Skeleton className="h-4 w-2/3"/><Skeleton className="h-7 w-3/4"/><Skeleton className="h-3 w-full"/></article>)}</div>;
+/** `count` tiles in `columns` columns: one row unless told otherwise (the dashboard's 2×2 is four in two). */
+export function StatTilesSkeleton({ label, columns = 3, count = columns }: { label?: string; columns?: 2 | 3 | 4; count?: number }) {
+  const tiles = <div aria-hidden="true" className="stat-tiles" data-columns={columns}>{Array.from({ length: count }, (_, index) => <article className="stat-tile" key={index}><Skeleton className="h-4 w-2/3"/><Skeleton className="h-7 w-3/4"/><Skeleton className="h-3 w-full"/></article>)}</div>;
   return label ? <div role="status" aria-busy="true"><span className="sr-only">{label}</span>{tiles}</div> : tiles;
 }
 
@@ -39,10 +40,12 @@ function DashboardCardSkeleton({ card }: { card: string }) {
 /** The dashboard while the workspace loads: its headline tiles over the board's two columns. */
 export function WorkspaceSkeleton({ label, columns = defaultDashboardSkeleton }: { label: string; columns?: DashboardSkeletonColumns }) {
   // The first few cards of each column fill the screen; drawing every card would only make the page longer than it loads.
+  const beside = columns.left.includes('net_worth') ? 1 : columns.right.includes('net_worth') ? 0 : -1;
   return <div role="status" aria-busy="true" className="overview-content-loading">
     <span className="sr-only">{label}</span>
-    <StatTilesSkeleton columns={4}/>
-    <div aria-hidden="true" className="dashboard-grid">{[columns.left, columns.right].map((cards, index) => <div className="dashboard-column" key={index}>{cards.slice(0, 3).map(card => <DashboardCardSkeleton card={card} key={card}/>)}</div>)}</div>
+    {/* The key figures, as the loaded page places them: atop the column beside Net worth over time, or above the board. */}
+    <div className="dashboard-headline" data-beside={beside >= 0 || undefined}><StatTilesSkeleton columns={beside >= 0 ? 2 : 4} count={4}/></div>
+    <div aria-hidden="true" className="dashboard-grid">{[columns.left, columns.right].map((cards, index) => <div className="dashboard-column" key={index}>{index === beside && <div className="dashboard-lead"><StatTilesSkeleton columns={2} count={4}/></div>}{cards.slice(0, 3).map(card => <DashboardCardSkeleton card={card} key={card}/>)}</div>)}</div>
   </div>;
 }
 

@@ -2735,5 +2735,7 @@
   "{percent} funded": "{percent} to‘plangan",
   "Month-end forecast": "Oy oxiri prognozi",
   "Below zero on {date}": "{date} kuni noldan past",
-  "Totals are in {currency}": "Jami summalar {currency} da"
+  "Totals are in {currency}": "Jami summalar {currency} da",
+  "{spent} of {plan} spent": "{plan} dan {spent} sarflandi",
+  "Next: {name}": "Keyingisi: {name}"
 }

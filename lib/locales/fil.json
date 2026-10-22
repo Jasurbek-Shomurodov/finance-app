@@ -2735,5 +2735,7 @@
   "{percent} funded": "{percent} napondohan",
   "Month-end forecast": "Forecast sa katapusan ng buwan",
   "Below zero on {date}": "Bababa sa zero sa {date}",
-  "Totals are in {currency}": "Ang mga kabuuan ay nasa {currency}"
+  "Totals are in {currency}": "Ang mga kabuuan ay nasa {currency}",
+  "{spent} of {plan} spent": "{spent} sa {plan} ang nagastos",
+  "Next: {name}": "Susunod: {name}"
 }

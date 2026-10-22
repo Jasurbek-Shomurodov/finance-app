@@ -2735,5 +2735,7 @@
   "{percent} funded": "Naplněno z {percent}",
   "Month-end forecast": "Výhled na konec měsíce",
   "Below zero on {date}": "Pod nulou {date}",
-  "Totals are in {currency}": "Součty jsou v {currency}"
+  "Totals are in {currency}": "Součty jsou v {currency}",
+  "{spent} of {plan} spent": "Utraceno {spent} z {plan}",
+  "Next: {name}": "Další: {name}"
 }

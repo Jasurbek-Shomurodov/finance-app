@@ -2735,5 +2735,7 @@
   "{percent} funded": "{percent} 달성",
   "Month-end forecast": "월말 전망",
   "Below zero on {date}": "{date}에 0 미만",
-  "Totals are in {currency}": "합계는 {currency} 기준"
+  "Totals are in {currency}": "합계는 {currency} 기준",
+  "{spent} of {plan} spent": "{plan} 중 {spent} 지출",
+  "Next: {name}": "다음: {name}"
 }

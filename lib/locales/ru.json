@@ -2735,5 +2735,7 @@
   "{percent} funded": "Накоплено {percent}",
   "Month-end forecast": "Прогноз на конец месяца",
   "Below zero on {date}": "Ниже нуля {date}",
-  "Totals are in {currency}": "Итоги в {currency}"
+  "Totals are in {currency}": "Итоги в {currency}",
+  "{spent} of {plan} spent": "Потрачено {spent} из {plan}",
+  "Next: {name}": "Далее: {name}"
 }

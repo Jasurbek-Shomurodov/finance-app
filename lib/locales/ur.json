@@ -2735,5 +2735,7 @@
   "{percent} funded": "{percent} مکمل",
   "Month-end forecast": "مہینے کے آخر کی پیش گوئی",
   "Below zero on {date}": "{date} کو صفر سے نیچے",
-  "Totals are in {currency}": "مجموعے {currency} میں ہیں"
+  "Totals are in {currency}": "مجموعے {currency} میں ہیں",
+  "{spent} of {plan} spent": "{plan} میں سے {spent} خرچ ہوئے",
+  "Next: {name}": "اگلا: {name}"
 }

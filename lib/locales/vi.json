@@ -2735,5 +2735,7 @@
   "{percent} funded": "Đã đạt {percent}",
   "Month-end forecast": "Dự báo cuối tháng",
   "Below zero on {date}": "Dưới 0 vào {date}",
-  "Totals are in {currency}": "Tổng tính bằng {currency}"
+  "Totals are in {currency}": "Tổng tính bằng {currency}",
+  "{spent} of {plan} spent": "Đã chi {spent} trên {plan}",
+  "Next: {name}": "Tiếp theo: {name}"
 }

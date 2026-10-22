@@ -2735,5 +2735,7 @@
   "{percent} funded": "{percent} terdanai",
   "Month-end forecast": "Perkiraan akhir bulan",
   "Below zero on {date}": "Di bawah nol pada {date}",
-  "Totals are in {currency}": "Total dalam {currency}"
+  "Totals are in {currency}": "Total dalam {currency}",
+  "{spent} of {plan} spent": "{spent} dari {plan} terpakai",
+  "Next: {name}": "Berikutnya: {name}"
 }

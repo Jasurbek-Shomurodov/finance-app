@@ -2735,5 +2735,7 @@
   "{percent} funded": "{percent} 達成",
   "Month-end forecast": "月末の見通し",
   "Below zero on {date}": "{date} にマイナス",
-  "Totals are in {currency}": "合計は {currency} 表示"
+  "Totals are in {currency}": "合計は {currency} 表示",
+  "{spent} of {plan} spent": "{plan}のうち{spent}を使用",
+  "Next: {name}": "次: {name}"
 }

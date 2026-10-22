@@ -2735,5 +2735,7 @@
   "{percent} funded": "{percent} पूरा",
   "Month-end forecast": "महीने के अंत का पूर्वानुमान",
   "Below zero on {date}": "{date} को शून्य से नीचे",
-  "Totals are in {currency}": "कुल राशि {currency} में है"
+  "Totals are in {currency}": "कुल राशि {currency} में है",
+  "{spent} of {plan} spent": "{plan} में से {spent} खर्च",
+  "Next: {name}": "अगला: {name}"
 }

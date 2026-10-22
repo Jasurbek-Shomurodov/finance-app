@@ -9,6 +9,7 @@ import { PartialTotal } from '@/components/presentation-foundation/partial-total
 import { IncomeHistoryChart } from '@/components/charts-lazy';
 import { useMemo, useState, type ReactNode } from 'react';
 import { InfoHint } from '@/components/presentation-foundation/info-hint';
+import { RollingText } from '@/components/presentation-foundation/rolling-text';
 import { signTone } from '@/components/presentation-foundation/tone';
 import type { PeriodGrowth } from '@/lib/period-growth';
 import { TrendingDown, TrendingUp } from 'lucide-react';
@@ -50,8 +51,9 @@ export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecord
  const netWorth = <section className="panel portfolio-trend overview-hero" aria-labelledby="overview-net-worth">
    <header className="overview-hero-head">
     <div className="overview-hero-value">
-     {/* The figure itself opens the dashboard in its headline row; this card is how it has moved. */}
      <h2 id="overview-net-worth">{t('Net worth over time')}</h2>
+     {/* Today's figure leads the card; the tiles beside it are this month's. */}
+     <strong className="overview-hero-figure"><RollingText text={money(portfolioValue)}/></strong>
      {!loading && !error && change !== null && <p><span className={change >= 0 ? 'overview-delta positive' : 'overview-delta negative'}><Trend size={15} aria-hidden="true"/>{change > 0 ? '+' : ''}{money(change)}{percent !== null && <> · {percent > 0 ? '+' : ''}{formatPercent(percent, locale)}</>}</span><span>{t('Change in selected period')}</span></p>}
      {/* The change in two parts: what the investments earned, and the rest, which came from the person's own money. */}
      {!loading && !error && change !== null && growth && <p className="overview-change-split"><span>{t('Investment returns')} <b className={signTone(growth.returns)}>{formatSignedMoney(growth.returns, currency, locale)}</b></span><span>{t('Your own money')} <b className={signTone(change - growth.returns)}>{formatSignedMoney(change - growth.returns, currency, locale)}</b></span><InfoHint>{t('Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.', { amount: money(Math.max(0, growth.invested)) })}</InfoHint></p>}

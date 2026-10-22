@@ -2735,5 +2735,7 @@
   "{percent} funded": "{percent} imefadhiliwa",
   "Month-end forecast": "Utabiri wa mwisho wa mwezi",
   "Below zero on {date}": "Chini ya sifuri tarehe {date}",
-  "Totals are in {currency}": "Jumla ziko kwa {currency}"
+  "Totals are in {currency}": "Jumla ziko kwa {currency}",
+  "{spent} of {plan} spent": "{spent} kati ya {plan} zimetumika",
+  "Next: {name}": "Inayofuata: {name}"
 }
