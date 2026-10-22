@@ -1,12 +1,13 @@
 "use client";
 import { InlineError } from '@/components/presentation-foundation/inline-error';
 import { Segmented } from '@/components/presentation-foundation/segmented';
+import { demoHistory } from '@/lib/demo-finance';
 import { InvestmentPeriodSummary } from '@/components/investment-period-summary';
 import { InvestmentComparison } from '@/components/investment-comparison';
 import { investmentValueChange } from '@/lib/investment-portfolio';
 import { PartialTotal } from '@/components/presentation-foundation/partial-total';
 import { IncomeHistoryChart } from '@/components/charts-lazy';
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { InfoHint } from '@/components/presentation-foundation/info-hint';
 import { signTone } from '@/components/presentation-foundation/tone';
 import type { PeriodGrowth } from '@/lib/period-growth';
@@ -14,26 +15,30 @@ import { TrendingDown, TrendingUp } from 'lucide-react';
 import { changePercent } from '@/lib/overview';
 import { useLanguage } from '@/components/language-provider';
 import { NetWorthBodySkeleton } from '@/components/presentation-foundation/loading-placeholder';
-import type { Entry } from '@/lib/finance';
+import { financialTotals, type Entry } from '@/lib/finance';
 import { formatMoney, formatNumber, formatPercent, formatSignedMoney } from '@/lib/format';
 import { depositToday } from '@/lib/deposit-interest';
-import type { PortfolioSnapshot } from '@/lib/portfolio-snapshots';
-import { portfolioWindow, trackingWindowStart } from '@/lib/portfolio-history';
-import { netWorthPoints } from '@/lib/net-worth-series';
+import { mergePortfolioPoints, type PortfolioSnapshot } from '@/lib/portfolio-snapshots';
+import { portfolioHistory, portfolioWindow, trackingWindowStart } from '@/lib/portfolio-history';
 import { useComparisonProfile } from '@/hooks/use-comparison-profile';
 import { type MarketData, marketRates } from '@/lib/market';
 import type { PortfolioHistory } from '@/hooks/use-portfolio-history';
 
-/** `history` is the screen's (`useNetWorthHistory`), shared with the headline; null while it loads. */
-export function PortfolioOverview({ entries, excludedCurrencies = [], currency, market, demo, history, historyError: error, onHistoryRetry, onAddIncome, board }: { history: PortfolioHistory | null; historyError: boolean; onHistoryRetry: () => void; board: (cards: { netWorth: ReactNode; income: ReactNode }) => ReactNode; onAddIncome?: () => void; excludedCurrencies?:string[]; snapshots: PortfolioSnapshot[]; snapshotError: string; onSnapshotRetry: () => void; entries: Entry[]; currency: string; market: MarketData | null; demo: boolean }) {
+/** `savedHistory` is the screen's read (`usePortfolioHistory`), started before this card mounts; the sample workspace builds its own. */
+export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecords, currency, market, demo, savedHistory, historyError: error, onHistoryRetry, onAddIncome, board }: { savedHistory: PortfolioHistory | null; historyError: boolean; onHistoryRetry: () => void; board: (cards: { netWorth: ReactNode; income: ReactNode }) => ReactNode; onAddIncome?: () => void; demoRecords?: Entry[]; excludedCurrencies?:string[]; snapshots: PortfolioSnapshot[]; snapshotError: string; onSnapshotRetry: () => void; entries: Entry[]; currency: string; market: MarketData | null; demo: boolean }) {
  const { t, locale } = useLanguage();
  const [range, setRange] = useState<number | null>(null);
  const [growth, setGrowth] = useState<PeriodGrowth | null>(null);
  const comparison = useComparisonProfile(demo);
  const today = depositToday();
+ const history: PortfolioHistory | null = useMemo(() => demo ? demoHistory(demoRecords ?? [], today) : savedHistory, [demo, demoRecords, today, savedHistory]);
  const money = (amount: number) => formatMoney(amount, currency, locale);
+ const {totalAssets:assetTotal,totalDebt:debt}=financialTotals(entries);
  const allRecords = history?.records ?? [];
- const { net: portfolioValue, missing, points } = netWorthPoints(history, entries, currency, marketRates(market), today);
+ const rates = marketRates(market);
+ const recorded = portfolioHistory(allRecords, history?.events ?? [], currency, rates, today, true);
+ const portfolioValue = assetTotal - debt;
+ const points = mergePortfolioPoints(recorded.points, [], {date:today,assets:assetTotal,debt,net:portfolioValue});
  const windowStart = trackingWindowStart(range, today, comparison.trackingStart);
  const visible = portfolioWindow(points, range, today, comparison.trackingStart);
  const partialHistory = visible.some(point=>point.partial);
@@ -56,7 +61,7 @@ export function PortfolioOverview({ entries, excludedCurrencies = [], currency, 
    </header>
    {loading ? <NetWorthBodySkeleton label={t('Loading history…')}/> : error ? <InlineError message={t('Could not load portfolio history.')} onRetry={onHistoryRetry}/> : <>
     <InvestmentComparison history={history??{records:[],events:[]}} today={today} currency={currency} market={market} demo={demo} windowStart={windowStart} points={visible} profile={comparison.profile} profileError={comparison.error} trackingStart={comparison.trackingStart} onTrackingStartChange={comparison.saveTrackingStart} onGrowth={setGrowth} summary={fx=><InvestmentPeriodSummary input={{records:allRecords,events:history?.events??[],cashflows:history?.cashflows,movements:history?.movements,market,currency,today,fx}} start={windowStart}/>}/>
-    {missing > 0 && <p className="muted overview-hero-note">{t('Some holdings have no recorded history yet.')}</p>}
+    {recorded.missing > 0 && <p className="muted overview-hero-note">{t('Some holdings have no recorded history yet.')}</p>}
     {excludedCurrencies.length > 0 && <p className="muted overview-hero-note">{t('Some currencies could not be converted and are excluded from totals.')}</p>}
    </>}
   </section>;

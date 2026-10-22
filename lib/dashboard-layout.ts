@@ -15,9 +15,8 @@ export const dashboardCardLabels: Record<DashboardCard, string> = {
  goals: 'Goals', transactions: 'Transactions', upcoming: 'Upcoming payments', forecast: 'Lowest balance ahead', income: 'Income over time',
 };
 export type DashboardLayout = { columns: Record<DashboardColumn, DashboardCard[]>; hidden: DashboardCard[] };
-// Income over time starts hidden: it is the tallest card and Cash flow shows the same. Lowest balance ahead starts
-// hidden too, since the headline row leads with the same figure. Customize turns either on.
-export const defaultDashboardLayout: DashboardLayout = { columns: { left: [...dashboardCards.left], right: [...dashboardCards.right] }, hidden: ['income', 'forecast'] };
+// Income over time starts hidden: it is the tallest card and Cash flow shows the same. Customize turns it on.
+export const defaultDashboardLayout: DashboardLayout = { columns: { left: [...dashboardCards.left], right: [...dashboardCards.right] }, hidden: ['income'] };
 
 const defaultColumn = (card: DashboardCard): DashboardColumn => (dashboardCards.left as readonly string[]).includes(card) ? 'left' : 'right';
 const isCard = (id: unknown): id is DashboardCard => (dashboardCardIds as readonly unknown[]).includes(id);

@@ -6,7 +6,7 @@ import { DrawerLink } from '@/components/presentation-foundation/drawer-link';
 export type StatTone = 'positive' | 'negative';
 
 /** A row of key figures. Tiles share one size and reflow by the width of the content column. */
-export function StatTiles({ children, label, columns = 4 }: { children: ReactNode; label?: string; columns?: 2 | 3 | 4 | 'auto' }) {
+export function StatTiles({ children, label, columns = 4 }: { children: ReactNode; label?: string; columns?: 3 | 4 | 'auto' }) {
  return <div className="stat-tiles" data-columns={columns} role={label ? 'group' : undefined} aria-label={label}>{children}</div>;
 }
 

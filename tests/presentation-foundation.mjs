@@ -466,7 +466,7 @@ test('every chart takes its look from the shared chart kit, never inline styles'
  for (const file of charts) {
   const source = fs.readFileSync(file, 'utf8');
   assert.match(source, /from '@\/components\/presentation-foundation\/chart'/, file + ' imports the chart kit');
-  assert.match(source, /<CartesianGrid \{\.\.\.chartGrid\}\/>|<Sankey|<PieChart|\{\.\.\.sparkChart\}/, file + ' uses the shared grid, or is a sparkline');
+  assert.match(source, /<CartesianGrid \{\.\.\.chartGrid\}\/>|<Sankey|<PieChart/, file + ' uses the shared grid');
   // Styling the kit owns: grid dashes, axis lines, tooltip boxes, bar widths, animation and gradients.
   assert.doesNotMatch(source, /strokeDasharray="(2 6|3 3|3 5)"|contentStyle=|axisLine=\{false\}|tickLine=\{false\}|maxBarSize=|isAnimationActive=\{false\}|<linearGradient/, file + ' keeps chart styling in the kit');
  }

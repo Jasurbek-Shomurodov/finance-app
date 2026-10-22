@@ -6,9 +6,9 @@ const { normalizeLayout, dashboardColumns, dropCard, placeCard, toggleCard, defa
 const { workspacePreferenceSchema } = loadTS('lib/workspace-preferences.ts');
 
 test('dashboard cards drag within and across columns, old saves load and every card can be hidden', () => {
- // Income over time and Lowest balance ahead start hidden; nothing saved yet reads as the default, and a saved layout keeps what its owner hid.
- assert.deepEqual(dashboardColumns(defaultDashboardLayout), { left: ['net_worth', 'spending', 'budget', 'commitments', 'allocation'], right: ['goals', 'transactions', 'upcoming', 'business'] });
- assert.deepEqual(normalizeLayout(undefined).hidden, ['income', 'forecast']);
+ // Income over time starts hidden; nothing saved yet reads as the default, and a saved layout keeps what its owner hid.
+ assert.deepEqual(dashboardColumns(defaultDashboardLayout), { left: ['net_worth', 'spending', 'budget', 'commitments', 'allocation'], right: ['goals', 'transactions', 'upcoming', 'forecast', 'business'] });
+ assert.deepEqual(normalizeLayout(undefined).hidden, ['income']);
  assert.deepEqual(normalizeLayout({ columns: { left: [], right: [] }, hidden: [] }).hidden, [], 'a saved layout showing every card keeps them all');
  const old = normalizeLayout({ order: ['upcoming', 'recap', 'removed_card', 'allocation', 'upcoming'], hidden: ['goals', 'recap', 'nope'] });
  assert.deepEqual(old.columns.right, ['upcoming', 'goals', 'transactions', 'forecast', 'income', 'business'], 'a single-list save keeps its columns, new cards appended, removed cards dropped');

@@ -20,18 +20,13 @@ import { allocationRows, assetAllocation, nextPayments } from '@/lib/overview';
 import { otherShareKey } from '@/lib/cash-flow-report';
 import { upcomingPayments, type PlanningData } from '@/lib/planning';
 import { payLink } from '@/lib/recurring';
-import { depositToday } from '@/lib/deposit-interest';
 import { openProps } from '@/lib/row-open';
 
-/** The page's name goes to the top bar; the page itself opens with today's date and a greeting.
- * `firstVisit` greets a brand-new account with "Welcome" instead of "Welcome back". */
+/** `firstVisit` greets a brand-new account with "Welcome" instead of "Welcome back". */
 export function OverviewHeading({ name, firstVisit = false, children }: { name?: string; firstVisit?: boolean; children?: ReactNode }) {
- const { t, locale } = useLanguage();
- const greeting = firstVisit ? (name ? t('Welcome, {name}!', { name }) : t('Welcome!')) : name ? t('Welcome back, {name}!', { name }) : t('Welcome back!');
- return <>
-  <div className="overview-greeting"><p>{formatDate(depositToday(), locale)}</p><h2>{greeting}</h2></div>
-  <PageHeader title={t('Dashboard')}>{children}</PageHeader>
- </>;
+ const { t } = useLanguage();
+ const title = firstVisit ? (name ? t('Welcome, {name}!', { name }) : t('Welcome!')) : name ? t('Welcome back, {name}!', { name }) : t('Welcome back!');
+ return <PageHeader title={title}>{children}</PageHeader>;
 }
 
 type Props = { entries: Entry[]; currency: string; excludedCurrencies: string[]; forecast: ReturnType<typeof estimatedCashFlow>; forecastReady: boolean; planning: PlanningData | null };

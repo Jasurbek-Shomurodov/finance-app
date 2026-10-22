@@ -7,12 +7,10 @@
 import { formatCompactMoney, formatMonthShort, formatMonthYear, formatYear } from '@/lib/format';
 
 /** Chart heights: `compact` inside dialogs and cards, `regular` for a panel's main chart, `tall` for a page's lead chart. */
-export const chartHeight = { spark: 104, compact: 220, regular: 260, tall: 300 } as const;
+export const chartHeight = { compact: 220, regular: 260, tall: 300 } as const;
 
 /** Room around the plot; the axes bring their own tick margins. */
 export const chartMargin = { top: 12, right: 8, left: 0, bottom: 4 };
-/** A sparkline: the line alone in a figure's tile, no grid, axes or tooltip, the reading being the figure beside it. */
-export const sparkChart = { margin: { top: 6, right: 2, bottom: 2, left: 2 } } as const;
 
 /** Faint horizontal guides only. */
 export const chartGrid = { stroke: 'var(--border)', strokeOpacity: .6, strokeDasharray: '2 6', vertical: false } as const;
