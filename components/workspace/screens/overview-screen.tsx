@@ -2,7 +2,7 @@
 import { useLanguage } from '@/components/language-provider';
 import { WorkspaceSkeleton } from '@/components/presentation-foundation/loading-placeholder';
 import { OverviewHeading, useOverviewCards } from '@/components/overview-page';
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Check, LayoutGrid } from 'lucide-react';
 import { CustomizeDashboardDialog, DashboardBoard } from '@/components/dashboard-board';
 import { BudgetCard, GoalsCard, RecentTransactionsCard, useMonthBudget } from '@/components/dashboard-cards';
@@ -23,6 +23,8 @@ import { TelegramNudge } from '@/components/telegram-nudge';
 import { ScreenNotices, ToolsUnavailable } from '@/components/workspace/screen-notices';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
 import { marketRates } from '@/lib/market';
+import { demoHistory } from '@/lib/demo-finance';
+import { netWorthPoints, netWorthTrend } from '@/lib/net-worth-series';
 
 export function OverviewScreen() {
  const { t } = useLanguage();
@@ -33,6 +35,14 @@ export function OverviewScreen() {
  const monthBudget = useMonthBudget({ owner: user, demo, revision: reload, budget, data: planning.data, currency, market, splits: transactionTools.data.splits });
  // The net worth history is read now, beside the workspace reads, not once they have finished.
  const portfolioHistory = usePortfolioHistory(user, demo, reload);
+ // The sample workspace builds its history from its own records. The headline and the net worth card read the same.
+ const today = depositToday();
+ const history = useMemo(() => demo ? demoHistory(rows, today) : portfolioHistory.history, [demo, rows, today, portfolioHistory.history]);
+ const trend = useMemo(() => {
+  if (!history) return null;
+  const { points, net } = netWorthPoints(history, current, currency, marketRates(market), today);
+  return netWorthTrend(points, net, today);
+ }, [history, current, currency, market, today]);
  const [customizing, setCustomizing] = useState(false);
  // Rearrange mode: handles show and the cards wiggle until Done.
  const [arranging, setArranging] = useState(false);
@@ -55,8 +65,8 @@ export function OverviewScreen() {
    <OverviewHeading name={preferencesData.display_name?.trim()} firstVisit={!demo && firstVisit(preferencesData, depositToday())}>{arranging ? <Button onClick={() => setArranging(false)}><Check size={16} aria-hidden="true"/>{t('Done')}</Button> : <Button variant="outline" onClick={() => setCustomizing(true)}><LayoutGrid size={16} aria-hidden="true"/>{t('Customize')}</Button>}</OverviewHeading>
    <ScreenNotices/>
    {!workspaceLoading&&<TelegramNudge demo={demo}/>}
-   {!workspaceLoading&&<DashboardHeadline netWorth={netWorth} budget={monthBudget} data={planningReady ? planning.data : null} currency={currency} market={market}/>}
-   {workspaceLoading ? <WorkspaceSkeleton label={t("Loading your workspace…")} columns={dashboardColumns(layout)}/> : <PortfolioOverview excludedCurrencies={excludedCurrencies} snapshots={snapshots.snapshots} snapshotError={snapshots.error} onSnapshotRetry={snapshots.retry} key={demo ? 'demo' : user} entries={current} demoRecords={demo ? rows : undefined} currency={currency} market={market} demo={demo} savedHistory={portfolioHistory.history} historyError={portfolioHistory.error} onHistoryRetry={portfolioHistory.retry} onAddIncome={() => addCashFlow('Other income')} board={nodes => <DashboardBoard layout={layout} cards={card(nodes)} arranging={arranging} onChange={change}/>}/>}
+   {!workspaceLoading&&<DashboardHeadline netWorth={netWorth} trend={trend} budget={monthBudget} data={planningReady ? planning.data : null} forecastBudget={forecastBudget} forecastLoading={forecastBudgetState?.loading} currency={currency} market={market}/>}
+   {workspaceLoading ? <WorkspaceSkeleton label={t("Loading your workspace…")} columns={dashboardColumns(layout)}/> : <PortfolioOverview excludedCurrencies={excludedCurrencies} snapshots={snapshots.snapshots} snapshotError={snapshots.error} onSnapshotRetry={snapshots.retry} key={demo ? 'demo' : user} entries={current} currency={currency} market={market} demo={demo} history={history} historyError={portfolioHistory.error} onHistoryRetry={portfolioHistory.retry} onAddIncome={() => addCashFlow('Other income')} board={nodes => <DashboardBoard layout={layout} cards={card(nodes)} arranging={arranging} onChange={change}/>}/>}
   </div>
   {customizing&&<CustomizeDashboardDialog layout={layout} onChange={change} onRearrange={() => { setCustomizing(false); setArranging(true); }} onClose={() => setCustomizing(false)}/>}
   {(workspacePreferences.error||planning.error||transactionTools.error)&&<ToolsUnavailable/>}

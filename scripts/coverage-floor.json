@@ -89,7 +89,6 @@
   "components/workspace/screens/overview-screen.tsx",
   "components/workspace/screens/recently-deleted-screen.tsx",
   "components/workspace/screens/settings-screen.tsx",
-  "components/workspace/screens/transactions-screen.tsx",
   "components/workspace/screens/upcoming-screen.tsx",
   "components/workspace/workspace-dialogs.tsx",
   "components/workspace/workspace-shell.tsx",
