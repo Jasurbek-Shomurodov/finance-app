@@ -690,7 +690,7 @@ test('every Accounts › Recent activity row opens its Sankey in the Cash flow d
  assert.equal(pushed.length, 1, 'Enter opens a row; other keys do not');
 });
 
-test('a transaction row opens its Sankey over the page: its payer or merchant for its month, its details one tap away', () => {
+test('a transaction’s Sankey (the dashboard’s recent transactions) opens over the page: its payer or merchant for its month, its details one tap away', () => {
  const r = createRenderer();
  const opened = [], read = [];
  let drilling = record('food', 'Market', 'Living expense', 120, '2026-08-06', { account_id: 'card', custom_category_id: 'groceries' }), closed = 0;

@@ -142,7 +142,7 @@ test('row menus and popovers never open the transaction details behind them',()=
  // QA 2026-10-03: Delete in a Cash flow row's ⋯ menu opened the details dialog first, because React
  // bubbles clicks from portaled menu items to the row. Rows open details only for clicks inside themselves.
  const read=path=>fs.readFileSync(new URL('../'+path,import.meta.url),'utf8');
- assert.match(read('components/workspace/records-table.tsx'),/event\.currentTarget\.contains\(target\)&&!target\.closest\('button,a,input'\)\)setDrilling/);
+ assert.match(read('components/workspace/records-table.tsx'),/event\.currentTarget\.contains\(target\)&&!target\.closest\('button,a,input'\)\)setViewing/);
  assert.match(read('components/workspace/screens/transactions-screen.tsx'),/!\(event\.currentTarget as HTMLElement\)\.contains\(event\.target as Node\) \|\|/);
 });
 
