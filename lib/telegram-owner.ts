@@ -19,7 +19,7 @@ export async function ownerProfile(db:ServiceDatabase,owner:string):Promise<Owne
  return {language:isLanguage(row?.language)?row.language:'en',name:(row?.display_name??'').trim(),currency:row?.currencies?.[0]||'USD'};
 }
 /** The owner's added spending categories, to name them in the scheduled reports. */
-export const ownerCategories=(db:ServiceDatabase,owner:string)=>db.read<Array<{id:string;name:string}>>('/rest/v1/custom_categories?select=id,name&user_id=eq.'+owner);
+export const ownerCategories=(db:ServiceDatabase,owner:string)=>db.read<Array<{id:string;name:string}>>('/rest/v1/transaction_categories?select=id,name&user_id=eq.'+owner);
 /** Spending by category (keys from lib/period-summary.ts), largest first, named in `language`: a built-in category is
  * translated, an added one shows the owner's own name, and one since deleted counts as Other expense. `key` is the
  * kind or the added category's id, which picks its colour. */

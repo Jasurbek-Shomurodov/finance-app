@@ -243,7 +243,7 @@ function recapRoute({onRead=()=>{},subscriptions,records={},splits={},links={},c
    const who=/user_id=eq\.([\w-]+)/.exec(path)?.[1];
    if(path.startsWith('/rest/v1/telegram_subscriptions'))return subscriptions;
    if(path.startsWith('/rest/v1/finance_records'))return recordsFor(records[who]??[],path);
-   if(path.startsWith('/rest/v1/custom_categories'))return categories[who]??[];
+   if(path.startsWith('/rest/v1/transaction_categories'))return categories[who]??[];
    if(path.startsWith('/rest/v1/goal_events'))return events[who]??[];
    if(path.startsWith('/rest/v1/transaction_splits'))return splits[who]??[];
    if(path.startsWith('/rest/v1/investment_account_links'))return links[who]??[];

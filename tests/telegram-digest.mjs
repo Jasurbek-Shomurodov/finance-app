@@ -107,7 +107,7 @@ function cronRoute({subscriptions,records={},splits={},links={},occurrences={},l
    if(path.startsWith('/rest/v1/payment_occurrences'))return occurrences[owner]??[];
    if(path.startsWith('/rest/v1/user_preferences'))return owner in languages||owner in names||owner in currencies?[{language:languages[owner],display_name:names[owner],currencies:currencies[owner]}]:[];
    if(path.startsWith('/rest/v1/portfolio_snapshots'))return [...(snapshots[owner]??[])].reverse();
-   if(path.startsWith('/rest/v1/custom_categories'))return [];
+   if(path.startsWith('/rest/v1/transaction_categories'))return [];
    if(path.startsWith('/rest/v1/workspace_preferences'))return owner in reminders?[{data:reminders[owner]}]:[];
    if(path.startsWith('/rest/v1/account_activity')||path.startsWith('/rest/v1/mortgage_payments'))return [];
    if(path.startsWith('/rest/v1/transaction_splits'))return splits[owner]??[];

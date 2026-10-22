@@ -183,7 +183,7 @@ function monthlyRoute({subscriptions,records={},categories={},prefs={},snapshots
    const who=/user_id=eq\.([\w-]+)/.exec(path)?.[1];
    if(path.startsWith('/rest/v1/telegram_subscriptions'))return subscriptions;
    if(path.startsWith('/rest/v1/finance_records'))return recordsFor(records[who]??[],path);
-   if(path.startsWith('/rest/v1/custom_categories'))return categories[who]??[];
+   if(path.startsWith('/rest/v1/transaction_categories'))return categories[who]??[];
    if(path.startsWith('/rest/v1/transaction_splits')||path.startsWith('/rest/v1/investment_account_links'))return [];
    if(path.startsWith('/rest/v1/user_preferences'))return who in prefs?[prefs[who]]:[];
    if(path.startsWith('/rest/v1/portfolio_snapshots')){const day=/occurred_on=lte\.([\d-]+)/.exec(path)[1];return (snapshots[who]??[]).filter(row=>row.occurred_on<=day).sort((a,b)=>b.occurred_on.localeCompare(a.occurred_on)).slice(0,1);}
