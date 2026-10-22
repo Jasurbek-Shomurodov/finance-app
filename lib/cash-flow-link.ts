@@ -1,6 +1,5 @@
 import { monthsBetween } from './budget';
 import { trendMonths } from './cash-flow-report';
-import type { Drill } from './business-report';
 import type { DrillTarget } from './cash-flow-drill-types';
 import type { Entry } from './finance';
 import type { PlanningData } from './planning';
@@ -9,11 +8,6 @@ import type { PlanningData } from './planning';
  * or a mortgage payment. */
 export type LinkedTarget = Extract<DrillTarget, { side: 'goal' | 'account' | 'merchant' | 'operation' | 'payment' }>;
 const linkable = new Set<string>(['goal', 'account', 'merchant', 'operation', 'payment']);
-
-/** A link that opens Cash flow with a Sankey in its drill-down, for one month (`YYYY-MM`): Goals › History and Accounts ›
- * Recent activity link each row there. */
-export const drillHref = (target: LinkedTarget, month: string) => `/income-expenses?open=${target.side}&key=${encodeURIComponent(target.key)}&month=${month}${target.side === 'merchant' && target.income ? '&income=1' : ''}`;
-export const goalSankeyHref = (goal: string, month: string) => drillHref({ side: 'goal', key: goal }, month);
 
 /** The drill-down a Cash flow link asks to open, and the month it is for; null for any other query. */
 export function drillLink(search: string): { target: LinkedTarget; month: string } | null {
@@ -43,15 +37,4 @@ export function readRange(month: string, today: string, linked?: string | null) 
  const readTo = month < now && monthsBetween(trend, now).length <= 24 ? now : month;
  const first = linked && linked < trend && monthsBetween(linked, readTo).length <= 24 ? linked : trend;
  return { first, readTo, throughToday: readTo >= now };
-}
-
-/** The Sankey a Reports row opens beside narrowing the transactions: a category, several categories together, or a
- * payer or merchant. A business alone has no drill-down view; it only narrows. */
-export function reportDrillTarget(drill: Drill): DrillTarget | null {
- if (drill.savings !== undefined) return { side: 'savings' };
- if (!drill.direction) return null;
- const income = drill.direction === 'income';
- if (drill.merchant !== undefined) return { side: 'merchant', key: drill.merchant, income };
- if (drill.category !== undefined) return { side: income ? 'income' : 'expense', key: drill.category };
- return drill.categories?.length ? { side: 'group', income, keys: [...drill.categories], by: 'category' } : null;
 }

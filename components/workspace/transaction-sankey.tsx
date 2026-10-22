@@ -5,21 +5,13 @@ import { useCashFlowData } from '@/components/cash-flow-data';
 import { CashFlowDrillDialog } from '@/components/cash-flow-drill-lazy';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
 import { depositToday } from '@/lib/deposit-interest';
-import { income } from '@/lib/finance';
 import type { SankeyRequest } from '@/components/workspace/state/use-open-dialogs';
 import { formatMonthYear } from '@/lib/format';
 import { marketRates } from '@/lib/market';
 
-/** The Sankey a row opens over the page it is on. A transaction row opens its payer or merchant for the month it happened,
- * with the transaction listed below, one tap from its details; other rows (a schedule, a loan) ask for theirs. Nothing
- * is read until a row opens one. */
+/** The Sankey a Money flow button opens over the page it is on. Nothing is read until one opens. */
 export function TransactionSankey() {
- const { t } = useLanguage();
- const { drilling, setDrilling, sankey, setSankey } = useWorkspace();
- if (drilling) {
-  const merchant = drilling.name.trim() || t(drilling.kind);
-  return <Drill key={drilling.id} request={{ target: { side: 'merchant', key: merchant, income: income.includes(drilling.kind) }, title: merchant, month: drilling.date.slice(0, 7) }} onClose={() => setDrilling(null)}/>;
- }
+ const { sankey, setSankey } = useWorkspace();
  return sankey ? <Drill key={JSON.stringify(sankey.target) + sankey.month} request={sankey} onClose={() => setSankey(null)}/> : null;
 }
 

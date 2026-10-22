@@ -9,7 +9,7 @@ import { liabilities, value, type Entry } from '@/lib/finance';
 import { marketEntry, type MarketData } from '@/lib/market';
 
 /** A filtered business's other assets and debts, so its whole net assets are in view. */
-export function BusinessHoldings({ records, market, onOpen }: { records: Entry[]; market: MarketData|null; /** Opens a row's Sankey. */ onOpen?: (record: Entry) => void }) {
+export function BusinessHoldings({ records, market, onOpen }: { records: Entry[]; market: MarketData|null; /** Opens a row's details. */ onOpen?: (record: Entry) => void }) {
  const { t } = useLanguage();
  const { show } = useDisplayMoney();
  // In the display currency like every list; a debt carries its minus, an amount without a rate reads "—" with a note.

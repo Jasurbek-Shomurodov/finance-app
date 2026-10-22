@@ -32,7 +32,7 @@ export function recentTransactions(records: Entry[], today: string, limit = 5) {
   .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id)).slice(0, limit);
 }
 
-/** With `onOpen`, a row opens its transaction (by click, Enter or Space): the dashboard opens its Sankey. */
+/** With `onOpen`, a row opens its transaction's details (by click, Enter or Space). */
 export function RecentTransactionsCard({ owner = null, demo = false, revision = 0, data: provided, onOpen }: { owner?: string | null; demo?: boolean; revision?: number; data: PlanningData; onOpen?: (record: Entry) => void }) {
  const { t, locale } = useLanguage();
  const { entered } = useDisplayMoney();
@@ -44,7 +44,7 @@ export function RecentTransactionsCard({ owner = null, demo = false, revision = 
   <PanelTitle title={t('Transactions')}><DrawerLink href="/transactions">{t('View all')}</DrawerLink></PanelTitle>
   {owner && !demo && remote.loading ? <LoadingPlaceholder label={t('Loading records…')} rows={4}/> : recent.length ? <ul className="overview-list overview-due">{recent.map(record => {
    const incoming = income.includes(record.kind);
-   const open = onOpen ? { role: 'button', tabIndex: 0, 'aria-label': t('Open {name}', { name: shownName(record, t) }), onClick: () => onOpen(record), onKeyDown: (event: KeyboardEvent) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen(record); } } } : {};
+   const open = onOpen ? { role: 'button', tabIndex: 0, 'aria-label': t('View details for {name}', { name: shownName(record, t) }), onClick: () => onOpen(record), onKeyDown: (event: KeyboardEvent) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen(record); } } } : {};
    return <li key={record.id} {...open}><CategoryIcon kind={record.kind}/><span>{shownName(record, t)}<small>{t(record.kind)} · {formatDate(record.date, locale)}</small></span><strong className={incoming ? 'positive' : undefined}>{incoming ? '+' : ''}{entered(Math.abs(signedAmount(record)), record.currency)}</strong></li>;
   })}</ul> : <EmptyState icon={<ReceiptText/>} description={t('No transactions recorded this month or last.')}/>}
  </section>;

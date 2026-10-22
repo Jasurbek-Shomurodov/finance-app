@@ -26,9 +26,9 @@ import { marketRates } from '@/lib/market';
 
 export function OverviewScreen() {
  const { t } = useLanguage();
- const { user, demo, rows, netWorth, addCashFlow, current, currency, market, budget, forecastBudget, forecastBudgetState, reload, preferencesData, excludedCurrencies, snapshots, forecast, forecastReady, planning, transactionTools, workspacePreferences, workspaceLoading, businessList, setSettingUpBusinesses, setDrilling, storedRecord, setSankey } = useWorkspace();
+ const { user, demo, rows, netWorth, addCashFlow, current, currency, market, budget, forecastBudget, forecastBudgetState, reload, preferencesData, excludedCurrencies, snapshots, forecast, forecastReady, planning, transactionTools, workspacePreferences, workspaceLoading, businessList, setSettingUpBusinesses, setViewing, storedRecord } = useWorkspace();
  const planningReady = demo || (!planning.loading && !planning.error);
- const cards = useOverviewCards({ entries: current, currency, excludedCurrencies, forecast, forecastReady, planning: planningReady ? planning.data : null, onSankey: setSankey });
+ const cards = useOverviewCards({ entries: current, currency, excludedCurrencies, forecast, forecastReady, planning: planningReady ? planning.data : null });
  const { layout, change } = useDashboardLayout(workspacePreferences, demo);
  const monthBudget = useMonthBudget({ owner: user, demo, revision: reload, budget, data: planning.data, currency, market, splits: transactionTools.data.splits });
  // The net worth history is read now, beside the workspace reads, not once they have finished.
@@ -44,8 +44,8 @@ export function OverviewScreen() {
   commitments: cards.commitments,
   allocation: cards.allocation,
   goals: planningReady && <GoalsCard goals={planning.data.goals} order={savedGoalOrder(workspacePreferences.data.preferences)} data={planning.data} currency={currency} netWorth={code => goalFinancials(planning.data.records, depositToday().slice(0, 7), code, market).netWorth}/>,
-  // A recent transaction opens its Sankey, as a transaction row does everywhere.
-  transactions: planningReady && <RecentTransactionsCard owner={user} demo={demo} revision={reload} data={planning.data} onOpen={record => setDrilling(storedRecord(record))}/>,
+  // A recent transaction opens its details, as a transaction row does everywhere.
+  transactions: planningReady && <RecentTransactionsCard owner={user} demo={demo} revision={reload} data={planning.data} onOpen={record => setViewing(storedRecord(record))}/>,
   upcoming: cards.upcoming,
   forecast: planningReady && <LowestBalanceCard data={planning.data} budget={forecastBudget} budgetState={forecastBudgetState} currency={currency} rates={marketRates(market)}/>,
   income,

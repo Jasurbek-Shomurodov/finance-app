@@ -628,10 +628,9 @@ test('a goal lists its additions and withdrawals as entered; a row opens the goa
  assert.deepEqual(holiday.filter(node => node.open?.side === 'link').map(node => node.open.href), Array(holiday.filter(node => node.open?.side === 'link').length).fill('/goals?view=history&goal=g'), 'the goal, its balances and accountless sources open its history too');
 });
 
-test('a goal history row links to Cash flow, which opens the goal’s Sankey for that month', () => {
- const { goalSankeyHref, drillLink } = loadTS('lib/cash-flow-link.ts');
- const href = goalSankeyHref('g 1', '2026-08');
- assert.equal(href, '/income-expenses?open=goal&key=g%201&month=2026-08');
+test('a Cash flow link opens the goal’s Sankey for that month', () => {
+ const { drillLink } = loadTS('lib/cash-flow-link.ts');
+ const href = '/income-expenses?open=goal&key=g%201&month=2026-08';
  assert.deepEqual(drillLink(href.slice(href.indexOf('?'))), { target: { side: 'goal', key: 'g 1' }, month: '2026-08' });
  assert.equal(drillLink('?open=goal&key=g&month=2026-13'), null, 'never an impossible month');
  assert.equal(drillLink('?tag=x'), null);
@@ -654,8 +653,9 @@ test('a goal history row links to Cash flow, which opens the goal’s Sankey for
  assert.deepEqual([title[0], text(title[2])], ['Holiday', 'August 2026'], 'the goal’s Sankey for the row’s month, not the page’s');
 });
 
-test('every Accounts › Recent activity row opens its Sankey in the Cash flow drill-down, for its month', () => {
- const { drillHref, drillLink, linkedTitle, readRange } = loadTS('lib/cash-flow-link.ts');
+test('a Cash flow link keeps its target, and Accounts › Recent activity opens a transaction’s details, never a Sankey', () => {
+ const { drillLink, linkedTitle, readRange } = loadTS('lib/cash-flow-link.ts');
+ const drillHref = (target, month) => `/income-expenses?open=${target.side}&key=${encodeURIComponent(target.key)}&month=${month}${target.side === 'merchant' && target.income ? '&income=1' : ''}`;
  for (const target of [{ side: 'goal', key: 'g' }, { side: 'account', key: 'card' }, { side: 'merchant', key: 'EPAM', income: true }, { side: 'merchant', key: 'Cafe', income: false }, { side: 'operation', key: 't' }, { side: 'payment', key: 'mp' }]) {
   const href = drillHref(target, '2026-08');
   assert.deepEqual(drillLink(href.slice(href.indexOf('?'))), { target, month: '2026-08' }, target.side + ' survives the link');
@@ -677,39 +677,39 @@ test('every Accounts › Recent activity row opens its Sankey in the Cash flow d
   activity: [op('t', 'transfer'), op('mp', 'mortgage', { target_id: 'home' }), op('x', 'reconcile', { target_id: null })],
   movements: [{ id: 'm', kind: 'buy', source_id: 'card', target_id: 'save', sent: 5, received: 5, source_value: 5, target_value: 5, fee: 0, occurred_on: '2026-08-11', notes: '', realized_gain: null }, { id: 'i', kind: 'interest', source_id: 'save', target_id: 'save', sent: 0, received: 1, source_value: 0, target_value: 1, fee: 0, occurred_on: '2026-08-12', notes: '', realized_gain: null }],
   investmentLinks: [{ id: 'l', account_id: 'card', amount: -50, investment_history: { occurred_on: '2026-06-03', record_id: 'save', event_type: 'buy' } }] };
- r.mount(React.createElement(AccountActivity, { data: planning, owner: null, currency: 'USD' }));
+ const opened = [];
+ r.mount(React.createElement(AccountActivity, { data: planning, owner: null, currency: 'USD', onOpen: record => opened.push(record.id) }));
  const rows = r.all(node => node.type === 'tr' && node.props.className === 'clickable-row');
- for (const row of rows) row.props.onClick();
- assert.deepEqual(pushed.sort(), [
-  '/income-expenses?open=account&key=card&month=2026-08', '/income-expenses?open=account&key=save&month=2026-06', '/income-expenses?open=account&key=save&month=2026-08',
-  '/income-expenses?open=merchant&key=EPAM&month=2026-07&income=1', '/income-expenses?open=operation&key=m&month=2026-08', '/income-expenses?open=operation&key=t&month=2026-08', '/income-expenses?open=payment&key=mp&month=2026-08',
- ], 'a transfer and a buy their transfer view, a mortgage payment its Sankey, a reconciliation and capitalized interest their account, income its payer, cash for an investment its holding');
- pushed.length = 0;
- rows[0].props.onKeyDown({ key: 'Enter', preventDefault() {} });
- rows[0].props.onKeyDown({ key: 'Tab', preventDefault() {} });
- assert.equal(pushed.length, 1, 'Enter opens a row; other keys do not');
+ assert.deepEqual(rows.map(row => row.props['aria-label']), ['View details for EPAM'], 'only a transaction opens; operations and movements show everything in their row');
+ rows[0].props.onClick({ target: { closest: () => null }, currentTarget: { contains: () => true } });
+ rows[0].props.onKeyDown({ key: 'Enter', target: 1, currentTarget: 1, preventDefault() {} });
+ rows[0].props.onKeyDown({ key: 'Tab', target: 1, currentTarget: 1, preventDefault() {} });
+ assert.deepEqual([opened, pushed], [['pay', 'pay'], []], 'a click and Enter open its details; nothing goes to Cash flow');
+ r.mount(React.createElement(AccountActivity, { data: planning, owner: null, currency: 'USD' }));
+ assert.equal(r.all(node => node.type === 'tr' && node.props.className === 'clickable-row').length, 0, 'without a handler the rows stay plain');
+ assert.match(fs.readFileSync('components/workspace/screens/accounts-screen.tsx', 'utf8'), /<AccountsPage onView=\{record => setViewing\(storedRecord\(record\)\)\}/);
 });
 
-test('a transaction’s Sankey (the dashboard’s recent transactions) opens over the page: its payer or merchant for its month, its details one tap away', () => {
+test('a Money flow Sankey opens over the page for its month, a transaction in it one tap from its details', () => {
  const r = createRenderer();
  const opened = [], read = [];
- let drilling = record('food', 'Market', 'Living expense', 120, '2026-08-06', { account_id: 'card', custom_category_id: 'groceries' }), closed = 0;
- const workspace = () => ({ drilling, setDrilling: value => { closed += value === null ? 1 : 0; drilling = value; }, setViewing: item => opened.push(item.id), storedRecord: item => item, user: null, demo: true, reload: 0,
-  planning: { data: { records: [...accounts, drilling ?? record('x', 'x', 'Cash', 0, '2026-01-01')], activity: [], investmentLinks: [], categories: [{ id: 'groceries', name: 'Groceries' }], goals: [], occurrences: [] } },
+ let sankey = { target: { side: 'cashflow' }, title: 'Money flow', month: '2026-08' }, closed = 0;
+ const workspace = () => ({ sankey, setSankey: value => { closed += value === null ? 1 : 0; sankey = value; }, setViewing: item => opened.push(item.id), storedRecord: item => item, user: null, demo: true, reload: 0,
+  planning: { data: { records: accounts, activity: [], investmentLinks: [], categories: [{ id: 'groceries', name: 'Groceries' }], goals: [], occurrences: [] } },
   transactionTools: { data: { splits: [] } }, currency: 'USD', market: { rates: { USD: 1 }, quotes: {} } });
  const modules = { '@/components/language-provider': language('en-US'), '@/components/workspace/workspace-provider': { useWorkspace: workspace }, 'next/navigation': { useRouter: () => router },
   '@/components/cash-flow-drill-lazy': hostModule(), '@/hooks/use-owner-resource': { useOwnerResource: url => { read.push(url); return { data: { records: [], events: [] } }; } } };
  const { TransactionSankey } = r.load('components/workspace/transaction-sankey.tsx', modules);
  r.mount(React.createElement(TransactionSankey));
  const dialog = r.find(node => node.type === 'CashFlowDrillDialog').props;
- assert.deepEqual([dialog.target, dialog.title, dialog.period, dialog.context.months], [{ side: 'merchant', key: 'Market', income: false }, 'Market', 'August 2026', ['2026-08']]);
+ assert.deepEqual([dialog.target, dialog.title, dialog.period, dialog.context.months], [{ side: 'cashflow' }, 'Money flow', 'August 2026', ['2026-08']]);
  assert.equal(dialog.context.label('groceries'), 'Groceries');
  dialog.onOpenRecord({ id: 'food' });
  assert.deepEqual(opened, ['food'], 'the transaction in its list opens the details');
  dialog.onClose();
  assert.equal(closed, 1);
  const lazy = fs.readFileSync('components/cash-flow-drill-lazy.tsx', 'utf8');
- assert.match(lazy, /dynamic\(\(\) => import\('@\/components\/cash-flow-sankey'\)/, 'the shell loads the charts only when a row opens one');
+ assert.match(lazy, /dynamic\(\(\) => import\('@\/components\/cash-flow-sankey'\)/, 'the shell loads the charts only when a button opens one');
  r.mount(React.createElement(TransactionSankey));
  assert.equal(r.all(node => node.type === 'CashFlowDrillDialog').length, 0, 'nothing open, nothing drawn');
  const { useCashFlowData } = loadTS('components/cash-flow-data.ts', { react: r.react, '@/hooks/use-owner-resource': { useOwnerResource: url => { read.push(url); return { data: { records: [], events: [] } }; } } });
@@ -719,7 +719,7 @@ test('a transaction’s Sankey (the dashboard’s recent transactions) opens ove
  assert.deepEqual(read, ['/api/planning?scope=budget&month=2026-10&from=2025-01', '/api/goal-tools'], 'signed in, it reads the budget read for the bars and the goals’ history');
 });
 
-test('a recent transaction on the dashboard opens its Sankey by click, Enter or Space; without a handler it stays plain', () => {
+test('a recent transaction on the dashboard opens its details by click, Enter or Space; without a handler it stays plain', () => {
  const r = createRenderer();
  const modules = { '@/components/language-provider': language('en-US'), '@/lib/deposit-interest': { ...loadTS('lib/deposit-interest.ts'), depositToday: () => '2026-08-31' },
   '@/hooks/use-owner-resource': { useOwnerResource: (url, owner, enabled, revision, empty) => ({ data: empty, loading: false }) }, 'next/link': hostModule(), 'lucide-react': hostModule(),
@@ -729,7 +729,7 @@ test('a recent transaction on the dashboard opens its Sankey by click, Enter or 
  const opened = [];
  r.mount(React.createElement(RecentTransactionsCard, { data, onOpen: item => opened.push(item.id) }));
  const rows = r.all(node => node.type === 'li' && node.props.role === 'button');
- assert.deepEqual(rows.map(row => row.props['aria-label']), ['Open Market', 'Open EPAM'], 'newest first, each a button');
+ assert.deepEqual(rows.map(row => row.props['aria-label']), ['View details for Market', 'View details for EPAM'], 'newest first, each a button');
  rows[0].props.onClick();
  rows[1].props.onKeyDown({ key: 'Enter', preventDefault() {} });
  rows[1].props.onKeyDown({ key: ' ', preventDefault() {} });
@@ -737,10 +737,10 @@ test('a recent transaction on the dashboard opens its Sankey by click, Enter or 
  assert.deepEqual(opened, ['food', 'pay', 'pay']);
  r.mount(React.createElement(RecentTransactionsCard, { data }));
  assert.equal(r.all(node => node.type === 'li' && node.props.role === 'button').length, 0);
- assert.match(fs.readFileSync('components/workspace/screens/overview-screen.tsx', 'utf8'), /<RecentTransactionsCard [^\n]*onOpen=\{record => setDrilling\(storedRecord\(record\)\)\}\/>/, 'the dashboard opens the shared transaction Sankey');
+ assert.match(fs.readFileSync('components/workspace/screens/overview-screen.tsx', 'utf8'), /<RecentTransactionsCard [^\n]*onOpen=\{record => setViewing\(storedRecord\(record\)\)\}\/>/, 'the dashboard opens the transaction’s details');
 });
 
-test('an upcoming or recurring payment opens its schedule’s Sankey: what paid it and what is still due, its details from there', () => {
+test('a schedule’s Sankey shows what paid it and what is still due; a Recurring row opens its history instead', () => {
  const rent = record('rent', 'Rent', 'Rent expense', 1000, '2026-01-05', { frequency: 'Monthly' });
  const salary = record('sal', 'EPAM', 'Salary', 3000, '2026-01-01', { frequency: 'Monthly' });
  const records = [...accounts, rent, salary,
@@ -749,20 +749,16 @@ test('an upcoming or recurring payment opens its schedule’s Sankey: what paid 
   record('p3', 'Rent', 'Rent expense', 999, '2026-07-05', { account_id: 'card', occurrence_record_id: 'rent', occurrence_due_on: '2026-07-05' }),
   record('s1', 'EPAM', 'Salary', 3000, '2026-08-01', { account_id: 'save', occurrence_record_id: 'sal', occurrence_due_on: '2026-08-01' })];
  const ctx = { ...context([]), data: { records, activity: [], investmentLinks: [] } };
- const { scheduleFlows, schedulePayments, recurringTarget, dueTarget } = loadTS('lib/cash-flow-schedule.ts');
- const due = recurringTarget({ record: rent, date: '2026-08-05', amount: 1000, direction: 'expense', status: 'due' });
- assert.deepEqual(due, { side: 'schedule', key: 'rent', date: '2026-08-05', due: { amount: 1000, currency: 'USD' }, direction: 'expense', open: true });
+ const { scheduleFlows, schedulePayments } = loadTS('lib/cash-flow-schedule.ts');
+ const due = { side: 'schedule', key: 'rent', date: '2026-08-05', due: { amount: 1000, currency: 'USD' }, direction: 'expense', open: true };
  const bill = scheduleFlows(due, ctx);
  assert.deepEqual(shape(bill), [['Card', 'Rent', 600], ['No account', 'Rent', 100], ['Remaining', 'Rent', 300], ['Rent', 'Rent expense', 1000]], 'its own due date only, by account, with what is still due');
  assert.deepEqual(bill.nodes.map(node => node.open?.side ?? null), ['account', 'account', 'details', 'details', 'expense'], 'the schedule and what is still due open its details');
  assert.deepEqual(schedulePayments(due, ctx).map(item => item.id), ['p2', 'p1']);
  const paid = scheduleFlows({ ...due, open: false }, ctx);
  assert.ok(!paid.nodes.some(node => node.name === 'Remaining'), 'paid or skipped: nothing remains');
- const pay = scheduleFlows(recurringTarget({ record: salary, date: '2026-08-01', amount: 3000, direction: 'income', status: 'paid' }), ctx);
+ const pay = scheduleFlows({ side: 'schedule', key: 'sal', date: '2026-08-01', due: { amount: 3000, currency: 'USD' }, direction: 'income', open: false }, ctx);
  assert.deepEqual(shape(pay), [['Salary', 'EPAM', 3000], ['EPAM', 'Savings account', 3000]], 'income: its category in, the account it reached out');
- assert.deepEqual(recurringTarget({ record: accounts[2], date: '2026-08-10', amount: 300, direction: 'expense', status: 'due', installment: true }), { side: 'account', key: 'loan' }, 'a loan’s payment opens the loan');
- assert.deepEqual(dueTarget({ record: rent, date: '2026-08-05', amount: 1000, type: 'scheduled' }).side, 'schedule');
- assert.deepEqual(dueTarget({ record: accounts[2], date: '2026-08-10', amount: 300, type: 'repayment' }), { side: 'account', key: 'loan' });
  const noRate = scheduleFlows(due, { ...ctx, currency: 'GBP' });
  assert.deepEqual([noRate.links.length, noRate.missing], [0, 1], 'without a rate for the due amount nothing is drawn, and it is counted as missing');
 
@@ -781,9 +777,12 @@ test('an upcoming or recurring payment opens its schedule’s Sankey: what paid 
  const plain = r.find(node => node.type === 'Sankey').props;
  assert.equal(plain.node({ x: 0, y: 0, width: 10, height: 20, index: hub, payload: { name: 'Rent', value: 1 } }).props.role, undefined, 'without details to open, the schedule is plain');
  const page = fs.readFileSync('components/planning/upcoming-page.tsx', 'utf8');
- assert.match(page, /const open = \(item: RecurringItem\) => onSankey \? onSankey\(\{ target: recurringTarget\(item\), title: item\.record\.name, month: item\.date\.slice\(0, 7\), onDetails: \(\) => details\.open\(item\) \}\) : details\.open\(item\);/);
- assert.match(page, /<tr key=\{item\.key\} \{\.\.\.reminderRow\(onSankey, item\)\}>/, 'debt repayments and deposit maturities open their account');
- assert.match(fs.readFileSync('components/overview-page.tsx', 'utf8'), /<li key=\{item\.key\} \{\.\.\.dueRow\(onSankey, item, /, 'the dashboard’s upcoming payments too');
+ assert.match(page, /onEdit=\{onEdit\} onOpen=\{details\.open\} onPay/, 'a Recurring row opens its history');
+ assert.match(page, /<tr key=\{item\.key\} \{\.\.\.reminderRow\(onEdit, item, /, 'debt repayments and deposit maturities open their loan or deposit');
+ assert.doesNotMatch(page, /onSankey/);
+ const overview = fs.readFileSync('components/overview-page.tsx', 'utf8');
+ assert.match(overview, /openRecurring = \(\) => router\.push\('\/upcoming'\)/);
+ assert.match(overview, /<li key=\{item\.key\} \{\.\.\.openProps\(openRecurring, /, 'the dashboard’s upcoming payments open Recurring');
 });
 
 test('a schedule opened from the dashboard, where its history is not at hand, opens Recurring from its own node', () => {
@@ -805,7 +804,7 @@ test('a schedule opened from the dashboard, where its history is not at hand, op
  assert.equal(r.find(node => node.type === 'CashFlowDrillDialog').props.onDetails, sankey.onDetails, 'a page that has the details opens them itself');
 });
 
-test('a subscription row opens its merchant’s Sankey; its menu and Restore button do only their own thing', () => {
+test('a subscription row opens its last charge’s details; its menu and Restore button do only their own thing', () => {
  const r = createRenderer();
  const charge = record('n3', 'Netflix', 'Living expense', 18, '2026-10-11', { account_id: 'card' });
  const item = { id: 'netflix', merchant: 'netflix', currency: 'USD', record: charge, cadence: 'monthly', amount: 18, yearly: 216, next: '2026-11-11', missed: false, priceIncrease: null };
@@ -817,23 +816,23 @@ test('a subscription row opens its merchant’s Sankey; its menu and Restore but
  const opened = [];
  r.mount(React.createElement(SubscriptionsPanel, { records: [], decisions: [], loading: false, onRetry() {}, decide: async () => {}, restore: async () => {}, onTrack() {}, onOpen: found => opened.push(found.id) }));
  const rows = r.all(node => node.type === 'li' && node.props['data-clickable']);
- assert.deepEqual(rows.map(row => row.props['aria-label']), ['Open Netflix', 'Open Gym'], 'active and hidden subscriptions');
+ assert.deepEqual(rows.map(row => row.props['aria-label']), ['View details for Netflix', 'View details for Gym'], 'active and hidden subscriptions');
  const inside = { closest: () => null }, onButton = { closest: () => ({}) };
  const event = target => ({ target, currentTarget: { contains: () => true } });
  rows[0].props.onClick(event(inside));
  rows[0].props.onClick(event(onButton));
  rows[1].props.onKeyDown({ key: 'Enter', target: 1, currentTarget: 1, preventDefault() {} });
- assert.deepEqual(opened, ['n3', 'g1'], 'its last charge, which the transaction Sankey opens for its merchant and month');
+ assert.deepEqual(opened, ['n3', 'g1'], 'its last charge');
  r.mount(React.createElement(SubscriptionsPanel, { records: [], decisions: [], loading: false, onRetry() {}, decide: async () => {}, restore: async () => {}, onTrack() {} }));
  assert.equal(r.all(node => node.type === 'li' && node.props['data-clickable']).length, 0, 'without a handler the rows stay plain');
- assert.match(fs.readFileSync('components/workspace/screens/upcoming-screen.tsx', 'utf8'), /<SubscriptionsPanel [^\n]*onOpen=\{record => setDrilling\(record\)\}\/>/);
+ assert.match(fs.readFileSync('components/workspace/screens/upcoming-screen.tsx', 'utf8'), /<SubscriptionsPanel [^\n]*onOpen=\{record => setViewing\(storedRecord\(record\)\)\}\/>/);
 });
 
-test('a Budget row opens its category’s Sankey for the month or the year to date, its details from the category', () => {
+test('a Budget row opens its category’s details; Money flow covers the month or the year to date', () => {
  const screen = fs.readFileSync('components/workspace/screens/budget-screen.tsx', 'utf8');
- assert.match(screen, /onOpen=\{openSankey\}/);
- assert.match(screen, /target: row\.key === flexBucketKey \? \{ side: 'group', income: false, keys: categories\.filter\(item => item\.direction === 'expense' && item\.type === 'flexible' && !item\.excluded\)\.map\(item => item\.key\), by: 'category' \} : \{ side: row\.direction === 'income' \? 'income' : 'expense', key: row\.key \}/, 'the flexible bucket opens its categories together');
- assert.match(screen, /months: view === 'year' \? periodMonths\(month, 'year'\) : undefined/);
+ assert.match(screen, /rowMenu=\{rowMenu\} onOpen=\{setViewing\}/, 'a row opens its category’s details');
+ assert.doesNotMatch(screen, /openSankey/);
+ assert.match(screen, /title: t\('Money flow'\), month, months: view === 'year' \? periodMonths\(month, 'year'\) : undefined/);
  const r = createRenderer();
  let sankey = { target: { side: 'expense', key: 'Living expense' }, title: 'Living expense', month: '2026-08', months: ['2026-01', '2026-02', '2026-08'], period: '2026', onDetails() {} };
  const workspace = () => ({ drilling: null, sankey, setSankey: value => { sankey = value; }, setViewing() {}, storedRecord: item => item, user: null, demo: true, reload: 0,
@@ -844,30 +843,24 @@ test('a Budget row opens its category’s Sankey for the month or the year to da
  const { TransactionSankey } = r.load('components/workspace/transaction-sankey.tsx', modules);
  r.mount(React.createElement(TransactionSankey));
  const dialog = r.find(node => node.type === 'CashFlowDrillDialog').props;
- assert.deepEqual([dialog.period, dialog.context.months, dialog.onDetails], ['2026', ['2026-01', '2026-02', '2026-08'], sankey.onDetails], 'the year to date, labelled by its year, with the category’s details');
+ assert.deepEqual([dialog.period, dialog.context.months, dialog.onDetails], ['2026', ['2026-01', '2026-02', '2026-08'], sankey.onDetails], 'the year to date, labelled by its year');
 });
 
-test('a Reports row narrows the transactions and opens its Sankey for the report’s period', () => {
- const { reportDrillTarget } = loadTS('lib/cash-flow-link.ts');
- assert.deepEqual(reportDrillTarget({ direction: 'expense', category: 'groceries', business: 'shop' }), { side: 'expense', key: 'groceries' }, 'a category, from any tab');
- assert.deepEqual(reportDrillTarget({ direction: 'income', merchant: 'EPAM' }), { side: 'merchant', key: 'EPAM', income: true });
- assert.deepEqual(reportDrillTarget({ direction: 'expense', categories: ['a', 'b'] }), { side: 'group', income: false, keys: ['a', 'b'], by: 'category' }, 'a merged Other');
- assert.equal(reportDrillTarget({ business: 'shop' }), null, 'a business alone only narrows');
- // 21 October 2026: Net income narrowed to Household instead of showing where the money went.
- assert.deepEqual(reportDrillTarget({ savings: 7535 }), { side: 'savings' }, 'Net income opens where the savings went');
- assert.equal(reportDrillTarget({ direction: 'expense', categories: [] }), null);
+test('a Reports row narrows the transactions below and opens no Sankey', () => {
  const screen = fs.readFileSync('components/workspace/screens/reports-screen.tsx', 'utf8');
- assert.match(screen, /if \(target\) setSankey\(\{ target, title: label, month: period\.to\.slice\(0, 7\), months: monthsBetween\(period\.from\.slice\(0, 7\), period\.to\.slice\(0, 7\)\), period: rangeLabel, savings: next\.savings \}\);/);
+ assert.match(screen, /const narrow = \(next: Drill\) => setDrill\(\{ drill: next, label: describeDrill\(next, names, t\) \}\);/);
+ assert.doesNotMatch(screen, /setSankey/);
+ assert.match(screen, /const open = \(line: LedgerLine\) => line\.record && setViewing\(storedRecord\(line\.record\)\);/, 'a transaction in the list opens its details');
 });
 
-test('a Loans & debts row opens its Sankey for this month, its Details editing it', () => {
+test('a Loans & debts row opens its details, ready to edit, never a Sankey', () => {
  const table = fs.readFileSync('components/workspace/records-table.tsx', 'utf8');
- assert.match(table, /const openRecord = \(r: Entry\) => setSankey\(\{ target: \{ side: 'account', key: r\.id \}, title: shownName\(r, t, categoryOf\(r\)\), month: depositToday\(\)\.slice\(0, 7\), onDetails: \(\) => editRecord\(r\) \}\);/);
- assert.match(table, /:\{className:'clickable-row',tabIndex:0,'aria-label':t\('Open \{name\}'[^}]*\}\),onClick:\(event:ReactMouseEvent\)=>\{const target=event\.target as HTMLElement;if\(event\.currentTarget\.contains\(target\)&&!target\.closest\('button,a,input'\)\)openRecord\(r\);\}/, 'by click, never from its menu or buttons');
- assert.match(table, /openRecord\(r\);\}\}\}\)\}>/, 'and by Enter or Space');
+ assert.doesNotMatch(table, /setSankey|openRecord/);
+ assert.match(table, /:\{className:'clickable-row',tabIndex:0,'aria-label':t\('Open \{name\}'[^}]*\}\),onClick:\(event:ReactMouseEvent\)=>\{const target=event\.target as HTMLElement;if\(event\.currentTarget\.contains\(target\)&&!target\.closest\('button,a,input'\)\)editRecord\(r\);\}/, 'by click, never from its controls');
+ assert.match(table, /editRecord\(r\);\}\}\}\)\}>/, 'and by Enter or Space');
 });
 
-test('an Investments card opens its holding’s Sankey, a holding account its holdings together', () => {
+test('a holdings Sankey shows what bought them; an Investments card tap opens its own details', () => {
  const vt = record('vt', 'VT', 'Stock', 120, '2026-01-01', { frequency: 'Monthly', quantity: 5, cost: 100, holding_account_id: 'broker' });
  const btc = record('btc', 'Bitcoin', 'Crypto', 60000, '2026-01-01', { frequency: 'Monthly', quantity: 0.01, holding_account_id: 'broker' });
  const movement = (id, kind, source_id, target_id, value, occurred_on) => ({ id, kind, source_id, target_id, sent: value, received: value, source_value: value, target_value: value, fee: 0, occurred_on, notes: '', realized_gain: null });
@@ -880,24 +873,22 @@ test('an Investments card opens its holding’s Sankey, a holding account its ho
 
  const r = createRenderer();
  const { AssetCard } = r.load('components/presentation-foundation/asset-card.tsx', { '@/components/language-provider': language('en-US'), 'lucide-react': hostModule(), '@/components/presentation-foundation/asset-icon': hostModule(), '@/components/presentation-foundation/category-badge': hostModule() });
- let opened = 0;
- r.mount(React.createElement(AssetCard, { record: vt, label: 'Stock', worth: '$600', share: 50, detailsLabel: 'Details', details: null, onOpen: () => { opened += 1; } }));
- const card = r.find(node => node.type === 'article').props;
- assert.equal(card['aria-label'], 'Open VT');
- const inCard = { contains: () => true };
- card.onClick({ target: { closest: () => null }, currentTarget: inCard });
- card.onClick({ target: { closest: () => ({}) }, currentTarget: inCard });
- card.onKeyDown({ key: ' ', target: 1, currentTarget: 1, preventDefault() {} });
- assert.equal(opened, 2, 'a tap on the card and Space open it; one on its menu, details or buttons does not');
  r.mount(React.createElement(AssetCard, { record: vt, label: 'Stock', worth: '$600', share: 50, detailsLabel: 'Details', details: null }));
- assert.equal(r.find(node => node.type === 'article').props['data-clickable'], undefined, 'without onOpen it only shows');
+ const card = r.find(node => node.type === 'article').props;
+ assert.equal(card['aria-label'], 'View details for VT');
+ const details = { open: false }, summary = { parentElement: details, closest: () => null };
+ const inCard = { contains: () => true, querySelector: () => summary };
+ card.onClick({ target: { closest: () => null }, currentTarget: inCard });
+ assert.equal(details.open, true, 'a tap on the card opens its details');
+ card.onClick({ target: { closest: () => ({}) }, currentTarget: inCard });
+ assert.equal(details.open, true, 'one on its menu, details or buttons does only that');
+ card.onKeyDown({ key: ' ', target: inCard, currentTarget: inCard, preventDefault() {} });
+ assert.equal(details.open, false, 'Space closes them again');
  const screen = fs.readFileSync('components/workspace/screens/assets-screen.tsx', 'utf8');
- assert.match(screen, /const openHolding = \(record: Entry\) => setSankey\(\{ target: \{ side: 'account', key: record\.id \}, title: record\.name, month, onDetails: \(\) => editRecord\(record\) \}\);/);
- assert.match(screen, /const openAccount = \(account: HoldingAccount, holdings: string\[\]\) => setSankey\(\{ target: \{ side: 'holdings', keys: holdings \}, title: account\.name, month \}\);/);
- assert.match(screen, /onOpen=\{openHolding\} onOpenAccount=\{openAccount\}/);
+ assert.doesNotMatch(screen, /setSankey|onOpen=\{|onOpenAccount/);
 });
 
-test('an Accounts row, holding or other asset opens its Sankey; picking an account in the directory keeps it selected', () => {
+test('picking an account shows its card; a holding or other asset opens its details, never a Sankey', () => {
  const { openProps } = loadTS('lib/row-open.ts');
  let opened = 0;
  const props = openProps(() => { opened += 1; }, 'Open Card');
@@ -910,22 +901,21 @@ test('an Accounts row, holding or other asset opens its Sankey; picking an accou
  assert.equal(opened, 2, 'a tap on the row and Enter on it; never from its own controls, a portaled menu, or a key meant for a control inside');
  assert.deepEqual(openProps(undefined, 'x'), {});
  const page = fs.readFileSync('components/planning/accounts-page.tsx', 'utf8');
- assert.match(page, /const select=\(key:string\)=>\{\n  setSelected\(key\);/, 'the directory still selects the account');
- assert.match(page, /if\(key\.startsWith\('investment:'\)\)onSankey\(\{target:\{side:'holdings',keys:data\.records\.filter\(record=>record\.holding_account_id===item\.id\)\.map\(record=>record\.id\)\}/, 'an investment account opens its holdings together');
- assert.match(page, /onAccountOwner, onSankey \}: Props\)/);
+ assert.match(page, /selected=\{selected\} onSelect=\{setSelected\}/, 'the directory selects the account, whose card shows beside it');
+ assert.match(page, /onCorporate:setCorporate,onOpen:onEdit\};/, 'a holding opens its details');
+ assert.doesNotMatch(page, /onSankey/);
  assert.match(fs.readFileSync('components/planning/accounts/holding-rows.tsx', 'utf8'), /<li className="account-holding-row" \{\.\.\.openProps\(onOpen && \(\(\) => onOpen\(record\)\)/);
  assert.match(fs.readFileSync('components/planning/accounts/accounts-overview.tsx', 'utf8'), /<BusinessHoldings records=\{businessHoldings\} market=\{market\} onOpen=\{holdingActions\.onOpen\}\/>/);
- assert.match(fs.readFileSync('components/workspace/screens/accounts-screen.tsx', 'utf8'), /<AccountsPage onSankey=\{setSankey\}/);
 });
 
-test('a goal row on Goals still selects it, and opens its Sankey for this month with Details editing it', () => {
+test('a goal row on Goals shows the goal: its progress and history, or an investment goal’s plan', () => {
  const page = fs.readFileSync('components/planning/goals-page.tsx', 'utf8');
- assert.match(page, /const pick=\(goal:Goal\)=>\{setSelected\(goal\.id\);onSankey\?\.\(\{target:\{side:'goal',key:goal\.id\},title:goal\.name,month:today\.slice\(0,7\),onDetails:\(\)=>open\(goal\)\}\);\};/);
+ assert.match(page, /const pick=\(goal:Goal\)=>\{if\(goal\.kind==='investment'\)\{plannerFor\(goal\.id\);return;\}setSelected\(goal\.id\);/);
  assert.match(page, /className="goal-row-main" aria-current=\{active\?\.id===goal\.id\|\|undefined\} onClick=\{\(\)=>pick\(goal\)\}/);
- assert.match(fs.readFileSync('components/workspace/screens/goals-screen.tsx', 'utf8'), /<GoalsPage onSankey=\{setSankey\}/);
+ assert.doesNotMatch(page + fs.readFileSync('components/workspace/screens/goals-screen.tsx', 'utf8'), /onSankey|setSankey/);
 });
 
-test('a Settings category, business or tag opens its Sankey for the last twelve months', () => {
+test('a business or tag Sankey counts only what it labels; in Settings a category opens its editor, a business its P&L, a tag its transactions', () => {
  const records = [...accounts,
   record('sale', 'Etsy payout', 'Business income', 900, '2026-08-03', { business_id: 'shop', account_id: 'card' }),
   record('wax', 'CandleScience', 'Other expense', 300, '2026-08-04', { business_id: 'shop', custom_category_id: 'supplies' }),
@@ -941,10 +931,11 @@ test('a Settings category, business or tag opens its Sankey for the last twelve 
  assert.equal(trip.nodes[1].open.href, '/transactions?tag=trip');
  assert.deepEqual(setTransactions({ side: 'set', of: 'tag', key: 'trip', ids: ['trip1', 'trip2'] }, ctx).map(item => item.id), ['trip2', 'trip1']);
  const screen = fs.readFileSync('components/workspace/screens/settings-screen.tsx', 'utf8');
- assert.match(screen, /const now = depositToday\(\)\.slice\(0, 7\), months = monthsBetween\(shiftMonth\(now, -11\), now\)/);
- assert.match(screen, /<TransactionToolsPanel onOpen=\{\(item, edit\) => sankey\(\{ side: item\.direction, key: item\.key \}, item\.name, edit\)\}/, 'a category’s Details is its editor');
- assert.match(screen, /<BusinessSettings onOpen=\{business => sankey\(\{ side: 'set', of: 'business', key: business\.id \}, business\.name, \(\) => editRecord\(business\)\)\}/);
- assert.match(screen, /<TagSettings onOpen=\{\(tag, ids\) => sankey\(\{ side: 'set', of: 'tag', key: tag\.id, ids \}, tag\.name\)\}/);
+ assert.doesNotMatch(screen, /setSankey|sankey\(/);
+ assert.match(fs.readFileSync('components/transaction-tools-panel.tsx', 'utf8'), /aria-label=\{t\('Edit \{name\}',\{name:label\(item\)\}\)\} onClick=\{\(\)=>setEditing\(item\)\}/, 'a category opens its editor');
+ const settings = fs.readFileSync('components/business-settings.tsx', 'utf8');
+ assert.match(settings, /const pnl = `\/reports\?tab=cash_flow&business=\$\{business\.id\}&view=pnl`;\n    return <SortableItem as="li" key=\{business\.id\} id=\{business\.id\} label=\{business\.name\} onOpen=\{\(\) => router\.push\(pnl\)\}>/, 'a business opens its profit and loss');
+ assert.match(settings, /onOpen=\{\(\) => router\.push\(`\/transactions\?tag=\$\{tag\.id\}`\)\}/, 'a tag opens the transactions it labels');
  const r = createRenderer();
  const { SortableItem } = r.load('components/presentation-foundation/sortable.tsx', { '@/components/language-provider': language('en-US'), 'lucide-react': hostModule(), '@dnd-kit/sortable': { useSortable: () => ({ attributes: {}, listeners: {}, setNodeRef() {}, setActivatorNodeRef() {}, transform: null, transition: undefined, isDragging: false }) }, '@dnd-kit/utilities': { CSS: { Translate: { toString: () => undefined } } } });
  let opened = 0;

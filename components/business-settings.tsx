@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Briefcase, Plus, Tag as TagIcon } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/components/language-provider';
 import { ColorChoices } from '@/components/presentation-foundation/color-choices';
 import { BusinessMark } from '@/components/presentation-foundation/business-mark';
@@ -28,8 +29,8 @@ import { tagCounts, type Tag } from '@/lib/tags';
 
 /** Settings › Businesses: each business with its structure and how many accounts and transactions it has, in the
  * person's own order. Editing opens the business's record; setup walks through adding businesses and accounts. */
-export function BusinessSettings({ businesses, records, preferences, owner, demo, onEdit, onDelete, onSetup, onGuide, onOpen }: { /** Opens a business's Sankey. */ onOpen?: (business: Entry) => void; businesses: Entry[]; records: readonly Entry[]; preferences: PreferenceResource; owner: string | null; demo: boolean; onEdit: (business: Entry) => void; onDelete: (business: Entry) => void; onSetup: () => void; onGuide: () => void }) {
- const { t, locale } = useLanguage();
+export function BusinessSettings({ businesses, records, preferences, owner, demo, onEdit, onDelete, onSetup, onGuide }: { businesses: Entry[]; records: readonly Entry[]; preferences: PreferenceResource; owner: string | null; demo: boolean; onEdit: (business: Entry) => void; onDelete: (business: Entry) => void; onSetup: () => void; onGuide: () => void }) {
+ const { t, locale } = useLanguage(), router = useRouter();
  const order = useDisplayOrder('business_order', businesses, preferences, owner, demo);
  return <section className="panel tools-panel business-settings">
   <PanelTitle title={t('Businesses')} count={<Count value={businesses.length}/>} hint={t('Track a side business, freelance work or rentals beside your household. Each business has its own profit and loss in Reports.')}>
@@ -39,10 +40,12 @@ export function BusinessSettings({ businesses, records, preferences, owner, demo
   {order.items.length ? <SortableList id="business-order" items={order.items.map(item => item.id)} nameOf={id => businesses.find(item => item.id === id)?.name ?? ''} onMove={(moved, over) => void order.reorder(moved, over)} disabled={order.disabled}>
    <ul className="settings-list">{order.items.map(business => {
     const accounts = records.filter(record => record.business_id === business.id && isBusinessAccount(record)).length;
-    return <SortableItem as="li" key={business.id} id={business.id} label={business.name} onOpen={onOpen && (() => onOpen(business))}>
+    // A business opens its profit and loss in Reports: what it earned and spent, month by month.
+    const pnl = `/reports?tab=cash_flow&business=${business.id}&view=pnl`;
+    return <SortableItem as="li" key={business.id} id={business.id} label={business.name} onOpen={() => router.push(pnl)}>
      <BusinessMark name={business.name} color={business.business_color} logo={business.business_logo}/>
      <span className="settings-list-name">{business.name}<small>{[business.business_structure ? t(businessStructureLabels[business.business_structure as BusinessStructure]) : null, t('{count} accounts', { count: formatNumber(accounts, locale, 0) })].filter(Boolean).join(' · ')}</small></span>
-     <Link className="panel-link" href={`/reports?tab=cash_flow&business=${business.id}&view=pnl`}>{t('View P&L')}</Link>
+     <Link className="panel-link" href={pnl}>{t('View P&L')}</Link>
      <RowMenu label={t('Actions for {name}', { name: business.name })} items={[{ label: t('Edit'), onSelect: () => onEdit(business) }, { label: t('Delete'), deletes: true, onSelect: () => onDelete(business) }]}/>
     </SortableItem>;
    })}</ul>
@@ -72,8 +75,8 @@ function TagDialog({ tag, onSave, onClose }: { tag: Tag; onSave: (tag: Tag) => P
 
 /** Settings › Tags: every tag in the person's order, with how many transactions carry it; the count opens those
  * transactions, ready to select and move to a business. */
-export function TagSettings({ tags, preferences, owner, demo, onOpen }: { tags: TagsResource; preferences: PreferenceResource; owner: string | null; demo: boolean; /** Opens a tag's Sankey with the ids it labels. */ onOpen?: (tag: { id: string; name: string }, ids: string[]) => void }) {
- const { t, locale } = useLanguage();
+export function TagSettings({ tags, preferences, owner, demo }: { tags: TagsResource; preferences: PreferenceResource; owner: string | null; demo: boolean }) {
+ const { t, locale } = useLanguage(), router = useRouter();
  const order = useDisplayOrder('tag_order', tags.data.tags, preferences, owner, demo);
  const counts = tagCounts(tags.data.links);
  const [editing, setEditing] = useState<Tag | null>(null), [deleting, setDeleting] = useState<Tag | null>(null), [busy, setBusy] = useState(false), [error, setError] = useState('');
@@ -87,7 +90,7 @@ export function TagSettings({ tags, preferences, owner, demo, onOpen }: { tags: 
    <Button variant="outline" onClick={() => setEditing({ id: crypto.randomUUID(), name: '', color: nextPaletteColor(tags.data.tags.map(tag => tag.color)) })}><Plus size={16} aria-hidden="true"/>{t('Add tag')}</Button>
   </PanelTitle>
   {tags.error ? <InlineError message={t(tags.error)} onRetry={tags.retry}/> : order.items.length ? <SortableList id="tag-order" items={order.items.map(item => item.id)} nameOf={id => tags.data.tags.find(item => item.id === id)?.name ?? ''} onMove={(moved, over) => void order.reorder(moved, over)} disabled={order.disabled}>
-   <ul className="settings-list">{order.items.map(tag => <SortableItem as="li" key={tag.id} id={tag.id} label={tag.name} onOpen={onOpen && (() => onOpen(tag, tags.data.links.filter(link => link.tag_id === tag.id).map(link => link.record_id)))}>
+   <ul className="settings-list">{order.items.map(tag => <SortableItem as="li" key={tag.id} id={tag.id} label={tag.name} onOpen={() => router.push(`/transactions?tag=${tag.id}`)}>
     <TagChip name={tag.name} color={tag.color}/>
     <span className="settings-list-name"/>
     <Link className="panel-link" href={`/transactions?tag=${tag.id}`}>{t('{count} transactions', { count: formatNumber(counts.get(tag.id) ?? 0, locale, 0) })}</Link>

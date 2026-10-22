@@ -1,9 +1,4 @@
 "use client";
-import { depositToday } from '@/lib/deposit-interest';
-import { monthsBetween } from '@/lib/budget';
-import { shiftMonth } from '@/lib/calendar-days';
-import { formatMonthYear } from '@/lib/format';
-import type { DrillTarget } from '@/lib/cash-flow-drill-types';
 import { useMemo, useState } from 'react';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -32,11 +27,8 @@ import { useWorkspace } from '@/components/workspace/workspace-provider';
 
 export function SettingsScreen() {
  const { household, user, demo, logout, currency, market, reload, preferencesData, applyPreferences, settingsLoading, settingsError, retrySettings, planning, workspacePreferences, refreshRecords, clearLocalSession, restartOnboarding,
-  businessList, tags, transactionTools, categorize, assignTransactionsBusiness, editRecord, requestDelete, setSettingUpBusinesses, categoryIcons, removedCategories, setSankey } = useWorkspace();
- const { t, locale } = useLanguage();
- // A category, business or tag opens its Sankey for the last twelve months over the page.
- const now = depositToday().slice(0, 7), months = monthsBetween(shiftMonth(now, -11), now), period = `${formatMonthYear(months[0], locale)} – ${formatMonthYear(now, locale)}`;
- const sankey = (target: DrillTarget, title: string, onDetails?: () => void) => setSankey({ target, title, month: now, months, period, onDetails });
+  businessList, tags, transactionTools, categorize, assignTransactionsBusiness, editRecord, requestDelete, setSettingUpBusinesses, categoryIcons, removedCategories } = useWorkspace();
+ const { t } = useLanguage();
  const tagMap = useMemo(() => tagsByRecord(tags.data.links), [tags.data.links]);
  const tagsOf = (id: string) => tagMap.get(id) ?? [];
  const rules = useTransactionRules(user, demo, reload, planning.data.records, transactionTools.data.splits, { categorize, assignBusiness: assignTransactionsBusiness, changeTags: tags.change, tagsOf }, refreshRecords);
@@ -51,9 +43,9 @@ export function SettingsScreen() {
    household={<HouseholdPanel household={household} demo={demo}/>}
    benchmarks={<InvestmentComparisonSettings demo={demo} currencies={preferencesData.currencies}/>}
    security={<AccountAccessPanel settings onSignedOut={clearLocalSession}/>}
-   categories={<TransactionToolsPanel onOpen={(item, edit) => sankey({ side: item.direction, key: item.key }, item.name, edit)} preferences={workspacePreferences} owner={demo?null:user} demo={demo} onDeleted={refreshRecords} categories={planning.data.categories} loading={planning.loading} error={planning.error} onRetry={refreshRecords} icons={categoryIcons} removed={removedCategories} saveCategory={async (name,direction,existing)=>{const id=existing??crypto.randomUUID();await planning.save('category',{id,name,direction});return id;}}/>}
-   businesses={<BusinessSettings onOpen={business => sankey({ side: 'set', of: 'business', key: business.id }, business.name, () => editRecord(business))} businesses={businessList} records={planning.data.records} preferences={workspacePreferences} owner={demo?null:user} demo={demo} onEdit={editRecord} onDelete={requestDelete} onSetup={() => setSettingUpBusinesses(true)} onGuide={() => setSettingUpBusinesses('guide')}/>}
-   tags={<TagSettings onOpen={(tag, ids) => sankey({ side: 'set', of: 'tag', key: tag.id, ids }, tag.name)} tags={tags} preferences={workspacePreferences} owner={demo?null:user} demo={demo}/>}
+   categories={<TransactionToolsPanel preferences={workspacePreferences} owner={demo?null:user} demo={demo} onDeleted={refreshRecords} categories={planning.data.categories} loading={planning.loading} error={planning.error} onRetry={refreshRecords} icons={categoryIcons} removed={removedCategories} saveCategory={async (name,direction,existing)=>{const id=existing??crypto.randomUUID();await planning.save('category',{id,name,direction});return id;}}/>}
+   businesses={<BusinessSettings businesses={businessList} records={planning.data.records} preferences={workspacePreferences} owner={demo?null:user} demo={demo} onEdit={editRecord} onDelete={requestDelete} onSetup={() => setSettingUpBusinesses(true)} onGuide={() => setSettingUpBusinesses('guide')}/>}
+   tags={<TagSettings tags={tags} preferences={workspacePreferences} owner={demo?null:user} demo={demo}/>}
    rules={<><RulesPanel rules={rules.rules} categories={planning.data.categories} businesses={businessList} tags={tags.data.tags} onEdit={setRule} onAdd={() => setRule(newRule())} onRemove={item => rules.remove(item.id)}/>
     {rule && <RuleDialog key={rule.id} rule={rule} records={demo ? planning.data.records : undefined} categories={planning.data.categories} businesses={businessList} accounts={planning.data.records.filter(record => record.kind === 'Cash').map(record => ({ id: record.id, name: record.name }))} tags={tags.data.tags} tagsOf={tagsOf} onCreateTag={createTag} splits={transactionTools.data.splits} onSave={async (next, apply) => { const changed = await rules.save(next, apply); if (apply) showNotice(t('{changed} updated', { changed })); return changed; }} onClose={() => setRule(null)}/>}</>}
    data-tools={<><DataTools owner={user} currency={currency} market={market} preferences={workspacePreferences} records={planning.data.records} onSaved={refreshRecords} demo={demo} sample={demo?()=>sampleBackup(planning.data,transactionTools.data.splits,categoryIcons):undefined}/><ImportHistory owner={user} demo={demo} revision={reload} onSaved={refreshRecords}/><DatabaseHealth demo={demo}/></>}

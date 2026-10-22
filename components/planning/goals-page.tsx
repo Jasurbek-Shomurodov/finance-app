@@ -1,5 +1,4 @@
 "use client";
-import type { DrillTarget } from '@/lib/cash-flow-drill-types';
 import { useLocationSearch } from '@/hooks/use-location-search';
 import { InfoHint } from '@/components/presentation-foundation/info-hint';
 import { DeleteButton } from '@/components/presentation-foundation/delete-button';
@@ -52,8 +51,8 @@ import type {PreferenceResource} from '@/hooks/use-workspace-preferences';
 import { GoalForecast } from './goal-forecast';
 import type { EarningSource } from '@/lib/earning-sources';
 
-type Props={/** Opens a goal's Sankey over the page (the workspace's), its Details editing the goal. */onSankey?:(request:{target:DrillTarget;title:string;month:string;onDetails?:()=>void})=>void;preferences:PreferenceResource;owner:string|null;demo:boolean;revision:number;onSaved:()=>void;data:PlanningData;save:(action:string,data:unknown)=>Promise<void>;currencies:string[];currency:string;market:MarketData|null;snapshots:PortfolioSnapshot[];historyError:string;/** Budget, which the monthly surplus counts. */budget?:ForecastBudget;/** Income sources, whose variable estimates the surplus counts. */sources?:readonly EarningSource[]};
-export function GoalsPage({onSankey,preferences,owner,demo,revision,onSaved,data,save,currencies,currency,market,snapshots,historyError,budget,sources=[]}:Props){
+type Props={preferences:PreferenceResource;owner:string|null;demo:boolean;revision:number;onSaved:()=>void;data:PlanningData;save:(action:string,data:unknown)=>Promise<void>;currencies:string[];currency:string;market:MarketData|null;snapshots:PortfolioSnapshot[];historyError:string;/** Budget, which the monthly surplus counts. */budget?:ForecastBudget;/** Income sources, whose variable estimates the surplus counts. */sources?:readonly EarningSource[]};
+export function GoalsPage({preferences,owner,demo,revision,onSaved,data,save,currencies,currency,market,snapshots,historyError,budget,sources=[]}:Props){
  const {t,locale}=useLanguage();
  const {show}=useDisplayMoney();
  // The page's three views, switched from the top bar: the goals, the chosen goal's planner, and cash goal history.
@@ -81,8 +80,8 @@ export function GoalsPage({onSankey,preferences,owner,demo,revision,onSaved,data
  // Goals page: one list in the person's own order (drag the six dots) with the chosen goal and what is free for goals;
  // the planner and the cash moved in and out of goals are their own views.
  const plannerFor=(id:string)=>{setSelected(id);setView('planner');};
- // Picking a goal still selects it, and opens its Sankey for this month over the page; its Details edit it.
- const pick=(goal:Goal)=>{setSelected(goal.id);onSankey?.({target:{side:'goal',key:goal.id},title:goal.name,month:today.slice(0,7),onDetails:()=>open(goal)});};
+ // Picking a goal shows what it is: its progress and history below the list, or an investment goal's plan.
+ const pick=(goal:Goal)=>{if(goal.kind==='investment'){plannerFor(goal.id);return;}setSelected(goal.id);globalThis.requestAnimationFrame?.(()=>document.querySelector('.goal-detail')?.scrollIntoView({block:'nearest',behavior:'smooth'}));};
  return <>
   <PageHeader title={t('Goals')} tabs={<Segmented className="page-tabs" as="nav" label={t('Goals')} options={[{value:'overview',label:t('Overview')},{value:'planner',label:t('Goal planner')},{value:'history',label:t('History')}]} value={view} onChange={setView}/>}><Button onClick={()=>setSetup(true)}><Plus size={17} aria-hidden="true"/>{t('Add goal')}</Button></PageHeader>
   <ErrorPopup message={order.error}/>

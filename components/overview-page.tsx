@@ -1,9 +1,7 @@
 "use client";
 import { SurplusButton } from '@/components/surplus-button';
-import type { KeyboardEvent, MouseEvent } from 'react';
-import { dueTarget } from '@/lib/cash-flow-schedule';
-import type { DrillTarget } from '@/lib/cash-flow-drill-types';
 import type { ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 import { LoadingPlaceholder } from '@/components/presentation-foundation/loading-placeholder';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
 import { PanelTitle } from '@/components/presentation-foundation/panel-title';
@@ -20,8 +18,9 @@ import { estimatedCashFlow, financialTotals, income, type Entry } from '@/lib/fi
 import { formatDate, formatMoney, formatNumber, formatPercent } from '@/lib/format';
 import { allocationRows, assetAllocation, nextPayments } from '@/lib/overview';
 import { otherShareKey } from '@/lib/cash-flow-report';
-import { upcomingPayments, type DueItem, type PlanningData } from '@/lib/planning';
+import { upcomingPayments, type PlanningData } from '@/lib/planning';
 import { payLink } from '@/lib/recurring';
+import { openProps } from '@/lib/row-open';
 
 /** `firstVisit` greets a brand-new account with "Welcome" instead of "Welcome back". */
 export function OverviewHeading({ name, firstVisit = false, children }: { name?: string; firstVisit?: boolean; children?: ReactNode }) {
@@ -30,18 +29,14 @@ export function OverviewHeading({ name, firstVisit = false, children }: { name?:
  return <PageHeader title={title}>{children}</PageHeader>;
 }
 
-type Props = { entries: Entry[]; currency: string; excludedCurrencies: string[]; forecast: ReturnType<typeof estimatedCashFlow>; forecastReady: boolean; planning: PlanningData | null;
- /** Opens an upcoming payment's Sankey over the dashboard (the workspace's). */ onSankey?: (request: { target: DrillTarget; title: string; month: string }) => void };
+type Props = { entries: Entry[]; currency: string; excludedCurrencies: string[]; forecast: ReturnType<typeof estimatedCashFlow>; forecastReady: boolean; planning: PlanningData | null };
 /** An upcoming payment opens its Sankey for its month, by click, Enter or Space, unless the tap was on its link. */
-const dueRow = (onSankey: Props['onSankey'], item: DueItem, label: string) => {
- if (!onSankey) return {};
- const open = () => onSankey({ target: dueTarget(item), title: item.record.name, month: item.date.slice(0, 7) });
- return { role: 'button', tabIndex: 0, 'aria-label': label, onClick: (event: MouseEvent) => { if (!(event.target as HTMLElement).closest('a,button')) open(); }, onKeyDown: (event: KeyboardEvent) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); open(); } } };
-};
-/** Dashboard cards: each card carries its headline figure in its title, so it reads at a glance. */
-export function useOverviewCards({ entries, currency, excludedCurrencies, forecast, forecastReady, planning, onSankey }: Props) {
+
+export function useOverviewCards({ entries, currency, excludedCurrencies, forecast, forecastReady, planning }: Props) {
  const { t, locale } = useLanguage();
  const { entered } = useDisplayMoney();
+ // An upcoming payment opens Recurring, where its payments are listed, unless the tap was on its link.
+ const router = useRouter(), openRecurring = () => router.push('/upcoming');
  const money = (amount: number) => formatMoney(amount, currency, locale);
  const percent = (value: number | null) => formatPercent(value ?? NaN, locale, 1, 1);
  const { totalAssets, totalDebt } = financialTotals(entries);
@@ -77,7 +72,7 @@ export function useOverviewCards({ entries, currency, excludedCurrencies, foreca
   <PanelTitle title={<>{t('Upcoming payments')} {overdueCount > 0 ? <span className="panel-figure negative">{t('{count} overdue', { count: formatNumber(overdueCount, locale, 0) })}</span> : upcomingItems.length > 0 && figure(t('{count} due soon', { count: formatNumber(upcomingItems.length, locale, 0) }))}</>}><DrawerLink href="/upcoming">{t('View all')}</DrawerLink></PanelTitle>
   {due.length ? <ul className="overview-list overview-due">{due.map(item => {
    const incoming = income.includes(item.record.kind);
-   return <li key={item.key} {...dueRow(onSankey, item, t('Open {name}', { name: item.record.name }))}><CategoryIcon kind={item.record.kind}/><span>{item.record.name}<small className={item.overdue ? 'negative' : undefined}>{item.overdue ? t('Overdue') + ' · ' : ''}{formatDate(item.date, locale)}</small><DrawerLink href={payLink(item.record.id, item.date)} className="overview-due-pay" aria-label={`${t('Record payment')}: ${item.record.name}`}>{t('Record payment')}</DrawerLink></span><strong className={incoming ? 'positive' : undefined}>{incoming ? '+' : ''}{entered(item.amount, item.record.currency)}</strong></li>;
+   return <li key={item.key} {...openProps(openRecurring, t('Open {name}', { name: item.record.name }))}><CategoryIcon kind={item.record.kind}/><span>{item.record.name}<small className={item.overdue ? 'negative' : undefined}>{item.overdue ? t('Overdue') + ' · ' : ''}{formatDate(item.date, locale)}</small><DrawerLink href={payLink(item.record.id, item.date)} className="overview-due-pay" aria-label={`${t('Record payment')}: ${item.record.name}`}>{t('Record payment')}</DrawerLink></span><strong className={incoming ? 'positive' : undefined}>{incoming ? '+' : ''}{entered(item.amount, item.record.currency)}</strong></li>;
   })}</ul> : planning ? <EmptyState icon={<CalendarClock/>} description={t('Nothing is due in the next 31 days.')}/> : <LoadingPlaceholder label={t('Loading records…')} rows={3}/>}
  </section>;
  return { commitments, allocation: allocationCard, upcoming };

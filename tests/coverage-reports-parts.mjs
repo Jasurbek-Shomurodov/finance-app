@@ -102,9 +102,8 @@ test('a chart click narrows the transactions, and changing a filter shows them a
  r.fire(r.find(byType('BusinessSankeyChart')), 'onDrill', { direction: 'expense', category: 'Living expense' });
  let list = r.find(byType('ReportTransactions')).props;
  assert.equal(list.label, 'Living expense');assert.deepEqual(list.lines.map(line => line.id), ['f']);
- assert.deepEqual(sankeys, ['Living expense'], 'the row also opens its Sankey over the page');
  r.fire(r.find(byType('BusinessSankeyChart')), 'onDrill', { business: 'b1' });
- assert.deepEqual(sankeys, ['Living expense'], 'a business alone only narrows');
+ assert.deepEqual(sankeys, [], 'a chart click only narrows: the list below is its history, no Sankey opens');
  r.fire(r.find(byType('ReportTransactions')), 'onOpen', list.lines[0]);
  assert.deepEqual(viewed, ['f']);
  r.fire(r.find(byType('BusinessFilter')), 'onChange', ['b1']);

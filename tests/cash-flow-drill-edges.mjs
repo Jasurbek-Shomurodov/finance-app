@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { loadTS } from './helpers/load-ts.mjs';
 const { mainTarget, mainFlows } = loadTS('lib/cash-flow-main.ts');
 const { goalFlows, goalEventsIn } = loadTS('lib/cash-flow-goal.ts');
-const { scheduleFlows, schedulePayments, dueTarget } = loadTS('lib/cash-flow-schedule.ts');
+const { scheduleFlows, schedulePayments } = loadTS('lib/cash-flow-schedule.ts');
 
 const record = (id, name, kind, amount, date, extra = {}) => ({ id, name, kind, currency: 'USD', amount, quantity: 1, cost: 0, rate: 0, date, frequency: 'Once', notes: '', ...extra });
 const card = record('card', 'Card', 'Cash', 0, '2026-01-01', { frequency: 'Monthly' });
@@ -72,6 +72,4 @@ test('a schedule’s Sankey counts a payment it cannot convert as missing, names
  assert.deepEqual(shape(flows), [['Card', 'Living expense', 15], ['Remaining', 'Living expense', 25], ['Living expense', 'Living expense', 40]]);
  assert.equal(flows.missing, 1, 'the GBP payment has no rate');
  assert.deepEqual(scheduleFlows({ ...target, key: 'none' }, ctx), { nodes: [], links: [], missing: 0 });
- const salary = record('sal', 'EPAM', 'Salary', 3000, '2026-01-01', { frequency: 'Monthly' });
- assert.equal(dueTarget({ record: salary, date: '2026-08-01', amount: 3000, type: 'scheduled' }).direction, 'income');
 });

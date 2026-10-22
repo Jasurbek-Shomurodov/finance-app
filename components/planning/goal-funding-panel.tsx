@@ -6,9 +6,7 @@ import { useId, useState } from 'react';
 import { ErrorPopup } from '@/components/presentation-foundation/error-popup';
 import { ResourceState } from '@/components/presentation-foundation/resource-state';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
-import Link from 'next/link';
 import { ChevronDown, History, Plus, SlidersHorizontal, X } from 'lucide-react';
-import { goalSankeyHref } from '@/lib/cash-flow-link';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
 import { PanelTitle } from '@/components/presentation-foundation/panel-title';
@@ -63,8 +61,7 @@ export function GoalFundingPanel({ data, currency, surplus, surplusParts, today,
  // One activity row; the panel and the full history share it.
  const activityRow = (event: (typeof events)[number]) => {
   const goal = savingsGoals.find(item => item.id === event.goal_id);
-  // A row opens the goal's Sankey in the Cash flow drill-down, for the month it happened.
-  return <li key={event.id}><Link className="goal-activity-link" href={goalSankeyHref(event.goal_id, event.occurred_on.slice(0, 7))} aria-label={t('Open {name}', { name: `${goal?.name ?? t('Goal')} · ${formatDate(event.occurred_on, locale)}` })}><div><strong>{goal?.name ?? t('Goal')}</strong><small>{formatDate(event.occurred_on, locale)} · {t(event.event_type)}{event.source_name && ` · ${event.source_name}`}</small>{event.notes && <small>{event.event_type === 'opening' ? t(event.notes) : event.notes}</small>}</div><strong className="goal-activity-amount">{formatMoney(Number(event.delta), goal?.currency ?? currency, locale)}</strong></Link></li>;
+  return <li key={event.id}><div><strong>{goal?.name ?? t('Goal')}</strong><small>{formatDate(event.occurred_on, locale)} · {t(event.event_type)}{event.source_name && ` · ${event.source_name}`}</small>{event.notes && <small>{event.event_type === 'opening' ? t(event.notes) : event.notes}</small>}</div><strong className="goal-activity-amount">{formatMoney(Number(event.delta), goal?.currency ?? currency, locale)}</strong></li>;
  };
  // Goals sidebar: what is free for goals this month, the plan that uses it, and the money moved in and out of goals.
  return <>

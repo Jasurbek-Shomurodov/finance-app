@@ -24,11 +24,11 @@ type Props = {
  decide: (decision: SubscriptionDecision) => Promise<void>; restore: (key: Key) => Promise<void>;
  /** Opens the record form with a recurring plan to review; nothing is saved until the person saves it. */
  onTrack: (draft: Entry) => void;
- /** Opens a subscription's Sankey: its merchant, for the month of its last charge. Without it a row is not interactive. */
+ /** Opens a subscription's last charge: its details. Without it a row is not interactive. */
  onOpen?: (record: Entry) => void;
 };
 
-/** A subscription row opens its Sankey; a tap on its menu or button does only that. */
+/** A subscription row opens its last charge's details; a tap on its menu or button does only that. */
 const openRow = (onOpen: Props['onOpen'], record: Entry, label: string) => openProps(onOpen && (() => onOpen(record)), label);
 
 /** Subscriptions found in recorded spending, with their monthly and yearly cost per currency. */
@@ -51,7 +51,7 @@ export function SubscriptionsPanel({ records, decisions, loading, error, onRetry
    {totals.length > 0 && <div className="subscription-totals"><span>{t('{monthly} a month · {yearly} a year', { monthly: showSum(totals.map(total => ({ amount: total.monthly, currency: total.currency }))), yearly: showSum(totals.map(total => ({ amount: total.yearly, currency: total.currency }))) })}</span></div>}
   </PanelTitle>
   <ResourceState loading={loading} error={error} onRetry={onRetry}>
-   {active.length ? <ul className="subscription-list" ref={rows}>{active.map(item => <li key={item.id} className="recurring-row" data-status={item.missed ? 'missed' : undefined} {...openRow(onOpen, item.record, t('Open {name}', { name: item.record.name }))}>
+   {active.length ? <ul className="subscription-list" ref={rows}>{active.map(item => <li key={item.id} className="recurring-row" data-status={item.missed ? 'missed' : undefined} {...openRow(onOpen, item.record, t('View details for {name}', { name: item.record.name }))}>
     <span className="transaction-merchant"><CategoryIcon kind={item.record.kind}/><span><strong>{item.record.name}</strong><small>{t(cadenceLabels[item.cadence])} · {item.priceIncrease ? t('Up from {amount}', { amount: entered(item.priceIncrease.from, item.currency) }) : t('Last charged {date}', { date: formatDate(item.lastCharge, locale) })}</small></span></span>
     {status(item)}
     <span className="transaction-amount"><strong>{entered(item.amount, item.currency)}</strong><small className="block muted">{t('{amount} a year', { amount: entered(item.yearly, item.currency) })}</small></span>
@@ -61,7 +61,7 @@ export function SubscriptionsPanel({ records, decisions, loading, error, onRetry
      { label: t('Not a subscription'), disabled: busy, onSelect: () => run(() => decide({ ...key(item), status: 'dismissed', decided_on: today })) },
     ]}/></div>
    </li>)}</ul> : <EmptyState icon={<CreditCard aria-hidden="true"/>} description={t('No subscriptions found yet. They appear once the same charge repeats a few times.')}/>}
-   {hidden.length > 0 && <details className="subscription-hidden"><summary>{t('Hidden subscriptions')}<Count value={hidden.length}/></summary><ul className="tool-list">{hidden.map(({ item, decision }) => <li key={item.id} {...openRow(onOpen, item.record, t('Open {name}', { name: item.record.name }))}>
+   {hidden.length > 0 && <details className="subscription-hidden"><summary>{t('Hidden subscriptions')}<Count value={hidden.length}/></summary><ul className="tool-list">{hidden.map(({ item, decision }) => <li key={item.id} {...openRow(onOpen, item.record, t('View details for {name}', { name: item.record.name }))}>
     <span>{item.record.name} · {t(decision.status === 'cancelled' ? 'Cancelled' : 'Not a subscription')}</span>
     <Button size="sm" variant="outline" disabled={busy} onClick={() => run(() => restore(key(item)))}>{t('Restore')}</Button>
    </li>)}</ul></details>}

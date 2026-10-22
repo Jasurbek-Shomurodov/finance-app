@@ -38,7 +38,7 @@ export function SortableList({ id, items, nameOf, onMove, disabled = false, layo
 
 /** A row or card that can be dragged: the whole element moves, and only its six-dot handle lifts it. */
 export function SortableItem({ id, label, as: Tag = 'div', className, children, onOpen }: { id: string; label: string; as?: 'div' | 'li'; className?: string; children: ReactNode;
- /** Opens the item (its Sankey) by click, Enter or Space; never from its drag handle or its own controls. */ onOpen?: () => void }) {
+ /** Opens the item by click, Enter or Space; never from its drag handle or its own controls. */ onOpen?: () => void }) {
  const { t } = useLanguage();
  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id });
  return <Tag ref={setNodeRef} className={['sortable-item', className].filter(Boolean).join(' ')} data-dragging={isDragging || undefined} style={{ transform: CSS.Translate.toString(transform), transition }} {...openProps(onOpen, t('Open {name}', { name: label }))}>

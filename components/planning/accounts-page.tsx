@@ -1,6 +1,4 @@
 "use client";
-import { depositToday } from '@/lib/deposit-interest';
-import type { DrillTarget } from '@/lib/cash-flow-drill-types';
 import { StatementReconciliation } from './statement-reconciliation';
 import { ErrorPopup } from '@/components/presentation-foundation/error-popup';
 import { CorporateEventDialog } from './corporate-event-dialog';
@@ -49,11 +47,11 @@ type Props = {
  /** The open household, when it is shared: accounts then show and filter by their owner. */
  household?: HouseholdState|null; readOnly?: boolean;
  onAccountOwner: (accountId: string, owner: string) => Promise<number>;
- /** Opens a Sankey over the page (the workspace's): an account's, a holding's, or an investment account's holdings'. */
- onSankey?: (request: { target: DrillTarget; title: string; month: string; onDetails?: () => void }) => void;
+ /** Opens a transaction's details from Recent activity. */
+ onView?: (record: Entry) => void;
 };
 
-export function AccountsPage({ owner,onSaved,revision=0,data, save, onAdd, onEdit, onTrack, onDelete, demo, preferences, market, currencies, currency, saveAccount, assignHolding, businesses, onAccountBusiness, household, readOnly, onAccountOwner, onSankey }: Props) {
+export function AccountsPage({ owner,onSaved,revision=0,data, save, onAdd, onEdit, onTrack, onDelete, demo, preferences, market, currencies, currency, saveAccount, assignHolding, businesses, onAccountBusiness, household, readOnly, onAccountOwner, onView }: Props) {
  const { t } = useLanguage();
  const [statement,setStatement]=useState<Entry|null>(null),[corporate,setCorporate]=useState<Entry|null>(null);
  // The page's two views, switched from the top bar: the accounts themselves and their recent operations.
@@ -68,18 +66,9 @@ export function AccountsPage({ owner,onSaved,revision=0,data, save, onAdd, onEdi
  const accountItems=order.items;
  const remove=(account:Entry)=>{if(accountHasLinks(account.id,data))showError(linkedAccountMessage);else onDelete(account);};
  const filters=useAccountFilters({items:accountItems,records:data.records,businesses,household});
- // An account, a holding or another asset opens its Sankey for this month, its Details editing it; picking an account in
- // the directory also selects it, so its card is there when the Sankey closes. An investment account opens its holdings.
- const month=depositToday().slice(0,7);
- const openRecord=onSankey&&((record:Entry)=>onSankey({target:{side:'account',key:record.id},title:record.name,month,onDetails:()=>onEdit(record)}));
- const select=(key:string)=>{
-  setSelected(key);
-  const item=order.items.find(entry=>entry.key===key);
-  if(!item||!onSankey)return;
-  if(key.startsWith('investment:'))onSankey({target:{side:'holdings',keys:data.records.filter(record=>record.holding_account_id===item.id).map(record=>record.id)},title:item.account.name,month});
-  else openRecord?.(item.account as Entry);
- };
- const holdingActions:HoldingActions={accounts:investmentAccounts,market,onEdit,onTrack,assignHolding,onMove:setMovement,onCorporate:setCorporate,onOpen:openRecord};
+ // Picking an account shows its card beside the directory: balance, details and activity. A holding or another asset
+ // opens its details.
+ const holdingActions:HoldingActions={accounts:investmentAccounts,market,onEdit,onTrack,assignHolding,onMove:setMovement,onCorporate:setCorporate,onOpen:onEdit};
  const choose=(kind:AccountType)=>{if(kind==='Cash'||kind==='Deposit')onAdd(kind);else setDraft({id:crypto.randomUUID(),kind:kind==='CashInvestment'?'Cash':kind,name:'',currency});};
  const owners=filters.owners;
  // Transfer money starts from the account shown beside the directory, when money can leave it, to where it last sent money.
@@ -87,10 +76,10 @@ export function AccountsPage({ owner,onSaved,revision=0,data, save, onAdd, onEdi
  const transferFrom=movementSources('transfer',data.records).find(record=>shown===`record:${record.id}`)?.id;
  return <>
   <PageHeader title={t('Accounts')} tabs={<Segmented className="page-tabs" as="nav" label={t('Accounts')} options={[{value:'accounts',label:t('Overview')},{value:'activity',label:t('Recent activity')}]} value={view} onChange={setView}/>}>{owners.length>0&&<Button variant="outline" disabled={readOnly} onClick={()=>setEditingOwners(true)}><Users size={17} aria-hidden="true"/>{t('Edit owners')}</Button>}{businesses.length>0&&<Button variant="outline" onClick={()=>setEditingBusinesses(true)}><Briefcase size={17} aria-hidden="true"/>{t('Edit businesses')}</Button>}<Button variant="outline" onClick={()=>setMovement({kind:'transfer',source_id:transferFrom,target_id:lastTransferTarget(data.movements??[],transferFrom,data.records)})}><ArrowRightLeft size={17} aria-hidden="true"/>{t('Transfer money')}</Button><Button onClick={()=>setChoosing(true)}><Plus size={17} aria-hidden="true" />{t('Add account')}</Button></PageHeader>
-  {view==='accounts'&&<AccountsOverview items={accountItems} data={data} filters={filters} order={order} businesses={businesses} holdingActions={holdingActions} onEditAccount={setDraft} onAdd={onAdd} onAddAccount={()=>setChoosing(true)} selected={selected} onSelect={select}
+  {view==='accounts'&&<AccountsOverview items={accountItems} data={data} filters={filters} order={order} businesses={businesses} holdingActions={holdingActions} onEditAccount={setDraft} onAdd={onAdd} onAddAccount={()=>setChoosing(true)} selected={selected} onSelect={setSelected}
    cardActions={{onEdit,onTrack,onDelete:remove,onMove:setMovement,onOperation:setOperation,onStatement:owner?setStatement:undefined}}/>}
   {/* Account operations are their own view, opened from the top bar. */}
-  {view==='activity'&&<AccountActivity data={data} owner={owner} live={!!owner&&!demo} revision={revision} currency={currencies[0]}/>}
+  {view==='activity'&&<AccountActivity data={data} owner={owner} live={!!owner&&!demo} revision={revision} currency={currencies[0]} onOpen={onView}/>}
   <AddAccountDialog open={choosing} onOpenChange={setChoosing} onChoose={choose}/>
   <ErrorPopup message={order.error}/>
   {editingOwners&&household&&<AccountOwnersDialog records={data.records} accounts={investmentAccounts} market={market} household={household} owners={owners} onChange={onAccountOwner} onClose={()=>setEditingOwners(false)}/>}

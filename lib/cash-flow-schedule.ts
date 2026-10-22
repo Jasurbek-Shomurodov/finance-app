@@ -1,9 +1,7 @@
 import { accountNode, accountOf, categoryNode } from './cash-flow-drill-base';
 import type { DrillContext, DrillFlows, DrillNode, DrillTarget } from './cash-flow-drill-types';
-import { income, type Entry } from './finance';
+import type { Entry } from './finance';
 import { convertAmount } from './market';
-import type { RecurringItem } from './recurring';
-import type { DueItem } from './planning';
 import { cashFlowItems } from './spending';
 import { ratesOf } from './transaction-rates';
 
@@ -51,17 +49,4 @@ export function scheduleFlows(target: ScheduleTarget, context: DrillContext): Dr
   links: [...shownLeft.map((part, index) => ({ source: index, target: shownLeft.length, value: part.value })), ...shownRight.map((part, index) => ({ source: shownLeft.length, target: shownLeft.length + 1 + index, value: part.value }))],
   missing,
  };
-}
-
-/** What a Recurring row opens: a schedule's due date as its own Sankey, or a loan's monthly payment as the loan's. */
-export function recurringTarget(item: Pick<RecurringItem, 'record' | 'date' | 'amount' | 'direction' | 'status' | 'installment'>): DrillTarget {
- return item.installment ? { side: 'account', key: item.record.id }
-  : { side: 'schedule', key: item.record.id, date: item.date, due: { amount: Number(item.amount), currency: item.record.currency }, direction: item.direction, open: item.status === 'due' || item.status === 'overdue' };
-}
-
-/** What an upcoming payment opens: a scheduled one its due date's Sankey, a loan repayment or deposit maturity its
- * account's. */
-export function dueTarget(item: Pick<DueItem, 'record' | 'date' | 'amount' | 'type'>): DrillTarget {
- return item.type === 'scheduled' ? { side: 'schedule', key: item.record.id, date: item.date, due: { amount: Number(item.amount), currency: item.record.currency }, direction: income.includes(item.record.kind) ? 'income' : 'expense', open: true }
-  : { side: 'account', key: item.record.id };
 }

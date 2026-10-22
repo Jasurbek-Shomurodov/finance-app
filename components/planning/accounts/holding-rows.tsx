@@ -20,7 +20,7 @@ export type HoldingActions = {
  onEdit: (record: Entry) => void; onTrack?: (record: Entry) => void;
  assignHolding: (record: Entry, accountId: string|null) => Promise<void>;
  onMove: (draft: MovementDraft) => void; onCorporate: (record: Entry) => void;
- /** Opens the holding's Sankey; never from its account picker or actions. */ onOpen?: (record: Entry) => void;
+ /** Opens the holding's details; never from its account picker or actions. */ onOpen?: (record: Entry) => void;
 };
 
 function HoldingRow({ record, accounts, market, onEdit, onTrack, assignHolding, onMove, onCorporate, onOpen }: HoldingActions & { record: Entry }) {

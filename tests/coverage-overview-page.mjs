@@ -12,6 +12,7 @@ const t=(message,values={})=>message.replace(/\{(\w+)\}/g,(_,key)=>String(values
 const {useOverviewCards,OverviewHeading}=loadTS('components/overview-page.tsx',{
  '@/components/language-provider':{useLanguage:()=>({locale:'en-US',t,language:'en'})},
  '@/components/presentation-foundation/top-bar-slot':{useTopBarSlot:()=>null},
+ 'next/navigation':{useRouter:()=>({push(){}})},
  'next/link':{__esModule:true,default:({children,href,...props})=>React.createElement('a',{href,...props},children)},
 });
 const entry=(id,kind,amount,extra={})=>({id,name:id,kind,amount,quantity:1,cost:0,rate:0,currency:'USD',frequency:'Once',date:'2026-09-01',notes:'',...extra});
@@ -89,6 +90,7 @@ test('upcoming payments put overdue ones first, show formatted dates and colour 
  ];
  const {upcoming}=cards({planning:{records,occurrences:[],categories:[],goals:[],activity:[],debtPayments:[]}});
  const text=plain(upcoming);
+ assert.match(upcoming,/<li tabindex="0" aria-label="Open Car loan" data-clickable="true">/,'a payment opens Recurring, where its history is');
  assert.match(text,/Upcoming payments 1 overdue/,'an overdue item is counted as overdue, never as due soon');
  // Live QA, 6 October 2026: "5 due soon" with 101 overdue items; the pill counted only the five rows shown.
  const backlog=Array.from({length:7},(_,i)=>entry('Debt '+i,'Debt',10,{date:shiftDay(today,-(i+1))}));
