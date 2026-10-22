@@ -4,7 +4,7 @@ import { loadTS } from './helpers/load-ts.mjs';
 const { spendingAmount, transferAmount } = loadTS('lib/spending.ts');
 const { monthlyReview } = loadTS('lib/transaction-tools.ts');
 const { cashFlowReport, sankeyFlows } = loadTS('lib/cash-flow-report.ts');
-const { transactionsIn, summarizeTransactions, groupByDay, signedAmount, emptyTransactionFilter } = loadTS('lib/transaction-list.ts');
+const { transactionsIn, summarizeTransactions, groupByDay, signedAmount, emptyTransactionFilter, transactionsHref, transactionsQuery } = loadTS('lib/transaction-list.ts');
 const { periodTotals } = loadTS('lib/period-summary.ts');
 const { monthActuals, budgetCategories, budgetRows } = loadTS('lib/budget.ts');
 const { spendingPace } = loadTS('lib/spending-pace.ts');
@@ -76,4 +76,17 @@ test('Cash flow, Transactions, Dashboard, Budget and the Telegram digest agree o
  // The investment dashboard's "Expenses paid" funding uses the same mortgage interest.
  assert.equal(benchmarkExpenseFunding(records, today).find(row => row.id === 'expense:mortgage-payment').amount, 200);
  assert.equal(watchlistSpending({ id: 'w', query: 'home', currency: 'USD', category: null, target: 500 }, records, [], today).spent, 200);
+});
+
+test('links to Transactions open the list filtered: Spent this month on expenses, a Sankey on its merchant over its days', () => {
+ const read = href => { const search = href.slice(href.indexOf('?')); return transactionsQuery(search, key => new URLSearchParams(search).getAll(key)); };
+ const spent = transactionsHref({ direction: 'expense', period: 'this_month' });
+ assert.equal(spent, '/transactions?type=expense&period=this_month');
+ assert.deepEqual(read(spent), { filter: { ...emptyTransactionFilter, direction: 'expense' }, period: 'this_month', range: null });
+ const merchant = read(transactionsHref({ direction: 'expense', query: 'Café & Co', range: { from: '2026-08-01', to: '2026-08-31' } }));
+ assert.deepEqual(merchant, { filter: { ...emptyTransactionFilter, direction: 'expense', query: 'Café & Co' }, period: null, range: { from: '2026-08-01', to: '2026-08-31' } }, 'the search survives the link and the days become a custom period');
+ assert.deepEqual(read(transactionsHref({ direction: 'income', category: 'salary' })).filter, { ...emptyTransactionFilter, direction: 'income', category: 'salary' });
+ assert.deepEqual(read('/transactions?tag=trip'), { filter: { ...emptyTransactionFilter, tags: ['trip'] }, period: 'two_years', range: null }, 'a tag alone still opens the longest period');
+ assert.deepEqual(read('/transactions?type=bogus&from=2026-09-01&to=2026-08-01&period=forever'), { filter: emptyTransactionFilter, period: 'two_years', range: null }, 'unknown values and a backwards range are ignored');
+ assert.equal(transactionsHref({}), '/transactions');
 });

@@ -4,18 +4,30 @@ import { reportError } from '@/lib/monitoring';
 import { dueReminders, type ReminderSettings } from '@/lib/daily-finance';
 import { depositToday } from '@/lib/deposit-interest';
 import { digestCard, digestMessage, digestPeriods, digestSnapshots } from '@/lib/digest-message';
-import { debtPaymentsFrom, type Occurrence } from '@/lib/planning';
+import { debtPaymentsFrom, type Category, type DebtPayment, type Occurrence } from '@/lib/planning';
 import { ownerRows } from '@/lib/owner-rows';
 import { periodTotals, shiftDay } from '@/lib/period-summary';
 import { snapshotPoints } from '@/lib/portfolio-snapshots';
 import { serviceDatabase } from '@/lib/service-role';
 import { telegramConfig } from '@/lib/telegram';
 import { deliverReport } from '@/lib/telegram-report';
-import { deliverToSubscribers, namedCategories, ownerCategories, ownerDebtPayments, ownerOperations, ownerProfile, ownerRecordsSince, ownerSpendingExtras, recentSnapshots } from '@/lib/telegram-owner';
+import { deliverToSubscribers, namedCategories, ownerBudget, ownerCategories, ownerDebtPayments, ownerGoals, ownerOperations, ownerProfile, ownerRecordsSince, ownerSpendingExtras, recentSnapshots } from '@/lib/telegram-owner';
 import { monthMoves } from '@/lib/digest-flow';
+import { digestBudget, digestForecast, digestGoal } from '@/lib/digest-plan';
+import type { Entry } from '@/lib/finance';
+import type { ServiceDatabase } from '@/lib/service-role';
 import { keepDayRates, withDayRates } from '@/lib/day-rate-tables';
 export const maxDuration=60;
 const defaultReminders:ReminderSettings={enabled:true,days_ahead:7,snoozed:[]};
+type PlanInput={records:Entry[];occurrences:Occurrence[];debtPayments:DebtPayment[];categories:Category[];spending:Record<string,number>;today:string;currency:string;rates:Record<string,number>};
+/** The month ahead as the Budget, Goals and Forecast screens see it. It only adds to the digest, so a failed read
+ * leaves it out and is reported rather than holding the digest back. */
+async function planOf(db:ServiceDatabase,owner:string,input:PlanInput){
+ try{
+  const [source,goals]=await Promise.all([ownerBudget(db,owner,input.categories),ownerGoals(db,owner)]);
+  return {budget:digestBudget(source,input.today.slice(0,7),input.currency,input.rates,input.spending),goal:digestGoal(goals,input.records,input.currency),forecast:digestForecast({...input,source})};
+ }catch(error){await reportError('cron:telegram-digest',error,{route:'/api/cron/telegram-digest',status:200});return {};}
+}
 /** Sends each linked owner their digest as a picture: a greeting, this month's income and expenses against the same days of last month, net worth, where the money went, and what is due. One owner's failure never blocks the others; the response says how many were reached. */
 export async function GET(req:Request){
  if(!cronAuthorized(req))return new Response(null,{status:401});
@@ -62,7 +74,9 @@ export async function GET(req:Request){
     const moves=monthMoves(records,operations,flows.splits,{from,to:today,currency:profile.currency,rates});
     const moved=moves.missing?{}:{sources:namedCategories(moves.income,categories,profile.language,'Other income'),moved:moves.moved};
     const cashflow={income:current.income,spending:current.spending,missing:current.missing>0,categories:namedCategories(current.byCategory,categories,profile.language),...(previous.missing?{}:{previous:{income:previous.income,spending:previous.spending,categories:namedCategories(previous.byCategory,categories,profile.language)}}),...moved};
-    const due=dueReminders({records,occurrences,categories:[],goals:[],activity:[],debtPayments:debtPaymentsFrom(activity,mortgagePayments)},settings,today),digest={name:profile.name,currency:profile.currency,rates,netWorth,cashflow};
+    const debtPayments=debtPaymentsFrom(activity,mortgagePayments),due=dueReminders({records,occurrences,categories:[],goals:[],activity:[],debtPayments},settings,today);
+    const plan=await planOf(db,user_id,{records,occurrences,debtPayments,categories,spending:current.byCategory,today,currency:profile.currency,rates});
+    const digest={name:profile.name,currency:profile.currency,rates,netWorth,cashflow,plan};
     // A picture, or the text where the picture's font cannot draw the language.
     return deliverReport({chat_id,language:profile.language,text:digestMessage(due,profile.language,today,digest),picture:{...digestCard(due,profile.language,today,digest),filename:`hoggish-${today}.png`}},config);
   });

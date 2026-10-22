@@ -2730,5 +2730,10 @@
   "Borrower group is too long.": "Název skupiny je příliš dlouhý.",
   "From savings": "Z úspor",
   "This month: income {income}, expenses {expenses}.": "Tento měsíc: příjmy {income}, výdaje {expenses}.",
-  "Kept in accounts": "Zůstalo na účtech"
+  "Kept in accounts": "Zůstalo na účtech",
+  "Monthly budget": "Měsíční rozpočet",
+  "{percent} funded": "Naplněno z {percent}",
+  "Month-end forecast": "Výhled na konec měsíce",
+  "Below zero on {date}": "Pod nulou {date}",
+  "Totals are in {currency}": "Součty jsou v {currency}"
 }

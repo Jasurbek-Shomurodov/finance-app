@@ -2730,5 +2730,10 @@
   "Borrower group is too long.": "Numele grupului este prea lung.",
   "From savings": "Din economii",
   "This month: income {income}, expenses {expenses}.": "Luna aceasta: venituri {income}, cheltuieli {expenses}.",
-  "Kept in accounts": "Rămas în conturi"
+  "Kept in accounts": "Rămas în conturi",
+  "Monthly budget": "Buget lunar",
+  "{percent} funded": "Finanțat {percent}",
+  "Month-end forecast": "Prognoza de final de lună",
+  "Below zero on {date}": "Sub zero pe {date}",
+  "Totals are in {currency}": "Totalurile sunt în {currency}"
 }

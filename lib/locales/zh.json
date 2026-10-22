@@ -2730,5 +2730,10 @@
   "Borrower group is too long.": "分组名称太长。",
   "From savings": "来自储蓄",
   "This month: income {income}, expenses {expenses}.": "本月：收入 {income}，支出 {expenses}。",
-  "Kept in accounts": "留在账户中"
+  "Kept in accounts": "留在账户中",
+  "Monthly budget": "每月预算",
+  "{percent} funded": "已完成 {percent}",
+  "Month-end forecast": "月末预测",
+  "Below zero on {date}": "{date} 低于零",
+  "Totals are in {currency}": "合计以 {currency} 计"
 }

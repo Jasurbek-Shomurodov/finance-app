@@ -2730,5 +2730,10 @@
   "Borrower group is too long.": "Masyadong mahaba ang pangalan ng grupo.",
   "From savings": "Mula sa ipon",
   "This month: income {income}, expenses {expenses}.": "Ngayong buwan: kita {income}, gastos {expenses}.",
-  "Kept in accounts": "Naiwan sa mga account"
+  "Kept in accounts": "Naiwan sa mga account",
+  "Monthly budget": "Buwanang budget",
+  "{percent} funded": "{percent} napondohan",
+  "Month-end forecast": "Forecast sa katapusan ng buwan",
+  "Below zero on {date}": "Bababa sa zero sa {date}",
+  "Totals are in {currency}": "Ang mga kabuuan ay nasa {currency}"
 }

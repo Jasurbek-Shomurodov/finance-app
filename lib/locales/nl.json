@@ -2730,5 +2730,10 @@
   "Borrower group is too long.": "De groepsnaam is te lang.",
   "From savings": "Uit spaargeld",
   "This month: income {income}, expenses {expenses}.": "Deze maand: inkomsten {income}, uitgaven {expenses}.",
-  "Kept in accounts": "Op de rekeningen gebleven"
+  "Kept in accounts": "Op de rekeningen gebleven",
+  "Monthly budget": "Maandbudget",
+  "{percent} funded": "{percent} gefinancierd",
+  "Month-end forecast": "Verwachting eind van de maand",
+  "Below zero on {date}": "Onder nul op {date}",
+  "Totals are in {currency}": "Totalen zijn in {currency}"
 }

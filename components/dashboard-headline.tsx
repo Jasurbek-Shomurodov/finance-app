@@ -7,6 +7,7 @@ import { depositToday } from '@/lib/deposit-interest';
 import { formatMoney, formatNumber } from '@/lib/format';
 import { marketRates, type MarketData } from '@/lib/market';
 import { dueSoon } from '@/lib/overview';
+import { transactionsHref } from '@/lib/transaction-list';
 import type { PlanningData } from '@/lib/planning';
 
 /** The dashboard's first line: net worth, this month's spending and budget, and what falls due within a week, each a
@@ -18,7 +19,7 @@ export function DashboardHeadline({ netWorth, budget, data, currency, market }: 
  const left = budget.plan === null || !(budget.plan > 0) ? null : budget.plan - budget.spent;
  return <StatTiles columns={4} label={t('Overview')}>
   <StatTile label={t('Net worth')} value={netWorth === null ? '—' : money(netWorth)} href="/assets"/>
-  <StatTile label={t('Spent this month')} value={budget.loading ? '—' : money(budget.spent)} href="/transactions"/>
+  <StatTile label={t('Spent this month')} value={budget.loading ? '—' : money(budget.spent)} href={transactionsHref({ direction: 'expense', period: 'this_month' })}/>
   {/* The figure alone, so it fits the tile; whether it is left or over is in the label. */}
   <StatTile label={t(left !== null && left < 0 ? 'Over budget' : 'Budget left')} value={budget.loading || left === null ? '—' : money(Math.abs(left))} tone={budget.loading || left === null ? undefined : signTone(left)} href="/budget"/>
   <StatTile label={t('Due in 7 days')} value={due?.total == null ? '—' : money(due.total)} href="/upcoming" aside={due && t('{count} due soon', { count: formatNumber(due.count, locale, 0) })}/>

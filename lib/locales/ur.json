@@ -2730,5 +2730,10 @@
   "Borrower group is too long.": "گروپ کا نام بہت لمبا ہے۔",
   "From savings": "بچت سے",
   "This month: income {income}, expenses {expenses}.": "اس مہینے: آمدنی {income}، اخراجات {expenses}۔",
-  "Kept in accounts": "اکاؤنٹس میں رہا"
+  "Kept in accounts": "اکاؤنٹس میں رہا",
+  "Monthly budget": "ماہانہ بجٹ",
+  "{percent} funded": "{percent} مکمل",
+  "Month-end forecast": "مہینے کے آخر کی پیش گوئی",
+  "Below zero on {date}": "{date} کو صفر سے نیچے",
+  "Totals are in {currency}": "مجموعے {currency} میں ہیں"
 }

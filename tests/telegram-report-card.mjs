@@ -19,22 +19,22 @@ const extras={name:'HOGGISH',currency:'USD',netWorth:{amount:314690,start:309460
  {key:'Charity',label:'Charity',amount:300},{key:'c-car',label:'Car',amount:210},{key:'Other expense',label:'Other expense',amount:120},{key:'c-x',label:'Phone',amount:80}],
  previous:{income:3900,spending:3810,categories:[{key:'Living expense',amount:1500},{key:'c-feed',amount:400},{key:'Other expense',amount:50},{key:'c-x',amount:30}]}}};
 
-test('the digest card shows this month against last month, where the money went as a Sankey, and the next payments',()=>{
+test('the digest card shows this month against last month, the budget, where the money went as a Sankey, the goal and forecast, and the next payments',()=>{
  const {categoryColor}=loadTS('lib/category-colors.ts');
  const {card,caption}=digestCard(items,'en',today,extras);
  assert.equal(caption,'☀️ <b>Good morning, HOGGISH</b>');
  assert.equal(card.title,'Good morning, HOGGISH');
- assert.equal(card.subtitle,undefined);assert.equal(card.note,undefined);assert.equal(card.tilesTitle,'October 2026');assert.equal(card.sectionsTitle,'Upcoming payments');
+ assert.equal(card.subtitle,undefined);assert.equal(card.note,undefined);assert.equal(card.period,'October 2026');assert.equal(card.sectionsTitle,'Upcoming payments');
  // Spending is stated plainly either way, never coloured as good or bad news.
- assert.deepEqual(card.hero,{label:'Spent',value:'$3,270',detail:'$540 less than last month by this day'});
+ assert.deepEqual(card.hero,{label:'Total spending',value:'$3,270',detail:'$540 less than last month by this day',direction:'down'});
  assert.deepEqual(card.figures,[
-  {label:'Income',value:'$4,200',detail:'Last month: $3,900'},
-  {label:'Saved',value:'$930',detail:'22% of income',tone:'good'},
-  {label:'Net worth',value:'$314,690',detail:'+$5,230 this month',tone:'good'},
+  {label:'Income',value:'$4,200',icon:'wallet',detail:'Last month: $3,900'},
+  {label:'Net cash flow',value:'$930',icon:'arrowUpDown',detail:'22% of income',tone:'good'},
+  {label:'Net worth',value:'$314,690',icon:'chart',detail:'+$5,230 this month',tone:'good'},
  ]);
  assert.equal(card.tiles,undefined);
  const [flow]=card.charts;
- assert.equal(flow.kind,'flow');assert.equal(flow.title,'Where the money went');
+ assert.equal(flow.kind,'flow');assert.equal(flow.title,'Where your money went');
  assert.deepEqual(flow.sources.map(node=>[node.label,node.value]),[['Income','$4,200']]);
  // The five largest keep their own colour and last month's amount by the same day; the rest fold into Other; then what stayed.
  assert.deepEqual(flow.targets.map(node=>[node.label,node.value,node.detail]),[
@@ -42,6 +42,8 @@ test('the digest card shows this month against last month, where the money went 
   ['Charity','$300','7%'],['Car','$210','5%'],['Other','$200','5% · Last month: $80'],['Kept in accounts','$930','22%'],
  ]);
  assert.equal(flow.targets[0].color,categoryColor('Living expense'));assert.equal(flow.targets[2].color,categoryColor('c-feed'));
+ // Each built-in category has its own icon; an added one is a tag, and what stayed is a piggy bank.
+ assert.deepEqual(flow.targets.map(node=>node.icon),['house','building','tag','heart','tag','ellipsis','piggyBank']);
  assert.equal(digestCard(items,'en',today,{...extras,netWorth:{amount:1,start:5}}).card.figures[2].tone,'bad');
  // Spending past income draws the gap from savings, and nothing is saved.
  const over=digestCard([],'en',today,{currency:'USD',cashflow:{income:100,spending:250,categories:[{key:'Charity',label:'Charity',amount:250}]}}).card.charts[0];
@@ -52,16 +54,28 @@ test('the digest card shows this month against last month, where the money went 
   {title:'21 October 2026',rows:[{label:'Sheep feed',value:'UZS\u00a01,000,000'}]},
   {title:'25 October 2026',rows:[{label:'Solar Panel',value:'+UZS\u00a05,000,000',detail:'income',tone:'good'}]},
  ]);
- assert.equal(card.footer,undefined);
+ assert.equal(card.footer,'Totals are in USD');
+ // Without a budget, a goal or a forecast, those cards are left out.
+ assert.equal(card.meter,undefined);assert.deepEqual(card.panels,[]);
+ const planned=digestCard(items,'en',today,{...extras,plan:{budget:{total:4000,spent:3270},goal:{name:'Emergency fund',saved:8400,target:10000,currency:'UZS'},forecast:{balance:2140,belowZero:null}}}).card;
+ assert.deepEqual(planned.meter,{title:'Monthly budget',total:'$4,000 total',remaining:'$730 left',share:3270/4000,tone:'good'});
+ // A goal reads in its own currency.
+ assert.deepEqual(planned.panels,[
+  {title:'Emergency fund',icon:'shield',value:'UZS\u00a08,400',detail:'of UZS\u00a010,000',share:0.84,note:'84% funded',noteTone:'good'},
+  {title:'Month-end forecast',icon:'trendingUp',lead:'On track',leadTone:'good',label:'Projected balance',value:'$2,140'},
+ ]);
+ const short=digestCard(items,'en',today,{...extras,plan:{budget:{total:3000,spent:3270},forecast:{balance:-320,belowZero:'2026-10-28'}}}).card;
+ assert.deepEqual([short.meter.remaining,short.meter.tone],['$270 over','bad']);
+ assert.deepEqual([short.panels[0].lead,short.panels[0].leadTone,short.panels[0].value],['Below zero on 28 October 2026','bad','−$320']);
 });
 
 test('a digest card with nothing due says so, a name is escaped only in the HTML caption, and a long list says what it left out',()=>{
  const empty=digestCard([],'en',today,{name:'<b>X</b>'});
- assert.deepEqual(empty.card.lines,['Nothing is due soon.']);assert.deepEqual(empty.card.figures,[]);assert.equal(empty.card.hero,undefined);assert.deepEqual(empty.card.charts,[]);assert.equal(empty.card.tilesTitle,undefined);
+ assert.deepEqual(empty.card.lines,['Nothing is due soon.']);assert.deepEqual(empty.card.figures,[]);assert.equal(empty.card.hero,undefined);assert.deepEqual(empty.card.charts,[]);assert.equal(empty.card.period,'October 2026');
  assert.equal(empty.card.title,'Good morning, <b>X</b>');assert.equal(empty.caption,'☀️ <b>Good morning, &lt;b&gt;X&lt;/b&gt;</b>');
  const many=Array.from({length:40},(_,index)=>({...items[1],key:'k'+index,record:record('Bill '+index,'Living expense',1000)}));
  const long=digestCard(many,'en',today).card;
- assert.equal(long.sections.flatMap(section=>section.rows).length,6);assert.equal(long.footer,'34 more');
+ assert.equal(long.sections.flatMap(section=>section.rows).length,6);assert.equal(long.footer,'34 more · Totals are in USD');
  assert.equal(digestCard([],'ru',today,{name:'Анна'}).card.title,'Доброе утро, Анна');
 });
 
@@ -123,7 +137,7 @@ test('the card wraps long text, escapes names and draws what the bundled font ha
  assert.match(svg,/Good morning, &lt;Ann &amp; Bob&gt;/);assert.match(svg,/Rent &quot;flat&quot;/);assert.match(svg,/–\$5/);assert.doesNotMatch(svg,/−/);
  assert.match(svg,/NET WORTH/);assert.match(svg,/3 more/);assert.doesNotMatch(svg,/EMPTY/,'a section without rows is left out');
  // A tile alone on its row takes the whole width.
- assert.match(svg,/<rect x="88" y="\d+" width="904"/);
+ assert.match(svg,/<rect x="76" y="[\d.]+" width="928"/);
  const height=card=>Number(/height="(\d+)"/.exec(reportCardSvg(card))[1]);
  assert.ok(height({title:'T',sections:[{title:'S',rows:[{label:'a',value:'1'},{label:'b',value:'2'}]}]})>height({title:'T',sections:[{title:'S',rows:[{label:'a',value:'1'}]}]}));
 });
@@ -279,7 +293,7 @@ test('the edges of each card: unnamed owners, a list that fills the card across 
  const card=digestCard([...bills('2026-10-01',12,true),...bills('2026-10-20',10),...bills('2026-10-21',10)],'en',today).card;
  // Three overdue items at most, then the days ahead until the card holds six rows.
  assert.deepEqual(card.sections.map(section=>[section.title,section.rows.length]),[['Overdue',3],['20 October 2026',3]]);
- assert.equal(card.footer,'26 more');
+ assert.equal(card.footer,'26 more · Totals are in USD');
  const week={currency:'USD',from:'2026-09-28',to:'2026-10-04',income:10,spending:5,top:null,goalsMoved:0,shareOrigin:null};
  const recap=recapCard(week,'en');
  assert.equal(recap.caption,'📊 <b>Your week</b>');assert.equal(recap.keyboard,undefined);assert.equal(recap.card.lines,undefined);
@@ -300,21 +314,28 @@ test('the monthly cron names a deleted category as Other expense and answers 503
  assert.equal(response.status,503);assert.deepEqual(await response.json(),{error:'Telegram monthly report is not configured.'});
 });
 
-test('the card draws a large figure, open figures and a Sankey whose ribbons are as wide as their amounts',()=>{
- const svg=reportCardSvg({title:'T',tilesTitle:'October 2026',hero:{label:'Spent',value:'$300',detail:'$20 less than last month by this day'},figures:[{label:'Income',value:'$400'},{label:'Saved',value:'$100'}],sectionsTitle:'Upcoming payments',sections:[{title:'Today',rows:[{label:'Rent',value:'$1'}]}],charts:[
-  {kind:'flow',title:'Where the money went',sources:[{label:'Income',value:'$400',amount:400,color:'#2f7d32'}],targets:[
-   {label:'Food',value:'$300',amount:300,color:'hsl(48 60% 48%)',detail:'75%'},{label:'Saved',value:'$100',amount:100,color:'#4d7c0f',detail:'25% of income'}]},
- ]});
- assert.match(svg,/OCTOBER 2026/);assert.match(svg,/UPCOMING PAYMENTS/);assert.match(svg,/WHERE THE MONEY WENT/);assert.match(svg,/>SPENT</);
- assert.match(svg,/font-size="76" font-weight="700" fill="#18200f">\$300</);
- // Each target's node is as tall as its share of the 360-pixel flow, and its ribbon is drawn in its own colour.
- assert.match(svg,/width="16" height="270" rx="4" fill="hsl\(48 60% 48%\)"/);assert.match(svg,/width="16" height="90" rx="4" fill="#4d7c0f"/);
- assert.match(svg,/<path d="M[^"]+" fill="hsl\(48 60% 48%\)" fill-opacity="0.22"\/>/);
- assert.match(svg,/>75%</);assert.match(svg,/>25% of income</);
- // A long amount shrinks to fit its column instead of running into the next.
+test('the card draws the month beside the greeting, a large figure, figure cards, a budget bar, a Sankey and small cards',()=>{
+ const svg=reportCardSvg({title:'T',period:'October 2026',hero:{label:'Total spending',value:'$300',detail:'$20 less than last month by this day',direction:'down'},figures:[{label:'Income',value:'$400',icon:'wallet'},{label:'Saved',value:'$100'}],
+  meter:{title:'Monthly budget',total:'$500 total',remaining:'$200 left',share:0.6},sectionsTitle:'Upcoming payments',sections:[{title:'Today',rows:[{label:'Rent',value:'$1'}]}],charts:[
+  {kind:'flow',title:'Where your money went',sources:[{label:'Income',value:'$400',amount:400,color:'#2f7d32'}],targets:[
+   {label:'Food',value:'$300',amount:300,color:'hsl(48 60% 48%)',detail:'75%',icon:'house'},{label:'Saved',value:'$100',amount:100,color:'#4d7c0f'}]},
+ ],panels:[{title:'Month-end forecast',icon:'trendingUp',lead:'On track',leadTone:'good',label:'Projected balance',value:'$2,140'}]});
+ assert.match(svg,/OCTOBER 2026/);assert.match(svg,/>Upcoming payments</);assert.match(svg,/>Where your money went</);assert.match(svg,/>Total spending</);
+ assert.match(svg,/font-size="96" font-weight="700" fill="#1c2a20">\$300</);
+ // Icons are the app's lucide shapes, stroked in their colour: the calendar, the arrow, the wallet and the category.
+ assert.match(svg,/stroke="#4a6b45"[^>]*><path d="M8 2v3"/);assert.match(svg,/stroke="hsl\(48 60% 48%\)"/);
+ // The budget bar fills 60% of its width.
+ assert.match(svg,/width="872" height="16" rx="8" fill="#ebe8dc"\/>\n<rect x="104" y="[\d.]+" width="523.2" height="16"/);
+ // Each ribbon is drawn in its target's colour, wider for the larger amount.
+ const ribbons=[...svg.matchAll(/<path d="M[\d.]+,([\d.]+) C[^L]+L[\d.]+,[\d.]+ C[^Z]+ [\d.]+,([\d.]+) Z" fill="([^"]+)" fill-opacity="0.3"\/>/g)];
+ assert.deepEqual(ribbons.map(match=>match[3]),['hsl(48 60% 48%)','#4d7c0f']);
+ const widths=ribbons.map(match=>Number(match[2])-Number(match[1]));
+ assert.ok(Math.abs(widths[0]-3*widths[1])<0.5,'ribbons are as wide as their amounts');
+ assert.match(svg,/>75%</);assert.match(svg,/>On track</);assert.match(svg,/>\$200 left</);
+ // A long amount shrinks to fit its card instead of running into the next.
  const wide=reportCardSvg({title:'T',figures:[{label:'A',value:'UZS 150,000,000,000'},{label:'B',value:'1'},{label:'C',value:'2'}]});
- assert.doesNotMatch(wide,/font-size="40" font-weight="700" fill="#18200f">UZS/);
- // A second source, such as what came from savings, is named under the flow.
+ assert.doesNotMatch(wide,/font-size="36" font-weight="700" fill="#1c2a20">UZS/);
+ // A second source, such as what came from savings, has its own box.
  const over=reportCardSvg({title:'T',charts:[{kind:'flow',title:'F',sources:[{label:'Income',value:'$1',amount:1,color:'#2f7d32'},{label:'From savings',value:'$2',amount:2,color:'#9aa38f'}],targets:[{label:'Rent',value:'$3',amount:3,color:'#123456'}]}]});
  assert.match(over,/>From savings</);
 });
@@ -323,7 +344,7 @@ test('a Sankey with several sources joins each source to the targets it shares m
  const svg=reportCardSvg({title:'T',charts:[{kind:'flow',title:'F',sources:[{label:'Salary',value:'$300',amount:300,color:'#111111'},{label:'Rent',value:'$100',amount:100,color:'#222222'}],targets:[
   {label:'Food',value:'$200',amount:200,color:'#aa0000'},{label:'Saved',value:'$200',amount:200,color:'#00aa00'}]}]});
  // Salary feeds Food and part of Saved; Rent feeds the rest of Saved: three ribbons, coloured by their target.
- assert.equal((svg.match(/fill-opacity="0.22"/g)||[]).length,3);
- assert.equal((svg.match(/fill="#00aa00" fill-opacity/g)||[]).length,2);
- assert.match(svg,/text-anchor="end" fill="#6b7560">Salary</);assert.match(svg,/>Rent</);
+ assert.equal((svg.match(/fill-opacity="0.3"/g)||[]).length,3);
+ assert.equal((svg.match(/fill="#00aa00" fill-opacity="0.3"/g)||[]).length,2);
+ assert.match(svg,/fill="#6d7468">Salary</);assert.match(svg,/>Rent</);
 });

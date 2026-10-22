@@ -2730,5 +2730,10 @@
   "Borrower group is too long.": "Grup adı çok uzun.",
   "From savings": "Birikimden",
   "This month: income {income}, expenses {expenses}.": "Bu ay: gelir {income}, gider {expenses}.",
-  "Kept in accounts": "Hesaplarda kalan"
+  "Kept in accounts": "Hesaplarda kalan",
+  "Monthly budget": "Aylık bütçe",
+  "{percent} funded": "{percent} karşılandı",
+  "Month-end forecast": "Ay sonu tahmini",
+  "Below zero on {date}": "{date} tarihinde sıfırın altında",
+  "Totals are in {currency}": "Toplamlar {currency} cinsinden"
 }

@@ -2730,5 +2730,10 @@
   "Borrower group is too long.": "Назва групи задовга.",
   "From savings": "Із заощаджень",
   "This month: income {income}, expenses {expenses}.": "Цього місяця: доходи {income}, витрати {expenses}.",
-  "Kept in accounts": "Залишилося на рахунках"
+  "Kept in accounts": "Залишилося на рахунках",
+  "Monthly budget": "Бюджет на місяць",
+  "{percent} funded": "Накопичено {percent}",
+  "Month-end forecast": "Прогноз на кінець місяця",
+  "Below zero on {date}": "Нижче нуля {date}",
+  "Totals are in {currency}": "Підсумки в {currency}"
 }

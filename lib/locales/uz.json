@@ -2730,5 +2730,10 @@
   "Borrower group is too long.": "Guruh nomi juda uzun.",
   "From savings": "Jamg‘armadan",
   "This month: income {income}, expenses {expenses}.": "Shu oy: daromad {income}, xarajatlar {expenses}.",
-  "Kept in accounts": "Hisoblarda qoldi"
+  "Kept in accounts": "Hisoblarda qoldi",
+  "Monthly budget": "Oylik byudjet",
+  "{percent} funded": "{percent} to‘plangan",
+  "Month-end forecast": "Oy oxiri prognozi",
+  "Below zero on {date}": "{date} kuni noldan past",
+  "Totals are in {currency}": "Jami summalar {currency} da"
 }

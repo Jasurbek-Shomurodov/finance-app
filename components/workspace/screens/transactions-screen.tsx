@@ -39,7 +39,7 @@ import { formatMoney, formatNumber } from '@/lib/format';
 import { convertAmount, marketRates } from '@/lib/market';
 import { emptyPlanning } from '@/lib/planning';
 import { ratesOf } from '@/lib/transaction-rates';
-import { chunks, emptyTransactionFilter, filtersTransactions, groupPageByDay, earliestTransactionDay, periodDays, signedAmount, summarizeTransactions, transactionPeriodLabels, transactionPeriods, transactionsIn, type TransactionPeriod } from '@/lib/transaction-list';
+import { chunks, emptyTransactionFilter, filtersTransactions, groupPageByDay, earliestTransactionDay, periodDays, signedAmount, summarizeTransactions, transactionPeriodLabels, transactionPeriods, transactionsIn, transactionsQuery, type TransactionPeriod } from '@/lib/transaction-list';
 import { canRecategorize, canTakeCategory, categoryChoices, choiceKey, newRule, ruleFromBusiness, ruleFromChange, type CategoryChoice, type TransactionRule } from '@/lib/transaction-rules';
 import { TransactionInsights } from '@/components/transaction-insights';
 import { RollingText } from '@/components/presentation-foundation/rolling-text';
@@ -60,11 +60,13 @@ export function TransactionsScreen() {
  const [period, setPeriod] = useState<TransactionPeriod | 'custom'>('three_months');
  const [custom, setCustom] = useState<DateRange>(() => periodDays('three_months', today));
  const [filter, setFilter] = useState(emptyTransactionFilter);
- // Links such as /transactions?tag=… or ?business=… open the list already filtered.
+ // Links such as /transactions?tag=…, ?business=… or a Sankey's ?type=expense&q=…&from=…&to=… open the list already filtered.
  const search = useLocationSearch();
  const [appliedSearch, setAppliedSearch] = useState('');
- // They open the longest period, so a tag's or a business's whole history is there to select and move.
- if (search !== appliedSearch) { setAppliedSearch(search); if (search) { setFilter({ ...emptyTransactionFilter, businesses: queryList(search, 'business'), tags: queryList(search, 'tag') }); setPeriod('two_years'); } }
+ if (search !== appliedSearch) {
+  setAppliedSearch(search);
+  if (search) { const query = transactionsQuery(search, key => queryList(search, key)); setFilter(query.filter); if (query.range) setCustom(query.range); setPeriod(query.period ?? 'custom'); }
+ }
  const [editingMany, setEditingMany] = useState(false);
  const [selecting, setSelecting] = useState(false);
  const [selected, setSelected] = useState<Set<string>>(new Set());

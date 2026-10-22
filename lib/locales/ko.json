@@ -2730,5 +2730,10 @@
   "Borrower group is too long.": "그룹 이름이 너무 깁니다.",
   "From savings": "저축에서",
   "This month: income {income}, expenses {expenses}.": "이번 달: 수입 {income}, 지출 {expenses}.",
-  "Kept in accounts": "계좌에 남은 금액"
+  "Kept in accounts": "계좌에 남은 금액",
+  "Monthly budget": "월 예산",
+  "{percent} funded": "{percent} 달성",
+  "Month-end forecast": "월말 전망",
+  "Below zero on {date}": "{date}에 0 미만",
+  "Totals are in {currency}": "합계는 {currency} 기준"
 }

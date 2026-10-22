@@ -2730,5 +2730,10 @@
   "Borrower group is too long.": "ชื่อกลุ่มยาวเกินไป",
   "From savings": "จากเงินออม",
   "This month: income {income}, expenses {expenses}.": "เดือนนี้: รายรับ {income} รายจ่าย {expenses}",
-  "Kept in accounts": "คงอยู่ในบัญชี"
+  "Kept in accounts": "คงอยู่ในบัญชี",
+  "Monthly budget": "งบประมาณรายเดือน",
+  "{percent} funded": "สะสมแล้ว {percent}",
+  "Month-end forecast": "คาดการณ์สิ้นเดือน",
+  "Below zero on {date}": "ต่ำกว่าศูนย์ใน {date}",
+  "Totals are in {currency}": "ยอดรวมเป็น {currency}"
 }

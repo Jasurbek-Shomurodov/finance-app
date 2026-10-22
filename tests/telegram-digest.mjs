@@ -66,11 +66,13 @@ test('this month\'s income and expenses lead the digest, and expenses are compar
  assert.equal(detail(400,650),'$250 less than last month by this day');
  assert.equal(detail(900,650),'$250 more than last month by this day');
  assert.equal(detail(400,400.3),'Same as last month by this day');
+ const direction=(...args)=>digestCard([],'en',today,flow(...args)).card.hero.direction;
+ assert.deepEqual([direction(400,650),direction(900,650),direction(400,400.3),direction(400)],['down','up',undefined,undefined]);
  for(const previous of [0,undefined])assert.equal(detail(400,previous),undefined);
- assert.deepEqual(digestCard([],'en',today,flow(400)).card.figures[0],{label:'Income',value:'$1,000'});
- assert.deepEqual(digestCard([],'en',today,flow(400,0)).card.figures[1],{label:'Saved',value:'$600',detail:'60% of income',tone:'good'});
- assert.deepEqual(digestCard([],'en',today,flow(1400,0)).card.figures[1],{label:'Saved',value:'−$400'});
- assert.deepEqual(digestCard([],'en',today,flow(0,0,0)).card.figures[1],{label:'Saved',value:'$0'});
+ assert.deepEqual(digestCard([],'en',today,flow(400)).card.figures[0],{label:'Income',value:'$1,000',icon:'wallet'});
+ assert.deepEqual(digestCard([],'en',today,flow(400,0)).card.figures[1],{label:'Net cash flow',value:'$600',icon:'arrowUpDown',detail:'60% of income',tone:'good'});
+ assert.deepEqual(digestCard([],'en',today,flow(1400,0)).card.figures[1],{label:'Net cash flow',value:'−$400',icon:'arrowUpDown'});
+ assert.deepEqual(digestCard([],'en',today,flow(0,0,0)).card.figures[1],{label:'Net cash flow',value:'$0',icon:'arrowUpDown'});
  assert.deepEqual(digestCard([],'en',today,flow(0,0,0)).card.charts,[],'a month with nothing in or out draws no flow');
 });
 
@@ -104,7 +106,7 @@ test('the digest cron is scheduled in the morning and documented',()=>{
  assert.match(fs.readFileSync('VERCEL.md','utf8'),/telegram-digest/);
 });
 
-function cronRoute({subscriptions,records={},splits={},links={},movements={},occurrences={},languages={},names={},currencies={},snapshots={},reminders={},sendResult=true,failFor='',deliveries=deliveryTable()}){
+function cronRoute({subscriptions,records={},splits={},links={},movements={},budgets={},goals={},occurrences={},languages={},names={},currencies={},snapshots={},reminders={},sendResult=true,failFor='',deliveries=deliveryTable()}){
  const sent=[],reads=[];
  const db={
   async read(path){
@@ -122,6 +124,10 @@ function cronRoute({subscriptions,records={},splits={},links={},movements={},occ
    if(path.startsWith('/rest/v1/transaction_splits'))return splits[owner]??[];
    if(path.startsWith('/rest/v1/investment_account_links'))return links[owner]??[];
    if(path.startsWith('/rest/v1/asset_movements'))return movements[owner]??[];
+   if(path.startsWith('/rest/v1/budget_settings'))return budgets[owner]?.settings??[];
+   if(path.startsWith('/rest/v1/budget_categories'))return budgets[owner]?.categories??[];
+   if(path.startsWith('/rest/v1/budget_amounts'))return budgets[owner]?.amounts??[];
+   if(path.startsWith('/rest/v1/savings_goals'))return goals[owner]??[];
    throw Error('unexpected '+path);
   },
   // The digest writes nothing but its delivery claims.
@@ -144,7 +150,7 @@ test('the digest never shows this month\'s totals when they left out amounts wit
  const text=digestMessage([],'en','2026-09-30',missing);
  assert.match(text,/🧾 This month: Exchange rate unavailable\./);assert.doesNotMatch(text,/income \$/);
  const card=digestCard([],'en','2026-09-30',missing).card;
- assert.deepEqual(card.hero,{label:'Spent',value:'—',detail:'Exchange rate unavailable.'});assert.deepEqual(card.figures,[]);assert.deepEqual(card.charts,[]);
+ assert.deepEqual(card.hero,{label:'Total spending',value:'—',detail:'Exchange rate unavailable.'});assert.deepEqual(card.figures,[]);assert.deepEqual(card.charts,[]);
 });
 
 test('the cron sends one digest per linked owner in their language and window, greeting them by the name saved in the app',async()=>{
@@ -395,4 +401,47 @@ test('the digest cron reads only this month\'s transfers, buys and Tracker moves
  const [flow]=cron.sent[0].picture.card.charts;
  assert.deepEqual(flow.sources.map(node=>[node.label,node.value]),[['Salary','$2,000']]);
  assert.deepEqual(flow.targets.map(node=>[node.label,node.value]),[['Investments','$500'],['Kept in accounts','$1,500']]);
+});
+
+test('the month ahead: the budget against spending in its categories, the goal funded first, and the cash at month end',()=>{
+ const {digestBudget,digestGoal,digestForecast}=loadTS('lib/digest-plan.ts');
+ const source=(amounts,extra={})=>({categories:[{id:'c-feed',name:'Sheep feed',direction:'expense'}],removed:[],state:{mode:'category',applyForward:false,categories:[],amounts,...extra}});
+ const amount=(category_key,value,currency='USD',month='2026-09')=>({category_key,month,amount:value,currency,applies_forward:true});
+ // Only spending in budgeted categories counts against the budget.
+ assert.deepEqual(digestBudget(source([amount('Living expense',500),amount('c-feed',300)]),'2026-09','USD',{},{'k:Living expense':200,'c:c-feed':350,'k:Charity':999}),{total:800,spent:550});
+ assert.deepEqual(digestBudget(source([amount('Living expense',1200000,'UZS')]),'2026-09','USD',{UZS:12000},{}),{total:100,spent:0});
+ // No budget, or one no rate converts, shows nothing rather than a wrong total.
+ assert.equal(digestBudget(source([]),'2026-09','USD',{},{}),undefined);
+ assert.equal(digestBudget(source([amount('Living expense',5,'EUR')]),'2026-09','USD',{},{}),undefined);
+ const goal=(id,extra)=>({id,name:id,kind:'savings',target:1000,allocated:100,archived:false,account_id:'cash',...extra});
+ const records=[{id:'cash',kind:'Cash',currency:'UZS',amount:0}];
+ assert.deepEqual(digestGoal([goal('Trip',{funding_priority:5}),goal('Emergency fund',{funding_priority:1}),goal('Old',{archived:true,funding_priority:0}),goal('Done',{completed_on:'2026-09-01',funding_priority:0}),goal('Worth',{kind:'net_worth',funding_priority:0})],records,'USD'),{name:'Emergency fund',saved:100,target:1000,currency:'UZS'});
+ assert.equal(digestGoal([goal('Worth',{kind:'net_worth'})],records,'USD'),undefined);
+ // The cash projected for the month's last day: today's cash less a bill still due this month.
+ const cash={id:'cash',name:'Wallet',kind:'Cash',currency:'USD',amount:1000,date:'2026-01-01',frequency:'Once',quantity:0,cost:0,rate:0,notes:''};
+ const rent={...cash,id:'rent',name:'Rent',kind:'Rent expense',amount:1200,date:'2026-09-28',frequency:'Monthly',account_id:'cash'};
+ const forecast=digestForecast({records:[cash,rent],occurrences:[],debtPayments:[],spending:{},today:'2026-09-20',currency:'USD',rates:{}});
+ assert.deepEqual(forecast,{balance:-200,belowZero:'2026-09-28'});
+ assert.equal(digestForecast({records:[rent],occurrences:[],debtPayments:[],spending:{},today:'2026-09-20',currency:'USD',rates:{}}),undefined,'no cash account, no forecast');
+ assert.equal(digestForecast({records:[{...cash,currency:'EUR'}],occurrences:[],debtPayments:[],spending:{},today:'2026-09-20',currency:'USD',rates:{}}),undefined,'no rate, no forecast');
+});
+
+test('the digest cron reads the budget and goals, and a failed read leaves those cards out without holding the digest back',async()=>{
+ process.env.CRON_SECRET='test-secret';
+ const cash={id:'cash',name:'Wallet',kind:'Cash',amount:500,currency:'USD',date:'2026-01-01',frequency:'Once',quantity:0,cost:0,rate:0,notes:''};
+ const food={...cash,id:'food',name:'Food',kind:'Living expense',amount:120,date:'2026-09-10',account_id:'cash'};
+ const cron=cronRoute({subscriptions:[{user_id:'anna',chat_id:1}],records:{anna:[cash,food]},
+  budgets:{anna:{settings:[{mode:'category',apply_forward:false}],amounts:[{category_key:'Living expense',month:'2026-09-01',amount:400,currency:'USD',applies_forward:true}]}},
+  goals:{anna:[{id:'g',name:'Emergency fund',kind:'savings',target:1000,allocated:250,archived:false,account_id:'cash',currency:'USD'}]}});
+ await cron.GET();
+ const card=cron.sent[0].picture.card;
+ assert.deepEqual(card.meter,{title:'Monthly budget',total:'$400 total',remaining:'$280 left',share:0.3,tone:'good'});
+ // The forecast spends what is left of the budget by month end, as the Forecast screen does: $500 less $280.
+ assert.deepEqual(card.panels.map(panel=>[panel.title,panel.value]),[['Emergency fund','$250'],['Month-end forecast','$220']]);
+ assert.ok(cron.reads.some(path=>path.startsWith('/rest/v1/budget_amounts')&&path.includes('user_id=eq.anna')));
+ assert.ok(cron.reads.some(path=>path.startsWith('/rest/v1/savings_goals')&&path.includes('user_id=eq.anna')));
+ const failing=cronRoute({subscriptions:[{user_id:'anna',chat_id:1}],records:{anna:[cash,food]},goals:{get anna(){throw Error('goals down');}}});
+ await failing.GET();
+ assert.equal(failing.sent.length,1);
+ assert.equal(failing.sent[0].picture.card.meter,undefined);assert.deepEqual(failing.sent[0].picture.card.panels,[]);
 });

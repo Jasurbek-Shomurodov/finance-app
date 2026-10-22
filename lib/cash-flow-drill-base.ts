@@ -3,6 +3,7 @@ import type { DrillContext, DrillNode, DrillTarget } from './cash-flow-drill-typ
 import type { Share } from './cash-flow-report';
 import { assets, liabilities, type Entry } from './finance';
 import type { CashFlowItem } from './spending';
+import { transactionsHref, type TransactionLink } from './transaction-list';
 
 /** Helpers every Cash flow drill-down view shares (`cash-flow-drill`, `cash-flow-group`, `cash-flow-principal`…). */
 export const add = (totals: Map<string, number>, key: string, amount: number) => totals.set(key, (totals.get(key) ?? 0) + amount);
@@ -35,3 +36,6 @@ export function accountNode(key: string, byId: Map<string, Entry>, t: (key: stri
 /** The page a view's own node opens, so every node of every Sankey responds: an account's on Accounts, a holding's on
  * Investments, a debt's on Loans & debts, and transactions (no account, a category, a merchant) on Transactions. */
 export const pageOf = (kind: DrillNode['kind'] | 'transactions'): DrillTarget => ({ side: 'link', href: kind === 'holding' ? '/assets' : kind === 'debt' ? '/loans-debts' : kind === 'account' ? '/accounts' : kind === 'savings' ? '/goals' : '/transactions' });
+/** Transactions filtered to what a view's own node shows (a merchant by search, a category, income or spending) over the
+ * view's period, so the list opens on exactly those transactions. */
+export const transactionsOf = (link: TransactionLink, context: Pick<DrillContext, 'months' | 'today'>): DrillTarget => ({ side: 'link', href: transactionsHref({ ...link, range: span(context.months, context.today) }) });

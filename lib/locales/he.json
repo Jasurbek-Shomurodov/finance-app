@@ -2730,5 +2730,10 @@
   "Borrower group is too long.": "שם הקבוצה ארוך מדי.",
   "From savings": "מהחסכונות",
   "This month: income {income}, expenses {expenses}.": "החודש: הכנסות {income}, הוצאות {expenses}.",
-  "Kept in accounts": "נשאר בחשבונות"
+  "Kept in accounts": "נשאר בחשבונות",
+  "Monthly budget": "תקציב חודשי",
+  "{percent} funded": "ממומן {percent}",
+  "Month-end forecast": "תחזית לסוף החודש",
+  "Below zero on {date}": "מתחת לאפס ב-{date}",
+  "Totals are in {currency}": "הסכומים ב-{currency}"
 }

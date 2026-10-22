@@ -2,7 +2,7 @@ import { type Entry } from './finance';
 import { convertAmount } from './market';
 import type { PlanningData } from './planning';
 import type { DrillContext, DrillFlows, DrillNode, DrillTarget } from './cash-flow-drill-types';
-import { accountNode, accountOf, add, categoryNode, merchantOf, pageOf, span, type Item } from './cash-flow-drill-base';
+import { accountNode, accountOf, add, categoryNode, merchantOf, pageOf, span, transactionsOf, type Item } from './cash-flow-drill-base';
 import { categoryGroup, groupFlows, groupTransactions } from './cash-flow-group';
 import { cashFlowItems, spendingAmount, transferAmount } from './spending';
 import { ratesOf, type DatedRecord, type DayTable } from './transaction-rates';
@@ -205,7 +205,7 @@ function merchantFlows(target: { key: string; income: boolean }, title: string, 
  const accountSide = [...accounts].filter(([, value]) => value > 0).sort((a, b) => b[1] - a[1]).map(([key, value]) => ({ node: accountNode(key, byId, t), value }));
  const categorySide = [...categories].filter(([, value]) => value > 0).sort((a, b) => b[1] - a[1]).map(([key, value]) => ({ node: categoryNode(key, target.income, context), value }));
  const [left, right] = target.income ? [categorySide, accountSide] : [accountSide, categorySide];
- const hub = left.length, nodes = [...left.map(entry => entry.node), { name: title, kind: target.income ? 'income' : 'expense', open: pageOf('transactions') } as DrillNode, ...right.map(entry => entry.node)];
+ const hub = left.length, nodes = [...left.map(entry => entry.node), { name: title, kind: target.income ? 'income' : 'expense', open: transactionsOf({ direction: target.income ? 'income' : 'expense', query: target.key }, context) } as DrillNode, ...right.map(entry => entry.node)];
  return { nodes, links: [...left.map((entry, index) => ({ source: index, target: hub, value: entry.value })), ...right.map((entry, index) => ({ source: hub, target: hub + 1 + index, value: entry.value }))], missing };
 }
 

@@ -1,4 +1,4 @@
-import { add, categoryNode, merchantOf, pageOf, shares, span, type Item } from './cash-flow-drill-base';
+import { add, categoryNode, merchantOf, shares, span, transactionsOf, type Item } from './cash-flow-drill-base';
 import type { DrillContext, DrillFlows, DrillNode, DrillTarget } from './cash-flow-drill-types';
 import { otherShareKey, topShares } from './cash-flow-report';
 import type { Entry } from './finance';
@@ -37,7 +37,7 @@ export function groupFlows(group: Group, title: string, context: DrillContext): 
  const kind: DrillNode['kind'] = group.income ? 'income' : 'expense';
  const named = top.map(({ key, amount }): { node: DrillNode; value: number } => ({ value: amount, node: key === otherShareKey ? { name: t('Other'), kind, open: { ...group, skip: [...group.skip ?? [], ...shown] } }
   : group.by === 'category' ? categoryNode(key, group.income, context) : { name: key, kind, open: { side: 'merchant', key, income: group.income } } }));
- const hub: DrillNode = { name: title, kind, open: pageOf('transactions') };
+ const hub: DrillNode = { name: title, kind, open: transactionsOf({ direction: group.income ? 'income' : 'expense', category: group.keys.length === 1 ? group.keys[0] : undefined }, context) };
  if (group.income) return { nodes: [...named.map(item => item.node), hub], links: named.map((item, index) => ({ source: index, target: named.length, value: item.value })), missing };
  return { nodes: [hub, ...named.map(item => item.node)], links: named.map((item, index) => ({ source: 0, target: index + 1, value: item.value })), missing };
 }

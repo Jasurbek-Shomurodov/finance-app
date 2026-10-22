@@ -12,7 +12,8 @@ import {formatDate,formatMonthYear,formatNumber,formatPercent} from './format';
 import type {Language} from './i18n';
 import type {RateTable} from './money';
 import type {DueItem} from './planning';
-import type {CardChart,CardRow,CardSection,CardTile,FlowNode,ReportCard} from './report-card';
+import type {CardChart,CardHero,CardMeter,CardPanel,CardRow,CardSection,CardTile,FlowNode,ReportCard} from './report-card';
+import {kindIcon,type CardIcon} from './report-card-icons';
 import {escapeHtml} from './telegram';
 import {messageKit} from './telegram-kit';
 const motivation=['Small steps add up to big results.','A clear view of your money is the first step to calm.','Every record you add makes tomorrow easier to plan.','Progress beats perfection. Keep going.'];
@@ -28,6 +29,9 @@ export type DigestExtras={
   /** Income by source, largest first, named like the categories; and the cash moved this month into investments, a
    * mortgage's principal, other debts and money lent (lib/digest-flow.ts). Both left out when a rate was missing. */
   sources?:{key:string;label:string;amount:number}[];moved?:Partial<Record<MoneyDestination,number>>};
+ /** The month ahead (lib/digest-plan.ts): the budget against what was spent in its categories, the savings goal funded
+  * first, and the cash projected for the month's last day; each left out when it is not known. */
+ plan?:{budget?:{total:number;spent:number};goal?:{name:string;saved:number;target:number;currency:string};forecast?:{balance:number;belowZero:string|null}};
 };
 /** The days the digest covers: this month from the 1st to `today`, and the same days of last month, cut at its end. */
 export function digestPeriods(today:string){
@@ -105,36 +109,59 @@ export function digestMessage(items:DueItem[],language:Language,today:string,ext
  }
  return [greeting,facts.join('\n'),payments].filter(Boolean).join('\n\n');
 }
-/** This month so far: what was spent, large, against the same days of last month in plain words; then income, what was
- * saved and net worth as quiet figures. */
-function digestFigures(kit:Kit,extras:DigestExtras):{hero?:CardTile;figures:CardTile[]}{
+/** This month so far: what was spent, large, against the same days of last month in plain words; then income, the net
+ * cash flow and net worth in cards. */
+/** What was spent this month, against the same days of last month in plain words: spending more or less is never
+ * coloured as good or bad news, and the arrow only says which way. */
+function spendingHero(kit:Kit,flow:NonNullable<DigestExtras['cashflow']>,currency:string):CardHero{
+ const {t}=kit,money=(value:number)=>kit.money(value,currency);
+ if(flow.missing)return {label:t('Total spending'),value:'—',detail:t('Exchange rate unavailable.')};
+ const {spending,previous}=flow,difference=previous?Math.abs(spending-previous.spending):0;
+ if(!previous?.spending)return {label:t('Total spending'),value:money(spending)};
+ if(Math.round(difference)===0)return {label:t('Total spending'),value:money(spending),detail:t('Same as last month by this day')};
+ const less=spending<previous.spending;
+ return {label:t('Total spending'),value:money(spending),detail:t(less?'{amount} less than last month by this day':'{amount} more than last month by this day',{amount:money(difference)}),direction:less?'down':'up'};
+}
+function digestFigures(kit:Kit,extras:DigestExtras):{hero?:CardHero;figures:CardTile[]}{
  const {t,locale}=kit,currency=extras.currency??'USD',money=(value:number)=>kit.money(value,currency);
  const signed=(value:number)=>(value<0?'−':'+')+money(Math.abs(value));
- const figures:CardTile[]=[];let hero:CardTile|undefined;
- const flow=extras.cashflow;
- if(flow?.missing)hero={label:t('Spent'),value:'—',detail:t('Exchange rate unavailable.')};
- else if(flow){
-  const {spending,previous}=flow,net=flow.income-spending,difference=previous?Math.abs(spending-previous.spending):0;
-  // Spending more or less is stated plainly, never coloured as good or bad news.
-  const detail=!previous||!previous.spending?undefined:Math.round(difference)===0?t('Same as last month by this day'):t(spending<previous.spending?'{amount} less than last month by this day':'{amount} more than last month by this day',{amount:money(difference)});
-  hero={label:t('Spent'),value:money(spending),...(detail?{detail}:{})};
+ const figures:CardTile[]=[],flow=extras.cashflow,hero=flow&&spendingHero(kit,flow,currency);
+ if(flow&&!flow.missing){
+  const {spending,previous}=flow,net=flow.income-spending;
   figures.push(
-   {label:t('Income'),value:money(flow.income),...(previous?{detail:`${t('Last month')}: ${money(previous.income)}`}:{})},
-   {label:t('Saved'),value:(net<0?'−':'')+money(Math.abs(net)),...(net>0&&flow.income>0?{detail:t('{percent} of income',{percent:formatPercent(net/flow.income*100,locale,0)}),tone:'good' as const}:{})},
+   {label:t('Income'),value:money(flow.income),icon:'wallet',...(previous?{detail:`${t('Last month')}: ${money(previous.income)}`}:{})},
+   {label:t('Net cash flow'),value:(net<0?'−':'')+money(Math.abs(net)),icon:'arrowUpDown',...(net>0&&flow.income>0?{detail:t('{percent} of income',{percent:formatPercent(net/flow.income*100,locale,0)}),tone:'good' as const}:{})},
   );
  }
  if(extras.netWorth){
   const change=grown(extras.netWorth),moved=change!==null&&Math.round(change)!==0;
-  figures.push({label:t('Net worth'),value:money(extras.netWorth.amount),...(moved?{detail:t('{change} this month',{change:signed(change)}),tone:change<0?'bad' as const:'good' as const}:{})});
+  figures.push({label:t('Net worth'),value:money(extras.netWorth.amount),icon:'chart',...(moved?{detail:t('{change} this month',{change:signed(change)}),tone:change<0?'bad' as const:'good' as const}:{})});
  }
  return {...(hero?{hero}:{}),figures};
 }
+/** The month's budget as a bar: its total, and what is left of it or how far spending went over. */
+function digestMeter(kit:Kit,extras:DigestExtras):CardMeter|undefined{
+ const budget=extras.plan?.budget,{t}=kit,money=(value:number)=>kit.money(value,extras.currency??'USD');
+ if(!budget)return undefined;
+ const left=budget.total-budget.spent;
+ return {title:t('Monthly budget'),total:t('{amount} total',{amount:money(budget.total)}),remaining:t(left<0?'{amount} over':'{amount} left',{amount:money(Math.abs(left))}),share:budget.spent/budget.total,tone:left<0?'bad':'good'};
+}
+/** The savings goal funded first, in its own currency, and the cash projected for the month's last day. */
+function digestPanels(kit:Kit,extras:DigestExtras):CardPanel[]{
+ const {t,locale}=kit,{goal,forecast}=extras.plan??{},panels:CardPanel[]=[];
+ if(goal){
+  const share=goal.saved/goal.target;
+  panels.push({title:goal.name,icon:'shield',value:kit.money(goal.saved,goal.currency),detail:t('of {amount}',{amount:kit.money(goal.target,goal.currency)}),share,note:t('{percent} funded',{percent:formatPercent(Math.min(1,share)*100,locale,0)}),noteTone:'good'});
+ }
+ if(forecast)panels.push({title:t('Month-end forecast'),icon:'trendingUp',...(forecast.belowZero?{lead:t('Below zero on {date}',{date:formatDate(forecast.belowZero,locale)}),leadTone:'bad' as const}:{lead:t('On track'),leadTone:'good' as const}),label:t('Projected balance'),value:kit.money(forecast.balance,extras.currency??'USD')});
+ return panels;
+}
 /** Where money went besides spending, in the order the Sankey lists them, with the label and colour of each. */
-const destinations:{key:MoneyDestination;label:string;detail?:string;color:string}[]=[
- {key:'invested',label:'Investments',color:'#3567c9'},
- {key:'mortgage',label:'Mortgage',detail:'Principal',color:'#9a6a3a'},
- {key:'debt',label:'Debt principal paid',color:'#b4583c'},
- {key:'lent',label:'Money lent',color:'#7a62c2'},
+const destinations:{key:MoneyDestination;label:string;detail?:string;color:string;icon:CardIcon}[]=[
+ {key:'invested',label:'Investments',color:'#3567c9',icon:'trendingUp'},
+ {key:'mortgage',label:'Mortgage',detail:'Principal',color:'#9a6a3a',icon:'house'},
+ {key:'debt',label:'Debt principal paid',color:'#b4583c',icon:'landmark'},
+ {key:'lent',label:'Money lent',color:'#7a62c2',icon:'handCoins'},
 ];
 /** Where this month's money went, as a Sankey: each income source (and what came out of savings when more went out than
  * came in) flowing into each spending category, what was invested, paid off a mortgage or another debt, or lent, and
@@ -147,25 +174,27 @@ function digestFlow(kit:Kit,extras:DigestExtras):CardChart[]{
  const kept=flow.income-flow.spending-moved.reduce((sum,item)=>sum+item.amount,0);
  const base=Math.max(flow.income,flow.income-kept),share=(amount:number)=>formatPercent(amount/base*100,locale,0);
  const before=new Map(flow.previous?.categories.map(category=>[category.key,category.amount]));
- const node=(label:string,amount:number,color:string,detail?:string):FlowNode=>({label,amount,color,value:money(amount),detail:[share(amount),detail].filter(Boolean).join(' · ')});
+ const node=(label:string,amount:number,color:string,icon:CardIcon,detail?:string):FlowNode=>({label,amount,color,icon,value:money(amount),detail:[share(amount),detail].filter(Boolean).join(' · ')});
  const lastMonth=(amount:number|undefined)=>amount?`${t('Last month')}: ${money(amount)}`:undefined;
  const shown=flow.categories.slice(0,flowsShown),rest=flow.categories.slice(flowsShown);
  const restAmount=rest.reduce((sum,category)=>sum+category.amount,0),restBefore=rest.reduce((sum,category)=>sum+(before.get(category.key)??0),0);
  // Each category keeps its own colour from the app and the tail folds into one grey flow; what stayed is green.
  const targets=[
-  ...shown.map(category=>node(category.label,category.amount,categoryColor(category.key),lastMonth(before.get(category.key)))),
-  ...(restAmount>0?[node(t('Other'),restAmount,'#9aa38f',lastMonth(restBefore))]:[]),
-  ...moved.map(item=>node(t(item.label),item.amount,item.color,item.detail&&t(item.detail))),
-  ...(Math.round(kept)>0?[node(t('Kept in accounts'),kept,'#4d7c0f')]:[]),
+  ...shown.map(category=>node(category.label,category.amount,categoryColor(category.key),kindIcon(category.key),lastMonth(before.get(category.key)))),
+  ...(restAmount>0?[node(t('Other'),restAmount,'#9aa38f','ellipsis',lastMonth(restBefore))]:[]),
+  ...moved.map(item=>node(t(item.label),item.amount,item.color,item.icon,item.detail&&t(item.detail))),
+  ...(Math.round(kept)>0?[node(t('Kept in accounts'),kept,'#4d7c0f','piggyBank')]:[]),
  ];
  // Income by source when it is known and adds up; otherwise one Income source.
  const named=flow.sources?.filter(source=>source.amount>0)??[],known=named.reduce((sum,source)=>sum+source.amount,0);
  const incomes=named.length&&Math.abs(known-flow.income)<1?named.map(source=>({label:source.label,amount:source.amount,value:money(source.amount),color:categoryColor(source.key)})):flow.income>0?[{label:t('Income'),amount:flow.income,value:money(flow.income),color:'#2f7d32'}]:[];
  const sources=[...incomes,...(Math.round(kept)<0?[{label:t('From savings'),amount:-kept,value:money(-kept),color:'#9aa38f'}]:[])];
- return targets.length?[{kind:'flow',title:t('Where the money went'),sources,targets}]:[];
+ return targets.length?[{kind:'flow',title:t('Where your money went'),sources,targets}]:[];
 }
-/** The digest as a picture: the greeting, this month's figures against last month, where the money went as a Sankey,
- * then the next payments as they were entered, grouped as in the text. The caption is the greeting, so the chat list shows who it is for. */
+/** A key only when its value is known, so the card leaves the block out. */
+const optional=<K extends string,V>(key:K,value:V|undefined)=>(value===undefined?{}:{[key]:value}) as Partial<Record<K,V>>;
+/** The digest as a picture: the greeting with the month, this month's figures against last month, the budget, where the
+ * money went as a Sankey, the savings goal and the month-end forecast, then the next payments as they were entered, grouped as in the text. The caption is the greeting, so the chat list shows who it is for. */
 export function digestCard(items:DueItem[],language:Language,today:string,extras:DigestExtras={}):{card:ReportCard;caption:string}{
  const kit=messageKit(language),{locale,t}=kit;
  const name=extras.name?.trim(),{title}=greetingOf(kit,name,today);
@@ -182,12 +211,11 @@ export function digestCard(items:DueItem[],language:Language,today:string,extras
  }
  const hidden=items.length-shown;
  const card:ReportCard={
-  // The header is the greeting alone: Telegram already dates the message.
-  title,sectionsTitle:t('Upcoming payments'),
-  ...(extras.cashflow||extras.netWorth?{tilesTitle:formatMonthYear(today,locale)}:{}),
-  ...digestFigures(kit,extras),charts:digestFlow(kit,extras),sections,
+  title,period:formatMonthYear(today,locale),sectionsTitle:t('Upcoming payments'),
+  ...digestFigures(kit,extras),...optional('meter',digestMeter(kit,extras)),charts:digestFlow(kit,extras),panels:digestPanels(kit,extras),sections,
   ...(items.length?{}:{lines:[t('Nothing is due soon.')]}),
-  ...(hidden>0?{footer:t('{count} more',{count:formatNumber(hidden,locale,0)})}:{}),
+  // Totals are in the display currency; a payment reads as it was entered.
+  footer:[hidden>0?t('{count} more',{count:formatNumber(hidden,locale,0)}):null,t('Totals are in {currency}',{currency:extras.currency??'USD'})].filter(Boolean).join(' · '),
  };
  return {card,caption:`☀️ <b>${name?t('Good morning, {name}',{name:escapeHtml(name)}):t('Good morning')}</b>`};
 }

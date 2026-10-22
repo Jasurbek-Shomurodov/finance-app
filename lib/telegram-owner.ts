@@ -6,7 +6,10 @@ import {reportError} from './monitoring';
 import {expenses,type Entry} from './finance';
 import {isLanguage,translate,type Language} from './i18n';
 import {ownerRows,pagePath,readAllPages,readIdPages} from './owner-rows';
+import type {BudgetSource} from './budget-forecast';
+import type {BudgetState} from './budget';
 import type {MonthOperations} from './digest-flow';
+import type {Category,Goal} from './planning';
 import {cashflowKinds,standingRecords} from './planning-reads';
 import type {PortfolioSnapshot} from './portfolio-snapshots';
 import type {ServiceDatabase} from './service-role';
@@ -19,8 +22,23 @@ export async function ownerProfile(db:ServiceDatabase,owner:string):Promise<Owne
  const [row]=await db.read<Array<{language?:string;display_name?:string;currencies?:string[]}>>('/rest/v1/user_preferences?select=language,display_name,currencies&user_id=eq.'+owner);
  return {language:isLanguage(row?.language)?row.language:'en',name:(row?.display_name??'').trim(),currency:row?.currencies?.[0]||'USD'};
 }
-/** The owner's added spending categories, to name them in the scheduled reports. */
-export const ownerCategories=(db:ServiceDatabase,owner:string)=>db.read<Array<{id:string;name:string}>>('/rest/v1/transaction_categories?select=id,name&user_id=eq.'+owner);
+/** The owner's added categories, to name them in the scheduled reports and to find their budgets. */
+export const ownerCategories=(db:ServiceDatabase,owner:string)=>db.read<Category[]>('/rest/v1/transaction_categories?select=id,name,direction&user_id=eq.'+owner);
+/** The owner's Budget as the Budget screen reads it (app/api/budget), with the categories it names and the built-in
+ * kinds the workspace removed. A failed read throws. */
+export async function ownerBudget(db:ServiceDatabase,owner:string,categories:readonly Category[]):Promise<BudgetSource>{
+ const [settings,rows,amounts,removed]=await Promise.all([
+  db.read<Array<{mode:BudgetState['mode'];apply_forward:boolean}>>(`/rest/v1/budget_settings?select=mode,apply_forward&user_id=eq.${owner}`),
+  readAllPages<BudgetState['categories'][number]>(range=>db.read(`/rest/v1/budget_categories?select=category_key,budget_type,rollover,rollover_start,excluded&user_id=eq.${owner}&order=category_key.asc&${range}`)),
+  readAllPages<BudgetState['amounts'][number]>(range=>db.read(`/rest/v1/budget_amounts?select=category_key,month,amount,currency,applies_forward&user_id=eq.${owner}&order=category_key.asc,month.asc&${range}`)),
+  db.read<Array<{data?:{kinds?:string[]}}>>(`/rest/v1/workspace_preferences?select=data&key=eq.removed_categories&user_id=eq.${owner}`),
+ ]);
+ return {categories,removed:removed[0]?.data?.kinds??[],state:{mode:settings[0]?.mode??'category',applyForward:settings[0]?.apply_forward??false,
+  categories:rows.map(row=>({...row,rollover_start:row.rollover_start?.slice(0,7)??null})),
+  amounts:amounts.map(row=>({category_key:row.category_key,month:row.month.slice(0,7),amount:Number(row.amount),currency:row.currency,applies_forward:row.applies_forward}))}};
+}
+/** The owner's savings goals, for the one the digest shows. */
+export const ownerGoals=(db:ServiceDatabase,owner:string)=>ownerRows<Goal>(db,'savings_goals',owner,'id,name,kind,target,allocated,currency,account_id,archived,completed_on,funding_priority');
 /** Spending by category (keys from lib/period-summary.ts), largest first, named in `language`: a built-in category is
  * translated, an added one shows the owner's own name, and one since deleted counts as `deleted` (Other expense, or
  * Other income for income). `key` is the

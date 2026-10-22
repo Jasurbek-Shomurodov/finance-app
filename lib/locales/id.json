@@ -2730,5 +2730,10 @@
   "Borrower group is too long.": "Nama grup terlalu panjang.",
   "From savings": "Dari tabungan",
   "This month: income {income}, expenses {expenses}.": "Bulan ini: pemasukan {income}, pengeluaran {expenses}.",
-  "Kept in accounts": "Tetap di rekening"
+  "Kept in accounts": "Tetap di rekening",
+  "Monthly budget": "Anggaran bulanan",
+  "{percent} funded": "{percent} terdanai",
+  "Month-end forecast": "Perkiraan akhir bulan",
+  "Below zero on {date}": "Di bawah nol pada {date}",
+  "Totals are in {currency}": "Total dalam {currency}"
 }

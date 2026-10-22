@@ -2730,5 +2730,10 @@
   "Borrower group is too long.": "দলের নাম খুব লম্বা।",
   "From savings": "সঞ্চয় থেকে",
   "This month: income {income}, expenses {expenses}.": "এই মাস: আয় {income}, খরচ {expenses}।",
-  "Kept in accounts": "অ্যাকাউন্টে রাখা"
+  "Kept in accounts": "অ্যাকাউন্টে রাখা",
+  "Monthly budget": "মাসিক বাজেট",
+  "{percent} funded": "{percent} পূরণ হয়েছে",
+  "Month-end forecast": "মাস শেষের পূর্বাভাস",
+  "Below zero on {date}": "{date} তারিখে শূন্যের নিচে",
+  "Totals are in {currency}": "মোট পরিমাণ {currency}-এ"
 }

@@ -2730,5 +2730,10 @@
   "Borrower group is too long.": "Nazwa grupy jest za długa.",
   "From savings": "Z oszczędności",
   "This month: income {income}, expenses {expenses}.": "W tym miesiącu: przychody {income}, wydatki {expenses}.",
-  "Kept in accounts": "Zostało na kontach"
+  "Kept in accounts": "Zostało na kontach",
+  "Monthly budget": "Budżet miesięczny",
+  "{percent} funded": "Sfinansowano {percent}",
+  "Month-end forecast": "Prognoza na koniec miesiąca",
+  "Below zero on {date}": "Poniżej zera {date}",
+  "Totals are in {currency}": "Sumy w {currency}"
 }

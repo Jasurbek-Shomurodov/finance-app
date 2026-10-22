@@ -2730,5 +2730,10 @@
   "Borrower group is too long.": "グループ名が長すぎます。",
   "From savings": "貯蓄から",
   "This month: income {income}, expenses {expenses}.": "今月: 収入 {income}、支出 {expenses}。",
-  "Kept in accounts": "口座に残した額"
+  "Kept in accounts": "口座に残した額",
+  "Monthly budget": "月間予算",
+  "{percent} funded": "{percent} 達成",
+  "Month-end forecast": "月末の見通し",
+  "Below zero on {date}": "{date} にマイナス",
+  "Totals are in {currency}": "合計は {currency} 表示"
 }

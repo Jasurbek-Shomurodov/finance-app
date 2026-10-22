@@ -2730,5 +2730,10 @@
   "Borrower group is too long.": "Jina la kikundi ni refu mno.",
   "From savings": "Kutoka akiba",
   "This month: income {income}, expenses {expenses}.": "Mwezi huu: mapato {income}, matumizi {expenses}.",
-  "Kept in accounts": "Iliyobaki kwenye akaunti"
+  "Kept in accounts": "Iliyobaki kwenye akaunti",
+  "Monthly budget": "Bajeti ya mwezi",
+  "{percent} funded": "{percent} imefadhiliwa",
+  "Month-end forecast": "Utabiri wa mwisho wa mwezi",
+  "Below zero on {date}": "Chini ya sifuri tarehe {date}",
+  "Totals are in {currency}": "Jumla ziko kwa {currency}"
 }

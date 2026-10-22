@@ -30,7 +30,31 @@ export const earliestTransactionDay = (today: string) => shiftMonth(today.slice(
 /** `businesses` holds business ids and `household`, `tags` holds tag ids (none means all); `tagMatch` says whether a row needs any or all of the tags. */
 export type TransactionFilter = { query: string; direction: 'all' | 'income' | 'expense'; category: string; businesses: string[]; tags: string[]; tagMatch: TagMatch };
 export const emptyTransactionFilter: TransactionFilter = { query: '', direction: 'all', category: 'all', businesses: [], tags: [], tagMatch: 'any' };
-export const filtersTransactions = (filter: TransactionFilter) => !!filter.query || filter.category !== 'all' || filter.direction !== 'all' || filter.businesses.length > 0 || filter.tags.length > 0;
+/** A link to Transactions already filtered: a direction (`type`), a category, the search (`q`), and a period by name or by
+ * its first and last day. */
+export type TransactionLink = { direction?: 'income' | 'expense'; category?: string; query?: string; period?: TransactionPeriod; range?: { from: string; to: string } };
+export function transactionsHref(link: TransactionLink) {
+ const params = new URLSearchParams();
+ if (link.direction) params.set('type', link.direction);
+ if (link.category) params.set('category', link.category);
+ if (link.query) params.set('q', link.query);
+ if (link.period) params.set('period', link.period);
+ if (link.range) { params.set('from', link.range.from); params.set('to', link.range.to); }
+ const search = params.toString();
+ return search ? `/transactions?${search}` : '/transactions';
+}
+const isDay = (value: string | null): value is string => !!value && /^\d{4}-\d{2}-\d{2}$/.test(value);
+/** What a Transactions link asks for (`transactionsHref`, or ?tag=… and ?business=…): the filter, and the period, a
+ * named one or a `range` of days; a tag or a business alone opens the longest period, so its whole history is in view. */
+export function transactionsQuery(search: string, list: (key: string) => string[]) {
+ const params = new URLSearchParams(search), type = params.get('type'), period = params.get('period'), from = params.get('from'), to = params.get('to');
+ const filter: TransactionFilter = { ...emptyTransactionFilter, businesses: list('business'), tags: list('tag'), query: params.get('q') ?? '', category: params.get('category') || 'all', direction: type === 'income' || type === 'expense' ? type : 'all' };
+ const range = isDay(from) && isDay(to) && from <= to ? { from, to } : null;
+ const named = transactionPeriods.find(item => item === period) ?? (range ? null : 'two_years');
+ return { filter, period: named, range };
+}
+
+export const filtersTransactions =(filter: TransactionFilter) => !!filter.query || filter.category !== 'all' || filter.direction !== 'all' || filter.businesses.length > 0 || filter.tags.length > 0;
 
 /** Recorded income and spending in the period, newest first, matching the search and filters. The range is months (`2026-10`) or days (`2026-10-05`). */
 export function transactionsIn(records: readonly Entry[], range: { from: string; to: string }, today: string, filter: TransactionFilter, categoryName: (record: Entry) => string, tagsOf: (id: string) => readonly string[] = () => []) {

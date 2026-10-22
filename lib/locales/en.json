@@ -2730,5 +2730,10 @@
   "Borrower group is too long.": "Borrower group is too long.",
   "From savings": "From savings",
   "This month: income {income}, expenses {expenses}.": "This month: income {income}, expenses {expenses}.",
-  "Kept in accounts": "Kept in accounts"
+  "Kept in accounts": "Kept in accounts",
+  "Monthly budget": "Monthly budget",
+  "{percent} funded": "{percent} funded",
+  "Month-end forecast": "Month-end forecast",
+  "Below zero on {date}": "Below zero on {date}",
+  "Totals are in {currency}": "Totals are in {currency}"
 }

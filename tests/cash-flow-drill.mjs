@@ -178,11 +178,12 @@ test('a merchant in a category Sankey opens its own: the accounts it was paid fr
  ];
  const ctx = { ...context(records), label: key => ({ groceries: 'Groceries', household: 'Household' })[key] ?? key };
  const groceries = drillFlows({ side: 'expense', key: 'groceries' }, 'Groceries', 0, ctx);
- assert.deepEqual(groceries.nodes.map(node => node.open ?? null), [{ side: 'link', href: '/transactions' }, { side: 'merchant', key: 'Costco', income: false }, { side: 'merchant', key: 'Cafe', income: false }], 'each merchant opens its Sankey, the category Transactions');
+ assert.deepEqual(groceries.nodes.map(node => node.open ?? null), [{ side: 'link', href: '/transactions?type=expense&category=groceries&from=2026-08-01&to=2026-08-31' }, { side: 'merchant', key: 'Costco', income: false }, { side: 'merchant', key: 'Cafe', income: false }], 'each merchant opens its Sankey, the category Transactions filtered to it over the period');
  const costco = drillFlows({ side: 'merchant', key: 'Costco', income: false }, 'Costco', 0, ctx);
  assert.deepEqual(shape(costco), [['Card', 'Costco', 120], ['No account', 'Costco', 80], ['Costco', 'Groceries', 120], ['Costco', 'Household', 80]], 'across every category, never the GBP amount without a rate');
  assert.equal(costco.missing, 1);
  assert.deepEqual(costco.nodes.map(node => node.open?.side ?? null), ['account', 'account', 'link', 'expense', 'expense'], 'its accounts (No account too) and categories open, the merchant Transactions');
+ assert.equal(costco.nodes[2].open.href, '/transactions?type=expense&q=Costco&from=2026-08-01&to=2026-08-31', 'the merchant opens Transactions searched for it over the period');
  const epam = drillFlows({ side: 'merchant', key: 'EPAM', income: true }, 'EPAM', 0, ctx);
  assert.deepEqual(shape(epam), [['Salary', 'EPAM', 2000], ['EPAM', 'Savings account', 2000]], 'a payer: its income category on the left, the account it landed in on the right');
  assert.deepEqual(shape(drillFlows({ side: 'merchant', key: 'Costco', income: true }, 'Costco', 0, ctx)), [], 'a merchant is never read as a payer');
