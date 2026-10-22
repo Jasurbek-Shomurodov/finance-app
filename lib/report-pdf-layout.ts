@@ -1,8 +1,8 @@
 // Lays the financial report's blocks out on A4 pages: the cover and key figures on the grey page, each section and
-// chart on its own white card, tables with repeated headers that break between rows (and inside a row only when the
-// row is taller than a page). Pure; lib/financial-report-pdf.ts paints the result.
-import { barsChart, sankeyChart, sharesChart, tilesChart, type Chart } from './report-pdf-charts';
-import { colors, contentWidth, createFlow, margin, pageBottom, wrap, type Flow, type Fonts, type PdfPage } from './report-pdf-kit';
+// chart on its own white card (a later chart moves up to fill a gap the next one leaves), tables with repeated headers
+// that break between rows (and inside a row only when the row is taller than a page). Pure; lib/financial-report-pdf.ts paints the result.
+import { barsChart, sankeyChart, sharesChart, tilesChart } from './report-pdf-charts';
+import { cardPadding, colors, contentWidth, createFlow, margin, pageBottom, wrap, type Flow, type Fonts, type PdfPage } from './report-pdf-kit';
 import type { ReportBlock } from './financial-report-context';
 
 type Of<K extends ReportBlock['kind']>=Extract<ReportBlock,{kind:K}>;
@@ -20,12 +20,21 @@ function cover(flow:Flow,block:Of<'cover'>){
  flow.y+=20;
 }
 
+type ChartBlock=Of<'sankey'>|Of<'bars'>|Of<'shares'>;
+const isChart=(block:ReportBlock|undefined):block is ChartBlock=>block?.kind==='sankey'||block?.kind==='bars'||block?.kind==='shares';
+
+/** A chart card measured but not yet drawn: its wrapped title, the chart and the card's full height. */
+function measureChart(fonts:Fonts,block:ChartBlock){
+ const width=contentWidth-36,drawn=block.kind==='sankey'?sankeyChart(fonts,block,width):block.kind==='bars'?barsChart(fonts,block,width):sharesChart(fonts,block,width);
+ const lines=block.text?wrap(fonts,block.text,11,width,true):[];
+ return {lines,drawn,height:lines.length*15+(lines.length?10:0)+drawn.height+36};
+}
+
 /** A chart on its own card under a one-line title, kept whole on one page. */
-function chartCard(flow:Flow,title:string,chart:(width:number)=>Chart){
+function chartCard(flow:Flow,block:ChartBlock){
  flow.closeCard();
- const lines=title?wrap(flow.fonts,title,11,contentWidth-36,true):[],head=lines.length*15+(lines.length?10:0);
- const drawn=chart(contentWidth-36);
- flow.ensure(head+drawn.height+36);
+ const {lines,drawn,height}=measureChart(flow.fonts,block);
+ flow.ensure(height);
  flow.openCard();
  for(const line of lines){flow.y+=13;flow.text(line,flow.x(),flow.y,11,{medium:true});flow.y+=2;}
  if(lines.length)flow.y+=10;
@@ -34,10 +43,35 @@ function chartCard(flow:Flow,title:string,chart:(width:number)=>Chart){
  flow.closeCard();
 }
 
-function heading(flow:Flow,text:string,next:ReportBlock|undefined){
+/** When the chart at `index` would leave the rest of the page empty, a later chart of the same run that fits there moves
+ * up to fill it; the run's other charts keep their order. */
+function fillGap(flow:Flow,blocks:ReportBlock[],index:number){
+ flow.closeCard();
+ const fits=(block:ChartBlock)=>flow.fresh()||flow.y+measureChart(flow.fonts,block).height<=pageBottom;
+ if(fits(blocks[index] as ChartBlock))return;
+ for(let next=index+1;isChart(blocks[next]);next++){
+  if(fits(blocks[next] as ChartBlock)){blocks.splice(index,0,...blocks.splice(next,1));return;}
+ }
+}
+
+const paragraphStyle=(kind:string)=>kind==='title'?{size:22,leading:26,color:colors.ink,medium:true,before:4,keep:60}:kind==='subheading'?{size:9.5,leading:13,color:colors.ink,medium:true,before:8,keep:75}:{size:7.8,leading:10.5,color:colors.muted,medium:false,before:2,keep:0};
+
+/** The room a heading keeps with it: the subheadings and notes right under it and the start of the table they lead to. */
+function leadHeight(flow:Flow,following:readonly ReportBlock[]){
+ let height=0;
+ for(const block of following){
+  if(block.kind==='table')return height+(tableLeading+cellPad*2)*2+4;
+  if(block.kind!=='subheading'&&block.kind!=='text')break;
+  const style=paragraphStyle(block.kind);
+  height+=style.before+wrap(flow.fonts,block.text,style.size,contentWidth-cardPadding*2,style.medium).length*style.leading+4;
+ }
+ return height+40;
+}
+
+function heading(flow:Flow,text:string,following:readonly ReportBlock[]){
  flow.closeCard();
  // A heading never ends a page alone: it keeps the start of what follows with it.
- flow.ensure(18+(next?.kind==='table'?60:40)+36);
+ flow.ensure(18+leadHeight(flow,following)+36);
  flow.openCard();
  for(const line of wrap(flow.fonts,text,13,flow.width(),true)){flow.y+=14;flow.text(line,flow.x(),flow.y,13,{medium:true});}
  flow.y+=10;
@@ -45,7 +79,7 @@ function heading(flow:Flow,text:string,next:ReportBlock|undefined){
 
 /** A title (a report without a cover, such as the tax prep sheet), a subheading, or a muted note. */
 function paragraph(flow:Flow,block:{kind:string;text:string}){
- const style=block.kind==='title'?{size:22,leading:26,color:colors.ink,medium:true,before:4,keep:60}:block.kind==='subheading'?{size:9.5,leading:13,color:colors.ink,medium:true,before:8,keep:75}:{size:7.8,leading:10.5,color:colors.muted,medium:false,before:2,keep:0};
+ const style=paragraphStyle(block.kind);
  const lines=wrap(flow.fonts,block.text,style.size,flow.width(),style.medium);
  flow.ensure(Math.min(lines.length,3)*style.leading+style.keep);
  flow.y+=style.before;
@@ -91,16 +125,15 @@ function table(flow:Flow,block:Of<'table'>){
 
 /** The report's pages: every block in order, nothing truncated. `header` is printed at the top of later pages. */
 export function layoutReport(blocks:readonly ReportBlock[],fonts:Fonts,header:string):PdfPage[]{
- const flow=createFlow(fonts,header);
- blocks.forEach((block,index)=>{
+ const flow=createFlow(fonts,header),queue=[...blocks];
+ queue.forEach((_,index)=>{
+  if(isChart(queue[index]))fillGap(flow,queue,index);
+  const block=queue[index];
   switch(block.kind){
    case 'cover':cover(flow,block);break;
    case 'tiles':{const chart=tilesChart(fonts,block.tiles,contentWidth);flow.closeCard();flow.ensure(chart.height);flow.page().ops.push(...chart.draw(margin,flow.y));flow.y+=chart.height+14;break;}
-   case 'sankey':chartCard(flow,block.text,width=>sankeyChart(fonts,block,width));break;
-   case 'bars':chartCard(flow,block.text,width=>barsChart(fonts,block,width));break;
-   case 'shares':chartCard(flow,block.text,width=>sharesChart(fonts,block,width));break;
-   case 'pageBreak':flow.closeCard();if(!flow.fresh())flow.newPage();break;
-   case 'heading':heading(flow,block.text,blocks[index+1]);break;
+   case 'sankey':case 'bars':case 'shares':chartCard(flow,block);break;
+   case 'heading':heading(flow,block.text,queue.slice(index+1));break;
    case 'table':table(flow,block);break;
    default:paragraph(flow,block);
   }

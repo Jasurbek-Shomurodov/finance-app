@@ -100,7 +100,6 @@ test('blocks flow onto pages: the cover on the grey page, sections and charts on
   {kind:'tiles',text:'',tiles:[{label:'Income',value:'$1'}]},
   {kind:'text',text:'A note on the grey page.'},
   sankey(),
-  {kind:'pageBreak',text:''},{kind:'pageBreak',text:''},
   {kind:'title',text:'Tax prep'},
   {kind:'heading',text:'Assets'},{kind:'subheading',text:'Cash'},
   {kind:'table',text:'',headers:['Name','Value'],widths:[.6,.4],numeric:[1],rows:[['Wallet','$5'],['Notes',tall],...Array.from({length:60},(_,i)=>[`Row ${i}`,'$1'])]},
@@ -116,6 +115,20 @@ test('blocks flow onto pages: the cover on the grey page, sections and charts on
  assert.ok(pages.every(page=>page.ops.every(op=>op.op!=='text'||op.y<=kit.pageHeight-40)),'nothing is drawn over the footer');
  // A table with no open card opens one.
  assert.ok(layoutReport([{kind:'table',text:'',headers:['A'],widths:[1],rows:[['b']]}],fonts,'R')[0].back.some(op=>op.fill===kit.colors.card));
+});
+
+test('a later chart fills the room the next one leaves, and a heading keeps its notes and table start with it',()=>{
+ const shares={kind:'shares',text:'Small',rows:[{label:'A',value:'$1',share:1,amount:1,icon:{emoji:'🏷️',hue:0}}]};
+ const pageOf=(pages,text)=>pages.findIndex(page=>texts(page.ops).includes(text));
+ const filler={kind:'table',text:'',headers:['Row'],widths:[1],rows:Array.from({length:30},(_,i)=>[`Row ${i}`])};
+ const charts=layoutReport([filler,sankey(),shares],fonts,'R');
+ assert.equal(pageOf(charts,'Small'),0,'the small chart moves up into the gap');
+ assert.equal(pageOf(charts,'Row 0'),0);assert.ok(pageOf(charts,'Income')>0,'the big chart still follows, whole');
+ const lead=[filler,{kind:'heading',text:'Debts'},{kind:'subheading',text:'Mortgage'},{kind:'text',text:'Note'},{kind:'table',text:'',headers:['Owed'],widths:[1],rows:[['$1']]}];
+ for(let rows=30;rows<44;rows++){
+  const pages=layoutReport([{...filler,rows:filler.rows.concat(Array.from({length:rows-30},(_,i)=>[`More ${i}`]))},...lead.slice(1)],fonts,'R');
+  assert.equal(pageOf(pages,'Debts'),pageOf(pages,'Owed'),`with ${rows} rows the heading stays with its table`);
+ }
 });
 
 test('category looks follow Settings: an added category\'s name, a chosen icon and colour, else the defaults',()=>{
@@ -137,7 +150,7 @@ test('the report opens with key figures and charts in the reporting currency, ev
  const r=buildFinancialReport(f,'en','',reportMarket,{currency:'USD'}),kinds=r.blocks.map(block=>block.kind);
  assert.deepEqual(kinds.slice(0,4),['cover','tiles','text','sankey']);
  assert.ok(kinds.includes('bars')&&kinds.filter(kind=>kind==='sankey').length===2&&kinds.filter(kind=>kind==='shares').length===2);
- assert.ok(kinds.indexOf('pageBreak')<kinds.indexOf('heading'));
+ assert.ok(!kinds.includes('pageBreak'),'the detailed sections follow the charts without a forced page break');
  const tiles=r.blocks[1].tiles;
  assert.deepEqual(tiles.map(tile=>tile.label),['Net worth','Income','Spending','Savings rate']);
  assert.equal(tiles[1].value,'$500');assert.equal(tiles[1].tone,'positive');

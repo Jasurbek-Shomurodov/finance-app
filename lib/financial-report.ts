@@ -225,14 +225,13 @@ export function reportRateDays(input:unknown,currency?:string){
 
 export function buildFinancialReport(input:unknown,language:Language,context='',market:MarketData|null=null,options:ReportOptions={}):FinancialReport {
  const backup=parseFinanceBackup(input),blocks:ReportBlock[]=[];
- const r=reportContext(backup,language,market,options,blocks),{t,add}=r;
+ const r=reportContext(backup,language,market,options,blocks),{t}=r;
  wealthIssues(r);
  for(const a of r.ledger.activity)if(inPeriod(a.occurred_on,r.month,r.today)&&['repayment','mortgage'].includes(a.action)&&!r.byId.has(a.account_id))r.issues.add(t('A payment has no linked account; its currency and cash flow cannot be verified.'));
  for(const c of r.currencies)r.flows.set(c,cashFlowOf(r,c));
  const title=t('Personal financial report');
  coverBlocks(r,title,formatDateTime(backup.exported_at,r.locale));
  summaryBlocks(r);
- add('pageBreak','');
  overviewSection(r);
  detailsSection(r,context);
  wealthSection(r);

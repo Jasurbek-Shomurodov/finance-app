@@ -26,7 +26,7 @@ export type ReportShare={label:string;value:string;share:string;fraction:number;
 export type ReportBar={label:string;income:number|null;spending:number|null};
 
 export type ReportBlock=
- |{kind:'title'|'heading'|'subheading'|'text'|'pageBreak';text:string}
+ |{kind:'title'|'heading'|'subheading'|'text';text:string}
  |{kind:'table';text:string;headers:string[];rows:string[][];widths:number[];numeric?:number[]}
  /** The opening of the first page: the report's name, the brand, and the lines under them (period, generated). */
  |{kind:'cover';text:string;brand:string;lines:string[]}
@@ -40,7 +40,7 @@ export type ReportBlock=
 
 /** `dayRates`: each day's official rates (units per US dollar), so combined figures add transactions at their own day's rates. */
 export type ReportOptions={currency?:string;dayRates?:Readonly<Record<string,Record<string,number>>>};
-export type Block='heading'|'subheading'|'text'|'pageBreak';
+export type Block='heading'|'subheading'|'text';
 /** What every section reads: the backup's records and tables, the period, the currencies and the shared formatters. */
 export type Report={
  t:(key:string,params?:Record<string,string|number>)=>string;na:string;locale:string;
