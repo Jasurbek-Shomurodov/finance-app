@@ -18,7 +18,7 @@ const render=props=>renderToStaticMarkup(React.createElement(DashboardHeadline,{
 test('the headline row links net worth, this month, the budget and what is due within a week to their pages',()=>{
  const html=render({});
  assert.match(html,/<a href="\/assets">Net worth=\$1,484,820<\/a>/);
- assert.match(html,/<a href="\/transactions">Spent this month=\$3,824<\/a>/);
+ assert.match(html,/<a href="\/transactions\?type=expense&amp;period=this_month">Spent this month=\$3,824<\/a>/);
  assert.match(html,/<a href="\/budget" data-tone="positive">Budget left=\$2,376<\/a>/,'6,200 planned − 3,824 spent');
  assert.match(html,/<a href="\/upcoming">Due in 7 days=\$60<small>1 due soon<\/small><\/a>/,'the gym bill; the salary coming in is not due');
 });
