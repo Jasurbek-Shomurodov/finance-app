@@ -126,6 +126,5 @@ h2:has(>.info-hint){display:flex;align-items:center;gap:6px}
 @container content (max-width:520px){.segmented:not(.page-tabs){display:flex;width:100%;flex-wrap:wrap;overflow:visible}.segmented:not(.page-tabs)>button{flex:1 1 auto;padding-inline:10px}.segmented.page-tabs{flex-wrap:wrap;row-gap:4px;overflow:visible}}
 
 /* Rows of overview figures. */
-.allocation-bar{display:flex;gap:3px;height:10px;border-radius:999px;overflow:hidden}
 .cash-footer{display:flex;justify-content:space-between;padding-top:20px;margin-top:26px;border-top:1px solid var(--border);font-size:var(--type-body)}
 .cash-footer strong{color:var(--positive)}

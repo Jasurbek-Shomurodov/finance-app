@@ -61,3 +61,12 @@ test('the lowest balance ahead is dated, and waits for the budget lines the fore
  assert.match(render({data:withCash}),/Lowest balance ahead=\$[\d,]+<p>\d+ \w+ \d{4} · Total cash<\/p><\/a>/);
  assert.match(render({data:withCash,forecastLoading:true}),/Lowest balance ahead=—/);
 });
+
+test('the lowest balance waits for a saved Budget that failed, warns below zero, and has no figure while a rate is missing',()=>{
+ const cash={id:'cash',name:'Everyday checking',kind:'Cash',amount:100,currency:'USD',frequency:'One time',date:today,notes:'',quantity:1,cost:0,rate:0};
+ const low={...data,records:[cash,bill('rent',900,{date:shiftDay(today,3)})]};
+ assert.match(render({data:low}),/data-tone="negative">Lowest balance ahead=−\$2,600<p class="negative">Below zero on \d+ \w+ \d{4}<\/p>/,'$100 less three monthly rents of $900 in the 90 days');
+ assert.match(render({data:low,forecastError:true}),/Lowest balance ahead=—<\/a>/,'a Budget that could not be read is not left out silently');
+ const euro={...low,records:[cash,bill('rent',900,{date:shiftDay(today,3),currency:'EUR'})]};
+ assert.match(render({data:euro}),/Lowest balance ahead=—<p>Exchange rate unavailable\.<\/p>/);
+});

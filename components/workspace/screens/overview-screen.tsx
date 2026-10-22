@@ -8,7 +8,6 @@ import { CustomizeDashboardDialog, DashboardBoard } from '@/components/dashboard
 import { BudgetCard, GoalsCard, RecentTransactionsCard, useMonthBudget } from '@/components/dashboard-cards';
 import { DashboardHeadline } from '@/components/dashboard-headline';
 import { BusinessCard } from '@/components/business-card';
-import { LowestBalanceCard } from '@/components/cash-forecast';
 import { Button } from '@/components/ui/button';
 import { useDashboardLayout } from '@/hooks/use-dashboard-layout';
 import { usePortfolioHistory } from '@/hooks/use-portfolio-history';
@@ -22,7 +21,6 @@ import { SpendingPaceCard, useSpendingPace } from '@/components/spending-pace-ca
 import { TelegramNudge } from '@/components/telegram-nudge';
 import { ScreenNotices, ToolsUnavailable } from '@/components/workspace/screen-notices';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
-import { marketRates } from '@/lib/market';
 
 export function OverviewScreen() {
  const { t } = useLanguage();
@@ -48,11 +46,10 @@ export function OverviewScreen() {
   // A recent transaction opens its details, as a transaction row does everywhere.
   transactions: planningReady && <RecentTransactionsCard owner={user} demo={demo} revision={reload} data={planning.data} onOpen={record => setViewing(storedRecord(record))}/>,
   upcoming: cards.upcoming,
-  forecast: planningReady && <LowestBalanceCard data={planning.data} budget={forecastBudget} budgetState={forecastBudgetState} currency={currency} rates={marketRates(market)}/>,
   income,
  });
  const showNetWorth = !layout.hidden.includes('net_worth');
- const headline = <DashboardHeadline netWorth={netWorth} netWorthTile={!showNetWorth} budget={monthBudget} spending={planningReady ? spending : undefined} data={planningReady ? planning.data : null} forecastBudget={forecastBudget} forecastLoading={forecastBudgetState?.loading} currency={currency} market={market}/>;
+ const headline = <DashboardHeadline netWorth={netWorth} netWorthTile={!showNetWorth} budget={monthBudget} spending={planningReady ? spending : undefined} data={planningReady ? planning.data : null} forecastBudget={forecastBudget} forecastLoading={forecastBudgetState?.loading} forecastError={!!forecastBudgetState?.error} currency={currency} market={market}/>;
  return <>
   <div data-page="Overview" className="content overview-content">
    <OverviewHeading name={preferencesData.display_name?.trim()} firstVisit={!demo && firstVisit(preferencesData, depositToday())}>{arranging ? <Button onClick={() => setArranging(false)}><Check size={16} aria-hidden="true"/>{t('Done')}</Button> : <Button variant="outline" onClick={() => setCustomizing(true)}><LayoutGrid size={16} aria-hidden="true"/>{t('Customize')}</Button>}</OverviewHeading>

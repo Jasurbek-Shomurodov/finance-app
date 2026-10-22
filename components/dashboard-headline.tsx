@@ -27,6 +27,8 @@ type Props = {
  /** The budget lines the cash forecast spends, as on the Lowest balance ahead card; undefined while they load. */
  forecastBudget?: CashForecastBudget;
  forecastLoading?: boolean;
+ /** The saved Budget could not be read: the projection would leave its spending out. */
+ forecastError?: boolean;
  currency: string;
  market: MarketData | null;
 };
@@ -72,19 +74,24 @@ function DueTile({ data, currency, rates }: { data: PlanningData | null; currenc
  </StatTile>;
 }
 
-/** The lowest total cash balance in the next 90 days and the day it falls, as the Lowest balance ahead card shows it. */
-function LowestBalanceTile({ data, budget, loading, currency, rates }: { data: PlanningData | null; budget?: CashForecastBudget; loading: boolean; currency: string; rates: Rates }) {
+/** The lowest total cash balance in the next 90 days and the day it falls, or the day cash goes below zero. It waits
+ * for the saved Budget, since the projection spends what is left of it, and shows no figure while any amount has no
+ * rate to the display currency (MONEY-008). */
+function LowestBalanceTile({ data, budget, loading, failed, currency, rates }: { data: PlanningData | null; budget?: CashForecastBudget; loading: boolean; failed: boolean; currency: string; rates: Rates }) {
  const { t, locale } = useLanguage();
- const lowest = !data || loading ? null : cashForecast({ records: data.records, occurrences: data.occurrences, debtPayments: data.debtPayments, budget, today: depositToday(), days: 90, currency, rates }).totals[0] ?? null;
- return <StatTile label={t('Lowest balance ahead')} value={lowest ? formatMoney(lowest.lowest.balance, lowest.currency, locale) : '—'} tone={lowest ? signTone(lowest.lowest.balance, true) : undefined} href="/income-expenses#forecast">
-  {lowest && <p>{formatDate(lowest.lowest.date, locale)} · {t(lowest.name)}</p>}
+ const forecast = !data || loading || failed ? null : cashForecast({ records: data.records, occurrences: data.occurrences, debtPayments: data.debtPayments, budget, today: depositToday(), days: 90, currency, rates });
+ const total = forecast && forecast.missing === 0 ? forecast.totals[0] ?? null : null;
+ return <StatTile label={t('Lowest balance ahead')} value={total ? formatMoney(total.lowest.balance, total.currency, locale) : '—'} tone={total ? signTone(total.lowest.balance, true) : undefined} href="/income-expenses#forecast">
+  {forecast && forecast.missing > 0 ? <p>{t('Exchange rate unavailable.')}</p>
+   : total?.belowZero ? <p className="negative">{t('Below zero on {date}', { date: formatDate(total.belowZero, locale) })}</p>
+   : total && <p>{formatDate(total.lowest.date, locale)} · {t(total.name)}</p>}
  </StatTile>;
 }
 
 /** The dashboard's key figures, beside the Net worth over time card: this month's spending and budget, what falls due
  * within a week and the lowest cash ahead, each a link to the page behind it. The budget figures are the Budget card's
  * own (useMonthBudget), worked out once. */
-export function DashboardHeadline({ netWorth, netWorthTile = false, budget, spending, data, forecastBudget, forecastLoading = false, currency, market }: Props) {
+export function DashboardHeadline({ netWorth, netWorthTile = false, budget, spending, data, forecastBudget, forecastLoading = false, forecastError = false, currency, market }: Props) {
  const { t, locale } = useLanguage();
  const rates = marketRates(market);
  return <StatTiles columns={netWorthTile ? 'auto' : 2} label={t('Overview')}>
@@ -92,6 +99,6 @@ export function DashboardHeadline({ netWorth, netWorthTile = false, budget, spen
   <SpentTile budget={budget} spending={spending} currency={currency}/>
   <BudgetTile budget={budget} currency={currency}/>
   <DueTile data={data} currency={currency} rates={rates}/>
-  <LowestBalanceTile data={data} budget={forecastBudget} loading={forecastLoading} currency={currency} rates={rates}/>
+  <LowestBalanceTile data={data} budget={forecastBudget} loading={forecastLoading} failed={forecastError} currency={currency} rates={rates}/>
  </StatTiles>;
 }

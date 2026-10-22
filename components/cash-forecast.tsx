@@ -6,7 +6,6 @@ import { ForecastChart } from '@/components/charts-lazy';
 import { CategoryIcon } from '@/components/presentation-foundation/category-icon';
 import { Count } from '@/components/presentation-foundation/count';
 import { DatePicker } from '@/components/presentation-foundation/date-picker';
-import { DrawerLink } from '@/components/presentation-foundation/drawer-link';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
 import { FormattedNumberInput } from '@/components/presentation-foundation/formatted-number-input';
 import { InfoHint } from '@/components/presentation-foundation/info-hint';
@@ -23,7 +22,6 @@ import { cashForecast, forecastHorizons, type CashForecastBudget, readAdjustment
 import { depositToday } from '@/lib/deposit-interest';
 import { formatDate, formatMoney, formatMonthYear, formatNumber, formatSignedMoney } from '@/lib/format';
 import type { PlanningData } from '@/lib/planning';
-import { RollingText } from '@/components/presentation-foundation/rolling-text';
 import { useDisplayMoney } from '@/components/display-money';
 
 type Rates = number | Record<string, number> | undefined;
@@ -154,28 +152,4 @@ function WhatIfPanel({ adjustments, currency, today, onChange }: { adjustments: 
    <span className="row-actions"><strong className={item.amount > 0 ? 'amount positive' : 'amount'}>{formatSignedMoney(item.amount, currency, locale)}</strong><Button size="icon" variant="ghost" aria-label={t('Remove {name}', { name: item.name || t('What-if change') })} onClick={() => onChange(adjustments.filter(other => other.id !== item.id))}><X size={16} aria-hidden="true"/></Button></span>
   </li>)}</ul>}
  </section>;
-}
-
-/** Dashboard card: the lowest projected cash in the next 90 days, and any account heading below zero.
- * It waits for the saved Budget (`budgetState`), since the projection spends what is left of it. */
-export function LowestBalanceCard({ data, budget, budgetState, currency, rates }: { data: PlanningData; budget?: CashForecastBudget; budgetState?: { loading: boolean; error: string; retry: () => void }; currency: string; rates: Rates }) {
- const { t } = useLanguage();
- const today = depositToday();
- const forecast = useMemo(() => cashForecast({ records: data.records, occurrences: data.occurrences, debtPayments: data.debtPayments, budget, today, days: 90, currency, rates }), [data, budget, today, currency, rates]);
- return <section className="panel overview-panel forecast-card" aria-label={t('Lowest balance ahead')}>
-  <PanelTitle title={t('Lowest balance ahead')}><DrawerLink href="/income-expenses#forecast">{t('View forecast')}</DrawerLink></PanelTitle>
-  {budgetState?.loading ? <PanelSkeleton label={t('Loading records…')} rows={2}/> : budgetState?.error ? <InlineError as="div" message={t(budgetState.error)} onRetry={budgetState.retry}/> : <LowestBalanceFigures forecast={forecast}/>}
- </section>;
-}
-
-function LowestBalanceFigures({ forecast }: { forecast: CashForecast }) {
- const { t, locale } = useLanguage();
- return <>
-  {forecast.totals.length ? <ul className="forecast-card-figures">{forecast.totals.map(total => <li key={total.id}>
-   <strong className={signTone(total.lowest.balance, true)}><RollingText text={formatMoney(total.lowest.balance, total.currency, locale)}/></strong>
-   <small>{formatDate(total.lowest.date, locale)}</small>
-  </li>)}</ul> : <EmptyState icon={<Wallet aria-hidden="true"/>} description={t('Add a cash account to forecast its balance.')}/>}
-  {forecast.totals[0] && <MissingRateNote forecast={forecast} series={forecast.totals[0]}/>}
-  <BelowZeroWarning forecast={forecast}/>
- </>;
 }

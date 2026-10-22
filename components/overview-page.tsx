@@ -1,5 +1,6 @@
 "use client";
 import { SurplusButton } from '@/components/surplus-button';
+import { AllocationDonut } from '@/components/charts-lazy';
 import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoadingPlaceholder } from '@/components/presentation-foundation/loading-placeholder';
@@ -41,6 +42,9 @@ export function useOverviewCards({ entries, currency, excludedCurrencies, foreca
  const percent = (value: number | null) => formatPercent(value ?? NaN, locale, 1, 1);
  const { totalAssets, totalDebt } = financialTotals(entries);
  const allocation = assetAllocation(entries);
+ const rows = allocationRows(allocation), openAssets = () => router.push('/assets');
+ const rowColor = (kind: string) => kind === otherShareKey ? 'var(--muted-foreground)' : categoryColor(kind);
+ const rowLabel = (kind: string) => kind === otherShareKey ? t('Other') : t(kind);
  const upcomingItems = planning ? upcomingPayments(planning.records, planning.occurrences, undefined, undefined, planning.debtPayments) : [];
  const due = nextPayments(upcomingItems);
  // The pill counts every item, not just the rows shown, and never calls an overdue item "due soon".
@@ -63,10 +67,11 @@ export function useOverviewCards({ entries, currency, excludedCurrencies, foreca
  const allocationCard = <section className="panel overview-panel" key="allocation">
   <PanelTitle title={<>{t("Asset allocation")} {figure(money(totalAssets))}</>} hint={totalDebt > 0 ? <p>{t('Outstanding debt')}: {money(totalDebt)}</p> : undefined}><DrawerLink href="/assets">{t('View all')}</DrawerLink></PanelTitle>
   <PartialTotal currencies={excludedCurrencies}/>
-  {allocation.length ? <>
-   <div className="allocation-bar" role="img" aria-label={t("Asset allocation")}>{allocation.map(item => <div key={item.kind} style={{ width: `${item.share}%`, background: categoryColor(item.kind) }}/>)}</div>
-   <ul className="overview-list">{allocationRows(allocation).map(item => <li key={item.kind}><i style={{ background: item.kind === otherShareKey ? 'var(--muted-foreground)' : categoryColor(item.kind) }}/><span>{item.kind === otherShareKey ? t('Other') : t(item.kind)}</span><strong>{money(item.total)}</strong><small>{percent(item.share)}</small></li>)}</ul>
-  </> : <EmptyState icon={<Landmark/>} description={t("Add your first asset to see its allocation.")}/>}
+  {allocation.length ? <div className="dashboard-allocation">
+   {/* The donut and the list share one set of rows and colours; a slice opens Investments, as View all does. */}
+   <AllocationDonut slices={rows.map(item => ({ kind: item.kind, amount: item.total, color: rowColor(item.kind), label: rowLabel(item.kind) }))} total={totalAssets} currency={currency} onSelect={openAssets}/>
+   <ul className="overview-list">{rows.map(item => <li key={item.kind}><i style={{ background: rowColor(item.kind) }}/><span>{rowLabel(item.kind)}</span><strong>{money(item.total)}</strong><small>{percent(item.share)}</small></li>)}</ul>
+  </div> : <EmptyState icon={<Landmark/>} description={t("Add your first asset to see its allocation.")}/>}
  </section>;
  const upcoming = <section className="panel overview-panel" key="upcoming">
   <PanelTitle title={<>{t('Upcoming payments')} {overdueCount > 0 ? <span className="panel-figure negative">{t('{count} overdue', { count: formatNumber(overdueCount, locale, 0) })}</span> : upcomingItems.length > 0 && figure(t('{count} due soon', { count: formatNumber(upcomingItems.length, locale, 0) }))}</>}><DrawerLink href="/upcoming">{t('View all')}</DrawerLink></PanelTitle>

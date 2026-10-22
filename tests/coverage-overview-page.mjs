@@ -14,6 +14,7 @@ const {useOverviewCards,OverviewHeading}=loadTS('components/overview-page.tsx',{
  '@/components/presentation-foundation/top-bar-slot':{useTopBarSlot:()=>null},
  'next/navigation':{useRouter:()=>({push(){}})},
  'next/link':{__esModule:true,default:({children,href,...props})=>React.createElement('a',{href,...props},children)},
+ '@/components/charts-lazy':{AllocationDonut:({slices,total})=>React.createElement('figure',{'data-total':total},slices.map(slice=>`${slice.label}:${slice.amount}:${slice.color}`).join('|'))},
 });
 const entry=(id,kind,amount,extra={})=>({id,name:id,kind,amount,quantity:1,cost:0,rate:0,currency:'USD',frequency:'Once',date:'2026-09-01',notes:'',...extra});
 const money=amount=>formatMoney(amount,'USD','en-US');
@@ -63,13 +64,18 @@ test('asset allocation lists holdings by size with their share and mentions outs
  assert.ok(allocation.indexOf('Cash')<allocation.indexOf('Stock'),'largest first');
  assert.match(plain(allocation),new RegExp(`Cash \\$750 ${formatPercent(75,'en-US',1,1)}`));
  assert.match(plain(allocation),/Stock \$250 25\.0%/);
- assert.match(allocation,/role="img" aria-label="Asset allocation"/);
- assert.match(allocation,/style="width:75%;background:/);
+ assert.match(allocation,/<div class="dashboard-allocation"><figure data-total="1000">Cash:750:[^|]+\|Stock:250:[^<]+<\/figure><ul/,'a donut of the same rows beside the list');
  assert.match(allocation,/href="\/assets"/);
  assert.match(allocation,/GBP/,'currencies left out of the total are named');
  const {allocation:empty}=cards({});
  assert.match(plain(empty),/Add your first asset to see its allocation\./);
- assert.doesNotMatch(empty,/allocation-bar/);
+ assert.doesNotMatch(empty,/<figure/,'no donut without assets');
+});
+
+test('the allocation donut groups the small kinds as Other in the list\'s grey',()=>{
+ const kinds=['Cash','Stock','Crypto','Property','Bond','Deposit','Vehicle'];
+ const {allocation}=cards({entries:kinds.map((kind,index)=>entry(kind,kind,1000-index*100))});
+ assert.match(allocation,/\|Other:[\d.]+:var\(--muted-foreground\)<\/figure>/);
 });
 
 test('the outstanding debt hint appears only with debt',()=>{

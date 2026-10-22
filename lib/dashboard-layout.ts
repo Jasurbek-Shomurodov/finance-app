@@ -2,17 +2,18 @@
 const dashboardCards = {
  left: ['net_worth', 'spending', 'budget', 'commitments', 'allocation'],
  // Business tracking only shows for someone with a business; at the end of the right column it evens the two out.
- right: ['goals', 'transactions', 'upcoming', 'forecast', 'income', 'business'],
+ right: ['goals', 'transactions', 'upcoming', 'income', 'business'],
 } as const;
 export type DashboardCard = (typeof dashboardCards)[keyof typeof dashboardCards][number];
 export type DashboardColumn = 'left' | 'right';
 export const dashboardColumnIds: readonly DashboardColumn[] = ['left', 'right'];
 export const dashboardCardIds: readonly DashboardCard[] = [...dashboardCards.left, ...dashboardCards.right];
-/** Cards that were removed. Saved layouts may still name them; they load and are dropped. */
-export const retiredDashboardCards = ['recap'] as const;
+/** Cards that were removed. Saved layouts may still name them; they load and are dropped. Lowest balance ahead
+ * became a figure in the headline beside Net worth over time. */
+export const retiredDashboardCards = ['recap', 'forecast'] as const;
 export const dashboardCardLabels: Record<DashboardCard, string> = {
  net_worth: 'Net worth', spending: 'Spending', budget: 'Budget', business: 'Business tracking', commitments: 'Monthly commitments', allocation: 'Asset allocation',
- goals: 'Goals', transactions: 'Transactions', upcoming: 'Upcoming payments', forecast: 'Lowest balance ahead', income: 'Income over time',
+ goals: 'Goals', transactions: 'Transactions', upcoming: 'Upcoming payments', income: 'Income over time',
 };
 export type DashboardLayout = { columns: Record<DashboardColumn, DashboardCard[]>; hidden: DashboardCard[] };
 // Income over time starts hidden: it is the tallest card and Cash flow shows the same. Customize turns it on.
