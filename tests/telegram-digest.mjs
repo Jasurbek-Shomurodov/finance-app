@@ -46,23 +46,32 @@ test('a day with nothing due still sends the greeting and says so',()=>{
  assert.equal(digestMessage([],'en',today,{name:'Aziz'}),greeting+'\n\nNothing is due soon.');
 });
 
-const history=(...nets)=>nets.map((net,index)=>({date:'2026-09-'+String(1+index).padStart(2,'0'),net}));
-test('net worth shows how it grew over the 30 days, signed, and omits a change that rounds to nothing',()=>{
- assert.match(digestMessage([],'en',today,{currency:'USD',netWorth:{amount:12500.4,history:history(12190,12400)}}),/📈 Net worth: \$12,500 · \+\$310 in 30 days\n/);
- assert.match(digestMessage([],'en',today,{currency:'USD',netWorth:{amount:12500,history:history(12580,12500)}}),/· −\$80 in 30 days\n/);
- for(const nets of [[12500,12500],[12499.8,12500],[12500]])assert.match(digestMessage([],'en',today,{currency:'USD',netWorth:{amount:12500,history:history(...nets)}}),/📈 Net worth: \$12,500\n/);
+test('net worth shows how it moved this month, signed, and omits a change that rounds to nothing',()=>{
+ assert.match(digestMessage([],'en',today,{currency:'USD',netWorth:{amount:12500.4,start:12190}}),/📈 Net worth: \$12,500 · \+\$310 this month\n/);
+ assert.match(digestMessage([],'en',today,{currency:'USD',netWorth:{amount:12500,start:12580}}),/· −\$80 this month\n/);
+ for(const start of [12500,12500.2,undefined])assert.match(digestMessage([],'en',today,{currency:'USD',netWorth:{amount:12500,start}}),/📈 Net worth: \$12,500\n/);
 });
 
-test('the last 30 days\' income and expenses lead the digest, and expenses are compared with the 30 days before in plain words',()=>{
- const flow=(spending,previousSpending,income=1000)=>({currency:'USD',cashflow:{income,spending,previousSpending,categories:[]}});
- assert.match(digestMessage([],'en',today,flow(400,650)),/\n\n🧾 Last 30 days: income \$1,000, expenses \$400\.\n\nNothing is due soon\.$/);
- const detail=(...args)=>digestCard([],'en',today,flow(...args)).card.tiles[1].detail;
- assert.equal(detail(400,650),'$250 less than the 30 days before');
- assert.equal(detail(900,650),'$250 more than the 30 days before');
- for(const previous of [0,400])assert.equal(detail(400,previous),undefined);
- assert.deepEqual(digestCard([],'en',today,flow(400,0)).card.tiles[2],{label:'Saved',value:'$600',detail:'60% of income',tone:'good'});
- assert.deepEqual(digestCard([],'en',today,flow(1400,0)).card.tiles[2],{label:'Saved',value:'−$400'});
- assert.deepEqual(digestCard([],'en',today,flow(0,0,0)).card.tiles[2],{label:'Saved',value:'$0'});
+test('the digest covers this month from the 1st, against the same days of last month, cut at its end',()=>{
+ const {digestPeriods}=loadTS('lib/digest-message.ts');
+ assert.deepEqual(digestPeriods('2026-10-22'),{from:'2026-10-01',to:'2026-10-22',previousFrom:'2026-09-01',previousTo:'2026-09-22'});
+ assert.deepEqual(digestPeriods('2026-03-31'),{from:'2026-03-01',to:'2026-03-31',previousFrom:'2026-02-01',previousTo:'2026-02-28'});
+ assert.deepEqual(digestPeriods('2026-01-01'),{from:'2026-01-01',to:'2026-01-01',previousFrom:'2025-12-01',previousTo:'2025-12-01'});
+});
+
+test('this month\'s income and expenses lead the digest, and expenses are compared with last month by this day in plain words',()=>{
+ const flow=(spending,previousSpending,income=1000)=>({currency:'USD',cashflow:{income,spending,categories:[],...(previousSpending===undefined?{}:{previous:{income:800,spending:previousSpending,categories:[]}})}});
+ assert.match(digestMessage([],'en',today,flow(400,650)),/\n\n🧾 This month: income \$1,000, expenses \$400\.\n\nNothing is due soon\.$/);
+ const detail=(...args)=>digestCard([],'en',today,flow(...args)).card.hero.detail;
+ assert.equal(detail(400,650),'$250 less than last month by this day');
+ assert.equal(detail(900,650),'$250 more than last month by this day');
+ assert.equal(detail(400,400.3),'Same as last month by this day');
+ for(const previous of [0,undefined])assert.equal(detail(400,previous),undefined);
+ assert.deepEqual(digestCard([],'en',today,flow(400)).card.figures[0],{label:'Income',value:'$1,000'});
+ assert.deepEqual(digestCard([],'en',today,flow(400,0)).card.figures[1],{label:'Saved',value:'$600',detail:'60% of income',tone:'good'});
+ assert.deepEqual(digestCard([],'en',today,flow(1400,0)).card.figures[1],{label:'Saved',value:'−$400'});
+ assert.deepEqual(digestCard([],'en',today,flow(0,0,0)).card.figures[1],{label:'Saved',value:'$0'});
+ assert.deepEqual(digestCard([],'en',today,flow(0,0,0)).card.charts,[],'a month with nothing in or out draws no flow');
 });
 
 test('the digest is translated',()=>{
@@ -129,12 +138,12 @@ function cronRoute({subscriptions,records={},splits={},links={},occurrences={},l
 }
 const rent={id:'rent',name:'Rent',kind:'Rent expense',amount:3000000,currency:'UZS',date:'2026-09-01',frequency:'Monthly',quantity:0,cost:0,rate:0,notes:''};
 
-test('the digest never shows 30 days\' totals that left out amounts without a rate',()=>{
- const missing={cashflow:{income:10,spending:40,previousSpending:30,missing:true,categories:[{key:'Charity',label:'Charity',amount:40}]}};
+test('the digest never shows this month\'s totals when they left out amounts without a rate',()=>{
+ const missing={cashflow:{income:10,spending:40,missing:true,categories:[{key:'Charity',label:'Charity',amount:40}]}};
  const text=digestMessage([],'en','2026-09-30',missing);
- assert.match(text,/🧾 Last 30 days: Exchange rate unavailable\./);assert.doesNotMatch(text,/income \$/);
+ assert.match(text,/🧾 This month: Exchange rate unavailable\./);assert.doesNotMatch(text,/income \$/);
  const card=digestCard([],'en','2026-09-30',missing).card;
- assert.deepEqual(card.tiles,[{label:'Expenses',value:'—',detail:'Exchange rate unavailable.'}]);assert.deepEqual(card.charts,[]);
+ assert.deepEqual(card.hero,{label:'Spent',value:'—',detail:'Exchange rate unavailable.'});assert.deepEqual(card.figures,[]);assert.deepEqual(card.charts,[]);
 });
 
 test('the cron sends one digest per linked owner in their language and window, greeting them by the name saved in the app',async()=>{
@@ -176,7 +185,7 @@ test('the cron refuses a missing or wrong secret before touching the database',a
 test('a long payment list stays within one Telegram message and says how many items it left out',()=>{
  // Live QA 2026-10-03: 137 items (96 overdue) made a 5,660-character reply that Telegram refused, so the bot stayed silent.
  const many=Array.from({length:137},(_,index)=>({amount:45,key:'k'+index,record:record('QA Gym membership '+index,'Living expense',45,'USD'),date:index<96?'2026-09-'+String(1+index%28).padStart(2,'0'):'2026-10-'+String(1+index%28).padStart(2,'0'),overdue:index<96,type:'scheduled'}));
- const text=digestMessage(many,'en',today,{name:'Aziz',netWorth:{amount:241100,history:history(241884,241100)},cashflow:{income:5000,spending:4207,previousSpending:3935,categories:[]}});
+ const text=digestMessage(many,'en',today,{name:'Aziz',netWorth:{amount:241100,start:241884},cashflow:{income:5000,spending:4207,categories:[],previous:{income:5000,spending:3935,categories:[]}}});
  assert.ok(text.length<4096,'digest is '+text.length+' characters');
  const shown=(text.match(/^• QA Gym/gm)||[]).length;
  assert.ok(shown>0&&shown<137);
@@ -230,7 +239,7 @@ test('a retried digest run sends nothing twice, and a digest that failed is sent
  assert.ok(!deliveries.rows.some(row=>row.period!=='2026-09-30'));
 });
 
-test('the digest reads schedules and holdings in full but cash flow only for the two 30-day periods it compares',async()=>{
+test('the digest reads schedules and holdings in full but cash flow only from the 1st of last month',async()=>{
  process.env.CRON_SECRET='test-secret';
  const old={id:'old',name:'Groceries',kind:'Living expense',amount:999,currency:'USD',date:'2026-08-01',frequency:'Once'};
  const recent={...old,id:'recent',amount:40,date:'2026-09-29'};
@@ -238,7 +247,7 @@ test('the digest reads schedules and holdings in full but cash flow only for the
  await cron.GET();
  const recordReads=cron.reads.filter(path=>path.startsWith('/rest/v1/finance_records'));
  assert.equal(recordReads.length,2);
- assert.ok(recordReads.some(path=>path.includes('frequency=eq.Once')&&path.includes('date=gte.2026-08-02')&&!path.includes('select=*')),'cash flow from 60 days back, narrow columns');
+ assert.ok(recordReads.some(path=>path.includes('frequency=eq.Once')&&path.includes('date=gte.2026-08-01')&&!path.includes('select=*')),'cash flow from the 1st of last month, narrow columns');
  assert.ok(recordReads.every(path=>path.includes('order=id.asc')&&path.includes('limit=500')),'paged by id');
  assert.ok(cron.reads.some(path=>path.startsWith('/rest/v1/account_activity')&&path.includes('action=in.(repayment,mortgage)')));
  assert.match(cron.sent[0].text,/Rent/);

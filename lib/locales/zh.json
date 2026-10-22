@@ -2618,14 +2618,7 @@
   "A quiet month. Add this month's records to see your report.": "安静的一个月。添加本月的记录即可查看报告。",
   "You saved {amount} this month.": "本月你结余了 {amount}。",
   "You spent {amount} more than you earned this month.": "本月你的支出比收入多 {amount}。",
-  "Last 30 days": "最近 30 天",
-  "{change} less than the 30 days before": "比之前 30 天少 {change}",
-  "{change} more than the 30 days before": "比之前 30 天多 {change}",
-  "{change} in 30 days": "30 天内{change}",
-  "Expenses by category": "按类别的支出",
-  "Net worth, last 30 days": "净资产（最近 30 天）",
   "{percent} of income": "收入的 {percent}",
-  "Last 30 days: income {income}, expenses {expenses}.": "最近 30 天：收入 {income}，支出 {expenses}。",
   "Rent received this year": "今年已收租金",
   "Costs this year": "今年费用",
   "Net this year": "今年净额",
@@ -2734,5 +2727,7 @@
   "Next quarter": "下一季度",
   "Borrower group (optional)": "借款人分组（可选）",
   "e.g. Family": "例如：家人",
-  "Borrower group is too long.": "分组名称太长。"
+  "Borrower group is too long.": "分组名称太长。",
+  "From savings": "来自储蓄",
+  "This month: income {income}, expenses {expenses}.": "本月：收入 {income}，支出 {expenses}。"
 }

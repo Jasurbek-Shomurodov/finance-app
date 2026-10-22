@@ -2618,14 +2618,7 @@
   "A quiet month. Add this month's records to see your report.": "Tahimik na buwan. Idagdag ang mga tala ngayong buwan para makita ang ulat.",
   "You saved {amount} this month.": "Nakapag-ipon ka ng {amount} ngayong buwan.",
   "You spent {amount} more than you earned this month.": "Gumastos ka ng {amount} nang higit sa kinita mo ngayong buwan.",
-  "Last 30 days": "Huling 30 araw",
-  "{change} less than the 30 days before": "{change} na mas mababa kaysa sa naunang 30 araw",
-  "{change} more than the 30 days before": "{change} na mas mataas kaysa sa naunang 30 araw",
-  "{change} in 30 days": "{change} sa loob ng 30 araw",
-  "Expenses by category": "Mga gastos ayon sa kategorya",
-  "Net worth, last 30 days": "Net worth, huling 30 araw",
   "{percent} of income": "{percent} ng kita",
-  "Last 30 days: income {income}, expenses {expenses}.": "Huling 30 araw: kita {income}, gastos {expenses}.",
   "Rent received this year": "Upang natanggap ngayong taon",
   "Costs this year": "Mga gastos ngayong taon",
   "Net this year": "Netong halaga ngayong taon",
@@ -2734,5 +2727,7 @@
   "Next quarter": "Susunod na quarter",
   "Borrower group (optional)": "Grupo ng nangutang (opsyonal)",
   "e.g. Family": "hal. Pamilya",
-  "Borrower group is too long.": "Masyadong mahaba ang pangalan ng grupo."
+  "Borrower group is too long.": "Masyadong mahaba ang pangalan ng grupo.",
+  "From savings": "Mula sa ipon",
+  "This month: income {income}, expenses {expenses}.": "Ngayong buwan: kita {income}, gastos {expenses}."
 }

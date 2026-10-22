@@ -2618,14 +2618,7 @@
   "A quiet month. Add this month's records to see your report.": "เดือนที่เงียบสงบ เพิ่มรายการของเดือนนี้เพื่อดูรายงาน",
   "You saved {amount} this month.": "เดือนนี้คุณเก็บออมได้ {amount}",
   "You spent {amount} more than you earned this month.": "เดือนนี้คุณใช้จ่ายมากกว่ารายได้ {amount}",
-  "Last 30 days": "30 วันที่ผ่านมา",
-  "{change} less than the 30 days before": "น้อยกว่า 30 วันก่อนหน้า {change}",
-  "{change} more than the 30 days before": "มากกว่า 30 วันก่อนหน้า {change}",
-  "{change} in 30 days": "{change} ใน 30 วัน",
-  "Expenses by category": "ค่าใช้จ่ายตามหมวดหมู่",
-  "Net worth, last 30 days": "มูลค่าสุทธิ 30 วันที่ผ่านมา",
   "{percent} of income": "{percent} ของรายได้",
-  "Last 30 days: income {income}, expenses {expenses}.": "30 วันที่ผ่านมา: รายได้ {income} ค่าใช้จ่าย {expenses}",
   "Rent received this year": "ค่าเช่าที่ได้รับปีนี้",
   "Costs this year": "ค่าใช้จ่ายปีนี้",
   "Net this year": "สุทธิปีนี้",
@@ -2734,5 +2727,7 @@
   "Next quarter": "ไตรมาสถัดไป",
   "Borrower group (optional)": "กลุ่มผู้ยืม (ไม่บังคับ)",
   "e.g. Family": "เช่น ครอบครัว",
-  "Borrower group is too long.": "ชื่อกลุ่มยาวเกินไป"
+  "Borrower group is too long.": "ชื่อกลุ่มยาวเกินไป",
+  "From savings": "จากเงินออม",
+  "This month: income {income}, expenses {expenses}.": "เดือนนี้: รายรับ {income} รายจ่าย {expenses}"
 }

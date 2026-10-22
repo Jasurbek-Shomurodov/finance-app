@@ -2618,14 +2618,7 @@
   "A quiet month. Add this month's records to see your report.": "Un mois calme. Ajoutez les opérations du mois pour voir votre rapport.",
   "You saved {amount} this month.": "Vous avez économisé {amount} ce mois-ci.",
   "You spent {amount} more than you earned this month.": "Vous avez dépensé {amount} de plus que vous n'avez gagné ce mois-ci.",
-  "Last 30 days": "30 derniers jours",
-  "{change} less than the 30 days before": "{change} de moins que les 30 jours précédents",
-  "{change} more than the 30 days before": "{change} de plus que les 30 jours précédents",
-  "{change} in 30 days": "{change} en 30 jours",
-  "Expenses by category": "Dépenses par catégorie",
-  "Net worth, last 30 days": "Patrimoine net, 30 derniers jours",
   "{percent} of income": "{percent} des revenus",
-  "Last 30 days: income {income}, expenses {expenses}.": "30 derniers jours : revenus {income}, dépenses {expenses}.",
   "Rent received this year": "Loyers perçus cette année",
   "Costs this year": "Charges cette année",
   "Net this year": "Net cette année",
@@ -2734,5 +2727,7 @@
   "Next quarter": "Trimestre suivant",
   "Borrower group (optional)": "Groupe d’emprunteurs (facultatif)",
   "e.g. Family": "ex. : Famille",
-  "Borrower group is too long.": "Le nom du groupe est trop long."
+  "Borrower group is too long.": "Le nom du groupe est trop long.",
+  "From savings": "Sur l’épargne",
+  "This month: income {income}, expenses {expenses}.": "Ce mois-ci : revenus {income}, dépenses {expenses}."
 }

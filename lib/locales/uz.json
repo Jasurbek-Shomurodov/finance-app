@@ -2618,14 +2618,7 @@
   "A quiet month. Add this month's records to see your report.": "Sokin oy. Hisobotni ko‘rish uchun shu oydagi yozuvlarni qo‘shing.",
   "You saved {amount} this month.": "Bu oy {amount} jamg‘ardingiz.",
   "You spent {amount} more than you earned this month.": "Bu oy topganingizdan {amount} ko‘p sarfladingiz.",
-  "Last 30 days": "Oxirgi 30 kun",
-  "{change} less than the 30 days before": "oldingi 30 kundan {change} kam",
-  "{change} more than the 30 days before": "oldingi 30 kundan {change} ko‘p",
-  "{change} in 30 days": "30 kunda {change}",
-  "Expenses by category": "Toifalar bo‘yicha xarajatlar",
-  "Net worth, last 30 days": "Sof kapital, oxirgi 30 kun",
   "{percent} of income": "daromadning {percent}",
-  "Last 30 days: income {income}, expenses {expenses}.": "Oxirgi 30 kun: daromad {income}, xarajatlar {expenses}.",
   "Rent received this year": "Bu yil olingan ijara",
   "Costs this year": "Bu yilgi xarajatlar",
   "Net this year": "Bu yilgi sof natija",
@@ -2734,5 +2727,7 @@
   "Next quarter": "Keyingi chorak",
   "Borrower group (optional)": "Qarz oluvchilar guruhi (ixtiyoriy)",
   "e.g. Family": "masalan, Oila",
-  "Borrower group is too long.": "Guruh nomi juda uzun."
+  "Borrower group is too long.": "Guruh nomi juda uzun.",
+  "From savings": "Jamg‘armadan",
+  "This month: income {income}, expenses {expenses}.": "Shu oy: daromad {income}, xarajatlar {expenses}."
 }

@@ -2618,14 +2618,7 @@
   "A quiet month. Add this month's records to see your report.": "静かな1か月でした。今月の記録を追加するとレポートが表示されます。",
   "You saved {amount} this month.": "今月は{amount}貯まりました。",
   "You spent {amount} more than you earned this month.": "今月は収入より{amount}多く使いました。",
-  "Last 30 days": "過去30日間",
-  "{change} less than the 30 days before": "前の30日間より{change}少ない",
-  "{change} more than the 30 days before": "前の30日間より{change}多い",
-  "{change} in 30 days": "30日間で{change}",
-  "Expenses by category": "カテゴリ別の支出",
-  "Net worth, last 30 days": "純資産（過去30日間）",
   "{percent} of income": "収入の{percent}",
-  "Last 30 days: income {income}, expenses {expenses}.": "過去30日間：収入 {income}、支出 {expenses}。",
   "Rent received this year": "今年の受取家賃",
   "Costs this year": "今年の費用",
   "Net this year": "今年の純額",
@@ -2734,5 +2727,7 @@
   "Next quarter": "次の四半期",
   "Borrower group (optional)": "借り手のグループ（任意）",
   "e.g. Family": "例: 家族",
-  "Borrower group is too long.": "グループ名が長すぎます。"
+  "Borrower group is too long.": "グループ名が長すぎます。",
+  "From savings": "貯蓄から",
+  "This month: income {income}, expenses {expenses}.": "今月: 収入 {income}、支出 {expenses}。"
 }

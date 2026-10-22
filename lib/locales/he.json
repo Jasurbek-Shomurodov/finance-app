@@ -2618,14 +2618,7 @@
   "A quiet month. Add this month's records to see your report.": "חודש שקט. הוסף את רישומי החודש כדי לראות את הדוח.",
   "You saved {amount} this month.": "חסכת {amount} החודש.",
   "You spent {amount} more than you earned this month.": "הוצאת החודש {amount} יותר ממה שהרווחת.",
-  "Last 30 days": "30 הימים האחרונים",
-  "{change} less than the 30 days before": "{change} פחות מ־30 הימים הקודמים",
-  "{change} more than the 30 days before": "{change} יותר מ־30 הימים הקודמים",
-  "{change} in 30 days": "{change} ב־30 יום",
-  "Expenses by category": "הוצאות לפי קטגוריה",
-  "Net worth, last 30 days": "שווי נקי, 30 הימים האחרונים",
   "{percent} of income": "{percent} מההכנסה",
-  "Last 30 days: income {income}, expenses {expenses}.": "30 הימים האחרונים: הכנסות {income}, הוצאות {expenses}.",
   "Rent received this year": "שכר דירה שהתקבל השנה",
   "Costs this year": "עלויות השנה",
   "Net this year": "נטו השנה",
@@ -2734,5 +2727,7 @@
   "Next quarter": "הרבעון הבא",
   "Borrower group (optional)": "קבוצת לווים (רשות)",
   "e.g. Family": "למשל משפחה",
-  "Borrower group is too long.": "שם הקבוצה ארוך מדי."
+  "Borrower group is too long.": "שם הקבוצה ארוך מדי.",
+  "From savings": "מהחסכונות",
+  "This month: income {income}, expenses {expenses}.": "החודש: הכנסות {income}, הוצאות {expenses}."
 }

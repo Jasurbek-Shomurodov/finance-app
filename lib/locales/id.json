@@ -2618,14 +2618,7 @@
   "A quiet month. Add this month's records to see your report.": "Bulan yang tenang. Tambahkan catatan bulan ini untuk melihat laporanmu.",
   "You saved {amount} this month.": "Bulan ini kamu menabung {amount}.",
   "You spent {amount} more than you earned this month.": "Bulan ini kamu mengeluarkan {amount} lebih banyak dari pemasukan.",
-  "Last 30 days": "30 hari terakhir",
-  "{change} less than the 30 days before": "{change} lebih sedikit dari 30 hari sebelumnya",
-  "{change} more than the 30 days before": "{change} lebih banyak dari 30 hari sebelumnya",
-  "{change} in 30 days": "{change} dalam 30 hari",
-  "Expenses by category": "Pengeluaran per kategori",
-  "Net worth, last 30 days": "Kekayaan bersih, 30 hari terakhir",
   "{percent} of income": "{percent} dari pemasukan",
-  "Last 30 days: income {income}, expenses {expenses}.": "30 hari terakhir: pemasukan {income}, pengeluaran {expenses}.",
   "Rent received this year": "Sewa diterima tahun ini",
   "Costs this year": "Biaya tahun ini",
   "Net this year": "Bersih tahun ini",
@@ -2734,5 +2727,7 @@
   "Next quarter": "Kuartal berikutnya",
   "Borrower group (optional)": "Grup peminjam (opsional)",
   "e.g. Family": "mis. Keluarga",
-  "Borrower group is too long.": "Nama grup terlalu panjang."
+  "Borrower group is too long.": "Nama grup terlalu panjang.",
+  "From savings": "Dari tabungan",
+  "This month: income {income}, expenses {expenses}.": "Bulan ini: pemasukan {income}, pengeluaran {expenses}."
 }

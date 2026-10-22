@@ -2618,14 +2618,7 @@
   "A quiet month. Add this month's records to see your report.": "শান্ত একটি মাস। প্রতিবেদন দেখতে এই মাসের এন্ট্রি যোগ করুন।",
   "You saved {amount} this month.": "এই মাসে আপনি {amount} সঞ্চয় করেছেন।",
   "You spent {amount} more than you earned this month.": "এই মাসে আপনি আয়ের চেয়ে {amount} বেশি খরচ করেছেন।",
-  "Last 30 days": "গত ৩০ দিন",
-  "{change} less than the 30 days before": "আগের ৩০ দিনের চেয়ে {change} কম",
-  "{change} more than the 30 days before": "আগের ৩০ দিনের চেয়ে {change} বেশি",
-  "{change} in 30 days": "৩০ দিনে {change}",
-  "Expenses by category": "বিভাগ অনুযায়ী খরচ",
-  "Net worth, last 30 days": "নিট সম্পদ, গত ৩০ দিন",
   "{percent} of income": "আয়ের {percent}",
-  "Last 30 days: income {income}, expenses {expenses}.": "গত ৩০ দিন: আয় {income}, খরচ {expenses}।",
   "Rent received this year": "এই বছর প্রাপ্ত ভাড়া",
   "Costs this year": "এই বছরের খরচ",
   "Net this year": "এই বছরের নিট",
@@ -2734,5 +2727,7 @@
   "Next quarter": "পরের ত্রৈমাসিক",
   "Borrower group (optional)": "ঋণগ্রহীতার দল (ঐচ্ছিক)",
   "e.g. Family": "যেমন পরিবার",
-  "Borrower group is too long.": "দলের নাম খুব লম্বা।"
+  "Borrower group is too long.": "দলের নাম খুব লম্বা।",
+  "From savings": "সঞ্চয় থেকে",
+  "This month: income {income}, expenses {expenses}.": "এই মাস: আয় {income}, খরচ {expenses}।"
 }

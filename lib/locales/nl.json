@@ -2618,14 +2618,7 @@
   "A quiet month. Add this month's records to see your report.": "Een rustige maand. Voeg de invoer van deze maand toe om je rapport te zien.",
   "You saved {amount} this month.": "Deze maand heb je {amount} gespaard.",
   "You spent {amount} more than you earned this month.": "Deze maand gaf je {amount} meer uit dan je verdiende.",
-  "Last 30 days": "Laatste 30 dagen",
-  "{change} less than the 30 days before": "{change} minder dan de 30 dagen ervoor",
-  "{change} more than the 30 days before": "{change} meer dan de 30 dagen ervoor",
-  "{change} in 30 days": "{change} in 30 dagen",
-  "Expenses by category": "Uitgaven per categorie",
-  "Net worth, last 30 days": "Nettovermogen, laatste 30 dagen",
   "{percent} of income": "{percent} van het inkomen",
-  "Last 30 days: income {income}, expenses {expenses}.": "Laatste 30 dagen: inkomsten {income}, uitgaven {expenses}.",
   "Rent received this year": "Ontvangen huur dit jaar",
   "Costs this year": "Kosten dit jaar",
   "Net this year": "Netto dit jaar",
@@ -2734,5 +2727,7 @@
   "Next quarter": "Volgend kwartaal",
   "Borrower group (optional)": "Lenersgroep (optioneel)",
   "e.g. Family": "bijv. Familie",
-  "Borrower group is too long.": "De groepsnaam is te lang."
+  "Borrower group is too long.": "De groepsnaam is te lang.",
+  "From savings": "Uit spaargeld",
+  "This month: income {income}, expenses {expenses}.": "Deze maand: inkomsten {income}, uitgaven {expenses}."
 }

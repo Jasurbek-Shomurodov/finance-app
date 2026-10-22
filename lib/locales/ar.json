@@ -2618,14 +2618,7 @@
   "A quiet month. Add this month's records to see your report.": "شهر هادئ. أضف سجلات هذا الشهر لترى تقريرك.",
   "You saved {amount} this month.": "وفّرت {amount} هذا الشهر.",
   "You spent {amount} more than you earned this month.": "أنفقت {amount} أكثر مما كسبت هذا الشهر.",
-  "Last 30 days": "آخر 30 يومًا",
-  "{change} less than the 30 days before": "{change} أقل من الـ30 يومًا السابقة",
-  "{change} more than the 30 days before": "{change} أكثر من الـ30 يومًا السابقة",
-  "{change} in 30 days": "{change} خلال 30 يومًا",
-  "Expenses by category": "المصروفات حسب الفئة",
-  "Net worth, last 30 days": "صافي الثروة، آخر 30 يومًا",
   "{percent} of income": "{percent} من الدخل",
-  "Last 30 days: income {income}, expenses {expenses}.": "آخر 30 يومًا: الدخل {income}، المصروفات {expenses}.",
   "Rent received this year": "الإيجار المستلم هذا العام",
   "Costs this year": "التكاليف هذا العام",
   "Net this year": "الصافي هذا العام",
@@ -2734,5 +2727,7 @@
   "Next quarter": "الربع التالي",
   "Borrower group (optional)": "مجموعة المقترضين (اختياري)",
   "e.g. Family": "مثل: العائلة",
-  "Borrower group is too long.": "اسم المجموعة طويل جدًا."
+  "Borrower group is too long.": "اسم المجموعة طويل جدًا.",
+  "From savings": "من المدخرات",
+  "This month: income {income}, expenses {expenses}.": "هذا الشهر: الدخل {income}، المصروفات {expenses}."
 }

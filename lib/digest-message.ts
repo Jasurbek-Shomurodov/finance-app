@@ -1,15 +1,17 @@
 // The morning Telegram digest, in the owner's language: a greeting with one
-// line of encouragement, the last 30 days' income and expenses, how net worth
-// grew over them, where the money went, and what is overdue or due soon. Pure.
+// line of encouragement, this month's income and expenses so far against the
+// same days of last month, how net worth moved, where the money went, and what
+// is overdue or due soon. Pure.
 // It is sent as a picture (digestCard); the text is for languages the card's
 // font cannot draw.
 import {categoryColor} from './category-colors';
 import {income} from './finance';
-import {formatDate,formatNumber,formatPercent} from './format';
+import {shiftDay} from './calendar-days';
+import {formatDate,formatMonthYear,formatNumber,formatPercent} from './format';
 import type {Language} from './i18n';
 import type {RateTable} from './money';
 import type {DueItem} from './planning';
-import type {CardChart,CardRow,CardSection,CardTile,ReportCard} from './report-card';
+import type {CardChart,CardRow,CardSection,CardTile,FlowNode,ReportCard} from './report-card';
 import {escapeHtml} from './telegram';
 import {messageKit} from './telegram-kit';
 const motivation=['Small steps add up to big results.','A clear view of your money is the first step to calm.','Every record you add makes tomorrow easier to plan.','Progress beats perfection. Keep going.'];
@@ -17,16 +19,22 @@ export type DigestExtras={
  name?:string;currency?:string;
  /** Units of each currency per US dollar (the latest snapshot's rates), to show every payment in `currency`. */
  rates?:RateTable|null;
- /** Net worth in `currency` today, and the daily values of the last 30 days, oldest first, for its growth. */
- netWorth?:{amount:number;history:{date:string;net:number}[]};
- /** Income and expenses over the last 30 days, the expenses of the 30 before, and the expenses by category, largest
-  * first; `missing` when an amount had no rate, so no total is complete. */
- cashflow?:{income:number;spending:number;previousSpending:number;missing?:boolean;categories:{key:string;label:string;amount:number}[]};
+ /** Net worth in `currency` today, and at the last snapshot before this month began, for how it moved this month. */
+ netWorth?:{amount:number;start?:number};
+ /** Income and expenses from the 1st of this month to today, with expenses by category, largest first; `previous` is the
+  * same days of last month, left out when it is incomplete. `missing` when an amount had no rate, so no total is complete. */
+ cashflow?:{income:number;spending:number;missing?:boolean;categories:{key:string;label:string;amount:number}[];previous?:{income:number;spending:number;categories:{key:string;amount:number}[]}};
 };
-/** Days the digest's figures cover. */
-export const digestDays=30;
-/** Categories drawn as bars; the rest are one "Other" bar. */
-const barsShown=5;
+/** The days the digest covers: this month from the 1st to `today`, and the same days of last month, cut at its end. */
+export function digestPeriods(today:string){
+ const from=today.slice(0,8)+'01',previousTo=shiftDay(from,-1),previousFrom=previousTo.slice(0,8)+'01';
+ const sameDay=previousFrom.slice(0,8)+today.slice(8);
+ return {from,to:today,previousFrom,previousTo:sameDay<previousTo?sameDay:previousTo};
+}
+/** Snapshots the digest reads: enough to reach back past the 1st of any month. */
+export const digestSnapshots=33;
+/** Categories drawn as their own flow; the rest are one "Other" flow. */
+const flowsShown=5;
 /** Characters of payment lines one message can hold beside the digest's greeting and figures. */
 const paymentsSectionBudget=3200;
 const overdueShown=10;
@@ -74,8 +82,8 @@ export function paymentsSection(items:DueItem[],language:Language,today:string):
  const hidden=items.length-shown;
  return `<b>${t('Upcoming payments')}</b> · ${formatDate(today,locale)}\n\n${sections.join('\n\n')}${hidden?`\n• ${t('{count} more',{count:formatNumber(hidden,locale,0)})}`:''}`;
 }
-/** Net worth's change over the 30 days, from the first value in them; null with fewer than two. */
-const grown=(netWorth:DigestExtras['netWorth'])=>netWorth&&netWorth.history.length>1?netWorth.amount-netWorth.history[0].net:null;
+/** Net worth's change this month; null without a value from before it began. */
+const grown=(netWorth:DigestExtras['netWorth'])=>netWorth&&netWorth.start!==undefined?netWorth.amount-netWorth.start:null;
 export function digestMessage(items:DueItem[],language:Language,today:string,extras:DigestExtras={}):string{
  const kit=messageKit(language),{t}=kit;
  const currency=extras.currency??'USD',money=(value:number)=>kit.money(value,currency);
@@ -85,55 +93,56 @@ export function digestMessage(items:DueItem[],language:Language,today:string,ext
  const payments=paymentsSection(items,language,today)??t('Nothing is due soon.');
  const facts:string[]=[];
  // An incomplete total is never shown as if it were the whole month.
- if(extras.cashflow?.missing)facts.push(`🧾 ${t('Last 30 days')}: ${t('Exchange rate unavailable.')}`);
- else if(extras.cashflow)facts.push(`🧾 ${t('Last 30 days: income {income}, expenses {expenses}.',{income:money(extras.cashflow.income),expenses:money(extras.cashflow.spending)})}`);
+ if(extras.cashflow?.missing)facts.push(`🧾 ${t('This month')}: ${t('Exchange rate unavailable.')}`);
+ else if(extras.cashflow)facts.push(`🧾 ${t('This month: income {income}, expenses {expenses}.',{income:money(extras.cashflow.income),expenses:money(extras.cashflow.spending)})}`);
  if(extras.netWorth){
   const change=grown(extras.netWorth);
-  facts.push(`📈 ${t('Net worth')}: ${money(extras.netWorth.amount)}${change!==null&&Math.round(change)!==0?' · '+t('{change} in 30 days',{change:signed(change)}):''}`);
+  facts.push(`📈 ${t('Net worth')}: ${money(extras.netWorth.amount)}${change!==null&&Math.round(change)!==0?' · '+t('{change} this month',{change:signed(change)}):''}`);
  }
  return [greeting,facts.join('\n'),payments].filter(Boolean).join('\n\n');
 }
-/** The last 30 days as tiles: income, expenses against the 30 before, what was saved and how net worth grew. */
-function digestTiles(kit:Kit,extras:DigestExtras):CardTile[]{
+/** This month so far: what was spent, large, against the same days of last month in plain words; then income, what was
+ * saved and net worth as quiet figures. */
+function digestFigures(kit:Kit,extras:DigestExtras):{hero?:CardTile;figures:CardTile[]}{
  const {t,locale}=kit,currency=extras.currency??'USD',money=(value:number)=>kit.money(value,currency);
- const tiles:CardTile[]=[];
+ const signed=(value:number)=>(value<0?'−':'+')+money(Math.abs(value));
+ const figures:CardTile[]=[];let hero:CardTile|undefined;
  const flow=extras.cashflow;
- if(flow?.missing)tiles.push({label:t('Expenses'),value:'—',detail:t('Exchange rate unavailable.')});
+ if(flow?.missing)hero={label:t('Spent'),value:'—',detail:t('Exchange rate unavailable.')};
  else if(flow){
-  const {spending,previousSpending}=flow,difference=Math.abs(spending-previousSpending),net=flow.income-spending;
+  const {spending,previous}=flow,net=flow.income-spending,difference=previous?Math.abs(spending-previous.spending):0;
   // Spending more or less is stated plainly, never coloured as good or bad news.
-  const compared=Math.round(difference)!==0&&previousSpending>0;
-  tiles.push(
-   {label:t('Income'),value:money(flow.income)},
-   {label:t('Expenses'),value:money(spending),...(compared?{detail:t(spending<previousSpending?'{change} less than the 30 days before':'{change} more than the 30 days before',{change:money(difference)})}:{})},
+  const detail=!previous||!previous.spending?undefined:Math.round(difference)===0?t('Same as last month by this day'):t(spending<previous.spending?'{amount} less than last month by this day':'{amount} more than last month by this day',{amount:money(difference)});
+  hero={label:t('Spent'),value:money(spending),...(detail?{detail}:{})};
+  figures.push(
+   {label:t('Income'),value:money(flow.income),...(previous?{detail:`${t('Last month')}: ${money(previous.income)}`}:{})},
    {label:t('Saved'),value:(net<0?'−':'')+money(Math.abs(net)),...(net>0&&flow.income>0?{detail:t('{percent} of income',{percent:formatPercent(net/flow.income*100,locale,0)}),tone:'good' as const}:{})},
   );
  }
  if(extras.netWorth){
   const change=grown(extras.netWorth),moved=change!==null&&Math.round(change)!==0;
-  tiles.push({label:t('Net worth'),value:money(extras.netWorth.amount),...(moved?{detail:t('{change} in 30 days',{change:(change<0?'−':'+')+money(Math.abs(change))}),tone:change<0?'bad' as const:'good' as const}:{})});
+  figures.push({label:t('Net worth'),value:money(extras.netWorth.amount),...(moved?{detail:t('{change} this month',{change:signed(change)}),tone:change<0?'bad' as const:'good' as const}:{})});
  }
- return tiles;
+ return {...(hero?{hero}:{}),figures};
 }
-/** Net worth's line over the 30 days and the expenses by category as bars, each when there is something to draw. */
-function digestCharts(kit:Kit,extras:DigestExtras,today:string):CardChart[]{
+/** Where this month's money went, as a Sankey: income (and what came from savings when spending passed it) flowing into
+ * each category and what was saved, each with last month's amount by the same day beside it. */
+function digestFlow(kit:Kit,extras:DigestExtras):CardChart[]{
  const {t,locale}=kit,currency=extras.currency??'USD',money=(value:number)=>kit.money(value,currency);
- const charts:CardChart[]=[];
- const history=extras.netWorth?.history??[];
- if(history.length>1){
-  const first=history[0],last=history[history.length-1];
-  charts.push({kind:'line',title:t('Net worth, last 30 days'),values:history.map(point=>point.net),from:{label:formatDate(first.date,locale),value:money(first.net)},to:{label:last.date===today?t('Today'):formatDate(last.date,locale),value:money(last.net)},...(last.net<first.net?{tone:'bad' as const}:{})});
- }
  const flow=extras.cashflow;
- if(flow&&!flow.missing&&flow.spending>0&&flow.categories.length){
-  const shown=flow.categories.slice(0,barsShown),rest=flow.categories.slice(barsShown).reduce((sum,category)=>sum+category.amount,0);
-  const bar=(label:string,amount:number,color:string)=>({label,amount,color,value:money(amount),share:formatPercent(amount/flow.spending*100,locale,0)});
-  // Each category keeps its own colour from the app, whatever its rank; the tail folds into one grey bar.
-  charts.push({kind:'bars',title:t('Expenses by category'),bars:[...shown.map(category=>bar(category.label,category.amount,categoryColor(category.key))),...(rest>0?[bar(t('Other'),rest,'#9aa38f')]:[])]});
- }
- return charts;
+ if(!flow||flow.missing||(!flow.income&&!flow.spending))return [];
+ const base=Math.max(flow.income,flow.spending),share=(amount:number)=>formatPercent(amount/base*100,locale,0);
+ const before=new Map(flow.previous?.categories.map(category=>[category.key,category.amount]));
+ const node=(label:string,amount:number,color:string,previous?:number):FlowNode=>({label,amount,color,value:money(amount),detail:share(amount)+(previous?` · ${t('Last month')}: ${money(previous)}`:'')});
+ const shown=flow.categories.slice(0,flowsShown),rest=flow.categories.slice(flowsShown);
+ const restAmount=rest.reduce((sum,category)=>sum+category.amount,0),restBefore=rest.reduce((sum,category)=>sum+(before.get(category.key)??0),0);
+ const saved=flow.income-flow.spending;
+ // Each category keeps its own colour from the app; the tail folds into one grey flow, and what is left over is green.
+ const targets=[...shown.map(category=>node(category.label,category.amount,categoryColor(category.key),before.get(category.key))),...(restAmount>0?[node(t('Other'),restAmount,'#9aa38f',restBefore)]:[]),...(saved>0?[{...node(t('Saved'),saved,'#4d7c0f'),detail:t('{percent} of income',{percent:formatPercent(saved/flow.income*100,locale,0)})}]:[])];
+ const sources=[...(flow.income>0?[{label:t('Income'),amount:flow.income,value:money(flow.income),color:'#2f7d32'}]:[]),...(saved<0?[{label:t('From savings'),amount:-saved,value:money(-saved),color:'#9aa38f'}]:[])];
+ return targets.length?[{kind:'flow',title:t('Where the money went'),sources,targets}]:[];
 }
-/** The digest as a picture: the greeting, the last 30 days as tiles, net worth's line and the expenses by category,
+/** The digest as a picture: the greeting, this month's figures against last month, where the money went as a Sankey,
  * then the next payments as they were entered, grouped as in the text. The caption is the greeting, so the chat list shows who it is for. */
 export function digestCard(items:DueItem[],language:Language,today:string,extras:DigestExtras={}):{card:ReportCard;caption:string}{
  const kit=messageKit(language),{locale,t}=kit;
@@ -153,8 +162,8 @@ export function digestCard(items:DueItem[],language:Language,today:string,extras
  const card:ReportCard={
   // The header is the greeting alone: Telegram already dates the message.
   title,sectionsTitle:t('Upcoming payments'),
-  ...(extras.cashflow||extras.netWorth?{tilesTitle:t('Last 30 days')}:{}),
-  tiles:digestTiles(kit,extras),charts:digestCharts(kit,extras,today),sections,
+  ...(extras.cashflow||extras.netWorth?{tilesTitle:formatMonthYear(today,locale)}:{}),
+  ...digestFigures(kit,extras),charts:digestFlow(kit,extras),sections,
   ...(items.length?{}:{lines:[t('Nothing is due soon.')]}),
   ...(hidden>0?{footer:t('{count} more',{count:formatNumber(hidden,locale,0)})}:{}),
  };

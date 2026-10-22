@@ -2618,14 +2618,7 @@
   "A quiet month. Add this month's records to see your report.": "조용한 한 달이었어요. 이번 달 기록을 추가하면 보고서를 볼 수 있어요.",
   "You saved {amount} this month.": "이번 달에 {amount}을(를) 저축했어요.",
   "You spent {amount} more than you earned this month.": "이번 달에는 수입보다 {amount} 더 지출했어요.",
-  "Last 30 days": "최근 30일",
-  "{change} less than the 30 days before": "이전 30일보다 {change} 적음",
-  "{change} more than the 30 days before": "이전 30일보다 {change} 많음",
-  "{change} in 30 days": "30일 동안 {change}",
-  "Expenses by category": "카테고리별 지출",
-  "Net worth, last 30 days": "순자산, 최근 30일",
   "{percent} of income": "수입의 {percent}",
-  "Last 30 days: income {income}, expenses {expenses}.": "최근 30일: 수입 {income}, 지출 {expenses}.",
   "Rent received this year": "올해 받은 임대료",
   "Costs this year": "올해 비용",
   "Net this year": "올해 순액",
@@ -2734,5 +2727,7 @@
   "Next quarter": "다음 분기",
   "Borrower group (optional)": "빌린 사람 그룹 (선택)",
   "e.g. Family": "예: 가족",
-  "Borrower group is too long.": "그룹 이름이 너무 깁니다."
+  "Borrower group is too long.": "그룹 이름이 너무 깁니다.",
+  "From savings": "저축에서",
+  "This month: income {income}, expenses {expenses}.": "이번 달: 수입 {income}, 지출 {expenses}."
 }

@@ -14,42 +14,50 @@ const items=[
  {amount:1000000,key:'b',record:record('Sheep feed','Living expense',1000000),date:'2026-10-21',overdue:false,type:'scheduled'},
  {amount:5000000,key:'c',record:record('Solar Panel','Rent income',5000000),date:'2026-10-25',overdue:false,type:'scheduled'},
 ];
-const history=[{date:'2026-09-19',net:309460},{date:'2026-10-05',net:311000},{date:'2026-10-19',net:314690}];
-const extras={name:'HOGGISH',currency:'USD',netWorth:{amount:314690,history},cashflow:{income:4200,spending:3270,previousSpending:3810,categories:[
+const extras={name:'HOGGISH',currency:'USD',netWorth:{amount:314690,start:309460},cashflow:{income:4200,spending:3270,categories:[
  {key:'Living expense',label:'Living expense',amount:1240},{key:'Rent expense',label:'Rent expense',amount:800},{key:'c-feed',label:'Sheep feed',amount:520},
- {key:'Charity',label:'Charity',amount:300},{key:'c-car',label:'Car',amount:210},{key:'Other expense',label:'Other expense',amount:120},{key:'c-x',label:'Phone',amount:80}]}};
+ {key:'Charity',label:'Charity',amount:300},{key:'c-car',label:'Car',amount:210},{key:'Other expense',label:'Other expense',amount:120},{key:'c-x',label:'Phone',amount:80}],
+ previous:{income:3900,spending:3810,categories:[{key:'Living expense',amount:1500},{key:'c-feed',amount:400},{key:'Other expense',amount:50},{key:'c-x',amount:30}]}}};
 
-test('the digest card shows the last 30 days as tiles, net worth\'s line, expenses by category and the next payments',()=>{
+test('the digest card shows this month against last month, where the money went as a Sankey, and the next payments',()=>{
  const {categoryColor}=loadTS('lib/category-colors.ts');
  const {card,caption}=digestCard(items,'en',today,extras);
  assert.equal(caption,'☀️ <b>Good morning, HOGGISH</b>');
  assert.equal(card.title,'Good morning, HOGGISH');
- assert.equal(card.subtitle,undefined);assert.equal(card.note,undefined);assert.equal(card.tilesTitle,'Last 30 days');assert.equal(card.sectionsTitle,'Upcoming payments');
- assert.deepEqual(card.tiles,[
-  {label:'Income',value:'$4,200'},
-  // Spending is stated plainly either way, never coloured as good or bad news.
-  {label:'Expenses',value:'$3,270',detail:'$540 less than the 30 days before'},
+ assert.equal(card.subtitle,undefined);assert.equal(card.note,undefined);assert.equal(card.tilesTitle,'October 2026');assert.equal(card.sectionsTitle,'Upcoming payments');
+ // Spending is stated plainly either way, never coloured as good or bad news.
+ assert.deepEqual(card.hero,{label:'Spent',value:'$3,270',detail:'$540 less than last month by this day'});
+ assert.deepEqual(card.figures,[
+  {label:'Income',value:'$4,200',detail:'Last month: $3,900'},
   {label:'Saved',value:'$930',detail:'22% of income',tone:'good'},
-  {label:'Net worth',value:'$314,690',detail:'+$5,230 in 30 days',tone:'good'},
+  {label:'Net worth',value:'$314,690',detail:'+$5,230 this month',tone:'good'},
  ]);
- assert.deepEqual(card.charts[0],{kind:'line',title:'Net worth, last 30 days',values:[309460,311000,314690],from:{label:'19 September 2026',value:'$309,460'},to:{label:'Today',value:'$314,690'}});
- const bars=card.charts[1];
- assert.equal(bars.title,'Expenses by category');
- // The five largest keep their own colour; the rest fold into one Other bar.
- assert.deepEqual(bars.bars.map(bar=>[bar.label,bar.value,bar.share]),[['Living expense','$1,240','38%'],['Rent expense','$800','24%'],['Sheep feed','$520','16%'],['Charity','$300','9%'],['Car','$210','6%'],['Other','$200','6%']]);
- assert.equal(bars.bars[0].color,categoryColor('Living expense'));assert.equal(bars.bars[2].color,categoryColor('c-feed'));
- assert.equal(digestCard(items,'en',today,{...extras,netWorth:{amount:1,history:[{date:'2026-10-01',net:5},{date:'2026-10-18',net:1}]}}).card.charts[0].tone,'bad');
+ assert.equal(card.tiles,undefined);
+ const [flow]=card.charts;
+ assert.equal(flow.kind,'flow');assert.equal(flow.title,'Where the money went');
+ assert.deepEqual(flow.sources.map(node=>[node.label,node.value]),[['Income','$4,200']]);
+ // The five largest keep their own colour and last month's amount by the same day; the rest fold into Other; then what was saved.
+ assert.deepEqual(flow.targets.map(node=>[node.label,node.value,node.detail]),[
+  ['Living expense','$1,240','30% · Last month: $1,500'],['Rent expense','$800','19%'],['Sheep feed','$520','12% · Last month: $400'],
+  ['Charity','$300','7%'],['Car','$210','5%'],['Other','$200','5% · Last month: $80'],['Saved','$930','22% of income'],
+ ]);
+ assert.equal(flow.targets[0].color,categoryColor('Living expense'));assert.equal(flow.targets[2].color,categoryColor('c-feed'));
+ assert.equal(digestCard(items,'en',today,{...extras,netWorth:{amount:1,start:5}}).card.figures[2].tone,'bad');
+ // Spending past income draws the gap from savings, and nothing is saved.
+ const over=digestCard([],'en',today,{currency:'USD',cashflow:{income:100,spending:250,categories:[{key:'Charity',label:'Charity',amount:250}]}}).card.charts[0];
+ assert.deepEqual(over.sources.map(node=>[node.label,node.value]),[['Income','$100'],['From savings','$150']]);
+ assert.deepEqual(over.targets.map(node=>node.label),['Charity']);
  assert.deepEqual(card.sections,[
-  {title:'Overdue',tone:'bad',rows:[{label:'Debt for Tracker car',value:'UZS 50,000,000',detail:'repayment · 5 October 2026'}]},
-  {title:'21 October 2026',rows:[{label:'Sheep feed',value:'UZS 1,000,000'}]},
-  {title:'25 October 2026',rows:[{label:'Solar Panel',value:'+UZS 5,000,000',detail:'income',tone:'good'}]},
+  {title:'Overdue',tone:'bad',rows:[{label:'Debt for Tracker car',value:'UZS\u00a050,000,000',detail:'repayment · 5 October 2026'}]},
+  {title:'21 October 2026',rows:[{label:'Sheep feed',value:'UZS\u00a01,000,000'}]},
+  {title:'25 October 2026',rows:[{label:'Solar Panel',value:'+UZS\u00a05,000,000',detail:'income',tone:'good'}]},
  ]);
  assert.equal(card.footer,undefined);
 });
 
 test('a digest card with nothing due says so, a name is escaped only in the HTML caption, and a long list says what it left out',()=>{
  const empty=digestCard([],'en',today,{name:'<b>X</b>'});
- assert.deepEqual(empty.card.lines,['Nothing is due soon.']);assert.deepEqual(empty.card.tiles,[]);assert.deepEqual(empty.card.charts,[]);assert.equal(empty.card.tilesTitle,undefined);
+ assert.deepEqual(empty.card.lines,['Nothing is due soon.']);assert.deepEqual(empty.card.figures,[]);assert.equal(empty.card.hero,undefined);assert.deepEqual(empty.card.charts,[]);assert.equal(empty.card.tilesTitle,undefined);
  assert.equal(empty.card.title,'Good morning, <b>X</b>');assert.equal(empty.caption,'☀️ <b>Good morning, &lt;b&gt;X&lt;/b&gt;</b>');
  const many=Array.from({length:40},(_,index)=>({...items[1],key:'k'+index,record:record('Bill '+index,'Living expense',1000)}));
  const long=digestCard(many,'en',today).card;
@@ -292,18 +300,21 @@ test('the monthly cron names a deleted category as Other expense and answers 503
  assert.equal(response.status,503);assert.deepEqual(await response.json(),{error:'Telegram monthly report is not configured.'});
 });
 
-test('the card draws a line for net worth and labelled bars against the largest category',()=>{
- const svg=reportCardSvg({title:'T',tilesTitle:'Last 30 days',tiles:[{label:'Income',value:'$1'}],sectionsTitle:'Upcoming payments',sections:[{title:'Today',rows:[{label:'Rent',value:'$1'}]}],charts:[
-  {kind:'line',title:'Net worth, last 30 days',values:[100,100,100],from:{label:'1 October 2026',value:'$100'},to:{label:'Today',value:'$100'}},
-  {kind:'bars',title:'Expenses by category',bars:[{label:'Food',value:'$300',share:'75%',amount:300,color:'hsl(48 60% 48%)'},{label:'Tiny',value:'$0',share:'0%',amount:0,color:'#9aa38f'}]},
+test('the card draws a large figure, open figures and a Sankey whose ribbons are as wide as their amounts',()=>{
+ const svg=reportCardSvg({title:'T',tilesTitle:'October 2026',hero:{label:'Spent',value:'$300',detail:'$20 less than last month by this day'},figures:[{label:'Income',value:'$400'},{label:'Saved',value:'$100'}],sectionsTitle:'Upcoming payments',sections:[{title:'Today',rows:[{label:'Rent',value:'$1'}]}],charts:[
+  {kind:'flow',title:'Where the money went',sources:[{label:'Income',value:'$400',amount:400,color:'#2f7d32'}],targets:[
+   {label:'Food',value:'$300',amount:300,color:'hsl(48 60% 48%)',detail:'75%'},{label:'Saved',value:'$100',amount:100,color:'#4d7c0f',detail:'25% of income'}]},
  ]});
- assert.match(svg,/LAST 30 DAYS/);assert.match(svg,/UPCOMING PAYMENTS/);assert.match(svg,/NET WORTH, LAST 30 DAYS/);assert.match(svg,/EXPENSES BY CATEGORY/);
- // A flat line sits in the middle of its plot, not on an edge.
- const [,y0]=/<polyline points="[\d.]+,([\d.]+)/.exec(svg);assert.ok(Number(y0)>0);
- assert.match(svg,/<polyline points="88,(\S+) 540,\1 992,\1"/);
- // The largest bar fills the width; a zero bar is still a dot.
- assert.match(svg,/width="904" height="14" rx="7" fill="hsl\(48 60% 48%\)"/);assert.match(svg,/width="14" height="14" rx="7" fill="#9aa38f"/);
- assert.match(svg,/>75%</);assert.match(svg,/>Today</);
- const falling=reportCardSvg({title:'T',charts:[{kind:'line',title:'N',values:[3,1],from:{label:'a',value:'3'},to:{label:'b',value:'1'},tone:'bad'}]});
- assert.match(falling,/stroke="#c0392b"/);
+ assert.match(svg,/OCTOBER 2026/);assert.match(svg,/UPCOMING PAYMENTS/);assert.match(svg,/WHERE THE MONEY WENT/);assert.match(svg,/>SPENT</);
+ assert.match(svg,/font-size="76" font-weight="700" fill="#18200f">\$300</);
+ // Each target's node is as tall as its share of the 360-pixel flow, and its ribbon is drawn in its own colour.
+ assert.match(svg,/width="16" height="270" rx="4" fill="hsl\(48 60% 48%\)"/);assert.match(svg,/width="16" height="90" rx="4" fill="#4d7c0f"/);
+ assert.match(svg,/<path d="M[^"]+" fill="hsl\(48 60% 48%\)" fill-opacity="0.22"\/>/);
+ assert.match(svg,/>75%</);assert.match(svg,/>25% of income</);
+ // A long amount shrinks to fit its column instead of running into the next.
+ const wide=reportCardSvg({title:'T',figures:[{label:'A',value:'UZS 150,000,000,000'},{label:'B',value:'1'},{label:'C',value:'2'}]});
+ assert.doesNotMatch(wide,/font-size="40" font-weight="700" fill="#18200f">UZS/);
+ // A second source, such as what came from savings, is named under the flow.
+ const over=reportCardSvg({title:'T',charts:[{kind:'flow',title:'F',sources:[{label:'Income',value:'$1',amount:1,color:'#2f7d32'},{label:'From savings',value:'$2',amount:2,color:'#9aa38f'}],targets:[{label:'Rent',value:'$3',amount:3,color:'#123456'}]}]});
+ assert.match(over,/>From savings</);
 });

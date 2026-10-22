@@ -2618,14 +2618,7 @@
   "A quiet month. Add this month's records to see your report.": "ماهی آرام. برای دیدن گزارش، ثبت‌های این ماه را اضافه کنید.",
   "You saved {amount} this month.": "این ماه {amount} پس‌انداز کردید.",
   "You spent {amount} more than you earned this month.": "این ماه {amount} بیشتر از درآمدتان خرج کردید.",
-  "Last 30 days": "۳۰ روز گذشته",
-  "{change} less than the 30 days before": "{change} کمتر از ۳۰ روز قبل",
-  "{change} more than the 30 days before": "{change} بیشتر از ۳۰ روز قبل",
-  "{change} in 30 days": "{change} در ۳۰ روز",
-  "Expenses by category": "هزینه‌ها بر اساس دسته",
-  "Net worth, last 30 days": "ارزش خالص، ۳۰ روز گذشته",
   "{percent} of income": "{percent} از درآمد",
-  "Last 30 days: income {income}, expenses {expenses}.": "۳۰ روز گذشته: درآمد {income}، هزینه‌ها {expenses}.",
   "Rent received this year": "اجاره دریافتی امسال",
   "Costs this year": "هزینه‌های امسال",
   "Net this year": "خالص امسال",
@@ -2734,5 +2727,7 @@
   "Next quarter": "فصل بعد",
   "Borrower group (optional)": "گروه وام‌گیرندگان (اختیاری)",
   "e.g. Family": "مثلاً خانواده",
-  "Borrower group is too long.": "نام گروه خیلی طولانی است."
+  "Borrower group is too long.": "نام گروه خیلی طولانی است.",
+  "From savings": "از پس‌انداز",
+  "This month: income {income}, expenses {expenses}.": "این ماه: درآمد {income}، هزینه‌ها {expenses}."
 }

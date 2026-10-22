@@ -2618,14 +2618,7 @@
   "A quiet month. Add this month's records to see your report.": "Klidný měsíc. Přidej záznamy z tohoto měsíce a uvidíš přehled.",
   "You saved {amount} this month.": "Tento měsíc jsi ušetřil(a) {amount}.",
   "You spent {amount} more than you earned this month.": "Tento měsíc jsi utratil(a) o {amount} více, než jsi vydělal(a).",
-  "Last 30 days": "Posledních 30 dní",
-  "{change} less than the 30 days before": "o {change} méně než předchozích 30 dní",
-  "{change} more than the 30 days before": "o {change} více než předchozích 30 dní",
-  "{change} in 30 days": "{change} za 30 dní",
-  "Expenses by category": "Výdaje podle kategorií",
-  "Net worth, last 30 days": "Čisté jmění, posledních 30 dní",
   "{percent} of income": "{percent} příjmů",
-  "Last 30 days: income {income}, expenses {expenses}.": "Posledních 30 dní: příjmy {income}, výdaje {expenses}.",
   "Rent received this year": "Nájemné přijaté letos",
   "Costs this year": "Náklady letos",
   "Net this year": "Čistý výsledek letos",
@@ -2734,5 +2727,7 @@
   "Next quarter": "Další čtvrtletí",
   "Borrower group (optional)": "Skupina dlužníků (nepovinné)",
   "e.g. Family": "např. Rodina",
-  "Borrower group is too long.": "Název skupiny je příliš dlouhý."
+  "Borrower group is too long.": "Název skupiny je příliš dlouhý.",
+  "From savings": "Z úspor",
+  "This month: income {income}, expenses {expenses}.": "Tento měsíc: příjmy {income}, výdaje {expenses}."
 }

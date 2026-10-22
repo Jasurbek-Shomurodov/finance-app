@@ -2618,14 +2618,7 @@
   "A quiet month. Add this month's records to see your report.": "Mwezi tulivu. Ongeza rekodi za mwezi huu ili uone ripoti yako.",
   "You saved {amount} this month.": "Umeokoa {amount} mwezi huu.",
   "You spent {amount} more than you earned this month.": "Umetumia {amount} zaidi ya ulichopata mwezi huu.",
-  "Last 30 days": "Siku 30 zilizopita",
-  "{change} less than the 30 days before": "{change} chini ya siku 30 zilizotangulia",
-  "{change} more than the 30 days before": "{change} zaidi ya siku 30 zilizotangulia",
-  "{change} in 30 days": "{change} ndani ya siku 30",
-  "Expenses by category": "Matumizi kwa kategoria",
-  "Net worth, last 30 days": "Thamani halisi, siku 30 zilizopita",
   "{percent} of income": "{percent} ya mapato",
-  "Last 30 days: income {income}, expenses {expenses}.": "Siku 30 zilizopita: mapato {income}, matumizi {expenses}.",
   "Rent received this year": "Kodi iliyopokelewa mwaka huu",
   "Costs this year": "Gharama mwaka huu",
   "Net this year": "Halisi mwaka huu",
@@ -2734,5 +2727,7 @@
   "Next quarter": "Robo inayofuata",
   "Borrower group (optional)": "Kikundi cha wakopaji (si lazima)",
   "e.g. Family": "mf. Familia",
-  "Borrower group is too long.": "Jina la kikundi ni refu mno."
+  "Borrower group is too long.": "Jina la kikundi ni refu mno.",
+  "From savings": "Kutoka akiba",
+  "This month: income {income}, expenses {expenses}.": "Mwezi huu: mapato {income}, matumizi {expenses}."
 }

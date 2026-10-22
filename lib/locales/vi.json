@@ -2618,14 +2618,7 @@
   "A quiet month. Add this month's records to see your report.": "Một tháng yên ắng. Hãy thêm các bản ghi của tháng này để xem báo cáo.",
   "You saved {amount} this month.": "Tháng này bạn đã tiết kiệm {amount}.",
   "You spent {amount} more than you earned this month.": "Tháng này bạn đã chi nhiều hơn thu nhập {amount}.",
-  "Last 30 days": "30 ngày qua",
-  "{change} less than the 30 days before": "ít hơn 30 ngày trước đó {change}",
-  "{change} more than the 30 days before": "nhiều hơn 30 ngày trước đó {change}",
-  "{change} in 30 days": "{change} trong 30 ngày",
-  "Expenses by category": "Chi tiêu theo danh mục",
-  "Net worth, last 30 days": "Giá trị ròng, 30 ngày qua",
   "{percent} of income": "{percent} thu nhập",
-  "Last 30 days: income {income}, expenses {expenses}.": "30 ngày qua: thu nhập {income}, chi tiêu {expenses}.",
   "Rent received this year": "Tiền thuê nhận được năm nay",
   "Costs this year": "Chi phí năm nay",
   "Net this year": "Ròng năm nay",
@@ -2734,5 +2727,7 @@
   "Next quarter": "Quý sau",
   "Borrower group (optional)": "Nhóm người vay (không bắt buộc)",
   "e.g. Family": "vd: Gia đình",
-  "Borrower group is too long.": "Tên nhóm quá dài."
+  "Borrower group is too long.": "Tên nhóm quá dài.",
+  "From savings": "Từ tiền tiết kiệm",
+  "This month: income {income}, expenses {expenses}.": "Tháng này: thu nhập {income}, chi tiêu {expenses}."
 }

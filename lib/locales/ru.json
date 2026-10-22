@@ -2618,14 +2618,7 @@
   "A quiet month. Add this month's records to see your report.": "Тихий месяц. Добавьте записи за этот месяц, чтобы увидеть отчёт.",
   "You saved {amount} this month.": "Вы сохранили {amount} за этот месяц.",
   "You spent {amount} more than you earned this month.": "Вы потратили на {amount} больше, чем заработали за этот месяц.",
-  "Last 30 days": "Последние 30 дней",
-  "{change} less than the 30 days before": "на {change} меньше, чем за 30 дней до этого",
-  "{change} more than the 30 days before": "на {change} больше, чем за 30 дней до этого",
-  "{change} in 30 days": "{change} за 30 дней",
-  "Expenses by category": "Расходы по категориям",
-  "Net worth, last 30 days": "Чистый капитал за 30 дней",
   "{percent} of income": "{percent} дохода",
-  "Last 30 days: income {income}, expenses {expenses}.": "За 30 дней: доходы {income}, расходы {expenses}.",
   "Rent received this year": "Получено аренды в этом году",
   "Costs this year": "Расходы в этом году",
   "Net this year": "Чистый итог в этом году",
@@ -2734,5 +2727,7 @@
   "Next quarter": "Следующий квартал",
   "Borrower group (optional)": "Группа заёмщиков (необязательно)",
   "e.g. Family": "например, Семья",
-  "Borrower group is too long.": "Название группы слишком длинное."
+  "Borrower group is too long.": "Название группы слишком длинное.",
+  "From savings": "Из сбережений",
+  "This month: income {income}, expenses {expenses}.": "В этом месяце: доходы {income}, расходы {expenses}."
 }

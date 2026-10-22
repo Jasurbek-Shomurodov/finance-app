@@ -2618,14 +2618,7 @@
   "A quiet month. Add this month's records to see your report.": "Тихий місяць. Додайте записи цього місяця, щоб побачити звіт.",
   "You saved {amount} this month.": "Цього місяця ви заощадили {amount}.",
   "You spent {amount} more than you earned this month.": "Цього місяця ви витратили на {amount} більше, ніж заробили.",
-  "Last 30 days": "Останні 30 днів",
-  "{change} less than the 30 days before": "на {change} менше, ніж за 30 днів до того",
-  "{change} more than the 30 days before": "на {change} більше, ніж за 30 днів до того",
-  "{change} in 30 days": "{change} за 30 днів",
-  "Expenses by category": "Витрати за категоріями",
-  "Net worth, last 30 days": "Чистий капітал за 30 днів",
   "{percent} of income": "{percent} доходу",
-  "Last 30 days: income {income}, expenses {expenses}.": "За 30 днів: доходи {income}, витрати {expenses}.",
   "Rent received this year": "Отримано оренди цього року",
   "Costs this year": "Витрати цього року",
   "Net this year": "Чистий підсумок цього року",
@@ -2734,5 +2727,7 @@
   "Next quarter": "Наступний квартал",
   "Borrower group (optional)": "Група позичальників (необов’язково)",
   "e.g. Family": "наприклад, Родина",
-  "Borrower group is too long.": "Назва групи задовга."
+  "Borrower group is too long.": "Назва групи задовга.",
+  "From savings": "Із заощаджень",
+  "This month: income {income}, expenses {expenses}.": "Цього місяця: доходи {income}, витрати {expenses}."
 }

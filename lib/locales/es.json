@@ -2618,14 +2618,7 @@
   "A quiet month. Add this month's records to see your report.": "Un mes tranquilo. Añade los registros de este mes para ver tu informe.",
   "You saved {amount} this month.": "Ahorraste {amount} este mes.",
   "You spent {amount} more than you earned this month.": "Gastaste {amount} más de lo que ganaste este mes.",
-  "Last 30 days": "Últimos 30 días",
-  "{change} less than the 30 days before": "{change} menos que los 30 días anteriores",
-  "{change} more than the 30 days before": "{change} más que los 30 días anteriores",
-  "{change} in 30 days": "{change} en 30 días",
-  "Expenses by category": "Gastos por categoría",
-  "Net worth, last 30 days": "Patrimonio neto, últimos 30 días",
   "{percent} of income": "{percent} de los ingresos",
-  "Last 30 days: income {income}, expenses {expenses}.": "Últimos 30 días: ingresos {income}, gastos {expenses}.",
   "Rent received this year": "Alquiler cobrado este año",
   "Costs this year": "Costos este año",
   "Net this year": "Neto este año",
@@ -2734,5 +2727,7 @@
   "Next quarter": "Trimestre siguiente",
   "Borrower group (optional)": "Grupo de prestatarios (opcional)",
   "e.g. Family": "p. ej., Familia",
-  "Borrower group is too long.": "El nombre del grupo es demasiado largo."
+  "Borrower group is too long.": "El nombre del grupo es demasiado largo.",
+  "From savings": "De los ahorros",
+  "This month: income {income}, expenses {expenses}.": "Este mes: ingresos {income}, gastos {expenses}."
 }

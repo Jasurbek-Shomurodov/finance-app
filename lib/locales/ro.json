@@ -2618,14 +2618,7 @@
   "A quiet month. Add this month's records to see your report.": "O lună liniștită. Adaugă înregistrările lunii pentru a vedea raportul.",
   "You saved {amount} this month.": "Luna aceasta ai economisit {amount}.",
   "You spent {amount} more than you earned this month.": "Luna aceasta ai cheltuit cu {amount} mai mult decât ai câștigat.",
-  "Last 30 days": "Ultimele 30 de zile",
-  "{change} less than the 30 days before": "cu {change} mai puțin decât în cele 30 de zile anterioare",
-  "{change} more than the 30 days before": "cu {change} mai mult decât în cele 30 de zile anterioare",
-  "{change} in 30 days": "{change} în 30 de zile",
-  "Expenses by category": "Cheltuieli pe categorii",
-  "Net worth, last 30 days": "Avere netă, ultimele 30 de zile",
   "{percent} of income": "{percent} din venit",
-  "Last 30 days: income {income}, expenses {expenses}.": "Ultimele 30 de zile: venituri {income}, cheltuieli {expenses}.",
   "Rent received this year": "Chirie încasată anul acesta",
   "Costs this year": "Costuri anul acesta",
   "Net this year": "Net anul acesta",
@@ -2734,5 +2727,7 @@
   "Next quarter": "Trimestrul următor",
   "Borrower group (optional)": "Grup de împrumutați (opțional)",
   "e.g. Family": "ex. Familie",
-  "Borrower group is too long.": "Numele grupului este prea lung."
+  "Borrower group is too long.": "Numele grupului este prea lung.",
+  "From savings": "Din economii",
+  "This month: income {income}, expenses {expenses}.": "Luna aceasta: venituri {income}, cheltuieli {expenses}."
 }

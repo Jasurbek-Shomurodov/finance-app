@@ -8,15 +8,20 @@ export type CardTone='good'|'bad'|'plain';
 export type CardTile={label:string;value:string;detail?:string;tone?:CardTone};
 export type CardRow={label:string;value:string;detail?:string;tone?:CardTone};
 export type CardSection={title:string;tone?:CardTone;rows:CardRow[]};
-/** A line over time, such as net worth: the values oldest first, with the first and last labelled. */
-export type CardLine={kind:'line';title:string;values:number[];from:{label:string;value:string};to:{label:string;value:string};tone?:CardTone};
-/** Bars against the largest, such as spending by category: each bar names itself, so colour is never the only key. */
-export type CardBars={kind:'bars';title:string;bars:{label:string;value:string;share:string;amount:number;color:string}[]};
-export type CardChart=CardLine|CardBars;
+/** A Sankey of where money went: the sources stacked on the left (income, and what came from savings), each target
+ * on the right (a category, or what was saved) with a ribbon as wide as its amount. Every target names itself and its
+ * amount, so colour is never the only key. */
+export type FlowNode={label:string;value:string;amount:number;color:string;detail?:string};
+export type CardFlow={kind:'flow';title:string;sources:FlowNode[];targets:FlowNode[]};
+export type CardChart=CardFlow;
 export type ReportCard={
  title:string;subtitle?:string;note?:string;
  /** A heading over the tiles, such as the period they cover. */
  tilesTitle?:string;
+ /** One large figure under the tiles' heading, such as what was spent this month. */
+ hero?:CardTile;
+ /** Figures in open columns, three to a row, with no box around them. */
+ figures?:CardTile[];
  tiles?:CardTile[];charts?:CardChart[];
  /** A heading over the sections, such as "Upcoming payments". */
  sectionsTitle?:string;sections?:CardSection[];
@@ -32,10 +37,10 @@ export const estimateWidth:Measure=(text,size,bold)=>[...text].length*size*(bold
 export const cardLanguage=(language:Language)=>!pdfUnsupportedLanguages.includes(language);
 export const cardWidth=1080;
 const margin=36,padding=52,content=cardWidth-margin*2-padding*2,tileGap=20,tilePadding=28;
-const lineHeight=200,barTrack=14;
+const flowHeight=360,flowNode=16,flowRow=92,flowGap=26;
 /** A coordinate to a tenth of a pixel, which keeps the SVG short. */
 const at=(value:number)=>Math.round(value*10)/10;
-const color={line:'#4d7c0f',lineFill:'#c4f36b',track:'#eef2e6',page:'#eef2e6',card:'#ffffff',header:'#11150e',brand:'#c4f36b',brandInk:'#18240d',title:'#ffffff',subtitle:'#d3dec0',note:'#a7b592',ink:'#18200f',muted:'#6b7560',tile:'#f4f7ee',rule:'#e4e9db',good:'#2f7d32',bad:'#c0392b'};
+const color={page:'#eef2e6',card:'#ffffff',header:'#11150e',brand:'#c4f36b',brandInk:'#18240d',title:'#ffffff',subtitle:'#d3dec0',note:'#a7b592',ink:'#18200f',muted:'#6b7560',tile:'#f4f7ee',rule:'#e4e9db',good:'#2f7d32',bad:'#c0392b'};
 const tone=(value:CardTone|undefined,fallback:string)=>value==='good'?color.good:value==='bad'?color.bad:fallback;
 /** The bundled font has no minus sign (U+2212), which the app's signed amounts use; an en dash is drawn in its place. */
 export const drawable=(text:string)=>text.replace(/\u2212/g,'\u2013');
@@ -101,51 +106,91 @@ function sections(draw:Draw,items:CardSection[],top:number){
  });
  return y;
 }
-function line(draw:Draw,chart:CardLine,top:number){
- const left=margin+padding,right=left+content,plotTop=top+56,plotBottom=plotTop+lineHeight;
- heading(draw,top,chart.title);
- const low=Math.min(...chart.values),high=Math.max(...chart.values),span=high-low||Math.abs(high)||1;
- // A little room above and below, so a flat month is a level line in the middle, not glued to an edge.
- const x=(index:number)=>left+index/(chart.values.length-1)*content;
- const y=(value:number)=>plotBottom-((value-low)/span*0.76+0.12)*lineHeight;
- const points=chart.values.map((value,index)=>`${at(x(index))},${at(y(value))}`);
- const stroke=chart.tone==='bad'?color.bad:color.line,last=chart.values.length-1;
- draw.svg.push(`<rect x="${left}" y="${plotTop}" width="${content}" height="${lineHeight}" rx="18" fill="${color.tile}"/>`);
- draw.svg.push(`<path d="M${left},${plotBottom} L${points.join(' L')} L${right},${plotBottom} Z" fill="${chart.tone==='bad'?color.bad:color.lineFill}" fill-opacity="0.28"/>`);
- draw.svg.push(`<polyline points="${points.join(' ')}" fill="none" stroke="${stroke}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`);
- draw.svg.push(`<circle cx="${x(last)}" cy="${y(chart.values[last])}" r="9" fill="${stroke}" stroke="${color.card}" stroke-width="3"/>`);
- // The first and the last value are labelled under the plot; the line between them shows the way there.
- text(draw,left,plotBottom+38,chart.from.value,{size:24,fill:color.muted,bold:true});
- text(draw,left,plotBottom+68,chart.from.label,{size:21,fill:color.muted});
- text(draw,right,plotBottom+38,chart.to.value,{size:24,fill:color.ink,bold:true,anchor:'end'});
- text(draw,right,plotBottom+68,chart.to.label,{size:21,fill:color.muted,anchor:'end'});
- return plotBottom+84;
+/** The largest size up to `size` at which `value` fits `width`, so a long amount shrinks instead of overflowing. */
+const fitted=(draw:Draw,value:string,size:number,width:number)=>{
+ let fit=size;while(fit>size*0.55&&draw.measure(value,fit,true)>width)fit-=2;
+ return fit;
+};
+function hero(draw:Draw,tile:CardTile,top:number){
+ const left=margin+padding;
+ text(draw,left,top+22,tile.label.toLocaleUpperCase(),{size:20,fill:color.muted,bold:true,spacing:1.2});
+ text(draw,left,top+108,tile.value,{size:fitted(draw,tile.value,76,content),fill:color.ink,bold:true});
+ const details=tile.detail?wrapText(tile.detail,content,26,draw.measure,{limit:2}):[];
+ details.forEach((line,number)=>text(draw,left,top+156+number*36,line,{size:26,fill:tone(tile.tone,color.muted)}));
+ return top+120+details.length*36+(details.length?24:0);
 }
-function bars(draw:Draw,chart:CardBars,top:number){
- const left=margin+padding,right=left+content,largest=Math.max(...chart.bars.map(bar=>bar.amount),0)||1;
- heading(draw,top,chart.title);
- let y=top+48;
- for(const bar of chart.bars){
-  const shareWidth=draw.measure(bar.share,22)+16,valueWidth=draw.measure(bar.value,26,true);
-  const [label]=wrapText(bar.label,content-shareWidth-valueWidth-24,26,draw.measure,{limit:1});
-  text(draw,left,y+30,label,{size:26,fill:color.ink});
-  text(draw,right,y+30,bar.share,{size:22,fill:color.muted,anchor:'end'});
-  text(draw,right-shareWidth,y+30,bar.value,{size:26,fill:color.ink,bold:true,anchor:'end'});
-  draw.svg.push(`<rect x="${left}" y="${y+46}" width="${content}" height="${barTrack}" rx="${barTrack/2}" fill="${color.track}"/>`);
-  // Every bar is at least a dot wide, so a small category still shows.
-  draw.svg.push(`<rect x="${left}" y="${y+46}" width="${at(Math.max(barTrack,bar.amount/largest*content))}" height="${barTrack}" rx="${barTrack/2}" fill="${bar.color}"/>`);
-  y+=82;
+function figures(draw:Draw,items:CardTile[],top:number){
+ let y=top;const gap=40;
+ for(let index=0;index<items.length;index+=3){
+  const row=items.slice(index,index+3),width=(content-gap*(row.length-1))/row.length;
+  const laid=row.map(tile=>({tile,details:tile.detail?wrapText(tile.detail,width-24,22,draw.measure,{limit:2}):[]}));
+  const height=96+Math.max(...laid.map(item=>item.details.length))*30;
+  laid.forEach(({tile,details},column)=>{
+   const x=margin+padding+column*(width+gap);
+   // A hairline before each column after the first keeps the figures apart without boxing them in.
+   if(column)draw.svg.push(`<rect x="${at(x-gap/2)}" y="${y+4}" width="1.5" height="${height-8}" fill="${color.rule}"/>`);
+   const inset=column?12:0;
+   text(draw,x+inset,y+20,tile.label.toLocaleUpperCase(),{size:19,fill:color.muted,bold:true,spacing:1.2});
+   text(draw,x+inset,y+74,tile.value,{size:fitted(draw,tile.value,40,width-inset),fill:color.ink,bold:true});
+   details.forEach((line,number)=>text(draw,x+inset,y+110+number*30,line,{size:22,fill:tone(tile.tone,color.muted)}));
+  });
+  y+=height+48;
  }
+ return y-48;
+}
+const ribbon=(x0:number,y0:number,x1:number,y1:number,height:number)=>{
+ const middle=at((x0+x1)/2);
+ return `M${x0},${at(y0)} C${middle},${at(y0)} ${middle},${at(y1)} ${x1},${at(y1)} L${x1},${at(y1+height)} C${middle},${at(y1+height)} ${middle},${at(y0+height)} ${x0},${at(y0+height)} Z`;
+};
+function flow(draw:Draw,chart:CardFlow,top:number){
+ const left=margin+padding,right=left+content,sourceX=left,targetX=left+300,labelX=targetX+flowNode+28;
+ heading(draw,top,chart.title);
+ const total=Math.max(chart.sources.reduce((sum,node)=>sum+node.amount,0),chart.targets.reduce((sum,node)=>sum+node.amount,0))||1;
+ const scale=flowHeight/total,size=(amount:number)=>Math.max(4,amount*scale);
+ // Each target gets a row tall enough for its two lines of label; its node sits in the middle of the row.
+ const rows=chart.targets.map(node=>Math.max(flowRow,size(node.amount)+flowGap));
+ const plotTop=top+108,plotHeight=rows.reduce((sum,row)=>sum+row,0);
+ const stack=chart.targets.reduce((sum,node)=>sum+size(node.amount),0),stackTop=plotTop+(plotHeight-stack)/2;
+ // The sources are one bar on the left, stacked in order.
+ let y=stackTop;const sourceStack=chart.sources.reduce((sum,node)=>sum+size(node.amount),0),scaleSources=stack/(sourceStack||1);
+ chart.sources.forEach((node,index)=>{
+  const height=size(node.amount)*scaleSources;
+  draw.svg.push(`<rect x="${sourceX}" y="${at(y)}" width="${flowNode}" height="${at(height)}" rx="4" fill="${node.color}"/>`);
+  // Named outside the ribbons: the first over the whole flow, the second under it.
+  const labelY=index?plotTop+plotHeight+44:plotTop-24;
+  if(index<2){
+   text(draw,sourceX,labelY,node.label,{size:24,fill:color.muted});
+   text(draw,sourceX+draw.measure(node.label,24)+12,labelY,node.value,{size:24,fill:color.ink,bold:true});
+  }
+  y+=height;
+ });
+ let from=stackTop,row=plotTop;
+ chart.targets.forEach((node,index)=>{
+  const height=size(node.amount),middle=row+rows[index]/2,to=middle-height/2;
+  draw.svg.push(`<path d="${ribbon(sourceX+flowNode,from,targetX,to,height)}" fill="${node.color}" fill-opacity="0.22"/>`);
+  draw.svg.push(`<rect x="${targetX}" y="${at(to)}" width="${flowNode}" height="${at(height)}" rx="4" fill="${node.color}"/>`);
+  const valueWidth=draw.measure(node.value,26,true);
+  const [label]=wrapText(node.label,right-labelX-valueWidth-20,26,draw.measure,{limit:1});
+  text(draw,labelX,middle-4,label,{size:26,fill:color.ink});
+  text(draw,right,middle-4,node.value,{size:26,fill:color.ink,bold:true,anchor:'end'});
+  if(node.detail){const [detail]=wrapText(node.detail,right-labelX,21,draw.measure,{limit:1});text(draw,labelX,middle+28,detail,{size:21,fill:color.muted});}
+  from+=height;row+=rows[index];
+ });
+ return plotTop+plotHeight+(chart.sources.length>1?56:0);
+}
+/** The figures under their heading: a large one, open columns and boxed tiles, each when given; returns where they end. */
+function drawFigures(draw:Draw,card:ReportCard,top:number){
+ let y=top;
+ if(card.tilesTitle&&(card.hero||card.figures?.length||card.tiles?.length)){heading(draw,y,card.tilesTitle);y+=56;}
+ if(card.hero)y=hero(draw,card.hero,y)+40;
+ if(card.figures?.length)y=figures(draw,card.figures,y)+80;
+ if(card.tiles?.length)y=tiles(draw,card.tiles,y)+40;
  return y;
 }
 /** Everything under the header, top to bottom; returns where it ends. */
 function drawBody(draw:Draw,card:ReportCard,top:number){
- let y=top;const left=margin+padding,measure=draw.measure;
- if(card.tiles?.length){
-  if(card.tilesTitle){heading(draw,y,card.tilesTitle);y+=44;}
-  y=tiles(draw,card.tiles,y)+40;
- }
- for(const chart of card.charts??[])y=(chart.kind==='line'?line(draw,chart,y):bars(draw,chart,y))+36;
+ let y=drawFigures(draw,card,top);const left=margin+padding,measure=draw.measure;
+ for(const chart of card.charts??[])y=flow(draw,chart,y)+72;
  if(card.sectionsTitle){heading(draw,y,card.sectionsTitle,color.ink);y+=56;}
  if(card.sections?.length)y=sections(draw,card.sections.filter(section=>section.rows.length),y)+18;
  for(const sentence of card.lines??[])for(const [number,line] of wrapText(sentence,content-28,26,measure,{limit:4}).entries()){

@@ -2618,14 +2618,7 @@
   "A quiet month. Add this month's records to see your report.": "शांत महीना। रिपोर्ट देखने के लिए इस महीने की प्रविष्टियाँ जोड़ें।",
   "You saved {amount} this month.": "इस महीने आपने {amount} बचाए।",
   "You spent {amount} more than you earned this month.": "इस महीने आपने कमाई से {amount} अधिक खर्च किया।",
-  "Last 30 days": "पिछले 30 दिन",
-  "{change} less than the 30 days before": "पिछले 30 दिनों से {change} कम",
-  "{change} more than the 30 days before": "पिछले 30 दिनों से {change} अधिक",
-  "{change} in 30 days": "30 दिनों में {change}",
-  "Expenses by category": "श्रेणी के अनुसार खर्च",
-  "Net worth, last 30 days": "कुल संपत्ति, पिछले 30 दिन",
   "{percent} of income": "आय का {percent}",
-  "Last 30 days: income {income}, expenses {expenses}.": "पिछले 30 दिन: आय {income}, खर्च {expenses}।",
   "Rent received this year": "इस वर्ष मिला किराया",
   "Costs this year": "इस वर्ष की लागत",
   "Net this year": "इस वर्ष का शुद्ध",
@@ -2734,5 +2727,7 @@
   "Next quarter": "अगली तिमाही",
   "Borrower group (optional)": "उधार लेने वालों का समूह (वैकल्पिक)",
   "e.g. Family": "जैसे परिवार",
-  "Borrower group is too long.": "समूह का नाम बहुत लंबा है।"
+  "Borrower group is too long.": "समूह का नाम बहुत लंबा है।",
+  "From savings": "बचत से",
+  "This month: income {income}, expenses {expenses}.": "इस महीने: आय {income}, खर्च {expenses}।"
 }
