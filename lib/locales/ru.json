@@ -2729,5 +2729,6 @@
   "e.g. Family": "например, Семья",
   "Borrower group is too long.": "Название группы слишком длинное.",
   "From savings": "Из сбережений",
-  "This month: income {income}, expenses {expenses}.": "В этом месяце: доходы {income}, расходы {expenses}."
+  "This month: income {income}, expenses {expenses}.": "В этом месяце: доходы {income}, расходы {expenses}.",
+  "Kept in accounts": "Осталось на счетах"
 }

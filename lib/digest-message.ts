@@ -5,6 +5,7 @@
 // It is sent as a picture (digestCard); the text is for languages the card's
 // font cannot draw.
 import {categoryColor} from './category-colors';
+import type {MoneyDestination} from './digest-flow';
 import {income} from './finance';
 import {shiftDay} from './calendar-days';
 import {formatDate,formatMonthYear,formatNumber,formatPercent} from './format';
@@ -23,7 +24,10 @@ export type DigestExtras={
  netWorth?:{amount:number;start?:number};
  /** Income and expenses from the 1st of this month to today, with expenses by category, largest first; `previous` is the
   * same days of last month, left out when it is incomplete. `missing` when an amount had no rate, so no total is complete. */
- cashflow?:{income:number;spending:number;missing?:boolean;categories:{key:string;label:string;amount:number}[];previous?:{income:number;spending:number;categories:{key:string;amount:number}[]}};
+ cashflow?:{income:number;spending:number;missing?:boolean;categories:{key:string;label:string;amount:number}[];previous?:{income:number;spending:number;categories:{key:string;amount:number}[]};
+  /** Income by source, largest first, named like the categories; and the cash moved this month into investments, a
+   * mortgage's principal, other debts and money lent (lib/digest-flow.ts). Both left out when a rate was missing. */
+  sources?:{key:string;label:string;amount:number}[];moved?:Partial<Record<MoneyDestination,number>>};
 };
 /** The days the digest covers: this month from the 1st to `today`, and the same days of last month, cut at its end. */
 export function digestPeriods(today:string){
@@ -125,21 +129,39 @@ function digestFigures(kit:Kit,extras:DigestExtras):{hero?:CardTile;figures:Card
  }
  return {...(hero?{hero}:{}),figures};
 }
-/** Where this month's money went, as a Sankey: income (and what came from savings when spending passed it) flowing into
- * each category and what was saved, each with last month's amount by the same day beside it. */
+/** Where money went besides spending, in the order the Sankey lists them, with the label and colour of each. */
+const destinations:{key:MoneyDestination;label:string;detail?:string;color:string}[]=[
+ {key:'invested',label:'Investments',color:'#3567c9'},
+ {key:'mortgage',label:'Mortgage',detail:'Principal',color:'#9a6a3a'},
+ {key:'debt',label:'Debt principal paid',color:'#b4583c'},
+ {key:'lent',label:'Money lent',color:'#7a62c2'},
+];
+/** Where this month's money went, as a Sankey: each income source (and what came out of savings when more went out than
+ * came in) flowing into each spending category, what was invested, paid off a mortgage or another debt, or lent, and
+ * what stayed in the accounts. A category shows last month's amount by the same day beside it. */
 function digestFlow(kit:Kit,extras:DigestExtras):CardChart[]{
  const {t,locale}=kit,currency=extras.currency??'USD',money=(value:number)=>kit.money(value,currency);
  const flow=extras.cashflow;
  if(!flow||flow.missing||(!flow.income&&!flow.spending))return [];
- const base=Math.max(flow.income,flow.spending),share=(amount:number)=>formatPercent(amount/base*100,locale,0);
+ const moved=destinations.map(item=>({...item,amount:Math.max(0,flow.moved?.[item.key]??0)})).filter(item=>Math.round(item.amount)>0);
+ const kept=flow.income-flow.spending-moved.reduce((sum,item)=>sum+item.amount,0);
+ const base=Math.max(flow.income,flow.income-kept),share=(amount:number)=>formatPercent(amount/base*100,locale,0);
  const before=new Map(flow.previous?.categories.map(category=>[category.key,category.amount]));
- const node=(label:string,amount:number,color:string,previous?:number):FlowNode=>({label,amount,color,value:money(amount),detail:share(amount)+(previous?` · ${t('Last month')}: ${money(previous)}`:'')});
+ const node=(label:string,amount:number,color:string,detail?:string):FlowNode=>({label,amount,color,value:money(amount),detail:[share(amount),detail].filter(Boolean).join(' · ')});
+ const lastMonth=(amount:number|undefined)=>amount?`${t('Last month')}: ${money(amount)}`:undefined;
  const shown=flow.categories.slice(0,flowsShown),rest=flow.categories.slice(flowsShown);
  const restAmount=rest.reduce((sum,category)=>sum+category.amount,0),restBefore=rest.reduce((sum,category)=>sum+(before.get(category.key)??0),0);
- const saved=flow.income-flow.spending;
- // Each category keeps its own colour from the app; the tail folds into one grey flow, and what is left over is green.
- const targets=[...shown.map(category=>node(category.label,category.amount,categoryColor(category.key),before.get(category.key))),...(restAmount>0?[node(t('Other'),restAmount,'#9aa38f',restBefore)]:[]),...(saved>0?[{...node(t('Saved'),saved,'#4d7c0f'),detail:t('{percent} of income',{percent:formatPercent(saved/flow.income*100,locale,0)})}]:[])];
- const sources=[...(flow.income>0?[{label:t('Income'),amount:flow.income,value:money(flow.income),color:'#2f7d32'}]:[]),...(saved<0?[{label:t('From savings'),amount:-saved,value:money(-saved),color:'#9aa38f'}]:[])];
+ // Each category keeps its own colour from the app and the tail folds into one grey flow; what stayed is green.
+ const targets=[
+  ...shown.map(category=>node(category.label,category.amount,categoryColor(category.key),lastMonth(before.get(category.key)))),
+  ...(restAmount>0?[node(t('Other'),restAmount,'#9aa38f',lastMonth(restBefore))]:[]),
+  ...moved.map(item=>node(t(item.label),item.amount,item.color,item.detail&&t(item.detail))),
+  ...(Math.round(kept)>0?[node(t('Kept in accounts'),kept,'#4d7c0f')]:[]),
+ ];
+ // Income by source when it is known and adds up; otherwise one Income source.
+ const named=flow.sources?.filter(source=>source.amount>0)??[],known=named.reduce((sum,source)=>sum+source.amount,0);
+ const incomes=named.length&&Math.abs(known-flow.income)<1?named.map(source=>({label:source.label,amount:source.amount,value:money(source.amount),color:categoryColor(source.key)})):flow.income>0?[{label:t('Income'),amount:flow.income,value:money(flow.income),color:'#2f7d32'}]:[];
+ const sources=[...incomes,...(Math.round(kept)<0?[{label:t('From savings'),amount:-kept,value:money(-kept),color:'#9aa38f'}]:[])];
  return targets.length?[{kind:'flow',title:t('Where the money went'),sources,targets}]:[];
 }
 /** The digest as a picture: the greeting, this month's figures against last month, where the money went as a Sankey,

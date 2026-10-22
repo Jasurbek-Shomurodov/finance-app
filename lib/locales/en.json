@@ -2729,5 +2729,6 @@
   "e.g. Family": "e.g. Family",
   "Borrower group is too long.": "Borrower group is too long.",
   "From savings": "From savings",
-  "This month: income {income}, expenses {expenses}.": "This month: income {income}, expenses {expenses}."
+  "This month: income {income}, expenses {expenses}.": "This month: income {income}, expenses {expenses}.",
+  "Kept in accounts": "Kept in accounts"
 }

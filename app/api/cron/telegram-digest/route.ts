@@ -11,7 +11,8 @@ import { snapshotPoints } from '@/lib/portfolio-snapshots';
 import { serviceDatabase } from '@/lib/service-role';
 import { telegramConfig } from '@/lib/telegram';
 import { deliverReport } from '@/lib/telegram-report';
-import { deliverToSubscribers, namedCategories, ownerCategories, ownerDebtPayments, ownerProfile, ownerRecordsSince, ownerSpendingExtras, recentSnapshots } from '@/lib/telegram-owner';
+import { deliverToSubscribers, namedCategories, ownerCategories, ownerDebtPayments, ownerOperations, ownerProfile, ownerRecordsSince, ownerSpendingExtras, recentSnapshots } from '@/lib/telegram-owner';
+import { monthMoves } from '@/lib/digest-flow';
 import { keepDayRates, withDayRates } from '@/lib/day-rate-tables';
 export const maxDuration=60;
 const defaultReminders:ReminderSettings={enabled:true,days_ahead:7,snoozed:[]};
@@ -30,7 +31,7 @@ export async function GET(req:Request){
   await keepDayRates([today],{today,db});
   const {from,previousFrom:before,previousTo}=digestPeriods(today);
   const counts=await deliverToSubscribers(db,{kind:'digest',period:today},async({user_id,chat_id})=>{
-    const [stored,occurrences,profile,snapshots,reminders,[activity,mortgagePayments],categories]=await Promise.all([
+    const [stored,occurrences,profile,snapshots,reminders,[activity,mortgagePayments],categories,operations]=await Promise.all([
      // Schedules and holdings in full; actual cash flow only for the two periods compared.
      ownerRecordsSince(db,user_id,before),
      ownerRows<Occurrence>(db,'payment_occurrences',user_id,'id,record_id,due_on,status'),
@@ -41,6 +42,8 @@ export async function GET(req:Request){
      // Only repayments mark a loan installment as paid.
      ownerDebtPayments(db,user_id),
      ownerCategories(db,user_id),
+     // Transfers, buys and repayments this month, for where the money went besides spending.
+     ownerOperations(db,user_id,from),
     ]);
     // Each transaction counts in the owner's currency at the official rates of its own day.
     const records=await withDayRates(stored,[profile.currency],{today:depositToday(),db});
@@ -55,7 +58,10 @@ export async function GET(req:Request){
     const flows={records,...await ownerSpendingExtras(db,user_id,before,records)};
     const current=periodTotals(flows,from,today,profile.currency,rates),previous=periodTotals(flows,before,previousTo,profile.currency,rates);
     // An incomplete earlier period only drops the comparison.
-    const cashflow={income:current.income,spending:current.spending,missing:current.missing>0,categories:namedCategories(current.byCategory,categories,profile.language),...(previous.missing?{}:{previous:{income:previous.income,spending:previous.spending,categories:namedCategories(previous.byCategory,categories,profile.language)}})};
+    // Income by source and what moved into investments and debts, left out whole when a rate was missing.
+    const moves=monthMoves(records,operations,flows.splits,{from,to:today,currency:profile.currency,rates});
+    const moved=moves.missing?{}:{sources:namedCategories(moves.income,categories,profile.language,'Other income'),moved:moves.moved};
+    const cashflow={income:current.income,spending:current.spending,missing:current.missing>0,categories:namedCategories(current.byCategory,categories,profile.language),...(previous.missing?{}:{previous:{income:previous.income,spending:previous.spending,categories:namedCategories(previous.byCategory,categories,profile.language)}}),...moved};
     const due=dueReminders({records,occurrences,categories:[],goals:[],activity:[],debtPayments:debtPaymentsFrom(activity,mortgagePayments)},settings,today),digest={name:profile.name,currency:profile.currency,rates,netWorth,cashflow};
     // A picture, or the text where the picture's font cannot draw the language.
     return deliverReport({chat_id,language:profile.language,text:digestMessage(due,profile.language,today,digest),picture:{...digestCard(due,profile.language,today,digest),filename:`hoggish-${today}.png`}},config);

@@ -6,6 +6,7 @@ import {reportError} from './monitoring';
 import {expenses,type Entry} from './finance';
 import {isLanguage,translate,type Language} from './i18n';
 import {ownerRows,pagePath,readAllPages,readIdPages} from './owner-rows';
+import type {MonthOperations} from './digest-flow';
 import {cashflowKinds,standingRecords} from './planning-reads';
 import type {PortfolioSnapshot} from './portfolio-snapshots';
 import type {ServiceDatabase} from './service-role';
@@ -21,12 +22,13 @@ export async function ownerProfile(db:ServiceDatabase,owner:string):Promise<Owne
 /** The owner's added spending categories, to name them in the scheduled reports. */
 export const ownerCategories=(db:ServiceDatabase,owner:string)=>db.read<Array<{id:string;name:string}>>('/rest/v1/transaction_categories?select=id,name&user_id=eq.'+owner);
 /** Spending by category (keys from lib/period-summary.ts), largest first, named in `language`: a built-in category is
- * translated, an added one shows the owner's own name, and one since deleted counts as Other expense. `key` is the
+ * translated, an added one shows the owner's own name, and one since deleted counts as `deleted` (Other expense, or
+ * Other income for income). `key` is the
  * kind or the added category's id, which picks its colour. */
-export function namedCategories(byCategory:Record<string,number>,categories:readonly {id:string;name:string}[],language:Language){
+export function namedCategories(byCategory:Record<string,number>,categories:readonly {id:string;name:string}[],language:Language,deleted='Other expense'){
  return Object.entries(byCategory).filter(([,amount])=>amount>0).sort((a,b)=>b[1]-a[1]).map(([key,amount])=>{
   const own=key.startsWith('c:')?categories.find(category=>category.id===key.slice(2)):undefined;
-  return {key:key.slice(2),label:own?.name??translate(language,key.startsWith('c:')?'Other expense':key.slice(2)),amount};
+  return {key:key.slice(2),label:own?.name??translate(language,key.startsWith('c:')?deleted:key.slice(2)),amount};
  });
 }
 /** The owner's newest daily snapshots, oldest first. */
@@ -63,6 +65,20 @@ export function ownerDebtPayments(db:ServiceDatabase,owner:string){
   ownerRows<{mortgage_id:string;paid_on:string}>(db,'mortgage_payments',owner,'mortgage_id,paid_on'),
  ]);
 }
+/** The account operations dated `from` on that move money between accounts, for where the month's money went
+ * (lib/digest-flow.ts): transfers, repayments and mortgage payments, buys and sales, and cash moved in or out of the
+ * Tracker's holdings (its expenses are spending, read by ownerSpendingExtras). Paged; a failed page throws. */
+export async function ownerOperations(db:ServiceDatabase,owner:string,from:string):Promise<MonthOperations>{
+ const [activity,movements,links]=await Promise.all([
+  readIdPages<Activity>(range=>db.read<Activity[]>(`/rest/v1/account_activity?select=id,action,account_id,target_id,amount,received,fee,occurred_on&action=in.(transfer,repayment,mortgage)&occurred_on=gte.${from}&user_id=eq.${owner}&order=id.asc&${range}`)),
+  readIdPages<Movement>(range=>db.read<Movement[]>(`/rest/v1/asset_movements?select=id,kind,source_id,target_id,source_value,target_value,occurred_on&kind=neq.interest&occurred_on=gte.${from}&user_id=eq.${owner}&order=id.asc&${range}`)),
+  readIdPages<InvestmentLink>(range=>db.read<InvestmentLink[]>(`/rest/v1/investment_account_links?select=id,account_id,account_currency,amount,investment_history!inner(occurred_on,record_id,event_type)&user_id=eq.${owner}&investment_history.event_type=neq.expense&investment_history.occurred_on=gte.${from}&order=id.asc&${range}`)),
+ ]);
+ return {activity,movements,investmentLinks:links};
+}
+type Activity=MonthOperations['activity'][number];
+type Movement=NonNullable<MonthOperations['movements']>[number];
+type InvestmentLink=NonNullable<MonthOperations['investmentLinks']>[number];
 /** Records whose splits one request asks for, so the address stays short. */
 const splitBatch=100;
 type SplitRow=Parameters<typeof normalizeSplits>[0][number];

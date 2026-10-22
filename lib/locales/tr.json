@@ -2729,5 +2729,6 @@
   "e.g. Family": "ör. Aile",
   "Borrower group is too long.": "Grup adı çok uzun.",
   "From savings": "Birikimden",
-  "This month: income {income}, expenses {expenses}.": "Bu ay: gelir {income}, gider {expenses}."
+  "This month: income {income}, expenses {expenses}.": "Bu ay: gelir {income}, gider {expenses}.",
+  "Kept in accounts": "Hesaplarda kalan"
 }

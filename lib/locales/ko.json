@@ -2729,5 +2729,6 @@
   "e.g. Family": "예: 가족",
   "Borrower group is too long.": "그룹 이름이 너무 깁니다.",
   "From savings": "저축에서",
-  "This month: income {income}, expenses {expenses}.": "이번 달: 수입 {income}, 지출 {expenses}."
+  "This month: income {income}, expenses {expenses}.": "이번 달: 수입 {income}, 지출 {expenses}.",
+  "Kept in accounts": "계좌에 남은 금액"
 }

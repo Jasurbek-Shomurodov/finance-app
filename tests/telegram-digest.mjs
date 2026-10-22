@@ -104,7 +104,7 @@ test('the digest cron is scheduled in the morning and documented',()=>{
  assert.match(fs.readFileSync('VERCEL.md','utf8'),/telegram-digest/);
 });
 
-function cronRoute({subscriptions,records={},splits={},links={},occurrences={},languages={},names={},currencies={},snapshots={},reminders={},sendResult=true,failFor='',deliveries=deliveryTable()}){
+function cronRoute({subscriptions,records={},splits={},links={},movements={},occurrences={},languages={},names={},currencies={},snapshots={},reminders={},sendResult=true,failFor='',deliveries=deliveryTable()}){
  const sent=[],reads=[];
  const db={
   async read(path){
@@ -121,6 +121,7 @@ function cronRoute({subscriptions,records={},splits={},links={},occurrences={},l
    if(path.startsWith('/rest/v1/account_activity')||path.startsWith('/rest/v1/mortgage_payments'))return [];
    if(path.startsWith('/rest/v1/transaction_splits'))return splits[owner]??[];
    if(path.startsWith('/rest/v1/investment_account_links'))return links[owner]??[];
+   if(path.startsWith('/rest/v1/asset_movements'))return movements[owner]??[];
    throw Error('unexpected '+path);
   },
   // The digest writes nothing but its delivery claims.
@@ -334,4 +335,64 @@ test('sending tells a chat that refuses the bot for good apart from a failure a 
  // Existing callers still get a plain yes or no.
  assert.equal(await sendTelegramMessage({chat_id:1,text:'hi'},config,reply(403,'Forbidden: bot was blocked by the user')),false);
  assert.equal(await sendTelegramMessage({chat_id:1,text:'hi'},config,async()=>Response.json({ok:true})),true);
+});
+
+test('where the month\'s money went besides spending: income by source, investing, mortgage principal, debts and lending',()=>{
+ const {monthMoves}=loadTS('lib/digest-flow.ts');
+ const account=(id,kind,currency='USD')=>({id,name:id,kind,amount:0,currency,date:'2026-01-01',frequency:'Once',quantity:1,cost:0,rate:0,notes:''});
+ const once=(id,kind,amount,date,extra={})=>({...account(id,kind),amount,date,...extra});
+ const records=[account('cash','Cash'),account('bank','Deposit'),account('stock','Stock'),account('home','Mortgage'),account('car','Loan'),account('friend','Money lent'),
+  once('pay','Salary',3000,'2026-09-05',{account_id:'cash'}),once('rent-in','Rent income',500,'2026-09-06',{account_id:'cash'}),once('old','Salary',999,'2026-08-31',{account_id:'cash'}),
+  once('m1','Other expense',700,'2026-09-10',{account_id:'cash',mortgage_payment_id:'mp',payment_principal:600,payment_interest:100})];
+ const activity=[
+  {id:'m1',action:'mortgage',account_id:'cash',target_id:'home',amount:700,received:0,fee:0,occurred_on:'2026-09-10',notes:''},
+  {id:'r1',action:'repayment',account_id:'cash',target_id:'car',amount:250,received:0,fee:0,occurred_on:'2026-09-11',notes:''},
+  // Moving cash between two accounts of one's own is neither.
+  {id:'t1',action:'transfer',account_id:'cash',target_id:'bank',amount:400,received:400,fee:0,occurred_on:'2026-09-12',notes:''},
+  {id:'r0',action:'repayment',account_id:'cash',target_id:'car',amount:999,received:0,fee:0,occurred_on:'2026-08-20',notes:''},
+ ];
+ const movements=[
+  {id:'b1',kind:'buy',source_id:'cash',target_id:'stock',source_value:1000,target_value:1000,occurred_on:'2026-09-14'},
+  {id:'s1',kind:'sell',source_id:'stock',target_id:'bank',source_value:300,target_value:300,occurred_on:'2026-09-15'},
+  {id:'l1',kind:'transfer',source_id:'cash',target_id:'friend',source_value:150,target_value:150,occurred_on:'2026-09-16'},
+ ];
+ const investmentLinks=[{id:'k1',account_id:'cash',amount:-200,investment_history:{occurred_on:'2026-09-17',record_id:'stock',event_type:'contribution'}}];
+ const moves=monthMoves(records,{activity,movements,investmentLinks},[],{from:'2026-09-01',to:'2026-09-30',currency:'USD',rates:{}});
+ assert.deepEqual(moves.income,{'k:Salary':3000,'k:Rent income':500});
+ // Bought 1,000 and added 200 through the Tracker, sold 300: 900 net. Only the mortgage payment's principal counts.
+ assert.deepEqual(moves.moved,{invested:900,mortgage:600,debt:250,lent:150});
+ assert.equal(moves.missing,0);
+ // An amount without a rate is counted as missing, never guessed.
+ const uzs=monthMoves([...records,once('uz','Salary',100,'2026-09-20',{currency:'UZS'})],{activity:[],movements:[],investmentLinks:[]},[],{from:'2026-09-01',to:'2026-09-30',currency:'USD',rates:{}});
+ assert.equal(uzs.missing,1);
+});
+
+test('the digest Sankey flows each income source into spending, investing, debts and what stayed in the accounts',()=>{
+ const cashflow={income:5000,spending:2000,categories:[{key:'Charity',label:'Charity',amount:2000}],sources:[{key:'Salary',label:'Salary',amount:4000},{key:'c-x',label:'Tutoring',amount:1000}],moved:{invested:1500,mortgage:600,debt:0,lent:-50}};
+ const [flow]=digestCard([],'en',today,{currency:'USD',cashflow}).card.charts;
+ assert.deepEqual(flow.sources.map(node=>[node.label,node.value]),[['Salary','$4,000'],['Tutoring','$1,000']]);
+ // Nothing is shown for a destination that took nothing or got money back.
+ assert.deepEqual(flow.targets.map(node=>[node.label,node.value,node.detail]),[['Charity','$2,000','40%'],['Investments','$1,500','30%'],['Mortgage','$600','12% · Principal'],['Kept in accounts','$900','18%']]);
+ // More moved out than came in: the rest came from savings, and nothing stayed.
+ const over=digestCard([],'en',today,{currency:'USD',cashflow:{...cashflow,moved:{invested:4000}}}).card.charts[0];
+ assert.deepEqual(over.sources.map(node=>[node.label,node.value]),[['Salary','$4,000'],['Tutoring','$1,000'],['From savings','$1,000']]);
+ assert.ok(!over.targets.some(node=>node.label==='Kept in accounts'));
+ // Sources that do not add up to the income fall back to one Income source.
+ const partial=digestCard([],'en',today,{currency:'USD',cashflow:{...cashflow,sources:[{key:'Salary',label:'Salary',amount:4000}]}}).card.charts[0];
+ assert.deepEqual(partial.sources.map(node=>node.label),['Income']);
+});
+
+test('the digest cron reads only this month\'s transfers, buys and Tracker moves, and names income by source',async()=>{
+ process.env.CRON_SECRET='test-secret';
+ const cash={id:'cash',name:'Wallet',kind:'Cash',amount:0,currency:'USD',date:'2026-01-01',frequency:'Once',quantity:0,cost:0,rate:0,notes:''};
+ const stock={...cash,id:'stock',name:'ETF',kind:'Stock'};
+ const salary={...cash,id:'pay',name:'Pay',kind:'Salary',amount:2000,date:'2026-09-05',account_id:'cash'};
+ const cron=cronRoute({subscriptions:[{user_id:'anna',chat_id:1}],records:{anna:[cash,stock,salary]},movements:{anna:[{id:'b1',kind:'buy',source_id:'cash',target_id:'stock',source_value:500,target_value:500,occurred_on:'2026-09-08'}]}});
+ await cron.GET();
+ assert.ok(cron.reads.some(path=>path.startsWith('/rest/v1/asset_movements')&&path.includes('occurred_on=gte.2026-09-01')&&path.includes('kind=neq.interest')));
+ assert.ok(cron.reads.some(path=>path.startsWith('/rest/v1/account_activity')&&path.includes('action=in.(transfer,repayment,mortgage)')&&path.includes('occurred_on=gte.2026-09-01')));
+ assert.ok(cron.reads.some(path=>path.startsWith('/rest/v1/investment_account_links')&&path.includes('event_type=neq.expense')));
+ const [flow]=cron.sent[0].picture.card.charts;
+ assert.deepEqual(flow.sources.map(node=>[node.label,node.value]),[['Salary','$2,000']]);
+ assert.deepEqual(flow.targets.map(node=>[node.label,node.value]),[['Investments','$500'],['Kept in accounts','$1,500']]);
 });

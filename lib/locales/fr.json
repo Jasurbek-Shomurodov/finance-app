@@ -2729,5 +2729,6 @@
   "e.g. Family": "ex. : Famille",
   "Borrower group is too long.": "Le nom du groupe est trop long.",
   "From savings": "Sur l’épargne",
-  "This month: income {income}, expenses {expenses}.": "Ce mois-ci : revenus {income}, dépenses {expenses}."
+  "This month: income {income}, expenses {expenses}.": "Ce mois-ci : revenus {income}, dépenses {expenses}.",
+  "Kept in accounts": "Resté sur les comptes"
 }

@@ -2729,5 +2729,6 @@
   "e.g. Family": "例如：家人",
   "Borrower group is too long.": "分组名称太长。",
   "From savings": "来自储蓄",
-  "This month: income {income}, expenses {expenses}.": "本月：收入 {income}，支出 {expenses}。"
+  "This month: income {income}, expenses {expenses}.": "本月：收入 {income}，支出 {expenses}。",
+  "Kept in accounts": "留在账户中"
 }

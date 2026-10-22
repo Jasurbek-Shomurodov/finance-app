@@ -2729,5 +2729,6 @@
   "e.g. Family": "เช่น ครอบครัว",
   "Borrower group is too long.": "ชื่อกลุ่มยาวเกินไป",
   "From savings": "จากเงินออม",
-  "This month: income {income}, expenses {expenses}.": "เดือนนี้: รายรับ {income} รายจ่าย {expenses}"
+  "This month: income {income}, expenses {expenses}.": "เดือนนี้: รายรับ {income} รายจ่าย {expenses}",
+  "Kept in accounts": "คงอยู่ในบัญชี"
 }

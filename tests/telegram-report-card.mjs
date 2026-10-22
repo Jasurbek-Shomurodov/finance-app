@@ -36,10 +36,10 @@ test('the digest card shows this month against last month, where the money went 
  const [flow]=card.charts;
  assert.equal(flow.kind,'flow');assert.equal(flow.title,'Where the money went');
  assert.deepEqual(flow.sources.map(node=>[node.label,node.value]),[['Income','$4,200']]);
- // The five largest keep their own colour and last month's amount by the same day; the rest fold into Other; then what was saved.
+ // The five largest keep their own colour and last month's amount by the same day; the rest fold into Other; then what stayed.
  assert.deepEqual(flow.targets.map(node=>[node.label,node.value,node.detail]),[
   ['Living expense','$1,240','30% · Last month: $1,500'],['Rent expense','$800','19%'],['Sheep feed','$520','12% · Last month: $400'],
-  ['Charity','$300','7%'],['Car','$210','5%'],['Other','$200','5% · Last month: $80'],['Saved','$930','22% of income'],
+  ['Charity','$300','7%'],['Car','$210','5%'],['Other','$200','5% · Last month: $80'],['Kept in accounts','$930','22%'],
  ]);
  assert.equal(flow.targets[0].color,categoryColor('Living expense'));assert.equal(flow.targets[2].color,categoryColor('c-feed'));
  assert.equal(digestCard(items,'en',today,{...extras,netWorth:{amount:1,start:5}}).card.figures[2].tone,'bad');
@@ -317,4 +317,13 @@ test('the card draws a large figure, open figures and a Sankey whose ribbons are
  // A second source, such as what came from savings, is named under the flow.
  const over=reportCardSvg({title:'T',charts:[{kind:'flow',title:'F',sources:[{label:'Income',value:'$1',amount:1,color:'#2f7d32'},{label:'From savings',value:'$2',amount:2,color:'#9aa38f'}],targets:[{label:'Rent',value:'$3',amount:3,color:'#123456'}]}]});
  assert.match(over,/>From savings</);
+});
+
+test('a Sankey with several sources joins each source to the targets it shares money with, in order',()=>{
+ const svg=reportCardSvg({title:'T',charts:[{kind:'flow',title:'F',sources:[{label:'Salary',value:'$300',amount:300,color:'#111111'},{label:'Rent',value:'$100',amount:100,color:'#222222'}],targets:[
+  {label:'Food',value:'$200',amount:200,color:'#aa0000'},{label:'Saved',value:'$200',amount:200,color:'#00aa00'}]}]});
+ // Salary feeds Food and part of Saved; Rent feeds the rest of Saved: three ribbons, coloured by their target.
+ assert.equal((svg.match(/fill-opacity="0.22"/g)||[]).length,3);
+ assert.equal((svg.match(/fill="#00aa00" fill-opacity/g)||[]).length,2);
+ assert.match(svg,/text-anchor="end" fill="#6b7560">Salary</);assert.match(svg,/>Rent</);
 });

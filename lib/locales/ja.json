@@ -2729,5 +2729,6 @@
   "e.g. Family": "例: 家族",
   "Borrower group is too long.": "グループ名が長すぎます。",
   "From savings": "貯蓄から",
-  "This month: income {income}, expenses {expenses}.": "今月: 収入 {income}、支出 {expenses}。"
+  "This month: income {income}, expenses {expenses}.": "今月: 収入 {income}、支出 {expenses}。",
+  "Kept in accounts": "口座に残した額"
 }

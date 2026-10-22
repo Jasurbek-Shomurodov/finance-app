@@ -142,41 +142,48 @@ const ribbon=(x0:number,y0:number,x1:number,y1:number,height:number)=>{
  const middle=at((x0+x1)/2);
  return `M${x0},${at(y0)} C${middle},${at(y0)} ${middle},${at(y1)} ${x1},${at(y1)} L${x1},${at(y1+height)} C${middle},${at(y1+height)} ${middle},${at(y0+height)} ${x0},${at(y0+height)} Z`;
 };
-function flow(draw:Draw,chart:CardFlow,top:number){
- const left=margin+padding,right=left+content,sourceX=left,targetX=left+300,labelX=targetX+flowNode+28;
- heading(draw,top,chart.title);
- const total=Math.max(chart.sources.reduce((sum,node)=>sum+node.amount,0),chart.targets.reduce((sum,node)=>sum+node.amount,0))||1;
- const scale=flowHeight/total,size=(amount:number)=>Math.max(4,amount*scale);
- // Each target gets a row tall enough for its two lines of label; its node sits in the middle of the row.
- const rows=chart.targets.map(node=>Math.max(flowRow,size(node.amount)+flowGap));
- const plotTop=top+108,plotHeight=rows.reduce((sum,row)=>sum+row,0);
- const stack=chart.targets.reduce((sum,node)=>sum+size(node.amount),0),stackTop=plotTop+(plotHeight-stack)/2;
- // The sources are one bar on the left, stacked in order.
- let y=stackTop;const sourceStack=chart.sources.reduce((sum,node)=>sum+size(node.amount),0),scaleSources=stack/(sourceStack||1);
- chart.sources.forEach((node,index)=>{
-  const height=size(node.amount)*scaleSources;
-  draw.svg.push(`<rect x="${sourceX}" y="${at(y)}" width="${flowNode}" height="${at(height)}" rx="4" fill="${node.color}"/>`);
-  // Named outside the ribbons: the first over the whole flow, the second under it.
-  const labelY=index?plotTop+plotHeight+44:plotTop-24;
-  if(index<2){
-   text(draw,sourceX,labelY,node.label,{size:24,fill:color.muted});
-   text(draw,sourceX+draw.measure(node.label,24)+12,labelY,node.value,{size:24,fill:color.ink,bold:true});
-  }
-  y+=height;
+/** Rows for nodes stacked down a column: each row tall enough for its labels, its node in the middle of it. */
+function column(nodes:FlowNode[],scale:number,top:number){
+ let y=top;
+ return nodes.map(node=>{
+  const height=Math.max(3,node.amount*scale),row=Math.max(flowRow,height+flowGap),middle=y+row/2;
+  y+=row;
+  return {node,height,middle,top:middle-height/2,start:0};
  });
- let from=stackTop,row=plotTop;
- chart.targets.forEach((node,index)=>{
-  const height=size(node.amount),middle=row+rows[index]/2,to=middle-height/2;
-  draw.svg.push(`<path d="${ribbon(sourceX+flowNode,from,targetX,to,height)}" fill="${node.color}" fill-opacity="0.22"/>`);
-  draw.svg.push(`<rect x="${targetX}" y="${at(to)}" width="${flowNode}" height="${at(height)}" rx="4" fill="${node.color}"/>`);
+}
+function flow(draw:Draw,chart:CardFlow,top:number){
+ const left=margin+padding,right=left+content,sourceX=left+210,targetX=sourceX+flowNode+220,labelX=targetX+flowNode+24;
+ heading(draw,top,chart.title);
+ const sum=(nodes:FlowNode[])=>nodes.reduce((total,node)=>total+node.amount,0);
+ const total=Math.max(sum(chart.sources),sum(chart.targets))||1,scale=flowHeight/total;
+ const plotTop=top+64,height=(nodes:FlowNode[])=>nodes.reduce((total,node)=>total+Math.max(flowRow,Math.max(3,node.amount*scale)+flowGap),0);
+ const plotHeight=Math.max(height(chart.sources),height(chart.targets));
+ const sources=column(chart.sources,scale,plotTop+(plotHeight-height(chart.sources))/2),targets=column(chart.targets,scale,plotTop+(plotHeight-height(chart.targets))/2);
+ // Money is one pool: the sources and the targets each lie along the same running total, and a ribbon joins every
+ // stretch a source and a target share, so each source spreads over the targets in order.
+ let running=0;for(const item of sources){item.start=running;running+=item.node.amount;}
+ running=0;for(const item of targets){item.start=running;running+=item.node.amount;}
+ for(const target of targets)for(const source of sources){
+  const from=Math.max(source.start,target.start),to=Math.min(source.start+source.node.amount,target.start+target.node.amount);
+  if(to<=from)continue;
+  const y0=source.top+(from-source.start)*scale,y1=target.top+(from-target.start)*scale;
+  draw.svg.push(`<path d="${ribbon(sourceX+flowNode,y0,targetX,y1,(to-from)*scale)}" fill="${target.node.color}" fill-opacity="0.22"/>`);
+ }
+ for(const {node,height:size,middle,top:y} of sources){
+  draw.svg.push(`<rect x="${sourceX}" y="${at(y)}" width="${flowNode}" height="${at(size)}" rx="4" fill="${node.color}"/>`);
+  const [label]=wrapText(node.label,sourceX-left-20,24,draw.measure,{limit:1});
+  text(draw,sourceX-18,middle-4,label,{size:24,fill:color.muted,anchor:'end'});
+  text(draw,sourceX-18,middle+26,node.value,{size:fitted(draw,node.value,24,sourceX-left-20),fill:color.ink,bold:true,anchor:'end'});
+ }
+ for(const {node,height:size,middle,top:y} of targets){
+  draw.svg.push(`<rect x="${targetX}" y="${at(y)}" width="${flowNode}" height="${at(size)}" rx="4" fill="${node.color}"/>`);
   const valueWidth=draw.measure(node.value,26,true);
   const [label]=wrapText(node.label,right-labelX-valueWidth-20,26,draw.measure,{limit:1});
   text(draw,labelX,middle-4,label,{size:26,fill:color.ink});
   text(draw,right,middle-4,node.value,{size:26,fill:color.ink,bold:true,anchor:'end'});
   if(node.detail){const [detail]=wrapText(node.detail,right-labelX,21,draw.measure,{limit:1});text(draw,labelX,middle+28,detail,{size:21,fill:color.muted});}
-  from+=height;row+=rows[index];
- });
- return plotTop+plotHeight+(chart.sources.length>1?56:0);
+ }
+ return plotTop+plotHeight;
 }
 /** The figures under their heading: a large one, open columns and boxed tiles, each when given; returns where they end. */
 function drawFigures(draw:Draw,card:ReportCard,top:number){
