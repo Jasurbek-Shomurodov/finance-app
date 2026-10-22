@@ -8,10 +8,11 @@ export type CardTile={label:string;value:string;detail?:string;tone?:CardTone;ic
 export type CardHero={label:string;value:string;detail?:string;direction?:'up'|'down'};
 /** A bar filled to `share` of a whole, such as the month's budget spent: `total` on the left, `remaining` on the right. */
 export type CardMeter={title:string;total:string;remaining:string;share:number;tone?:CardTone};
-/** A Sankey of where money went: the sources on the left (each income, and what came from savings), each target on the
- * right with a ribbon as wide as its amount. Every target names itself and its amount, so colour is never the only key. */
+/** A Sankey of where money went: the sources on the left (each income, and what came from savings) into one total, out
+ * to each target on the right, with bars and flows as wide as their amounts. Every node names itself and its amount, so
+ * colour is never the only key; `total` names the middle bar. */
 export type FlowNode={label:string;value:string;amount:number;color:string;detail?:string;icon?:CardIcon};
-export type CardFlow={kind:'flow';title:string;sources:FlowNode[];targets:FlowNode[]};
+export type CardFlow={kind:'flow';title:string;sources:FlowNode[];targets:FlowNode[];total?:{label:string;value:string}};
 /** A small card with a title and an icon: a status in large type (`lead`), a figure, a bar and a note, each when given. */
 export type CardPanel={title:string;icon:CardIcon;lead?:string;leadTone?:CardTone;label?:string;value?:string;detail?:string;share?:number;note?:string;noteTone?:CardTone};
 const gap=16,cardTitle=25;
@@ -63,48 +64,57 @@ const ribbon=(x0:number,y0:number,x1:number,y1:number,height:number)=>{
  const middle=at((x0+x1)/2);
  return `M${at(x0)},${at(y0)} C${middle},${at(y0)} ${middle},${at(y1)} ${at(x1)},${at(y1)} L${at(x1)},${at(y1+height)} C${middle},${at(y1+height)} ${middle},${at(y0+height)} ${at(x0)},${at(y0+height)} Z`;
 };
-const flowRow=78,sourceWidth=220;
-/** Each source as a box, as tall as its share of the rows beside it but never too small for its two lines. */
-function sourceBoxes(sources:FlowNode[],top:number,plot:number){
- const total=sources.reduce((sum,node)=>sum+node.amount,0)||1,room=plot-gap*(sources.length-1);
- const heights=sources.map(node=>Math.max(120,node.amount/total*room)),used=heights.reduce((sum,height)=>sum+height,0)+gap*(sources.length-1);
- let y=top+Math.max(0,(plot-used)/2);
- return sources.map((node,index)=>{const item={node,top:y,height:heights[index]};y+=heights[index]+gap;return item;});
+// The app's own Sankey: income sources as bars on the left flowing into one total bar, and out of it to a bar for each
+// target on the right, every bar as tall as its amount. Sources are named to the left of their bars, targets to the right.
+const bar=14,flowGap=12,flowHeight=420,sourceLabel=170,sourceSlot=64,targetSlot=(node:FlowNode)=>node.detail?64:44,totalHead=58;
+type Slot={node:FlowNode;top:number;slot:number;h:number};
+/** One side's bars down the plot, each in a slot at least as tall as its label, the side centred on `body`. */
+function side(nodes:FlowNode[],scale:number,least:(node:FlowNode)=>number){
+ let y=0;
+ const slots=nodes.map(node=>{const h=Math.max(3,node.amount*scale),slot:Slot={node,top:y,slot:Math.max(h,least(node)),h};y+=slot.slot+flowGap;return slot;});
+ return {slots,height:Math.max(0,y-flowGap)};
+}
+function sourceLabels(draw:Draw,{node,top,slot}:Slot,x:number){
+ const middle=top+slot/2;
+ text(draw,x,middle-6,oneLine(draw,node.label,sourceLabel,20),{size:20,fill:color.muted,anchor:'end'});
+ text(draw,x,middle+22,node.value,{size:fitted(draw,node.value,24,sourceLabel),fill:color.ink,bold:true,anchor:'end'});
+}
+function targetLabels(draw:Draw,{node,top,slot}:Slot,x:number,width:number){
+ const middle=top+slot/2,textX=x+48,room=x+width-textX,valueWidth=draw.measure(node.value,21,true),line=middle+(node.detail?-4:8);
+ badge(draw,node.icon??'tag',{x:x+20,y:middle},20,node.color);
+ text(draw,textX,line,oneLine(draw,node.label,room-valueWidth-12,21),{size:21,fill:color.ink});
+ text(draw,x+width,line,node.value,{size:21,fill:color.ink,bold:true,anchor:'end'});
+ if(node.detail)text(draw,textX,middle+22,oneLine(draw,node.detail,room,17),{size:17,fill:color.muted});
 }
 export function flowCard(draw:Draw,chart:CardFlow,top:number){
- const inner=left+28,innerRight=right-28,boxRight=inner+sourceWidth,listX=left+440,plotTop=top+92;
- const plot=chart.targets.length*flowRow,boxes=sourceBoxes(chart.sources,plotTop,plot);
- const bottom=Math.max(plotTop+plot,...boxes.map(item=>item.top+item.height))+28;
+ const inner=left+28,innerRight=right-28,leftBar=inner+sourceLabel+12,rightBar=left+content*0.6,mid=(leftBar+bar+rightBar)/2-bar/2;
+ const sums=[chart.sources,chart.targets].map(nodes=>nodes.reduce((sum,node)=>sum+node.amount,0)),most=Math.max(...sums,1);
+ const count=Math.max(chart.sources.length,chart.targets.length),scale=(flowHeight-(count-1)*flowGap)/most;
+ const sides=[side(chart.sources,scale,()=>sourceSlot),side(chart.targets,scale,targetSlot)];
+ const body=Math.max(most*scale,...sides.map(item=>item.height)),midHeight=most*scale;
+ // The total's name and amount sit above its bar, and need their own room only when the bar starts near the top.
+ const plotTop=top+92+Math.max(0,totalHead-(body-midHeight)/2),midTop=plotTop+(body-midHeight)/2,bottom=plotTop+body+32;
  box(draw,{x:left,y:top,width:content,height:bottom-top});
  text(draw,inner,top+52,chart.title,{size:cardTitle,fill:color.ink,bold:true});
- // Ribbons as wide as their amounts, scaled so the widest fits its row and every source fits its box.
- const largest=Math.max(...chart.targets.map(node=>node.amount),1);
- const scale=Math.min((flowRow-26)/largest,...boxes.map(item=>(item.height-28)/(item.node.amount||1)));
- const thick=(amount:number)=>Math.max(4,amount*scale);
- // Money is one pool: sources and targets each lie along the same running total, and a ribbon joins every stretch a
- // source and a target share, so each source spreads over the targets in order.
- let running=0;const sources=boxes.map(item=>{const start=running;running+=item.node.amount;return {...item,start,edge:item.top+item.height/2-thick(item.node.amount)/2};});
- running=0;const targets=chart.targets.map((node,index)=>{const start=running;running+=node.amount;return {node,start,middle:plotTop+index*flowRow+flowRow/2};});
- for(const target of targets)for(const source of sources){
-  const from=Math.max(source.start,target.start),to=Math.min(source.start+source.node.amount,target.start+target.node.amount);
-  if(to<=from)continue;
-  const y0=source.edge+(from-source.start)*scale,y1=target.middle-thick(target.node.amount)/2+(from-target.start)*scale;
-  draw.svg.push(`<path d="${ribbon(boxRight,y0,listX,y1,Math.max(2,(to-from)*scale))}" fill="${target.node.color}" fill-opacity="0.3"/>`);
- }
- for(const {node,top:y,height} of sources){
-  box(draw,{x:inner,y,width:sourceWidth,height},{fill:color.card,radius:16});
-  const middle=y+height/2;
-  text(draw,inner+20,middle-8,oneLine(draw,node.label,sourceWidth-40,21),{size:21,fill:color.muted});
-  text(draw,inner+20,middle+30,node.value,{size:fitted(draw,node.value,32,sourceWidth-40),fill:color.ink,bold:true});
- }
- targets.forEach(({node,middle},index)=>{
-  if(index)draw.svg.push(`<rect x="${listX+60}" y="${at(middle-flowRow/2)}" width="${at(innerRight-listX-60)}" height="1.5" fill="${color.rule}"/>`);
-  badge(draw,node.icon??'tag',{x:listX+24,y:middle},23,node.color);
-  const labelX=listX+62,valueWidth=draw.measure(node.value,23,true);
-  text(draw,labelX,middle+(node.detail?-4:8),oneLine(draw,node.label,innerRight-labelX-valueWidth-16,23),{size:23,fill:color.ink});
-  text(draw,innerRight,middle+(node.detail?-4:8),node.value,{size:23,fill:color.ink,bold:true,anchor:'end'});
-  if(node.detail)text(draw,labelX,middle+24,oneLine(draw,node.detail,innerRight-labelX,18),{size:18,fill:color.muted});
+ // Flows first, so the bars and labels lie over them; each meets the total stacked in order, centred on it.
+ const bars:string[]=[];
+ sides.forEach(({slots,height},column)=>{
+  const offset=plotTop+(body-height)/2;let stack=midTop+(midHeight-sums[column]*scale)/2;
+  for(const item of slots){
+   const barTop=offset+item.top+(item.slot-item.h)/2,h=item.node.amount*scale,x=column?rightBar:leftBar;
+   const path=column?ribbon(mid+bar,stack,rightBar,barTop,h):ribbon(leftBar+bar,barTop,mid,stack,h);
+   draw.svg.push(`<path d="${path}" fill="${item.node.color}" fill-opacity="0.3"/>`);
+   bars.push(`<rect x="${at(x)}" y="${at(barTop)}" width="${bar}" height="${at(item.h)}" rx="4" fill="${item.node.color}"/>`);
+   stack+=h;
+  }
  });
+ draw.svg.push(...bars,`<rect x="${at(mid)}" y="${at(midTop)}" width="${bar}" height="${at(Math.max(3,midHeight))}" rx="4" fill="${color.header}"/>`);
+ if(chart.total){
+  text(draw,mid+bar/2,midTop-34,chart.total.label,{size:19,fill:color.muted,anchor:'middle'});
+  text(draw,mid+bar/2,midTop-10,chart.total.value,{size:23,fill:color.ink,bold:true,anchor:'middle'});
+ }
+ for(const slot of sides[0].slots)sourceLabels(draw,{...slot,top:plotTop+(body-sides[0].height)/2+slot.top},leftBar-12);
+ for(const slot of sides[1].slots)targetLabels(draw,{...slot,top:plotTop+(body-sides[1].height)/2+slot.top},rightBar+bar+10,innerRight-rightBar-bar-10);
  return bottom;
 }
 

@@ -189,7 +189,9 @@ function digestFlow(kit:Kit,extras:DigestExtras):CardChart[]{
  const named=flow.sources?.filter(source=>source.amount>0)??[],known=named.reduce((sum,source)=>sum+source.amount,0);
  const incomes=named.length&&Math.abs(known-flow.income)<1?named.map(source=>({label:source.label,amount:source.amount,value:money(source.amount),color:categoryColor(source.key)})):flow.income>0?[{label:t('Income'),amount:flow.income,value:money(flow.income),color:'#2f7d32'}]:[];
  const sources=[...incomes,...(Math.round(kept)<0?[{label:t('From savings'),amount:-kept,value:money(-kept),color:'#9aa38f'}]:[])];
- return targets.length?[{kind:'flow',title:t('Where your money went'),sources,targets}]:[];
+ // The middle bar is named Income when income is all that flows through it.
+ const total=Math.round(kept)<0||!incomes.length?{}:{total:{label:t('Income'),value:money(flow.income)}};
+ return targets.length?[{kind:'flow',title:t('Where your money went'),sources,targets,...total}]:[];
 }
 /** A key only when its value is known, so the card leaves the block out. */
 const optional=<K extends string,V>(key:K,value:V|undefined)=>(value===undefined?{}:{[key]:value}) as Partial<Record<K,V>>;

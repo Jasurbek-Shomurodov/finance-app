@@ -326,25 +326,26 @@ test('the card draws the month beside the greeting, a large figure, figure cards
  assert.match(svg,/stroke="#4a6b45"[^>]*><path d="M8 2v3"/);assert.match(svg,/stroke="hsl\(48 60% 48%\)"/);
  // The budget bar fills 60% of its width.
  assert.match(svg,/width="872" height="16" rx="8" fill="#ebe8dc"\/>\n<rect x="104" y="[\d.]+" width="523.2" height="16"/);
- // Each ribbon is drawn in its target's colour, wider for the larger amount.
- const ribbons=[...svg.matchAll(/<path d="M[\d.]+,([\d.]+) C[^L]+L[\d.]+,[\d.]+ C[^Z]+ [\d.]+,([\d.]+) Z" fill="([^"]+)" fill-opacity="0.3"\/>/g)];
- assert.deepEqual(ribbons.map(match=>match[3]),['hsl(48 60% 48%)','#4d7c0f']);
+ // The source flows into the total in its colour, and the total out to each target in the target's colour, as wide as its amount.
+ const ribbons=[...svg.matchAll(/<path d="M[\d.]+,[\d.]+ C[^L]+ [\d.]+,([\d.]+) L[\d.]+,([\d.]+) C[^Z]+Z" fill="([^"]+)" fill-opacity="0.3"\/>/g)];
+ assert.deepEqual(ribbons.map(match=>match[3]),['#2f7d32','hsl(48 60% 48%)','#4d7c0f']);
  const widths=ribbons.map(match=>Number(match[2])-Number(match[1]));
- assert.ok(Math.abs(widths[0]-3*widths[1])<0.5,'ribbons are as wide as their amounts');
+ assert.ok(Math.abs(widths[1]-3*widths[2])<0.5&&Math.abs(widths[0]-widths[1]-widths[2])<0.5,'flows are as wide as their amounts');
+ assert.match(svg,/<rect x="[\d.]+" y="[\d.]+" width="14" height="[\d.]+" rx="4" fill="#1f3a2b"\/>/,'one total bar in the middle');
  assert.match(svg,/>75%</);assert.match(svg,/>On track</);assert.match(svg,/>\$200 left</);
  // A long amount shrinks to fit its card instead of running into the next.
  const wide=reportCardSvg({title:'T',figures:[{label:'A',value:'UZS 150,000,000,000'},{label:'B',value:'1'},{label:'C',value:'2'}]});
  assert.doesNotMatch(wide,/font-size="36" font-weight="700" fill="#1c2a20">UZS/);
- // A second source, such as what came from savings, has its own box.
+ // A second source, such as what came from savings, has its own bar; a named total sits over the middle bar.
  const over=reportCardSvg({title:'T',charts:[{kind:'flow',title:'F',sources:[{label:'Income',value:'$1',amount:1,color:'#2f7d32'},{label:'From savings',value:'$2',amount:2,color:'#9aa38f'}],targets:[{label:'Rent',value:'$3',amount:3,color:'#123456'}]}]});
  assert.match(over,/>From savings</);
 });
 
-test('a Sankey with several sources joins each source to the targets it shares money with, in order',()=>{
+test('a Sankey with several sources flows each into the total, and the total out to each target',()=>{
  const svg=reportCardSvg({title:'T',charts:[{kind:'flow',title:'F',sources:[{label:'Salary',value:'$300',amount:300,color:'#111111'},{label:'Rent',value:'$100',amount:100,color:'#222222'}],targets:[
   {label:'Food',value:'$200',amount:200,color:'#aa0000'},{label:'Saved',value:'$200',amount:200,color:'#00aa00'}]}]});
- // Salary feeds Food and part of Saved; Rent feeds the rest of Saved: three ribbons, coloured by their target.
- assert.equal((svg.match(/fill-opacity="0.3"/g)||[]).length,3);
- assert.equal((svg.match(/fill="#00aa00" fill-opacity="0.3"/g)||[]).length,2);
- assert.match(svg,/fill="#6d7468">Salary</);assert.match(svg,/>Rent</);
+ // Salary and Rent each flow into the total; the total flows out to Food and Saved: four flows, one per node.
+ assert.equal((svg.match(/fill-opacity="0.3"/g)||[]).length,4);
+ for(const fill of ['#111111','#222222','#aa0000','#00aa00'])assert.equal((svg.match(new RegExp(`fill="${fill}" fill-opacity="0.3"`,'g'))||[]).length,1);
+ assert.match(svg,/text-anchor="end" fill="#6d7468">Salary</);assert.match(svg,/>Rent</);
 });
