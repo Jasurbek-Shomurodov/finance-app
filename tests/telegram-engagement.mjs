@@ -325,7 +325,7 @@ test('the recap cron refuses a wrong secret, reports unreachable owners, and is 
  assert.equal((await route.GET(new Request('https://local',{headers:{authorization:'Bearer wrong'}}))).status,401);
  const failing=recapRoute({subscriptions:[{user_id:'anna',chat_id:1}],prefs:{anna:{language:'en',display_name:'A',currencies:['USD']}},sendResult:false});
  const response=await failing.GET();
- assert.equal(response.status,503);assert.deepEqual(await response.json(),{sent:0,failed:1,blocked:0});
+ assert.equal(response.status,503);assert.deepEqual(await response.json(),{sent:0,failed:1,blocked:0,error:'Telegram did not accept the message.'});
  const vercel=JSON.parse(fs.readFileSync('vercel.json','utf8'));
  assert.deepEqual(vercel.crons.find(cron=>cron.path==='/api/cron/telegram-recap'),{path:'/api/cron/telegram-recap',schedule:'0 15 * * 0'});
  assert.match(fs.readFileSync('VERCEL.md','utf8'),/telegram-recap/);
@@ -387,7 +387,7 @@ test('a retried recap run sends each owner their week once',async()=>{
  const deliveries=deliveryTable(),setup={subscriptions:[{user_id:'anna',chat_id:1}],prefs:{anna:{language:'en',display_name:'A',currencies:['USD']}},deliveries};
  const first=recapRoute(setup);
  assert.deepEqual(await (await first.GET()).json(),{sent:1,failed:0,blocked:0});
- assert.deepEqual(deliveries.rows,[{user_id:'anna',kind:'recap',period:'2026-10-04'}]);
+ assert.deepEqual(deliveries.rows,[{user_id:'anna',kind:'recap',period:'2026-10-04',delivered:true}]);
  const retry=recapRoute(setup);
  assert.deepEqual(await (await retry.GET()).json(),{sent:0,failed:0,blocked:0});assert.equal(retry.sent.length,0);
 });

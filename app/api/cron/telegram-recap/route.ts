@@ -1,5 +1,6 @@
 import { accountOrigin } from '@/lib/account-access';
 import { cronAuthorized } from '@/lib/cron-auth';
+import { recordCronRun, runFailure } from '@/lib/cron-runs';
 import { reportError } from '@/lib/monitoring';
 import { depositToday } from '@/lib/deposit-interest';
 import { translate } from '@/lib/i18n';
@@ -17,9 +18,11 @@ export async function GET(req:Request){
  const config=telegramConfig(),db=serviceDatabase();
  if(!config||!db)return Response.json({error:'Telegram recap is not configured.'},{status:503});
  const to=depositToday(),from=shiftDay(to,-6),shareOrigin=accountOrigin();
+ // Each run is recorded with its outcome, since Vercel keeps a Hobby project's logs for about an hour.
+ return recordCronRun(db,'telegram-recap',async()=>{
  try{
   // One recap per owner and week, keyed by its last day: a retried or overlapping run skips the owners already sent.
-  const {sent,failed,blocked}=await deliverToSubscribers(db,{kind:'recap',period:to},async({user_id,chat_id})=>{
+  const counts=await deliverToSubscribers(db,{kind:'recap',period:to},async({user_id,chat_id})=>{
     const [stored,categories,profile,snapshots,goalEvents]=await Promise.all([
      // Only the week's own cash flow counts.
      ownerCashflowSince(db,user_id,from),
@@ -38,7 +41,8 @@ export async function GET(req:Request){
     const message=recapMessage(recap,profile.language),picture=recapCard(recap,profile.language);
     return deliverReport({chat_id,language:profile.language,...message,picture:picture&&{...picture,filename:`hoggish-week-${to}.png`}},config);
   });
-  if(failed)await reportError('cron:telegram-recap','Some Telegram recaps were not delivered.',{route:'/api/cron/telegram-recap',status:503,counts:{sent,failed,blocked}},{alert:true});
-  return Response.json({sent,failed,blocked},{status:failed?503:200,headers:{'Cache-Control':'no-store'}});
- }catch(error){await reportError('cron:telegram-recap',error,{route:'/api/cron/telegram-recap',status:503},{alert:true});return Response.json({error:'Telegram recap failed. Recaps already sent are not repeated on retry.',sent:0,failed:0,blocked:0},{status:503});}
+  if(counts.failed)await reportError('cron:telegram-recap','Some Telegram recaps were not delivered.',{route:'/api/cron/telegram-recap',status:503,counts:{sent:counts.sent,failed:counts.failed,blocked:counts.blocked}},{alert:true});
+  return Response.json(counts,{status:counts.failed?503:200,headers:{'Cache-Control':'no-store'}});
+ }catch(error){await reportError('cron:telegram-recap',error,{route:'/api/cron/telegram-recap',status:503},{alert:true});return Response.json({cause:runFailure(error),error:'Telegram recap failed. Recaps already sent are not repeated on retry.',sent:0,failed:0,blocked:0},{status:503});}
+ });
 }

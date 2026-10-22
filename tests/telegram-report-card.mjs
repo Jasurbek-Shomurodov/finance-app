@@ -225,7 +225,7 @@ test('the monthly cron reports the month that ended, in the owner\'s language an
  assert.match(report.text,/You saved \$1,650 this month\./);
  // Cash flow is read from the month before on, and only up to it.
  assert.ok(cron.reads.some(path=>path.includes('finance_records')&&path.includes('date=gte.2026-08-01')));
- assert.deepEqual(deliveries.rows,[{user_id:'anna',kind:'monthly',period:'2026-09-01'}]);
+ assert.deepEqual(deliveries.rows,[{user_id:'anna',kind:'monthly',period:'2026-09-01',delivered:true}]);
  // A retry on the 2nd reports the same month and sends nothing twice.
  const retry=monthlyRoute({...setup,today:'2026-10-02'});
  assert.deepEqual(await (await retry.GET()).json(),{sent:0,failed:0,blocked:0});assert.equal(retry.sent.length,0);

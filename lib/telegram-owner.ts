@@ -1,6 +1,7 @@
 // What the background Telegram messages need to know about an owner: language,
 // the name to greet them by, and the currency to show amounts in.
 import {forEachLimited} from './bounded-concurrency';
+import {runFailure} from './cron-runs';
 import {reportError} from './monitoring';
 import {expenses,type Entry} from './finance';
 import {isLanguage,translate,type Language} from './i18n';
@@ -85,16 +86,24 @@ export const digestSubscribersPath='/rest/v1/telegram_subscriptions?select=user_
  * report keyed by the month's first day. */
 export type Delivery={kind:'digest'|'recap'|'monthly';period:string};
 const deliveries='/rest/v1/telegram_deliveries';
-/** Claims an owner's message for the period (migrations 129 and 147). False when another run already sent it or is sending it. */
+/** Claims an owner's message for the period (migrations 129, 147 and 153). False when it was delivered or another run
+ * is sending it; a claim a cut-off run left undelivered for five minutes is taken over, so the owner is not skipped. */
 async function claimDelivery(db:ServiceDatabase,owner:string,{kind,period}:Delivery){
- const response=await db.write(deliveries+'?on_conflict=user_id,kind,period',{method:'POST',headers:{Prefer:'resolution=ignore-duplicates,return=representation'},body:JSON.stringify({user_id:owner,kind,period})});
+ const response=await db.write('/rest/v1/rpc/claim_telegram_delivery',{method:'POST',body:JSON.stringify({p_user:owner,p_kind:kind,p_period:period})});
  if(!response.ok)throw Error('Database request failed.');
- return (await response.json() as unknown[]).length>0;
+ return await response.json()===true;
+}
+const claimPath=(owner:string,{kind,period}:Delivery)=>`${deliveries}?user_id=eq.${owner}&kind=eq.${kind}&period=eq.${period}`;
+/** Marks a claim delivered once Telegram took the message (or refused it for good), so no later run sends it again. A
+ * mark that cannot be written is reported: after five minutes a retry could send that message a second time. */
+async function confirmDelivery(db:ServiceDatabase,owner:string,delivery:Delivery){
+ const response=await db.write(claimPath(owner,delivery),{method:'PATCH',body:JSON.stringify({delivered:true})}).catch(()=>null);
+ if(!response?.ok)await reportError('telegram-delivery','A delivered Telegram message was not marked delivered, so a retry may send it again.',{counts:{status:response?.status??0}});
 }
 /** Gives a claim back after a failed send, so the next run sends it. A claim that stays would skip the owner for the
  * whole period, so a refused release is reported. */
 async function releaseDelivery(db:ServiceDatabase,owner:string,{kind,period}:Delivery){
- const response=await db.write(`${deliveries}?user_id=eq.${owner}&kind=eq.${kind}&period=eq.${period}`,{method:'DELETE'}).catch(()=>null);
+ const response=await db.write(claimPath(owner,{kind,period}),{method:'DELETE'}).catch(()=>null);
  if(!response?.ok)await reportError('telegram-delivery','A Telegram delivery claim was not released, so it is not retried this period.',{counts:{status:response?.status??0}});
 }
 /** Turns the scheduled messages off for a chat that refuses them for good (the person blocked the bot), so a blocked
@@ -106,14 +115,17 @@ async function muteSubscriber(db:ServiceDatabase,{user_id,chat_id}:DigestSubscri
 }
 /** Subscribers handled at once: enough to finish a long list in time, few enough to stay gentle on the database and Telegram. */
 export const deliveryConcurrency=8;
+/** How a scheduled message went for every subscriber, and the first failure's reason, so a run's record says why. */
+export type DeliveryCounts={sent:number;failed:number;blocked:number;error?:string};
 /** Runs `deliver` for each digest subscriber who has not had this `delivery` yet and counts the messages Telegram
- * accepted. Each owner's message is claimed before it is built, so a retried or overlapping run never repeats one; a
- * failed one is given back, so a retry sends it. A chat that blocked the bot keeps its claim, has its digest switched
- * off and counts as `blocked`, not as a failure. One owner's failure never blocks the others; only reading the
- * subscribers can throw. `deliver` sends to the subscriber's own linked chat and resolves to whether it arrived, or how
- * the send ended. */
-export async function deliverToSubscribers(db:ServiceDatabase,delivery:Delivery,deliver:(subscriber:DigestSubscriber)=>Promise<boolean|SendOutcome>):Promise<{sent:number;failed:number;blocked:number}>{
- let sent=0,failed=0,blocked=0;
+ * accepted. Each owner's message is claimed before it is built and marked delivered once it arrives, so a retried or
+ * overlapping run never repeats one; a failed one is given back, so a retry sends it. A chat that blocked the bot keeps
+ * its claim, has its digest switched off and counts as `blocked`, not as a failure. One owner's failure never blocks the
+ * others; only reading the subscribers can throw. `deliver` sends to the subscriber's own linked chat and resolves to
+ * whether it arrived, or how the send ended. */
+export async function deliverToSubscribers(db:ServiceDatabase,delivery:Delivery,deliver:(subscriber:DigestSubscriber)=>Promise<boolean|SendOutcome>):Promise<DeliveryCounts>{
+ let sent=0,failed=0,blocked=0,error:string|undefined;
+ const fail=(reason:unknown)=>{failed++;error??=runFailure(reason);};
  const subscribers=await readAllPages<DigestSubscriber>(range=>db.read<DigestSubscriber[]>(pagePath(digestSubscribersPath,range)));
  await forEachLimited(subscribers,deliveryConcurrency,async subscriber=>{
   try{
@@ -123,10 +135,12 @@ export async function deliverToSubscribers(db:ServiceDatabase,delivery:Delivery,
     const result=await deliver(subscriber);
     outcome=result===true?'sent':result===false?'failed':result;
     if(outcome==='blocked')await muteSubscriber(db,subscriber);
-   }catch(error){outcome='failed';throw error;}
+   }catch(reason){outcome='failed';throw reason;}
    finally{if(outcome==='failed')await releaseDelivery(db,subscriber.user_id,delivery);}
-   if(outcome==='sent')sent++;else if(outcome==='blocked')blocked++;else failed++;
-  }catch{failed++;}
+   if(outcome==='failed')return fail('Telegram did not accept the message.');
+   await confirmDelivery(db,subscriber.user_id,delivery);
+   if(outcome==='sent')sent++;else blocked++;
+  }catch(reason){fail(reason);}
  });
- return {sent,failed,blocked};
+ return {sent,failed,blocked,...(error?{error}:{})};
 }

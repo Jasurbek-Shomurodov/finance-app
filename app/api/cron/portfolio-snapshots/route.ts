@@ -1,5 +1,6 @@
 import { forEachLimited } from '@/lib/bounded-concurrency';
 import { cronAuthorized } from '@/lib/cron-auth';
+import { recordCronRun, runFailure } from '@/lib/cron-runs';
 import { reportError } from '@/lib/monitoring';
 import { loadMarket } from '@/lib/server-market';
 import { readIdPages } from '@/lib/owner-rows';
@@ -20,6 +21,8 @@ export async function GET(req:Request){
  if(!cronAuthorized(req))return new Response(null,{status:401});
  const db=serviceDatabase();
  if(!db)return Response.json({error:'Background capture is not configured.'},{status:503});
+ // Each run is recorded with its outcome, since Vercel keeps a Hobby project's logs for about an hour.
+ return recordCronRun(db,'portfolio-snapshots',async()=>{
  try{
  // Every owner's holdings, paged by id: a failed page stops the run rather than capturing a partial portfolio.
  const records=await readIdPages<Entry&{user_id:string}>(range=>db.read(`/rest/v1/finance_records?select=${columns}&kind=in.(${kinds})&order=id.asc&${range}`));
@@ -38,5 +41,6 @@ export async function GET(req:Request){
  });
  if(skipped)await reportError('cron:portfolio-snapshots','Some portfolios could not be valued, so they were not captured.',{route,status:503,counts:{captured,skipped}},{alert:true});
  return Response.json({captured,skipped,celebrated},{status:skipped?503:200,headers:{'Cache-Control':'no-store'}});
- }catch(error){await reportError('cron:portfolio-snapshots',error,{route,status:503},{alert:true});return Response.json({error:'Background capture failed. Completed captures remain safe to retry.'},{status:503});}
+ }catch(error){await reportError('cron:portfolio-snapshots',error,{route,status:503},{alert:true});return Response.json({cause:runFailure(error),error:'Background capture failed. Completed captures remain safe to retry.'},{status:503});}
+ });
 }

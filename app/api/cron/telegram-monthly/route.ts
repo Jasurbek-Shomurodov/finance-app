@@ -1,4 +1,5 @@
 import { cronAuthorized } from '@/lib/cron-auth';
+import { recordCronRun, runFailure } from '@/lib/cron-runs';
 import { reportError } from '@/lib/monitoring';
 import { monthEnd, shiftMonth } from '@/lib/calendar-days';
 import { depositToday } from '@/lib/deposit-interest';
@@ -19,9 +20,11 @@ export async function GET(req:Request){
  // The month before today's, so a run retried on the 2nd still reports the same month.
  const month=shiftMonth(depositToday().slice(0,7),-1),from=month+'-01',to=monthEnd(month);
  const before=shiftMonth(month,-1),previousFrom=before+'-01',previousTo=monthEnd(before);
+ // Each run is recorded with its outcome, since Vercel keeps a Hobby project's logs for about an hour.
+ return recordCronRun(db,'telegram-monthly',async()=>{
  try{
   // One report per owner and month, keyed by its first day: a retried or overlapping run skips the owners already sent.
-  const {sent,failed,blocked}=await deliverToSubscribers(db,{kind:'monthly',period:from},async({user_id,chat_id})=>{
+  const counts=await deliverToSubscribers(db,{kind:'monthly',period:from},async({user_id,chat_id})=>{
     const [stored,categories,profile,closing,opening]=await Promise.all([
      // The month's cash flow and the month before's, for the spending comparison.
      ownerCashflowSince(db,user_id,previousFrom),
@@ -42,7 +45,8 @@ export async function GET(req:Request){
     const input={name:profile.name,currency:profile.currency,month:from,income:totals.income,spending:totals.spending,missing:totals.missing,previous:{spending:previous.spending,missing:previous.missing},categories:named,...(end?{netWorth:{amount:end.net,change:start?end.net-start.net:null}}:{})};
     return deliverReport({chat_id,language:profile.language,text:monthlyMessage(input,profile.language),picture:{...monthlyCard(input,profile.language),filename:`hoggish-${month}.png`}},config);
   });
-  if(failed)await reportError('cron:telegram-monthly','Some Telegram monthly reports were not delivered.',{route:'/api/cron/telegram-monthly',status:503,counts:{sent,failed,blocked}},{alert:true});
-  return Response.json({sent,failed,blocked},{status:failed?503:200,headers:{'Cache-Control':'no-store'}});
- }catch(error){await reportError('cron:telegram-monthly',error,{route:'/api/cron/telegram-monthly',status:503},{alert:true});return Response.json({error:'Telegram monthly report failed. Reports already sent are not repeated on retry.',sent:0,failed:0,blocked:0},{status:503});}
+  if(counts.failed)await reportError('cron:telegram-monthly','Some Telegram monthly reports were not delivered.',{route:'/api/cron/telegram-monthly',status:503,counts:{sent:counts.sent,failed:counts.failed,blocked:counts.blocked}},{alert:true});
+  return Response.json(counts,{status:counts.failed?503:200,headers:{'Cache-Control':'no-store'}});
+ }catch(error){await reportError('cron:telegram-monthly',error,{route:'/api/cron/telegram-monthly',status:503},{alert:true});return Response.json({cause:runFailure(error),error:'Telegram monthly report failed. Reports already sent are not repeated on retry.',sent:0,failed:0,blocked:0},{status:503});}
+ });
 }

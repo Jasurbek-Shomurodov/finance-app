@@ -157,7 +157,7 @@ test('a snoozed item stays out of the digest and one failing owner does not bloc
  const cron=cronRoute({subscriptions:[{user_id:'broken',chat_id:9},{user_id:'anna',chat_id:1}],records:{anna:[{...rent,date:'2026-10-01'},{...rent,id:'car',name:'Car loan',kind:'Loan',amount:400,currency:'USD',date:'2026-10-03',frequency:'Once'}]},reminders:{anna:{enabled:true,days_ahead:7,snoozed:[{key:'rent:2026-10-01',until:'2026-10-05'}]}},failFor:'broken'});
  const response=await cron.GET();
  assert.equal(response.status,503);
- assert.deepEqual(await response.json(),{sent:1,failed:1,blocked:0});
+ assert.deepEqual(await response.json(),{sent:1,failed:1,blocked:0,error:'Database request failed.'},'the first failure\'s reason goes into the run\'s record');
  assert.equal(cron.sent.length,1);
  assert.ok(!cron.sent[0].text.includes('Rent'));assert.ok(cron.sent[0].text.includes('Car loan'));
 });
@@ -195,13 +195,13 @@ test('the digest and the recap share one subscriber loop: only linked private ch
  const reads=[],delivered=[],deliveries=deliveryTable(),digest={kind:'digest',period:'2026-09-30'};
  const db={read:async path=>{reads.push(path);return [{user_id:'a',chat_id:1},{user_id:'b',chat_id:2},{user_id:'c',chat_id:3}];},write:deliveries.write};
  const counts=await deliverToSubscribers(db,digest,async subscriber=>{delivered.push(subscriber.chat_id);if(subscriber.user_id==='b')throw Error('boom');return subscriber.user_id==='a';});
- assert.deepEqual(counts,{sent:1,failed:2,blocked:0});assert.deepEqual(delivered,[1,2,3]);assert.deepEqual(reads,[digestSubscribersPath+'&limit=500&offset=0']);
+ assert.deepEqual(counts,{sent:1,failed:2,blocked:0,error:'boom'});assert.deepEqual(delivered,[1,2,3]);assert.deepEqual(reads,[digestSubscribersPath+'&limit=500&offset=0']);
  // Only the delivered message keeps its claim; the failed ones are given back for a retry.
- assert.deepEqual(deliveries.rows,[{user_id:'a',...digest}]);
+ assert.deepEqual(deliveries.rows,[{user_id:'a',...digest,delivered:true}]);
  await assert.rejects(deliverToSubscribers({read:async()=>{throw Error('down');}},digest,async()=>true),/down/);
  // A claim that cannot be written counts as a failure, and nothing is sent.
  const unsent=[];
- assert.deepEqual(await deliverToSubscribers({read:async()=>[{user_id:'a',chat_id:1}],write:async()=>new Response(null,{status:500})},digest,async()=>{unsent.push(1);return true;}),{sent:0,failed:1,blocked:0});
+ assert.deepEqual(await deliverToSubscribers({read:async()=>[{user_id:'a',chat_id:1}],write:async()=>new Response(null,{status:500})},digest,async()=>{unsent.push(1);return true;}),{sent:0,failed:1,blocked:0,error:'Database request failed.'});
  assert.deepEqual(unsent,[]);
  for(const file of ['app/api/cron/telegram-digest/route.ts','app/api/cron/telegram-recap/route.ts']){
   const source=fs.readFileSync(file,'utf8');
@@ -214,8 +214,8 @@ test('a retried digest run sends nothing twice, and a digest that failed is sent
  const deliveries=deliveryTable();
  const subscriptions=[{user_id:'anna',chat_id:1},{user_id:'bob',chat_id:2}];
  const first=cronRoute({subscriptions,failFor:'bob',deliveries});
- assert.deepEqual(await (await first.GET()).json(),{sent:1,failed:1,blocked:0});
- assert.deepEqual(deliveries.rows,[{user_id:'anna',kind:'digest',period:'2026-09-30'}]);
+ assert.deepEqual(await (await first.GET()).json(),{sent:1,failed:1,blocked:0,error:'Database request failed.'});
+ assert.deepEqual(deliveries.rows,[{user_id:'anna',kind:'digest',period:'2026-09-30',delivered:true}]);
  // The retry (or a second run that overlaps it) reaches only Bob.
  const retry=cronRoute({subscriptions,deliveries});
  const response=await retry.GET();
@@ -286,18 +286,18 @@ test('a chat that blocked the bot keeps its claim, has its digest switched off a
   return deliveries.write(path,init);
  }};
  const outcomes={a:'sent',b:'blocked',c:'failed'};
- assert.deepEqual(await deliverToSubscribers(db,digest,async({user_id})=>outcomes[user_id]),{sent:1,failed:1,blocked:1});
+ assert.deepEqual(await deliverToSubscribers(db,digest,async({user_id})=>outcomes[user_id]),{sent:1,failed:1,blocked:1,error:'Telegram did not accept the message.'});
  assert.deepEqual(deliveries.rows.map(row=>row.user_id),['a','b'],'the blocked chat keeps its claim; the failed one is given back');
  assert.equal(patches.length,1);assert.equal(patches[0].method,'PATCH');assert.match(patches[0].path,/user_id=eq\.b&chat_id=eq\.2/);
  assert.equal(patches[0].body.digest_enabled,false);assert.equal('chat_id' in patches[0].body,false,'the chat stays linked');
  // When switching the digest off fails, the message counts as failed and is tried again.
  const failing=deliveryTable();
- assert.deepEqual(await deliverToSubscribers({read:db.read,write:(path,init)=>path.startsWith('/rest/v1/telegram_subscriptions')?Promise.resolve(new Response(null,{status:500})):failing.write(path,init)},digest,async()=>'blocked'),{sent:0,failed:3,blocked:0});
+ assert.deepEqual(await deliverToSubscribers({read:db.read,write:(path,init)=>path.startsWith('/rest/v1/telegram_subscriptions')?Promise.resolve(new Response(null,{status:500})):failing.write(path,init)},digest,async()=>'blocked'),{sent:0,failed:3,blocked:0,error:'Database request failed.'});
  assert.deepEqual(failing.rows,[]);
  // A claim that cannot be given back is reported, and the run goes on.
  assert.equal(reported.length,0);
  const stuck=deliveryTable();
- assert.deepEqual(await deliverToSubscribers({read:async()=>[{user_id:'a',chat_id:1}],write:(path,init)=>init.method==='DELETE'?Promise.resolve(new Response(null,{status:500})):stuck.write(path,init)},digest,async()=>false),{sent:0,failed:1,blocked:0});
+ assert.deepEqual(await deliverToSubscribers({read:async()=>[{user_id:'a',chat_id:1}],write:(path,init)=>init.method==='DELETE'?Promise.resolve(new Response(null,{status:500})):stuck.write(path,init)},digest,async()=>false),{sent:0,failed:1,blocked:0,error:'Telegram did not accept the message.'});
  assert.equal(reported.length,1);assert.equal(reported[0][0],'telegram-delivery');
 });
 

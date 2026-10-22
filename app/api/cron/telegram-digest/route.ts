@@ -1,4 +1,5 @@
 import { cronAuthorized } from '@/lib/cron-auth';
+import { recordCronRun, runFailure } from '@/lib/cron-runs';
 import { reportError } from '@/lib/monitoring';
 import { dueReminders, type ReminderSettings } from '@/lib/daily-finance';
 import { depositToday } from '@/lib/deposit-interest';
@@ -20,13 +21,15 @@ export async function GET(req:Request){
  const config=telegramConfig(),db=serviceDatabase();
  if(!config||!db)return Response.json({error:'Telegram digest is not configured.'},{status:503});
  const today=depositToday();
+ // Each run is recorded with its outcome, since Vercel keeps a Hobby project's logs for about an hour.
+ return recordCronRun(db,'telegram-digest',async()=>{
  try{
   // One digest per owner and day: a retried or overlapping run skips the owners already sent today.
   // The 30 days ending today, and the 30 before them for the comparison.
   // Today's official rates are kept every morning, so whatever saves a transaction today saves it with them.
   await keepDayRates([today],{today,db});
   const from=shiftDay(today,1-digestDays),before=shiftDay(from,-digestDays);
-  const {sent,failed,blocked}=await deliverToSubscribers(db,{kind:'digest',period:today},async({user_id,chat_id})=>{
+  const counts=await deliverToSubscribers(db,{kind:'digest',period:today},async({user_id,chat_id})=>{
     const [stored,occurrences,profile,snapshots,reminders,[activity,mortgagePayments],categories]=await Promise.all([
      // Schedules and holdings in full; actual cash flow only for the two periods compared.
      ownerRecordsSince(db,user_id,before),
@@ -56,7 +59,8 @@ export async function GET(req:Request){
     // A picture, or the text where the picture's font cannot draw the language.
     return deliverReport({chat_id,language:profile.language,text:digestMessage(due,profile.language,today,digest),picture:{...digestCard(due,profile.language,today,digest),filename:`hoggish-${today}.png`}},config);
   });
-  if(failed)await reportError('cron:telegram-digest','Some Telegram digests were not delivered.',{route:'/api/cron/telegram-digest',status:503,counts:{sent,failed,blocked}},{alert:true});
-  return Response.json({sent,failed,blocked},{status:failed?503:200,headers:{'Cache-Control':'no-store'}});
- }catch(error){await reportError('cron:telegram-digest',error,{route:'/api/cron/telegram-digest',status:503},{alert:true});return Response.json({error:'Telegram digest failed. Digests already sent are not repeated on retry.',sent:0,failed:0,blocked:0},{status:503});}
+  if(counts.failed)await reportError('cron:telegram-digest','Some Telegram digests were not delivered.',{route:'/api/cron/telegram-digest',status:503,counts:{sent:counts.sent,failed:counts.failed,blocked:counts.blocked}},{alert:true});
+  return Response.json(counts,{status:counts.failed?503:200,headers:{'Cache-Control':'no-store'}});
+ }catch(error){await reportError('cron:telegram-digest',error,{route:'/api/cron/telegram-digest',status:503},{alert:true});return Response.json({cause:runFailure(error),error:'Telegram digest failed. Digests already sent are not repeated on retry.',sent:0,failed:0,blocked:0},{status:503});}
+ });
 }
