@@ -98,6 +98,43 @@ export function barsChart(fonts:Fonts,block:Of<'bars'>,width:number):Chart{
  }};
 }
 
+/** A figure month by month as a line over a light fill, on its axis ticks; a month without a value breaks the line. */
+export function lineChart(fonts:Fonts,block:Of<'line'>,width:number):Chart{
+ const plot=130,labels=16,axis=Math.max(...block.ticks.map(tick=>fonts.width(tick.label,7)))+8,note=block.note?12:0;
+ const lo=block.ticks[0].value,hi=block.ticks[block.ticks.length-1].value;
+ return {height:plot+labels+note,draw:(x,y)=>{
+  const ops:Op[]=[],top=y+6,bottom=top+plot-6,left=x+axis,step=(width-axis)/block.points.length;
+  const yOf=(value:number)=>bottom-(bottom-top)*(value-lo)/(hi-lo||1),xOf=(index:number)=>left+step*index+step/2;
+  for(const tick of block.ticks){const ty=yOf(tick.value);ops.push({op:'line',x1:left,y1:ty,x2:x+width,y2:ty,color:tick.value?colors.rule:colors.border,width:tick.value?.5:.8},right(fonts,{x:left-6,y:ty+2.5},tick.label,{size:7,color:colors.muted}));}
+  const base=yOf(Math.max(lo,Math.min(hi,0))),f=(n:number)=>Math.round(n*100)/100;
+  block.points.forEach((point,index)=>{
+   const next=block.points[index+1];
+   if(point.value!==null&&next?.value!=null){
+    const [x1,y1,x2,y2]=[xOf(index),yOf(point.value),xOf(index+1),yOf(next.value)];
+    ops.push({op:'path',d:`M${f(x1)} ${f(y1)}L${f(x2)} ${f(y2)}L${f(x2)} ${f(base)}L${f(x1)} ${f(base)}Z`,fill:colors.mark,opacity:.08},{op:'line',x1,y1,x2,y2,color:colors.mark,width:1.6});
+   }
+   const label=fonts.clean(point.label);ops.push(text(xOf(index)-fonts.width(label,7)/2,bottom+12,label,7,{color:colors.muted}));
+  });
+  for(const [index,point] of block.points.entries())if(point.value!==null)ops.push({op:'rect',x:xOf(index)-2.2,y:yOf(point.value)-2.2,w:4.4,h:4.4,fill:colors.mark,radius:2.2});
+  if(block.note)ops.push(text(x,bottom+labels+8,wrap(fonts,block.note,7.5,width)[0]??'',7.5,{color:colors.muted}));
+  return ops;
+ }};
+}
+
+/** Short sentences, each after a dot in the brand colour, wrapped to the card. */
+export function listChart(fonts:Fonts,block:Of<'list'>,width:number):Chart{
+ const size=9,leading=13,indent=12,laid=block.items.map(item=>wrap(fonts,item,size,width-indent));
+ return {height:laid.reduce((sum,lines)=>sum+lines.length*leading+5,0)-5,draw:(x,y)=>{
+  const ops:Op[]=[];let at=y;
+  for(const lines of laid){
+   ops.push({op:'rect',x,y:at+4,w:4.5,h:4.5,fill:colors.mark,radius:2.25});
+   lines.forEach((line,index)=>ops.push(text(x+indent,at+size+index*leading,line,size)));
+   at+=lines.length*leading+5;
+  }
+  return ops;
+ }};
+}
+
 /** Shares of a whole: optionally one stacked bar, then a row per share with its icon, name, a bar in its hue, the
  * percentage and the amount. */
 export function sharesChart(fonts:Fonts,block:Of<'shares'>,width:number):Chart{

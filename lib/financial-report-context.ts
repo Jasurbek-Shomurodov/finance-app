@@ -35,6 +35,10 @@ export type ReportBlock=
  |{kind:'sankey';text:string;nodes:ReportFlowNode[];links:Array<{source:number;target:number;value:number}>}
  /** Income and spending per month, with the axis ticks already formatted. */
  |{kind:'bars';text:string;legend:[string,string];bars:ReportBar[];ticks:Array<{value:number;label:string}>;missing?:string}
+ /** One figure over time, a point per month (null where none was saved), on formatted ticks; `note` sits under the axis. */
+ |{kind:'line';text:string;points:Array<{label:string;value:number|null}>;ticks:Array<{value:number;label:string}>;note?:string}
+ /** Short sentences on their own card under a title, each with a dot. */
+ |{kind:'list';text:string;items:string[]}
  /** Shares of a whole, each a row with its icon and a bar; `stacked` also draws them as one bar above the rows. */
  |{kind:'shares';text:string;rows:ReportShare[];stacked?:boolean};
 

@@ -1,7 +1,7 @@
 // Lays the financial report's blocks out on A4 pages: the cover and key figures on the grey page, each section and
 // chart on its own white card (a later chart moves up to fill a gap the next one leaves), tables with repeated headers
 // that break between rows (and inside a row only when the row is taller than a page). Pure; lib/financial-report-pdf.ts paints the result.
-import { barsChart, sankeyChart, sharesChart, tilesChart } from './report-pdf-charts';
+import { barsChart, lineChart, listChart, sankeyChart, sharesChart, tilesChart } from './report-pdf-charts';
 import { cardPadding, colors, contentWidth, createFlow, margin, pageBottom, wrap, type Flow, type Fonts, type PdfPage } from './report-pdf-kit';
 import type { ReportBlock } from './financial-report-context';
 
@@ -20,18 +20,19 @@ function cover(flow:Flow,block:Of<'cover'>){
  flow.y+=20;
 }
 
-type ChartBlock=Of<'sankey'>|Of<'bars'>|Of<'shares'>;
-const isChart=(block:ReportBlock|undefined):block is ChartBlock=>block?.kind==='sankey'||block?.kind==='bars'||block?.kind==='shares';
+type ChartBlock=Of<'sankey'>|Of<'bars'>|Of<'shares'>|Of<'line'>;
+const isChart=(block:ReportBlock|undefined):block is ChartBlock=>block?.kind==='sankey'||block?.kind==='bars'||block?.kind==='shares'||block?.kind==='line';
 
+const charts={sankey:sankeyChart,bars:barsChart,shares:sharesChart,line:lineChart,list:listChart} as const;
 /** A chart card measured but not yet drawn: its wrapped title, the chart and the card's full height. */
-function measureChart(fonts:Fonts,block:ChartBlock){
- const width=contentWidth-36,drawn=block.kind==='sankey'?sankeyChart(fonts,block,width):block.kind==='bars'?barsChart(fonts,block,width):sharesChart(fonts,block,width);
+function measureChart(fonts:Fonts,block:ChartBlock|Of<'list'>){
+ const width=contentWidth-36,drawn=(charts[block.kind] as (fonts:Fonts,block:ChartBlock|Of<'list'>,width:number)=>ReturnType<typeof barsChart>)(fonts,block,width);
  const lines=block.text?wrap(fonts,block.text,11,width,true):[];
  return {lines,drawn,height:lines.length*15+(lines.length?10:0)+drawn.height+36};
 }
 
-/** A chart on its own card under a one-line title, kept whole on one page. */
-function chartCard(flow:Flow,block:ChartBlock){
+/** A chart (or a short list) on its own card under a one-line title, kept whole on one page. */
+function chartCard(flow:Flow,block:ChartBlock|Of<'list'>){
  flow.closeCard();
  const {lines,drawn,height}=measureChart(flow.fonts,block);
  flow.ensure(height);
@@ -132,7 +133,7 @@ export function layoutReport(blocks:readonly ReportBlock[],fonts:Fonts,header:st
   switch(block.kind){
    case 'cover':cover(flow,block);break;
    case 'tiles':{const chart=tilesChart(fonts,block.tiles,contentWidth);flow.closeCard();flow.ensure(chart.height);flow.page().ops.push(...chart.draw(margin,flow.y));flow.y+=chart.height+14;break;}
-   case 'sankey':case 'bars':case 'shares':chartCard(flow,block);break;
+   case 'sankey':case 'bars':case 'shares':case 'line':case 'list':chartCard(flow,block);break;
    case 'heading':heading(flow,block.text,queue.slice(index+1));break;
    case 'table':table(flow,block);break;
    default:paragraph(flow,block);

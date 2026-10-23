@@ -14,7 +14,7 @@ import type { Report } from './financial-report-context';
 import type { ReportBar, ReportIcon, ReportShare, ReportTile } from './financial-report-context';
 
 /** The bundled PDF font has no minus sign (U+2212); a hyphen is printed in its place, as in the report's tables. */
-const plain = (text: string) => text.replace(/−/g, '-');
+export const plain = (text: string) => text.replace(/−/g, '-');
 /** Savings has no category of its own: a piggy bank in the positive green. */
 export const savingsIcon: ReportIcon = { emoji: '🐷', hue: 150 };
 
@@ -33,11 +33,11 @@ export function categoryLooks(r: Pick<Report, 't' | 'tables'>): Looks {
 }
 
 /** Cash flow in the reporting currency over `months`, through the report's day. */
-function cashFlow(r: Report, months: string[]) {
+export function cashFlow(r: Report, months: string[]) {
  const data = { records: r.ledger.records, activity: r.ledger.activity, investmentLinks: r.ledger.links, categories: (r.tables.transaction_categories ?? []) as unknown as Category[] };
  return cashFlowReport(data, r.ledger.splits, months, r.reporting, r.today, marketRates(r.market));
 }
-type Flow = ReturnType<typeof cashFlow>;
+export type Flow = ReturnType<typeof cashFlow>;
 
 /** The first page's heading: the report's name, the period and when it was made. */
 export function coverBlocks(r: Report, title: string, generated: string) {
@@ -108,11 +108,12 @@ function allocationBlock(r: Report, looks: Looks) {
 }
 
 /** Key figures and charts, before the detailed tables. */
-export function summaryBlocks(r: Report) {
+export function summaryBlocks(r: Report, afterTiles?: () => void) {
  const looks = categoryLooks(r), year = trendMonths(r.month, 'month'), last12 = r.t('Last 12 months');
  const month = cashFlow(r, [r.month]), annual = cashFlow(r, year);
  r.push({ kind: 'tiles', text: '', tiles: keyTiles(r, month) });
  r.add('text', r.t('Actuals: recorded so far this month. Budgets: full month. Plans and forecasts are not payments.'));
+ afterTiles?.();
  sankeyBlock(r, month, `${r.t('Where your money went')} · ${formatMonthYear(r.month, r.locale)}`, looks);
  barsBlock(r, annual, `${r.t('Income and spending')} · ${last12}`);
  sankeyBlock(r, annual, `${r.t('Where your money went')} · ${last12}`, looks);

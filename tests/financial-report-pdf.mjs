@@ -148,14 +148,14 @@ test('the report opens with key figures and charts in the reporting currency, ev
  const f=structuredClone(reportFixture);
  f.tables.finance_records.push(entry('Groceries run','Living expense',120.4,{custom_category_id:'leisure'}),entry('Old salary','Salary',800,{date:'2026-05-03'}));
  const r=buildFinancialReport(f,'en','',reportMarket,{currency:'USD'}),kinds=r.blocks.map(block=>block.kind);
- assert.deepEqual(kinds.slice(0,4),['cover','tiles','text','sankey']);
+ assert.deepEqual(kinds.slice(0,5),['cover','tiles','text','list','sankey']);
  assert.ok(kinds.includes('bars')&&kinds.filter(kind=>kind==='sankey').length===2&&kinds.filter(kind=>kind==='shares').length===2);
  assert.ok(!kinds.includes('pageBreak'),'the detailed sections follow the charts without a forced page break');
  const tiles=r.blocks[1].tiles;
  assert.deepEqual(tiles.map(tile=>tile.label),['Net worth','Income','Spending','Savings rate']);
  assert.equal(tiles[1].value,'$500');assert.equal(tiles[1].tone,'positive');
  assert.ok(tiles.every(tile=>!/\d\.\d/.test(tile.value)),'whole amounts');
- const month=r.blocks[3];
+ const month=r.blocks[4];
  assert.match(month.text,/^Where your money went · September 2026$/);
  assert.ok(month.nodes.every(node=>node.kind==='total'||node.icon));
  assert.ok(month.nodes.some(node=>node.label==='Leisure custom'));

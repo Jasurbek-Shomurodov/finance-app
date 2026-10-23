@@ -13,6 +13,7 @@ import { investmentGoalItems, investmentGoalPlan } from './investment-goals';
 import { consolidatedCashFlow, expectedMonthlyIncome, hasFlowHistory, inPeriod, budgetFigures, monthBudgets, parseFinanceBackup, reportCashFlow, reportLedger, reportNumber as number, wealthTotals, type FinanceBackup, type ReportRow, type WealthItem } from './report-figures';
 import { reportContext, type Report, type ReportBlock, type ReportOptions } from './financial-report-context';
 import { coverBlocks, summaryBlocks } from './financial-report-visuals';
+import { comparisonTable, healthSection, highlightsBlock, nextDaysSection, reportInsights, trendBlock, type Insights } from './financial-report-insights';
 import { depositToday } from './deposit-interest';
 import { happened } from './transaction-rates';
 
@@ -140,9 +141,10 @@ function incomeSection(r:Report){
  table(['Received income','Date','Currency','Amount'],receipts.map(rec=>[rec.name,date(rec.date),rec.currency,money(number(byId.get(rec.id)?.amount),rec.currency)]),[.35,.25,.12,.28],[3]);
 }
 
-function expensesSection(r:Report){
+function expensesSection(r:Report,insights:Insights){
  const {t,add,table,money,date,records,byId,tables}=r;
  add('heading',t('Expenses and budget'));
+ comparisonTable(r,insights);
  const label=(row:ReportRow)=>typeof row.name==='string'&&row.name.trim()?row.name:r.na;
  const categories=new Map((tables.transaction_categories??[]).map(c=>[String(c.id),label(c)]));
  for(const c of r.currencies){
@@ -231,12 +233,16 @@ export function buildFinancialReport(input:unknown,language:Language,context='',
  for(const c of r.currencies)r.flows.set(c,cashFlowOf(r,c));
  const title=t('Personal financial report');
  coverBlocks(r,title,formatDateTime(backup.exported_at,r.locale));
- summaryBlocks(r);
+ const insights=reportInsights(r);
+ summaryBlocks(r,()=>highlightsBlock(r,insights));
+ trendBlock(r,insights);
  overviewSection(r);
+ healthSection(r,insights);
  detailsSection(r,context);
  wealthSection(r);
  incomeSection(r);
- expensesSection(r);
+ expensesSection(r,insights);
+ nextDaysSection(r,insights);
  goalsSection(r);
  reviewSection(r);
  return {title,generated:formatDateTime(backup.exported_at,r.locale),locale:r.locale,blocks};
