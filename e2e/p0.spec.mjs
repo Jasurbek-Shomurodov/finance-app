@@ -61,8 +61,9 @@ test('XAPP-001 DASH-013 spending is one figure on the Dashboard, Cash flow, Tran
 
 test('XAPP-003 DASH-001 net worth is the same on the Dashboard and Investments', async ({ page }) => {
   await page.goto('/');
-  await expect.poll(() => figureAfter(page, 'Net worth')).toMatch(/^\$[\d,]+$/);
-  const dashboard = await figureAfter(page, 'Net worth');
+  // The Dashboard leads with net worth in its Net worth over time card.
+  await expect.poll(() => figureAfter(page, 'Net worth over time')).toMatch(/^\$[\d,]+$/);
+  const dashboard = await figureAfter(page, 'Net worth over time');
   await open(page, 'Investments');
   await expect.poll(() => figureAfter(page, 'Net worth')).toBe(dashboard);
 });

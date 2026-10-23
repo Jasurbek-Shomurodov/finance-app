@@ -1,6 +1,7 @@
 // Browser tests of the P0 flows (e2e/), against a production build of the app and the test Supabase in
 // e2e/fake-supabase.mjs. Build first with `npm run build:production`, then `npm run test:e2e`.
 import fs from 'node:fs';
+import { pathToFileURL } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
 import { appUrl, supabaseUrl, testAccount } from './e2e/settings.mjs';
 
@@ -42,7 +43,8 @@ export default defineConfig({
       url: appUrl + '/sign-in',
       reuseExistingServer: false,
       timeout: 120_000,
-      env: { ...blanked, SUPABASE_URL: supabaseUrl, SUPABASE_PUBLISHABLE_KEY: 'e2e-publishable-key', SUPABASE_SERVICE_ROLE_KEY: 'sb_secret_e2e_only', APP_ORIGIN: appUrl, PUBLIC_SIGNUP_ENABLED: 'false' },
+      // Outside services (rates, prices) answer from e2e/offline-network.mjs instead of the network.
+      env: { ...blanked, NODE_OPTIONS: `--import=${pathToFileURL('e2e/offline-network.mjs').href}`, SUPABASE_URL: supabaseUrl, SUPABASE_PUBLISHABLE_KEY: 'e2e-publishable-key', SUPABASE_SERVICE_ROLE_KEY: 'sb_secret_e2e_only', APP_ORIGIN: appUrl, PUBLIC_SIGNUP_ENABLED: 'false' },
     },
   ],
 });
