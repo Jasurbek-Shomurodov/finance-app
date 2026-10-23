@@ -5,7 +5,7 @@ import type { DiversifiedPortfolio } from './diversified-portfolio';
 import type { HistoryEvent } from './investment-history';
 import { compareInvestments, convertHistorical, type CashFlow, type WealthPoint } from './investment-comparison';
 import { isInvestmentRecord } from './comparison-profile';
-import { expenses, liabilities, value } from './finance';
+import { expenses, income, liabilities, value } from './finance';
 import { convertAmount, marketEntry, marketRates } from './market';
 import { validDay } from './benchmark-data';
 import { shiftDay } from './calendar-days';
@@ -38,6 +38,20 @@ export function benchmarkExpenseFunding(cashflows:InvestmentPortfolioInput['cash
   const amount=spendingAmount(row);
   return Number.isFinite(amount)&&amount>0?[{id:'expense:'+row.id,date:row.date,name:row.name,kind:row.kind,amount,currency:row.currency}]:[];
  }).sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));
+}
+
+// Income received from a held business or property is saved as a transaction linked to it, not as
+// a history event. It is the holding's return paid out: the actual side counts it like a payout,
+// and benchmarks never receive it. A copy of an income event is already counted through that event.
+export function assetIncomePayouts(cashflows:InvestmentPortfolioInput['cashflows'],held:ReadonlySet<string>,events:readonly HistoryEvent[],today:string){
+ const eventIds=new Set(events.map(e=>e.id));
+ return (cashflows??[]).flatMap(row=>{
+  const asset=row.business_id??row.income_source_id??row.property_id;
+  if(!income.includes(row.kind)||row.frequency!=='Once'||!validDay(row.date)||row.date>today||!asset||!held.has(asset))return [];
+  if(row.history_event_id&&eventIds.has(row.history_event_id))return [];
+  const amount=Number(row.amount);
+  return Number.isFinite(amount)&&amount>0?[{date:row.date,amount,currency:row.currency}]:[];
+ }).sort((a,b)=>a.date.localeCompare(b.date));
 }
 
 // A repayment recorded from Accounts changes both balances but leaves no Tracker
@@ -191,6 +205,7 @@ export function investmentDecisionComparison(input:DecisionInput,data:BenchmarkD
  const held=new Set(assets.map(row=>row.id));
  const events=activity.events.filter(e=>held.has(e.record_id));
  const spending=scope==='expenses'?benchmarkExpenseFunding(input.cashflows,input.today):[];
+ const earned=assetIncomePayouts(input.cashflows,held,activity.events,input.today);
  const start=dated?input.method.date:purchaseComparisonStart(input,scope);
  if(!validDay(start)||start>input.today||start<data.start)return null;
  // From a dated start, that day's holdings are in the starting value; a principal repayment that day is not, so it funds benchmarks.
@@ -198,7 +213,7 @@ export function investmentDecisionComparison(input:DecisionInput,data:BenchmarkD
  const balances=new Map<string,number>(),cost=new Map<string,number>();
  // `own` is the money put in from outside the investments, without the spending that "Including expenses" also funds.
  const flows:CashFlow[]=[],own:CashFlow[]=[],details:FundingDetail[]=[],points:WealthPoint[]=[];
- const observed=new Set<string>();let principal=0,payouts=0,cursor=0,next=0,spent=0,seeded=false;
+ const observed=new Set<string>();let principal=0,payouts=0,cursor=0,next=0,spent=0,paid=0,seeded=false;
  const usd=(amount:number,currency:string,date:string)=>{const converted=convertHistorical(amount,currency,'USD',date,data.fx);if(converted===null||!Number.isFinite(converted)){missing=true;return 0;}return converted;};
  const fund=(id:string,date:string,name:string,amount:number,currency:string,reused=0,principalPaid?:number,expenseKind?:string,opening=false)=>{
   if(!counted(date,principalPaid!==undefined))return;
@@ -222,6 +237,7 @@ export function investmentDecisionComparison(input:DecisionInput,data:BenchmarkD
  for(let date=firstDate;date<=input.today;date=shiftDay(date,1)){
   // Spending funds benchmarks only; it never adds to actual holdings or proceeds.
   while(spent<spending.length&&spending[spent].date<=date){const row=spending[spent++];fund(row.id,row.date,row.name,row.amount,row.currency,0,undefined,row.kind);}
+  while(paid<earned.length&&earned[paid].date<=date){const row=earned[paid++];if(counted(row.date))payouts+=usd(row.amount,row.currency,row.date);}
   while(cursor<events.length&&events[cursor].occurred_on<=date){
    const e=events[cursor++];
    if(e.balance!==null){

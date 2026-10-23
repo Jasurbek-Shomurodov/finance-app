@@ -310,3 +310,25 @@ test('a UZS deposit benchmark shown in UZS only grows while the dollar rate swin
  assert.ok(Math.abs(deposit.at(-1)-12000000*1.21**(3/365))<0.01);
  assert.ok(points.every(point=>Math.abs(point.actual-12000000)<0.01));
 });
+test('income received from a held business counts as its return paid out and never funds benchmarks',()=>{
+ const pay=(id,date,amount,extra={})=>({id,kind:'Business income',frequency:'Once',date,amount,currency:'USD',business_id:'asset',name:'Club',...extra});
+ const input={...base,records:[record('cash','Cash'),record('asset','Business',1000)],cashflows:[pay('m1','2026-09-02',30),pay('m2','2026-09-03',30),pay('other','2026-09-03',500,{business_id:'elsewhere'}),{...pay('sal','2026-09-03',900),kind:'Salary',business_id:null},pay('plan','2026-09-03',30,{frequency:'Monthly'})]};
+ const result=investmentDecisionComparison(input,data);
+ const last=result.result.points.at(-1);
+ assert.equal(last.contributed,1000);assert.equal(last.BTC,4000);assert.equal(last.invested,1000);
+ assert.equal(last.actual,1060);
+ assert.deepEqual(result.result.points.map(p=>p.actual),[1000,1030,1060,1060]);
+});
+test('a business income copy of an income event is counted once, and income before a chosen start is not counted',()=>{
+ const events=[...base.events,event('inc','asset','2026-09-02','income',40,null)];
+ const copy={id:'copy',kind:'Business income',frequency:'Once',date:'2026-09-02',amount:40,currency:'USD',business_id:'asset',history_event_id:'inc',name:'Club'};
+ assert.equal(investmentDecisionComparison({...base,events,cashflows:[copy]},data).result.points.at(-1).actual,1040);
+ const later={...copy,id:'later',history_event_id:null,date:'2026-09-02'};
+ const dated=investmentDecisionComparison({...base,cashflows:[later],method:{mode:'date',date:'2026-09-02'}},{...data,start:'2026-09-02',prices:{BTC:data.prices.BTC.filter(point=>point.date>='2026-09-02')}});
+ assert.equal(dated.result.points.at(-1).actual,1000);
+});
+test('rent received from a held property is that property\'s return',()=>{
+ const input={...base,records:[record('cash','Cash'),record('asset','Property',1000)],cashflows:[{id:'r',kind:'Rent income',frequency:'Once',date:'2026-09-03',amount:25,currency:'USD',income_source_id:'asset',name:'Rent'}]};
+ const last=investmentDecisionComparison(input,data).result.points.at(-1);
+ assert.equal(last.actual,1025);assert.equal(last.contributed,1000);
+});
