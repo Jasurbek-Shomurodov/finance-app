@@ -29,6 +29,10 @@ name, amount or date that happens to match (migration 119).
   never after today, never before the schedule starts) and settles the due date of
   the row it was opened from; the database takes a due date ahead only with
   `paid_on` (migration 155). `tests/early-scheduled-payment-sql.mjs` covers this.
+- Add income does the same for an income source or a salary plan: its scheduled date
+  starts on the open one `openScheduleDue` picks, and the person may choose another
+  from `scheduleDueChoices` (open dates from two months back through the day received,
+  plus the next open one). Only scheduled dates are offered, never a free date.
 - Every screen totals a due date the same way: its first payment plus the other
   payments naming it, through `laterPayments` in `lib/planning.ts` (Recurring and
   the planning read). Cash flow joins a payment to its schedule's card by the same

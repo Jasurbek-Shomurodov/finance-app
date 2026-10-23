@@ -21,7 +21,7 @@ import { RecordNameInput } from '@/components/record-name-input';
 import { AmountCurrencyFields } from '@/components/presentation-foundation/amount-currency-fields';
 import { DatePicker } from '@/components/presentation-foundation/date-picker';
 import { CashAccountField } from '@/components/cash-account-field';
-import { earningSourcePaymentStatus, openEarningDue, selectEarningSource } from '@/lib/earning-sources';
+import { earningPlan, earningSourcePaymentStatus, openScheduleDue, scheduleDueChoices, selectEarningSource } from '@/lib/earning-sources';
 import { depositToday } from '@/lib/deposit-interest';
 import type { Entry } from '@/lib/finance';
 import { offeredKinds } from '@/lib/removed-categories';
@@ -42,17 +42,36 @@ function ScheduledPaymentSummary({date,label}:{date:string;label:string}){
  </div>;
 }
 
+/** The scheduled date a new receipt pays. It starts on the open one `openScheduleDue` picks; when an earlier open date or
+ * the next one is also on offer (a late or an early payment), the person chooses. */
+function DueDateField({label,date,choices,disabled,onChoose}:{label:string;date:string;choices:string[];disabled:boolean;onChoose:(date:string)=>void}){
+ const {locale}=useLanguage();
+ if(choices.length<2)return <ScheduledPaymentSummary label={label} date={date}/>;
+ return <label>{label}<NativeSelect value={date} disabled={disabled} leadingIcon={<CalendarDays size={16}/>} onChange={event=>onChoose(event.target.value)}>
+  {choices.map(day=><option key={day} value={day}>{formatDate(day,locale)}</option>)}
+ </NativeSelect></label>;
+}
+
 export function IncomeRecordForm({onSuggest,editing,setEditing,busy,save,currencies,planning,error,demo,earningSources,onLeave,original}:RecordDialogProps){
  const {t,locale}=useLanguage();
  const removed=planning.data.removedKinds??[];
  const [salaryPlan,setSalaryPlan]=useState(()=>editing?.kind==='Salary'&&editing.frequency!=='Once');
  // Only a saved schedule opens here repeating; new recurring income is a fixed income source (Recurring › Add recurring).
  const [schedule]=useState(()=>!!editing&&editing.frequency!=='Once');
- // A new receipt from a fixed source settles the earliest due date still open (openEarningDue), so a late payment pays
- // the week it was late for rather than the one it was received in. A saved receipt keeps the date it settled.
+ // A new receipt from a fixed source or a salary plan settles the earliest due date still open (openScheduleDue), so a
+ // late payment pays the week it was late for rather than the one it was received in; the person may pick another open
+ // date instead, the next one included for a payment that came early. A saved receipt keeps the date it settled.
  const fixedSource=!original&&editing?.frequency==='Once'&&editing.payment_type!=='bonus'?earningSources?.sources.find(item=>item.id===editing.earning_source_id):undefined;
- const openDue=fixedSource&&editing?openEarningDue(fixedSource,editing.date,new Set((planning.data.occurrences??[]).filter(occurrence=>occurrence.record_id===(fixedSource.schedule_id??fixedSource.id)).map(occurrence=>occurrence.due_on))):null;
- useEffect(()=>{if(openDue)setEditing(current=>current&&current.earning_source_id&&current.earning_due_on!==openDue?{...current,earning_due_on:openDue}:current);},[openDue,editing?.earning_due_on,setEditing]);
+ const salarySource=!original&&!fixedSource&&editing?.kind==='Salary'&&editing.frequency==='Once'&&editing.income_source_id?incomeSources('Salary',planning.data.records,editing.id).find(row=>row.id===editing.income_source_id):undefined;
+ const duePlan=fixedSource?earningPlan(fixedSource):salarySource??null;
+ const dueSchedule=fixedSource?fixedSource.schedule_id??fixedSource.id:salarySource?.id;
+ const dueField=fixedSource?'earning_due_on' as const:'income_due_on' as const;
+ const [picked,setPicked]=useState<{schedule:string;date:string}|null>(null);
+ const settled=new Set((planning.data.occurrences??[]).filter(occurrence=>occurrence.record_id===dueSchedule).map(occurrence=>occurrence.due_on));
+ const dueChoices=duePlan&&editing?scheduleDueChoices(duePlan,editing.date,settled):[];
+ const openDue=!duePlan||!editing?null:picked&&picked.schedule===dueSchedule&&dueChoices.includes(picked.date)?picked.date:openScheduleDue(duePlan,editing.date,settled);
+ useEffect(()=>{if(openDue)setEditing(current=>current&&(dueField==='earning_due_on'?current.earning_source_id:current.income_source_id)&&current[dueField]!==openDue?{...current,[dueField]:openDue}:current);},[openDue,dueField,editing?.[dueField],setEditing]);
+ const chooseDue=(date:string)=>dueSchedule&&setPicked({schedule:dueSchedule,date});
  // Notes fold away unless the income already has some.
  const [detailsOpen]=useState(()=>!!editing?.notes);
  if(!editing)return null;
@@ -100,7 +119,7 @@ export function IncomeRecordForm({onSuggest,editing,setEditing,busy,save,currenc
    {earningSources.error&&<InlineError as="div" message={t(earningSources.error)} onRetry={earningSources.retry}/>}
   </div>}
   {reusable&&<label>{t('Payment type')}<NativeSelect value={editing.payment_type??'regular'} disabled={busy} onChange={event=>update(selectEarningSource(editing,reusable,event.target.value==='bonus'))}><option value="regular">{t('Regular income')}</option><option value="bonus">{t('Bonus')}</option></NativeSelect></label>}
-  {reusable&&editing.payment_type!=='bonus'&&reusable.mode==='fixed'&&<ScheduledPaymentSummary label={t('Scheduled payment date')} date={editing.earning_due_on??''}/>}
+  {reusable&&editing.payment_type!=='bonus'&&reusable.mode==='fixed'&&<DueDateField label={t('Scheduled payment date')} date={editing.earning_due_on??''} choices={fixedSource?dueChoices:[]} disabled={busy} onChoose={chooseDue}/>}
   {salaryPlan&&<p className="muted">{t('Set up the recurring salary plan you will select when recording payments.')}</p>}
   {!simple&&<label>{t('Category')}<NativeSelect value={editing.custom_category_id??editing.kind} disabled={busy||!!reusable||planning.loading||!!planning.error} leadingIcon={<RecordIcon record={editing}/>} onChange={event=>{setSalaryPlan(false);const selected=selectTransactionCategory(editing,event.target.value,planning.data.categories,'income');setEditing({...changeIncomeKind(editing,selected.kind),custom_category_id:selected.custom_category_id});}}>{offeredKinds('income',removed,editing.kind).map(kind=><option key={kind} value={kind}>{t(kind)}</option>)}{planning.data.categories.filter(category=>category.direction==='income').map(category=><option key={category.id} value={category.id}>{category.name}</option>)}</NativeSelect></label>}
   {!simple&&<div className="field-links">{categoriesLink}</div>}
@@ -108,7 +127,7 @@ export function IncomeRecordForm({onSuggest,editing,setEditing,busy,save,currenc
    {!planning.loading&&!planning.error&&!sources.length&&!sourceId&&<p className="muted">{t(editing.kind==='Salary'?'Add a salary plan before recording its income.':editing.kind==='Rent income'?'Add a property in Assets & investments first.':'Add a business in Assets & investments first.')}</p>}
    {editing.kind==='Salary'?<Link href="/income-expenses#income-sources">{t('Add income source')}</Link>:<Link href="/assets">{t('Assets & investments')}</Link>}
   </div>)}
-  {editing.kind==='Salary'&&source&&<ScheduledPaymentSummary label={t('Salary due date')} date={editing.income_due_on??''}/>}
+  {editing.kind==='Salary'&&source&&<DueDateField label={t('Salary due date')} date={editing.income_due_on??''} choices={salarySource?dueChoices:[]} disabled={busy} onChoose={chooseDue}/>}
   <div className="form-grid"><label>{t(editing.frequency==='Once'?'Record date':'Start date')}<DatePicker value={editing.date} disabled={!!original&&original.frequency!=='Once'&&editing.frequency!=='Once'} min={editing.kind==='Salary'&&source?source.date:undefined} max={latestDate} onChange={changeDate}/></label>
   {!schedule&&!salaryPlan&&cashAccount}
   {schedule&&!reusable&&<ScheduleFields frequency={editing.frequency} days={editing.recurrence_days} disabled={busy} onChange={(frequency,recurrence_days)=>update({frequency,recurrence_days,account_id:null,end_date:frequency==='Once'?null:editing.end_date})}/>}

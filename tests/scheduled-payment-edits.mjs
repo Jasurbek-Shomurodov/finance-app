@@ -56,6 +56,19 @@ test('a saved payment keeps its schedule in the form: no field, no reset, no pha
  assert.notEqual(ScheduledPaymentField({ schedules: [schedule], value: bill, onChange: value => changes.push(value) }), null);
 });
 
+test('a receipt may be recorded against an earlier open date or the next one, for a salary paid early', () => {
+ const { scheduleDueChoices } = loadTS('lib/earning-sources.ts');
+ const monthly = { date: '2026-08-01', frequency: 'Monthly', recurrence_days: null, end_date: null };
+ // Paid on 24 October with 1 October already recorded: 1 November, the salary that came early, is on offer.
+ assert.deepEqual(scheduleDueChoices(monthly, '2026-10-24', new Set(['2026-08-01', '2026-10-01'])), ['2026-09-01', '2026-11-01']);
+ // Only the next open date: a recorded 1 November is passed over for 1 December.
+ assert.deepEqual(scheduleDueChoices(monthly, '2026-10-24', new Set(['2026-08-01', '2026-09-01', '2026-10-01', '2026-11-01'])), ['2026-12-01']);
+ // Never before the schedule starts or after it ends.
+ assert.deepEqual(scheduleDueChoices({ ...monthly, end_date: '2026-10-31' }, '2026-10-24', new Set()), ['2026-08-01', '2026-09-01', '2026-10-01']);
+ const yearly = { date: '2025-03-15', frequency: 'Yearly', recurrence_days: null, end_date: null };
+ assert.deepEqual(scheduleDueChoices(yearly, '2026-02-20', new Set(['2025-03-15'])), ['2026-03-15']);
+});
+
 test('a late receipt settles the earliest open due date, not the paid one it was received on (CF-043)', () => {
  const { openEarningDue } = loadTS('lib/earning-sources.ts');
  const weekly = { id: id(4), name: 'QA Salary Weekly', kind: 'Salary', currency: 'USD', mode: 'fixed', archived: false, amount: 500, frequency: 'Weekly', recurrence_days: null, start_date: '2026-10-02', end_date: null, linked_record_id: null };

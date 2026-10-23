@@ -82,10 +82,10 @@ test('source loading and save failures remain owner-isolated, including late res
  run('third');run('fourth');assert.equal(requests[3].options.signal.aborted,true);requests[3].reply([variable]);requests[4].reply([]);await flush();assert.deepEqual(run('fourth').sources,[]);
 });
 
-test('receipt scheduled dates are read-only while the received date remains editable',()=>{
+test('a receipt\'s scheduled date is chosen from the open scheduled dates only, never typed, while the received date stays editable',()=>{
  const ui=fs.readFileSync('components/income-record-form.tsx','utf8');
- assert.match(ui,/<ScheduledPaymentSummary[^>]*date=\{editing\.earning_due_on\?\?''\}/);
- assert.match(ui,/<ScheduledPaymentSummary[^>]*date=\{editing\.income_due_on\?\?''\}/);
+ assert.match(ui,/<DueDateField[^>]*date=\{editing\.earning_due_on\?\?''\} choices=\{fixedSource\?dueChoices:\[\]\}/);
+ assert.match(ui,/<DueDateField[^>]*date=\{editing\.income_due_on\?\?''\} choices=\{salarySource\?dueChoices:\[\]\}/);
  assert.doesNotMatch(ui,/<DatePicker[^>]*value=\{editing\.(earning_due_on|income_due_on)/);
  assert.match(ui,/<DatePicker value=\{editing\.date\}/);
 });

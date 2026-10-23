@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { fiatCurrency, isoDate as date } from './api-validation';
-import { scheduleDates, type Entry } from './finance';
+import { scheduleDates, type Entry, type Schedule } from './finance';
 import { shiftDay, shiftMonth } from './calendar-days';
 import { salaryDueDate } from './income-sources';
 export const earningSourceSchema=z.object({
@@ -32,11 +32,25 @@ export function selectEarningSource(entry:Entry,source:EarningSource,bonus=false
  * before, else the date of the period it was received in. `settled` holds the source's paid or skipped due dates, so a
  * late payment settles the week it was late for instead of leaving that week open beside a paid one. */
 export function openEarningDue(source:EarningSource,receivedOn:string,settled:ReadonlySet<string>):string|null{
- if(source.mode!=='fixed'||!source.start_date||!source.frequency)return null;
- const plan={date:source.start_date,frequency:source.frequency,recurrence_days:source.recurrence_days??null,end_date:source.end_date};
+ const plan=earningPlan(source);
+ return plan&&openScheduleDue(plan,receivedOn,settled);
+}
+/** A fixed source's schedule, as `scheduleDates` reads it; null for a variable one. */
+export const earningPlan=(source:EarningSource):Schedule|null=>source.mode!=='fixed'||!source.start_date||!source.frequency?null:{date:source.start_date,frequency:source.frequency,recurrence_days:source.recurrence_days??null,end_date:source.end_date};
+/** `openEarningDue` for any schedule (an income source or a salary plan). */
+export function openScheduleDue(plan:Schedule,receivedOn:string,settled:ReadonlySet<string>):string{
  const month=receivedOn.slice(0,7)+'-01';
  const open=(from:string,through:string)=>scheduleDates(plan,from,through).find(day=>!settled.has(day));
  return open(month,receivedOn)??open(shiftMonth(month.slice(0,7),-1)+'-01',shiftDay(month,-1))??salaryDueDate(plan,receivedOn);
+}
+/** The due dates a receipt on `receivedOn` may be recorded against, oldest first: the open ones from two months before
+ * its month through the day it arrived (a late payment), then the next open one after it (a salary paid early, the
+ * user's rule of 24 October 2026). The database accepts any scheduled date that is not already recorded. */
+export function scheduleDueChoices(plan:Schedule,receivedOn:string,settled:ReadonlySet<string>):string[]{
+ const month=receivedOn.slice(0,7);
+ const open=(from:string,through:string)=>scheduleDates(plan,from,through).filter(day=>!settled.has(day));
+ const next=open(shiftDay(receivedOn,1),shiftMonth(month,13)+'-01')[0];
+ return [...open(shiftMonth(month,-2)+'-01',receivedOn),...(next?[next]:[])];
 }
 export function resolveEarningSource(entry:Entry,sources:EarningSource[],original?:Entry):Partial<Entry>{
  const source=sources.find(item=>item.id===entry.earning_source_id);
