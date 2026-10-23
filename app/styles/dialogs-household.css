@@ -64,23 +64,6 @@
 .report-transaction-list small{color:var(--muted-foreground);font-size:var(--type-caption)}
 .report-transaction-list>li>*>strong{font-variant-numeric:tabular-nums;text-align:end}
 @container content (max-width:600px){.report-transaction-list>li>*{grid-template-columns:auto minmax(0,1fr) auto}.report-transaction-list .report-business-name{grid-column:2;grid-row:2}.report-transaction-list>li>*>strong{grid-row:1/3;grid-column:3}}
-.dashboard-business{display:flex;flex-direction:column;gap:12px}
-.dashboard-business>[data-slot=native-select-wrapper]{width:auto;align-self:flex-start}
-.business-card-list li{grid-template-columns:auto minmax(0,1fr) auto minmax(max-content,.35fr)}
-/* A phone-wide card has no room for the name beside the bars and the net: the name takes the line, bars and net go under it. */
-.business-card-list{container:business-list/inline-size}
-@container business-list (max-width:340px){.business-card-list li{grid-template-columns:auto minmax(0,1fr) auto}.business-card-list li>.business-card-name{grid-column:2/-1}.business-card-list li>:nth-child(3){grid-column:2;justify-self:start}}
-.business-card-list li>:last-child{justify-self:end}
-.business-card-name{display:flex;flex-direction:column;min-width:0;font-weight:500;overflow-wrap:anywhere}
-.business-card-name small{min-width:0;color:var(--muted-foreground);font-size:var(--type-caption);font-weight:400;text-align:start}
-.business-card-name:hover,.business-card-net:hover small{text-decoration:underline;text-underline-offset:3px}
-.business-card-net{display:flex;flex-direction:column;align-items:flex-end}
-.business-card-net strong{font-weight:500;font-variant-numeric:tabular-nums}
-.business-card-net small{color:var(--muted-foreground);font-size:var(--type-micro)}
-.business-net-bars{display:block;width:56px;height:28px}
-.business-net-bars line{stroke:var(--border);stroke-width:1}
-.business-net-bars rect[data-tone=positive]{fill:var(--positive)}
-.business-net-bars rect[data-tone=negative]{fill:var(--negative)}
 .business-setup-notes{display:grid;gap:6px;margin:0;font-size:var(--type-small);font-weight:500}
 .business-setup-notes textarea{min-height:60px;padding:8px 10px;border:1px solid var(--input);border-radius:var(--radius-control);background:var(--card);font:inherit;font-weight:400}
 .business-setup-accounts{display:flex;flex-direction:column;margin:0;padding:0;list-style:none}

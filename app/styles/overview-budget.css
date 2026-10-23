@@ -16,7 +16,6 @@
 
 
 .overview-chart-heading{display:flex;align-items:center;justify-content:space-between;gap:12px 20px;flex-wrap:wrap;margin-top:28px;padding-top:20px;border-top:1px solid var(--border)}
-.overview-chart-heading h3{font-size:var(--type-body);font-weight:600;letter-spacing:-.01em}
 .overview-chart-heading .comparison-legend{margin-top:0}
 .overview-chart-title{display:flex;flex-direction:column;gap:8px}
 .tracking-start[aria-busy=true]{opacity:.6}

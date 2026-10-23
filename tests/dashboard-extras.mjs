@@ -6,15 +6,17 @@ const { normalizeLayout, dashboardColumns, dropCard, placeCard, toggleCard, defa
 const { workspacePreferenceSchema } = loadTS('lib/workspace-preferences.ts');
 
 test('dashboard cards drag within and across columns, old saves load and every card can be hidden', () => {
- // Income over time starts hidden; nothing saved yet reads as the default, and a saved layout keeps what its owner hid.
- assert.deepEqual(dashboardColumns(defaultDashboardLayout), { left: ['net_worth', 'spending', 'budget', 'commitments', 'allocation'], right: ['goals', 'transactions', 'upcoming', 'business'] });
- assert.deepEqual(normalizeLayout(undefined).hidden, ['income']);
+ // Every card starts shown, the wide Income over time chart in the wide column and the allocation donut in the narrow one;
+ // nothing saved yet reads as the default, and a saved layout keeps what its owner hid.
+ assert.deepEqual(dashboardColumns(defaultDashboardLayout), { left: ['net_worth', 'spending', 'budget', 'commitments', 'income'], right: ['goals', 'transactions', 'upcoming', 'allocation'] });
+ assert.deepEqual(normalizeLayout(undefined).hidden, []);
  assert.deepEqual(normalizeLayout({ columns: { left: [], right: [] }, hidden: [] }).hidden, [], 'a saved layout showing every card keeps them all');
  const old = normalizeLayout({ order: ['upcoming', 'recap', 'removed_card', 'allocation', 'upcoming'], hidden: ['goals', 'recap', 'nope'] });
- assert.deepEqual(old.columns.right, ['upcoming', 'goals', 'transactions', 'income', 'business'], 'a single-list save keeps its columns, new cards appended, removed cards dropped');
- assert.equal(old.columns.left[0], 'allocation');
- assert.equal(old.columns.left.length + old.columns.right.length, 10);
+ assert.deepEqual(old.columns.right, ['upcoming', 'allocation', 'goals', 'transactions'], 'a single-list save keeps its columns, new cards appended, removed cards dropped');
+ assert.equal(old.columns.left[0], 'net_worth');
+ assert.equal(old.columns.left.length + old.columns.right.length, 9);
  assert.ok(!normalizeLayout({ columns: { left: ['forecast'], right: [] }, hidden: ['forecast'] }).columns.left.includes('forecast'), 'the retired Lowest balance ahead card drops out of saved layouts');
+ assert.ok(!normalizeLayout({ columns: { left: [], right: ['business'] }, hidden: [] }).columns.right.includes('business'), 'so does the retired Business tracking card');
  assert.deepEqual(old.hidden, ['goals']);
  const repaired = normalizeLayout({ columns: { left: ['goals', 'goals', 'x'], right: ['goals', 'budget'] }, hidden: [] });
  assert.deepEqual(repaired.columns.right.slice(0, 1), ['budget'], 'a card appears once, in the first column that lists it');
@@ -27,19 +29,19 @@ test('dashboard cards drag within and across columns, old saves load and every c
  assert.equal(dropCard(layout, 'budget', 'budget'), layout);
  // Across columns: the card lands before the one it was dropped on, or at the end of an empty column.
  layout = dropCard(layout, 'net_worth', 'goals');
- assert.deepEqual(layout.columns.right, ['net_worth', 'goals', 'transactions', 'upcoming', 'income', 'business']);
+ assert.deepEqual(layout.columns.right, ['net_worth', 'goals', 'transactions', 'upcoming', 'allocation']);
  assert.ok(!layout.columns.left.includes('net_worth'));
  layout = dropCard(layout, 'transactions', 'left');
  assert.equal(layout.columns.left.at(-1), 'transactions');
  let empty = defaultDashboardLayout;
- for (const card of ['goals', 'transactions', 'upcoming', 'income', 'business']) empty = dropCard(empty, card, 'left');
+ for (const card of ['goals', 'transactions', 'upcoming', 'allocation']) empty = dropCard(empty, card, 'left');
  assert.deepEqual(empty.columns.right, []);
  assert.deepEqual(dropCard(empty, 'budget', 'right').columns.right, ['budget'], 'an empty column still takes a card');
  assert.deepEqual(placeCard(defaultDashboardLayout, 'goals', 'left', 99).columns.left.at(-1), 'goals', 'an index past the end is clamped');
  layout = toggleCard(toggleCard(layout, 'net_worth'), 'allocation');
  assert.ok(!dashboardColumns(layout).right.includes('net_worth'));
  assert.ok(layout.columns.right.includes('net_worth'), 'a hidden card keeps its place');
- assert.ok(dashboardColumns(toggleCard(layout, 'allocation')).left.includes('allocation'));
+ assert.ok(dashboardColumns(toggleCard(layout, 'allocation')).right.includes('allocation'));
  assert.ok(workspacePreferenceSchema.safeParse({ key: 'dashboard', data: layout }).success);
  assert.ok(workspacePreferenceSchema.safeParse({ key: 'dashboard', data: { order: ['goals', 'recap'], hidden: ['recap'] } }).success, 'saves from before, naming the removed weekly recap, still load');
  assert.ok(!workspacePreferenceSchema.safeParse({ key: 'dashboard', data: { columns: { left: ['hack'], right: [] }, hidden: [] } }).success);

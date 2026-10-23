@@ -131,11 +131,10 @@ test('every transition and animation is switched off under reduced motion, by th
  assert.match(fs.readFileSync('app/styles/dialogs-household.css','utf8'),/@media\(prefers-reduced-motion:reduce\)\{\.sankey-link,\.switch,\.switch-thumb/);
 });
 
-test('panel links and business card links keep a 44px touch target (RESP-004, RESP-024)',()=>{
+test('panel links keep a 44px touch target (RESP-004, RESP-024)',()=>{
  const css=stylesheet();
  const coarse=css.slice(css.indexOf('@media(pointer:coarse){\n /* One floor'));
  assert.match(coarse,/\.panel-title :is\(a,\[data-variant=link\]\),\.panel-link\{display:inline-flex;align-items:center;min-height:44px\}/,'the same selector as the 24px rule in shell.css, so it wins');
- assert.match(coarse,/\.business-card-list li>a\{min-height:44px/);
 });
 
 test('names, chips and filters show their text instead of an ellipsis (LIST-018, LIST-019, RESP-023)',()=>{
@@ -367,7 +366,6 @@ test('narrow rows keep names whole and never stack controls on them (RESP-030, R
  assert.match(css,/\.budget-row\{--budget-actions:28px;display:grid;grid-template-columns:minmax\(9rem,1fr\) repeat\(3,minmax\(92px,128px\)\) var\(--budget-actions\);/);
  // On touch the ⋯ column is as wide as the 44px ⋯ button, so it never covers Remaining.
  assert.match(css,/@media\(pointer:coarse\)\{\.budget-row\{--budget-actions:44px\}\}/);
- assert.match(css,/\.business-card-list\{container:business-list\/inline-size\}/);
  assert.match(css,/@container recurring \(max-width:340px\)\{[^\n]*\.row-actions\{grid-area:3\/1\/4\/4\}/);
  // Long compound words in other languages hyphenate instead of overflowing a phone column (German budget and recurring rows).
  assert.match(css,/:root:not\(:lang\(en\)\) body\{hyphens:auto;hyphenate-limit-chars:12 5 5\}/);

@@ -129,7 +129,7 @@ test('row lists keep their columns lined up from row to row',()=>{
  const css=stylesheet();
  const template=selector=>css.match(new RegExp(selector.replace(/[.*+?^${}()|[\]\\>]/g,'\\$&')+'\\{[^}]*?grid-template-columns:([^;}]+)'))?.[1];
  // Each of these rows is its own grid, so a bare `auto` column would size to that row's own amount and shift its neighbours.
- for(const row of ['.report-transaction-list>li>*','.transaction-row','.account-holding-row','.share-bars>li','.business-card-list li','.tax-transactions li>button']){
+ for(const row of ['.report-transaction-list>li>*','.transaction-row','.account-holding-row','.share-bars>li','.tax-transactions li>button']){
   const columns=template(row);
   assert.ok(columns,`${row} has a column template`);
   assert.match(columns,/minmax\((?:max-content|[\d.]+rem),[\d.]+fr\)/,`${row}: its amount column takes a share of the row, not just its own width (${columns})`);

@@ -65,8 +65,6 @@ roll-strip>roll-char{display:block;height:1lh}
  :is(input:not([type=checkbox],[type=radio],[type=range]),select,textarea){font-size:var(--type-body)!important}
  /* Matches the panel-title link rule in shell.css, which would otherwise win and keep "View all" at 24px (RESP-024). */
  .panel-title :is(a,[data-variant=link]),.panel-link{display:inline-flex;align-items:center;min-height:44px}
- .business-card-list li>a{min-height:44px;justify-content:center}
- .business-card-list li>a:not(.business-card-name,.business-card-net){display:inline-flex;align-items:center}
  .info-hint::after{inset:-11px}
  /* Small controls inside report rows keep their size; like the ⓘ, an invisible area around them takes the tap (RESP-018). */
  :is(.pnl-toggle,.pnl-drill)::after{content:"";position:absolute;inset:-11px}

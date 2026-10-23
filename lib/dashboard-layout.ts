@@ -1,23 +1,23 @@
 /** Dashboard cards and where they start: two columns. Any card can be dragged to either column or hidden. */
 const dashboardCards = {
- left: ['net_worth', 'spending', 'budget', 'commitments', 'allocation'],
- // Business tracking only shows for someone with a business; at the end of the right column it evens the two out.
- right: ['goals', 'transactions', 'upcoming', 'income', 'business'],
+ // Income over time, the wide chart, sits in the wide column; the allocation donut fits the narrow one.
+ left: ['net_worth', 'spending', 'budget', 'commitments', 'income'],
+ right: ['goals', 'transactions', 'upcoming', 'allocation'],
 } as const;
 export type DashboardCard = (typeof dashboardCards)[keyof typeof dashboardCards][number];
 export type DashboardColumn = 'left' | 'right';
 export const dashboardColumnIds: readonly DashboardColumn[] = ['left', 'right'];
 export const dashboardCardIds: readonly DashboardCard[] = [...dashboardCards.left, ...dashboardCards.right];
 /** Cards that were removed. Saved layouts may still name them; they load and are dropped. Lowest balance ahead
- * became a figure in the headline beside Net worth over time. */
-export const retiredDashboardCards = ['recap', 'forecast'] as const;
+ * became a figure in the headline beside Net worth over time; Business tracking lives on in Reports. */
+export const retiredDashboardCards = ['recap', 'forecast', 'business'] as const;
 export const dashboardCardLabels: Record<DashboardCard, string> = {
- net_worth: 'Net worth', spending: 'Spending', budget: 'Budget', business: 'Business tracking', commitments: 'Monthly commitments', allocation: 'Asset allocation',
+ net_worth: 'Net worth', spending: 'Spending', budget: 'Budget', commitments: 'Monthly commitments', allocation: 'Asset allocation',
  goals: 'Goals', transactions: 'Transactions', upcoming: 'Upcoming payments', income: 'Income over time',
 };
 export type DashboardLayout = { columns: Record<DashboardColumn, DashboardCard[]>; hidden: DashboardCard[] };
-// Income over time starts hidden: it is the tallest card and Cash flow shows the same. Customize turns it on.
-export const defaultDashboardLayout: DashboardLayout = { columns: { left: [...dashboardCards.left], right: [...dashboardCards.right] }, hidden: ['income'] };
+// Every card starts shown; Customize hides any of them.
+export const defaultDashboardLayout: DashboardLayout = { columns: { left: [...dashboardCards.left], right: [...dashboardCards.right] }, hidden: [] };
 
 const defaultColumn = (card: DashboardCard): DashboardColumn => (dashboardCards.left as readonly string[]).includes(card) ? 'left' : 'right';
 const isCard = (id: unknown): id is DashboardCard => (dashboardCardIds as readonly unknown[]).includes(id);

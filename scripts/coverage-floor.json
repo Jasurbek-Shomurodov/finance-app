@@ -39,7 +39,6 @@
   "components/auth-card.tsx",
   "components/auth-showcase.tsx",
   "components/backup-restore.tsx",
-  "components/business-card.tsx",
   "components/business-settings.tsx",
   "components/business-setup-flow.tsx",
   "components/data-tools.tsx",
