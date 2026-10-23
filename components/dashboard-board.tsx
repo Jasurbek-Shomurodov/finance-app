@@ -1,5 +1,5 @@
 "use client";
-import { closestCorners, DndContext, KeyboardSensor, MouseSensor, TouchSensor, useDroppable, useSensor, useSensors, type DragEndEvent, type DragOverEvent } from '@dnd-kit/core';
+import { closestCorners, DndContext, KeyboardSensor, MouseSensor, pointerWithin, TouchSensor, useDroppable, useSensor, useSensors, type CollisionDetection, type DragEndEvent, type DragOverEvent } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Move } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
@@ -9,6 +9,22 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { columnOf, dashboardCardLabels, dashboardColumnIds, dashboardColumns, defaultDashboardLayout, dropCard, toggleCard, type DashboardCard, type DashboardColumn, type DashboardLayout } from '@/lib/dashboard-layout';
+
+/** What a held card is over: the card under the pointer, else the nearest card of the column the pointer is above,
+ * below or beside (the key figures, the space under a shorter column), and in the gap between the columns, of the
+ * column it is in now. Keys have no pointer, so they take the nearest card of either column. Measuring from the held
+ * card instead sends it back and forth: crossing into the other column remounts it there at that column's width, its
+ * new outline sits nearest a card of the column it left, and it crosses back on every render (a chart inside it then
+ * stops React with "Maximum update depth exceeded"). The columns never move sideways, so the pointer's column holds. */
+export const boardCollision: CollisionDetection = args => {
+ const { pointerCoordinates: pointer, droppableRects, droppableContainers } = args;
+ if (!pointer) return closestCorners(args);
+ const cards = pointerWithin(args).filter(hit => !(dashboardColumnIds as readonly unknown[]).includes(hit.id));
+ if (cards.length) return cards;
+ const under = dashboardColumnIds.find(id => { const rect = droppableRects.get(id); return rect && pointer.x >= rect.left && pointer.x <= rect.right; });
+ const column = under ?? args.active.data.current?.sortable?.containerId;
+ return closestCorners({ ...args, droppableContainers: droppableContainers.filter(container => container.id === column || container.data.current?.sortable?.containerId === column) });
+};
 
 const sameLayout = (a: DashboardLayout, b: DashboardLayout) => JSON.stringify(a.columns) === JSON.stringify(b.columns);
 
@@ -33,7 +49,7 @@ function useCardDrag(layout: DashboardLayout, onChange: (layout: DashboardLayout
   setPreview(null);
   if (!sameLayout(next, layout)) onChange(next);
  }
- const context = { sensors, collisionDetection: closestCorners, onDragOver: over, onDragEnd: end, onDragCancel: () => setPreview(null),
+ const context = { sensors, collisionDetection: boardCollision, onDragOver: over, onDragEnd: end, onDragCancel: () => setPreview(null),
   accessibility: sortableAccessibility(t, id => t(dashboardCardLabels[id as DashboardCard] ?? '')) };
  return { shown: preview ?? layout, context };
 }

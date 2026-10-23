@@ -60,6 +60,23 @@ test('dashboard cards move only in rearrange mode, which wiggles them until Done
  assert.match(screen, /arranging \? <Button onClick=\{\(\) => setArranging\(false\)\}>.*'Done'/, 'Done ends rearrange mode');
 });
 
+test('a held card goes where the pointer is, so the two columns never trade it back and forth', () => {
+ // Regression: crossing into the narrow column remounted Spending there, its new outline sat nearest a card of the wide
+ // column, and it crossed back on every render until React stopped with "Maximum update depth exceeded".
+ const { boardCollision } = loadTS('components/dashboard-board.tsx');
+ const rect = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height });
+ const rects = new Map([['left', rect(0, 0, 600, 900)], ['right', rect(616, 0, 450, 2000)], ['budget', rect(0, 0, 600, 300)], ['income', rect(0, 316, 600, 300)], ['spending', rect(616, 0, 450, 300)], ['goals', rect(616, 316, 450, 300)]]);
+ const column = id => id === 'budget' || id === 'income' ? 'left' : 'right';
+ const containers = [...rects.keys()].map(id => ({ id, data: { current: id === 'left' || id === 'right' ? {} : { sortable: { containerId: column(id) } } } }));
+ // Spending already sits in the right column, but its outline is still the wide card's, nearest Budget.
+ const at = (x, y) => boardCollision({ active: { id: 'spending', data: { current: { sortable: { containerId: 'right' } } } }, collisionRect: rect(10, 10, 600, 300), droppableRects: rects, droppableContainers: containers, pointerCoordinates: x === null ? null : { x, y } })[0]?.id;
+ assert.equal(at(700, 400), 'goals', 'the card under the pointer');
+ assert.ok(['right', 'spending', 'goals'].includes(at(700, 1500)), 'past the last card, the nearest card of the column under the pointer');
+ assert.equal(at(608, 100), 'spending', 'in the gap between the columns it stays in its own column');
+ assert.ok(['left', 'budget', 'income'].includes(at(300, 1500)), 'below the shorter column it joins that column');
+ assert.equal(at(null), 'budget', 'keys have no pointer, so they take the nearest card of either column');
+});
+
 test('Customize switches keep their shape on phones and quick toggles save after a background refresh', async () => {
  const { readFileSync } = await import('node:fs');
  const css = stylesheet(), hook = readFileSync('hooks/use-workspace-preferences.ts', 'utf8');
