@@ -43,7 +43,7 @@ test('a settled row keeps only Archive; a loan payment and a read-only row have 
  assert.equal(skipped.find(byType(ui.Button)).props.disabled, true, 'a skipped occurrence shows the button, unavailable');
  assert.equal(mount(OccurrenceRow, { item: item('due', { installment: true }), dated: false, today: '2026-10-05', busy: false, onPay() {}, onSkip() {}, onArchive() {} }).all(byType(RowMenu)).length, 0);
  const early = mount(OccurrenceRow, { item: item('due', { date: '2026-10-20' }), dated: false, today: '2026-10-05', busy: false, onPay() {}, onSkip() {} });
- assert.equal(early.find(byType(ui.Button)).props.disabled, true, 'a payment waits for its day');
+ assert.equal(early.find(byType(ui.Button)).props.disabled, false, 'a payment that came early can be recorded before its day');
  assert.equal(early.find(byType(RowMenu)).props.items.length, 1);
  assert.match(text(mount(OccurrenceRow, { item: item('skipped'), dated: false, today: '2026-10-05', busy: false, onPay() {}, onSkip() {} }).tree), /Skipped/);
  assert.match(text(mount(OccurrenceRow, { item: item('paid', { recorded: null }), dated: false, today: '2026-10-05', busy: false, onPay() {}, onSkip() {} }).tree), /Paid · Exchange rate unavailable\./, 'a payment that could not be converted shows no figure');

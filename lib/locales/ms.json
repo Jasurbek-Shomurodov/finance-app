@@ -2481,7 +2481,6 @@
   "Due date must not precede lending date.": "Tarikh matang tidak boleh mendahului tarikh pinjaman.",
   "Check the end date.": "Semak tarikh tamat.",
   "Open from earlier months": "Masih terbuka dari bulan sebelumnya",
-  "You can record it from {date}.": "Anda boleh merekodkannya mulai {date}.",
   "Payments recorded for it: {count}. Keep them in your history, or delete them too? Deleting them also reverses their account balances. You can restore everything from Recently deleted.": "Bayaran yang direkodkan: {count}. Simpan dalam sejarah, atau padam juga? Memadamnya juga memulihkan baki akaunnya. Semua boleh dipulihkan daripada Dipadam baru-baru ini.",
   "It moves to Recently deleted, where you can restore it.": "Ia dipindahkan ke Dipadam baru-baru ini, tempat anda boleh memulihkannya.",
   "Delete, keep history": "Padam, simpan sejarah",

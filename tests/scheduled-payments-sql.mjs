@@ -26,7 +26,7 @@ test('a scheduled payment can be recorded as 0 with its note and no cash moved, 
   await d.query("INSERT INTO finance_records(id,user_id,name,kind,currency,amount,date,frequency) VALUES($1,$2,'Solar panel','Other income','USD',500,$3,'Monthly')",[id(20),id(1),month]);
   const cash=async()=>Number((await d.query('SELECT amount FROM finance_records WHERE id=$1',[id(10)])).rows[0].amount);
   const pay=(n,date,amount,notes='')=>d.query('SELECT planning_action_with_actual_amount($1,$2)',['occurrence',{id:id(n),account_id:id(10),target_id:id(20),date,amount,notes}]);
-  // Not before it is due: next month's occurrence waits for its date.
+  // Without the day it was paid, next month's occurrence waits for its date (migration 155 takes it early with `paid_on`).
   await assert.rejects(pay(30,next,300),/Check the payment date/);
   assert.equal(await cash(),1000);
   await assert.rejects(pay(32,month,-1),/Check the account fields/,'a negative amount is refused');

@@ -24,6 +24,11 @@ name, amount or date that happens to match (migration 119).
   (migration 137), when it is saved and when an edit or a bulk recategorisation
   moves it into the category; a category's bill may not move into a category that
   already has one (`guard_category_bill_move`, migration 138).
+- Record payment is offered before the due date too (a salary paid early, the user's
+  rule of 24 October 2026). The payment is dated the day it was paid (`paid_on`,
+  never after today, never before the schedule starts) and settles the due date of
+  the row it was opened from; the database takes a due date ahead only with
+  `paid_on` (migration 155). `tests/early-scheduled-payment-sql.mjs` covers this.
 - Every screen totals a due date the same way: its first payment plus the other
   payments naming it, through `laterPayments` in `lib/planning.ts` (Recurring and
   the planning read). Cash flow joins a payment to its schedule's card by the same

@@ -60,8 +60,8 @@ const occurrenceDetail = (t: (key: string) => string, locale: string, item: Recu
 /** One scheduled income or bill on its day: its status, the scheduled amount, and recording, skipping or archiving it. */
 export function OccurrenceRow({ item, dated, grouped, today, busy, categories = [], onEdit, onOpen, onPay, onSkip, onRestore, onArchive, onDelete }: OccurrenceProps) {
  const { t, locale } = useLanguage();
- // A payment is recorded once it happens: before its date the button waits and says when. A recorded one takes further payments; a skipped one none.
- const early = !item.installment && item.date > today, pending = item.status === 'due' || item.status === 'overdue';
+ // A payment is recorded once it happens, even before its due date (a salary paid early); the dialog dates it no later than today. A recorded one takes further payments; a skipped one none.
+ const pending = item.status === 'due' || item.status === 'overdue';
  const { edit, open, openLabel } = rowActions(t, item, onEdit, onOpen);
  const paid = item.status === 'paid';
  const category = customCategory(item.record, categories);
@@ -71,7 +71,7 @@ export function OccurrenceRow({ item, dated, grouped, today, busy, categories = 
   <span className="transaction-merchant"><DoneTick done={paid}/><CategoryIcon kind={category ?? item.record.kind}/><RowName name={shownName(item.record, t)} label={openLabel} onOpen={open} detail={occurrenceDetail(t, locale, item, grouped ? null : category ?? t(item.record.kind), dated)}/></span>
   {status}
   <strong className={income.includes(item.record.kind) ? 'transaction-amount positive' : 'transaction-amount'}>{formatMoney(item.amount, item.record.currency, locale)}</strong>
-  <div className="row-actions"><span title={early ? t('You can record it from {date}.', { date: formatDate(item.date, locale) }) : undefined}><Button size="sm" variant="outline" disabled={busy || early || item.status === 'skipped'} onClick={() => onPay(item)}>{t('Record payment')}</Button></span>
+  <div className="row-actions"><Button size="sm" variant="outline" disabled={busy || item.status === 'skipped'} onClick={() => onPay(item)}>{t('Record payment')}</Button>
    {menu.length > 0 && <RowMenu label={t('Actions for {name}', { name: item.record.name })} items={menu}/>}
   </div>
  </li>;

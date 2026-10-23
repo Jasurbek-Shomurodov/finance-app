@@ -2481,7 +2481,6 @@
   "Due date must not precede lending date.": "Das Fälligkeitsdatum darf nicht vor dem Verleihdatum liegen.",
   "Check the end date.": "Prüfen Sie das Enddatum.",
   "Open from earlier months": "Offen aus früheren Monaten",
-  "You can record it from {date}.": "Sie können sie ab dem {date} erfassen.",
   "Payments recorded for it: {count}. Keep them in your history, or delete them too? Deleting them also reverses their account balances. You can restore everything from Recently deleted.": "Dafür erfasste Zahlungen: {count}. Im Verlauf behalten oder ebenfalls löschen? Beim Löschen werden auch die Kontostände zurückgebucht. Alles lässt sich aus „Zuletzt gelöscht“ wiederherstellen.",
   "It moves to Recently deleted, where you can restore it.": "Es wird nach „Zuletzt gelöscht“ verschoben, wo du es wiederherstellen kannst.",
   "Delete, keep history": "Löschen, Verlauf behalten",

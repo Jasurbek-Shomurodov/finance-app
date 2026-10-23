@@ -2481,7 +2481,6 @@
   "Due date must not precede lending date.": "Qaytarish muddati qarz berilgan sanadan oldin boʻlmasligi kerak.",
   "Check the end date.": "Tugash sanasini tekshiring.",
   "Open from earlier months": "Oldingi oylardan yopilmagan",
-  "You can record it from {date}.": "Uni {date} dan boshlab yozib qoʻyishingiz mumkin.",
   "Payments recorded for it: {count}. Keep them in your history, or delete them too? Deleting them also reverses their account balances. You can restore everything from Recently deleted.": "Yozilgan toʻlovlar: {count}. Ularni tarixda qoldirasizmi yoki ularni ham oʻchirasizmi? Oʻchirish hisob qoldiqlarini ham qaytaradi. Hammasini Yaqinda oʻchirilganlardan tiklash mumkin.",
   "It moves to Recently deleted, where you can restore it.": "U Yaqinda oʻchirilganlarga oʻtadi, u yerdan tiklashingiz mumkin.",
   "Delete, keep history": "Oʻchirish, tarixni saqlash",
