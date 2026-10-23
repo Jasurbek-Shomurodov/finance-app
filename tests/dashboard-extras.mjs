@@ -8,7 +8,7 @@ const { workspacePreferenceSchema } = loadTS('lib/workspace-preferences.ts');
 test('dashboard cards drag within and across columns, old saves load and every card can be hidden', () => {
  // Every card starts shown, the wide Income over time chart in the wide column and the allocation donut in the narrow one;
  // nothing saved yet reads as the default, and a saved layout keeps what its owner hid.
- assert.deepEqual(dashboardColumns(defaultDashboardLayout), { left: ['net_worth', 'spending', 'budget', 'commitments', 'income'], right: ['goals', 'transactions', 'upcoming', 'allocation'] });
+ assert.deepEqual(dashboardColumns(defaultDashboardLayout), { left: ['net_worth', 'spending', 'budget', 'income', 'commitments'], right: ['upcoming', 'goals', 'transactions', 'allocation'] }, 'what needs doing now leads the narrow column, the slowest-changing card ends it');
  assert.deepEqual(normalizeLayout(undefined).hidden, []);
  assert.deepEqual(normalizeLayout({ columns: { left: [], right: [] }, hidden: [] }).hidden, [], 'a saved layout showing every card keeps them all');
  const old = normalizeLayout({ order: ['upcoming', 'recap', 'removed_card', 'allocation', 'upcoming'], hidden: ['goals', 'recap', 'nope'] });
@@ -25,11 +25,11 @@ test('dashboard cards drag within and across columns, old saves load and every c
  let layout = dropCard(defaultDashboardLayout, 'budget', 'net_worth');
  assert.deepEqual(layout.columns.left.slice(0, 3), ['budget', 'net_worth', 'spending']);
  layout = dropCard(layout, 'budget', 'commitments');
- assert.deepEqual(layout.columns.left.slice(0, 4), ['net_worth', 'spending', 'commitments', 'budget']);
+ assert.deepEqual(layout.columns.left, ['net_worth', 'spending', 'income', 'commitments', 'budget']);
  assert.equal(dropCard(layout, 'budget', 'budget'), layout);
  // Across columns: the card lands before the one it was dropped on, or at the end of an empty column.
- layout = dropCard(layout, 'net_worth', 'goals');
- assert.deepEqual(layout.columns.right, ['net_worth', 'goals', 'transactions', 'upcoming', 'allocation']);
+ layout = dropCard(layout, 'net_worth', 'upcoming');
+ assert.deepEqual(layout.columns.right, ['net_worth', 'upcoming', 'goals', 'transactions', 'allocation']);
  assert.ok(!layout.columns.left.includes('net_worth'));
  layout = dropCard(layout, 'transactions', 'left');
  assert.equal(layout.columns.left.at(-1), 'transactions');

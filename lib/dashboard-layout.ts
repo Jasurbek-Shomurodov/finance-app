@@ -1,8 +1,10 @@
 /** Dashboard cards and where they start: two columns. Any card can be dragged to either column or hidden. */
 const dashboardCards = {
- // Income over time, the wide chart, sits in the wide column; the allocation donut fits the narrow one.
- left: ['net_worth', 'spending', 'budget', 'commitments', 'income'],
- right: ['goals', 'transactions', 'upcoming', 'allocation'],
+ // What the first screen should answer, top down. Wide column: net worth, then whether this month is on track, then
+ // income and the plan. Narrow column, under the key figures: what needs doing now (overdue and due payments), then
+ // goals and recent activity, and the allocation, which changes slowest, last.
+ left: ['net_worth', 'spending', 'budget', 'income', 'commitments'],
+ right: ['upcoming', 'goals', 'transactions', 'allocation'],
 } as const;
 export type DashboardCard = (typeof dashboardCards)[keyof typeof dashboardCards][number];
 export type DashboardColumn = 'left' | 'right';
