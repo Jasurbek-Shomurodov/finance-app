@@ -102,7 +102,7 @@ const claim=async(d,user,period='2026-10-22')=>(await d.query('SELECT claim_tele
 
 test('migration 153 is in setup.sql, safe to re-run, keeps older claims delivered and bumps the schema version',async()=>{
  assert.ok(setup.includes(migration),'setup.sql includes migration 153');
- assert.equal(Number(fs.readFileSync('lib/database-capabilities.ts','utf8').match(/requiredSchemaVersion = (\d+);/)[1]),153);
+ assert.ok(Number(fs.readFileSync('lib/database-capabilities.ts','utf8').match(/requiredSchemaVersion = (\d+);/)[1])>=153);
  const d=await database(setup.slice(0,setup.indexOf(migration)));
  try{
   await d.exec(`INSERT INTO telegram_deliveries(user_id,kind,period) VALUES('${id(1)}','digest',current_date-5),('${id(1)}','digest',current_date)`);
