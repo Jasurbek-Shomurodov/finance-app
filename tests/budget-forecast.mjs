@@ -90,12 +90,12 @@ test('flex mode: Budget, the Overview card and the forecasts plan the same Flexi
  const forecast = budgetLines({ state, categories, removed: [] }, '2026-10', 'USD', rates).lines.find(line => line.key === 'flex:flexible');
  assert.equal(forecast.amount, plan, 'Budget and the forecasts agree');
  // The bucket's own rollover carries September's leftover, once: 400 + 100 available, not 600.
- const carried = flexBucketRollover(flexBucketCategory(settings), all, { amounts: state.amounts, schedules: [] }, history, '2026-10', 'USD', rates);
+ const carried = flexBucketRollover(flexBucketCategory(settings), all, { plan: { amounts: state.amounts, schedules: [] }, history, currency: 'USD', rates }, '2026-10');
  assert.equal(carried, 100);
  assert.equal(plan + carried, 500);
  const shown = budgetRowsForMode(rows, 'flex');
  assert.equal(shown.find(row => row.key === 'food').rolloverIn, 0, 'in flex mode the category carries nothing of its own');
- assert.equal(leftToBudget(shown.filter(row => row.direction === 'expense'), 'flex', plan, 0).expenses, 400, 'the Overview Budget card plans the same 400');
+ assert.equal(leftToBudget(shown.filter(row => row.direction === 'expense'), 'flex', { budget: plan, rollover: 0 }, 0).expenses, 400, 'the Overview Budget card plans the same 400');
 });
 
 test('DRY-001: the monthly estimate and Budget count scheduled bills by one rule (scheduledByKey)', () => {

@@ -23,11 +23,11 @@ export function monthlyReview(records:Entry[],splits:TransactionSplit[],snapshot
  let received=0,spent=0,missing=0;
  const categories=new Map<string,number>();
  for(const item of cashFlowItems(records,start,today<end?today:end,{splits,investmentLinks})){
-  const amount=item.currency===null?null:convertAmount(item.amount,item.currency,currency,ratesOf(item.record,rates));
+  const amount=item.currency===null?null:convertAmount(item.amount,item.currency,currency,ratesOf(item.dated,rates));
   if(amount===null||!Number.isFinite(amount)){missing++;continue;}
   if(item.income){received+=amount;continue;}
   spent+=amount;
-  for(const part of item.parts)categories.set(part.category,(categories.get(part.category)??0)+convertAmount(part.amount,item.currency!,currency,ratesOf(item.record,rates))!);
+  for(const part of item.parts)categories.set(part.category,(categories.get(part.category)??0)+convertAmount(part.amount,item.currency!,currency,ratesOf(item.dated,rates))!);
  }
  const points=snapshotPoints(snapshots,currency).sort((a,b)=>a.date.localeCompare(b.date));
  const before=points.filter(point=>point.date<start).at(-1),after=points.filter(point=>point.date>=start&&point.date<=end&&point.date<=today).at(-1);

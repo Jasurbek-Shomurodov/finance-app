@@ -32,6 +32,21 @@ test('the assistant snapshot lists holdings, debts, monthly cash flow, scheduled
  assert.doesNotMatch(assistantInstructions, /\d{4}-\d{2}-\d{2}/, 'the instructions carry no per-request data, so they cache');
 });
 
+test('an investment goal reads in units of its symbol and a net-worth goal by its net worth, never allocated money (MONEY-006)', () => {
+ const wallet = { id: 'h', name: 'Coinbase', kind: 'Crypto', currency: 'USD' };
+ const goals = [
+  { id: 'i', name: 'Half a coin', kind: 'investment', holding_account_id: 'h', asset_kind: 'Crypto', asset_symbol: 'BTC', allocated: 0, target: 0.5, archived: false, target_date: '2027-06-01' },
+  { id: 'n', name: 'Net worth', kind: 'net_worth', allocated: 0, target: 20000, archived: false, currency: 'USD' },
+ ];
+ const records = [...data.records, record('coin', 'Bitcoin', 'Crypto', 60000, '2026-01-01', { quantity: 0.2, holding_account_id: 'h' })];
+ const text = assistantContext({ ...data, goals, records, holdingAccounts: [wallet] }, '2026-10-02', 'USD', { USD: 1, UZS: 12500 });
+ assert.match(text, /- Half a coin: 0\.2 BTC of 0\.5 BTC by 1 June 2027\n/, 'units, never the target as $1');
+ // Net worth: $5,000 cash + 0.2 BTC at $60,000 − the UZS 125,000,000 loan ($10,000); allocated is not its value.
+ assert.match(text, /- Net worth: \$7,000 of \$20,000$/);
+ const missing = assistantContext({ ...data, goals, records, holdingAccounts: [wallet] }, '2026-10-02', 'USD', { USD: 1 });
+ assert.match(missing, /- Net worth: — \(Exchange rate unavailable\) of \$20,000/, 'a debt without a rate leaves the net worth unknown');
+});
+
 test('the assistant snapshot shows goals in the display currency too, and never an amount under another currency', () => {
  // Review BOT-004: goals kept their own currency and an amount without a rate kept its own label.
  const goals = [{ id: 'u', name: 'House', allocated: 25000000, target: 125000000, archived: false, currency: 'UZS', funding_monthly: 1250000 }];

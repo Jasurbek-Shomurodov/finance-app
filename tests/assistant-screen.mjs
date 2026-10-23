@@ -57,3 +57,25 @@ test('a question that really fails still shows its error and gives the question 
   assert.equal(view.renderer.find(node=>node.type==='textarea').props.value,'How much did I spend?');
  }finally{view.restore();}
 });
+
+// API-006: the question goes through the shared request helper, so a proxy's HTML error page reads as the fallback and
+// the server saying the assistant is not set up still turns the screen into its empty state.
+test('a reply that is not JSON shows the fallback, and "not set up" switches to the empty state with the question given back',async()=>{
+ const html=setup(async()=>new Response('<html>502 Bad Gateway</html>',{status:502}));
+ try{
+  await html.renderer.flush();
+  await html.ask('What did I earn?');
+  await html.renderer.flush();
+  assert.deepEqual(html.alert(),['The assistant could not answer. Please try again.']);
+  assert.equal(html.renderer.find(node=>node.type==='textarea').props.value,'What did I earn?');
+ }finally{html.restore();}
+ const off=setup(async()=>Response.json({error:'The assistant is not set up yet.'},{status:503}));
+ try{
+  await off.renderer.flush();
+  await off.ask('Where did my money go?');
+  await off.renderer.flush();
+  assert.deepEqual(off.alert(),[],'not an error: the empty state explains it');
+  assert.ok(off.renderer.all(node=>node.type==='empty-state').some(node=>node.props.title==='The assistant isn’t available yet'));
+  assert.equal(off.renderer.find(node=>node.type==='textarea').props.value,'Where did my money go?');
+ }finally{off.restore();}
+});

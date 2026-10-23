@@ -40,6 +40,13 @@ test('database refusals keep their own words, known codes their message and stat
  assert.deepEqual(await read(await postgrestFailure(failure({code:'23505'}),'Could not save.',{codes:{'23505':'Already exists.'}})),[409,'Already exists.']);
  assert.deepEqual(await read(await postgrestFailure(failure('<html>bad gateway</html>',502),'Could not save.',{fallbackStatus:503})),[503,'Could not save.']);
  assert.deepEqual(await read(await postgrestFailure(failure({code:'constructor'}),'Could not save.')),[409,'Could not save.']);
+ assert.deepEqual(await read(await postgrestFailure(new Response(null,{status:500}),'Could not save.')),[503,'Could not save.'],'the database failing is no refusal: 503 even with the default status');
+ assert.deepEqual(await read(await postgrestFailure(failure({code:'P0001',message:'No.'},500),'Could not save.')),[409,'No.'],'a raise keeps its words whatever the HTTP status');
+ // A view-only member's write (42501 from the owner's policies) answers 403 in the household's own words for every route, unless a route maps the code itself.
+ const viewer=await read(await postgrestFailure(failure({code:'42501',message:'new row violates row-level security policy for table "budget_amounts"'}),'Could not save.',{fallbackStatus:503}));
+ assert.deepEqual(viewer,[403,'This shared workspace is view-only.']);
+ assert.equal(loadTS('lib/household.ts').knownHouseholdMessage(viewer[1]),viewer[1],'the message is one the client already knows');
+ assert.deepEqual(await read(await postgrestFailure(failure({code:'42501'}),'Could not save.',{codes:{'42501':'Not yours.'}})),[409,'Not yours.']);
 });
 
 test('shared replies are never cached and keep their existing words',async()=>{

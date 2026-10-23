@@ -42,6 +42,10 @@ test('the headline says over, or nothing, rather than a wrong budget figure',()=
 
 test('spending says how far ahead of or behind last month it is by this day',()=>{
  assert.match(render({spending:{difference:-1637}}),/Spent this month=\$3,824<p class="stat-tile-trend"><svg[^>]*class="lucide lucide-trending-down positive"[^>]*>.*<span>\$1,637 less than last month by this day<\/span>/);
+ // The tile shows the Spending card's own figure (monthlyReview.spent, every category), not the Budget card's, which drops excluded categories (DRY-001).
+ assert.match(render({spending:{difference:-1637,loading:false,pace:{spent:4100}}}),/Spent this month=\$4,100<p class="stat-tile-trend">/,'the tile, its trend and the Spending card agree');
+ assert.match(render({spending:{difference:null,loading:true,pace:{spent:0}}}),/Spent this month=—/,'while the pace loads the tile waits rather than showing a different figure');
+ assert.match(render({spending:{difference:null,loading:false,pace:{spent:0}},budget:{plan:6200,spent:3824,loading:true}}),/Spent this month=\$0/,'the pace is the figure even while the Budget card still loads');
  assert.match(render({spending:{difference:29}}),/<span>\$29 more than last month by this day<\/span>/);
  assert.match(render({spending:{difference:0}}),/<p class="stat-tile-trend"><span>Same as last month by this day<\/span>/,'no arrow when it is the same');
  assert.doesNotMatch(render({spending:{difference:null}}),/stat-tile-trend/,'nothing to compare');

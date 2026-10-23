@@ -102,7 +102,7 @@ export function useMonthBudget({ owner = null, demo = false, revision = 0, budge
  const categories = budgetCategories(data.categories, budget.state.categories, removed);
  const rows = budgetRows(categories, budget.state.amounts, history, month, currency, rates, provided.records).filter(row => row.direction === 'expense' && !row.excluded);
  // The Flexible plan as Budget and the forecasts count it.
- const flexible = budget.state.mode === 'flex' ? flexPlan({ amounts: budget.state.amounts, schedules: provided.records }, categories, month, currency, rates) : null;
+ const flexible = budget.state.mode === 'flex' ? { budget: flexPlan({ amounts: budget.state.amounts, schedules: provided.records }, categories, month, currency, rates), rollover: 0 } : null;
  const plan = leftToBudget(rows, budget.state.mode, flexible, 0).expenses, spent = rows.reduce((sum, row) => sum + row.actual, 0);
  // In flex mode flexible categories share one bucket, so only fixed categories keep a budget of their own here, as on the Budget page.
  const watched = budgetRowsForMode(rows, budget.state.mode).filter(row => row.budget).sort((a, b) => b.progress - a.progress).slice(0, 3);

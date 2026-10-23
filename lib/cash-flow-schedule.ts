@@ -30,7 +30,7 @@ export function scheduleFlows(target: ScheduleTarget, context: DrillContext): Dr
  // Payments come through the cash-flow walk, so a payment counts as it does everywhere (a mortgage's interest, a split).
  for (const item of cashFlowItems(records, '0000-01-01', '9999-12-31', { splits: context.splits })) {
   if (!item.record || !ids.has(item.record.id)) continue;
-  const value = item.currency ? convertAmount(item.amount, item.currency, currency, ratesOf(item.record, rates)) ?? null : null;
+  const value = item.currency ? convertAmount(item.amount, item.currency, currency, ratesOf(item.dated, rates)) ?? null : null;
   if (value === null) { missing += 1; continue; }
   const account = accountOf(item, activityAccount);
   accounts.set(account, (accounts.get(account) ?? 0) + value);

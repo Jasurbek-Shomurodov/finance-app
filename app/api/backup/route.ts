@@ -19,7 +19,8 @@ export async function GET(req:Request){
   const rows=await result.json() as unknown[];return Response.json({items:rows.slice(0,20),hasMore:rows.length>20},{headers:{'Cache-Control':'no-store'}});
  }
  if(query.get('format')==='csv'){
- const records=await readOwnerRows<Record<string,unknown>>('finance_records',auth.token);
+ // Personal like the JSON backup: the person's own records, whichever workspace is open.
+ const records=await readOwnerRows<Record<string,unknown>>('finance_records',auth.token,{},personalRequest());
  return new Response(exportCSV(records,FINANCE_RECORD_CSV_COLUMNS),{headers:{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename="finance-records.csv"','Cache-Control':'no-store'}});
  }
  const recovery=new URL(req.url).searchParams.get('recovery');

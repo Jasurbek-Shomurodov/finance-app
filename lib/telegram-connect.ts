@@ -44,7 +44,8 @@ export async function consumeConnectRequest(db:ServiceDatabase,token:unknown,now
 /** Withdraw an unused request, as Cancel on the web page does. */
 export async function cancelConnectRequest(db:ServiceDatabase,token:unknown){
  if(!isConnectToken(token))return;
- await db.write(`${table}?token_hash=eq.${hashToken(token)}&used_at=is.null`,{method:'DELETE'});
+ const withdrawn=await db.write(`${table}?token_hash=eq.${hashToken(token)}&used_at=is.null`,{method:'DELETE'});
+ if(!withdrawn.ok)failed();
 }
 /** Unlink a chat from its owner, as Sign out in the bot does. An account without a number also gives up its Telegram identity. */
 export async function unlinkChat(db:ServiceDatabase,subscription:Pick<TelegramSubscription,'user_id'|'phone'>,now:Date){

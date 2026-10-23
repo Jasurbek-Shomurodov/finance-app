@@ -129,7 +129,8 @@ test('money lent is filtered and sorted by the day it was lent, with or without 
 
 test('account activity shows spending as money out and income as money in',()=>{
  const page=fs.readFileSync('components/planning/accounts/account-activity.tsx','utf8');
- assert.match(page,/formatMoney\(income\.includes\(record\.kind\)\?record\.amount:-record\.amount,record\.currency,locale\)/);
+ // Signed by the shared formatter, income with its plus and green, like Transactions (MONEY-006).
+ assert.match(page,/<td className=\{signedAmount\(record\)>0\?'positive':undefined\}>\{formatSignedMoney\(signedAmount\(record\),record\.currency,locale\)\}<\/td>/);
 });
 
 test('deleting an account that still has savings goals explains what blocks it',async()=>{

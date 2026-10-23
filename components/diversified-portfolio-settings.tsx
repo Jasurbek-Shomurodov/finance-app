@@ -7,7 +7,7 @@ import { InstrumentPicker } from '@/components/instrument-picker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { instrumentFor } from '@/lib/market';
-import { formatNumber } from '@/lib/format';
+import { formatPercent } from '@/lib/format';
 import { allocationKinds, portfolioAssets, portfolioAssetCurrency, type PortfolioAsset, type DiversifiedPortfolio } from '@/lib/diversified-portfolio';
 
 export function DiversifiedPortfolioSettings({value,onChange,currencies}:{currencies:string[];value:DiversifiedPortfolio;onChange:(value:DiversifiedPortfolio)=>void}) {
@@ -39,9 +39,9 @@ export function DiversifiedPortfolioSettings({value,onChange,currencies}:{curren
   </section>;
  }
  return <fieldset className="diversified-settings"><legend className="sr-only">{t('Diversified portfolio')}</legend>
-  <p className="muted">{t('Split each contribution across these investments. Weights must total {target}%. Holdings are not automatically rebalanced.',{target:formatNumber(100,locale)})}</p>
+  <p className="muted">{t('Split each contribution across these investments. Weights must total {target}. Holdings are not automatically rebalanced.',{target:formatPercent(100,locale)})}</p>
   <div className="diversified-grid">{(['crypto','stock'] as const).filter(kind=>assets.some(asset=>asset.kind===kind)).map(kind=><section className="diversified-sleeve portfolio-instrument-group" key={kind} aria-label={t(labels[kind])}>
-   <div className="portfolio-instrument-heading"><h3>{t(labels[kind])}</h3><span>{t('Total allocation: {total}%',{total:formatNumber(assets.filter(asset=>asset.kind===kind).reduce((sum,asset)=>sum+asset.weight,0),locale)})}</span></div>
+   <div className="portfolio-instrument-heading"><h3>{t(labels[kind])}</h3><span>{t('Total allocation: {total}',{total:formatPercent(assets.filter(asset=>asset.kind===kind).reduce((sum,asset)=>sum+asset.weight,0),locale)})}</span></div>
    <div className="portfolio-instrument-list">{assets.filter(asset=>asset.kind===kind).map(renderAsset)}</div>
    <InstrumentPicker kind={kind==='crypto'?'Crypto':'Stock'} value="" actionLabel={t(kind==='crypto'?'Add coin':'Add stock or ETF')} excludedSymbols={assets.filter(asset=>asset.kind===kind).map(asset=>asset.symbol)} disabled={assets.length>=20} onChange={name=>{const symbol=instrumentFor({kind:kind==='crypto'?'Crypto':'Stock',name})?.symbol;if(symbol)addAsset(kind,symbol);}}/>
   </section>)}{assets.filter(asset=>asset.kind!=='crypto'&&asset.kind!=='stock').map(renderAsset)}</div>

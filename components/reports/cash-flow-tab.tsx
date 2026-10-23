@@ -12,27 +12,35 @@ import { formatMoney, formatPercent } from '@/lib/format';
 import { rangeText, type TabProps } from './report-labels';
 
 /** Cash flow: the period's totals, its breakdown as a Sankey or a profit and loss table, and its trend over time. */
-export function CashFlowTab({ lines, trendLines, trendRange, interval, includeHousehold, businessIds, names, groupOf, currency, view, onView, mode, onMode: setMode, onDrill }: TabProps & { includeHousehold: boolean; businessIds: string[]; view: 'sankey' | 'pnl'; onView: (view: 'sankey' | 'pnl') => void; mode: 'breakdown' | 'trends'; onMode: (mode: 'breakdown' | 'trends') => void }) {
+/** The period's income, expenses, net income and savings rate. `missing` counts the amounts no rate converts: a total that
+ * would leave them out reads — instead, with no tone (MONEY-008). */
+function CashFlowTotals({ totals, missing, currency }: { totals: { income: number; expenses: number }; missing: number; currency: string }) {
+ const { t, locale } = useLanguage();
+ const net = totals.income - totals.expenses, earning = !missing && totals.income > 0;
+ const money = (amount: number) => missing ? '—' : formatMoney(amount, currency, locale);
+ return <StatTiles columns={4} label={t('Cash flow')}>
+  <StatTile label={t('Income')} value={money(totals.income)} tone={earning ? 'positive' : undefined}/>
+  <StatTile label={t('Expenses')} value={money(totals.expenses)}/>
+  <StatTile label={t('Net income')} value={money(net)} tone={missing ? undefined : signTone(net)}/>
+  <StatTile label={t('Savings rate')} value={earning ? formatPercent(net / totals.income * 100, locale) : '—'} tone={earning ? signTone(net) : undefined}/>
+ </StatTiles>;
+}
+
+/** `missing` counts the period's amounts no rate converts; the totals above the breakdown then read — (MONEY-008). */
+export function CashFlowTab({ lines, trendLines, trendRange, interval, includeHousehold, businessIds, names, groupOf, currency, view, onView, mode, onMode: setMode, onDrill, missing = 0 }: TabProps & { missing?: number; includeHousehold: boolean; businessIds: string[]; view: 'sankey' | 'pnl'; onView: (view: 'sankey' | 'pnl') => void; mode: 'breakdown' | 'trends'; onMode: (mode: 'breakdown' | 'trends') => void }) {
  const { t, locale } = useLanguage();
  const [breakdown, setBreakdown] = useState<'category' | 'group' | 'both'>('category');
  const [stacked, setStacked] = useState(false);
  const [series, setSeries] = useState<'totals' | 'business'>('totals');
  const pnl = useMemo(() => profitAndLoss(lines, businessIds, line => line.category, includeHousehold), [lines, businessIds, includeHousehold]);
  const totals = lines.reduce((sum, line) => line.direction === 'income' ? { ...sum, income: sum.income + line.amount } : { ...sum, expenses: sum.expenses + line.amount }, { income: 0, expenses: 0 });
- const net = totals.income - totals.expenses;
- const money = (amount: number) => formatMoney(amount, currency, locale);
  const sankey = businessSankey(pnl, { category: names.category, business: id => names.business(id), total: t(businessIds.length ? 'Household income' : 'Income'), savings: t('Net income'), profit: t('Net profit'), loss: name => t('{name} net loss', { name }), otherIncome: t('All other income'), otherExpense: t('All other expenses'), inBusiness: (name, business) => t('{business}: {name}', { business, name }) });
  const trend = cashFlowTrend(trendLines, trendRange, interval);
  // Net income of the household and of each business, side by side or stacked, so businesses can be compared.
  const netKeys = [...(includeHousehold ? [HOUSEHOLD] : []), ...businessIds];
  const byBusiness = series === 'business' && businessIds.length > 0;
  return <>
-  <StatTiles columns={4} label={t('Cash flow')}>
-   <StatTile label={t('Income')} value={money(totals.income)} tone={totals.income > 0 ? 'positive' : undefined}/>
-   <StatTile label={t('Expenses')} value={money(totals.expenses)}/>
-   <StatTile label={t('Net income')} value={money(net)} tone={signTone(net)}/>
-   <StatTile label={t('Savings rate')} value={totals.income > 0 ? formatPercent(net / totals.income * 100, locale) : '—'} tone={totals.income > 0 ? signTone(net) : undefined}/>
-  </StatTiles>
+  <CashFlowTotals totals={totals} missing={missing} currency={currency}/>
   <section className="panel">
    <PanelTitle title={t(mode === 'breakdown' ? 'Breakdown' : 'Trends')} hint={mode === 'trends' ? rangeText(trendRange, locale) : view === 'sankey' ? t('Net income is income less spending in this period: what stayed in your accounts or went to savings, investments or loan principal.') : undefined}>
     <div className="cash-flow-switches">

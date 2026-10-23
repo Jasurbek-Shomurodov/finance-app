@@ -422,6 +422,9 @@ test('the month ahead: the budget against spending in its categories, the goal f
  const rent={...cash,id:'rent',name:'Rent',kind:'Rent expense',amount:1200,date:'2026-09-28',frequency:'Monthly',account_id:'cash'};
  const forecast=digestForecast({records:[cash,rent],occurrences:[],debtPayments:[],spending:{},today:'2026-09-20',currency:'USD',rates:{}});
  assert.deepEqual(forecast,{balance:-200,belowZero:'2026-09-28'});
+ // The horizon is the month's last day: a bill due on the 30th is in, one on 1 October is out (daysBetween, lib/calendar-days.ts).
+ assert.equal(digestForecast({records:[cash,{...rent,date:'2026-08-30'}],occurrences:[],debtPayments:[],spending:{},today:'2026-09-01',currency:'USD',rates:{}}).balance,-200);
+ assert.equal(digestForecast({records:[cash,{...rent,date:'2026-09-01'}],occurrences:[],debtPayments:[],spending:{},today:'2026-09-02',currency:'USD',rates:{}}).balance,1000,'the 1 October due date is past month end');
  assert.equal(digestForecast({records:[rent],occurrences:[],debtPayments:[],spending:{},today:'2026-09-20',currency:'USD',rates:{}}),undefined,'no cash account, no forecast');
  assert.equal(digestForecast({records:[{...cash,currency:'EUR'}],occurrences:[],debtPayments:[],spending:{},today:'2026-09-20',currency:'USD',rates:{}}),undefined,'no rate, no forecast');
 });

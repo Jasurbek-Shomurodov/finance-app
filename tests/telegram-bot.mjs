@@ -169,6 +169,12 @@ test('a loan with a monthly payment is due every month on its start day, until a
 test('database failures surface so the webhook can ask Telegram to retry',async()=>{
  const db=fakeDb({subscriptions:[linked],languages:{[owner]:'en'},failWrites:true});
  await assert.rejects(handleTelegramUpdate(message(500,'/stop'),db,clock),/Database request failed/);
+ // Signing out drops the onboarding draft: when only that delete fails, the sign-out still fails so Telegram retries it, rather than leaving a draft the next sign-in resumes.
+ const draftsStay=fakeDb({subscriptions:[linked],languages:{[owner]:'en'},drafts:[{user_id:owner,step:'onboard:currency',data:{},updated_at:clock.now.toISOString()}]});
+ const write=draftsStay.write.bind(draftsStay);let dropped=0;
+ draftsStay.write=async(path,init)=>path.startsWith('/rest/v1/telegram_drafts')&&init?.method==='DELETE'?(dropped++,new Response(null,{status:500})):write(path,init);
+ await assert.rejects(handleTelegramUpdate(message(500,'/stop'),draftsStay,clock),/Database request failed/);
+ assert.equal(dropped,1,'the delete was attempted');
  // The removed-categories read is one of them: a failure must not pass as "none removed" and offer deleted categories.
  const preferences=fakeDb({...workspace(),failPreferences:true});
  await assert.rejects(handleTelegramUpdate(message(500,'Expense'),preferences,clock),/Database request failed/);

@@ -4,7 +4,7 @@ import { useLanguage } from '@/components/language-provider';
 import { InfoHint } from '@/components/presentation-foundation/info-hint';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { budgetTypeLabels, budgetTypes, remainingTone, type BudgetMode, type BudgetRow, type LeftToBudget } from '@/lib/budget';
-import { formatMoney } from '@/lib/format';
+import { formatMoney, formatSignedMoney } from '@/lib/format';
 import { RollingText } from '@/components/presentation-foundation/rolling-text';
 import { BudgetProgress, useCategoryName } from './budget-rows';
 
@@ -23,8 +23,9 @@ export function LeftToBudgetCard({ left, rows, mode, currency, tab: chosen, onTa
  const spending = rows.filter(row => row.direction === 'expense' && !row.excluded);
  const buckets = budgetTypes.map(type => {
   const items = spending.filter(row => row.type === type);
-  // A plan no rate converts leaves the bucket's planned and remaining unknown.
-  const planned = type === 'flexible' && mode === 'flex' ? left.flexible ?? (left.missing ? null : 0) : items.some(row => row.missing) ? null : items.reduce((sum, row) => sum + (row.budget ?? 0) + row.rolloverIn, 0);
+  // Planned here is the plan with the money rolled over, as the table's Total expenses adds it (`leftToBudget.rollover`);
+  // in flex mode the bucket's own carry. A plan or a carry no rate converts leaves the bucket's planned and remaining unknown.
+  const planned = type === 'flexible' && mode === 'flex' ? left.flexible === null || left.flexibleRollover === null ? null : left.flexible + left.flexibleRollover : items.some(row => row.missing) ? null : items.reduce((sum, row) => sum + (row.budget ?? 0) + row.rolloverIn, 0);
   const spent = items.reduce((sum, row) => sum + row.actual, 0);
   return { type, planned, spent, remaining: planned === null ? null : planned - spent };
  }).filter(bucket => bucket.planned !== 0 || bucket.spent);
@@ -34,6 +35,8 @@ export function LeftToBudgetCard({ left, rows, mode, currency, tab: chosen, onTa
   {tab === 'summary' && <dl className="budget-left-summary">
    <div><dt>{t('Planned income')}</dt><dd><RollingText text={money(left.income)}/></dd></div>
    <div><dt>{t('Planned spending')}</dt><dd><RollingText text={money(left.expenses)}/></dd></div>
+   {/* Money carried in by rollover funds is not planned from this month's income, so it stands apart: Planned spending plus this line is what the Expenses tab and the table total. */}
+   {left.rollover !== 0 && <div><dt>{t('Rolled over')}</dt><dd><RollingText text={left.rollover === null ? '—' : formatSignedMoney(left.rollover, currency, locale)}/></dd></div>}
    <div><dt>{t('Contributions')}</dt><dd><RollingText text={money(left.contributions)}/></dd></div>
    <div className="budget-left-total"><dt>{t('Left to budget')}</dt><dd data-tone={tone}><RollingText text={money(left.left)}/></dd></div>
   </dl>}

@@ -15,7 +15,7 @@ import { ChartGradient, chartAxis, chartDot, chartGrid, chartLine, chartTooltip,
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { SeriesLegend, toggleKey } from '@/components/presentation-foundation/series-legend';
 import { useLanguage } from '@/components/language-provider';
-import { formatDate, formatMoney, formatMonthYear, formatNumber, formatPercent } from '@/lib/format';
+import { formatDate, formatMoney, formatMonthYear, formatPercent } from '@/lib/format';
 import { projectGoal } from '@/lib/goal-projection';
 import type { Goal } from '@/lib/planning';
 import { snapshotPoints, type PortfolioSnapshot } from '@/lib/portfolio-snapshots';
@@ -105,7 +105,7 @@ export function GoalForecast({ goal, starting, surplus, currency, today, snapsho
       <strong className="goal-projected-value">{money(result.projected)}</strong>
       <p>{t('Target amount')}: <strong>{money(goal.target)}</strong><span> · {goal.target_date && formatDate(goal.target_date, locale)}</span></p>
       <progress className="goal-target-progress" value={progress} max={100} aria-label={t('Projected progress toward target')} />
-      <div className="goal-outcome-bottom"><span>{t('{percent}% of target', { percent: formatNumber(Math.max(0, result.projected / goal.target * 100), locale, 0) })}</span><span>{t(reached ? '{amount} above target' : '{amount} left to reach target', { amount: money(Math.abs(goal.target - result.projected)) })}</span></div>
+      <div className="goal-outcome-bottom"><span>{t('{percent} of target', { percent: formatPercent(Math.max(0, result.projected / goal.target * 100), locale, 0) })}</span><span>{t(reached ? '{amount} above target' : '{amount} left to reach target', { amount: money(Math.abs(goal.target - result.projected)) })}</span></div>
      </div>
 
      <div className="goal-summary-stats">

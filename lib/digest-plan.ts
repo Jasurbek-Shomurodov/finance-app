@@ -2,7 +2,7 @@
 // savings goal funded first, and the cash balance projected for the month's last day. Pure: the same budget lines,
 // goal currency and cash forecast as the Budget, Goals and Forecast screens, so the digest never disagrees with them.
 import {budgetLines,type BudgetSource} from './budget-forecast';
-import {monthEnd} from './calendar-days';
+import {daysBetween,monthEnd} from './calendar-days';
 import {cashForecast} from './cash-forecast';
 import type {Entry} from './finance';
 import {goalCurrency} from './goal-projection';
@@ -29,7 +29,7 @@ export function digestGoal(goals:readonly Goal[],records:readonly Entry[],fallba
  * account or when an amount cannot be converted. */
 export function digestForecast({records,occurrences,debtPayments,source,spending,today,currency,rates}:{records:Entry[];occurrences:Occurrence[];debtPayments:DebtPayment[];source?:BudgetSource;spending:Record<string,number>;today:string;currency:string;rates:Rates}){
  if(!records.some(record=>record.kind==='Cash'))return undefined;
- const all={USD:1,...rates},end=monthEnd(today.slice(0,7)),days=Math.round((Date.parse(end)-Date.parse(today))/86400000);
+ const all={USD:1,...rates},end=monthEnd(today.slice(0,7)),days=daysBetween(today,end);
  const budget=source&&{linesFor:(month:string)=>budgetLines(source,month,currency,all),spent:byBudgetKey(spending)};
  const forecast=cashForecast({records,occurrences,debtPayments,...(budget?{budget}:{}),today,days,currency,rates:all});
  const [total]=forecast.totals;

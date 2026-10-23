@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import type { Household } from '@/hooks/use-household';
 import { showError, showNotice } from '@/lib/feedback';
-import { formatDate } from '@/lib/format';
+import { formatDateTime } from '@/lib/format';
 import { householdLimit, type HouseholdRole } from '@/lib/household';
 
 const roleLabel = (role: string) => role === 'owner' ? 'Owner' : role === 'viewer' ? 'Can view' : 'Can edit';
@@ -54,7 +54,7 @@ export function HouseholdPanel({ household, demo }: { household: Household; demo
      </li>)}
      {state.invites.map(invite => <li key={invite.id} className="household-invite">
       <span className="person-avatar" aria-hidden="true"><UserPlus size={14}/></span><strong>{t('Open invite')}</strong>
-      <span className="status-badge">{t(roleLabel(invite.role))}</span><small>{t('Expires {date}', { date: formatDate(invite.expires_at, locale) })}</small>
+      <span className="status-badge">{t(roleLabel(invite.role))}</span><small>{t('Expires {date}', { date: formatDateTime(invite.expires_at, locale) })}</small>
       <RowMenu label={t('Actions for {name}', { name: t('Open invite') })} items={[{ label: t('Withdraw invite'), destructive: true, onSelect: () => void run(() => household.revoke(invite.id)) }]}/>
      </li>)}
     </ul>
@@ -94,7 +94,7 @@ function InviteDialog({ household, onClose }: { household: Household; onClose: (
  }
  return <Dialog open onOpenChange={open => { if (!open && !busy) onClose(); }}><DialogContent className="household-invite-dialog">
   <DialogTitle>{t('Invite someone')}</DialogTitle>
-  <DialogDescription>{created ? t('Anyone with this link can join once until {date}. Send it only to the person you are inviting.', { date: formatDate(created.expires, locale) }) : t('Choose what they can do in your finances.')}</DialogDescription>
+  <DialogDescription>{created ? t('Anyone with this link can join once until {date}. Send it only to the person you are inviting.', { date: formatDateTime(created.expires, locale) }) : t('Choose what they can do in your finances.')}</DialogDescription>
   {created ? <div className="household-link"><Input readOnly aria-label={t('Invite link')} value={created.link} onFocus={event => event.currentTarget.select()}/><Button type="button" onClick={() => void copy()}><Copy size={16} aria-hidden="true"/>{t('Copy link')}</Button></div>
    : <Segmented label={t('Access')} options={[{ value: 'member', label: t('Can edit') }, { value: 'viewer', label: t('Can view') }] as const} value={role} onChange={setRole}/>}
   <ErrorPopup message={error}/>

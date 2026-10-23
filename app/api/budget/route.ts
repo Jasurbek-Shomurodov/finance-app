@@ -2,10 +2,12 @@ import { workspaceOwner } from '@/lib/household';
 import type { BudgetState } from '@/lib/budget';
 import { budgetSchemas } from '@/lib/budget-schemas';
 import { readOwnerRows } from '@/lib/server-records';
-import { crossSite, parseAction, readJson, signInAgain } from '@/lib/api-route';
+import { crossSite, parseAction, postgrestFailure, readJson, signInAgain } from '@/lib/api-route';
 import { session, supa, sameOrigin } from '@/lib/supabase';
 
-const failure = () => Response.json({ error: 'Could not load or save the budget. Check that the latest migrations are installed.' }, { status: 503 });
+const unavailable = 'Could not load or save the budget. Check that the latest migrations are installed.';
+/** A read that failed or a request that never reached the database. */
+const failure = () => Response.json({ error: unavailable }, { status: 503 });
 
 export async function GET() {
  try {
@@ -51,7 +53,9 @@ export async function POST(req: Request) {
   } else {
    response = await supa('/rest/v1/budget_settings?on_conflict=user_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates' }, body: JSON.stringify({ ...input.data, user_id: workspaceOwner(auth), updated_at: new Date().toISOString() }) }, auth.token);
   }
-  if (!response.ok) return failure();
+  // The database's refusals (a view-only member, a raise in migration 139) keep their status and words; only a missing
+  // function is a setup problem worth a retry.
+  if (!response.ok) return postgrestFailure(response, unavailable, { codes: { PGRST202: [unavailable, 503] } });
   return Response.json({ ok: true });
  } catch { return failure(); }
 }

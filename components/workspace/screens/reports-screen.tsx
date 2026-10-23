@@ -56,7 +56,7 @@ export function ReportsScreen() {
  const visibleTabs = reportTabsFor(businessList.length > 0);
  const shownTab = visibleTabs.includes(tab) ? tab : 'cash_flow';
  const open = (line: LedgerLine) => line.record && setViewing(storedRecord(line.record));
- const tabProps = { trendLines, trendRange, interval, names, groupOf, currency, onDrill: narrow };
+ const tabProps = { trendLines, trendRange, interval, names, groupOf, currency, onDrill: narrow, missing: ledger.missing };
 
  return <div data-page="Reports" className="content reports-content">
   <PageHeader title={t('Reports')} tabs={<Segmented as="nav" className="page-tabs" label={t('Reports')} options={visibleTabs.map(value => ({ value, label: t(tabLabels[value]) }))} value={shownTab} onChange={reset(setTab)}/>} hint={t('Cash flow, spending and income for your household and each business. Click any part of a chart or table to see its transactions.')}>

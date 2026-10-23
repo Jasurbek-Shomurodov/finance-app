@@ -8,8 +8,10 @@ import { hasMonthlyInstallment, installmentAnchor, installmentsFrom, paidInstall
 export const forecastHorizons = [30, 90, 180, 365] as const;
 export type ForecastHorizon = typeof forecastHorizons[number];
 
-/** A temporary what-if: money in (positive) or out (negative), once or every month from its date. Kept on the screen, never saved. */
-export type ForecastAdjustment = { id: string; name: string; amount: number; frequency: 'Once' | 'Monthly'; date: string };
+/** A temporary what-if: money in (positive) or out (negative) in `currency` (the display currency it was added in), once or
+ * every month from its date. Kept on the screen, never saved. It reads as entered and converts into the display currency like
+ * any other event (AGENTS.md, entered or converted), so switching the top bar never re-reads 500 USD as 500 UZS. */
+export type ForecastAdjustment = { id: string; name: string; amount: number; currency: string; frequency: 'Once' | 'Monthly'; date: string };
 export type ForecastSource = 'scheduled' | 'installment' | 'repayment' | 'maturity' | 'budget' | 'adjustment';
 /** One dated movement of cash. `amount` is signed (income positive) in `currency`; `accountId` is the cash account it moves, when known.
  * A scheduled income or bill carries the Budget `category` it falls under. */
@@ -90,7 +92,7 @@ function budgetEvents(scheduled: readonly ForecastEvent[], input: Input, end: st
 
 /** Every cash movement from today through the horizon, by date. Overdue items are left out: the forecast starts from today's balances. */
 export function forecastEvents(input: Input): ForecastEvent[] {
- const { records, occurrences, today, currency } = input;
+ const { records, occurrences, today } = input;
  const end = shiftDay(today, input.days);
  const events: ForecastEvent[] = [];
  for (const item of upcomingPayments(records, occurrences, today, end)) {
@@ -110,7 +112,7 @@ export function forecastEvents(input: Input): ForecastEvent[] {
  for (const adjustment of input.adjustments ?? []) {
   if (!Number.isFinite(adjustment.amount) || !adjustment.amount) continue;
   for (const date of scheduleDates({ date: adjustment.date, frequency: adjustment.frequency }, today, end))
-   events.push({ key: adjustment.id + ':' + date, date, name: adjustment.name, kind: adjustment.amount > 0 ? 'Other income' : 'Other expense', source: 'adjustment', amount: adjustment.amount, currency, accountId: null });
+   events.push({ key: adjustment.id + ':' + date, date, name: adjustment.name, kind: adjustment.amount > 0 ? 'Other income' : 'Other expense', source: 'adjustment', amount: adjustment.amount, currency: adjustment.currency, accountId: null });
  }
  return events.filter(event => Number.isFinite(event.amount) && event.amount !== 0).sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name) || a.key.localeCompare(b.key));
 }
@@ -182,11 +184,15 @@ export function seriesIn(item: ForecastSeries, currency: string, rates?: number 
  return { ...item, currency, start: item.start * rate, end: item.end * rate, points: item.points.map(point), lowest: point(item.lowest) };
 }
 
-/** What-ifs read back from browser storage: anything malformed is dropped rather than trusted. */
-export function readAdjustments(value: unknown): ForecastAdjustment[] {
+const currencyCode = /^[A-Z]{3}$/;
+/** What-ifs read back from browser storage: anything malformed is dropped rather than trusted. One saved before what-ifs
+ * carried a currency takes `currency` (the display currency it is read in) once, and keeps it from then on. */
+export function readAdjustments(value: unknown, currency: string): ForecastAdjustment[] {
  if (!Array.isArray(value)) return [];
- return value.filter((item): item is ForecastAdjustment => !!item && typeof item === 'object'
+ return value.filter((item): item is Omit<ForecastAdjustment, 'currency'> & { currency?: unknown } => !!item && typeof item === 'object'
   && typeof item.id === 'string' && typeof item.name === 'string' && item.name.length <= 120
   && typeof item.amount === 'number' && Number.isFinite(item.amount) && item.amount !== 0 && Math.abs(item.amount) <= 1e15
-  && (item.frequency === 'Once' || item.frequency === 'Monthly') && typeof item.date === 'string' && validDay(item.date)).slice(0, 50);
+  && (item.frequency === 'Once' || item.frequency === 'Monthly') && typeof item.date === 'string' && validDay(item.date)
+  && (item.currency === undefined || (typeof item.currency === 'string' && currencyCode.test(item.currency)))).slice(0, 50)
+  .map(item => ({ ...item, currency: typeof item.currency === 'string' ? item.currency : currency }));
 }

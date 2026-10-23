@@ -6,12 +6,9 @@ import { LanguageProvider, useLanguage } from '@/components/language-provider';
 import { Brand } from '@/components/presentation-foundation/brand';
 import { LoadingPlaceholder } from '@/components/presentation-foundation/loading-placeholder';
 import { signInPath } from '@/lib/sign-in-path';
+import { requestJson } from '@/lib/api-client';
 type WebApp = { initData?: string; ready?: () => void; expand?: () => void };
-async function signIn(body: { token?: string; initData?: string }) {
-  const response = await fetch('/api/auth/telegram', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  const result = await response.json().catch(() => ({})) as { error?: string };
-  if (!response.ok) throw Error(result.error ?? 'Account service is unavailable. Please try again.');
-}
+const signIn = (body: { token?: string; initData?: string }) => requestJson('/api/auth/telegram', { body, fallback: 'Account service is unavailable. Please try again.' });
 /** The landing page of the bot's "Open in browser" link and "Open app" Mini App button. */
 function TelegramSignIn() {
   const query = useSearchParams(), { t } = useLanguage();

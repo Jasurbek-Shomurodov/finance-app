@@ -53,7 +53,7 @@ function PropertyYear({ totals, money }: { totals?: PropertyTotals; money: (amou
 export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoading, accountsError, onRetryAccounts, onAddHolding, records, currency, market, netWorth, debt, loading, demo, onAdd, onEdit, onTrack, onInvest, onDelete, quoteLabel, propertyTotals = null }: Props) {
  const { t, locale } = useLanguage();
  const [category, setCategory] = useState('all');
- const holdingsRef = useRef<HTMLElement>(null);
+ const holdingsRef = useRef<HTMLElement>(null), accountsRef = useRef<HTMLElement>(null);
  const [layout, setLayout] = useState<'grid' | 'list'>('grid');
  const [assetPage, setAssetPage] = useState(1);
  const holdings = useMemo(() => sortAssetsByWorth(records.filter(record => assetRecordKinds.includes(record.kind) && (record.kind !== 'Cash' || isInvestmentRecord(record))), record => marketEntry(record, currency, market)).map(original => ({ original, converted: marketEntry(original, currency, market) })), [records, currency, market]);
@@ -70,8 +70,10 @@ export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoadin
  const visible = filtered.slice((page - 1) * assetsPerPage, page * assetsPerPage);
  const money = (amount: number, unit = currency) => formatMoney(amount, unit, locale);
  const selectCategory = (kind: string) => { setCategory(kind); setAssetPage(1); };
- // Tapping a row in the allocation list moves the reader down to the filtered assets it now shows.
- const showCategory = (kind: string) => { selectCategory(kind); holdingsRef.current?.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); };
+ const scrollTo = (target: HTMLElement | null) => target?.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+ // Tapping a row in the allocation list moves the reader down to the filtered assets it now shows. A kind held only in
+ // accounts (Cash, Deposit, holdings grouped under an account) has no card in that filter, so it moves to the accounts.
+ const showCategory = (kind: string) => { if (otherCategories.some(group => group.kind === kind)) { selectCategory(kind); scrollTo(holdingsRef.current); } else scrollTo(accountsRef.current); };
  const clearFilters = () => { setCategory('all'); setAssetPage(1); };
 
  const renderCard = ({ original, converted }: (typeof holdings)[number]) => {
@@ -116,7 +118,7 @@ export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoadin
    </div>
   </section>
 
-  <AssetAccounts accounts={accounts} records={records} market={market} loading={accountsLoading || loading} error={accountsError} onRetry={onRetryAccounts} onAdd={onAddHolding} currency={currency} portfolioTotal={total} accountCount={accountRecords.length} onEdit={onEdit} onTrack={onTrack} demo={demo}>{accountRecords.map(renderCard)}</AssetAccounts>
+  <AssetAccounts ref={accountsRef} accounts={accounts} records={records} market={market} loading={accountsLoading || loading} error={accountsError} onRetry={onRetryAccounts} onAdd={onAddHolding} currency={currency} portfolioTotal={total} accountCount={accountRecords.length} onEdit={onEdit} onTrack={onTrack} demo={demo}>{accountRecords.map(renderCard)}</AssetAccounts>
 
   <section ref={holdingsRef} className="asset-holdings" aria-label={t('Assets & investments')}>
    <div className="asset-holdings-heading"><h2>{t('Other assets')}<Count value={otherHoldings.length}/></h2><div className="asset-layout-switch" role="group" aria-label={t('Asset layout')}><Button variant="ghost" size="icon" aria-label={t('Card view')} aria-pressed={layout === 'grid'} onClick={() => setLayout('grid')}><LayoutGrid size={17}/></Button><Button variant="ghost" size="icon" aria-label={t('Compact view')} aria-pressed={layout === 'list'} onClick={() => setLayout('list')}><List size={18}/></Button></div></div>

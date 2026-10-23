@@ -33,8 +33,14 @@ test('a mortgage\'s history runs from its start, not from the day it is due in f
  const track = scheduleTrack({ key: 'home:installment:2026-10-17', record: home, date: '2026-10-17', status: 'paid', direction: 'expense', amount: 1600, installment: true }, loanData, '2026-10-08', 12);
  assert.deepEqual(track.points.slice(0, 5).map(point => [point.month, point.scheduled, point.recorded]), [['2026-07', 0, 0], ['2026-08', 1600, 1600], ['2026-09', 1600, 0], ['2026-10', 1600, 450], ['2026-11', 1600, 0]]);
  assert.equal(track.points.length, 12);
- assert.deepEqual([track.recorded, track.average], [2050, 1025]);
+ assert.deepEqual([track.recorded, track.average, track.missing], [2050, 1025, 0]);
  assert.deepEqual(track.history.map(entry => [entry.date, entry.status, entry.recorded]), [['2026-10-17', 'paid', 450], ['2026-09-17', 'overdue', undefined], ['2026-08-17', 'paid', 1600]]);
+ // A payment no rate converts into the loan's currency (`recorded` null) is missing, never counted at the scheduled $1,600 (MONEY-008).
+ const unconverted = { ...loanData, debtPayments: [...loanData.debtPayments, { record_id: 'home', date: '2026-09-17', amount: null, currency: 'EUR' }] };
+ const partial = scheduleTrack({ key: 'home:installment:2026-10-17', record: home, date: '2026-10-17', status: 'paid', direction: 'expense', amount: 1600, installment: true }, unconverted, '2026-10-08', 12);
+ assert.deepEqual([partial.recorded, partial.average, partial.missing], [2050, 1025, 1]);
+ assert.deepEqual(partial.points.find(point => point.month === '2026-09'), { month: '2026-09', scheduled: 1600, recorded: 0 });
+ assert.deepEqual(partial.history.find(entry => entry.date === '2026-09-17').recorded, null);
 });
 
 test('a loan payment made in its first month, before the first payment day, still shows in the history', () => {
@@ -71,6 +77,13 @@ test('tapping a schedule shows its totals, next payment, history chart and payme
  const empty = mount({ item: { ...item, direction: 'expense', record: { ...pay, id: 'none', date: '2026-12-01' } }, data, today: '2026-10-20', onClose() {} });
  assert.match(text(empty.tree), /Paid in this period.*Nothing recorded in this period\./);
  assert.equal(empty.all(byType(Bar)).length, 0);
+ assert.ok(!shown.includes('Exchange rate unavailable.'), 'no note while every payment converts');
+ // A payment no rate converts reads — in the list, and the dialog says why (MONEY-008).
+ const home = record('home', 'Mortgage', 86531, '2046-01-17', { frequency: 'Once', opened_on: '2026-07-17', estimated_monthly_payment: 1600 });
+ const loan = mount({ item: { key: 'home:installment:2026-10-17', record: home, date: '2026-10-17', status: 'paid', direction: 'expense', amount: 1600, installment: true }, data: { records: [home], occurrences: [], debtPayments: [{ record_id: 'home', date: '2026-08-17', amount: 1600, currency: 'USD' }, { record_id: 'home', date: '2026-09-17', amount: null, currency: 'EUR' }] }, today: '2026-10-08', onClose() {} });
+ const rows = loan.all(node => node.type === 'li' && node.props['data-status']).map(text);
+ assert.ok(rows.find(row => row.startsWith('17 September 2026')).includes('Paid—of ' + usd(1600)), rows.join(' | '));
+ assert.ok(text(loan.tree).includes('Paid in this period' + usd(1600)) && text(loan.tree).includes('Exchange rate unavailable.'), text(loan.tree));
 });
 
 test('the list opens the details on a tap and its close dismisses them', () => {

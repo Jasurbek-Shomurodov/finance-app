@@ -60,7 +60,7 @@ test('loans are paid by their monthly payment with monthly interest until repaid
 
 test('what-if adjustments apply once or every month from their date, in the primary currency', () => {
  const records = [record('cash', 'Checking', 'Cash', 5000, '2026-01-01')];
- const adjustments = [{ id: 'a', name: 'Car repair', amount: -800, frequency: 'Once', date: '2026-10-25' }, { id: 'b', name: 'Side job', amount: 250, frequency: 'Monthly', date: '2026-11-15' }];
+ const adjustments = [{ id: 'a', name: 'Car repair', amount: -800, currency: 'USD', frequency: 'Once', date: '2026-10-25' }, { id: 'b', name: 'Side job', amount: 250, currency: 'USD', frequency: 'Monthly', date: '2026-11-15' }];
  const forecast = cashForecast({ ...base, records, adjustments, days: 90 });
  assert.deepEqual(forecast.events.map(event => [event.date, event.amount, event.source]), [['2026-10-25', -800, 'adjustment'], ['2026-11-15', 250, 'adjustment'], ['2026-12-15', 250, 'adjustment']]);
  assert.equal(forecast.totals[0].end, 4700);
@@ -88,11 +88,25 @@ test('total cash is one series in the display currency; what no rate converts is
  assert.equal(mismatch.accounts[0].end, 1000);
 });
 
-test('stored what-ifs are validated before use', () => {
- const good = { id: 'a', name: 'Rent rise', amount: -500, frequency: 'Monthly', date: '2027-06-01' };
- assert.deepEqual(readAdjustments([good]), [good]);
- assert.deepEqual(readAdjustments('nope'), []);
- assert.deepEqual(readAdjustments([{ ...good, amount: 0 }, { ...good, amount: Infinity }, { ...good, frequency: 'Weekly' }, { ...good, date: '2027-02-30' }, null, { ...good, name: 5 }]), []);
+test('a what-if keeps the currency it was added in, converts into the display currency and is missing without a rate (MONEY-014)', () => {
+ // Added as −500 USD while the top bar showed dollars; read back with the top bar on UZS, it is still 500 dollars, never 500 UZS.
+ const records = [record('cash', 'Checking', 'Cash', 12_800_000, '2026-01-01', { currency: 'UZS' })];
+ const adjustments = [{ id: 'a', name: 'Car repair', amount: -500, currency: 'USD', frequency: 'Once', date: '2026-10-25' }];
+ const inUzs = cashForecast({ ...base, currency: 'UZS', rates: { USD: 1, UZS: 12800 }, records, adjustments, days: 30 });
+ assert.deepEqual(inUzs.events.map(event => [event.amount, event.currency]), [[-500, 'USD']], 'the event reads as entered');
+ assert.equal(inUzs.totals[0].end, 12_800_000 - 6_400_000);
+ const noRate = cashForecast({ ...base, currency: 'UZS', rates: { USD: 1, UZS: 12800 }, records, adjustments: [{ ...adjustments[0], currency: 'EUR' }], days: 30 });
+ assert.equal(noRate.totals[0].end, 12_800_000, 'an amount no rate converts is left out of the balance');
+ assert.equal(noRate.missing, 1); assert.equal(noRate.months[0].missing, 1);
+});
+
+test('stored what-ifs are validated before use; one saved without a currency takes the display currency once', () => {
+ const good = { id: 'a', name: 'Rent rise', amount: -500, currency: 'EUR', frequency: 'Monthly', date: '2027-06-01' };
+ assert.deepEqual(readAdjustments([good], 'USD'), [good], 'a saved currency is kept');
+ const legacy = Object.fromEntries(Object.entries(good).filter(([key]) => key !== 'currency'));
+ assert.deepEqual(readAdjustments([legacy], 'UZS'), [{ ...good, currency: 'UZS' }], 'a what-if from before currencies were saved is read in the display currency');
+ assert.deepEqual(readAdjustments('nope', 'USD'), []);
+ assert.deepEqual(readAdjustments([{ ...good, amount: 0 }, { ...good, amount: Infinity }, { ...good, frequency: 'Weekly' }, { ...good, date: '2027-02-30' }, null, { ...good, name: 5 }, { ...good, currency: 'dollars' }, { ...good, currency: 7 }], 'USD'), []);
 });
 
 test('income arriving today never lifts the lowest balance above today\'s opening balance', () => {

@@ -15,7 +15,7 @@ import { useLanguage } from '@/components/language-provider';
 import { useDisplayMoney } from '@/components/display-money';
 import { formatDate, formatMoney, formatMonthYear, formatNumber, weekdayLabels } from '@/lib/format';
 import { depositToday } from '@/lib/deposit-interest';
-import { shiftMonth } from '@/lib/calendar-days';
+import { monthEnd, shiftMonth } from '@/lib/calendar-days';
 import { convertAmount } from '@/lib/market';
 import { upcomingPayments, type PlanningData } from '@/lib/planning';
 import { archivedSchedules, calendarWeeks, carriedOverdue, monthOccurrences, onlyDirection, openDueDates, payRequest, recurringSummary, type ArchiveTarget, type RecurringItem } from '@/lib/recurring';
@@ -51,6 +51,12 @@ function SummaryBar({ label, done, remaining, doneLabel, currency, tone, pressed
 
 /** The month's incomes and bills, as a list or a calendar, with what came in and went out. */
 /** A debt repayment or deposit maturity row opens its loan or deposit, unless the tap was on a button. */
+/** The debt repayments and deposit maturities of the shown month, with any still open from earlier months. Loan installments
+ * are already the month's rows (`monthOccurrences`), so they are not repeated here; nothing is read past the month's end. */
+export function monthReminders(data: Pick<PlanningData, 'records' | 'occurrences'>, month: string, today: string) {
+ const end = monthEnd(month);
+ return upcomingPayments(data.records, data.occurrences, today, end > today ? end : today).filter(item => (item.type === 'repayment' || item.type === 'maturity') && (item.date.slice(0, 7) === month || item.overdue));
+}
 const reminderRow = (onEdit: ((record: Entry) => void) | undefined, item: { record: Entry }, label: string) => onEdit ? { className: 'clickable-row', ...openProps(() => onEdit(item.record), label) } : {};
 
 export function UpcomingPage({ data, save, currency, currencies = [], rates, view, onView, onEdit, onAddRecurring, onArchive, onDelete }: Props) {
@@ -69,7 +75,7 @@ export function UpcomingPage({ data, save, currency, currencies = [], rates, vie
  const [only, setOnly] = useState<Direction | null>(null);
  const toggle = (direction: Direction) => setOnly(only === direction ? null : direction);
  const { shown, shownCarried } = onlyDirection(items, carried, only);
- const reminders = upcomingPayments(data.records, data.occurrences, today, undefined, data.debtPayments).filter(item => item.type !== 'scheduled');
+ const reminders = monthReminders(data, month, today);
  const skipped = data.occurrences.filter(o => o.status === 'dismissed' && data.records.some(r => r.id === o.record_id && r.frequency !== 'Once'));
  async function run(action: () => Promise<void>) { setBusy(true); setError(''); try { await action(); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } }
  const payDebt = (record: RecurringItem['record']) => setOperation({ action: record.kind === 'Mortgage' ? 'mortgage' : 'repayment', target_id: record.id, date: today, amount: 0 });

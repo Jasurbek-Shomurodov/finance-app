@@ -2,7 +2,7 @@ import { workspaceOwner } from '@/lib/household';
 import { diversifiedPortfolioSchema } from '@/lib/diversified-portfolio';
 import { z } from 'zod';
 import { fiatCurrency, uuid } from '@/lib/api-validation';
-import { crossSite, readJson, signInAgain } from '@/lib/api-route';
+import { crossSite, postgrestFailure, readJson, signInAgain } from '@/lib/api-route';
 import { session, supa, sameOrigin } from '@/lib/supabase';
 import { isCurrency } from '@/lib/currencies';
 import { investmentKinds, defaultComparisonPreferences } from '@/lib/comparison-profile';
@@ -14,6 +14,8 @@ const benchmarkColors = z.record(z.string().regex(/^(BTC|SPY|HYG|BIL|depositUZS|
 const preferences = z.object({benchmarks:benchmarkSelectionSchema,colors:benchmarkColors.optional(),portfolio:diversifiedPortfolioSchema.nullable().optional(),custom_symbol:z.string().regex(/^$|^[A-Z][A-Z0-9.-]{0,14}$/)}).refine(value=>!value.benchmarks.includes('CUSTOM')||!!value.custom_symbol).refine(value=>!value.benchmarks.includes('PORTFOLIO')||!!value.portfolio).refine(value=>!value.portfolio?.assets?.some(asset=>asset.currency&&!isCurrency(asset.currency)));
 // Null returns to tracking from the first investment activity.
 const tracking = z.object({tracking_start:z.string().refine(date=>validDay(date)&&date>=benchmarkHistoryStart).nullable()});
+/** The database's refusal keeps its status and words (a view-only member answers 403); only a missing function is a setup problem. */
+const refused=(response:Response,fallback:string)=>postgrestFailure(response,fallback,{codes:{PGRST202:[fallback,503]}});
 const baseline = z.object({starting_amount:z.number().finite().min(0).max(1e27),currency:fiatCurrency,holdings:z.array(z.object({id:uuid,kind:z.enum(investmentKinds),currency:fiatCurrency,balance:z.number().finite().min(0).max(1e27)})).max(10000)}).refine(value=>new Set(value.holdings.map(holding=>holding.id)).size===value.holdings.length);
 export async function GET() {
  try {
@@ -35,7 +37,7 @@ async function write(req:Request,capture:boolean){
   if(!parsed.success)return Response.json({error:'Check the comparison settings.'},{status:400});
   const table=capture?'investment_comparison_baselines':'investment_comparison_preferences';
   const response=await supa('/rest/v1/'+table+'?on_conflict=user_id',{method:'POST',headers:{Prefer:capture?'resolution=ignore-duplicates':'resolution=merge-duplicates'},body:JSON.stringify({...parsed.data,user_id:workspaceOwner(auth)})},auth.token);
-  if(!response.ok)throw Error();
+  if(!response.ok)return refused(response,'Could not save comparison settings.');
   return Response.json({ok:true});
  }catch{return Response.json({error:'Could not save comparison settings.'},{status:503});}
 }
@@ -47,10 +49,10 @@ export async function PATCH(req:Request){
   const parsed=tracking.safeParse(await readJson(req));
   if(!parsed.success)return Response.json({error:'Choose a valid tracking start date.'},{status:400});
   const updated=await supa('/rest/v1/investment_comparison_preferences?user_id=eq.'+workspaceOwner(auth),{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(parsed.data)},auth.token);
-  if(!updated.ok)throw Error();
+  if(!updated.ok)return refused(updated,'Could not save the tracking start date.');
   if(!(await updated.json() as unknown[]).length){
    const created=await supa('/rest/v1/investment_comparison_preferences?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates'},body:JSON.stringify({...defaultComparisonPreferences,...parsed.data,user_id:workspaceOwner(auth)})},auth.token);
-   if(!created.ok)throw Error();
+   if(!created.ok)return refused(created,'Could not save the tracking start date.');
   }
   return Response.json({ok:true});
  }catch{return Response.json({error:'Could not save the tracking start date.'},{status:503});}

@@ -2,6 +2,8 @@
 import { Plus, Trash2 } from 'lucide-react';
 import { CategoryIcon } from '@/components/presentation-foundation/category-icon';
 import { AnimatedMoney } from '@/components/presentation-foundation/animated-money';
+import { RollingText } from '@/components/presentation-foundation/rolling-text';
+import { useDisplayMoney } from '@/components/display-money';
 import { useLanguage } from '@/components/language-provider';
 import { Button } from '@/components/ui/button';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
@@ -28,18 +30,23 @@ export type BalanceCardActions = {
 /** A cash account's goal allocations, or a deposit's interest rate. */
 function BalanceFacts({ account, goals }: { account: Entry; goals: PlanningData['goals'] }) {
  const { t, locale } = useLanguage();
+ const { show } = useDisplayMoney();
  if (account.kind!=='Cash') return <p className="muted">{t('{rate}% annual interest',{rate:formatNumber(account.rate,locale)})}</p>;
  const allocated=allocatedToGoals(goals,account.id);
- return <dl className="account-balance-facts"><div><dt>{t('Allocated to goals')}</dt><dd><AnimatedMoney value={allocated} currency={account.currency}/></dd></div><div><dt>{t('Available')}</dt><dd><AnimatedMoney value={account.amount-allocated} currency={account.currency}/></dd></div></dl>;
+ return <dl className="account-balance-facts"><div><dt>{t('Allocated to goals')}</dt><dd><RollingText text={show(allocated,account.currency)}/></dd></div><div><dt>{t('Available')}</dt><dd><RollingText text={show(account.amount-allocated,account.currency)}/></dd></div></dl>;
 }
 
 /** The selected cash account or deposit: its balance, what it holds for goals and its actions. */
 export function BalanceAccountCard({ account, goals, onEdit, onTrack, onDelete, onMove, onOperation, onStatement }: BalanceCardActions & { account: Entry; goals: PlanningData['goals'] }) {
  const { t, locale } = useLanguage();
+ // A balance is a display-currency figure, like the directory beside it; one no rate converts reads — with the note.
+ const { show } = useDisplayMoney();
+ const balance=show(account.amount,account.currency);
  const deposit=account.kind==='Deposit';
  return <article className="panel account-card">
   <header><CategoryIcon kind={account.kind}/><div className="account-card-heading"><h2>{account.name}</h2><small>{t(deposit?'Deposit':'Cash account')}</small></div><AccountMenu name={account.name}><DropdownMenuItem onSelect={()=>onEdit(account)}>{t('Edit')}</DropdownMenuItem>{deposit&&<DropdownMenuItem onSelect={()=>onMove({kind:'interest',source_id:account.id})}>{t('Record capitalized interest')}</DropdownMenuItem>}{deposit&&onTrack&&<DropdownMenuItem onSelect={()=>onTrack(account)}>{t('Manage deposit')}</DropdownMenuItem>}<DropdownMenuItem variant="destructive" onSelect={()=>onDelete(account)}><Trash2 aria-hidden="true"/>{t('Delete')}</DropdownMenuItem></AccountMenu></header>
-  <strong className="account-card-value"><AnimatedMoney value={account.amount} currency={account.currency}/></strong>
+  <strong className="account-card-value"><RollingText text={balance}/></strong>
+  {balance==='—'&&<p role="status" className="muted">{t('Exchange rate unavailable.')}</p>}
   <BalanceFacts account={account} goals={goals}/>
   <div className="account-card-actions">{!deposit&&<Button aria-disabled={!onStatement||undefined} title={onStatement?undefined:t('Available after you sign in.')} onClick={()=>onStatement?.(account)}>{t('Reconcile statement')}</Button>}{deposit?<><Button onClick={()=>onMove({kind:'transfer',target_id:account.id})}><Plus size={16} aria-hidden="true" />{t('Top-up')}</Button><Button variant="outline" onClick={()=>onMove({kind:'transfer',source_id:account.id})}>{t('Withdraw')}</Button></>:<Button variant="outline" onClick={()=>onOperation({action:'reconcile',account_id:account.id,amount:account.amount})}>{t('Adjust balance')}</Button>}</div>
   {deposit&&<Dialog><DialogTrigger asChild><Button variant="ghost" className="account-details-trigger">{t('Account details')}</Button></DialogTrigger><DialogContent aria-describedby={undefined}><DialogTitle>{account.name} · {t('Account details')}</DialogTitle><dl className="account-card-facts">{onTrack&&<div><dt>{t('Estimated monthly interest')}</dt><dd>{account.estimated_monthly_income==null?'—':formatMoney(account.estimated_monthly_income,account.currency,locale)}</dd></div>}<div><dt>{t('Due / maturity date')}</dt><dd>{formatDate(account.date,locale)}</dd></div></dl></DialogContent></Dialog>}

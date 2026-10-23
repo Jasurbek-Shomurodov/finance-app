@@ -6,8 +6,9 @@ import { PanelTitle } from '@/components/presentation-foundation/panel-title';
 import { useLanguage } from '@/components/language-provider';
 import { Pagination } from '@/components/presentation-foundation/pagination';
 import { accountActivityPage } from '@/lib/account-activity-page';
-import { formatDate, formatMoney, formatNumber } from '@/lib/format';
-import { income, type Entry } from '@/lib/finance';
+import { formatDate, formatMoney, formatNumber, formatSignedMoney } from '@/lib/format';
+import type { Entry } from '@/lib/finance';
+import { signedAmount } from '@/lib/transaction-list';
 import { decimalSum } from '@/lib/decimal-amounts';
 import { holdingQuantity, isHolding } from '@/lib/asset-movements';
 import { useOwnerResource } from '@/hooks/use-owner-resource';
@@ -41,7 +42,7 @@ function CashFlowTable({ activity, data, fallback, onOpen }: { activity: Activit
  const open = (record: Entry) => onOpen ? { className: 'clickable-row', ...openProps(() => onOpen(record), t('View details for {name}', { name: record.name.trim() || t(record.kind) })) } : {};
  const cash = data.records.filter(record=>record.kind==='Cash');
  if(!activity.records.length&&!activity.investmentLinks.length)return null;
- return <><h3>{t('Income & expenses')}</h3><div className="table-scroll"><table><tbody>{activity.records.map(record=><tr key={record.id} {...open(record)}><td>{formatDate(record.date,locale)}</td><td>{record.name}</td><td>{cash.find(account=>account.id===record.account_id)?.name}</td><td>{formatMoney(income.includes(record.kind)?record.amount:-record.amount,record.currency,locale)}</td></tr>)}{activity.investmentLinks.map(moved=>{const account=cash.find(a=>a.id===moved.account_id);return <tr key={moved.id}><td>{formatDate(moved.investment_history.occurred_on,locale)}</td><td>{data.records.find(record=>record.id===moved.investment_history.record_id)?.name}</td><td>{account?.name}</td><td>{formatMoney(moved.amount,account?.currency??fallback,locale)}</td></tr>;})}</tbody></table></div></>;
+ return <><h3>{t('Income & expenses')}</h3><div className="table-scroll"><table><tbody>{activity.records.map(record=><tr key={record.id} {...open(record)}><td>{formatDate(record.date,locale)}</td><td>{record.name}</td><td>{cash.find(account=>account.id===record.account_id)?.name}</td><td className={signedAmount(record)>0?'positive':undefined}>{formatSignedMoney(signedAmount(record),record.currency,locale)}</td></tr>)}{activity.investmentLinks.map(moved=>{const account=cash.find(a=>a.id===moved.account_id);return <tr key={moved.id}><td>{formatDate(moved.investment_history.occurred_on,locale)}</td><td>{data.records.find(record=>record.id===moved.investment_history.record_id)?.name}</td><td>{account?.name}</td><td>{formatMoney(moved.amount,account?.currency??fallback,locale)}</td></tr>;})}</tbody></table></div></>;
 }
 
 /** Every record booked to an account, the loaded ones first: the Accounts read leaves income and spending out. */

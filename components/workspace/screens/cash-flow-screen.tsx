@@ -35,11 +35,13 @@ export function CashFlowScreen() {
  const { user, demo, rows, currency, market, reload, preferencesData, planning, earningSources, transactionTools, workspacePreferences, snapshots, forecast, forecastReady, forecastMonth, setForecastMonth, workspaceLoading, refreshRecords,
   addCashFlow, editRecord, setPayingMortgage, recordFromSource, budget, forecastBudget, forecastBudgetState, showFirstPage, setViewing, storedRecord } = useWorkspace();
  // Each income source in its own currency, as entered; only the month's headline is converted (AGENTS.md, entered or converted).
+ // The spending estimate follows the one definition of spending (lib/spending.ts): bills plus mortgage interest; mortgage
+ // principal and loan repayments are transfers, so they leave the net estimate but never the spending one.
  const incomeSources = earningSources.sources;
  const mortgages = <MonthlyMortgagePayments records={demo?rows:planning.data.records} currency={currency} market={market} loading={planning.loading} error={planning.error} onPay={setPayingMortgage} onEdit={editRecord}/>;
  // This month's budget, as on Overview and Budget: spending categories against their limits.
  const budgetCard = !transactionTools.loading && !transactionTools.error ? <BudgetCard owner={user} demo={demo} revision={reload} budget={budget} data={planning.data} currency={currency} market={market} splits={transactionTools.data.splits}/> : null;
- const watchlists = !transactionTools.loading&&!transactionTools.error ? <SpendingWatchlists data={planning.data} splits={transactionTools.data.splits} today={depositToday()} currency={currency} currencies={preferencesData.currencies} preferences={workspacePreferences}/> : null;
+ const watchlists = !transactionTools.loading&&!transactionTools.error ? <SpendingWatchlists data={planning.data} splits={transactionTools.data.splits} today={depositToday()} currency={currency} currencies={preferencesData.currencies} market={market} preferences={workspacePreferences}/> : null;
  return <>
   <div data-page="Income & expenses" className="content">
    <PageHeader title={t('Cash flow')} tabs={<Segmented as="nav" className="page-tabs" label={t('Cash flow')} options={tabs.map(name=>({value:name,label:t(name)}))} value={tab} onChange={name=>{setTab(name);if(name==='Overview')showFirstPage();}}/>}>
@@ -49,7 +51,7 @@ export function CashFlowScreen() {
    </PageHeader>
    <ScreenNotices/>
    {workspaceLoading ? (tab==='Overview' ? <CashFlowSkeleton label={t("Loading your workspace…")}/> : <PanelSkeleton label={t("Loading your workspace…")} rows={4}/>) : <>
-    {tab!=='Forecast'&&(planning.loading?<CashflowSummarySkeleton/>:!planning.error&&<MonthlyReview compact selectedMonth={forecastMonth} estimates={forecastReady?{income:forecast.plannedIncome,spending:forecast.monthlyExpenses+forecast.mortgagePayments+forecast.loanPayments,net:forecast.forecast}:null} owner={user} demo={demo} revision={reload} market={market} data={planning.data} tools={transactionTools} snapshots={snapshots.snapshots} historyError={snapshots.error} currency={currency}/>)}
+    {tab!=='Forecast'&&(planning.loading?<CashflowSummarySkeleton/>:!planning.error&&<MonthlyReview compact selectedMonth={forecastMonth} estimates={forecastReady?{income:forecast.plannedIncome,spending:forecast.monthlyExpenses+forecast.mortgageInterest,net:forecast.forecast}:null} owner={user} demo={demo} revision={reload} market={market} data={planning.data} tools={transactionTools} snapshots={snapshots.snapshots} historyError={snapshots.error} currency={currency}/>)}
     {transactionTools.error&&<InlineError message={t(transactionTools.error)} onRetry={transactionTools.retry}/>}
     {tab==='Overview'&&<CashFlowReport onOpenRecord={record => setViewing(storedRecord(record))} owner={user} demo={demo} revision={reload} data={planning.data} splits={transactionTools.data.splits} month={forecastMonth} currency={currency} market={market}/>}
     {tab==='Overview'&&<CashflowPreview entries={planning.data.records} sources={incomeSources} month={forecastMonth} currency={currency} rates={marketRates(market)} loading={planning.loading||earningSources.loading} error={planning.error||earningSources.error} onRetry={refreshRecords} onIncome={()=>setTab('Income')} budget={budgetCard} mortgages={mortgages} watchlists={watchlists}/>}

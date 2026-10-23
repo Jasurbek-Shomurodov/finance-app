@@ -30,6 +30,12 @@ test('connect requests are random, stored as hashes, one per chat, valid for fif
  assert.equal(db.tables.telegram_connect_requests.length,2,'a spent request stays as a record; only open ones are replaced');
  await cancelConnectRequest(db,third);
  assert.equal(await findConnectRequest(db,third,now),null);
+ // A cancel the database refuses is a failure, so the page says so instead of reporting "Nothing was connected" while the link still works.
+ const refusing=botDb({});
+ const fourth=await createConnectRequest(refusing,person,now);
+ refusing.fail('telegram_connect_requests');
+ await assert.rejects(cancelConnectRequest(refusing,fourth),/Database request failed/);
+ await assert.doesNotReject(cancelConnectRequest(refusing,'not-a-token'),'anything but a token is ignored without a request');
 });
 
 test('linking a chat signs out its earlier owner and records the Telegram user only when no other account holds it',async()=>{
@@ -62,7 +68,7 @@ function route({db,signedIn=true,cookie,sent=[]}){
   'next/headers':{cookies:async()=>jar},
   '@/lib/service-role':{serviceDatabase:()=>db},
   '@/lib/supabase':{sameOrigin:req=>req.headers.get('sec-fetch-site')!=='cross-site'&&(!req.headers.get('origin')||req.headers.get('origin')==='https://app.local'),session:async()=>signedIn?{token:'access',user}:null},
-  '@/lib/telegram':{telegramConfig:()=>config,sendTelegramMessage:async(message,used)=>{sent.push({message,used});return true;}},
+  '@/lib/telegram':{telegramConfig:()=>config,deliverTelegramMessage:async(message,used)=>{sent.push({message,used});return 'sent';}},
   '@/lib/telegram-bot':{connectedReply:async(_,owner,chat)=>({chat_id:chat,text:'connected '+owner})},
  });
  const post=(action,headers={})=>api.POST(new Request('https://app.local/api/telegram/connect',{method:'POST',headers:{origin:'https://app.local',...headers},body:JSON.stringify({action})}));

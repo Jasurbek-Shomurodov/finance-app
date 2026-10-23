@@ -32,6 +32,13 @@ test('a category budget uses its spending through today and the month\'s own amo
  assert.deepEqual(tables(r,'Budget plan / category')[0].rows,[['Leisure custom','$25','$30','-$5']]);
  assert.ok(text(r).includes('Budget overspend $5'));
 });
+test('recurring expense commitments list the bills that run this month, as the Budget rows above count them (DRY-007)',()=>{
+ const f=structuredClone(reportFixture);
+ f.tables.finance_records.push(entry('Gym','Living expense',40,'USD',{frequency:'Monthly'}),entry('Old cable','Living expense',30,'USD',{frequency:'Monthly',end_date:'2026-08-31'}),entry('Ends later','Living expense',20,'USD',{frequency:'Monthly',end_date:'2026-09-15'}),
+  entry('Paused','Living expense',10,'USD',{frequency:'Monthly',source_paused:true}),entry('Archived','Living expense',11,'USD',{frequency:'Monthly',archived:true}),entry('Archived this month','Living expense',12,'USD',{frequency:'Monthly',archived:true,archive_pauses:[{from:'2026-09-03',to:null}]}),entry('Restored','Living expense',13,'USD',{frequency:'Monthly',archived:false,archive_pauses:[{from:'2026-07-01',to:'2026-09-01'}]}));
+ const rows=tables(buildFinancialReport(f,'en'),'Commitment')[0].rows.map(row=>row[0]);
+ assert.deepEqual(rows,['Gym','Ends later','Restored'],'a bill that ended before this month, is paused, or is archived (now or from this month) is no commitment');
+});
 test('a currency without a rate is left out of the consolidated total and named, like Overview, and goals never show fake progress',()=>{
  const f=structuredClone(reportFixture);
  let r=buildFinancialReport(f,'en');

@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRenderer,host,text} from './helpers/component-tree.mjs';
+import {loadTS} from './helpers/load-ts.mjs';
+const {formatSignedMoney}=loadTS('lib/format.ts');
 
 const t=(message,values={})=>message.replace(/\{(\w+)\}/g,(_,key)=>String(values[key]));
 function open(props={}){
@@ -37,6 +39,9 @@ test('the details list what a transaction is: amount, category, date, and only t
  const mortgage=open({record:{kind:'Other expense',mortgage_payment_id:'m',payment_principal:555,payment_interest:925,amount:1480,frequency:'Monthly'}});
  assert.deepEqual(mortgage.rows().slice(4,6),['Principal','Interest']);
  assert.equal(text(mortgage.value('Frequency')),'Monthly');
+ // The sign is the shared formatter's, never a hand-built prefix (MONEY-006).
+ const euros=open({record:{currency:'EUR',amount:42}});
+ assert.equal(text(euros.value('Amount')),formatSignedMoney(-42,'EUR','en-US'));
 });
 
 test('a business changes here when it may, saying so; otherwise its name is shown',async()=>{

@@ -1,13 +1,16 @@
 import { shiftMonth } from './calendar-days';
 import { income, type Entry } from './finance';
 // budget-schedules reads the amounts saved here and this file reads the plans it makes of them with Recurring: one rule each way.
-import { flexPlan, plannedIn, scheduledByCategory, type PlanSource } from './budget-schedules';
+import { plannedIn, scheduledByCategory, type PlanSource } from './budget-schedules';
 import { convertAmount } from './market';
 import { fundingBudget, inFundingPlan } from './goal-funding';
 import type { Category, Goal, PlanningData } from './planning';
 import { offeredKinds } from './removed-categories';
 import { monthlyReview, type TransactionSplit } from './transaction-tools';
 import { ratesOf } from './transaction-rates';
+import { rolloverBalance } from './budget-rollover';
+// The rollover rules live beside this file; every caller keeps one import.
+export { budgetReadRange, flexBucketRollover, rolloverBalance, rolloverCarry, startingBalanceIn, type BudgetRead } from './budget-rollover';
 
 /** Three spending buckets. Fixed: the same every month (rent, loans). Flexible: day-to-day spending.
  * Non-monthly: yearly or irregular costs that are saved for ahead. */
@@ -126,34 +129,6 @@ export function budgetedIn(amounts: readonly BudgetAmount[], key: string, month:
  return convertAmount(Number(saved.amount), saved.currency, currency, rates);
 }
 
-/** The fund's starting balance in `currency`; zero when it has none, null when its currency cannot be converted. */
-export function startingBalanceIn(fund: RolloverFund, currency: string, rates: Rates): number | null {
- if (!fund.rolloverBalance) return 0;
- return convertAmount(fund.rolloverBalance, fund.rolloverCurrency ?? currency, currency, rates);
-}
-
-/** Money carried into `month`: the starting balance, then each earlier month's budget minus what was spent.
- * Overspending is taken from the fund and can make it negative; with negative carry off an overspent month resets it to zero.
- * Nothing carries before the start month or when rollover is off. Null when the starting balance or an earlier budget
- * cannot be converted: the carry is unknown, never counted as zero. Pure, so every chain can be tested month by month. */
-export function rolloverCarry(fund: RolloverFund, month: string, starting: number | null, budgetOf: (month: string) => number | null, actualOf: (month: string) => number): number | null {
- if (!fund.rollover || !fund.rolloverStart || fund.rolloverStart > month) return 0;
- if (starting === null) return null;
- let balance = starting;
- for (const past of monthsBetween(fund.rolloverStart, shiftMonth(month, -1))) {
-  const budget = budgetOf(past);
-  if (budget === null) return null;
-  balance += budget - actualOf(past);
-  if (!fund.rolloverNegative && balance < 0) balance = 0;
- }
- return balance;
-}
-
-/** Unspent (or overspent) money carried into `month` from earlier months of a rollover category: each month's plan (`plannedIn`) minus its spending. */
-export function rolloverBalance(category: BudgetCategory, plan: PlanSource, history: ReadonlyMap<string, MonthActuals>, month: string, currency: string, rates: Rates) {
- return rolloverCarry(category, month, startingBalanceIn(category, currency, rates), past => plannedIn(plan, category.key, past, currency, rates), past => history.get(past)?.byCategory.get(category.key) ?? 0);
-}
-
 /** A spending category that belongs to the Flexible bucket (excluded ones never do). Rows are categories too. */
 export const isFlexibleCategory = (category: Pick<BudgetCategory, 'direction' | 'type' | 'excluded'>) => category.direction === 'expense' && category.type === 'flexible' && !category.excluded;
 
@@ -167,12 +142,6 @@ const sumKnown = (values: readonly (number | null)[]) => values.reduce<number | 
 export function flexBucketPlan(amounts: readonly BudgetAmount[], categories: readonly BudgetCategory[], month: string, currency: string, rates: Rates): number | null {
  if (budgetAmountFor(amounts, flexBucketKey, month)) return budgetedIn(amounts, flexBucketKey, month, currency, rates);
  return sumKnown(categories.filter(isFlexibleCategory).map(category => budgetedIn(amounts, category.key, month, currency, rates)));
-}
-
-/** Money the Flexible bucket carries into `month` in flex mode: its plan (`flexPlan`) minus everything spent in flexible categories. */
-export function flexBucketRollover(bucket: BudgetCategory, categories: readonly BudgetCategory[], plan: PlanSource, history: ReadonlyMap<string, MonthActuals>, month: string, currency: string, rates: Rates) {
- const flexible = categories.filter(isFlexibleCategory);
- return rolloverCarry(bucket, month, startingBalanceIn(bucket, currency, rates), past => flexPlan(plan, categories, past, currency, rates), past => flexible.reduce((sum, category) => sum + (history.get(past)?.byCategory.get(category.key) ?? 0), 0));
 }
 
 export type BudgetHistoryMonth = { month: string; amount: number; planned: number | null };
@@ -204,11 +173,11 @@ export type BudgetGroup = { name: string; direction: BudgetDirection; type: Budg
  * forecasts count it: a bill is part of its budget, never added to it. */
 export function budgetRows(categories: readonly BudgetCategory[], amounts: readonly BudgetAmount[], history: ReadonlyMap<string, MonthActuals>, month: string, currency: string, rates: Rates, schedules: readonly Entry[] = []): BudgetRow[] {
  const actuals = history.get(month)?.byCategory ?? new Map<string, number>();
- const plan: PlanSource = { amounts, schedules }, scheduledIn = scheduledByCategory(schedules, month, currency, rates);
+ const plan: PlanSource = { amounts, schedules }, scheduledIn = scheduledByCategory(schedules, month, currency, rates), read = { plan, history, currency, rates };
  return categories.map(category => {
   const scheduled = scheduledIn.has(category.key) ? scheduledIn.get(category.key)! : 0;
   const budget = plannedIn(plan, category.key, month, currency, rates);
-  const carried = rolloverBalance(category, plan, history, month, currency, rates);
+  const carried = rolloverBalance(category, read, month);
   const actual = actuals.get(category.key) ?? 0;
   const available = budget === null || carried === null ? null : budget + carried;
   return { ...category, budget, scheduled: scheduled ?? 0, actual, rolloverIn: carried ?? 0, rolloverMissing: carried === null, remaining: available === null ? null : available - actual, progress: available && available > 0 ? actual / available : actual > 0 ? 1 : 0, missing: available === null };
@@ -272,19 +241,28 @@ export function budgetRowsForMode(rows: readonly BudgetRow[], mode: BudgetMode):
 export const knownPlan = (row: Pick<BudgetRow, 'missing' | 'budget'>) => row.missing && row.budget === null ? null : row.budget ?? 0;
 
 /** Planned figures are null when an amount they add (a budget, the bucket, a goal contribution) has no usable rate:
- * unknown, shown as —, never counted as zero. `missing` counts those amounts for the Exchange rate unavailable note. */
-export type LeftToBudget = { income: number | null; expenses: number | null; contributions: number | null; left: number | null; flexible: number | null; missing: number };
+ * unknown, shown as —, never counted as zero. `missing` counts those amounts for the Exchange rate unavailable note.
+ * `rollover` is the money every counted fund carries into the month (in flex mode the bucket's, `flexibleRollover`, with
+ * the fixed funds'): the Summary's Planned spending leaves it out, and the Expenses tab and the table's Total expenses add
+ * it, so the three read from this one figure. Null while one fund's carry is unknown. */
+export type LeftToBudget = { income: number | null; expenses: number | null; contributions: number | null; left: number | null; flexible: number | null; flexibleRollover: number | null; rollover: number | null; missing: number };
+/** The Flexible bucket in flex mode: its plan (`flexPlan`) and the money it carries in (`flexBucketRollover`). */
+export type FlexibleBucket = { budget: number | null; rollover: number | null };
 /** Budgeted income minus budgeted spending and goal contributions. Green when positive, grey at zero, red when negative.
  * In flex mode the Flexible bucket replaces the sum of its categories. `contributions` is null when one cannot be converted. */
-export function leftToBudget(rows: readonly BudgetRow[], mode: BudgetMode, flexibleBudget: number | null, contributions: number | null, missingContributions = 0): LeftToBudget {
+export function leftToBudget(rows: readonly BudgetRow[], mode: BudgetMode, bucket: FlexibleBucket | null, contributions: number | null, missingContributions = 0): LeftToBudget {
  const active = rows.filter(row => !row.excluded);
  const plan = knownPlan;
  const plannedIncome = sumKnown(active.filter(row => row.direction === 'income').map(plan));
- const others = sumKnown(active.filter(row => row.direction === 'expense' && (mode === 'category' || row.type !== 'flexible')).map(plan));
- const flexible = mode === 'flex' ? flexibleBudget : null;
+ const counted = active.filter(row => row.direction === 'expense' && (mode === 'category' || row.type !== 'flexible'));
+ const others = sumKnown(counted.map(plan));
+ const flexible = mode === 'flex' ? bucket?.budget ?? null : null;
+ const flexibleRollover = mode === 'flex' ? bucket?.rollover ?? null : 0;
  const planned = mode === 'flex' ? sumKnown([others, flexible]) : others;
- const missing = active.filter(row => plan(row) === null).length + (mode === 'flex' && flexibleBudget === null ? 1 : 0) + (contributions === null ? Math.max(1, missingContributions) : missingContributions);
- return { income: plannedIncome, expenses: planned, contributions, left: sumKnown([plannedIncome, planned === null ? null : -planned, contributions === null ? null : -contributions]), flexible, missing };
+ const rollover = sumKnown([...counted.map(row => row.rolloverMissing ? null : row.rolloverIn), flexibleRollover]);
+ const missing = active.filter(row => plan(row) === null).length + counted.filter(row => plan(row) !== null && row.rolloverMissing).length
+  + (mode === 'flex' ? (flexible === null ? 1 : 0) + (flexibleRollover === null ? 1 : 0) : 0) + (contributions === null ? Math.max(1, missingContributions) : missingContributions);
+ return { income: plannedIncome, expenses: planned, contributions, left: sumKnown([plannedIncome, planned === null ? null : -planned, contributions === null ? null : -contributions]), flexible, flexibleRollover, rollover, missing };
 }
 
 export type BudgetTone = 'positive' | 'negative' | 'neutral';
@@ -294,14 +272,4 @@ export function remainingTone(remaining: number | null, direction: BudgetDirecti
  if (remaining === null || Math.abs(remaining) < 0.005) return 'neutral';
  if (direction === 'income') return remaining < 0 ? 'positive' : 'neutral';
  return remaining > 0 ? 'positive' : 'negative';
-}
-
-/** Months of actuals a view needs: the year, or the History window, extended back to the earliest rollover start. */
-export function budgetReadRange(month: string, view: 'month' | 'year', categories: readonly Pick<BudgetCategory, 'rollover' | 'rolloverStart'>[]) {
- let from = view === 'year' ? month.slice(0, 4) + '-01' : shiftMonth(month, -historyMonths);
- const to = view === 'year' ? month.slice(0, 4) + '-12' : month;
- for (const category of categories) if (category.rollover && category.rolloverStart && category.rolloverStart < from) from = category.rolloverStart;
- // Reads stay bounded: two years at most.
- const earliest = shiftMonth(to, -23);
- return { from: from < earliest ? earliest : from, to };
 }

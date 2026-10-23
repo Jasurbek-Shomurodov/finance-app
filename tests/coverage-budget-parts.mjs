@@ -197,7 +197,7 @@ test('ContributionRows lists goals with their monthly amount or a dash and links
  const link=one(view,'x-drawer-link');assert.equal(link.props.href,'/goals');assert.equal(text(link),'T:Edit contributions in Goals');
 });
 
-const left={income:3000,expenses:2000,contributions:250,left:750,flexible:900};
+const left={income:3000,expenses:2000,contributions:250,left:750,flexible:900,flexibleRollover:0,rollover:0};
 const leftRows=[
  row({key:'salary',name:'Salary',direction:'income',type:'fixed',budget:3000,actual:1000,progress:.33}),
  row({key:'bonus',name:'Bonus',custom:true,direction:'income',type:'fixed',budget:null,actual:400,progress:1}),
@@ -250,10 +250,10 @@ test('LeftToBudgetCard expenses tab buckets spending by type; flex mode uses the
  one(flex,'x-segmented').props.onChange('expenses');flex.render();
  items=all(flex,'li');
  assert.equal(text(items[1]),`T:FlexibleT:${money(900)} plannedT:${money(250)} spentT:${money(650)} remaining`);
- // Flex mode with no flexible amount yet: spending alone fills the bar.
- const unplanned=mount(React.createElement(page.LeftToBudgetCard,{left:{...left,flexible:null},rows:[row({type:'flexible',budget:null,actual:80})],mode:'flex',currency:'USD'}));
+ // Flex mode with a flexible plan no rate converts: — planned, and spending alone fills the bar.
+ const unplanned=mount(React.createElement(page.LeftToBudgetCard,{left:{...left,flexible:null,missing:1},rows:[row({type:'flexible',budget:null,actual:80})],mode:'flex',currency:'USD'}));
  one(unplanned,'x-segmented').props.onChange('expenses');unplanned.render();
- assert.equal(text(all(unplanned,'li')[0]),`T:FlexibleT:${money(0)} plannedT:${money(80)} spentT:${money(80)} over`);
+ assert.equal(text(all(unplanned,'li')[0]),`T:FlexibleT:— plannedT:${money(80)} spentT:— remaining`);
  assert.deepEqual(nodes(unplanned.tree,node=>node.props.style).map(node=>node.props.style.width),['100%']);
  const empty=mount(React.createElement(page.LeftToBudgetCard,{left,rows:[],mode:'category',currency:'USD'}));
  one(empty,'x-segmented').props.onChange('expenses');empty.render();
@@ -528,7 +528,7 @@ test('the Budget page drives the Left to budget tabs, so Income and Expenses nar
 });
 
 test('LeftToBudgetCard reads — for plans no rate converts, never $0',()=>{
- const unknown=mount(React.createElement(page.LeftToBudgetCard,{left:{income:null,expenses:null,contributions:0,left:null,flexible:null,missing:1},rows:[],mode:'flex',currency:'USD'}));
+ const unknown=mount(React.createElement(page.LeftToBudgetCard,{left:{income:null,expenses:null,contributions:0,left:null,flexible:null,flexibleRollover:0,rollover:0,missing:1},rows:[],mode:'flex',currency:'USD'}));
  assert.equal(text(byClass(unknown,'budget-left-summary')[0]),`T:Planned income—T:Planned spending—T:Contributions${money(0)}T:Left to budget—`);
 });
 
@@ -569,4 +569,67 @@ test('Make recurring presets the bill from its row: a custom row with history st
   const menu=all(mount(React.createElement(BudgetScreen)),'x-row-menu').find(node=>node.props.label==='T:Actions for Gym');
   assert.deepEqual(menu.props.items.filter(Boolean).map(entry=>entry.label).filter(label=>label!=='T:Edit'),['T:'+expected],JSON.stringify(extra));
  }
+});
+
+test('ERR-005: a plan typed below the category’s recurring bills goes back to the bills once saved; a plan that changes under the field replaces the draft',async()=>{
+ const saves=[];
+ // The row plans at least its $500 bill (`plannedIn`): typing 300 is saved, but the plan stays 500, so the field shows 500 again.
+ const props={label:'Planned: Rent',value:500,history,direction:'expense',currency:'USD',defaultForward:false,appliesForward:false,onSave:async(amount,forward)=>{saves.push([amount,forward]);},onRepeat:async()=>{}};
+ const view=mount(React.createElement(page.PlannedInput,props));
+ one(view,'x-number-input').props.onValueChange(300);view.render();
+ assert.equal(one(view,'x-number-input').props.value,300);
+ one(view,'x-popover').props.onOpenChange(false);await flush();view.render();
+ assert.deepEqual(saves,[[300,false]],'the typed figure is saved');
+ assert.equal(one(view,'x-number-input').props.value,500,'the field shows the plan as it stands, not the lingering draft');
+ // Another month's plan arrives (the parent re-renders with a new value): the draft follows it.
+ view.rerender(React.createElement(page.PlannedInput,{...props,value:650}));view.render();
+ assert.equal(one(view,'x-number-input').props.value,650);
+});
+
+test('LeftToBudgetCard: the Summary lists the money rolled over apart from Planned spending; the Expenses tab adds it to each bucket, the Flexible bucket its own carry in flex mode',()=>{
+ const rows=[row({key:'rent',name:'Rent',type:'fixed',budget:1500,actual:1600,rolloverIn:100,rollover:true}),row({key:'groceries',type:'flexible',budget:400,actual:250,rolloverIn:40,rollover:true})];
+ const carried={...left,expenses:1900,rollover:140};
+ const view=mount(React.createElement(page.LeftToBudgetCard,{left:carried,rows,mode:'category',currency:'USD'}));
+ assert.equal(text(byClass(view,'budget-left-summary')[0]),`T:Planned income${money(3000)}T:Planned spending${money(1900)}T:Rolled over+${money(140)}T:Contributions${money(250)}T:Left to budget${money(750)}`);
+ one(view,'x-segmented').props.onChange('expenses');view.render();
+ assert.deepEqual(all(view,'li').map(text),[`T:FixedT:${money(1600)} plannedT:${money(1600)} spentT:${money(0)} remaining`,`T:FlexibleT:${money(440)} plannedT:${money(250)} spentT:${money(190)} remaining`],'buckets plan with the carry: 1600 + 440 is Planned spending plus Rolled over');
+ // Flex mode: the bucket plans its own amount plus its own carry; the categories’ carry is not its.
+ const flex=mount(React.createElement(page.LeftToBudgetCard,{left:{...carried,flexible:900,flexibleRollover:60,rollover:160},rows:[rows[0],{...rows[1],budget:null,rolloverIn:0}],mode:'flex',currency:'USD'}));
+ one(flex,'x-segmented').props.onChange('expenses');flex.render();
+ assert.equal(text(all(flex,'li')[1]),`T:FlexibleT:${money(960)} plannedT:${money(250)} spentT:${money(710)} remaining`);
+ // An unknown carry reads — and is never shown as a figure.
+ const unknown=mount(React.createElement(page.LeftToBudgetCard,{left:{...carried,flexible:900,flexibleRollover:null,rollover:null,missing:1},rows:[rows[0]],mode:'flex',currency:'USD'}));
+ assert.match(text(byClass(unknown,'budget-left-summary')[0]),/T:Rolled over—T:Contributions/);
+ one(unknown,'x-segmented').props.onChange('expenses');unknown.render();
+ assert.equal(text(all(unknown,'li')[1]),`T:FlexibleT:— plannedT:${money(0)} spentT:— remaining`);
+});
+
+// MONEY-010: the Year view plans flex mode as the Month view does: one Flexible line from `flexPlan`, its categories showing
+// what they spent, and the year’s Total expenses adding the bucket rather than each flexible category’s own saved amount.
+test('Year view in flex mode: a Flexible line carries the bucket’s plan, flexible categories show spending alone, and the totals add the bucket',()=>{
+ const {depositToday}=loadTS('lib/deposit-interest.ts');const {emptyPlanning}=loadTS('lib/planning.ts');
+ const today=depositToday(),month=today.slice(0,7);
+ const payment=(id,amount,custom_category_id,kind='Other expense')=>({id,name:id,kind,currency:'USD',amount,quantity:1,cost:0,rate:0,date:today,frequency:'Once',notes:'',custom_category_id});
+ const records=[payment('g3',120,'c1'),payment('r1',300,null,'Rent expense')];
+ const amounts=[{category_key:'c1',month,amount:120,currency:'USD',applies_forward:true},{category_key:'Rent expense',month,amount:300,currency:'USD',applies_forward:true},{category_key:'flex:flexible',month,amount:400,currency:'USD',applies_forward:true}];
+ const budget={state:{mode:'flex',applyForward:false,categories:[],amounts},loading:false,error:'',retry(){},saveAmount:async()=>{},saveRepeat:async()=>{},saveAmounts:async()=>{},saveCategory:async()=>{},saveSettings:async()=>{}};
+ const workspace={user:null,demo:true,reload:0,currency:'USD',market:null,planning:{data:{...emptyPlanning,records,categories:[{id:'c1',name:'Gym',direction:'expense'}],removedKinds:[]},loading:false,error:''},transactionTools:{data:{splits:[]}},workspaceLoading:false,budget,addCashFlow(){},editRecord(){},archiveSchedule:async()=>{},readOnly:false,setSankey(){}};
+ const screenOverrides={...overrides,
+  '@/components/workspace/workspace-provider':{useWorkspace:()=>workspace},
+  '@/hooks/use-owner-resource':{useOwnerResource:()=>({data:emptyPlanning,loading:false,initialLoading:false,error:'',retry(){}})},
+  '@/components/presentation-foundation/tone':{signTone:()=>undefined},
+  ...Object.fromEntries([['inline-error','InlineError'],['today-button','TodayButton'],['page-header','PageHeader'],['row-menu','RowMenu'],['history-chart','HistoryChart'],['empty-state','EmptyState']].map(([file,name])=>[`@/components/presentation-foundation/${file}`,{[name]:host(file)}])),
+  '@/components/presentation-foundation/loading-placeholder':{PanelSkeleton:host('panel-skeleton'),LoadingPlaceholder:host('loading-placeholder')},
+  '@/components/presentation-foundation/stat-tile':{StatTile:host('stat-tile'),StatTiles:host('stat-tiles')},
+ };
+ const {BudgetScreen}=loadTS('components/workspace/screens/budget-screen.tsx',screenOverrides);
+ const view=mount(React.createElement(BudgetScreen));
+ one(view,'x-page-header').props.tabs.props.onChange('year');view.render();
+ const rowsByName=Object.fromEntries(all(view,'tr').filter(tr=>tr.props.key!==undefined||true).map(tr=>[text(nodes(tr,node=>node.type==='th')[0]),tr]));
+ const position=1+Number(month.slice(5))-1;// the current month's cell, after the row heading
+ const cell=(tr)=>text(nodes(tr,node=>node.type==='td')[position-1]);
+ assert.equal(cell(rowsByName['T:Flexible']),`${money(120)}T:of ${money(400)}`,'the bucket line shows flexible spending against the bucket’s plan');
+ assert.equal(cell(rowsByName['Gym']),money(120),'a flexible category shows what it spent, with no plan of its own');
+ assert.equal(cell(rowsByName['T:Rent expense']),`${money(300)}T:of ${money(300)}`,'a fixed category keeps its own plan');
+ assert.equal(cell(rowsByName['T:Total expenses']),`${money(420)}T:of ${money(700)}`,'the total plans Rent 300 plus the bucket 400, never Gym’s own 120');
 });

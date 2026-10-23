@@ -30,9 +30,9 @@ test('forecast saves retain directional precision and report missing database up
   const response=await failed.POST(request({action:'forecast',data}));
   assert.equal(response.status,503);assert.match((await response.json()).error,/database update 045/);assert.equal(failed.calls.length,1);
  }
- for(const [code,message,expected] of [['P0001','Choose a cash account.','Choose a cash account.'],['42501','Internal permission detail','Could not save the forecast assignment. Please try again.']]){
+ for(const [code,message,expected,status] of [['P0001','Choose a cash account.','Choose a cash account.',409],['42501','Internal permission detail','Could not save the forecast assignment. Please try again.',403]]){
   const response=await api({failure:{code,message}}).POST(request({action:'forecast',data}));
-  assert.equal(response.status,409);assert.equal((await response.json()).error,expected);
+  assert.equal(response.status,status);assert.equal((await response.json()).error,expected);
  }
 });
 

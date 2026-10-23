@@ -1,17 +1,13 @@
 "use client";
-import { InfoHint } from '@/components/presentation-foundation/info-hint';
 import { normalizeEntry } from '@/lib/finance';
 import { useOwnerResource } from '@/hooks/use-owner-resource';
 import { marketRates, type MarketData } from '@/lib/market';
 import { useState } from 'react';
-import { CircleHelp, CalendarDays, ReceiptText, X } from 'lucide-react';
 import { StatTile, StatTiles } from '@/components/presentation-foundation/stat-tile';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
 import { LoadingPlaceholder, StatTilesSkeleton } from '@/components/presentation-foundation/loading-placeholder';
 import { Skeleton } from '@/components/ui/skeleton';
 import { signTone } from '@/components/presentation-foundation/tone';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { DatePicker } from '@/components/presentation-foundation/date-picker';
 import { useLanguage } from '@/components/language-provider';
 import { monthlyReview } from '@/lib/transaction-tools';
@@ -39,31 +35,21 @@ export function MonthlyReview({data:providedData,owner,demo=false,revision=0,too
  const money=(amount:number)=>formatMoney(amount,currency,locale);
  if(compact&&owner&&!demo&&remote.loading)return <CashflowSummarySkeleton/>;
  if(owner&&!demo&&(remote.loading||remote.error))return <section className="panel tools-panel monthly-review"><h2>{t('Monthly review')} · {formatMonthYear(month,locale)}</h2>{remote.error?<InlineError message={t(remote.error)} onRetry={remote.retry}/>:<LoadingPlaceholder label={t('Loading records…')} rows={3}/>}</section>;
+ // A month with an amount no rate converts shows no total: — with the note, never a partial figure (MONEY-008).
  if(compact)return <section className="cashflow-summary" aria-label={t('Monthly review')}>
   {tools.error&&<InlineError message={t(tools.error)} onRetry={tools.retry}/>}
   <StatTiles columns={4}>{[
    {label:'Income received',value:result.received,estimate:estimates?.income},
    {label:'Actual spending',value:result.spent,estimate:estimates?.spending},
    {label:'Net cash flow',value:result.saved,estimate:estimates?.net,tone:signTone(result.saved)},
-  ].map(({label,value,estimate,tone})=><StatTile key={label} label={t(label)} value={tools.loading?<Skeleton aria-hidden="true" className="h-7 w-3/4"/>:tools.error?'—':money(value)} tone={tools.loading||tools.error?undefined:tone}><p>{t(label==='Net cash flow'?'Estimated monthly surplus':'Monthly estimate')}: {estimate==null?'—':money(estimate)}</p></StatTile>)}
+  ].map(({label,value,estimate,tone})=><StatTile key={label} label={t(label)} value={tools.loading?<Skeleton aria-hidden="true" className="h-7 w-3/4"/>:tools.error||result.missing?'—':money(value)} tone={tools.loading||tools.error||result.missing?undefined:tone}><p>{t(label==='Net cash flow'?'Estimated monthly surplus':'Monthly estimate')}: {estimate==null?'—':money(estimate)}</p></StatTile>)}
    {/* The month's savings rate, as the period report shows it for a quarter or a year (the user's choice, 20 October 2026). */}
-   <StatTile label={t('Savings rate')} value={tools.loading?<Skeleton aria-hidden="true" className="h-7 w-3/4"/>:tools.error||!(result.received>0)?'—':formatPercent(result.saved/result.received*100,locale)} tone={tools.loading||tools.error||!(result.received>0)?undefined:signTone(result.saved)}/></StatTiles>
+   <StatTile label={t('Savings rate')} value={tools.loading?<Skeleton aria-hidden="true" className="h-7 w-3/4"/>:tools.error||result.missing||!(result.received>0)?'—':formatPercent(result.saved/result.received*100,locale)} tone={tools.loading||tools.error||result.missing||!(result.received>0)?undefined:signTone(result.saved)}/></StatTiles>
   {!!result.missing&&<p className="partial-total" role="status">{t('Some transactions could not be converted. Current or previous month totals are incomplete.')}</p>}
  </section>;
  return <section className="panel tools-panel monthly-review">
   <header className="monthly-review-heading">
-   <div><div className="monthly-review-title"><h2>{t('Monthly review')} · {formatMonthYear(month,locale)}</h2><Dialog>
-    <DialogTrigger asChild><Button type="button" variant="ghost" size="icon" className="monthly-review-help" aria-label={t('How this review is calculated')} title={t('How this review is calculated')}><CircleHelp size={19} aria-hidden="true"/></Button></DialogTrigger>
-    <DialogContent className="monthly-review-help-dialog" showCloseButton={false}>
-     <DialogClose className="monthly-review-help-close" aria-label={t('Close')}><X size={18} aria-hidden="true"/></DialogClose>
-     <div className="monthly-review-help-icon"><CircleHelp size={26} aria-hidden="true"/></div>
-     <DialogTitle>{t('How this review is calculated')}<InfoHint>{t('Recorded income and spending converted to {currency}. Includes principal and interest payments.',{currency})}</InfoHint></DialogTitle>
-     <DialogDescription className="sr-only">{t('Recorded income and spending converted to {currency}. Includes principal and interest payments.',{currency})}</DialogDescription>
-     <div className="monthly-review-help-note"><ReceiptText size={21} aria-hidden="true"/><p>{t('Recorded expenses include full mortgage and loan payments. Other currencies use available exchange rates. Recurring plans and transfers are excluded.')}</p></div>
-     <div className="monthly-review-help-note"><CalendarDays size={21} aria-hidden="true"/><p>{t('The current month includes transactions through today; the previous month is a full month. Net-worth observations may not fall on month boundaries.')}</p></div>
-     <DialogClose asChild><Button type="button" className="monthly-review-help-done">{t('Close')}</Button></DialogClose>
-    </DialogContent>
-   </Dialog></div></div>
+   <div><div className="monthly-review-title"><h2>{t('Monthly review')} · {formatMonthYear(month,locale)}</h2></div></div>
    <label>{t('Month')}<DatePicker mode="month" value={month} max={today} onChange={setMonth}/></label>
   </header>
   {tools.error&&<InlineError message={t(tools.error)} onRetry={tools.retry}/>}

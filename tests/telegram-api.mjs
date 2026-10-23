@@ -49,7 +49,7 @@ test('without bot configuration the panel is told to wait for server setup',asyn
 test('the webhook checks the secret header, hands updates to the bot and sends its replies',async()=>{
  const sent=[],handled=[];
  const webhook=loadTS('app/api/telegram/webhook/route.ts',{
-  '@/lib/telegram':{telegramConfig:()=>({token:'TOKEN',webhookSecret:'SECRET',botUsername:'hoggish_bot'}),sendTelegramMessage:async message=>{sent.push(message);return true;},answerCallback:async id=>{sent.push({callback:id});return true;}},
+  '@/lib/telegram':{telegramConfig:()=>({token:'TOKEN',webhookSecret:'SECRET',botUsername:'hoggish_bot'}),deliverTelegramMessage:async message=>{sent.push(message);return 'sent';},answerCallback:async id=>{sent.push({callback:id});return true;}},
   '@/lib/telegram-bot':{handleTelegramUpdate:async update=>{handled.push(update);if(update.fail)throw Error('Database request failed.');return {replies:[{chat_id:1,text:'ok'}],callbackId:update.callback_query?.id};}},
  });
  const post=(body,secret)=>webhook.POST(new Request('https://app.local/api/telegram/webhook',{method:'POST',headers:{'Content-Type':'application/json',...(secret?{'x-telegram-bot-api-secret-token':secret}:{})},body}));
@@ -66,9 +66,9 @@ test('the webhook checks the secret header, hands updates to the bot and sends i
 });
 
 test('the webhook refuses to run without bot or database configuration',async()=>{
- const noBot=loadTS('app/api/telegram/webhook/route.ts',{'@/lib/telegram':{telegramConfig:()=>null,sendTelegramMessage:async()=>true,answerCallback:async()=>true}});
+ const noBot=loadTS('app/api/telegram/webhook/route.ts',{'@/lib/telegram':{telegramConfig:()=>null,deliverTelegramMessage:async()=>'sent',answerCallback:async()=>true}});
  assert.equal((await noBot.POST(new Request('https://app.local/api/telegram/webhook',{method:'POST',body:'{}'}))).status,503);
- const noDb=loadTS('app/api/telegram/webhook/route.ts',{'@/lib/telegram':{telegramConfig:()=>({token:'T',webhookSecret:'SECRET',botUsername:'b'}),sendTelegramMessage:async()=>true,answerCallback:async()=>true},'@/lib/service-role':{serviceDatabase:()=>null}});
+ const noDb=loadTS('app/api/telegram/webhook/route.ts',{'@/lib/telegram':{telegramConfig:()=>({token:'T',webhookSecret:'SECRET',botUsername:'b'}),deliverTelegramMessage:async()=>'sent',answerCallback:async()=>true},'@/lib/service-role':{serviceDatabase:()=>null}});
  assert.equal((await noDb.POST(new Request('https://app.local/api/telegram/webhook',{method:'POST',headers:{'x-telegram-bot-api-secret-token':'SECRET'},body:'{}'}))).status,503);
 });
 

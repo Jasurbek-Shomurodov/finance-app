@@ -47,7 +47,7 @@ test('the sign-in page shows phone sign-in only when the server reports it, and 
  assert.match(choices,/if \(byPhone\) return <PhoneSignIn botUsername=\{phone\.botUsername\} onBack=\{\(\) => setByPhone\(false\)\}\/>;/);
  assert.match(fs.readFileSync('components/sign-in-screen.tsx','utf8'),/footer=\{<>[\s\S]*\{!configured && <SampleInvite[^>]*\/>\}\s*<\/>\}>/,'sign-in offers the sample workspace only while accounts are not set up');assert.doesNotMatch(fs.readFileSync('components/account-access-card.tsx','utf8'),/SampleInvite/);
  const page=fs.readFileSync('app/auth/telegram/page.tsx','utf8');
- assert.match(page,/fetch\('\/api\/auth\/telegram'/);assert.match(page,/https:\/\/telegram\.org\/js\/telegram-web-app\.js/);
+ assert.match(page,/requestJson\('\/api\/auth\/telegram'/);assert.match(page,/https:\/\/telegram\.org\/js\/telegram-web-app\.js/);
  assert.match(page,/started\.current/,'the sign-in runs once even if the effect repeats');
  assert.match(page,/query\.get\('t'\)/);assert.match(page,/webApp\?\.initData/);
  assert.ok(!/localStorage|document\.cookie/.test(page),'no credential is kept in the page');

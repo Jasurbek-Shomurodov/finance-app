@@ -50,17 +50,19 @@ export function useOverviewCards({ entries, currency, excludedCurrencies, foreca
  // The pill counts every item, not just the rows shown, and never calls an overdue item "due soon".
  const overdueCount = upcomingItems.filter(item => item.overdue).length;
  const figure = (value: string) => <span className="panel-figure">{value}</span>;
+ // Every commitment figure waits for the forecast, as Expenses does: a partial forecast never prints as a total (MONEY-008).
+ const ready = (amount: number) => forecastReady ? money(amount) : '—';
  const commitments = <section className="panel overview-panel" key="commitments">
   <PanelTitle title={<>{t("Monthly commitments")} {forecastReady && figure(t('{amount} left', { amount: money(forecast.forecast) }))}</>} hint={<>
-   <p>{t('Estimated asset income: {amount}', { amount: money(forecast.estimatedIncome) })}</p>
-   <p>{t('Other recurring income: {amount}', { amount: money(forecast.otherIncome) })}</p>
+   <p>{t('Estimated asset income: {amount}', { amount: ready(forecast.estimatedIncome) })}</p>
+   <p>{t('Other recurring income: {amount}', { amount: ready(forecast.otherIncome) })}</p>
    <p>{t("Yearly records are divided by 12. A category's budget counts when it is more than the bills in that category. One-time records are excluded.")}</p>
   </>}/>
   <ul className="overview-list overview-commitments">
-   <li><CategoryIcon kind="Salary"/><span>{t("Income")}</span><strong className="positive">{money(forecast.plannedIncome)}</strong></li>
-   <li><CategoryIcon kind="Living expense"/><span>{t("Expenses")}</span><strong>{forecastReady ? money(forecast.monthlyExpenses) : '—'}</strong></li>
-   <li><CategoryIcon kind="Mortgage"/><span>{t("Estimated mortgage payments")}</span><strong>{money(forecast.mortgagePayments)}</strong></li>
-   {forecast.loanPayments > 0 && <li><CategoryIcon kind="Loan"/><span>{t("Estimated loan payments")}</span><strong>{money(forecast.loanPayments)}</strong></li>}
+   <li><CategoryIcon kind="Salary"/><span>{t("Income")}</span><strong className={forecastReady ? 'positive' : undefined}>{ready(forecast.plannedIncome)}</strong></li>
+   <li><CategoryIcon kind="Living expense"/><span>{t("Expenses")}</span><strong>{ready(forecast.monthlyExpenses)}</strong></li>
+   <li><CategoryIcon kind="Mortgage"/><span>{t("Estimated mortgage payments")}</span><strong>{ready(forecast.mortgagePayments)}</strong></li>
+   {forecast.loanPayments > 0 && <li><CategoryIcon kind="Loan"/><span>{t("Estimated loan payments")}</span><strong>{ready(forecast.loanPayments)}</strong></li>}
   </ul>
   <div className="cash-footer"><span>{t("Left after expenses")}</span><strong className={forecastReady ? signTone(forecast.forecast, true) : undefined}><SurplusButton parts={forecastReady ? forecast : null} currency={currency} className="surplus-link">{forecastReady ? money(forecast.forecast) : '—'}</SurplusButton></strong></div>
  </section>;

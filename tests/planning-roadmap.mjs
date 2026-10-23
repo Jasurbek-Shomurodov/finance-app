@@ -40,6 +40,8 @@ test('recurring detection requires three regularly spaced actuals and avoids exi
  const {recurringSuggestions,suspectedDuplicates}=loadTS('lib/recurring-insights.ts');
  const rows=['2026-06-15','2026-07-15','2026-08-15'].map((date,index)=>({id:String(index),name:'Internet',kind:'Other expense',currency:'USD',amount:index===2?25:20,date,frequency:'Once'}));
  const results=recurringSuggestions(rows,'2026-09-01');assert.equal(results.length,1);assert.equal(results[0].next,'2026-09-15');assert.equal(results[0].changed,true);assert.equal(recurringSuggestions(rows.slice(1),'2026-09-01').length,0);assert.equal(recurringSuggestions([...rows,{...rows[0],id:'plan',frequency:'Monthly'}],'2026-09-01').length,0);assert.equal(recurringSuggestions(rows.map(row=>({...row,operation_id:'protected'})),'2026-09-01').length,0);
+ assert.equal(recurringSuggestions([...rows,{...rows[0],id:'plan',frequency:'Monthly',end_date:'2026-08-31'}],'2026-09-01').length,1,'a plan that ended before this month no longer covers its merchant (runningSchedule)');
+ assert.equal(recurringSuggestions([...rows,{...rows[0],id:'plan',frequency:'Monthly',archived:true,archive_pauses:[{from:'2026-09-01',to:null}]}],'2026-09-01').length,1,'nor does one archived this month');
  assert.equal(suspectedDuplicates([...rows,{...rows[0],id:'copy'}]).length,1);assert.equal(suspectedDuplicates([...rows,{...rows[0],id:'other',currency:'UZS'}]).length,0);
 });
 test('saved scenarios preserve purchasing power and model a missed month without inflating existing wealth',()=>{

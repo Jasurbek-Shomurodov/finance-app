@@ -1,10 +1,13 @@
 import { workspaceOwner } from '@/lib/household';
 import { readOwnerRows } from '@/lib/server-records';
-import { crossSite, parseAction, postgrestError, readJson, signInAgain } from '@/lib/api-route';
+import { crossSite, parseAction, postgrestFailure, readJson, signInAgain } from '@/lib/api-route';
 import { session, supa, sameOrigin } from '@/lib/supabase';
 import { tagSchemas, type Tag, type TagLink } from '@/lib/tags';
 
-const unavailable = () => Response.json({ error: 'Could not load tags. Check that the latest migrations are installed.' }, { status: 503 });
+const notSaved = 'Could not load tags. Check that the latest migrations are installed.';
+const unavailable = () => Response.json({ error: notSaved }, { status: 503 });
+/** The database's refusal keeps its status and words (a view-only member answers 403); only a missing function is a setup problem. */
+const saved = (response: Response) => response.ok ? Response.json({ ok: true }) : postgrestFailure(response, notSaved, { codes: { '23505': 'A tag with this name already exists.', PGRST202: [notSaved, 503] } });
 
 export async function GET() {
  try {
@@ -21,13 +24,9 @@ export async function POST(req: Request) {
   const input = parseAction(await readJson(req), tagSchemas);
   if (!input) return Response.json({ error: 'Check the tag fields.' }, { status: 400 });
   if (input.action === 'delete') {
-   const response = await supa('/rest/v1/transaction_tags?id=eq.' + input.data.id, { method: 'DELETE' }, auth.token);
-   return response.ok ? Response.json({ ok: true }) : unavailable();
+   return saved(await supa('/rest/v1/transaction_tags?id=eq.' + input.data.id, { method: 'DELETE' }, auth.token));
   }
   const tag = input.data;
-  const response = await supa('/rest/v1/transaction_tags?on_conflict=id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates' }, body: JSON.stringify({ id: tag.id, user_id: workspaceOwner(auth), name: tag.name, color: tag.color }) }, auth.token);
-  if (response.ok) return Response.json({ ok: true });
-  const detail = await postgrestError(response);
-  return detail.code === '23505' ? Response.json({ error: 'A tag with this name already exists.' }, { status: 409 }) : unavailable();
+  return saved(await supa('/rest/v1/transaction_tags?on_conflict=id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates' }, body: JSON.stringify({ id: tag.id, user_id: workspaceOwner(auth), name: tag.name, color: tag.color }) }, auth.token));
  } catch { return unavailable(); }
 }

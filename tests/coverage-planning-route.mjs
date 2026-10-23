@@ -134,7 +134,7 @@ test('POST delete_goal moves the goal to Recently deleted and names database fai
  state.handler=()=>Response.json({code:'PGRST202'},{status:404});
  assert.deepEqual(await json(await api.POST(post({action:'delete_goal',data:{id:GOAL}}))),{status:503,body:{error:'Goal deletion needs the latest database update.'}});
  state.handler=()=>Response.json({code:'XX000'},{status:500});
- assert.deepEqual(await json(await api.POST(post({action:'delete_goal',data:{id:GOAL}}))),{status:409,body:{error:'Could not delete the goal. Please try again.'}});
+ assert.deepEqual(await json(await api.POST(post({action:'delete_goal',data:{id:GOAL}}))),{status:503,body:{error:'Could not delete the goal. Please try again.'}});
  assert.equal(state.events.length,1);
 });
 
@@ -331,7 +331,7 @@ test('POST repayment across currencies uses the atomic FX function and guards ag
  paymentHandler(state,{records:[uzsAccount,usdLoan],rpc:()=>Response.json({code:'P0001',message:'Account balance is too low.'},{status:400})});
  assert.deepEqual(await json(await api.POST(post({action:'repayment',data}))),{status:409,body:{error:'Account balance is too low.'}});
  paymentHandler(state,{records:[uzsAccount,usdLoan],rpc:()=>Response.json({},{status:500})});
- assert.deepEqual(await json(await api.POST(post({action:'repayment',data}))),{status:409,body:{error:'Could not save the operation. Please try again.'}});
+ assert.deepEqual(await json(await api.POST(post({action:'repayment',data}))),{status:503,body:{error:'Could not save the operation. Please try again.'}});
 });
 
 test('POST mortgage across currencies records principal and interest as one dated payment',async()=>{

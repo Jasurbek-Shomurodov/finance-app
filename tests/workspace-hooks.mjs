@@ -58,6 +58,16 @@ test('the JSON client sends the body, returns the reply and shapes failures with
   await assert.rejects(requestJson('/api/example',{body:{},fallback:'Could not save changes.'}),error=>error.message==='Name is taken.'&&error.confirmedFailure===true&&error.status===409);
   reply=()=>new Response('Bad gateway',{status:502});
   await assert.rejects(requestJson('/api/example',{body:{},fallback:'Could not save changes.'}),error=>error.message==='Could not save changes.'&&error.confirmedFailure===false,'a reply without JSON uses the fallback, and a server failure may have saved');
+  // A GET sends no body and is never cached; it carries the caller's signal.
+  reply=()=>Response.json({records:2});calls.length=0;
+  const controller=new AbortController();
+  assert.deepEqual(await requestJson('/api/categories?id=x',{method:'GET',signal:controller.signal}),{records:2});
+  assert.deepEqual(calls[0].options,{method:'GET',cache:'no-store',signal:controller.signal});
+  // The account wrappers: an HTML error page from a proxy reads as the fallback, never as a JSON parse error.
+  reply=()=>new Response('<html>502</html>',{status:502});
+  const {requestAccountAccess}=loadTS('lib/account-access-request.ts');
+  await assert.rejects(requestAccountAccess({action:'signup',email:'a@b.c',password:'x'}),error=>error.message==='Account service is unavailable. Please try again.'&&error.status===502);
+  assert.equal(calls.at(-1).url,'/api/account-access');assert.deepEqual(JSON.parse(calls.at(-1).options.body),{action:'signup',email:'a@b.c',password:'x'});
  }finally{globalThis.fetch=original;}
 });
 test('the Telegram link shows a load failure, retries, and keeps a later answer from a save',async()=>{

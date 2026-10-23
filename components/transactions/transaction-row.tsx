@@ -30,7 +30,8 @@ export function MortgageSplit({ record }: { record: Entry }) {
  return <small>{t('Mortgage payment · Principal: {principal} · Interest: {interest}', { principal: entered(transferAmount(record), record.currency), interest: entered(spendingAmount(record), record.currency) })}</small>;
 }
 
-/** The row's signed amount by the shared spending definition (`lib/spending.ts`): a mortgage payment shows its interest. */
+/** The row's signed amount as it was entered: income with a plus, spending with a minus. A mortgage payment shows the whole
+ * payment; `MortgageSplit` under it says how much was interest (spending) and principal (a transfer, `lib/spending.ts`). */
 export function TransactionAmount({ record }: { record: Entry }) {
  const { enteredSigned } = useDisplayMoney();
  const incoming = income.includes(record.kind);

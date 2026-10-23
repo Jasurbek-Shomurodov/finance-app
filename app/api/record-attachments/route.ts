@@ -47,10 +47,12 @@ export async function POST(req: Request) {
   const mime = file.mime as AttachmentMime;
   if (input.action === 'prepare') {
    // The browser uploads straight to storage through a one-time link, so files up to the limit skip the app server's body limit.
-   // Each link lets a file in before any row exists, so links are counted per workspace, whose folder they fill.
-   if (await rateLimited(req, 'attachments', limits.attachments, owner, { perIp: false })) return tooManyAttempts();
+   // Each link lets a file in before any row exists, so links are counted per workspace, whose folder they fill. The
+   // record check comes first: it runs under row security, so a workspace cookie naming a household this person is not
+   // in never reaches the limiter and cannot use up that household's links.
    const blocked = await checkAttachmentRecord(store, owner, file.record_id);
    if (blocked && !blocked.ok) return reply({ error: blocked.error }, blocked.status);
+   if (await rateLimited(req, 'attachments', limits.attachments, owner, { perIp: false })) return tooManyAttempts();
    const id = crypto.randomUUID();
    const link = await store.uploadLink(attachmentPath(owner, file.record_id, id, mime));
    return reply({ id, upload: storageUrl(link), name: attachmentFileName(file.name) });

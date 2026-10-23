@@ -24,9 +24,8 @@ export function DeleteCategoryDialog({category,categories,removed=[],onClose,onD
  const submitting=useRef(false);
  useEffect(()=>{
   const controller=new AbortController();
-  fetch('/api/categories?id='+encodeURIComponent(category.id),{signal:controller.signal}).then(async response=>{
-   const data=await response.json() as Usage & {error?:string};if(!response.ok)throw Error(data.error);if(!controller.signal.aborted)setUsage(data);
-  }).catch(reason=>{if(!controller.signal.aborted)setError(reason.message);});
+  requestJson<Usage>('/api/categories?id='+encodeURIComponent(category.id),{method:'GET',signal:controller.signal,fallback:'Could not load category usage. Please try again.'})
+   .then(data=>{if(!controller.signal.aborted)setUsage(data);}).catch(reason=>{if(!controller.signal.aborted)setError((reason as Error).message);});
   return()=>controller.abort();
  },[category.id,retry]);
  const inUse=!!usage&&(usage.records+usage.deleted+usage.watchlists+(usage.rules??0)>0);

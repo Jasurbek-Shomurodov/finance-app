@@ -34,17 +34,19 @@ export function spendingPace(input: Input, today: string, currency: string, rate
  return { month, previousMonth, points, spent: reached.current ?? 0, previousToDate: reached.previous ?? 0, missing, empty };
 }
 
-export type SpendingItem = { id: string; name: string; kind: string; amount: number };
+/** `amount` is in `currency`, for ordering and sums; `entered` is the transaction as it was entered, in its own currency, which is what a person reads. */
+export type SpendingItem = { id: string; name: string; kind: string; amount: number; entered: { amount: number; currency: string } };
 /** Where the money went on one day: that day's actual spending, by the Monthly review's own walk (`cashFlowItems`),
  * largest first. A Tracker expense is named after its holding. An amount without a rate to `currency` is left out rather than guessed. */
 export function spendingOnDay(records: Entry[], date: string, currency: string, rates?: number | Record<string, number>, investmentLinks: NonNullable<PlanningData['investmentLinks']> = []): SpendingItem[] {
  const names = new Map(records.map(record => [record.id, record.name]));
  const items: SpendingItem[] = [];
  for (const item of cashFlowItems(records, date, date, { investmentLinks })) {
-  const amount = item.income || item.currency === null ? null : convertAmount(item.amount, item.currency, currency, ratesOf(item.record, rates));
+  if (item.income || item.currency === null) continue;
+  const amount = convertAmount(item.amount, item.currency, currency, ratesOf(item.dated, rates));
   if (amount === null || !Number.isFinite(amount) || amount <= 0) continue;
-  const { record, link } = item;
-  items.push(record ? { id: record.id, name: record.name, kind: record.kind, amount } : { id: item.id, name: names.get(link?.investment_history?.record_id ?? '') ?? '', kind: 'Other expense', amount });
+  const { record, link } = item, entered = { amount: item.amount, currency: item.currency };
+  items.push(record ? { id: record.id, name: record.name, kind: record.kind, amount, entered } : { id: item.id, name: names.get(link?.investment_history?.record_id ?? '') ?? '', kind: 'Other expense', amount, entered });
  }
  return items.sort((a, b) => b.amount - a.amount);
 }

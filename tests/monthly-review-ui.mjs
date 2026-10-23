@@ -14,7 +14,16 @@ test('monthly review retains totals without the spending category section',()=>{
  assert.match(html,/\$9,150/);assert.match(html,/\$100/);
  assert.match(html,/Actual spending/);assert.match(html,/Net-worth change/);
  assert.doesNotMatch(html,/Spending by category|No recorded spending|monthly-category|Add expense/);
- assert.match(html,/aria-label="How this review is calculated"[^>]*[\s\S]*?aria-haspopup="dialog"/);
+ assert.doesNotMatch(html,/How this review is calculated/,'the help dialog that claimed current rates is gone');
+});
+test('the compact review prints no total while a transaction has no rate: — in every tile, with the note (MONEY-008)',()=>{
+ const data={...props.data,records:[record('salary',9150,{kind:'Salary'}),record('groceries',125000,{currency:'UZS'})]};
+ const html=render({compact:true,data,estimates:{income:9000,spending:500,net:8500}});
+ assert.match(html,/Current or previous month totals are incomplete/);
+ assert.doesNotMatch(html,/\$9,150|\$0|100%/,'no partial income, spending or savings rate');
+ assert.match(html,/\$9,000/,'the estimates still read');
+ const whole=render({compact:true,data,market:{rates:{USD:1,UZS:12500}},estimates:null});
+ assert.match(whole,/\$9,150/);assert.match(whole,/\$10/);assert.doesNotMatch(whole,/totals are incomplete/);
 });
 test('net-worth history failures remain visible',()=>{
  const html=render({historyError:'Offline'});

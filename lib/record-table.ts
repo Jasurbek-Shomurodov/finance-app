@@ -40,7 +40,8 @@ export type RecordTableInput = {
 /** What the record table shows: its rows in the display currency, how many there are, the page and whether it is loading. */
 export function recordTableView(input: RecordTableInput) {
  const { demo, section, sectionKey, locale, currency, market, rows, current, filters, currencyFilter, page, historyOnly, remoteHistory, useFilteredRecords, historyPage } = input;
- const display = (record: Entry) => marketEntry(record, currency, market) ?? record;
+ // A transaction reads as it was entered (AGENTS.md, entered or converted); asset and debt rows show their value in the display currency.
+ const display = (record: Entry) => isTransactionHistory(record) ? record : marketEntry(record, currency, market) ?? record;
  const kinds = sectionKinds(section);
  const demoVisible = (sectionKey === 'assets' ? sortAssetsByWorth : sortRecords)(current.filter(record => !kinds || kinds.includes(record.kind)));
  const filtered = filterRecords((demo ? rows : input.planningRecords).filter(record => (!historyOnly || isTransactionHistory(record)) && (sectionKey === 'all' || (sectionKey === 'debts' ? lendingRecordKinds : [...income, ...expenses]).includes(record.kind)) && (!currencyFilter || record.currency === currencyFilter)), filters, locale);

@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { showError } from '@/lib/feedback';
+import { requestJson } from '@/lib/api-client';
 import { demoMarket, type DemoWorkspace } from '@/lib/demo-finance';
 import { useWorkspacePreferences } from '@/hooks/use-workspace-preferences';
 import { useTransactionTools } from '@/hooks/use-transaction-tools';
@@ -122,8 +123,8 @@ function useWorkspaceState() {
     function clearLocalSession() { setEditing(null); setDeleting(null); closeRecordDialogs(); setRecordKinds(kinds); price.resetPrice(); settings.resetSettings(); table.resetTable(); setSummary([]); setUser(null); setDemo(false); sample.clearSample(); bin.emptyBin(); setRows([]); setError(''); }
     async function logout() {
         if (!demo) {
-            const r = await fetch('/api/auth', { method: 'DELETE' }).catch(() => null);
-            if (!r?.ok) { setError('Could not sign out. Please try again.'); showError('Could not sign out. Please try again.'); return; }
+            try { await requestJson('/api/auth', { method: 'DELETE' }); }
+            catch { setError('Could not sign out. Please try again.'); showError('Could not sign out. Please try again.'); return; }
         }
         clearLocalSession();
     }

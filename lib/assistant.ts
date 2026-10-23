@@ -3,6 +3,8 @@ import { shiftMonth } from './calendar-days';
 import { cashFlowReport } from './cash-flow-report';
 import { assets, liabilities, value, type Entry } from './finance';
 import { formatDate, formatMoney, formatMonthYear, formatNumber } from './format';
+import { goalCurrentValue } from './goal-projection';
+import { investmentGoalProgress } from './investment-goals';
 import { isLanguage, locales } from './languages';
 import { convertAmount } from './market';
 import { upcomingPayments, type PlanningData } from './planning';
@@ -35,7 +37,7 @@ export const assistantSuggestions = ['What recurring expenses do I have?', 'How 
  * this month's scheduled items and goals. Amounts and dates are written the way the app shows them ("$1,200", "30 September 2026"),
  * in the person's own language and number style, so the assistant repeats them the way they read them everywhere else;
  * every amount is in `currency`, and one without a rate to it is written as a dash and counted, never shown under its own currency. */
-export function assistantContext(data: Pick<PlanningData, 'records' | 'categories' | 'goals' | 'occurrences' | 'activity' | 'investmentLinks'>, today: string, currency: string, rates: Record<string, number>, language = 'en') {
+export function assistantContext(data: Pick<PlanningData, 'records' | 'categories' | 'goals' | 'occurrences' | 'activity' | 'investmentLinks' | 'holdingAccounts'>, today: string, currency: string, rates: Record<string, number>, language = 'en') {
  const month = today.slice(0, 7);
  const locale = isLanguage(language) ? locales[language] : locales.en, money = (amount: number, unit = currency) => formatMoney(amount, unit, locale), day = (date: string) => formatDate(date, locale);
  let unconverted = 0;
@@ -52,7 +54,15 @@ export function assistantContext(data: Pick<PlanningData, 'records' | 'categorie
  });
  const recurring = monthOccurrences(records, data.occurrences, month, today).map(item => `${day(item.date)} ${item.record.name} (${item.record.kind}, ${item.record.frequency}): ${inCurrency(item.amount, item.record.currency)}, ${item.status}`);
  const reminders = upcomingPayments(records, data.occurrences, today).filter(item => item.type !== 'scheduled').map(item => `${day(item.date)} ${item.record.name} (${item.record.kind}): ${inCurrency(item.amount, item.record.currency)}${item.overdue ? ', overdue' : ''}`);
- const goals = data.goals.filter(goal => !goal.archived).map(goal => { const unit = goal.currency ?? currency, monthly = goal.funding_monthly ?? goal.monthly_contribution; return `${goal.name}: ${inCurrency(Number(goal.allocated), unit)} of ${inCurrency(Number(goal.target), unit)}${goal.target_date ? ` by ${day(goal.target_date)}` : ''}${monthly ? `, saving ${inCurrency(Number(monthly), unit)} a month` : ''}`; });
+ // Net worth in a goal's currency, for a net-worth goal; null when a holding or debt has no rate into it.
+ const netWorthIn = (unit: string) => { let total = 0; for (const record of records) { if (!assets.includes(record.kind) && !liabilities.includes(record.kind)) continue; const amount = convertAmount(liabilities.includes(record.kind) ? -Number(record.amount) : value(record), record.currency, unit, rates); if (amount === null) return null; total += amount; } return total; };
+ // A goal reads by its kind, as the Goals card does: an investment goal counts units of its symbol, a net-worth goal its current net worth, a savings goal its money.
+ const goals = data.goals.filter(goal => !goal.archived).map(goal => {
+  const unit = goal.currency ?? currency, monthly = goal.funding_monthly ?? goal.monthly_contribution, when = goal.target_date ? ` by ${day(goal.target_date)}` : '';
+  if (goal.kind === 'investment') { const units = (amount: number) => `${formatNumber(amount, locale)} ${goal.asset_symbol ?? ''}`.trim(); return `${goal.name}: ${units(investmentGoalProgress(goal, { records, holdingAccounts: data.holdingAccounts })?.current ?? 0)} of ${units(Number(goal.target))}${when}`; }
+  const current = goalCurrentValue(goal, netWorthIn(unit));
+  return `${goal.name}: ${current === null ? '— (Exchange rate unavailable)' : inCurrency(current, unit)} of ${inCurrency(Number(goal.target), unit)}${when}${monthly ? `, saving ${inCurrency(Number(monthly), unit)} a month` : ''}`;
+ });
  const section = (title: string, lines: string[]) => `## ${title}\n${lines.length ? lines.map(line => `- ${line}`).join('\n') : '- none'}`;
  const header = `Today is ${day(today)}. Display currency: ${currency}.${unconverted ? ` ${formatNumber(unconverted, locale, 0)} amounts in currencies without a rate are written as — and left out of any total.` : ''}`;
  return [header, section('Holdings', holdings), section('Debts', debts), section(`Cash flow by month (${currency})`, flows), section(`Scheduled income and bills in ${formatMonthYear(month, locale)}`, recurring), section('Debt and deposit reminders', reminders), section('Savings goals', goals)].join('\n\n');

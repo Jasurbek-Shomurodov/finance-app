@@ -10,6 +10,7 @@ const { drillFlows } = loadTS('lib/cash-flow-drill.ts');
 const { cashFlowReport } = loadTS('lib/cash-flow-report.ts');
 const { reportLedger } = loadTS('lib/business-report.ts');
 const { periodTotals } = loadTS('lib/period-summary.ts');
+const { cashFlowItems, trackerDated } = loadTS('lib/spending.ts');
 const { groupByDay, summarizeTransactions } = loadTS('lib/transaction-list.ts');
 const { convertAmount } = loadTS('lib/market.ts');
 
@@ -120,6 +121,23 @@ test('the Sankey of a payee, the Cash flow report and Reports add each payment a
  assert.equal(ledger.missing, 0);
  const lost = reportLedger({ records: [{ ...october[0], day_rates: null }], investmentLinks: [] }, [], { from: '2026-10-01', to: '2026-10-31' }, 'USD', '2026-10-20', today);
  assert.equal(lost.missing, 1, 'a day without rates is missing, never converted at today\'s rate');
+});
+
+test('a Tracker expense on an investment converts at the rates of its own day, like a transaction (MONEY-012)', () => {
+ // 1,200,000 UZS spent from a UZS brokerage account on 1 October, when the official rate was 12,000: $100, not $93.75 at today's.
+ const link = (day_rates) => ({ id: 'l', account_id: 'broker', account_currency: 'UZS', amount: -1_200_000, investment_history: { record_id: 'fund', event_type: 'expense', occurred_on: '2026-10-01' }, ...(day_rates === undefined ? {} : { day_rates }) });
+ const broker = record('broker', 'Broker', 'Cash', 0, '2026-01-01');
+ const items = [...cashFlowItems([broker], '2026-10-01', '2026-10-31', { investmentLinks: [link(day['2026-10-01'])] })];
+ assert.deepEqual(items.map(item => item.dated), [{ currency: 'UZS', day_rates: day['2026-10-01'] }], 'the item carries its link\'s day table');
+ assert.equal(periodTotals({ records: [broker], investmentLinks: [link(day['2026-10-01'])] }, '2026-10-01', '2026-10-20', 'USD', today).spending, 100);
+ assert.equal(reportLedger({ records: [broker], investmentLinks: [link(day['2026-10-01'])] }, [], { from: '2026-10-01', to: '2026-10-31' }, 'USD', '2026-10-20', today).lines[0].amount, 100, 'Reports too');
+ const flows = drillFlows({ side: 'expense', key: 'Other expense', income: false }, 'Other expense', 0, { data: { records: [broker], activity: [], investmentLinks: [link(day['2026-10-01'])] }, splits: [], months: ['2026-10'], currency: 'USD', today: '2026-10-20', rates: today, t: key => key });
+ assert.equal(Math.round(flows.links.reduce((sum, item) => Math.max(sum, item.value), 0)), 100, 'the drill agrees with the totals');
+ const lost = periodTotals({ records: [broker], investmentLinks: [link(null)] }, '2026-10-01', '2026-10-20', 'USD', today);
+ assert.equal(lost.spending, 0); assert.equal(lost.missing, 1, 'a day whose rates could not be loaded is missing, never today\'s rate');
+ assert.equal(reportLedger({ records: [broker], investmentLinks: [link(null)] }, [], { from: '2026-10-01', to: '2026-10-31' }, 'USD', '2026-10-20', today).missing, 1);
+ assert.equal(periodTotals({ records: [broker], investmentLinks: [link(undefined)] }, '2026-10-01', '2026-10-20', 'USD', today).spending, 1_200_000 / 12800, 'a movement the server never dated (a sample) converts at today\'s rates');
+ assert.deepEqual(trackerDated(link(undefined), 'UZS'), null);
 });
 
 test('period totals, the transaction list\'s day totals and the summary use each transaction\'s day', () => {

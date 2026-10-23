@@ -121,13 +121,19 @@ export function onScheduleDays<T extends {record_id:string;due_on:string}>(occur
  return occurrences.map(item=>{const day=days.get(item.record_id);if(!day)return item;const due=withMonthDay(item.due_on,day);return due===item.due_on?item:{...item,due_on:due};});
 }
 export const isRecurringCashFlow=(record:Entry)=>[...income,...expenses].includes(record.kind)&&record.frequency!=='Once';
+/** A recurring income or bill that still runs: neither archived nor paused, as Recurring and `paymentSchedules` count them. */
+export const activeSchedule=(record:Entry)=>isRecurringCashFlow(record)&&!record.archived&&!record.source_paused;
+/** An active schedule that falls in `month` (YYYY-MM): not archived that month (`archivedIn`) and not ended before it, the
+ * same test `monthly` and `scheduleDates` apply, so a table of commitments, the budget beside it, Recurring and the forecasts
+ * all count one ended or month-archived bill the same way (none of them). */
+export const runningSchedule=(record:Entry,month:string)=>activeSchedule(record)&&!archivedIn(record,month)&&(!record.end_date||record.end_date.slice(0,7)>=month);
 /** What a one-time payment is: its kind and category, and its business or property. */
 export type SchedulePayment={kind?:string;custom_category_id?:string|null;business_id?:string|null;income_source_id?:string|null};
 /** The active schedules a one-time payment may name by id: the same item (its custom category, else its kind; `budgetKey`,
  * as Budget counts it), and the same business for business income or property for rent, in any currency (migration 120).
  * The bot and the record forms offer these. */
 export function paymentSchedules(records:Entry[],payment:SchedulePayment):Entry[]{
- return records.filter(record=>isRecurringCashFlow(record)&&!record.archived&&!record.source_paused&&!!payment.kind
+ return records.filter(record=>activeSchedule(record)&&!!payment.kind
   &&budgetKey(record)===budgetKey({kind:payment.kind,custom_category_id:payment.custom_category_id})&&income.includes(record.kind)===income.includes(payment.kind)
   &&(record.kind!=='Business income'||!payment.business_id||record.business_id===payment.business_id)
   &&(record.kind!=='Rent income'||!payment.income_source_id||record.income_source_id===payment.income_source_id));
@@ -136,7 +142,7 @@ export function paymentSchedules(records:Entry[],payment:SchedulePayment):Entry[
  * before the end of the payment's month. `anyCategory` offers the open schedules of every category of its direction; the
  * form then moves the payment into the chosen schedule's category. */
 export function openPaymentSchedules(records:Entry[],occurrences:Occurrence[],payment:SchedulePayment&{date:string},anyCategory=false):Entry[]{
- const offered=anyCategory?records.filter(record=>isRecurringCashFlow(record)&&!record.archived&&!record.source_paused&&!!payment.kind&&income.includes(record.kind)===income.includes(payment.kind)):paymentSchedules(records,payment);
+ const offered=anyCategory?records.filter(record=>activeSchedule(record)&&!!payment.kind&&income.includes(record.kind)===income.includes(payment.kind)):paymentSchedules(records,payment);
  if(!offered.length)return [];
  const open=new Set(upcomingPayments(records,occurrences,payment.date,monthEnd(payment.date)).filter(item=>item.type==='scheduled').map(item=>item.record.id));
  return offered.filter(record=>open.has(record.id));

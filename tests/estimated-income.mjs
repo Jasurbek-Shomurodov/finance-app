@@ -11,7 +11,7 @@ test('estimates convert with records and do not become asset value',()=>{
  const record={id:'p',name:'Rental',kind:'Property',amount:10000,cost:0,currency:'USD',estimated_monthly_income:500};
  const converted=marketEntry(record,'UZS',{fx:{rate:12000},quotes:{}});
  assert.equal(converted.estimated_monthly_income,6000000);assert.equal(value(converted),120000000);
- assert.deepEqual(estimatedCashFlow([]),{estimatedAssets:[],otherIncome:0,plannedIncome:0,monthlyExpenses:0,mortgagePayments:0,loanPayments:0,estimatedIncome:0,forecast:0});
+ assert.deepEqual(estimatedCashFlow([]),{estimatedAssets:[],otherIncome:0,plannedIncome:0,monthlyExpenses:0,mortgagePayments:0,mortgageInterest:0,loanPayments:0,estimatedIncome:0,forecast:0});
 });
 
 test('mortgage estimates reduce forecasts once, ignore paid-off debt and actual one-time payments',()=>{
@@ -42,4 +42,15 @@ test('foreign-currency salary is converted before adding it to the monthly forec
 test('monthly commitments count loan and debt payments alongside mortgages',()=>{
  const result=estimatedCashFlow([{kind:'Mortgage',amount:119300,estimated_monthly_payment:900},{kind:'Loan',amount:7650,estimated_monthly_payment:350},{kind:'Debt',amount:500,estimated_monthly_payment:50},{kind:'Loan',amount:0,estimated_monthly_payment:200},{kind:'Living expense',amount:40,frequency:'Monthly'}]);
  assert.equal(result.mortgagePayments,900);assert.equal(result.loanPayments,400,'repaid loans no longer count');assert.equal(result.forecast,-1340);
+});
+
+test('the spending estimate is bills plus mortgage interest only: principal and loan repayments are transfers (lib/spending.ts)',()=>{
+ // 90,000 at 12% a year: 900 of the 1,570 payment is interest this month; the 670 principal is not spending.
+ const mortgage={kind:'Mortgage',amount:90000,rate:12,estimated_monthly_payment:1570,currency:'USD',cost:0};
+ const result=estimatedCashFlow([mortgage,{kind:'Living expense',amount:600,frequency:'Monthly'},{kind:'Loan',amount:5000,estimated_monthly_payment:200}]);
+ assert.equal(result.mortgageInterest,900);assert.equal(result.mortgagePayments,1570);assert.equal(result.loanPayments,200);
+ assert.equal(result.monthlyExpenses+result.mortgageInterest,1500,'the Cash flow "Monthly estimate" under Actual spending');
+ assert.equal(result.forecast,-(600+1570+200),'the net estimate still pays the whole installments');
+ assert.equal(estimatedCashFlow([{...mortgage,amount:100000,rate:60}]).mortgageInterest,1570,'never more than the payment itself (5,000 of interest on 100,000 at 60% is capped at the 1,570 payment)');
+ assert.equal(estimatedCashFlow([{...mortgage,rate:0}]).mortgageInterest,0,'no rate, no interest');
 });

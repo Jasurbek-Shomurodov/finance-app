@@ -14,7 +14,8 @@ import { formatMoney, formatNumber } from '@/lib/format';
 import { attributeLabels, rangeText, type TabProps } from './report-labels';
 
 /** Spending or income: the total, a breakdown by category, group, merchant or business (bars or a donut), and trends. */
-export function AttributeTab({ direction, lines, trendLines, trendRange, interval, names, groupOf, hasBusinesses, currency, onDrill }: TabProps & { direction: Direction; hasBusinesses: boolean }) {
+/** `missing` counts the period's amounts no rate converts: the total reads — rather than leaving them out (MONEY-008). */
+export function AttributeTab({ direction, lines, trendLines, trendRange, interval, names, groupOf, hasBusinesses, currency, onDrill, missing = 0 }: TabProps & { direction: Direction; hasBusinesses: boolean; missing?: number }) {
  const { t, locale } = useLanguage();
  const categoryHue = useCategoryHue();
  const [mode, setMode] = useState<'breakdown' | 'trends'>('breakdown');
@@ -33,7 +34,7 @@ export function AttributeTab({ direction, lines, trendLines, trendRange, interva
  const attributes = (['category', 'group', 'merchant', ...(hasBusinesses ? ['business'] : [])] as Attribute[]);
  return <>
   <StatTiles columns="auto" label={t(direction === 'expense' ? 'Spending' : 'Income')}>
-   <StatTile label={t(direction === 'expense' ? 'Total spending' : 'Total income')} value={formatMoney(total, currency, locale)} tone={direction === 'income' && total > 0 ? 'positive' : undefined}/>
+   <StatTile label={t(direction === 'expense' ? 'Total spending' : 'Total income')} value={missing ? '—' : formatMoney(total, currency, locale)} tone={!missing && direction === 'income' && total > 0 ? 'positive' : undefined}/>
    <StatTile label={t('Transactions')} value={formatNumber(lines.length, locale, 0)}/>
   </StatTiles>
   <section className="panel">

@@ -156,7 +156,7 @@ test('the household API checks the open workspace against the database and keeps
 
 test('backups, account deletion and sign-out stay personal whichever workspace is open',()=>{
  const backup=fs.readFileSync('app/api/backup/route.ts','utf8');
- assert.equal((backup.match(/supa\(/g)||[]).length-(backup.match(/personalRequest\(/g)||[]).length,1,'only the signed service-key registration is not marked personal');
+ assert.equal((backup.match(/supa\(/g)||[]).length+(backup.match(/readOwnerRows[<(]/g)||[]).length-(backup.match(/personalRequest\(/g)||[]).length,1,'only the signed service-key registration is not marked personal');
  assert.match(fs.readFileSync('app/api/account-access/route.ts','utf8'),/supa\(path,personalRequest\(init\),auth\.token\)\),auth\.user\.id\)/);
  assert.match(fs.readFileSync('app/api/auth/route.ts','utf8'),/c\.delete\(workspaceCookie\)/);
  // Routes that write owner rows name the open workspace, never the signed-in id.
@@ -203,6 +203,8 @@ test('the shell, top bar and screens show sharing only where it applies',()=>{
  // The sample household lists its people and offers no invites.
  assert.match(panel,/\{!demo && state && <Button disabled=\{people \+ state\.invites\.length >= householdLimit\}/);
  assert.match(panel,/demo \? <ul className="household-people">\{state\?\.people\.map\(/);
+ // `expires_at` is a timestamp (migration 100): the date-only formatter would read it as — (MONEY-006).
+ assert.match(panel,/formatDateTime\(invite\.expires_at, locale\)/);assert.match(panel,/formatDateTime\(created\.expires, locale\)/);assert.doesNotMatch(panel,/formatDate\(/);
  // The provider refuses to open edit forms for a viewer and skips the daily snapshot write.
  const provider=workspaceSource();
  for(const action of ['addCashFlow','addRecord','addAccountRecord','quickExpense','requestDelete'])assert.match(provider,new RegExp(`const ${action} = [^\\n]*\\n?[^\\n]*editable\\(\\)`),action);

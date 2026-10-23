@@ -3,7 +3,7 @@ import { shiftMonth } from './calendar-days';
 import { budgetKey, expenses, scheduledByKey, type Entry } from './finance';
 import { isLinkedTransaction } from './linked-transactions';
 import { convertAmount } from './market';
-import { isRecurringCashFlow } from './planning';
+import { activeSchedule, isRecurringCashFlow } from './planning';
 
 // How Budget meets Recurring: the schedules a category plans for, the plan of a month that counts them, where a bill
 // made from a category starts, and how a saved amount repeats.
@@ -16,8 +16,9 @@ export function scheduledByCategory(schedules: readonly Entry[], month: string, 
  return scheduledByKey(schedules, month, isRecurringCashFlow, (amount, from) => convertAmount(amount, from, currency, rates));
 }
 
-/** A recurring income or bill that still runs: neither archived nor paused, as Recurring and `paymentSchedules` count them. */
-export const activeSchedule = (record: Entry) => isRecurringCashFlow(record) && !record.archived && !record.source_paused;
+/** A recurring income or bill that still runs (`activeSchedule`), and one that runs in a given month (`runningSchedule`): the
+ * one pair of predicates, defined beside `isRecurringCashFlow` in lib/planning.ts, which this module builds on. */
+export { activeSchedule, runningSchedule } from './planning';
 
 /** The running recurring bills Budget counts under a category (`budgetKey`): one at most for a custom category (migration 137). */
 export const categoryBills = (records: readonly Entry[], key: string) => records.filter(record => activeSchedule(record) && expenses.includes(record.kind) && budgetKey(record) === key);

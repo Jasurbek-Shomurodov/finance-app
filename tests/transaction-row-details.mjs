@@ -46,3 +46,17 @@ test('tapping a Transactions row opens that transaction\'s details, not its Sank
  assert.deepEqual(viewed, ['m', 'm'], 'other keys and the row\'s own pickers open nothing');
  assert.deepEqual([drilled, sankeys], [[], []], 'no Sankey opens from a row');
 });
+
+test('the Summary reads — with the rate note when a transaction cannot be converted, never a partial total (MONEY-008)', () => {
+ const summary = () => r.find(node => node.type === 'aside' && node.props.className === 'panel transactions-summary');
+ const figures = () => r.all(node => node.type === 'RollingText', [summary()]).map(node => node.props.text);
+ const note = () => r.all(node => node.type === 'p' && node.props.role === 'status', [summary()]);
+ r.mount(React.createElement(TransactionsScreen));
+ assert.ok(!figures().includes('—') && note().length === 0, 'every amount converts: real figures, no note');
+ planning.data.records.push({ ...market, id: 'gbp', name: 'London', currency: 'GBP', amount: 25 });
+ r.mount(React.createElement(TransactionsScreen));
+ assert.deepEqual(figures(), ['—', '—', '40 USD', '—'], 'Income, Spending and Net are missing; the largest expense still reads as entered');
+ assert.equal(note().length, 1);
+ assert.equal(r.all(node => node.type === 'dd' && node.props.className === 'positive', [summary()]).length, 0, 'a missing total is not coloured');
+ planning.data.records.pop();
+});

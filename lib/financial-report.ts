@@ -7,7 +7,7 @@ import { assets, interestKinds, liabilities, income, expenses } from './finance'
 import { formatDateTime, formatNumber } from './format';
 import { isCurrency, currencyLabel } from './currencies';
 import type { Language } from './languages';
-import { upcomingPayments, type Goal, type Occurrence, type PlanningData } from './planning';
+import { runningSchedule, upcomingPayments, type Goal, type Occurrence, type PlanningData } from './planning';
 import { legacyEarningSources, type EarningSource } from './earning-sources';
 import { investmentGoalItems, investmentGoalPlan } from './investment-goals';
 import { consolidatedCashFlow, expectedMonthlyIncome, hasFlowHistory, inPeriod, budgetFigures, monthBudgets, parseFinanceBackup, reportCashFlow, reportLedger, reportNumber as number, wealthTotals, type FinanceBackup, type ReportRow, type WealthItem } from './report-figures';
@@ -94,7 +94,7 @@ function detailsSection(r:Report,context:string){
  if(context.trim()){add('subheading',t('About me and interests'));add('text',context.trim());}
  add('subheading',t('Exchange rates and valuation'));
  ratesTable(r);
- add('text',t('Conversions use the rates below, not historical transaction rates. Missing rates mean no consolidated total.'));
+ add('text',t('A total that adds transactions converts each one at the official rates of its own day; balances, holdings and what is still to come use the rates below. Missing rates mean no consolidated total.'));
  previousPeriod(r);
 }
 
@@ -161,7 +161,8 @@ function expensesSection(r:Report,insights:Insights){
   if(remaining!==null&&remaining<0)r.issues.add(`${name}: ${t('Budget overspend')} ${money(-remaining,b.currency)}`);
   return [name,money(planned,b.currency),money(actual,b.currency),money(remaining,b.currency)];
  }),[.34,.22,.22,.22],[1,2,3]);
- const commitments=records.filter(rec=>expenses.includes(rec.kind)&&rec.frequency!=='Once'&&!rec.source_paused&&!rec.archived);
+ // The bills that run this month, as the Budget rows above count them: an ended or month-archived bill is in neither.
+ const commitments=records.filter(rec=>expenses.includes(rec.kind)&&runningSchedule(rec,r.month));
  if(commitments.length)add('subheading',t('Recurring expense commitments'));
  table(['Commitment','Amount','Frequency','End date'],commitments.map(rec=>[rec.name,money(number(byId.get(rec.id)?.amount),rec.currency),t(rec.frequency),date(rec.end_date)]),[.36,.24,.2,.2],[1]);
  add('text',t('Negative budget remaining = overspend. Unlinked spending has no assigned budget.'));

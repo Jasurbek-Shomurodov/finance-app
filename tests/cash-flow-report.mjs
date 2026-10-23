@@ -150,3 +150,16 @@ test('the PDF budget actual follows Budget: a split counts in its own categories
  const unsaved = reportLedger({ ...tables, finance_records: [{ ...rows[0], amount: '' }, ...rows.slice(1)] });
  assert.equal(budgetFigures(budget('home'), unsaved, period, market).actual, null, 'a split record without its amount leaves it unknown');
 });
+
+test('the merchant grouping counts a Tracker expense on an investment under its holding’s name, so the bars add up alike by category and by merchant (CR 2026-10-23, item 55)', () => {
+ const fund = record('fund', 'Index fund', 'Stock', 100, '2026-01-01', { quantity: 10 });
+ const links = [{ id: 'fee', account_id: 'fund', account_currency: 'USD', amount: -30, investment_history: { occurred_on: '2026-08-10', record_id: 'fund', event_type: 'expense' } }];
+ const data = { categories: [], activity: [], investmentLinks: links, records: [fund, record('c', 'Market', 'Living expense', 600, '2026-08-08')] };
+ const report = cashFlowReport(data, [], ['2026-08'], 'USD', '2026-08-20', { USD: 1 });
+ assert.equal(report.expenses, 630);
+ assert.deepEqual(report.merchants.expense.map(item => [item.key, item.amount]), [['Market', 600], ['Index fund', 30]]);
+ assert.equal(report.merchants.expense.reduce((sum, item) => sum + item.amount, 0), report.categories.expense.reduce((sum, item) => sum + item.amount, 0));
+ // A split transaction is one merchant line for its whole amount.
+ const split = cashFlowReport(data, [{ record_id: 'c', position: 0, category_id: 'Living expense', amount: 400 }, { record_id: 'c', position: 1, category_id: 'Other expense', amount: 200 }], ['2026-08'], 'USD', '2026-08-20', { USD: 1 });
+ assert.deepEqual(split.merchants.expense.find(item => item.key === 'Market').amount, 600);
+});

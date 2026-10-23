@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { isoDate } from './api-validation';
 import { addMonths, daysBetween, shiftDay } from './calendar-days';
 import { expenses, income, type Entry } from './finance';
+import { runningSchedule } from './planning';
 
 /**
  * Recurring charges found in recorded transactions.
@@ -136,7 +137,8 @@ function patternOf(id: string, rows: Entry[], today: string): RecurringPattern |
 
 /** Every merchant whose charges repeat on a cadence, except those already scheduled as a recurring plan. */
 function detectRecurring(records: Entry[], today: string) {
- const scheduled = new Set(records.filter(r => cashflow.includes(r.kind) && !r.source_paused && !r.archived && r.frequency !== 'Once' && (!r.end_date || r.end_date >= today)).map(groupKey));
+ // A plan that still runs this month (ended or archived ones no longer hide their merchant).
+ const scheduled = new Set(records.filter(r => runningSchedule(r, today.slice(0, 7))).map(groupKey));
  const groups = new Map<string, Entry[]>();
  for (const row of records) {
   if (!isCharge(row, today)) continue;

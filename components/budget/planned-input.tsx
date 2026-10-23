@@ -46,27 +46,38 @@ export function PlannedInput({ value, ...props }: Omit<PlannedProps, 'value'> & 
 }
 
 /** Focusing the amount opens the History popover; leaving it saves. The tick shows whether the amount carries on into
- * later months and saves the moment it changes. */
+ * later months and saves the moment it changes. Once a save settles the field shows the plan as it now stands: an amount
+ * typed below the category's recurring bills is saved, but the plan stays at the bills (`plannedIn`, shown as "{amount}
+ * recurring" on the row), so the figure goes back to them rather than lingering (ERR-005). */
 function EditablePlannedInput({ label, value, history, direction, currency, defaultForward, appliesForward, onSave, onRepeat }: PlannedProps) {
  const { t } = useLanguage();
  const anchor = useRef<HTMLSpanElement>(null);
  const [open, setOpen] = useState(false);
  const [draft, setDraft] = useState(value);
- const failed = (error: unknown) => { setDraft(value); showError(t((error as Error).message || 'Could not save changes.')); };
- const save = (forward: boolean) => onSave(draft, forward).catch(failed);
- const repeat = (forward: boolean) => onRepeat(draft, forward).catch(failed);
+ // The field follows the plan: when it changes under the field (another month, a bill that raised it) and once a save
+ // settles, since the plan may not be the figure typed (one below the bills stays at them). Derived during render, so
+ // the figure is right in the same pass; `settled` counts the saves that came back.
+ const [settled, setSettled] = useState(0);
+ const [shown, setShown] = useState({ value, settled });
+ const stale = shown.value !== value || shown.settled !== settled;
+ if (stale) { setShown({ value, settled }); setDraft(value); }
+ const amount = stale ? value : draft;
+ const done = () => setSettled(count => count + 1);
+ const failed = (error: unknown) => { done(); showError(t((error as Error).message || 'Could not save changes.')); };
+ const save = (forward: boolean) => onSave(amount, forward).then(done, failed);
+ const repeat = (forward: boolean) => onRepeat(amount, forward).then(done, failed);
  function commit() {
   setOpen(false);
-  if (draft !== value) save(appliesForward || defaultForward);
+  if (amount !== value) save(appliesForward || defaultForward);
  }
  return <Popover open={open} onOpenChange={next => { if (!next) commit(); }}>
   <PopoverAnchor asChild>
    <span ref={anchor} className="budget-input" onFocus={() => setOpen(true)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); commit(); (event.target as HTMLElement).blur(); } }}>
-    <FormattedNumberInput ariaLabel={label} value={draft} onValueChange={next => setDraft(next)} required={false} displayFractionDigits={0}/>
+    <FormattedNumberInput ariaLabel={label} value={amount} onValueChange={next => setDraft(next)} required={false} displayFractionDigits={0}/>
    </span>
   </PopoverAnchor>
   <PopoverContent className="budget-history-popover" align="end" collisionPadding={16} onOpenAutoFocus={event => event.preventDefault()} onInteractOutside={event => { if (anchor.current?.contains(event.target as Node)) event.preventDefault(); }}>
-   <HistoryPanel history={history} direction={direction} currency={currency} amount={draft} forward={appliesForward} onForward={repeat}/>
+   <HistoryPanel history={history} direction={direction} currency={currency} amount={amount} forward={appliesForward} onForward={repeat}/>
   </PopoverContent>
  </Popover>;
 }

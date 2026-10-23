@@ -28,6 +28,12 @@ test('the spending chart\'s tooltip lists the day\'s Tracker expense beside its 
  const shown=text(tooltip.props.content({active:true,payload:[{payload:pace.points[1]}]}));
  assert.match(shown,/Market/);assert.match(shown,/Apple/);assert.match(shown,/\$72/);
  assert.equal(tooltip.props.content({active:false,payload:[]}),null);
+ // A euro expense is listed as entered, in euros, while the day's total is in the display currency (MONEY-011).
+ const euros=[...records,record('Paris','Living expense',10,'2026-10-02',{currency:'EUR'})];
+ const rates={USD:1,EUR:.5};
+ const mixed=spendingPace({records:euros,splits:[],snapshots:[],investmentLinks},'2026-10-02','USD',rates);
+ const listed=text(find(SpendingPaceChart({pace:mixed,data:{records:euros,investmentLinks},currency:'USD',rates}),'Tooltip').props.content({active:true,payload:[{payload:mixed.points[1]}]}));
+ assert.match(listed,/€10/);assert.doesNotMatch(listed,/\$20/);assert.match(listed,/\$92/);
 });
 
 // next/dynamic is compiled by the build, which refuses options that are not written out as an object literal.

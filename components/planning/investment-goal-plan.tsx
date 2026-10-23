@@ -7,7 +7,7 @@ import { Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormattedNumberInput } from '@/components/presentation-foundation/formatted-number-input';
 import { useLanguage } from '@/components/language-provider';
-import { formatDate, formatMonthYear, formatNumber, formatMoney } from '@/lib/format';
+import { formatDate, formatMonthYear, formatNumber, formatMoney, formatPercent } from '@/lib/format';
 import { isoDay } from '@/lib/calendar-days';
 import { chartAxis, chartGrid, chartLegend, chartTooltip, chartValueAxis, guideLine, leadLine } from '@/components/presentation-foundation/chart';
 import { investmentGoalItems, investmentGoalPlan, investmentGoalTargets, investmentGoalStatus } from '@/lib/investment-goals';
@@ -35,7 +35,7 @@ export function InvestmentGoalPlan({goal,data,today,currency,market,save,onEdit}
    return <section className="investment-target-row" key={index} aria-labelledby={`${id}-${index}`}>
     <h3 id={`${id}-${index}`}>{target.asset_symbol}{progress?` · ${progress.account.name}`:''}</h3>
     {!progress?<p role="alert" className="error">{t('The selected investment account is unavailable. Edit this goal to choose an account.')}</p>:<>
-     <div className="investment-goal-progress"><span>{t('{percent}% complete',{percent:formatNumber(progress.percent,locale,1)})}</span><strong className={status==='Target reached'||status==='On track with this plan'?'positive':''}>{t(status)}</strong><progress value={progress.percent} max={100} aria-label={t('Goal progress')}/></div>
+     <div className="investment-goal-progress"><span>{t('{percent} complete',{percent:formatPercent(progress.percent,locale,1)})}</span><strong className={status==='Target reached'||status==='On track with this plan'?'positive':''}>{t(status)}</strong><progress value={progress.percent} max={100} aria-label={t('Goal progress')}/></div>
      <div className="investment-plan-body"><div className="investment-plan-controls"><dl className="goal-card-values"><div><dt>{t('Account balance')}</dt><dd>{balance===null?'—':formatMoney(balance,currency,locale)}</dd></div><div><dt>{t('Currently held')}</dt><dd>{units(progress.current)}</dd></div><div><dt>{t('Target quantity')}</dt><dd>{units(target.target)}</dd></div><div><dt>{t('Remaining')}</dt><dd>{units(progress.remaining)}</dd></div></dl>
      {balance===null&&<p className="muted">{t('Account balance is unavailable because an exchange rate is missing.')}</p>}
      <fieldset className="tracker-fields investment-goal-fields" disabled={busy||goal.archived}>

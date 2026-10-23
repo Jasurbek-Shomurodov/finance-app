@@ -21,7 +21,7 @@ const { AccountsPage } = r.load('components/planning/accounts-page.tsx', {
  'next/link': { __esModule: true, default: 'a' },
  // Recent activity rows open their Sankey in Cash flow.
  'next/navigation': { useRouter: () => ({ push() {} }) },
- ...Object.fromEntries(['page-header', 'segmented', 'empty-state', 'panel-title', 'stat-tile', 'animated-money', 'business-filter', 'business-mark', 'owner-filter', 'person-avatar', 'category-icon', 'count', 'sortable', 'pagination']
+ ...Object.fromEntries(['page-header', 'segmented', 'empty-state', 'panel-title', 'stat-tile', 'animated-money', 'business-filter', 'business-mark', 'owner-filter', 'person-avatar', 'category-icon', 'count', 'sortable', 'pagination', 'rolling-text']
   .map(name => ['@/components/presentation-foundation/' + name, hostModule()])),
  ...Object.fromEntries(['./statement-reconciliation', './corporate-event-dialog', './asset-movement-dialog', './account-operation', './holding-account-dialog', '@/components/account-businesses-dialog', '@/components/account-owners-dialog']
   .map(name => [name, hostModule()])),
@@ -94,7 +94,8 @@ test('Accounts shows one total in the display currency, the grouped directory an
  // The first account is selected: its goals' share and what is left.
  const card = r.find(node => node.type === 'article');
  assert.ok(text(card).includes('Wallet') && text(card).includes('Allocated to goals') && text(card).includes('Available'));
- assert.deepEqual(r.all(node => node.type === 'AnimatedMoney' && r.all(() => true, [card]).includes(node)).map(node => node.props.value), [1000, 300, 700]);
+ // The balance, its goals' share and what is left are display-currency figures through `show` (MONEY-008).
+ assert.deepEqual(r.all(node => node.type === 'RollingText', [card]).map(node => node.props.text), [usd(1000), usd(300), usd(700)]);
  r.fire(button('Adjust balance'), 'onClick');
  assert.deepEqual(r.find(byType('AccountOperation')).props.operation, { action: 'reconcile', account_id: 'wallet', amount: 1000 });
  r.fire(button('Reconcile statement'), 'onClick');

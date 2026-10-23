@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useEffectEvent, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { requestJson } from '@/lib/api-client';
 import { useLanguage } from '@/components/language-provider';
 import { defaultPreferences, type Preferences } from '@/lib/currencies';
@@ -12,11 +12,14 @@ export function useAccountSettings(user: string | null, demo: boolean) {
     const { language, setDefaultLanguage, setLanguage } = useLanguage();
     const [preferencesData, setPreferencesData] = useState<Preferences>(defaultPreferences);
     const [currency, setCurrency] = useState<string>('USD');
+    const applied = useRef(false);
     const [settingsLoading, setSettingsLoading] = useState(true);
     const [settingsError, setSettingsError] = useState('');
     const [settingsRevision,setSettingsRevision]=useState(0);
     const retrySettings=()=>{setSettingsLoading(true);setSettingsError('');setSettingsRevision(n=>n+1);};
-    function applyPreferences(next: Preferences) { setPreferencesData(next); if (demo) setLanguage(next.language); else setDefaultLanguage(next.language); applyFont(resolveFont(next.font), !demo); setCurrency(next.currencies[0]); }
+    function applyPreferences(next: Preferences) { setPreferencesData(next); if (demo) setLanguage(next.language); else setDefaultLanguage(next.language); applyFont(resolveFont(next.font), !demo);
+     // The first load applies the saved primary. After that the top bar's display currency stays while it is still preferred; only a currency that was removed falls back to the primary.
+     setCurrency(current => applied.current && next.currencies.includes(current) ? current : next.currencies[0]); applied.current = true; }
     // An account that has not finished the welcome setup has chosen no language yet, so the one already showing (saved earlier or matched to the browser) stays until it does.
     const receivePreferences = useEffectEvent((loaded: Preferences) => applyPreferences(loaded.onboarded === false ? { ...loaded, language } : loaded));
     /** Stores preferences without applying them, so the welcome setup can show its closing screen first. */

@@ -9,6 +9,8 @@ import { useWorkspace } from '@/components/workspace/workspace-provider';
 import { assistantSuggestions, assistantUnavailable } from '@/lib/assistant';
 import { marketRates } from '@/lib/market';
 import { Textarea } from '@/components/ui/textarea';
+import { requestJson } from '@/lib/api-client';
+const notAnswered = 'The assistant could not answer. Please try again.';
 
 type Turn = { role: 'user' | 'assistant'; content: string };
 
@@ -56,15 +58,16 @@ export function AssistantScreen() {
   const controller = new AbortController();
   pending.current = controller;
   try {
-   const response = await fetch('/api/assistant', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: next, currency, rates, language }), signal: controller.signal });
-   const result = await response.json() as { answer?: string; error?: string };
-   if (result.error === assistantUnavailable) { setStatus({ owner: user, available: false }); setTurns(turns); setDraft(text); return; }
-   if (!response.ok || !result.answer) throw Error(result.error ?? 'The assistant could not answer. Please try again.');
+   const result = await requestJson<{ answer?: string }>('/api/assistant', { body: { messages: next, currency, rates, language }, signal: controller.signal, fallback: notAnswered });
+   if (!result.answer) throw Error(notAnswered);
    setTurns([...next, { role: 'assistant', content: result.answer }]);
   } catch (reason) {
    // A question stopped on purpose is no failure: no message, and the conversation is not rewound.
    if (controller.signal.aborted) return;
-   setError((reason as Error).message); setTurns(turns); setDraft(text);
+   setTurns(turns); setDraft(text);
+   // The server says the assistant is not set up: the empty state explains it instead of an error.
+   if ((reason as Error).message === assistantUnavailable) { setStatus({ owner: user, available: false }); return; }
+   setError((reason as Error).message);
   } finally {
    if (pending.current === controller) { pending.current = null; setBusy(false); requestAnimationFrame(() => end.current?.scrollIntoView({ block: 'end' })); }
   }

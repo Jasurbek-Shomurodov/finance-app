@@ -1,9 +1,10 @@
 import { cookies } from 'next/headers';
 import { z } from 'zod';
 import { readJson, reply as answer } from '@/lib/api-route';
+import { reportError } from '@/lib/monitoring';
 import { serviceDatabase } from '@/lib/service-role';
 import { sameOrigin, session } from '@/lib/supabase';
-import { sendTelegramMessage, telegramConfig } from '@/lib/telegram';
+import { deliverTelegramMessage, telegramConfig } from '@/lib/telegram';
 import { connectedReply } from '@/lib/telegram-bot';
 import { cancelConnectRequest, connectCookie, connectMinutes, connectPage, consumeConnectRequest, findConnectRequest, isConnectToken, linkChat, linkRefusal } from '@/lib/telegram-connect';
 const cookieOptions = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' as const, path: '/' };
@@ -45,7 +46,8 @@ export async function POST(req: Request) {
     if (!spent) return reply({ state: 'expired', bot });
     if (await linkChat(db, signedIn.user.id, { chatId: spent.chat_id, telegramUserId: spent.telegram_user_id, firstName: spent.first_name ?? '' }, now) !== 'linked') return reply({ state: 'other_telegram', bot });
     // The chat hears about it straight away, so returning to Telegram shows the menu.
-    await sendTelegramMessage(await connectedReply(db, signedIn.user.id, spent.chat_id), config);
+    // The chat is linked whether or not the message lands; a message Telegram would not take is counted, with no chat or text.
+    if (await deliverTelegramMessage(await connectedReply(db, signedIn.user.id, spent.chat_id), config) === 'failed') await reportError('telegram-connect', Object.assign(new Error('Telegram did not accept the connected message.'), { name: 'TelegramSendError', stack: '' }), { route: '/api/telegram/connect', status: 200, counts: { failed: 1 } }, { alert: 'repeated' });
     return reply({ state: 'connected', bot });
   } catch { return reply({ error: 'Could not connect Telegram. Please try again.' }, 503); }
 }

@@ -46,6 +46,19 @@ test('removing an attachment deletes its row only after the file is gone',async(
  assert.deepEqual(order,['/storage/v1/object/attachments','/rest/v1/record_attachments']);
 });
 
+test('an upload link is refused by the record check before the workspace limit counts it, so a stranger\'s cookie never spends a household\'s links',async()=>{
+ const limit=limiter();let known=false;
+ const route=loadTS('app/api/record-attachments/route.ts',{'@/lib/rate-limit':limit.module,'@/lib/supabase':{config:()=>({url:'https://project.supabase.co'}),session:async()=>({user:{id:owner},token:'owner',owner:other}),sameOrigin:()=>true,
+  supa:async path=>path.startsWith('/rest/v1/finance_records')?Response.json(known?[{id:other}]:[]):path.startsWith('/rest/v1/record_attachments')?Response.json([]):Response.json({signedURL:'/object/upload/sign/attachments/x'})}});
+ const prepare=()=>route.POST(post('/api/record-attachments',{action:'prepare',data:{record_id:other,name:'receipt.pdf',mime:'application/pdf',size:1000}}));
+ // Row security hides the record from someone outside the household: nothing is counted against that workspace.
+ const refused=await prepare();
+ assert.equal(refused.status,404);assert.equal(limit.calls.length,0,'the limiter is never asked for a record this person cannot see');
+ known=true;
+ assert.equal((await prepare()).status,200);
+ assert.deepEqual(limit.calls.map(call=>[call.name,call.key,call.options]),[['attachments',other,{perIp:false}]],'a visible record counts once, against its workspace');
+});
+
 // Emptying the bin removes files before their rows (migration 130): a failed removal keeps the rows for the next purge.
 function binRoute(storageOk){
  const reports=[],calls=[];

@@ -4,11 +4,12 @@ import { fontIds, resolveFont } from '@/lib/fonts';
 import { isLanguage, languageCodes } from '@/lib/i18n';
 import { queueLanguageMenu } from '@/lib/notify-action';
 import { fiatCurrency } from '@/lib/api-validation';
-import { crossSite, readJson, signInAgain } from '@/lib/api-route';
+import { crossSite, postgrestFailure, readJson, signInAgain } from '@/lib/api-route';
 import { session, supa, sameOrigin } from '@/lib/supabase';
 import { defaultPreferences, maxPreferredCurrencies } from '@/lib/currencies';
 import { onboardedOn } from '@/lib/onboarding';
 const schema = z.object({ country: z.string().refine(value => value === '' || isCountry(value)).nullable().transform(value => value ?? '').optional(), display_name: z.string().trim().max(80).optional(), language: z.enum(languageCodes), currencies: z.array(fiatCurrency).min(1).max(maxPreferredCurrencies).refine(list => new Set(list).size === list.length), font: z.enum(fontIds).nullish().transform(resolveFont), onboarded: z.boolean().optional() });
+const notSaved = 'Could not save settings. Try again.';
 export async function GET() {
   try {
     const s = await session();
@@ -40,10 +41,11 @@ export async function PUT(req: Request) {
     const previousLanguage = isLanguage(earlierRows[0]?.language) ? earlierRows[0].language : 'en';
     // The setup timestamp changes only when the request says so; the Settings form leaves it alone.
     const response = await supa('/rest/v1/user_preferences?on_conflict=user_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates' }, body: JSON.stringify({ user_id: s.user.id, ...preferences, ...(onboarded === undefined ? {} : { onboarded_at: onboarded ? new Date().toISOString() : null }) }) }, s.token);
-    if (!response.ok) throw Error();
+    // The database's refusal keeps its status and words (a view-only member answers 403); only a missing function is a setup problem.
+    if (!response.ok) return postgrestFailure(response, notSaved, { codes: { PGRST202: [notSaved, 503] } });
     // A linked Telegram chat gets a new keyboard in the new language, so nobody has to press Start again.
     if (parsed.data.language !== previousLanguage) queueLanguageMenu(s, parsed.data.language);
     const finishedAt = onboarded === undefined ? earlierRows[0]?.onboarded_at : onboarded ? new Date().toISOString() : null;
     return Response.json({ ...parsed.data, onboarded_on: onboardedOn(finishedAt) });
-  } catch { return Response.json({ error: 'Could not save settings. Try again.' }, { status: 503 }); }
+  } catch { return Response.json({ error: notSaved }, { status: 503 }); }
 }

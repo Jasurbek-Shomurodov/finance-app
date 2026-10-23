@@ -7,14 +7,10 @@ import { Brand } from '@/components/presentation-foundation/brand';
 import { LoadingPlaceholder } from '@/components/presentation-foundation/loading-placeholder';
 import { Button } from '@/components/ui/button';
 import { signInPath } from '@/lib/sign-in-path';
+import { requestJson } from '@/lib/api-client';
 type Result = { state: 'sign_in' | 'confirm' | 'expired' | 'cancelled' | 'connected' | 'other_telegram'; telegram?: string | null; account?: string; bot?: string };
 type View = { state: 'loading' } | { state: 'error'; message: string } | Result;
-async function request(action: 'preview' | 'confirm' | 'cancel'): Promise<Result> {
-  const response = await fetch('/api/telegram/connect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) });
-  const result = await response.json().catch(() => ({})) as Result & { error?: string };
-  if (!response.ok) throw Error(result.error ?? 'Could not connect Telegram. Please try again.');
-  return result;
-}
+const request = (action: 'preview' | 'confirm' | 'cancel') => requestJson<Result>('/api/telegram/connect', { body: { action }, fallback: 'Could not connect Telegram. Please try again.' });
 /** Where the bot's "I already have an account" link lands. The person signs in with any method, checks which chat and account are being joined, and confirms. */
 function ConnectTelegram() {
   const { t } = useLanguage(), router = useRouter();

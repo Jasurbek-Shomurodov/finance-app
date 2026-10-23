@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { crossSite, readJson, signInAgain } from '@/lib/api-route';
+import { crossSite, postgrestFailure, readJson, signInAgain } from '@/lib/api-route';
 import { session, supa, sameOrigin } from '@/lib/supabase';
 import { telegramConfig } from '@/lib/telegram';
 import { subscriptionStatus, unlinkedChat, type TelegramSubscription } from '@/lib/telegram-link';
@@ -40,7 +40,8 @@ export async function POST(req:Request){
   // The owner cannot write the Telegram identity columns, so Disconnect keeps them; the bot releases a stale identity when needed.
   const patch=parsed.data.action==='unlink'?unlinkedChat(now,false):{digest_enabled:parsed.data.digest_enabled,actions_enabled:parsed.data.actions_enabled,updated_at:now};
   const response=await supa(table+'?user_id=eq.'+s.user.id,{method:'PATCH',body:JSON.stringify(patch)},s.token);
-  if(!response.ok)throw Error(notSaved);
+  // The database's refusal keeps its status and words (a view-only member answers 403); only a missing function is a setup problem.
+  if(!response.ok)return postgrestFailure(response,notSaved,{codes:{PGRST202:[notSaved,503]}});
   return Response.json(subscriptionStatus(await own(s.token,s.user.id),config.botUsername));
  }catch(error){return failure(error,notSaved);}
 }

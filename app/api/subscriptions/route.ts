@@ -1,11 +1,14 @@
 import { workspaceOwner } from '@/lib/household';
 import { readOwnerRows } from '@/lib/server-records';
-import { crossSite, parseAction, readJson, signInAgain } from '@/lib/api-route';
+import { crossSite, parseAction, postgrestFailure, readJson, signInAgain } from '@/lib/api-route';
 import { session, supa, sameOrigin } from '@/lib/supabase';
 import { subscriptionSchemas, type SubscriptionDecision } from '@/lib/recurring-insights';
 
-const unavailable = () => Response.json({ error: 'Could not load subscriptions. Check that the latest migrations are installed.' }, { status: 503 });
+const notSaved = 'Could not load subscriptions. Check that the latest migrations are installed.';
+const unavailable = () => Response.json({ error: notSaved }, { status: 503 });
 const invalid = () => Response.json({ error: 'Check the subscription fields.' }, { status: 400 });
+/** The database's refusal keeps its status and words (a view-only member answers 403); only a missing function is a setup problem. */
+const saved = (response: Response) => response.ok ? Response.json({ ok: true }) : postgrestFailure(response, notSaved, { codes: { PGRST202: [notSaved, 503] } });
 
 export async function GET() {
  try {
@@ -23,11 +26,9 @@ export async function POST(req: Request) {
   const input = parseAction(await readJson(req), subscriptionSchemas);
   if (!input) return invalid();
   if (input.action === 'decide') {
-   const response = await supa('/rest/v1/subscription_decisions?on_conflict=user_id,merchant,currency', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates' }, body: JSON.stringify({ ...input.data, user_id: workspaceOwner(auth) }) }, auth.token);
-   return response.ok ? Response.json({ ok: true }) : unavailable();
+   return saved(await supa('/rest/v1/subscription_decisions?on_conflict=user_id,merchant,currency', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates' }, body: JSON.stringify({ ...input.data, user_id: workspaceOwner(auth) }) }, auth.token));
   }
   const filter = new URLSearchParams({ user_id: 'eq.' + workspaceOwner(auth), merchant: 'eq.' + input.data.merchant, currency: 'eq.' + input.data.currency });
-  const response = await supa('/rest/v1/subscription_decisions?' + filter, { method: 'DELETE' }, auth.token);
-  return response.ok ? Response.json({ ok: true }) : unavailable();
+  return saved(await supa('/rest/v1/subscription_decisions?' + filter, { method: 'DELETE' }, auth.token));
  } catch { return unavailable(); }
 }

@@ -15,7 +15,8 @@ const usable = (rate: unknown): rate is number => typeof rate === 'number' && Nu
 /** The rates to convert `record` with. Its own day's table when the server attached one; a record paid from an account in
  * another currency also keeps the exact rate it was paid at, so it adds what really left the account. A record the server
  * gave no table (a schedule, a sample record) converts at `current`, today's rates. A transaction whose day could not be
- * loaded (`day_rates: null`) gets no rates, so it counts as missing ("Exchange rate unavailable"), never at today's rate. */
+ * loaded (`day_rates: null`) gets no rates, so it counts as missing ("Exchange rate unavailable"), never at today's rate.
+ * A Tracker expense has no record: `cashFlowItems` hands its link's day table over as `dated` (`trackerDated`). */
 export function ratesOf(record: DatedRecord | null | undefined, current?: Record<string, number> | number | null): Record<string, number> | undefined {
  // The older single rate is UZS per US dollar.
  const today = typeof current === 'number' ? { USD: 1, UZS: current } : current ?? undefined;

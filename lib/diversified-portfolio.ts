@@ -26,8 +26,17 @@ export const diversifiedPortfolioSchema = z.object({
 export type DiversifiedPortfolio = z.infer<typeof diversifiedPortfolioSchema>;
 export const defaultDiversifiedPortfolio: DiversifiedPortfolio = {crypto:20,stock:20,deposit:20,business:20,cash:20,cryptoSymbol:'BTC',stockSymbol:'SPY',businessRate:0};
 
-export function portfolioAssets(portfolio:DiversifiedPortfolio):PortfolioAsset[] {
- return portfolio.assets??legacyAllocationKinds.map(kind=>({id:kind,kind,name:'',weight:portfolio[kind],symbol:kind==='stock'?portfolio.stockSymbol:kind==='crypto'?portfolio.cryptoSymbol:'',currency:kind==='deposit'?'UZS':'USD',rate:kind==='business'?portfolio.businessRate:kind==='deposit'?21:0}));
+/** The portfolio's sleeves. A row saved before sleeves were listed (`assets` missing) keeps its one deposit as it was
+ * stored, in UZS at 21%, so the history under `depositUZS` still reads. With `currency`, the owner's primary currency, the
+ * same five sleeves are built fresh: deposit and cash in that currency, the deposit at no interest until a rate is entered. */
+export function portfolioAssets(portfolio:DiversifiedPortfolio,currency?:string):PortfolioAsset[] {
+ const local=(kind:typeof legacyAllocationKinds[number])=>currency&&(kind==='deposit'||kind==='cash')?currency:kind==='deposit'?'UZS':'USD';
+ return portfolio.assets??legacyAllocationKinds.map(kind=>({id:kind,kind,name:'',weight:portfolio[kind],symbol:kind==='stock'?portfolio.stockSymbol:kind==='crypto'?portfolio.cryptoSymbol:'',currency:local(kind),rate:kind==='business'?portfolio.businessRate:kind==='deposit'&&!currency?21:0}));
+}
+/** The mix offered before any portfolio is saved: five equal sleeves listed as assets, in the owner's primary `currency`
+ * (languages.md: never preselect a local currency for everyone). Saving it stores these sleeves, never the legacy deposit. */
+export function defaultPortfolioFor(currency:string):DiversifiedPortfolio {
+ return {...defaultDiversifiedPortfolio,assets:portfolioAssets(defaultDiversifiedPortfolio,currency||'USD')};
 }
 export function portfolioAssetKey(asset:PortfolioAsset,portfolio:DiversifiedPortfolio) {
  return portfolio.assets?'portfolio_'+asset.id:({crypto:'portfolioCrypto',stock:'portfolioStock',business:'portfolioBusiness',cash:'portfolioCash',deposit:'depositUZS',property:'portfolioProperty',custom:'portfolioCustom'} as const)[asset.kind];

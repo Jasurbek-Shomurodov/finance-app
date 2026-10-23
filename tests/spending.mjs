@@ -90,3 +90,16 @@ test('links to Transactions open the list filtered: Spent this month on expenses
  assert.deepEqual(read('/transactions?type=bogus&from=2026-09-01&to=2026-08-01&period=forever'), { filter: emptyTransactionFilter, period: 'two_years', range: null }, 'unknown values and a backwards range are ignored');
  assert.equal(transactionsHref({}), '/transactions');
 });
+
+test('a watchlist converts each record at the rates of its own day, and counts one without rates as missing (MONEY-012)', () => {
+ const { ratesOf } = loadTS('lib/transaction-rates.ts');
+ const { convertAmount } = loadTS('lib/market.ts');
+ const current = { USD: 1, UZS: 12800 };
+ const convert = (amount, from, record) => convertAmount(amount, from, 'USD', ratesOf(record, current));
+ const payments = [record('a', 'Home market', 'Living expense', 1_200_000, '2026-10-01', { currency: 'UZS', day_rates: { USD: 1, UZS: 12000 } }), record('b', 'Home market', 'Living expense', 128_000, '2026-10-15', { currency: 'UZS', day_rates: { USD: 1, UZS: 12800 } })];
+ const list = { id: 'w', query: 'home', currency: 'USD', category: null, target: 500 };
+ assert.equal(watchlistSpending(list, payments, [], today, convert).spent, 110, '$100 at 12,000 on the 1st plus $10 at 12,800 on the 15th; not $103.75 at today\'s rate for both');
+ const lost = watchlistSpending(list, [payments[0], { ...payments[1], day_rates: null }], [], today, convert);
+ assert.equal(lost.spent, 100); assert.equal(lost.missing, 1, 'a day whose rates could not be loaded is missing, never converted at today\'s rate');
+ assert.equal(watchlistSpending(list, payments, [], today, convert).target, 500, 'the target converts at today\'s rates, with no record');
+});

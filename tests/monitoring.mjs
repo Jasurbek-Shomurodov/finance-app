@@ -140,9 +140,12 @@ test('database failures that answer 5xx are reported by code only, and nothing e
  assert.match(reported[1][1].message,/PostgREST PGRST202/);
  response=await postgrestFailure(new Response('not json',{status:502}),'Could not load.',{fallbackStatus:503});
  assert.match(reported[2][1].message,/PostgREST no code, HTTP 502/);
- // 4xx answers and the database's own refusals are not failures of the app.
- for(const [body,options] of [[{code:'23505'},{}],[{code:'P0001',message:'Name taken'},{status:409}],[{code:'X'},{codes:{X:['Gone',410]}}]])await postgrestFailure(failed(body),'Nope.',options);
+ // 4xx answers and the database's own refusals are not failures of the app (PostgREST answers a unique violation with 409).
+ for(const [body,status,options] of [[{code:'23505'},409,{}],[{code:'P0001',message:'Name taken'},400,{status:409}],[{code:'X'},500,{codes:{X:['Gone',410]}}]])await postgrestFailure(failed(body,status),'Nope.',options);
  assert.equal(reported.length,3);
+ // A 5xx with a code nobody mapped is the database failing: 503 and a report, even for a route whose refusals answer 409.
+ response=await postgrestFailure(failed({code:'XX000'}),'Nope.');
+ assert.equal(response.status,503);assert.equal(reported.length,4);
 });
 
 test('cron runs report failures and partial runs as alerts with their tallies; the answers stay as they were',async()=>{
@@ -176,7 +179,7 @@ test('cron runs report failures and partial runs as alerts with their tallies; t
 
 test('the Telegram webhook, the sign-in code hook and the assistant report their unexpected failures',async()=>{
  const reported=[],monitor={'@/lib/monitoring':{reportError:async(...args)=>{reported.push(args);}}};
- const telegram={telegramConfig:()=>({token:'T',webhookSecret:'SECRET',botUsername:'b'}),sendTelegramMessage:async()=>false,answerCallback:async()=>true,escapeHtml:text=>text};
+ const telegram={telegramConfig:()=>({token:'T',webhookSecret:'SECRET',botUsername:'b'}),sendTelegramMessage:async()=>false,deliverTelegramMessage:async()=>'failed',answerCallback:async()=>true,escapeHtml:text=>text};
  const webhook=loadTS('app/api/telegram/webhook/route.ts',{...monitor,'@/lib/telegram':telegram,'@/lib/service-role':{serviceDatabase:()=>({})},'@/lib/telegram-bot':{handleTelegramUpdate:async()=>{throw Error('update failed');}}});
  const response=await webhook.POST(new Request('https://local/api/telegram/webhook',{method:'POST',headers:{'x-telegram-bot-api-secret-token':'SECRET'},body:'{}'}));
  assert.equal(response.status,503);
@@ -209,6 +212,28 @@ test('the Telegram webhook, the sign-in code hook and the assistant report their
   records=async()=>{throw Error('records failed');};assert.equal((await ask()).status,503);
  }finally{if(key===undefined)delete process.env.ANTHROPIC_API_KEY;else process.env.ANTHROPIC_API_KEY=key;}
  assert.deepEqual(reported.map(([source,error,context,options])=>[source,error.message,context.status,context.userId,options.alert]),[['assistant','invalid x-api-key',503,'u1',true],['assistant','overloaded',502,'u1','repeated'],['assistant','records failed',503,'u1','repeated']]);
+});
+
+test('a reply Telegram would not take is reported with counts only, by the webhook and the connect page alike',async()=>{
+ const reported=[],monitor={'@/lib/monitoring':{reportError:async(...args)=>{reported.push(args);}}};
+ let outcome='failed';
+ const telegram={telegramConfig:()=>({token:'T',webhookSecret:'SECRET',botUsername:'b'}),deliverTelegramMessage:async()=>outcome,answerCallback:async()=>true};
+ const webhook=loadTS('app/api/telegram/webhook/route.ts',{...monitor,'@/lib/telegram':telegram,'@/lib/service-role':{serviceDatabase:()=>({})},'@/lib/telegram-bot':{handleTelegramUpdate:async()=>({replies:[{chat_id:5,text:'secret words'},{chat_id:5,text:'more'}]})}});
+ const update=()=>webhook.POST(new Request('https://local/api/telegram/webhook',{method:'POST',headers:{'x-telegram-bot-api-secret-token':'SECRET'},body:'{}'}));
+ assert.equal((await update()).status,200,'the update was handled; Telegram must not resend it');
+ assert.deepEqual(reported.map(([source,error,context,options])=>[source,error.name,error.message,context,options]),[['telegram-webhook','TelegramSendError','Telegram did not accept every reply.',{route:'/api/telegram/webhook',status:200,counts:{failed:2,replies:2}},{alert:'repeated'}]]);
+ assert.ok(!JSON.stringify(reported).includes('secret words')&&!JSON.stringify(reported).includes('"5"'),'no chat id or text travels');
+ reported.length=0;outcome='blocked';
+ assert.equal((await update()).status,200);
+ assert.equal(reported.length,0,'a chat that blocked the bot is final, not a failure to report');
+ outcome='failed';
+ const jar={get:()=>({value:'c'.repeat(64)}),set(){},delete(){}};
+ const db={read:async()=>[],write:async()=>Response.json([{chat_id:5,telegram_user_id:7,first_name:'A'}])};
+ const connect=loadTS('app/api/telegram/connect/route.ts',{...monitor,'next/headers':{cookies:async()=>jar},'@/lib/service-role':{serviceDatabase:()=>db},'@/lib/supabase':{sameOrigin:()=>true,session:async()=>({token:'t',user:{id:'a0000000-0000-4000-8000-000000000001',email:'me@example.com'}})},'@/lib/telegram':telegram,'@/lib/telegram-bot':{connectedReply:async(_,owner,chat)=>({chat_id:chat,text:'connected'})},
+  '@/lib/telegram-connect':{...loadTS('lib/telegram-connect.ts'),findConnectRequest:async()=>({chat_id:5,telegram_user_id:7,first_name:'A'}),linkRefusal:async()=>null,consumeConnectRequest:async()=>({chat_id:5,telegram_user_id:7,first_name:'A'}),linkChat:async()=>'linked'}});
+ const confirmed=await connect.POST(new Request('https://local/api/telegram/connect',{method:'POST',body:JSON.stringify({action:'confirm'})}));
+ assert.deepEqual(await confirmed.json(),{state:'connected',bot:'b'},'the chat is linked whether or not the message lands');
+ assert.deepEqual(reported.map(([source,error,context,options])=>[source,error.name,context,options]),[['telegram-connect','TelegramSendError',{route:'/api/telegram/connect',status:200,counts:{failed:1}},{alert:'repeated'}]]);
 });
 
 test('browser reports carry only the message, stack, page path and digest, and stop after five per page',()=>{

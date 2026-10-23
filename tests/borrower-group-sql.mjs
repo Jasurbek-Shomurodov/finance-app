@@ -29,3 +29,26 @@ test('money lent saves its borrower group, an edit changes it, and nothing else 
   await assert.rejects(save(d,{id:id(13),name:'Loan',kind:'Money lent',amount:1,borrower_group:'x'.repeat(121)}),/finance_records_borrower_group/);
  }finally{await d.close();}
 });
+
+test('the record schema agrees with the database rule: a borrower group is 1 to 120 characters, trimmed, and an empty one reads as none',async()=>{
+ const {loadTS}=await import('./helpers/load-ts.mjs');
+ const {recordSchema,recordIssueMessage}=loadTS('lib/record-schema.ts');
+ const base={id:id(20),name:'School fees',kind:'Money lent',currency:'USD',amount:500,quantity:1,cost:0,rate:0,date:'',lent_date:'2026-09-01',frequency:'Once',notes:''};
+ assert.equal(recordSchema.parse({...base,borrower_group:' Family '}).borrower_group,'Family');
+ assert.equal(recordSchema.parse({...base,borrower_group:''}).borrower_group,null,'the form sends an empty field; it is saved as no group');
+ assert.equal(recordSchema.parse({...base,borrower_group:'   '}).borrower_group,null,'blanks are no group either');
+ assert.equal(recordSchema.parse({...base,borrower_group:null}).borrower_group,null);
+ assert.equal('borrower_group' in recordSchema.parse(base),false,'a record that never names one stays as sent');
+ const long=recordSchema.safeParse({...base,borrower_group:'x'.repeat(121)});
+ assert.ok(!long.success);assert.equal(recordIssueMessage(long.error),'Borrower group is too long.');
+ assert.ok(!recordSchema.safeParse({...base,kind:'Loan',date:'2026-12-01',borrower_group:'Family'}).success,'only money lent names a borrower');
+ // Every value the schema lets through is one the database constraint accepts.
+ const d=await db(setup);
+ try{
+  for(const [n,group] of [[21,' Family '],[22,''],[23,'   ']]){
+   const parsed=recordSchema.parse({...base,id:id(n),borrower_group:group});
+   await save(d,{id:id(n),name:'Loan',kind:'Money lent',amount:1,borrower_group:parsed.borrower_group});
+   assert.equal(await groupOf(d,n),parsed.borrower_group);
+  }
+ }finally{await d.close();}
+});

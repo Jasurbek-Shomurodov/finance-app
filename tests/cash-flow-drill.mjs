@@ -681,6 +681,8 @@ test('a Cash flow link keeps its target, and Accounts › Recent activity opens 
  r.mount(React.createElement(AccountActivity, { data: planning, owner: null, currency: 'USD', onOpen: record => opened.push(record.id) }));
  const rows = r.all(node => node.type === 'tr' && node.props.className === 'clickable-row');
  assert.deepEqual(rows.map(row => row.props['aria-label']), ['View details for EPAM'], 'only a transaction opens; operations and movements show everything in their row');
+ const amountCell = r.all(node => node.type === 'td', [rows[0]]).at(-1);
+ assert.deepEqual([text(amountCell), amountCell.props.className], ['+$100', 'positive'], 'income carries its plus and reads green, as on Transactions');
  rows[0].props.onClick({ target: { closest: () => null }, currentTarget: { contains: () => true } });
  rows[0].props.onKeyDown({ key: 'Enter', target: 1, currentTarget: 1, preventDefault() {} });
  rows[0].props.onKeyDown({ key: 'Tab', target: 1, currentTarget: 1, preventDefault() {} });

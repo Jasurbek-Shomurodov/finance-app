@@ -9,10 +9,10 @@ import { formatDate, formatMoney, formatNumber } from '@/lib/format';
 import type { PlanningData } from '@/lib/planning';
 import { spendingOnDay, type SpendingItem, type SpendingPace, type SpendingPacePoint } from '@/lib/spending-pace';
 
-/** One day's spending in the chart tooltip: where the money went, largest first. */
-function SpentOn({ title, items, currency }: { title: string; items: SpendingItem[]; currency: string }) {
+/** One day's spending in the chart tooltip: where the money went, largest first, each transaction as it was entered. */
+function SpentOn({ title, items }: { title: string; items: SpendingItem[] }) {
  const { t, locale } = useLanguage();
- return <section><h4>{title}</h4>{items.length ? items.slice(0, 5).map(item => <div className="portfolio-tooltip-row" key={item.id}><CategoryIcon kind={item.kind} size="sm"/><div><strong>{item.name}</strong><span>{t(item.kind)}</span></div><b>{formatMoney(item.amount, currency, locale)}</b></div>) : <p className="portfolio-tooltip-note">{t('Nothing spent on this day.')}</p>}{items.length > 5 && <p className="portfolio-tooltip-note">{t('{count} more', { count: formatNumber(items.length - 5, locale, 0) })}</p>}</section>;
+ return <section><h4>{title}</h4>{items.length ? items.slice(0, 5).map(item => <div className="portfolio-tooltip-row" key={item.id}><CategoryIcon kind={item.kind} size="sm"/><div><strong>{item.name}</strong><span>{t(item.kind)}</span></div><b>{formatMoney(item.entered.amount, item.entered.currency, locale)}</b></div>) : <p className="portfolio-tooltip-note">{t('Nothing spent on this day.')}</p>}{items.length > 5 && <p className="portfolio-tooltip-note">{t('{count} more', { count: formatNumber(items.length - 5, locale, 0) })}</p>}</section>;
 }
 
 /** The Spending card's chart: this month's running total over last month's, with where the money went on each day.
@@ -40,8 +40,8 @@ export function SpendingPaceChart({ pace, data, currency, rates }: { pace: Spend
       <div className="portfolio-tooltip-row"><i className="previous"/><div><strong>{t('Last month')}</strong></div><b>{money(point.previous ?? 0)}</b></div>
      </header>
      <div className="portfolio-tooltip-body">
-      {point.current !== null && <SpentOn title={formatDate(day(pace.month), locale)} items={items(pace.month)} currency={currency}/>}
-      {point.day <= monthDays(pace.previousMonth) && <SpentOn title={formatDate(day(pace.previousMonth), locale)} items={items(pace.previousMonth)} currency={currency}/>}
+      {point.current !== null && <SpentOn title={formatDate(day(pace.month), locale)} items={items(pace.month)}/>}
+      {point.day <= monthDays(pace.previousMonth) && <SpentOn title={formatDate(day(pace.previousMonth), locale)} items={items(pace.previousMonth)}/>}
      </div>
     </div>;
    }}/>

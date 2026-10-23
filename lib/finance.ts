@@ -124,9 +124,13 @@ export function estimatedCashFlow(entries: Entry[], month?: string, lines?: read
  const monthlyExpenses = budgetedSpending(lines ?? [], scheduledByKey(entries, month, e => expenses.includes(e.kind), amount => amount));
  const monthlyPayment = (kinds: string[]) => entries.filter(e => kinds.includes(e.kind) && e.amount > 0).reduce((sum,e) => sum + (e.estimated_monthly_payment ?? 0), 0);
  const mortgagePayments = monthlyPayment(['Mortgage']);
+ // The interest part of a month's mortgage payments: a month's interest on each balance at its annual rate, never more than
+ // the payment (`typicalMortgagePayment` splits one payment the same way). Only this part is spending (lib/spending.ts);
+ // the principal, like loan and debt repayments, is a transfer.
+ const mortgageInterest = entries.filter(e => e.kind === 'Mortgage' && e.amount > 0).reduce((sum, e) => sum + Math.min(e.estimated_monthly_payment ?? 0, e.amount * Math.max(0, Number(e.rate) || 0) / 1200), 0);
  // Loans and debts with a monthly payment are due every month too (see hasMonthlyInstallment in planning).
  const loanPayments = monthlyPayment(['Loan','Debt']);
- return { estimatedAssets, otherIncome, plannedIncome: estimatedIncome + otherIncome, monthlyExpenses, mortgagePayments, loanPayments, estimatedIncome, forecast: estimatedIncome + otherIncome - monthlyExpenses - mortgagePayments - loanPayments };
+ return { estimatedAssets, otherIncome, plannedIncome: estimatedIncome + otherIncome, monthlyExpenses, mortgagePayments, mortgageInterest, loanPayments, estimatedIncome, forecast: estimatedIncome + otherIncome - monthlyExpenses - mortgagePayments - loanPayments };
 }
 
 /** Entries must already be expressed in the same currency. Never round stored totals. */

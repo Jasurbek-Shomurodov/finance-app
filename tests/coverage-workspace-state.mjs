@@ -337,6 +337,13 @@ test('the pure save rules and the table view behave as the provider relied on', 
  assert.deepEqual([remote.totalRecords, remote.tablePage, remote.tableLoading, remote.visible.length], [31, 3, true, 1]);
  const filtered = table.recordTableView({ ...base, useFilteredRecords: true, page: 5, currencyFilter: 'EUR' });
  assert.deepEqual([filtered.totalRecords, filtered.tablePage], [0, 1]);
+ // Cash flow › Recent transactions: a transaction reads as entered, in its own currency; an asset row converts into the display currency (MONEY-011).
+ const market = { rates: { USD: 1, EUR: 0.5 }, quotes: {}, errors: {} };
+ const cash = { id: 'bank', name: 'Bank', kind: 'Cash', currency: 'USD', amount: 100, quantity: 1, cost: 0, rate: 0, date: '2026-01-01', frequency: 'Monthly', notes: '' };
+ const asEntered = table.recordTableView({ ...base, demo: false, currency: 'EUR', market, remoteHistory: true, historyPage: { records: [rows[0]], total: 1, page: 1 } });
+ assert.deepEqual([asEntered.visible[0].amount, asEntered.visible[0].currency], [1, 'USD'], 'the row is not the converted copy');
+ const converted = table.recordTableView({ ...base, demo: false, currency: 'EUR', market, loadedKey: 'k', rows: [cash, rows[0]], recordTotal: 2 });
+ assert.deepEqual(converted.visible.map(row => [row.amount, row.currency]), [[50, 'EUR'], [1, 'USD']]);
  const { workspaceTotals } = loadTS('lib/workspace-totals.ts');
  const totals = workspaceTotals({ records: [{ id: 'c', kind: 'Cash', currency: 'USD', amount: 100, quantity: 1 }, { id: 'e', kind: 'Cash', currency: 'JPY', amount: 5, quantity: 1 }], planningRecords: [], currency: 'USD', market: { rates: { USD: 1 }, quotes: {}, errors: {} } });
  assert.deepEqual([totals.netWorth, totals.excludedCurrencies], [100, ['JPY']]);

@@ -29,8 +29,8 @@ type Rates = number | Record<string, number> | undefined;
 type Props = { owner?: string | null; data: PlanningData; budget?: CashForecastBudget; currency: string; rates: Rates; loading: boolean; error: string; onRetry: () => void };
 
 const storageKey = (owner?: string | null) => 'hoggish-forecast-adjustments:' + (owner ?? 'demo');
-function storedAdjustments(owner?: string | null) {
- try { return readAdjustments(JSON.parse(localStorage.getItem(storageKey(owner)) ?? '[]')); } catch { return []; }
+function storedAdjustments(owner: string | null | undefined, currency: string) {
+ try { return readAdjustments(JSON.parse(localStorage.getItem(storageKey(owner)) ?? '[]'), currency); } catch { return []; }
 }
 
 /** The name of a projected series: an account's own name, or total cash. */
@@ -67,7 +67,7 @@ export function CashForecastView({ owner, data, budget, currency, rates, loading
  const today = depositToday();
  const [days, setDays] = useState<ForecastHorizon>(90);
  const [selected, setSelected] = useState('');
- const [adjustments, setAdjustments] = useState<ForecastAdjustment[]>(() => storedAdjustments(owner));
+ const [adjustments, setAdjustments] = useState<ForecastAdjustment[]>(() => storedAdjustments(owner, currency));
  const change = (next: ForecastAdjustment[]) => {
   setAdjustments(next);
   try { localStorage.setItem(storageKey(owner), JSON.stringify(next)); } catch { /* What-ifs still work for this visit when storage is blocked. */ }
@@ -127,6 +127,8 @@ function EventRow({ event, account }: { event: ForecastEvent; account?: string }
 /** Temporary changes ("−500 every month from June") that update the projection at once. They stay in this browser and never touch records. */
 function WhatIfPanel({ adjustments, currency, today, onChange }: { adjustments: ForecastAdjustment[]; currency: string; today: string; onChange: (next: ForecastAdjustment[]) => void }) {
  const { t, locale } = useLanguage();
+ // A change is added in the display currency of the moment and reads as entered from then on.
+ const { enteredSigned } = useDisplayMoney();
  const [label, setLabel] = useState('');
  const [direction, setDirection] = useState<'out' | 'in'>('out');
  const [amount, setAmount] = useState(0);
@@ -134,7 +136,7 @@ function WhatIfPanel({ adjustments, currency, today, onChange }: { adjustments: 
  const [date, setDate] = useState(today);
  const add = () => {
   if (!(amount > 0) || !date) return;
-  onChange([...adjustments, { id: crypto.randomUUID(), name: label.trim(), amount: direction === 'out' ? -amount : amount, frequency, date }]);
+  onChange([...adjustments, { id: crypto.randomUUID(), name: label.trim(), amount: direction === 'out' ? -amount : amount, currency, frequency, date }]);
   setLabel(''); setAmount(0);
  };
  return <section className="panel forecast-what-if" aria-labelledby="forecast-what-if">
@@ -149,7 +151,7 @@ function WhatIfPanel({ adjustments, currency, today, onChange }: { adjustments: 
   </form>
   {adjustments.length > 0 && <ul className="tool-list">{adjustments.map(item => <li key={item.id}>
    <span><strong>{item.name || t('What-if change')}</strong><p>{t(item.frequency === 'Monthly' ? 'Every month' : 'One time')} · {t('From {date}', { date: formatDate(item.date, locale) })}</p></span>
-   <span className="row-actions"><strong className={item.amount > 0 ? 'amount positive' : 'amount'}>{formatSignedMoney(item.amount, currency, locale)}</strong><Button size="icon" variant="ghost" aria-label={t('Remove {name}', { name: item.name || t('What-if change') })} onClick={() => onChange(adjustments.filter(other => other.id !== item.id))}><X size={16} aria-hidden="true"/></Button></span>
+   <span className="row-actions"><strong className={item.amount > 0 ? 'amount positive' : 'amount'}>{enteredSigned(item.amount, item.currency)}</strong><Button size="icon" variant="ghost" aria-label={t('Remove {name}', { name: item.name || t('What-if change') })} onClick={() => onChange(adjustments.filter(other => other.id !== item.id))}><X size={16} aria-hidden="true"/></Button></span>
   </li>)}</ul>}
  </section>;
 }

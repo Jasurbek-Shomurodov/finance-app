@@ -49,13 +49,15 @@ function accountBalance(account: Entry, now: number, change: number, ended: numb
 function holdingBalance(holding: Entry, now: number, change: number, ended: number, context: DrillContext): DrillFlows {
  const { t, currency, rates } = context;
  const cost = unitPricedKinds.includes(holding.kind) ? Number(holding.cost) * Number(holding.quantity) : Number(holding.cost);
- const paid = convertAmount(cost, holding.currency, currency, rates) ?? 0;
+ const converted = convertAmount(cost, holding.currency, currency, rates), paid = converted ?? 0;
+ // A cost no rate converts is unknown, not zero: the drill says so rather than calling the whole value an opening balance.
+ const unknown = converted === null ? 1 : 0;
  // Without a purchase cost the value before the period stands in for it, and no gain can be told.
  const before = paid > 0 ? paid - (now - ended) - change : ended - change, gain = paid > 0 ? ended - (before + change) : 0;
  const page: DrillNode['open'] = { side: 'link', href: '/assets' };
  const left: Part[] = [{ node: { name: t(paid > 0 ? 'Purchase cost' : 'Opening balance'), kind: 'holding', open: page }, value: before }, { node: { name: t('This period'), kind: 'income', open: { side: 'account', key: holding.id } }, value: change }, { node: { name: t('Gain/loss'), kind: 'income', open: page }, value: gain }];
  const right: Part[] = [{ node: { name: t('This period'), kind: 'expense', open: { side: 'account', key: holding.id } }, value: -change }, { node: { name: t('Current value'), kind: 'holding', open: page }, value: ended }, { node: { name: t('Gain/loss'), kind: 'expense', open: page }, value: -gain }];
- return draw(left, { ...accountNode(holding.id, new Map([[holding.id, holding]]), t), open: pageOf('holding') }, right, 0);
+ return draw(left, { ...accountNode(holding.id, new Map([[holding.id, holding]]), t), open: pageOf('holding') }, right, unknown);
 }
 
 /** Where one account or holding stood at the period's end, in the display currency: today's balance less what moved

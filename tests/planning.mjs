@@ -37,3 +37,19 @@ test('raw finance exports cannot silently turn expenses, assets and schedules in
  const statement=parseCSV('name,date,amount,notes\nGroceries,2026-09-18,-42,Food');
  assert.equal(mapCSV(statement,{name:0,date:1,amount:2,notes:3,dateFormat:'iso',decimal:'.'})[0].amount,-42);
 });
+
+test('runningSchedule is the one test of a schedule in a month: active, not archived that month and not ended before it',()=>{
+ const {activeSchedule,runningSchedule}=loadTS('lib/planning.ts');
+ const schedules=loadTS('lib/budget-schedules.ts');
+ const bill={id:'b',name:'Gym',kind:'Living expense',amount:40,currency:'USD',frequency:'Monthly',date:'2026-01-05'};
+ // Budget re-exports the same pair (loadTS instances differ, so the behaviour is compared).
+ assert.equal(schedules.runningSchedule({...bill,end_date:'2026-08-31'},'2026-09'),false);assert.equal(schedules.activeSchedule(bill),true);
+ assert.ok(activeSchedule(bill)&&runningSchedule(bill,'2026-09'));
+ assert.ok(!activeSchedule({...bill,frequency:'Once'}),'a payment is no schedule');
+ assert.ok(!activeSchedule({...bill,source_paused:true})&&!activeSchedule({...bill,archived:true}));
+ assert.ok(runningSchedule({...bill,end_date:'2026-09-01'},'2026-09'),'a bill ending this month still runs this month');
+ assert.ok(!runningSchedule({...bill,end_date:'2026-08-31'},'2026-09'),'ended before the month');
+ assert.ok(!runningSchedule({...bill,archived:true,archive_pauses:[{from:'2026-09-10',to:null}]},'2026-09'),'archived from this month');
+ assert.ok(!runningSchedule({...bill,archived:true,archive_pauses:[{from:'2026-10-01',to:null}]},'2026-09'),'an archived schedule is out, as on Recurring, whatever month it left');
+ assert.ok(runningSchedule({...bill,archive_pauses:[{from:'2026-06-01',to:'2026-09-01'}]},'2026-09')&&!runningSchedule({...bill,archive_pauses:[{from:'2026-06-01',to:'2026-09-01'}]},'2026-08'),'a restored bill runs again from its restore month');
+});

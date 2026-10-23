@@ -44,6 +44,8 @@ test('the tooltip shows where the money went on a day: that day\'s spending only
  const day=[...records,record('big','Rent expense',1200,'2026-09-15'),record('fx','Living expense',100,'2026-09-15',{currency:'EUR'}),record('pay','Salary',3000,'2026-09-15'),record('rent','Rent expense',800,'2026-09-15',{frequency:'Monthly'})];
  assert.deepEqual(spendingOnDay(day,'2026-09-15','USD',{USD:1}).map(item=>[item.name,item.kind,item.amount]),[['big','Rent expense',1200],['d','Living expense',60]],'income, plans and amounts without a rate are left out');
  assert.deepEqual(spendingOnDay(day,'2026-09-15','USD',{USD:1,EUR:.5}).map(item=>item.amount),[1200,200,60]);
+ // Each item carries the transaction as entered (MONEY-011): the euro expense reads in euros, its converted amount only orders it.
+ assert.deepEqual(spendingOnDay(day,'2026-09-15','USD',{USD:1,EUR:.5}).map(item=>item.entered),[{amount:1200,currency:'USD'},{amount:100,currency:'EUR'},{amount:60,currency:'USD'}]);
  assert.deepEqual(spendingOnDay(day,'2026-09-16','USD',{USD:1}),[]);
  const pace=spendingPace({records:day,splits:[],snapshots:[]},'2026-10-02','USD',{USD:1});
  assert.equal(pace.points[14].previous-pace.points[13].previous,spendingOnDay(day,'2026-09-15','USD',{USD:1}).reduce((sum,item)=>sum+item.amount,0),'the day\'s items add up to the jump in the line');

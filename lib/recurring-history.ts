@@ -26,19 +26,24 @@ export function scheduleTrack(schedule: RecurringItem, data: ScheduleData, today
   .sort((a, b) => a.date.localeCompare(b.date));
  const points: ScheduleMonth[] = monthsBetween(start, end).map(month => ({ month, scheduled: 0, recorded: 0 }));
  const byMonth = new Map(points.map(point => [point.month, point]));
- let recorded = 0, scheduled = 0;
+ let recorded = 0, scheduled = 0, missing = 0;
  for (const item of items) {
   const month = item.date.slice(0, 7), point = byMonth.get(month);
   if (!point || item.status === 'skipped') continue;
   point.scheduled += item.amount;
   if (month <= current) scheduled += item.amount;
-  if (item.status === 'paid') { const value = item.recorded ?? item.amount; point.recorded += value; recorded += value; }
+  if (item.status !== 'paid') continue;
+  // A payment no rate converts into the schedule's currency (`recorded` null) is counted as missing, never at the scheduled amount.
+  if (item.recorded === null) { missing++; continue; }
+  const value = item.recorded ?? item.amount; point.recorded += value; recorded += value;
  }
  const settledMonths = points.filter(point => point.recorded > 0).length;
  return {
   points,
   recorded,
   scheduled,
+  /** Settled payments whose amount could not be converted into the schedule's currency; the totals leave them out. */
+  missing,
   /** The average over the months something was recorded, so months before the first payment do not pull it down. */
   average: settledMonths ? recorded / settledMonths : 0,
   /** Recorded against scheduled, as a percentage; null when nothing was scheduled yet. */

@@ -1,3 +1,4 @@
+import { knownHouseholdMessage } from './household';
 // Response shaping shared by the API routes. The helpers need no session, cookies or network, so routes keep
 // calling session() and supa() themselves and tests can substitute those; a database failure that answers 5xx is
 // also reported to lib/monitoring.ts, which alerts once the same failure keeps happening.
@@ -61,12 +62,20 @@ export type PostgrestError = { code?: string; message?: string; details?: string
 /** The error PostgREST sent, or an empty one when the body is not JSON. */
 export const postgrestError = (response: Response): Promise<PostgrestError> => response.json().then(body => body && typeof body === 'object' ? body as PostgrestError : {}, () => ({}));
 /** The database's own words for a P0001 refusal (raised for people to read), a known code's message, or the fallback.
- * `codes` maps an error code to a message, or to a message and status (such as PGRST202, a function this database lacks). */
+ * `codes` maps an error code to a message, or to a message and status (such as PGRST202, a function this database lacks);
+ * 42501 (a view-only member writing) answers 403 for every route unless `codes` says otherwise, and a 5xx from PostgREST
+ * with no known code answers at least 503. */
+const viewOnly = 'This shared workspace is view-only.';
 export async function postgrestFailure(response: Response, fallback: string, { status = 409, fallbackStatus = status, codes = {} }: { status?: number; fallbackStatus?: number; codes?: Record<string, string | readonly [string, number]> } = {}) {
  const { code = '', message } = await postgrestError(response);
  if (code === 'P0001' && message) return Response.json({ error: message }, { status });
- const known = Object.hasOwn(codes, code) ? codes[code] : undefined;
- const [error, answer] = known === undefined ? [fallback, fallbackStatus] : typeof known === 'string' ? [known, status] : known;
+ // 42501 is a permission refusal, answered 403: the database's own household message when it sent one; a bare row-level
+ // security refusal is a view-only member writing (a stranger is refused earlier by active_owner()); anything else in this route's words.
+ // 42P01 (a table this database lacks) is a missing migration, like PGRST202.
+ const mapped: Record<string, string | readonly [string, number]> = { '42501': [knownHouseholdMessage(message) ?? (/row-level security/.test(message ?? '') ? viewOnly : fallback), 403], '42P01': [fallback, 503], ...codes };
+ const known = Object.hasOwn(mapped, code) ? mapped[code] : undefined;
+ // PostgREST answering 5xx without a code it knows is the database failing, not a refusal: a setup problem worth a retry.
+ const [error, answer] = known === undefined ? [fallback, response.status >= 500 ? Math.max(fallbackStatus, 503) : fallbackStatus] : typeof known === 'string' ? [known, status] : known;
  // Only the code travels: PostgREST's own message and details can quote the values of a row.
  if (answer >= 500) await reportError('database', Object.assign(new Error(`${fallback} (PostgREST ${code || 'no code'}, HTTP ${response.status})`), { name: 'DatabaseError', stack: '' }), { status: answer }, { alert: 'repeated' });
  return Response.json({ error }, { status: answer });

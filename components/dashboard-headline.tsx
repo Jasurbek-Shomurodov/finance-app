@@ -33,12 +33,15 @@ type Props = {
  market: MarketData | null;
 };
 
-/** This month's spending, and how far ahead of or behind last month it is by this day. */
+/** This month's spending, and how far ahead of or behind last month it is by this day. The figure is the Spending card's
+ * (`monthlyReview.spent`, every category), the same one its trend compares, so the tile and the card agree; the Budget
+ * card's `spent` (excluded categories dropped) only stands in until the pace is known. */
 function SpentTile({ budget, spending, currency }: { budget: Budget; spending?: SpendingPaceState; currency: string }) {
  const { t, locale } = useLanguage();
  const money = (amount: number) => formatMoney(amount, currency, locale);
  const difference = spending ? paceDifference(spending) : null;
- return <StatTile label={t('Spent this month')} value={budget.loading ? '—' : money(budget.spent)} href={transactionsHref({ direction: 'expense', period: 'this_month' })}>
+ const spent = spending?.pace ? { loading: spending.loading, value: spending.pace.spent } : { loading: budget.loading, value: budget.spent };
+ return <StatTile label={t('Spent this month')} value={spent.loading ? '—' : money(spent.value)} href={transactionsHref({ direction: 'expense', period: 'this_month' })}>
   {difference !== null && <p className="stat-tile-trend">
    {difference !== 0 && (difference < 0 ? <TrendingDown size={14} aria-hidden="true" className="positive"/> : <TrendingUp size={14} aria-hidden="true"/>)}
    <span>{difference > 0 ? t('{amount} more than last month by this day', { amount: money(difference) }) : difference < 0 ? t('{amount} less than last month by this day', { amount: money(-difference) }) : t('Same as last month by this day')}</span>

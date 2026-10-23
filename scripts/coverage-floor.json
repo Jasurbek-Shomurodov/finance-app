@@ -60,7 +60,6 @@
   "components/planning/goal-summary-row.tsx",
   "components/planning/goals-page.tsx",
   "components/planning/holding-account-dialog.tsx",
-  "components/planning/recurring-list.tsx",
   "components/planning/statement-reconciliation.tsx",
   "components/planning/upcoming-page.tsx",
   "components/portfolio-allocation-plan.tsx",

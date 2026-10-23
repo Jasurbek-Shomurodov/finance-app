@@ -179,7 +179,7 @@ export function ReportTransactions({ lines, drill, label, names, currency, onCle
  const pageCount = Math.max(1, Math.ceil(lines.length / reportLinesPerPage));
  const page = paging.key === listKey ? Math.min(paging.page, pageCount) : 1;
  return <section className="panel report-transactions" aria-label={t('Transactions')}>
-  <PanelTitle title={t('Transactions')} count={<Count value={lines.length}/>}>{drill && label && <span className="report-drill">{label}<button type="button" aria-label={t('Clear filter')} onClick={onClear}><X size={14} aria-hidden="true"/></button></span>}</PanelTitle>
+  <PanelTitle title={t('Transactions')} count={<Count value={new Set(lines.map(line => line.record?.id ?? line.id)).size}/>}>{drill && label && <span className="report-drill">{label}<button type="button" aria-label={t('Clear filter')} onClick={onClear}><X size={14} aria-hidden="true"/></button></span>}</PanelTitle>
   {lines.length ? <ul className="report-transaction-list">{lines.slice((page - 1) * reportLinesPerPage, page * reportLinesPerPage).map(line => {
    const cells = <>
     <CategoryIcon kind={names.icon(line.category)} size="sm"/>

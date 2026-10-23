@@ -5,7 +5,7 @@ import { expenses, income, liabilities, value, type Entry } from './finance';
 import { convertAmount } from './market';
 import type { Share } from './cash-flow-report';
 import type { PlanningData } from './planning';
-import { isMortgagePayment, spendingAmount } from './spending';
+import { isMortgagePayment, spendingAmount, trackerDated } from './spending';
 import type { TransactionSplit } from './transaction-tools';
 import { ratesOf } from './transaction-rates';
 
@@ -64,7 +64,8 @@ export function reportLedger(data: Pick<PlanningData, 'records' | 'investmentLin
   if (!event || event.event_type !== 'expense' || event.occurred_on < range.from || event.occurred_on > last || Number(link.amount) >= 0) continue;
   if (records.some(record => record.history_event_id === link.id)) continue;
   const asset = byId.get(event.record_id), unit = link.account_currency ?? byId.get(link.account_id)?.currency;
-  const amount = unit ? convertAmount(-Number(link.amount), unit, currency, rates) : null;
+  // A Tracker expense converts at the rates of its own day, as a transaction does.
+  const amount = unit ? convertAmount(-Number(link.amount), unit, currency, ratesOf(trackerDated(link, unit), rates)) : null;
   if (amount === null) { missing++; continue; }
   lines.push({ id: link.id, record: null, name: asset?.name ?? 'Other expense', date: event.occurred_on, direction: 'expense', amount, category: 'Other expense', business: asset ? (asset.kind === 'Business' ? asset.id : asset.business_id ?? null) : null });
  }

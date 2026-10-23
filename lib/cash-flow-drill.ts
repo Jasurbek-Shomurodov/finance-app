@@ -77,8 +77,8 @@ export function periodFlows(context: DrillContext) {
  const activityAccount = new Map((data.activity ?? []).map(row => [row.id, row.account_id]));
  for (const item of cashFlowItems(records, from, to, { splits, investmentLinks: data.investmentLinks })) {
   const account = { account: accountOf(item, activityAccount) };
-  if (item.income) move({ income: item.record?.custom_category_id ?? item.record?.kind ?? 'Other income', payer: merchantOf(item, context.t) }, account, item.amount, item.currency, item.record);
-  else for (const part of item.parts) move(account, { expense: part.category }, part.amount, item.currency, item.record);
+  if (item.income) move({ income: item.record?.custom_category_id ?? item.record?.kind ?? 'Other income', payer: merchantOf(item, context.t) }, account, item.amount, item.currency, item.dated);
+  else for (const part of item.parts) move(account, { expense: part.category }, part.amount, item.currency, item.dated);
  }
  // A transfer, repayment or purchase converts at the rates of its own day, as a transaction does.
  const onDay = (row: { day_rates?: DayTable | null }): Recorder => {
@@ -196,7 +196,7 @@ function merchantFlows(target: { key: string; income: boolean }, title: string, 
   if (item.income !== target.income || merchantOf(item, t) !== target.key) continue;
   const parts = item.income ? [{ category: item.record?.custom_category_id ?? item.record?.kind ?? 'Other income', amount: item.amount }] : item.parts;
   for (const part of parts) {
-   const value = item.currency ? convertAmount(part.amount, item.currency, currency, ratesOf(item.record, rates)) ?? null : null;
+   const value = item.currency ? convertAmount(part.amount, item.currency, currency, ratesOf(item.dated, rates)) ?? null : null;
    if (value === null) { missing += 1; continue; }
    add(accounts, accountOf(item, activityAccount), value);
    add(categories, part.category, value);

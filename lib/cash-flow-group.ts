@@ -28,7 +28,7 @@ export function groupFlows(group: Group, title: string, context: DrillContext): 
  let missing = 0;
  for (const item of cashFlowItems(data.records as Entry[], from, to, { splits, investmentLinks: data.investmentLinks })) {
   for (const part of members(item, group, context)) {
-   const value = item.currency ? convertAmount(part.amount, item.currency, currency, ratesOf(item.record, rates)) ?? null : null;
+   const value = item.currency ? convertAmount(part.amount, item.currency, currency, ratesOf(item.dated, rates)) ?? null : null;
    if (value === null) { missing += 1; continue; }
    add(totals, part.member, value);
   }

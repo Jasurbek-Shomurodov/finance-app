@@ -33,7 +33,7 @@ export function AccountsOverview({ items, data, filters, order, businesses, card
  const market=holdingActions.market;
  return <>
   {!!items.length&&<StatTiles columns="auto" label={t('About account totals')}>
-   <StatTile label={t('Total')} value={total===null?'—':<AnimatedMoney value={total} currency={display.currency??totals[0]?.currency??'USD'}/>}/>
+   <StatTile label={t('Total')} value={total===null?'—':<AnimatedMoney value={total} currency={display.currency??totals[0]?.currency??'USD'}/>}>{total===null&&<p role="status">{t('Exchange rate unavailable.')}</p>}</StatTile>
   </StatTiles>}
   {(businesses.length>0||owners.length>0)&&!!items.length&&<div className="transactions-tools">{businesses.length>0&&<BusinessFilter businesses={businesses} value={businessFilter} onChange={setBusinessFilter}/>}{owners.length>0&&<OwnerFilter owners={owners} value={ownerFilter} onChange={setOwnerFilter}/>}</div>}
   {!!items.length&&<div className="accounts-master-detail">

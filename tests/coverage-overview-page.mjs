@@ -44,6 +44,11 @@ test('monthly commitments show whole amounts, the left-over figure and its sign'
  assert.doesNotMatch(plain(waiting.commitments),/ left/,'no headline figure before the forecast is ready');
  assert.match(plain(waiting.commitments),/Expenses — /);
  assert.match(plain(waiting.commitments),/Left after expenses —/);
+ // Income and the mortgage and loan estimates wait too: a partial forecast never prints as a total (MONEY-008).
+ const partial=cards({forecastReady:false,forecast:{...forecast,loanPayments:510.2}});
+ assert.match(plain(partial.commitments),/Income — /);assert.match(plain(partial.commitments),/Estimated mortgage payments — /);assert.match(plain(partial.commitments),/Estimated loan payments — /);
+ assert.doesNotMatch(plain(partial.commitments),/\$/,'no figure before the forecast is ready');
+ assert.doesNotMatch(partial.commitments,/class="positive"/,'no green before there is a figure');
 });
 
 test('the commitments hint explains asset and other income with shared formatting',()=>{
@@ -55,6 +60,10 @@ test('the commitments hint explains asset and other income with shared formattin
  assert.match(text,new RegExp(`Estimated asset income: ${formatMoney(300,'EUR','en-US').replace(/[$€]/,'.')}`));
  assert.match(text,new RegExp(`Other recurring income: ${formatMoney(2500.4,'EUR','en-US').replace(/[$€]/,'.')}`));
  assert.match(text,/Yearly records are divided by 12\./);
+ function Waiting(){result=useOverviewCards({entries:[],currency:'EUR',excludedCurrencies:[],forecast,forecastReady:false,planning:null});return null;}
+ renderToStaticMarkup(React.createElement(Waiting));
+ const waiting=plain(renderToStaticMarkup(result.commitments.props.children[0].props.hint));
+ assert.match(waiting,/Estimated asset income: — /);assert.match(waiting,/Other recurring income: —/);
 });
 
 test('asset allocation lists holdings by size with their share and mentions outstanding debt',()=>{

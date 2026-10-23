@@ -12,7 +12,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { countryOptions } from '@/lib/countries';
 import { currencyLabel, currencyMatches, type Preferences } from '@/lib/currencies';
 import { depositToday } from '@/lib/deposit-interest';
-import { formatDate, formatMoney } from '@/lib/format';
+import { formatDate, formatMoney, formatNumber } from '@/lib/format';
 import { isLanguage, languageCatalogue } from '@/lib/languages';
 import { countryCurrency, currenciesForCountry, goalHorizons, goalTargetDate, horizonDate, makePrimary, onboardingGoalPayload, onboardingSteps, pickCurrency, startingCurrencies, suggestedCurrencies, trackingStartFor, type OnboardingGoal, type TrackingPreset } from '@/lib/onboarding';
 import styles from './onboarding-screen.module.css';
@@ -82,7 +82,7 @@ export function OnboardingScreen({ brand, initial, telegram, savePreferences, ap
   return <main className={styles.page}>
     <header className={styles.header}>{brand}<Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => void finish(true)}>{t('Skip setup')}</Button></header>
     <div className={styles.progress} role="progressbar" aria-valuemin={1} aria-valuemax={onboardingSteps.length} aria-valuenow={step + 1} aria-label={t('Setup progress')}><span style={{ width: `${((step + 1) / onboardingSteps.length) * 100}%` }}/></div>
-    <p className={styles.stepLabel}>{t('Step {current} of {total}', { current: step + 1, total: onboardingSteps.length })}</p>
+    <p className={styles.stepLabel}>{t('Step {current} of {total}', { current: formatNumber(step + 1, locale, 0), total: formatNumber(onboardingSteps.length, locale, 0) })}</p>
     <section key={current} className={styles.step} data-step={current}>
       {current === 'profile' && <>
         <p className={styles.eyebrow}><Sparkles size={14} aria-hidden="true"/>{t('WELCOME')}</p>
@@ -108,7 +108,7 @@ export function OnboardingScreen({ brand, initial, telegram, savePreferences, ap
         <label className={styles.field}>{t('Target amount')}<span className={styles.amount}><FormattedNumberInput value={goal.target} required={false} onValueChange={value => setGoal({ ...goal, target: value })}/><span>{primary}</span></span></label>
         <p className={styles.groupLabel} id="onboarding-horizon">{t('When do you want to reach it?')}</p>
         <div className={styles.options} role="group" aria-labelledby="onboarding-horizon">
-          {goalHorizons.map(years => <button key={years} type="button" className={styles.option} aria-pressed={goal.horizon === years} onClick={() => setGoal({ ...goal, horizon: goal.horizon === years ? null : years })}><span className={styles.optionMark}><Check size={14} strokeWidth={3} aria-hidden="true"/></span><strong>{t(years === 1 ? 'In 1 year' : 'In {years} years', { years })}</strong><span>{formatDate(horizonDate(today, years), locale)}</span></button>)}
+          {goalHorizons.map(years => <button key={years} type="button" className={styles.option} aria-pressed={goal.horizon === years} onClick={() => setGoal({ ...goal, horizon: goal.horizon === years ? null : years })}><span className={styles.optionMark}><Check size={14} strokeWidth={3} aria-hidden="true"/></span><strong>{t(years === 1 ? 'In 1 year' : 'In {years} years', { years: formatNumber(years, locale, 0) })}</strong><span>{formatDate(horizonDate(today, years), locale)}</span></button>)}
           <button type="button" className={styles.option} aria-pressed={goal.horizon === 'custom'} onClick={() => setGoal({ ...goal, horizon: goal.horizon === 'custom' ? null : 'custom' })}><span className={styles.optionMark}><Check size={14} strokeWidth={3} aria-hidden="true"/></span><strong>{t('Choose a date')}</strong><span>{goal.horizon === 'custom' && goal.custom ? formatDate(goal.custom, locale) : t('Any day after today')}</span></button>
         </div>
         {goal.horizon === 'custom' && <div className={styles.picker}><DatePicker value={goal.custom} min={presetDay('tomorrow', today)} onChange={custom => setGoal({ ...goal, custom })}/></div>}

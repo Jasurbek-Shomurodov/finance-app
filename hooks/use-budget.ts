@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { saveOwnerResource, useOwnerResource } from '@/hooks/use-owner-resource';
 import { emptyBudget, setBudgetAmount, type BudgetCategorySetting, type BudgetMode, type BudgetState } from '@/lib/budget';
 import { demoBudget } from '@/lib/budget-demo';
@@ -9,17 +9,31 @@ import { showSaved } from '@/lib/feedback';
 
 export type WorkspaceBudget = ReturnType<typeof useBudget>;
 
+/** Saves of one category queue behind each other; the budget-wide saves (settings, recalculate) each keep a queue of their own. */
+export const saveQueueKey = (action: string, data: unknown) => {
+ const key = (data as { category_key?: unknown } | null)?.category_key;
+ return typeof key === 'string' ? 'category:' + key : action;
+};
+
 /** Saved budgets, category settings and the budget style. The sample workspace keeps its own copy in memory.
  * Held once, by WorkspaceProvider (`useWorkspace().budget`), so a change shows at once on Budget and in every forecast. */
 export function useBudget(owner: string | null, demo: boolean, revision: number) {
  const remote = useOwnerResource<BudgetState>('/api/budget', owner, !!owner && !demo, revision, emptyBudget);
  const [sample, setSample] = useState<BudgetState>(() => demoBudget(depositMonth()));
  const state = demo ? sample : remote.data;
+ // One queue per category (or per other kind of save): two quick edits of the same plan would otherwise be two unordered
+ // requests, and the earlier figure could land last (CONC-009). A failed save still lets the next one run.
+ const queues = useRef(new Map<string, Promise<unknown>>());
+ const enqueue = (key: string, task: () => Promise<unknown>) => {
+  const run = (queues.current.get(key) ?? Promise.resolve()).catch(() => undefined).then(task);
+  queues.current.set(key, run);
+  return run;
+ };
  // Changes show at once; a failed save reloads what is really stored. Saves run in order.
  async function change(next: (state: BudgetState) => BudgetState, ...saves: Array<[action: string, data: unknown]>) {
   if (demo) { setSample(next); showSaved(); return; }
   remote.update(next);
-  try { for (const [action, data] of saves) await saveOwnerResource('/api/budget', action, data); }
+  try { for (const [action, data] of saves) await enqueue(saveQueueKey(action, data), () => saveOwnerResource('/api/budget', action, data)); }
   catch (error) { remote.invalidate(); throw error; }
  }
  const amount = (category_key: string, month: string, amount: number, currency: string, applies_forward: boolean) =>

@@ -97,7 +97,7 @@ export function TransactionsScreen() {
  const days = groupPageByDay(records, (page - 1) * transactionsPerPage, page * transactionsPerPage, convert);
  const summary = summarizeTransactions(records, convert);
  const accounts = new Map(data.records.filter(record => record.kind === 'Cash').map(record => [record.id, record.name]));
- const money = (amount: number) => formatMoney(amount, currency, locale);
+ const total = (amount: number) => summary.missing ? '—' : formatMoney(amount, currency, locale);
  const chosen = records.filter(record => selected.has(record.id));
  const categoryOptions = [...categoryChoices(data.categories, 'income', removedCategories.kinds), ...categoryChoices(data.categories, 'expense', removedCategories.kinds)];
 
@@ -194,11 +194,13 @@ export function TransactionsScreen() {
     <PanelTitle title={t('Summary')}/>
     <dl className="budget-left-summary">
      <div><dt>{t('Transactions')}</dt><dd>{formatNumber(summary.count, locale, 0)}</dd></div>
-     <div><dt>{t('Income')}</dt><dd className={summary.received > 0 ? 'positive' : undefined}><RollingText text={money(summary.received)}/></dd></div>
-     <div><dt>{t('Spending')}</dt><dd><RollingText text={money(summary.spent)}/></dd></div>
+     {/* A total that adds amounts no rate converts is missing, never a partial figure (MONEY-008). */}
+     <div><dt>{t('Income')}</dt><dd className={!summary.missing && summary.received > 0 ? 'positive' : undefined}><RollingText text={total(summary.received)}/></dd></div>
+     <div><dt>{t('Spending')}</dt><dd><RollingText text={total(summary.spent)}/></dd></div>
      {summary.largest && <div><dt>{t('Largest expense')}</dt><dd><RollingText text={enteredMoney(summary.largest.entered.amount, summary.largest.entered.currency)}/></dd></div>}
-     <div className="budget-left-total"><dt>{t('Net')}</dt><dd className={summary.received - summary.spent > 0 ? 'positive' : undefined}><RollingText text={money(summary.received - summary.spent)}/></dd></div>
+     <div className="budget-left-total"><dt>{t('Net')}</dt><dd className={!summary.missing && summary.received - summary.spent > 0 ? 'positive' : undefined}><RollingText text={total(summary.received - summary.spent)}/></dd></div>
     </dl>
+    {summary.missing > 0 && <p role="status" className="muted">{t('Exchange rate unavailable.')}</p>}
    </aside>
   </div>}
   {!loading && !error && <TransactionInsights owner={user} demo={demo} revision={reload} records={planning.data.records} today={today} onReview={reviewRecurring}/>}

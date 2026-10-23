@@ -1,4 +1,5 @@
 import { expenses, income, type Entry } from './finance';
+import type { DatedRecord, DayTable } from './transaction-rates';
 
 // The one definition of "spending", shared by Cash flow, Transactions, the
 // Dashboard, Budget actuals, reports and the Telegram digest:
@@ -24,15 +25,20 @@ export function spendingAmount(row: SpendingRow): number {
 export const transferAmount = (row: SpendingRow) => expenses.includes(row.kind) && isMortgagePayment(row) ? Number(row.amount) - spendingAmount(row) : 0;
 
 /** A record the cash-flow walk reads. Without an `id` it can never be told apart from another, so it is never skipped as a repeat. */
-type FlowRecord = SpendingRow & Pick<Entry, 'currency' | 'date' | 'frequency'> & Partial<Pick<Entry, 'id' | 'custom_category_id' | 'history_event_id'>>;
+type FlowRecord = SpendingRow & Pick<Entry, 'currency' | 'date' | 'frequency'> & Partial<Pick<Entry, 'id' | 'custom_category_id' | 'history_event_id' | 'day_rates' | 'account_currency' | 'account_exchange_rate'>>;
 /** Part of a record's amount in one category: `category_id` is an added category's id or a built-in kind. */
 export type SpendingSplit = { record_id: string; category_id: string; amount: number | string };
 /** A Tracker cash movement on an account (`investment_account_links`). An expense event's movement is spending, until
  * it is copied into an expense record of its own (`history_event_id`). */
-export type SpendingLink = { id: string; account_id: string; account_currency?: string | null; amount: number | string; investment_history: { occurred_on: string; record_id?: string; event_type: string } | null };
+export type SpendingLink = { id: string; account_id: string; account_currency?: string | null; amount: number | string; investment_history: { occurred_on: string; record_id?: string; event_type: string } | null; /** The rates of its day, attached by the server like a transaction's (`withPlanningDayRates`); null when that day could not be loaded. */ day_rates?: DayTable | null };
 /** One actual income or spending, in its own `currency` (null when it cannot be told). `parts` split spending into
- * categories and add up to `amount`; income has none. */
-export type CashFlowItem<R> = { id: string; income: boolean; date: string; amount: number; currency: string | null; parts: Array<{ category: string; amount: number }>; record: R | null; link: SpendingLink | null };
+ * categories and add up to `amount`; income has none. `dated` is what the item converts at (`ratesOf`): the record itself,
+ * or a Tracker expense's day table; null converts at today's rates. */
+export type CashFlowItem<R> = { id: string; income: boolean; date: string; amount: number; currency: string | null; parts: Array<{ category: string; amount: number }>; record: R | null; link: SpendingLink | null; dated: DatedRecord | null };
+
+/** A Tracker movement as `ratesOf` reads it: its own day's rates when the server attached them (a null table counts as
+ * missing, never today's); null when none were, so a sample or unsaved movement converts at today's rates. */
+export const trackerDated = (link: Pick<SpendingLink, 'day_rates'>, currency: string | null): DatedRecord | null => link.day_rates === undefined ? null : { currency: currency ?? '', day_rates: link.day_rates };
 export type CashFlowExtras = { splits?: readonly SpendingSplit[]; investmentLinks?: readonly SpendingLink[] };
 
 /** The Tracker expenses dated from..to that no expense record copies yet. */
@@ -55,7 +61,7 @@ function spendingParts(record: FlowRecord, splits: Map<string, SpendingSplit[]>)
 const cashFlowKind = (record: FlowRecord) => income.includes(record.kind) || expenses.includes(record.kind);
 /** An income or expense record as a cash-flow item, in its own currency. */
 function recordItem<R extends FlowRecord>(record: R, splits: Map<string, SpendingSplit[]>): CashFlowItem<R> {
- const base = { id: record.id ?? '', date: record.date, currency: record.currency, record, link: null };
+ const base = { id: record.id ?? '', date: record.date, currency: record.currency, record, link: null, dated: record };
  return income.includes(record.kind) ? { ...base, income: true, amount: Number(record.amount), parts: [] } : { ...base, income: false, amount: spendingAmount(record), parts: spendingParts(record, splits) };
 }
 
@@ -77,7 +83,7 @@ export function* cashFlowItems<R extends FlowRecord>(records: readonly R[], from
  // spending; their fees are expense records. Tracker expenses on investments have no record of their own until copied.
  const accounts = new Map(records.filter(record => record.id).map(record => [record.id, record.currency]));
  for (const link of trackerExpenses(extras.investmentLinks ?? [], from, to, copied)) {
-  const amount = -Number(link.amount);
-  yield { id: link.id, income: false, date: link.investment_history!.occurred_on, amount, currency: link.account_currency ?? accounts.get(link.account_id) ?? null, parts: [{ category: 'Other expense', amount }], record: null, link };
+  const amount = -Number(link.amount), currency = link.account_currency ?? accounts.get(link.account_id) ?? null;
+  yield { id: link.id, income: false, date: link.investment_history!.occurred_on, amount, currency, parts: [{ category: 'Other expense', amount }], record: null, link, dated: trackerDated(link, currency) };
  }
 }

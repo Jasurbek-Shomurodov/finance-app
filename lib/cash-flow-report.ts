@@ -1,10 +1,10 @@
 import { monthActuals, monthsBetween } from './budget';
 import { intervalOf } from './business-report';
-import { shiftMonth } from './calendar-days';
-import { expenses, income, type Entry } from './finance';
+import { monthEnd, shiftMonth } from './calendar-days';
+import { income, type Entry } from './finance';
 import { convertAmount } from './market';
 import type { Category, PlanningData } from './planning';
-import { spendingAmount } from './spending';
+import { cashFlowItems } from './spending';
 import type { TransactionSplit } from './transaction-tools';
 import { ratesOf } from './transaction-rates';
 
@@ -53,12 +53,13 @@ export function cashFlowReport(data: Pick<PlanningData, 'records' | 'activity' |
   }
   series.push({ month, income: monthIncome, expenses: monthSpending, missing: actual.missing });
  }
- const first = months[0], last = months.at(-1);
- for (const record of data.records as Entry[]) {
-  if (record.frequency !== 'Once' || !first || !last || record.date.slice(0, 7) < first || record.date.slice(0, 7) > last || record.date > today) continue;
-  const direction = income.includes(record.kind) ? 'income' : expenses.includes(record.kind) ? 'expense' : null;
-  const value = direction && convertAmount(direction === 'income' ? Number(record.amount) : spendingAmount(record), record.currency, currency, ratesOf(record, rates));
-  if (direction && value !== null && value !== undefined) add(byMerchant[direction], record.name.trim() || record.kind, value);
+ // The same items the categories count (`cashFlowItems`), so the two groupings add up alike: a Tracker expense on an
+ // investment, which has no record of its own, is named after the holding it was spent from.
+ const first = months[0], last = months.at(-1), to = last && monthEnd(last) < today ? monthEnd(last) : today;
+ const names = new Map((data.records as Entry[]).map(record => [record.id, record.name.trim() || record.kind]));
+ if (first && last) for (const item of cashFlowItems(data.records as Entry[], first + '-01', to, { splits, investmentLinks: data.investmentLinks })) {
+  const value = item.currency ? convertAmount(item.amount, item.currency, currency, ratesOf(item.dated, rates)) : null;
+  if (value != null) add(byMerchant[item.income ? 'income' : 'expense'], item.record ? item.record.name.trim() || item.record.kind : names.get(item.link!.account_id) ?? 'Other expense', value);
  }
  const totalIncome = series.reduce((sum, item) => sum + item.income, 0), totalSpending = series.reduce((sum, item) => sum + item.expenses, 0);
  const savings = totalIncome - totalSpending;

@@ -26,7 +26,9 @@ export async function webSignIn({db,chatId,clock,env}:Turn,from:TelegramFrom|und
 export async function signOut(db:ServiceDatabase,subscription:TelegramSubscription,now:Date):Promise<TelegramMessage>{
  const language=await ownerLanguage(db,subscription.user_id);
  await unlinkChat(db,subscription,now);
- await db.write('/rest/v1/telegram_drafts?user_id=eq.'+subscription.user_id,{method:'DELETE'});
+ // A draft that outlives the sign-out would resume a half-finished setup at the next sign-in, so a failed delete is a failure.
+ const dropped=await db.write('/rest/v1/telegram_drafts?user_id=eq.'+subscription.user_id,{method:'DELETE'});
+ if(!dropped.ok)throw Error('Database request failed.');
  return {chat_id:subscription.chat_id!,text:t(language,'You are signed out. Sad to see you go! 👋 Come back any time: send /start and sign in with your phone number or on the web.'),keyboard:{remove:true}};
 }
 /** Payments due in the next 31 days, as the morning digest lists them, in the owner's primary currency at the latest snapshot's rates. */

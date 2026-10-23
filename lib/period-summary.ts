@@ -23,11 +23,11 @@ export function periodTotals(input:PeriodInput,from:string,to:string,currency:st
  const totals:PeriodTotals={income:0,spending:0,byCategory:{},missing:0};
  const table={USD:1,...rates};
  for(const item of cashFlowItems(records,from,to,extras)){
-  const amount=item.currency===null?null:convertAmount(item.amount,item.currency,currency,ratesOf(item.record,table));
+  const amount=item.currency===null?null:convertAmount(item.amount,item.currency,currency,ratesOf(item.dated,table));
   if(amount===null||!Number.isFinite(amount)){totals.missing++;continue;}
   if(item.income){totals.income+=amount;continue;}
   totals.spending+=amount;
-  for(const part of item.parts){const key=categoryKey(part.category);totals.byCategory[key]=(totals.byCategory[key]??0)+convertAmount(part.amount,item.currency!,currency,ratesOf(item.record,table))!;}
+  for(const part of item.parts){const key=categoryKey(part.category);totals.byCategory[key]=(totals.byCategory[key]??0)+convertAmount(part.amount,item.currency!,currency,ratesOf(item.dated,table))!;}
  }
  return totals;
 }

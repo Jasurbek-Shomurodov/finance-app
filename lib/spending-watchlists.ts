@@ -4,8 +4,9 @@ import {spendingAmount} from './spending';
 import type {Watchlist} from './workspace-preferences';
 import type {TransactionSplit} from './transaction-tools';
 
-/** Converts an amount in `from` into the currency the figures are shown in; null without a usable rate. */
-export type WatchlistConvert=(amount:number,from:string)=>number|null;
+/** Converts an amount in `from` into the currency the figures are shown in; null without a usable rate. A record's
+ * amount converts at the rates of its own day (`ratesOf`), so `record` is passed; the target has none. */
+export type WatchlistConvert=(amount:number,from:string,record?:Entry)=>number|null;
 
 /** What a record spent in the watchlist's category (its split share), or all of it without a category. */
 function matchedAmount(watchlist:Watchlist,record:Entry,splits:TransactionSplit[]){
@@ -26,7 +27,7 @@ export function watchlistSpending(watchlist:Watchlist,records:Entry[],splits:Tra
   if(!expenses.includes(record.kind)||record.frequency!=='Once'||record.date.slice(0,7)!==month||record.date>today||!record.name.toLowerCase().includes(query))continue;
   const amount=matchedAmount(watchlist,record,splits);
   if(!(amount>0))continue;
-  const value=into(amount,record.currency);
+  const value=into(amount,record.currency,record);
   if(value===null){missing++;continue;}
   spent+=value;count++;
  }

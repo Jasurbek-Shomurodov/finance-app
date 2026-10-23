@@ -176,6 +176,43 @@ test('a holding card converts, its converted price per unit reads to the cent, a
  missingRate(dashboard([entry('CCC', 'Stock', 'GBP', 10, { cost: 5 })]).replace(/Saved value.*/, ''));
 });
 
+test('Cash flow’s income headline shows neither its received nor its estimate total while a source has no rate (MONEY-008)', () => {
+ const r = createRenderer(), ui = stubs();
+ const { CashflowPreview } = r.load('components/cashflow-preview.tsx', { ...ui.modules, ...inEuros, ...foundation('done-tick', 'progress-line', 'category-icon', 'inline-error', 'loading-placeholder', 'panel-title') });
+ const source = (id, currency, approx) => ({ id, name: id, kind: 'Other income', currency, mode: 'variable', approx_monthly: approx, archived: false });
+ const mount = sources => { r.mount(React.createElement(CashflowPreview, { entries: [], sources, month: '2026-10', currency: 'EUR', loading: false, error: '', onRetry() {}, onIncome() {}, mortgages: null, watchlists: null, budget: null })); return text(r.find(node => node.type === 'PanelTitle').props.title); };
+ assert.ok(mount([source('Pay', 'USD', 1000)]).endsWith(eur(0) + ' / ' + eur(900)));
+ assert.ok(mount([source('Pay', 'USD', 1000), source('Rent', 'GBP', 500)]).endsWith('— / —'), 'a pound estimate without a rate leaves both totals missing');
+ assert.ok(text(r.tree).includes('Exchange rate unavailable.'));
+});
+
+test('an account’s balance and the directory totals are display-currency figures, — with the note without a rate (MONEY-008)', () => {
+ const foundationStubs = foundation('category-icon', 'count', 'sortable', 'rolling-text', 'animated-money');
+ const account = currency => entry('Wallet', 'Cash', currency, 1000, { date: '2026-01-01' });
+ const directoryItem = currency => ({ key: 'record:Wallet', id: 'Wallet', account: account(currency), total: 1000, group: 'cash', count: null });
+ const details = { business: () => null, owner: () => null };
+ const directory = currency => mountScreen('components/planning/accounts/account-directory.tsx', 'AccountDirectory', { count: 1, visible: [directoryItem(currency)], query: '', onQuery() {}, onSelect() {}, order: { reorder() {}, disabled: true }, details }, { ...foundationStubs, '@/components/ui/input': hostModule(), 'lucide-react': hostModule() });
+ assert.ok(directory('USD').includes(eur(900)) && !directory('USD').includes('Exchange rate unavailable.'), directory('USD'));
+ missingRate(directory('GBP'));
+ const r = createRenderer(), ui = stubs();
+ const { BalanceAccountCard } = r.load('components/planning/accounts/account-cards.tsx', { ...ui.modules, ...inEuros, ...foundationStubs, 'lucide-react': hostModule(), '@/components/ui/dropdown-menu': hostModule(), './account-menu': { AccountMenu: ({ children }) => children }, './holding-rows': hostModule() });
+ const card = currency => { r.mount(React.createElement(BalanceAccountCard, { account: account(currency), goals: [{ id: 'g', name: 'Trip', account_id: 'Wallet', allocated: 250, target: 500, archived: false }], onEdit() {}, onDelete() {}, onMove() {}, onOperation() {} })); return r.all(node => node.type === 'RollingText').map(node => node.props.text).join(' ') + ' ' + text(r.tree); };
+ assert.ok(card('USD').startsWith([900, 225, 675].map(eur).join(' ')), card('USD'));
+ missingRate(card('GBP'));
+});
+
+test('Recently deleted names an unnamed transaction as Transactions does, and shows no empty state over an error', async () => {
+ const fs = await import('node:fs');
+ const source = fs.readFileSync('components/recently-deleted.tsx', 'utf8');
+ assert.match(source, /!visible\.length\?error\?null:<EmptyState/, 'InlineError and the empty state never render together');
+ const r = createRenderer(), ui = stubs();
+ const { RecentlyDeleted } = r.load('components/recently-deleted.tsx', { ...ui.modules, ...inEuros, ...foundation('confirm-dialog', 'empty-state', 'inline-error', 'page-header', 'category-badge', 'screen-skeletons', 'pagination'), 'lucide-react': hostModule(), '@/lib/api-client': { requestJson: async () => ({}) }, '@/lib/feedback': { showDeleted() {}, showNotice() {} } });
+ const unnamed = { id: 'd1', source: 'finance_records', deleted_at: '2026-10-20T10:00:00Z', data: { ...entry('Living expense', 'Living expense', 'USD', 12), notes: 'Coffee beans' } };
+ r.mount(React.createElement(RecentlyDeleted, { demo: true, demoItems: [unnamed], onRestore() {}, onDelete() {}, onSaved() {} }));
+ const shown = text(r.find(node => node.props?.className === 'recovery-info'));
+ assert.ok(shown.startsWith('Coffee beans'), shown);
+});
+
 test('a schedule’s details show its totals, payments and chart in the currency it was entered in, even with another display currency', () => {
  const pay = entry('Pay', 'Salary', 'USD', 1000, { date: '2026-08-15', frequency: 'Monthly' });
  const data = currency => ({ records: [{ ...pay, currency }, entry('a', 'Salary', currency, 800, { date: '2026-08-15' })], occurrences: [{ id: 'o', record_id: 'Pay', due_on: '2026-08-15', status: 'paid', transaction_id: 'a' }], debtPayments: [] });

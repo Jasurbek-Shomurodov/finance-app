@@ -1,6 +1,6 @@
 import { loadMarket } from '@/lib/server-market';
 import { marketSymbols } from '@/lib/market';
-import { crossSite,signInAgain,tooManyAttempts } from '@/lib/api-route';
+import { crossSite,postgrestFailure,signInAgain,tooManyAttempts } from '@/lib/api-route';
 import { limits,rateLimited } from '@/lib/rate-limit';
 import { pagePath,readAllPages } from '@/lib/owner-rows';
 import { session,supa,sameOrigin } from '@/lib/supabase';
@@ -14,6 +14,7 @@ export async function GET(){
   return Response.json({snapshots},{headers:{'Cache-Control':'no-store'}});
  }catch{return Response.json({error:'Daily portfolio history is awaiting setup.'},{status:503});}
 }
+const notSaved='Could not save today’s portfolio. Live values are still shown.';
 export async function POST(req:Request){
  if(!sameOrigin(req))return crossSite();
  try{
@@ -27,6 +28,8 @@ export async function POST(req:Request){
   const totals=snapshotTotals(records,market);
   if(!totals)return Response.json({error:'Complete prices and exchange rates are needed to save today’s portfolio.'},{status:409});
   const response=await supa('/rest/v1/rpc/capture_portfolio_snapshot',{method:'POST',body:JSON.stringify({p_assets:totals.assets,p_debt:totals.debt,p_rates:totals.rates})},auth.token);
-  if(!response.ok)throw Error();return Response.json({snapshot:await response.json()},{headers:{'Cache-Control':'no-store'}});
- }catch{return Response.json({error:'Could not save today’s portfolio. Live values are still shown.'},{status:503});}
+  // The database's refusal keeps its status and words (a view-only member answers 403); only a missing function is a setup problem.
+  if(!response.ok)return postgrestFailure(response,notSaved,{codes:{PGRST202:[notSaved,503]}});
+  return Response.json({snapshot:await response.json()},{headers:{'Cache-Control':'no-store'}});
+ }catch{return Response.json({error:notSaved},{status:503});}
 }

@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Settings, Workflow } from 'lucide-react';
 import { BudgetGroupCard, BudgetProgress, BudgetRateNotice, BudgetSectionHeader, BudgetTotalRow, ContributionRows, useCategoryName } from '@/components/budget/budget-rows';
 import { LeftToBudgetCard, type BudgetFocus } from '@/components/budget/left-to-budget-card';
 import { PlannedInput } from '@/components/budget/planned-input';
+import { AgeOfMoneyTile } from '@/components/budget/age-of-money-tile';
 import { CategoryDetailsDialog } from '@/components/budget/category-details';
 import { BudgetSettingsDialog, CategorySettingsDialog, type BudgetFigures } from '@/components/budget/settings-dialogs';
 import { useLanguage } from '@/components/language-provider';
@@ -13,20 +14,18 @@ import { PanelSkeleton } from '@/components/presentation-foundation/loading-plac
 import { BudgetSkeleton } from '@/components/presentation-foundation/screen-skeletons';
 import { PageHeader } from '@/components/presentation-foundation/page-header';
 import { RowMenu } from '@/components/presentation-foundation/row-menu';
-import { StatTile } from '@/components/presentation-foundation/stat-tile';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { signTone } from '@/components/presentation-foundation/tone';
 import { Button } from '@/components/ui/button';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
 import { useOwnerResource } from '@/hooks/use-owner-resource';
-import { ageOfMoneyTrend } from '@/lib/age-of-money';
-import { appliesToFutureMonths, budgetCategories, budgetHistory, budgetOverall, budgetReadRange, budgetRows, budgetRowsForMode, flexBucketCategory, flexBucketKey, flexBucketRollover, goalContribution, isFlexibleCategory, knownPlan, leftToBudget, monthActuals, monthsBetween, sectionGroups, suggestedBudget, type BudgetAmount, type BudgetCategory, type BudgetOverall, type BudgetRow, type MonthActuals } from '@/lib/budget';
+import { appliesToFutureMonths, budgetCategories, budgetHistory, budgetOverall, budgetReadRange, budgetRows, budgetRowsForMode, flexBucketCategory, flexBucketKey, flexBucketRollover, goalContribution, isFlexibleCategory, knownPlan, leftToBudget, monthActuals, monthsBetween, sectionGroups, suggestedBudget, type BudgetAmount, type BudgetCategory, type BudgetMode, type BudgetOverall, type BudgetRow, type MonthActuals } from '@/lib/budget';
 import { categoryBills, firstRecentPayment, flexPlan, plannedIn, type PlanSource } from '@/lib/budget-schedules';
 import { shiftMonth } from '@/lib/calendar-days';
 import { depositMonth, depositToday } from '@/lib/deposit-interest';
 import { normalizeEntry, type Entry } from '@/lib/finance';
 import { showError } from '@/lib/feedback';
-import { formatMoney, formatMonthShort, formatMonthYear, formatNumber, formatYear } from '@/lib/format';
+import { formatMoney, formatMonthShort, formatMonthYear, formatYear } from '@/lib/format';
 import { periodMonths } from '@/lib/cash-flow-report';
 import { convertAmount, marketRates } from '@/lib/market';
 import { emptyPlanning } from '@/lib/planning';
@@ -62,7 +61,7 @@ export function BudgetScreen() {
  const categoryRows = budgetRows(categories, plan.amounts, history, month, currency, rates, plan.schedules);
  const flexBudget = flex ? flexPlan(plan, categories, month, currency, rates) : null;
  const bucket = flexBucketCategory(budget.state.categories);
- const bucketRollover = flex ? flexBucketRollover(bucket, categories, plan, history, month, currency, rates) : 0;
+ const bucketRollover = flex ? flexBucketRollover(bucket, categories, { plan, history, currency, rates }, month) : 0;
  const bucketMissing = flex && (flexBudget === null || bucketRollover === null);
  const rows = budgetRowsForMode(categoryRows, budget.state.mode);
  const groups = sectionGroups(rows, flex);
@@ -71,7 +70,7 @@ export function BudgetScreen() {
  // A contribution no rate converts leaves the total unknown, never counted as zero.
  const missingContributions = goals.filter(goal => contributionOf(goal) === null).length;
  const contributions = missingContributions ? null : goals.reduce((sum, goal) => sum + (contributionOf(goal) ?? 0), 0);
- const left = leftToBudget(rows, budget.state.mode, flexBudget, contributions, missingContributions);
+ const left = leftToBudget(rows, budget.state.mode, flex ? { budget: flexBudget, rollover: bucketRollover } : null, contributions, missingContributions);
 
  const save = (key: string) => (amount: number, forward: boolean) => budget.saveAmount(key, month, amount, currency, forward);
  const repeat = (key: string) => (amount: number, forward: boolean) => budget.saveRepeat(key, month, amount, currency, forward);
@@ -125,8 +124,8 @@ export function BudgetScreen() {
  const sum = (list: typeof groups, key: 'budget' | 'actual') => list.reduce((total, group) => total + group[key], 0);
  // A section's plan is unknown (—) while one of its amounts has no usable rate.
  const planOf = (list: typeof groups) => list.some(group => group.missing) ? null : sum(list, 'budget');
- // Like each group's Planned figure, the total includes money rolled over; in flex mode that is the bucket's and the other funds'.
- const spendingPlanned = !flex ? planOf(spending) : left.expenses === null || bucketMissing || spending.some(group => group.missing) ? null : left.expenses + (bucketRollover ?? 0) + rows.filter(row => row.direction === 'expense' && !row.excluded).reduce((total, row) => total + row.rolloverIn, 0);
+ // Like each group's Planned figure and the Expenses tab, the total adds the money rolled over: one figure (`leftToBudget`).
+ const spendingPlanned = left.expenses === null || left.rollover === null || spending.some(group => group.missing) ? null : left.expenses + left.rollover;
  const incomePlanned = planOf(income);
  const loading = workspaceLoading || budget.loading || (live ? remote.initialLoading : planning.loading);
  const error = budget.error || (live ? remote.error : planning.error);
@@ -145,7 +144,7 @@ export function BudgetScreen() {
    <Button variant="outline" onClick={() => setSettingsOpen(true)}><Settings size={16} aria-hidden="true"/>{t('Settings')}</Button>
   </PageHeader>
   <BudgetRateNotice planned={left.missing} actual={history.get(month)?.missing ?? 0}/>
-  {error ? <InlineError message={t(error)} onRetry={() => { budget.retry(); remote.retry(); }}/> : loading ? (view === 'year' ? <PanelSkeleton label={t('Loading records…')} rows={6}/> : <BudgetSkeleton label={t('Loading records…')}/>) : view === 'year' ? <BudgetYear rows={categories} month={month} history={history} amounts={budget.state.amounts} schedules={planning.data.records} currency={currency} rates={rates} today={today}/> : <div className="budget-layout">
+  {error ? <InlineError message={t(error)} onRetry={() => { budget.retry(); remote.retry(); }}/> : loading ? (view === 'year' ? <PanelSkeleton label={t('Loading records…')} rows={6}/> : <BudgetSkeleton label={t('Loading records…')}/>) : view === 'year' ? <BudgetYear rows={categories} mode={budget.state.mode} month={month} history={history} amounts={budget.state.amounts} schedules={planning.data.records} currency={currency} rates={rates} today={today}/> : <div className="budget-layout">
    {/* Summary shows every section; Income or Expenses in the Left to budget card narrows the list to that side. */}
    <div className="budget-table" data-focus={focus}>
     <div className="budget-section" data-section="income">
@@ -175,50 +174,45 @@ export function BudgetScreen() {
  </div>;
 }
 
-/** Age of Money: how many days money sits in cash accounts before it is spent, and its change over 30 days. */
-function AgeOfMoneyTile({ records, currency, today, rates }: { records: Entry[]; currency: string; today: string; rates?: number | Record<string, number> }) {
- const { t, locale } = useLanguage();
- const age = useMemo(() => ageOfMoneyTrend(records, currency, today, rates, new Set(records.filter(record => record.kind === 'Cash').map(record => record.id))), [records, currency, today, rates]);
- const days = (count: number) => count === 1 ? t('1 day') : t('{count} days', { count: formatNumber(count, locale, 0) });
- const change = age.change === null ? null : age.change === 0 ? t('No change vs 30 days ago') : t('{change} vs 30 days ago', { change: (age.change > 0 ? '+' : '\u2212') + days(Math.abs(age.change)) });
- return <StatTile label={t('Age of Money')} value={age.days === null ? '—' : days(Math.round(age.days))} hint={<>
-  {t('How long money waits before you spend it: the average age of the money behind your last 10 expenses. Income is matched to spending in the order it arrived, across your cash accounts. A higher number means more of a buffer.')}
-  {age.skipped > 0 && <> {t('Records without an exchange rate to {currency} are left out: {count}.', { currency, count: formatNumber(age.skipped, locale, 0) })}</>}
- </>}>{change && <p>{change}</p>}</StatTile>;
-}
-
-/** The Year view: every month of the year side by side. Past and current months show what happened; later months show the plan. */
-function BudgetYear({ rows, month, history, amounts, schedules, currency, rates, today }: { rows: BudgetCategory[]; month: string; history: ReadonlyMap<string, MonthActuals>; amounts: BudgetAmount[]; schedules: Entry[]; currency: string; rates?: number | Record<string, number>; today: string }) {
+/** The Year view: every month of the year side by side. Past and current months show what happened; later months show the plan.
+ * In flex mode the Flexible bucket is one line, planned as the Month view plans it (`flexPlan`), and its categories show only
+ * what they spent (`budgetRowsForMode`), so the year's totals agree with each month's (MONEY-010). */
+function BudgetYear({ rows, mode, month, history, amounts, schedules, currency, rates, today }: { rows: BudgetCategory[]; mode: BudgetMode; month: string; history: Map<string, MonthActuals>; amounts: BudgetAmount[]; schedules: Entry[]; currency: string; rates?: number | Record<string, number>; today: string }) {
  const { t, locale } = useLanguage();
  const name = useCategoryName();
  const months = monthsBetween(month.slice(0, 4) + '-01', month.slice(0, 4) + '-12');
  const current = today.slice(0, 7);
- const table = months.map(item => budgetRows(rows, amounts, history, item, currency, rates, schedules));
- const visible = rows.map((row, index) => ({ row, index })).filter(({ row, index }) => !row.excluded && table.some(list => list[index].budget !== 0 || list[index].actual));
+ const table = months.map(item => budgetRowsForMode(budgetRows(rows, amounts, history, item, currency, rates, schedules), mode));
+ const flexible = mode === 'flex' ? months.map(item => flexPlan({ amounts, schedules }, rows, item, currency, rates)) : null;
+ const bucketCell = (budget: number | null, list: BudgetRow[]): BudgetRow => { const actual = list.filter(isFlexibleCategory).reduce((sum, row) => sum + row.actual, 0); return { ...flexBucketCategory([]), budget, actual, rolloverIn: 0, remaining: budget === null ? null : budget - actual, progress: budget ? actual / budget : actual > 0 ? 1 : 0, missing: budget === null }; };
+ const lines = [...rows.map((row, index) => ({ row, cells: table.map(list => list[index]) })), ...(flexible ? [{ row: flexBucketCategory([]), cells: flexible.map((budget, position) => bucketCell(budget, table[position])) }] : [])];
+ // A row planned by the bucket (budget null, nothing missing) shows its spending alone; the rest hide until something is planned or spent.
+ const own = (cell: BudgetRow) => cell.budget !== null || cell.missing;
+ const visible = lines.filter(({ row, cells }) => !row.excluded && cells.some(cell => cell.budget || cell.actual || cell.missing));
+ const overall = table.map((list, position) => { const sum = budgetOverall(list), bucket = flexible?.[position]; return bucket === undefined ? sum : bucket === null ? { ...sum, missing: sum.missing + 1 } : { ...sum, plannedExpenses: sum.plannedExpenses + bucket }; });
  // A plan no rate converts (budget null) reads —, and so does a total that would add it.
  const plan = (value: number | null) => value === null ? '—' : formatMoney(value, currency, locale);
  return <section className="panel budget-year">
   {visible.length ? <div className="budget-year-scroll"><table>
    <thead><tr><th scope="col">{t('Category')}</th>{months.map(item => <th scope="col" key={item} data-current={item === current || undefined}>{formatMonthShort(item, locale)}</th>)}<th scope="col">{t('Total')}</th></tr></thead>
-   <tbody>{visible.map(({ row, index }) => {
-    const cells = table.map(list => list[index]);
-    const total = cells.reduce<number | null>((sum, cell, position) => { const value = months[position] <= current ? cell.actual : cell.budget; return sum === null || value === null ? null : sum + value; }, 0);
+   <tbody>{visible.map(({ row, cells }) => {
+    const total = cells.reduce<number | null>((sum, cell, position) => { const value = months[position] <= current ? cell.actual : own(cell) ? cell.budget : 0; return sum === null || value === null ? null : sum + value; }, 0);
     return <tr key={row.key}>
      <th scope="row">{name(row)}</th>
      {cells.map((cell, position) => {
       const past = months[position] <= current;
       const marks = { 'data-future': !past || undefined, 'data-current': months[position] === current || undefined };
-      if (!cell.actual && cell.budget === 0) return <td key={months[position]} {...marks}>—</td>;
+      if (!cell.actual && !cell.budget && !cell.missing) return <td key={months[position]} {...marks}>—</td>;
       return <td key={months[position]} {...marks}>
-       <span>{past ? formatMoney(cell.actual, currency, locale) : plan(cell.budget)}</span>
-       {past && <small>{t('of {amount}', { amount: plan(cell.budget) })}</small>}
+       <span>{past ? formatMoney(cell.actual, currency, locale) : own(cell) ? plan(cell.budget) : '—'}</span>
+       {past && own(cell) && <small>{t('of {amount}', { amount: plan(cell.budget) })}</small>}
        {past && cell.budget ? <BudgetProgress row={cell}/> : null}
       </td>;
      })}
      <td><strong>{plan(total)}</strong></td>
     </tr>;
    })}</tbody>
-   <BudgetYearOverall months={months} overall={table.map(budgetOverall)} current={current} currency={currency}/>
+   <BudgetYearOverall months={months} overall={overall} current={current} currency={currency}/>
   </table></div> : <p className="budget-left-empty">{t('Nothing planned or recorded this year yet.')}</p>}
  </section>;
 }

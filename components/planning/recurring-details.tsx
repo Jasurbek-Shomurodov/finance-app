@@ -34,7 +34,7 @@ function PaymentList({ items, money, today, done, income }: { items: RecurringIt
   <h3>{t('Payments')}</h3>
   <ul>{items.slice(0, 12).map(entry => <li key={entry.key} data-status={entry.status}>
    <span>{formatDate(entry.date, locale)}<span className={entry.status === 'overdue' ? 'status-badge is-overdue' : 'status-badge'}>{label(entry)}</span></span>
-   <strong className={entry.status === 'paid' && income ? 'positive' : undefined}>{entry.status === 'paid' ? entry.entered ? formatMoney(entry.entered.amount, entry.entered.currency, locale) : money(entry.recorded ?? entry.amount) : '—'}<small>{t('of {amount}', { amount: money(entry.amount) })}</small></strong>
+   <strong className={entry.status === 'paid' && income ? 'positive' : undefined}>{entry.status === 'paid' && (entry.entered || entry.recorded !== null) ? entry.entered ? formatMoney(entry.entered.amount, entry.entered.currency, locale) : money(entry.recorded ?? entry.amount) : '—'}<small>{t('of {amount}', { amount: money(entry.amount) })}</small></strong>
   </li>)}</ul>
  </section>;
 }
@@ -64,5 +64,6 @@ export function RecurringDetails({ item, data, today, onClose }: Props) {
    {track.scheduled <= 0 ? <EmptyState icon={<BarChart3 aria-hidden="true"/>} description={t('Nothing recorded in this period.')}/> : <HistoryChart points={points} currency={record.currency} fill={fill} done={done}/>}
   </section>
   <PaymentList items={track.history} money={money} today={today} done={done} income={income}/>
+  {track.missing > 0 && <p role="status" className="muted">{t('Exchange rate unavailable.')}</p>}
  </DialogContent></Dialog>;
 }

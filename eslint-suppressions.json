@@ -238,7 +238,7 @@
   },
   "lib/budget.ts": {
     "max-params": {
-      "count": 5
+      "count": 3
     }
   },
   "lib/business-report.ts": {
