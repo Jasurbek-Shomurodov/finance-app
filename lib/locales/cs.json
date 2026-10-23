@@ -1433,6 +1433,7 @@
   "Recent transactions": "Nedávné transakce",
   "Manage": "Spravovat",
   "Transferred from an existing investment": "Převedeno z existující investice",
+  "Paid from investment income": "Zaplaceno z příjmů z investic",
   "Investment purchases and principal repayments fund benchmarks. Explicit transfers between investments are not counted again. Cash balances and income receipts are excluded.": "Investiční nákupy a splátky jistiny financují benchmarky. Výslovné převody mezi investicemi se znovu nepočítají. Hotovostní zůstatky a příjmy jsou vyloučeny.",
   "Benchmark funding": "Financování benchmarku",
   "Excluding expenses": "Bez výdajů",

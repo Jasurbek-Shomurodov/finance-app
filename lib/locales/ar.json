@@ -1433,6 +1433,7 @@
   "Recent transactions": "المعاملات الأخيرة",
   "Manage": "أدِر",
   "Transferred from an existing investment": "محوَّل من استثمار قائم",
+  "Paid from investment income": "مدفوع من دخل الاستثمارات",
   "Investment purchases and principal repayments fund benchmarks. Explicit transfers between investments are not counted again. Cash balances and income receipts are excluded.": "تموّل مشتريات الاستثمار وسدادات أصل الدين المعايير المرجعية. لا تُحتسب التحويلات الصريحة بين الاستثمارات مرة أخرى. تُستبعد الأرصدة النقدية وإيصالات الدخل.",
   "Benchmark funding": "تمويل المعايير المرجعية",
   "Excluding expenses": "باستثناء المصروفات",

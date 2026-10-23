@@ -1433,6 +1433,7 @@
   "Recent transactions": "Letzte Transaktionen",
   "Manage": "Verwalten",
   "Transferred from an existing investment": "Von einer bestehenden Investition übertragen",
+  "Paid from investment income": "Bezahlt aus Anlageerträgen",
   "Investment purchases and principal repayments fund benchmarks. Explicit transfers between investments are not counted again. Cash balances and income receipts are excluded.": "Investitionskäufe und Tilgungen finanzieren Benchmarks. Ausdrückliche Überweisungen zwischen Investitionen werden nicht erneut gezählt. Bargeldsalden und Einnahmeeingänge sind ausgenommen.",
   "Benchmark funding": "Benchmark-Finanzierung",
   "Excluding expenses": "Ohne Ausgaben",

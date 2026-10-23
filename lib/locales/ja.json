@@ -1433,6 +1433,7 @@
   "Recent transactions": "最近の取引",
   "Manage": "管理",
   "Transferred from an existing investment": "既存の投資からの移管",
+  "Paid from investment income": "投資収益から支払い",
   "Investment purchases and principal repayments fund benchmarks. Explicit transfers between investments are not counted again. Cash balances and income receipts are excluded.": "投資の購入と元本の返済が、ベンチマークの資金になります。投資間の明示的な移管は、重ねて計上されません。現金残高と収入の受取は除外されます。",
   "Benchmark funding": "ベンチマークの資金",
   "Excluding expenses": "支出を除く",

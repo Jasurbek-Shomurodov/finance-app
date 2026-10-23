@@ -1433,6 +1433,7 @@
   "Recent transactions": "Последние операции",
   "Manage": "Управление",
   "Transferred from an existing investment": "Переведено из существующей инвестиции",
+  "Paid from investment income": "Оплачено из дохода от инвестиций",
   "Investment purchases and principal repayments fund benchmarks. Explicit transfers between investments are not counted again. Cash balances and income receipts are excluded.": "Покупки инвестиций и погашение основной суммы пополняют бенчмарки. Явные переводы между инвестициями повторно не учитываются. Остатки денежных средств и поступления дохода исключены.",
   "Benchmark funding": "Что вкладывается в бенчмарк",
   "Excluding expenses": "Без учёта расходов",

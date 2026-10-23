@@ -14,12 +14,12 @@ import { spendingAmount } from './spending';
 export type FundingScope='investments'|'expenses';
 export type ComparisonMethod={mode:'purchases'|'date';date:string;scope?:FundingScope};
 export type BenchmarkMovement=NonNullable<PlanningData['movements']>[number]&{created_at?:string};
-export type FundingDetail={id:string;date:string;name:string;amount:number;currency:string;reused:number;principal?:number;source?:'investment'|'expense'|'opening';kind?:string};
+export type FundingDetail={id:string;date:string;name:string;amount:number;currency:string;reused:number;principal?:number;source?:'investment'|'expense'|'opening';kind?:string;/** Part of a purchase paid from income the investments already paid out: earnings staying invested, not new money. */fromIncome?:number};
 export type DecisionInput=InvestmentPortfolioInput&{movements?:BenchmarkMovement[];method:ComparisonMethod};
 export type ExpenseFunding={id:string;date:string;name:string;kind:string;amount:number;currency:string};
 export type AccountRepayment={id:string;action:string;account_id:string;target_id:string|null;amount:number;occurred_on:string;notes:string;created_at?:string};
-/** Money entering or leaving investments: a purchase or principal repayment funds benchmarks; a payout is proceeds or income paid out. */
-export type ActivityItem={id:string;date:string;recordId:string;name:string;amount:number;currency:string;reused:number;principal?:number;payout?:boolean};
+/** Money entering or leaving investments: a purchase or principal repayment funds benchmarks; a payout is proceeds or income paid out (`income` for earnings, not proceeds). */
+export type ActivityItem={id:string;date:string;recordId:string;name:string;amount:number;currency:string;reused:number;principal?:number;payout?:boolean;income?:boolean};
 type Records=InvestmentPortfolioInput['records'];
 /** Market and exchange-rate history is requested from this day at the earliest. */
 export const benchmarkHistoryStart='2016-01-01';
@@ -113,7 +113,7 @@ export function investmentActivity(records:Records,allEvents:InvestmentPortfolio
    const e=item.row,r=byId.get(e.record_id);if(!r)continue;
    const entry={id:e.id,date:e.occurred_on,recordId:r.id,name:r.name,currency:r.currency,reused:0};
    if(benchmarkInvestment(r)&&e.event_type==='contribution')items.push({...entry,amount:Number(e.amount)});
-   else if(benchmarkInvestment(r)&&['withdrawal','income'].includes(e.event_type))items.push({...entry,amount:Number(e.amount),payout:true});
+   else if(benchmarkInvestment(r)&&['withdrawal','income'].includes(e.event_type))items.push({...entry,amount:Number(e.amount),payout:true,...(e.event_type==='income'?{income:true}:{})});
    else if(liabilities.includes(r.kind)&&['mortgage_payment','withdrawal'].includes(e.event_type)){
     const paid=e.event_type==='mortgage_payment'?Number(e.principal):Number(e.amount);
     items.push({...entry,amount:paid,principal:paid});
@@ -214,12 +214,23 @@ export function investmentDecisionComparison(input:DecisionInput,data:BenchmarkD
  // `own` is the money put in from outside the investments, without the spending that "Including expenses" also funds.
  const flows:CashFlow[]=[],own:CashFlow[]=[],details:FundingDetail[]=[],points:WealthPoint[]=[];
  const observed=new Set<string>();let principal=0,payouts=0,cursor=0,next=0,spent=0,paid=0,seeded=false;
+ // Income the investments paid out and not yet put back in. A later purchase spends it first, in any holding:
+ // that part is earnings staying invested, so no benchmark receives it and the actual side does not count it twice.
+ let earnings=0,reinvested=0;
  const usd=(amount:number,currency:string,date:string)=>{const converted=convertHistorical(amount,currency,'USD',date,data.fx);if(converted===null||!Number.isFinite(converted)){missing=true;return 0;}return converted;};
- const fund=(id:string,date:string,name:string,amount:number,currency:string,reused=0,principalPaid?:number,expenseKind?:string,opening=false)=>{
+ const fund=(id:string,date:string,name:string,amount:number,currency:string,reused=0,principalPaid?:number,expenseKind?:string,opening=false,fromIncome=0)=>{
   if(!counted(date,principalPaid!==undefined))return;
-  const converted=usd(Math.max(0,amount-reused),currency,date);
+  const fresh=Math.max(0,amount-reused-fromIncome),converted=usd(fresh,currency,date);
   if(converted>0){flows.push({date,amount:converted});if(expenseKind===undefined)own.push({date,amount:converted});}
-  if(amount>0)details.push({id,date,name,amount:Math.max(0,amount-reused),currency,reused,...(principalPaid===undefined?{}:{principal:principalPaid}),...(expenseKind===undefined?{}:{source:'expense' as const,kind:expenseKind}),...(opening?{source:'opening' as const}:{})});
+  if(amount>0)details.push({id,date,name,amount:fresh,currency,reused,...(fromIncome>0?{fromIncome}:{}),...(principalPaid===undefined?{}:{principal:principalPaid}),...(expenseKind===undefined?{}:{source:'expense' as const,kind:expenseKind}),...(opening?{source:'opening' as const}:{})});
+ };
+ // How much of a purchase the unspent earnings cover, in the purchase's own currency.
+ const fromEarnings=(item:ActivityItem)=>{
+  if(item.principal!==undefined||!counted(item.date)||!(earnings>0))return 0;
+  const cost=Math.max(0,item.amount-item.reused),converted=usd(cost,item.currency,item.date);
+  if(!(converted>0))return 0;
+  const used=Math.min(earnings,converted);earnings-=used;reinvested+=used;
+  return cost*used/converted;
  };
  const openings=openingFunding(input.records,input.events,input.today);
  const opening=new Map<string,HistoryEvent>(),firstBalance=new Map<string,HistoryEvent>();
@@ -237,7 +248,7 @@ export function investmentDecisionComparison(input:DecisionInput,data:BenchmarkD
  for(let date=firstDate;date<=input.today;date=shiftDay(date,1)){
   // Spending funds benchmarks only; it never adds to actual holdings or proceeds.
   while(spent<spending.length&&spending[spent].date<=date){const row=spending[spent++];fund(row.id,row.date,row.name,row.amount,row.currency,0,undefined,row.kind);}
-  while(paid<earned.length&&earned[paid].date<=date){const row=earned[paid++];if(counted(row.date))payouts+=usd(row.amount,row.currency,row.date);}
+  while(paid<earned.length&&earned[paid].date<=date){const row=earned[paid++];if(counted(row.date)){const amount=usd(row.amount,row.currency,row.date);payouts+=amount;earnings+=amount;}}
   while(cursor<events.length&&events[cursor].occurred_on<=date){
    const e=events[cursor++];
    if(e.balance!==null){
@@ -254,9 +265,9 @@ export function investmentDecisionComparison(input:DecisionInput,data:BenchmarkD
   while(next<items.length&&items[next].date<=date){
    const item=items[next++];
    if(!counted(item.date,item.principal!==undefined))continue;
-   if(item.payout){payouts+=usd(item.amount,item.currency,item.date);continue;}
+   if(item.payout){const amount=usd(item.amount,item.currency,item.date);payouts+=amount;if(item.income)earnings+=amount;continue;}
    if(item.principal!==undefined)principal+=usd(item.principal,item.currency,item.date);
-   fund(item.id,item.date,item.name,item.amount,item.currency,item.reused,item.principal);
+   fund(item.id,item.date,item.name,item.amount,item.currency,item.reused,item.principal,undefined,false,fromEarnings(item));
   }
   if(date<start)continue;
   let total=0;
@@ -269,7 +280,7 @@ export function investmentDecisionComparison(input:DecisionInput,data:BenchmarkD
   if(dated&&!seeded){
    flows.push({date,amount:total});own.push({date,amount:total});details.push({id:'opening',date,name:'Starting investment value',amount:total,currency:'USD',reused:0});seeded=true;
   }
-  points.push({date,amount:total+principal+payouts});
+  points.push({date,amount:total+principal+payouts-reinvested});
  }
  if(missing)return null;
  const compared=compareInvestments(0,flows,points,{...data,start},'USD',true,portfolio);

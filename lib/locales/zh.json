@@ -1433,6 +1433,7 @@
   "Recent transactions": "近期交易",
   "Manage": "管理",
   "Transferred from an existing investment": "从现有投资转入",
+  "Paid from investment income": "由投资收益支付",
   "Investment purchases and principal repayments fund benchmarks. Explicit transfers between investments are not counted again. Cash balances and income receipts are excluded.": "投资买入和本金还款为基准出资。投资之间明确的转账不会重复计算。现金余额和收入收款不计入。",
   "Benchmark funding": "基准出资",
   "Excluding expenses": "不含支出",

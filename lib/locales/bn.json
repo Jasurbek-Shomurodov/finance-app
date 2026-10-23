@@ -1433,6 +1433,7 @@
   "Recent transactions": "সাম্প্রতিক লেনদেন",
   "Manage": "পরিচালনা করুন",
   "Transferred from an existing investment": "বিদ্যমান বিনিয়োগ থেকে স্থানান্তরিত",
+  "Paid from investment income": "বিনিয়োগের আয় থেকে পরিশোধিত",
   "Investment purchases and principal repayments fund benchmarks. Explicit transfers between investments are not counted again. Cash balances and income receipts are excluded.": "বিনিয়োগ ক্রয় ও আসল পরিশোধ বেঞ্চমার্কে অর্থায়ন করে। বিনিয়োগগুলোর মধ্যে স্পষ্ট স্থানান্তর আবার গণনা করা হয় না। নগদ ব্যালেন্স ও আয়ের প্রাপ্তি বাদ দেওয়া হয়েছে।",
   "Benchmark funding": "বেঞ্চমার্ক অর্থায়ন",
   "Excluding expenses": "ব্যয় বাদে",

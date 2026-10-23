@@ -1433,6 +1433,7 @@
   "Recent transactions": "हाल के लेन-देन",
   "Manage": "प्रबंधित करें",
   "Transferred from an existing investment": "मौजूदा निवेश से ट्रांसफ़र किया गया",
+  "Paid from investment income": "निवेश की आय से भुगतान",
   "Investment purchases and principal repayments fund benchmarks. Explicit transfers between investments are not counted again. Cash balances and income receipts are excluded.": "निवेश की खरीद और मूलधन की चुकौती बेंचमार्क को फ़ंड करती हैं। निवेशों के बीच स्पष्ट ट्रांसफ़र दोबारा नहीं गिने जाते। नकद बैलेंस और आय की प्राप्तियाँ शामिल नहीं हैं।",
   "Benchmark funding": "बेंचमार्क फ़ंडिंग",
   "Excluding expenses": "खर्च छोड़कर",

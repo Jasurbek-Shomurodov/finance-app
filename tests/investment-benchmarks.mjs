@@ -332,3 +332,23 @@ test('rent received from a held property is that property\'s return',()=>{
  const last=investmentDecisionComparison(input,data).result.points.at(-1);
  assert.equal(last.actual,1025);assert.equal(last.contributed,1000);
 });
+test('a purchase is paid first from income the investments already paid out; only the rest is new money for benchmarks',()=>{
+ const pay=(id,business_id,amount)=>({id,kind:'Business income',frequency:'Once',date:'2026-09-02',amount,currency:'USD',business_id,name:id});
+ const input={...base,records:[record('cash','Cash'),record('asset','Business',1700),record('b2','Business',500)],
+  events:[...base.events,event('p2','b2','2026-09-01','contribution',500,500),event('more','asset','2026-09-03','contribution',700,1700)],
+  cashflows:[pay('a-income','asset',100),pay('b-income','b2',200),{id:'salary',kind:'Salary',frequency:'Once',date:'2026-09-02',amount:900,currency:'USD',name:'Salary'},{id:'spend',kind:'Living expense',frequency:'Once',date:'2026-09-02',amount:500,currency:'USD',name:'Food'}]};
+ const result=investmentDecisionComparison(input,data);
+ const last=result.result.points.at(-1);
+ assert.equal(last.contributed,1900);assert.equal(last.invested,1900);
+ assert.equal(last.actual,2200);
+ assert.ok(Math.abs(last.BTC-(15*400+400/300*400))<1e-9);
+ const top=result.details.find(row=>row.id==='more');
+ assert.equal(top.fromIncome,300);assert.equal(top.amount,400);assert.equal(top.reused,0);
+});
+test('unspent earnings carry to the next purchase, income events count as earnings and sale proceeds do not',()=>{
+ const events=[...base.events,event('inc','asset','2026-09-02','income',300,null),event('sale','asset','2026-09-02','withdrawal',200,800),event('buy1','asset','2026-09-03','contribution',100,900),event('buy2','asset','2026-09-04','contribution',500,1400)];
+ const result=investmentDecisionComparison({...base,records:[record('cash','Cash'),record('asset','Business',1400)],events},data);
+ assert.deepEqual(result.details.filter(row=>row.id.startsWith('buy')).map(row=>[row.amount,row.fromIncome??0]),[[0,100],[300,200]]);
+ assert.equal(result.result.points.at(-1).contributed,1300);
+ assert.equal(result.result.points.at(-1).actual,1400+300+200-300);
+});

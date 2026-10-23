@@ -1433,6 +1433,7 @@
   "Recent transactions": "ธุรกรรมล่าสุด",
   "Manage": "จัดการ",
   "Transferred from an existing investment": "โอนจากการลงทุนที่มีอยู่",
+  "Paid from investment income": "จ่ายจากรายได้จากการลงทุน",
   "Investment purchases and principal repayments fund benchmarks. Explicit transfers between investments are not counted again. Cash balances and income receipts are excluded.": "การซื้อการลงทุนและการชำระเงินต้นเป็นเงินทุนของเกณฑ์เปรียบเทียบ การโอนโดยตรงระหว่างการลงทุนจะไม่ถูกนับซ้ำ ไม่รวมยอดเงินสดและรายรับ",
   "Benchmark funding": "เงินทุนของเกณฑ์เปรียบเทียบ",
   "Excluding expenses": "ไม่รวมรายจ่าย",

@@ -1433,6 +1433,7 @@
   "Recent transactions": "Giao dịch gần đây",
   "Manage": "Quản lý",
   "Transferred from an existing investment": "Chuyển từ một khoản đầu tư hiện có",
+  "Paid from investment income": "Trả từ thu nhập đầu tư",
   "Investment purchases and principal repayments fund benchmarks. Explicit transfers between investments are not counted again. Cash balances and income receipts are excluded.": "Các lần mua đầu tư và trả nợ gốc được dùng làm vốn cho các chuẩn so sánh. Các khoản chuyển rõ ràng giữa các khoản đầu tư không bị tính lại. Không tính số dư tiền mặt và thu nhập đã nhận.",
   "Benchmark funding": "Vốn cho chuẩn so sánh",
   "Excluding expenses": "Không gồm chi phí",

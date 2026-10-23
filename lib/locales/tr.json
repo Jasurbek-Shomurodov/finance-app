@@ -1433,6 +1433,7 @@
   "Recent transactions": "Son işlemler",
   "Manage": "Yönet",
   "Transferred from an existing investment": "Mevcut bir yatırımdan aktarıldı",
+  "Paid from investment income": "Yatırım gelirinden ödendi",
   "Investment purchases and principal repayments fund benchmarks. Explicit transfers between investments are not counted again. Cash balances and income receipts are excluded.": "Yatırım alımları ve anapara geri ödemeleri kıyaslamaları fonlar. Yatırımlar arasındaki açık transferler yeniden sayılmaz. Nakit bakiyeler ve gelir tahsilatları hariçtir.",
   "Benchmark funding": "Kıyaslama fonlaması",
   "Excluding expenses": "Giderler hariç",
