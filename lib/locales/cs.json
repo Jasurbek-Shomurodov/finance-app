@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "Některé příjmy nelze převést. Zobrazené částky v grafu jsou neúplné.",
   "Income source": "Zdroj příjmu",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "Plné sloupce ukazují zaznamenané příjmy. Obrysové sloupce ukazují aktuální a budoucí měsíční odhady, nikoli přijaté příjmy. Prázdné měsíce před první platbou jsou nahrazeny budoucími měsíci.",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "Dividendy z akcií evidujte jako Přijatý příjem ve Sledování dané akcie. Plat a další opakující se plány se spravují v části Příjmy a výdaje. Pro tento graf se používají aktuální směnné kurzy.",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "Dividendy z akcií evidujte jako Přijatý příjem ve Sledování dané akcie. Plat a další opakující se plány se spravují v části Příjmy a výdaje.",
+  "Each receipt converts at the exchange rate of its day.": "Každý příjem se převádí kurzem svého dne.",
   "Accounts": "Účty",
   "Account": "Účet",
   "Account activity": "Aktivita účtu",
@@ -2763,5 +2764,6 @@
   "This month so far": "Tento měsíc zatím",
   "3-month average": "Průměr za 3 měsíce",
   "Compared with average": "Oproti průměru",
-  "Item": "Položka"
+  "Item": "Položka",
+  "Amounts are compared as entered, in each transaction’s own currency.": "Částky se porovnávají tak, jak byly zadány, ve vlastní měně každé transakce."
 }

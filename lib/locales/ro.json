@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "Unele venituri nu pot fi convertite. Sumele afișate în grafic sunt incomplete.",
   "Income source": "Sursa venitului",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "Barele pline arată veniturile înregistrate. Barele conturate arată estimările lunare curente și viitoare, nu veniturile încasate. Lunile goale dinaintea primei încasări sunt înlocuite cu luni viitoare.",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "Înregistrează dividendele acțiunilor ca Venituri încasate în Monitorizarea acțiunii. Salariul și alte planuri recurente se gestionează în Venituri și cheltuieli. Pentru acest grafic se folosesc cursurile de schimb curente.",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "Înregistrează dividendele acțiunilor ca Venituri încasate în Monitorizarea acțiunii. Salariul și alte planuri recurente se gestionează în Venituri și cheltuieli.",
+  "Each receipt converts at the exchange rate of its day.": "Fiecare încasare se convertește la cursul de schimb din ziua ei.",
   "Accounts": "Conturi",
   "Account": "Cont",
   "Account activity": "Activitatea contului",
@@ -2763,5 +2764,6 @@
   "This month so far": "Luna aceasta până acum",
   "3-month average": "Media pe 3 luni",
   "Compared with average": "Față de medie",
-  "Item": "Element"
+  "Item": "Element",
+  "Amounts are compared as entered, in each transaction’s own currency.": "Sumele se compară așa cum au fost introduse, în moneda proprie a fiecărei tranzacții."
 }

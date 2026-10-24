@@ -17,16 +17,27 @@ const tracking = z.object({tracking_start:z.string().refine(date=>validDay(date)
 /** The database's refusal keeps its status and words (a view-only member answers 403); only a missing function is a setup problem. */
 const refused=(response:Response,fallback:string)=>postgrestFailure(response,fallback,{codes:{PGRST202:[fallback,503]}});
 const baseline = z.object({starting_amount:z.number().finite().min(0).max(1e27),currency:fiatCurrency,holdings:z.array(z.object({id:uuid,kind:z.enum(investmentKinds),currency:fiatCurrency,balance:z.number().finite().min(0).max(1e27)})).max(10000)}).refine(value=>new Set(value.holdings.map(holding=>holding.id)).size===value.holdings.length);
+/** When this person first used the app. The app-start mark is written once per visit by the session check
+ * (app/api/auth GET, after its answer); this read, repeated on every focus, only writes it when that mark has not
+ * landed yet, so the first visit's profile still carries a date. */
+async function appActivity(token:string){
+ const read=await supa('/rest/v1/user_app_activity?select=started_at,source',{},token);
+ if(!read.ok)throw Error();
+ const rows=await read.json() as unknown[];
+ if(rows.length)return rows[0];
+ const marked=await supa('/rest/v1/rpc/mark_app_started',{method:'POST',body:'{}'},token);
+ if(!marked.ok)throw Error();
+ return marked.json();
+}
 export async function GET() {
  try {
   const auth=await session();if(!auth)return signInAgain();
-  const activity=await supa('/rest/v1/rpc/mark_app_started',{method:'POST',body:'{}'},auth.token);
-  const [saved,capital]=await Promise.all([supa('/rest/v1/investment_comparison_preferences?select=*',{},auth.token),supa('/rest/v1/investment_comparison_baselines?select=starting_amount,currency,capital_as_of,holdings',{},auth.token)]);
-  if(!activity.ok||!saved.ok||!capital.ok)throw Error();
+  const [activity,saved,capital]=await Promise.all([appActivity(auth.token),supa('/rest/v1/investment_comparison_preferences?select=*',{},auth.token),supa('/rest/v1/investment_comparison_baselines?select=starting_amount,currency,capital_as_of,holdings',{},auth.token)]);
+  if(!saved.ok||!capital.ok)throw Error();
   const rows=await saved.json() as Array<Record<string,unknown>>,baselines=await capital.json() as unknown[];
   // Every column is read so the profile still loads before migration 073 adds tracking_start.
   const row=rows[0],preferences=row?{benchmarks:row.benchmarks,custom_symbol:row.custom_symbol,...(row.portfolio===undefined?{}:{portfolio:row.portfolio}),...(row.colors&&typeof row.colors==='object'?{colors:row.colors}:{})}:defaultComparisonPreferences;
-  return Response.json({owner_id:workspaceOwner(auth),activity:await activity.json(),preferences,baseline:baselines[0]??null,tracking_start:typeof row?.tracking_start==='string'?row.tracking_start:null},{headers:{'Cache-Control':'no-store'}});
+  return Response.json({owner_id:workspaceOwner(auth),activity,preferences,baseline:baselines[0]??null,tracking_start:typeof row?.tracking_start==='string'?row.tracking_start:null},{headers:{'Cache-Control':'no-store'}});
  }catch{return Response.json({error:'Investment comparisons are not set up for this account yet.'},{status:503});}
 }
 async function write(req:Request,capture:boolean){

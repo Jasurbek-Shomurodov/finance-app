@@ -178,9 +178,17 @@ test('a read dates transactions in the viewer\'s preferred currencies and fills 
  assert.match(calls[0].today, /^\d{4}-\d{2}-\d{2}$/);
  assert.equal(later.length, 1);
  // Without preferences, or when the read fails, the records' own currencies still decide.
- const failing = loadTS('lib/viewer-day-rates.ts', { 'next/server': { after: () => { throw Error('outside a request'); } }, '@/lib/day-rate-tables': tables, '@/lib/supabase': { supa: async () => { throw Error('offline'); } } });
+ const reported = [];
+ const monitoring = { reportError: async (...args) => { reported.push(args); } };
+ const failing = loadTS('lib/viewer-day-rates.ts', { 'next/server': { after: () => { throw Error('outside a request'); } }, '@/lib/day-rate-tables': tables, '@/lib/monitoring': monitoring, '@/lib/supabase': { supa: async () => { throw Error('offline'); } } });
  await failing.withViewerDayRates({ records: [] }, { token: 't', user: { id: 'me' } });
  assert.deepEqual(calls[1].currencies, []);
+ // The failure is reported (and alerts once it keeps happening), without the person's id; a refused read counts too.
+ assert.equal(reported.length, 1); assert.equal(reported[0][0], 'day-rates'); assert.equal(reported[0][1].message, 'offline'); assert.deepEqual(reported[0][3], { alert: 'repeated' });
+ assert.ok(!JSON.stringify(reported[0].slice(2)).includes('me'), 'no user id in the report');
+ const refused = loadTS('lib/viewer-day-rates.ts', { 'next/server': { after: () => {} }, '@/lib/day-rate-tables': tables, '@/lib/monitoring': monitoring, '@/lib/supabase': { supa: async () => new Response(null, { status: 500 }) } });
+ await refused.withViewerDayRates({ records: [] }, { token: 't', user: { id: 'me' } });
+ assert.deepEqual(calls[2].currencies, []); assert.equal(reported.length, 2); assert.match(reported[1][1].message, /HTTP 500/);
 });
 
 test('the rate route answers several days\' official rates in the asked currencies, and refuses bad requests', async () => {

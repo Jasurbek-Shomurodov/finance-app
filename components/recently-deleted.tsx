@@ -3,7 +3,7 @@ import { showDeleted, showNotice } from '@/lib/feedback';
 import { ConfirmDialog } from '@/components/presentation-foundation/confirm-dialog';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { PageHeader } from '@/components/presentation-foundation/page-header';
 import { ArchiveRestore, RotateCcw, Trash2 } from 'lucide-react';
 import { CategoryBadge } from '@/components/presentation-foundation/category-badge';
@@ -15,34 +15,32 @@ import { RecoveryRowsSkeleton } from '@/components/presentation-foundation/scree
 import { Pagination } from '@/components/presentation-foundation/pagination';
 import { formatDate, formatDateTime, formatNumber } from '@/lib/format';
 import { requestJson } from '@/lib/api-client';
+import { useSessionResource } from '@/hooks/use-owner-resource';
 import { deletedItemColorKind, deletedItemLabel, type DeletedItem } from '@/lib/deleted-items';
 import { unitPricedKinds } from '@/lib/finance';
 import { shownName } from '@/lib/record-names';
 
+const emptyPage:{items:DeletedItem[];hasMore:boolean}={items:[],hasMore:false};
 export function RecentlyDeleted({demo,demoItems,onRestore,onDelete,onSaved}:{demo:boolean;demoItems:DeletedItem[];onRestore:(item:DeletedItem)=>void;onDelete:(item:DeletedItem)=>void;onSaved:()=>void}) {
  const {t,locale}=useLanguage();
  // Deleted items keep their own currency; the list shows them in the display currency like every other list.
  const {entered}=useDisplayMoney();
- const [items,setItems]=useState<DeletedItem[]>([]),[page,setPage]=useState(1),[hasMore,setHasMore]=useState(false),[loadedKey,setLoadedKey]=useState(''),[reload,setReload]=useState(0);
+ const [page,setPage]=useState(1),[reload,setReload]=useState(0);
  const [permanent,setPermanent]=useState(false);
  const [restoring,setRestoring]=useState<DeletedItem|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState('');
- const requestKey=page+':'+reload;
- const loading=!demo&&loadedKey!==requestKey;
- useEffect(()=>{
-  if(demo)return;
-  const controller=new AbortController();
-  fetch('/api/deleted-items?page='+page,{signal:controller.signal}).then(async response=>{
-   const data=await response.json() as {items:DeletedItem[];hasMore:boolean;error?:string};if(!response.ok)throw Error(data.error);
-   if(!controller.signal.aborted){setError('');if(!data.items.length&&page>1)setPage(page-1);else{setItems(data.items);setHasMore(data.hasMore);}}
-  }).catch(error=>{if(!controller.signal.aborted)setError(error.message);}).finally(()=>{if(!controller.signal.aborted)setLoadedKey(requestKey);});
-  return ()=>controller.abort();
- },[demo,page,requestKey]);
+ // The page's items belong to the signed-in session; a restore or permanent delete reads the page again.
+ const remote=useSessionResource('/api/deleted-items?page='+page,!demo,reload,emptyPage);
+ const {error:loadError}=remote;const {items,hasMore}=remote.data;
+ // A page emptied by a restore or a delete falls back to the one before it, still loading until that page shows.
+ const fallingBack=!demo&&!remote.loading&&!loadError&&!items.length&&page>1;
+ if(fallingBack)setPage(page-1);
+ const loading=remote.loading||fallingBack;
  const visible=demo?demoItems.slice((page-1)*10,page*10):items;
  // A transaction saved without a name reads by its category in the current language, as Transactions shows it.
  const nameOf=(item:DeletedItem)=>item.source==='finance_records'?shownName(item.data,t):item.data.name;
  return <><PageHeader title={t('Recently deleted')} hint={<>{t('Restore deleted items to bring them back, or permanently delete them to remove their recovery data.')} {t('Items deleted before recovery was enabled cannot be recovered here.')}</>}/><section className="panel records recovery-panel">
- {error&&!restoring&&!loading&&<InlineError as="div" message={t(error)} onRetry={()=>setReload(n=>n+1)}/>}
- {loading?<RecoveryRowsSkeleton label={t('Loading records…')}/>:!visible.length?error?null:<EmptyState icon={<ArchiveRestore aria-hidden="true"/>} title={t('No deleted items')} description={t('Your deleted records will appear here for recovery.')}/>:<ul className="recovery-list">{visible.map(item=><li className="recovery-row" key={item.id} style={{'--recovery-color':categoryColor(deletedItemColorKind(item))} as CSSProperties}>
+ {loadError&&!loading&&<InlineError as="div" message={t(loadError)} onRetry={remote.retry}/>}
+ {loading?<RecoveryRowsSkeleton label={t('Loading records…')}/>:!visible.length?loadError?null:<EmptyState icon={<ArchiveRestore aria-hidden="true"/>} title={t('No deleted items')} description={t('Your deleted records will appear here for recovery.')}/>:<ul className="recovery-list">{visible.map(item=><li className="recovery-row" key={item.id} style={{'--recovery-color':categoryColor(deletedItemColorKind(item))} as CSSProperties}>
   <span className="recovery-icon"><ArchiveRestore size={20} aria-hidden="true"/></span>
   <div className="recovery-info"><strong>{nameOf(item)}</strong><p><CategoryBadge kind={deletedItemColorKind(item)} label={t(deletedItemLabel(item))}/>{item.source==='finance_records'&&item.data.date&&<span>{formatDate(item.data.date,locale)}</span>}</p></div>
   <div className="recovery-value">{item.source==='finance_records'&&<strong>{entered(Number(item.data.amount)*(unitPricedKinds.includes(String(item.data.kind))?Number(item.data.quantity||1):1),String(item.data.currency))}</strong>}{item.source==='savings_goals'&&<strong>{t('Target amount')}: {entered(Number(item.data.target),String(item.data.currency??'USD'))}</strong>}<small>{t('Deleted on')} · {formatDateTime(item.deleted_at,locale)}</small></div>

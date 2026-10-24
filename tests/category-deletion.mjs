@@ -36,10 +36,16 @@ test('delete dialog requires a loaded preview and explicit same-type replacement
  const category={id:id(1),name:'Leisure',direction:'expense'},target={id:id(2),name:'Travel',direction:'expense'};
  const props={category,categories:[category,target,{id:id(3),name:'Salary bonus',direction:'income'}],onClose:()=>closed++,onDeleted:()=>deleted++};
  const original=globalThis.fetch,calls=[];
- globalThis.fetch=async(url,options)=>{calls.push({url,options});return options?.method==='DELETE'?Response.json({error:'Unavailable'},{status:503}):Response.json({records:2,deleted:1,watchlists:0});};
+ let usageDown=true;
+ globalThis.fetch=async(url,options)=>{calls.push({url,options});return options?.method==='DELETE'?Response.json({error:'Unavailable'},{status:503}):usageDown?new Response('<html>Bad gateway</html>',{status:404}):Response.json({records:2,deleted:1,watchlists:0});};
  try{
   let tree=h.render(props);let submit=find(tree,node=>node.props?.variant==='destructive');assert.equal(submit.props.disabled,true);
-  const cleanup=h.effects[0]();await new Promise(resolve=>setImmediate(resolve));tree=h.render(props);
+  assert.equal(find(tree,node=>node.props?.role==='status').props.children,'Checking linked records…');
+  // The usage preview is the shared session loader's read: a reply without JSON shows the dialog's own fallback, and Retry reads again.
+  h.effects.at(-1)();await new Promise(resolve=>setImmediate(resolve));tree=h.render(props);
+  const failed=find(tree,node=>node.type?.name==='InlineError');assert.equal(failed.props.message,'Could not load category usage. Please try again.');assert.equal(find(tree,node=>node.props?.variant==='destructive').props.disabled,true);
+  usageDown=false;failed.props.onRetry();tree=h.render(props);assert.equal(find(tree,node=>node.props?.role==='status').props.children,'Checking linked records…');
+  const cleanup=h.effects.at(-1)();await new Promise(resolve=>setImmediate(resolve));tree=h.render(props);
   const select=find(tree,node=>node.type?.name==='NativeSelect');assert.ok(select);assert.equal(find(tree,node=>node.props?.value===id(3)),undefined);
   assert.equal(find(tree,node=>node.props?.variant==='destructive').props.disabled,true);
   select.props.onChange({target:{value:target.id}});tree=h.render(props);submit=find(tree,node=>node.props?.variant==='destructive');assert.equal(submit.props.disabled,false);
@@ -159,7 +165,7 @@ test('the delete dialog offers the other built-in kinds of the same type, minus 
  const original=globalThis.fetch,calls=[];
  globalThis.fetch=async(url,options)=>{calls.push({url,options});return options?.method==='DELETE'?Response.json({ok:true}):Response.json({records:2,deleted:0,watchlists:0});};
  try{
-  h.render(props);const cleanup=h.effects[0]();await new Promise(resolve=>setImmediate(resolve));let tree=h.render(props);
+  h.render(props);const cleanup=h.effects.at(-1)();await new Promise(resolve=>setImmediate(resolve));let tree=h.render(props);
   const options=[];(function walk(node){if(!node||typeof node!=='object')return;if(node.type==='option')options.push(node.props.value);for(const child of React.Children.toArray(node.props?.children))walk(child);})(find(tree,node=>node.type?.name==='NativeSelect'));
   assert.deepEqual(options,['','Living expense','Charity','Other expense',id(2),'new'],'built-in kinds first, without the deleted Rent expense, then added categories');
   find(tree,node=>node.type?.name==='NativeSelect').props.onChange({target:{value:'Charity'}});tree=h.render(props);
@@ -168,7 +174,7 @@ test('the delete dialog offers the other built-in kinds of the same type, minus 
   assert.deepEqual(JSON.parse(calls.at(-1).options.body),{id:category.id,replacement_kind:'Charity'});assert.equal(closed,1);assert.equal(deleted,1);cleanup();
   // A built-in category being deleted never offers itself.
   const own=harness('components/delete-category-dialog.tsx','DeleteCategoryDialog');const charity={id:'Charity',name:'Charity',direction:'expense'};
-  own.render({...props,category:charity});const stop=own.effects[0]();await new Promise(resolve=>setImmediate(resolve));
+  own.render({...props,category:charity});const stop=own.effects.at(-1)();await new Promise(resolve=>setImmediate(resolve));
   const kinds=[];(function walk(node){if(!node||typeof node!=='object')return;if(node.type==='option')kinds.push(node.props.value);for(const child of React.Children.toArray(node.props?.children))walk(child);})(find(own.render({...props,category:charity}),node=>node.type?.name==='NativeSelect'));
   assert.ok(!kinds.includes('Charity'));assert.ok(kinds.includes('Living expense'));stop();
  }finally{globalThis.fetch=original;}

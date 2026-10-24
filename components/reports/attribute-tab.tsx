@@ -35,7 +35,8 @@ export function AttributeTab({ direction, lines, trendLines, trendRange, interva
  return <>
   <StatTiles columns="auto" label={t(direction === 'expense' ? 'Spending' : 'Income')}>
    <StatTile label={t(direction === 'expense' ? 'Total spending' : 'Total income')} value={missing ? '—' : formatMoney(total, currency, locale)} tone={!missing && direction === 'income' && total > 0 ? 'positive' : undefined}/>
-   <StatTile label={t('Transactions')} value={formatNumber(lines.length, locale, 0)}/>
+   {/* A split transaction is several ledger lines, one per part, and still one transaction (as the Transactions panel counts). */}
+   <StatTile label={t('Transactions')} value={formatNumber(new Set(lines.map(line => line.record?.id ?? line.id)).size, locale, 0)}/>
   </StatTiles>
   <section className="panel">
    <PanelTitle title={t(mode === 'breakdown' ? 'Breakdown' : 'Trends')} hint={mode === 'trends' ? rangeText(trendRange, locale) : undefined}>

@@ -25,7 +25,15 @@ export function sharedRead(key:string,url:string,signal:AbortSignal):Promise<{ok
 }
 /** A save to an address makes the reads of it already under way, whatever their query, out of date: later readers ask again. */
 function forgetReads(url:string){const path=url.split('?')[0];for(const [key,read] of sharedReads)if(read.url.split('?')[0]===path)sharedReads.delete(key);}
-export function useOwnerResource<T>(url:string,owner:string|null,enabled:boolean,revision:number,empty:T){
+type Resource<T>={url:string;owner:string|null;enabled:boolean;revision:number;empty:T;fallback?:string};
+/** A reply without a JSON body (a proxy's HTML error page) reads as the fallback, never as a parse error; a reply that is OK must be JSON. */
+function parseReply<T>(reply:{ok:boolean;text:string},fallback:string):T{
+ let result:T&{error?:string};
+ try{result=JSON.parse(reply.text) as T&{error?:string};}catch(error){if(reply.ok)throw error;result={} as T&{error?:string};}
+ if(!reply.ok)throw Error(result.error||fallback);
+ return result;
+}
+function useResource<T>({url,owner,enabled,revision,empty,fallback='Could not load data.'}:Resource<T>){
  const request=useRef<AbortController|null>(null);
  const current=useRef('');
  const scope=`${owner}:${url}`;
@@ -37,12 +45,11 @@ export function useOwnerResource<T>(url:string,owner:string|null,enabled:boolean
   if(!owner||!enabled)return;
   const controller=new AbortController();request.current=controller;
   sharedRead(key,url,controller.signal).then(reply=>{
-   const result=JSON.parse(reply.text) as T & {error?:string};
-   if(!reply.ok)throw Error(result.error??'Could not load data.');
+   const result=parseReply<T>(reply,fallback);
    if(!controller.signal.aborted)setState({scope,key,data:result,error:''});
   }).catch(error=>{if(!controller.signal.aborted)setState(previous=>({scope,key,data:previous.scope===scope?previous.data:empty,error:error.message}));});
   return()=>controller.abort();
- },[url,owner,enabled,key,scope,empty]);
+ },[url,owner,enabled,key,scope,empty,fallback]);
  if((!owner||!enabled)&&state.scope)setState({scope:'',key:'',data:empty,error:''});
  return {
   data:enabled&&state.scope===scope?state.data:empty,
@@ -53,6 +60,17 @@ export function useOwnerResource<T>(url:string,owner:string|null,enabled:boolean
   update:(change:(data:T)=>T)=>{if(current.current===scope)setState(previous=>({scope,key,data:change(previous.scope===scope?previous.data:empty),error:''}));},
   invalidate:()=>{if(current.current===scope){request.current?.abort();setRetry(count=>count+1);}},
  };
+}
+/** A resource of one owner (a workspace's records, budget, planning): the read is scoped to the owner, so another owner never sees it. */
+export function useOwnerResource<T>(url:string,owner:string|null,enabled:boolean,revision:number,empty:T){
+ return useResource({url,owner,enabled,revision,empty});
+}
+/** A resource of the signed-in session rather than of a workspace owner (settings, the Telegram link, deleted items, a day's
+ * exchange rate): the one GET-parse-set loader for every such read, with `refreshRead`'s retries and `sharedRead`'s dedupe.
+ * `empty` stands in until the read answers; a failure keeps the data already shown and reports `error` (`fallback` when the
+ * reply names none). `revision` asks again. */
+export function useSessionResource<T>(url:string,enabled:boolean,revision:number,empty:T,fallback?:string){
+ return useResource({url,owner:'session',enabled,revision,empty,fallback});
 }
 /** Posts `{action,data}` and confirms the save; a failure keeps `confirmedFailure` from `requestJson`. */
 export async function saveOwnerResource<T=Record<string,never>>(url:string,action:string,data:unknown){const result=await requestJson<T>(url,{body:{action,data},fallback:'Could not save changes.'});forgetReads(url);showSaved();return result;}

@@ -2,6 +2,7 @@
 import { useCallback,useEffect,useMemo,useState } from 'react';
 import { useOwnerResource } from '@/hooks/use-owner-resource';
 import { requestJson } from '@/lib/api-client';
+import { depositToday } from '@/lib/deposit-interest';
 import type { MarketData } from '@/lib/market';
 import type { PortfolioSnapshot } from '@/lib/portfolio-snapshots';
 
@@ -12,19 +13,21 @@ function mergeByDate(...lists:PortfolioSnapshot[][]){
  for(const point of lists.flat()){const saved=byDate.get(point.occurred_on);if(!saved||point.updated_at>=saved.updated_at)byDate.set(point.occurred_on,point);}
  return [...byDate.values()].sort((a,b)=>a.occurred_on.localeCompare(b.occurred_on));
 }
-/** The owner's saved daily totals, plus today's, recorded once prices and records have loaded. */
+/** The owner's saved daily totals, plus today's, recorded once prices and records have loaded. Today's is posted once
+ * per owner and day (and again when the records change or on retry), not on every five-minute price refresh. */
 export function usePortfolioSnapshots(account:string|null,market:MarketData|null,ready:boolean,revision:number){
  const [attempt,setAttempt]=useState(0);
  const refresh=useCallback(()=>setAttempt(value=>value+1),[]);
  const remote=useOwnerResource('/api/portfolio-snapshots',account,true,attempt,noSnapshots);
  const [recorded,setRecorded]=useState<{account:string|null;snapshots:PortfolioSnapshot[];error:string}>({account:null,snapshots:[],error:''});
+ const today=depositToday(),priced=!!market;
  useEffect(()=>{
-  if(!account||!ready||!market)return;const controller=new AbortController();
+  if(!account||!ready||!priced)return;const controller=new AbortController();
   requestJson<{snapshot:PortfolioSnapshot}>('/api/portfolio-snapshots',{body:{},signal:controller.signal}).then(data=>{
    if(!controller.signal.aborted)setRecorded(previous=>({account,snapshots:mergeByDate(previous.account===account?previous.snapshots:[],[data.snapshot]),error:''}));
   }).catch(reason=>{if(!controller.signal.aborted)setRecorded(previous=>({...(previous.account===account?previous:{snapshots:[]}),account,error:reason.message}));});
   return()=>controller.abort();
- },[account,market,ready,revision,attempt]);
+ },[account,priced,ready,revision,attempt,today]);
  if(!account&&recorded.account!==null)setRecorded({account:null,snapshots:[],error:''});
  const own=recorded.account===account,posted=own?recorded.snapshots:noSnapshots.snapshots,saved=remote.data.snapshots;
  const snapshots=useMemo(()=>posted.length?mergeByDate(saved,posted):saved,[saved,posted]);

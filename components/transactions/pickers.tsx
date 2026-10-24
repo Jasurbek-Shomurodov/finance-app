@@ -23,7 +23,7 @@ export function useChoiceName(categories: readonly Category[]) {
 }
 
 /** A searchable list of one direction's categories. */
-export function CategoryList({ categories, removed = [], direction, selected, onSelect }: { categories: readonly Category[]; /** Deleted built-in categories, not offered. */ removed?: readonly string[]; direction: Category['direction']; selected?: string; onSelect: (choice: Choice) => void }) {
+function CategoryList({ categories, removed = [], direction, selected, onSelect }: { categories: readonly Category[]; /** Deleted built-in categories, not offered. */ removed?: readonly string[]; direction: Category['direction']; selected?: string; onSelect: (choice: Choice) => void }) {
  const { t } = useLanguage();
  const [query, setQuery] = useState('');
  const name = (choice: Choice) => choice.custom ? choice.name : t(choice.name);
@@ -59,7 +59,7 @@ export function CategoryPicker({ record, categories, removed, disabled, onChange
 }
 
 /** A business choice: one business, or the household (none). */
-export function BusinessList({ businesses, selected, onSelect, household = true }: { businesses: readonly BusinessOption[]; selected?: string | null; onSelect: (business: string | null) => void; household?: boolean }) {
+function BusinessList({ businesses, selected, onSelect, household = true }: { businesses: readonly BusinessOption[]; selected?: string | null; onSelect: (business: string | null) => void; household?: boolean }) {
  const { t } = useLanguage();
  return <ul className="category-picker business-picker" role="listbox" aria-label={t('Business')}>
   {household && <li role="option" aria-selected={selected === null}><button type="button" onClick={() => onSelect(null)}><span className="business-mark" data-size="sm" aria-hidden="true">🏠</span><span>{t('Household')}</span>{selected === null && <Check size={15} aria-hidden="true"/>}</button></li>}

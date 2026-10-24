@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "Ayrim daromadlarni konvertatsiya qilib bo‘lmadi. Grafikdagi summalar to‘liq emas.",
   "Income source": "Daromad manbasi",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "To‘liq ustunlar qayd etilgan daromadni ko‘rsatadi. Konturli ustunlar olingan daromadni emas, joriy va kelgusi oylar taxminlarini ko‘rsatadi. Birinchi tushumdan oldingi bo‘sh oylar o‘rniga kelgusi oylar ko‘rsatiladi.",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "Aksiya dividendlarini uning Trekerida «Olingan daromad» sifatida qayd eting. Maosh va boshqa muntazam rejalar «Daromad va xarajatlar» bo‘limida boshqariladi. Grafik joriy valyuta kurslaridan foydalanadi.",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "Aksiya dividendlarini uning Trekerida «Olingan daromad» sifatida qayd eting. Maosh va boshqa muntazam rejalar «Daromad va xarajatlar» bo‘limida boshqariladi.",
+  "Each receipt converts at the exchange rate of its day.": "Har bir tushum o‘z kunidagi valyuta kursi bo‘yicha hisoblanadi.",
   "Accounts": "Hisoblar",
   "Account": "Hisob",
   "Account activity": "Hisob operatsiyalari",
@@ -2763,5 +2764,6 @@
   "This month so far": "Shu oy hozircha",
   "3-month average": "3 oylik o‘rtacha",
   "Compared with average": "O‘rtachaga nisbatan",
-  "Item": "Modda"
+  "Item": "Modda",
+  "Amounts are compared as entered, in each transaction’s own currency.": "Summalar kiritilganidek, har bir tranzaksiyaning o‘z valyutasida qiyoslanadi."
 }

@@ -4,7 +4,7 @@ import { loadTS } from './helpers/load-ts.mjs';
 const { categoryChoices, canRecategorize, recategorize, ruleMatches, ruleTargets, suggestedPattern, directionOf } = loadTS('lib/transaction-rules.ts');
 const { assignBusiness, moveAccountToBusiness, withAccount } = loadTS('lib/business.ts');
 const { changeTags } = loadTS('lib/tags.ts');
-const { periodRange, periodDays, earliestTransactionDay, transactionsIn, groupByDay, groupPageByDay, summarizeTransactions, emptyTransactionFilter } = loadTS('lib/transaction-list.ts');
+const { periodRange, periodDays, earliestTransactionDay, transactionsIn, groupByDay, groupPageByDay, summarizeTransactions, emptyTransactionFilter, signedAmount } = loadTS('lib/transaction-list.ts');
 
 const record = (id, name, kind, amount, date, extra = {}) => ({ id, name, kind, currency: 'USD', amount, quantity: 1, cost: 0, rate: 0, date, frequency: 'Once', notes: '', ...extra });
 const categories = [{ id: 'pets', name: 'Pets', direction: 'expense' }, { id: 'tips', name: 'Tips', direction: 'income' }];
@@ -235,6 +235,16 @@ test('a rule form becomes a rule: name trimmed, categories only within one direc
  const record={id:'r',name:'UBER *TRIP 1234',kind:'Living expense'};
  assert.deepEqual([ruleFromChange(record,{kind:'Other income',category_id:'c1'}).direction,ruleFromChange(record,{kind:'Charity',category_id:null}).direction],['income','expense']);
  assert.deepEqual([ruleFromBusiness(record,'b1').direction,ruleFromBusiness(record,'b1').business_id],['any','b1']);
+});
+
+test('day totals add up to the Summary\'s net: a mortgage payment counts its interest in both, its row the whole payment', () => {
+ const convert = amount => amount;
+ const rows = [record('p', 'Pay', 'Salary', 3000, '2026-10-05'), record('m', 'Home', 'Other expense', 900, '2026-10-05', { mortgage_payment_id: 'mp', payment_principal: 700, payment_interest: 200 }), record('s', 'Shop', 'Living expense', 50, '2026-10-05')];
+ const [day] = groupByDay(rows, convert), summary = summarizeTransactions(rows, convert);
+ assert.equal(day.total, 2750, '3000 − 200 interest − 50');
+ assert.equal(day.total, summary.received - summary.spent, 'the heading agrees with Received − Spent');
+ assert.equal(signedAmount(rows[1]), -900, 'the row still shows the payment as entered');
+ assert.deepEqual(groupPageByDay(rows, 0, 1, convert).map(item => item.total), [2750], 'a page shows the same day total');
 });
 
 test('a page of transactions shows each day\'s whole total, also when the day runs onto the next page', () => {

@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import {PGlite} from '@electric-sql/pglite';
 import {loadTS} from './helpers/load-ts.mjs';
 import {deliveryTable} from './helpers/telegram-cron.mjs';
-const {recordCronRun,cronRunDays}=loadTS('lib/cron-runs.ts');
+const {recordCronRun,cronRunDays,runFailure,boundedResult,resultLimits}=loadTS('lib/cron-runs.ts');
 const {deliverToSubscribers}=loadTS('lib/telegram-owner.ts');
 const digest={kind:'digest',period:'2026-10-22'};
 
@@ -32,7 +32,7 @@ test('a claim a cut-off run left undelivered is taken over, while a delivered or
 
 test('a message that arrived but could not be marked delivered still counts as sent and is reported',async()=>{
  const reported=[];
- const {deliverToSubscribers:deliver}=loadTS('lib/telegram-owner.ts',{'./monitoring':{reportError:async(...args)=>{reported.push(args);}}});
+ const {deliverToSubscribers:deliver}=loadTS('lib/telegram-owner.ts',{'./monitoring':{...loadTS('lib/monitoring.ts'),reportError:async(...args)=>{reported.push(args);}}});
  const deliveries=deliveryTable();
  const write=(path,init)=>init.method==='PATCH'?Promise.resolve(new Response(null,{status:500})):deliveries.write(path,init);
  assert.deepEqual(await deliver({read:async()=>[{user_id:'a',chat_id:1}],write},digest,async()=>true),{sent:1,failed:0,blocked:0});
@@ -78,6 +78,33 @@ test('a run that cannot be recorded still runs and answers as usual',async()=>{
  assert.deepEqual(await (await recordCronRun(odd,'telegram-digest',async()=>Response.json({sent:1}))).json(),{sent:1});
  const offline={write:async()=>{throw Error('offline');}};
  assert.equal((await recordCronRun(offline,'telegram-digest',async()=>new Response(null,{status:401}))).status,401);
+});
+
+test('a failure\'s reason is scrubbed before it reaches the 503 body or cron_runs, in the job and in the subscriber loop',async()=>{
+ const leak='PostgREST https://db.example.supabase.co/rest/v1/finance_records?user_id=eq.53000000-0000-4000-8000-000000000001 refused for person@example.com with Bearer eyJabcdef.ghijkl.mn';
+ const reason=runFailure(Error(leak));
+ for(const secret of ['user_id=eq.','53000000-0000-4000-8000-000000000001','person@example.com','eyJabcdef'])assert.ok(!reason.includes(secret),secret);
+ assert.match(reason,/\[query\]/);assert.ok(reason.length<=301);
+ assert.equal(runFailure('word '.repeat(80)).length,301,'cut at 300 characters plus the ellipsis');
+ const table=runsTable();
+ const thrown=await recordCronRun(table,'telegram-digest',async()=>{throw Error(leak);});
+ assert.ok(!(await thrown.json()).error.includes('person@example.com'));assert.ok(!table.rows[0].result.error.includes('person@example.com'));
+ const deliveries=deliveryTable();
+ const counts=await deliverToSubscribers({read:async()=>[{user_id:'a',chat_id:1}],write:deliveries.write},digest,async()=>{throw Error(leak);});
+ assert.equal(counts.failed,1);assert.ok(!counts.error.includes('person@example.com'));assert.match(counts.error,/\[email\]/);
+});
+
+test('a run\'s record always fits its column: long strings are cut and an oversized answer is reduced to its status',async()=>{
+ assert.deepEqual(resultLimits,{field:300,bytes:7000});
+ const bounded=boundedResult({status:503,ms:10,error:'é'.repeat(400),sent:1});
+ assert.equal(bounded.error.length,301);assert.equal(bounded.sent,1);
+ const huge=Object.fromEntries(Array.from({length:40},(_,i)=>['field'+i,'x'.repeat(290)]));
+ assert.deepEqual(boundedResult({status:200,ms:5,...huge}),{status:200,ms:5,truncated:true});
+ const table=runsTable();
+ await recordCronRun(table,'telegram-digest',async()=>Response.json({sent:0,failed:1,blocked:0,error:'y'.repeat(2000),...huge},{status:503}),clock('2026-10-22T04:00:00.000Z'));
+ assert.deepEqual(table.rows[0].result,{status:503,ms:0,truncated:true});assert.equal(table.rows[0].status,'failed');
+ await recordCronRun(table,'telegram-recap',async()=>Response.json({sent:0,failed:1,blocked:0,error:'y'.repeat(2000)},{status:503}));
+ assert.equal(table.rows[1].result.error.length,301);assert.ok(new TextEncoder().encode(JSON.stringify(table.rows[1].result)).length<=7000);
 });
 
 test('every scheduled job records its runs, and a whole-run failure records its cause',()=>{

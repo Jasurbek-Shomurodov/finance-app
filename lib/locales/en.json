@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "Some income cannot be converted. Displayed chart amounts are incomplete.",
   "Income source": "Income source",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.",
+  "Each receipt converts at the exchange rate of its day.": "Each receipt converts at the exchange rate of its day.",
   "Accounts": "Accounts",
   "Account": "Account",
   "Account activity": "Account activity",
@@ -2763,5 +2764,6 @@
   "This month so far": "This month so far",
   "3-month average": "3-month average",
   "Compared with average": "Compared with average",
-  "Item": "Item"
+  "Item": "Item",
+  "Amounts are compared as entered, in each transaction’s own currency.": "Amounts are compared as entered, in each transaction’s own currency."
 }

@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "Деякі доходи не вдалося конвертувати. Суми на графіку неповні.",
   "Income source": "Джерело доходу",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "Суцільні стовпці показують записаний дохід. Контурні — поточні та майбутні місячні оцінки, а не отриманий дохід. Порожні місяці до першого надходження замінюються майбутніми.",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "Записуйте дивіденди з акцій як «Отриманий дохід» у трекері акції. Зарплатою та іншими регулярними планами керуйте в розділі «Доходи та витрати». Для цього графіка використовуються поточні курси обміну.",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "Записуйте дивіденди з акцій як «Отриманий дохід» у трекері акції. Зарплатою та іншими регулярними планами керуйте в розділі «Доходи та витрати».",
+  "Each receipt converts at the exchange rate of its day.": "Кожне надходження перераховується за курсом свого дня.",
   "Accounts": "Рахунки",
   "Account": "Рахунок",
   "Account activity": "Рух за рахунком",
@@ -2763,5 +2764,6 @@
   "This month so far": "Цей місяць поки що",
   "3-month average": "Середнє за 3 місяці",
   "Compared with average": "До середнього",
-  "Item": "Стаття"
+  "Item": "Стаття",
+  "Amounts are compared as entered, in each transaction’s own currency.": "Суми порівнюються як введені, у власній валюті кожної операції."
 }

@@ -3,6 +3,7 @@ import type {Entry} from '../finance';
 import type {Language} from '../i18n';
 import type {Category} from '../planning';
 import {shiftMonth} from '../calendar-days';
+import {reportError} from '../monitoring';
 import type {ServiceDatabase} from '../service-role';
 import {advance,mainMenu,needsRate,prompt,retryKeyboard,withRate,type Draft,type FlowContext,type FlowResult} from '../telegram-flow';
 import type {TelegramSubscription} from '../telegram-link';
@@ -25,8 +26,9 @@ async function loadContext(db:ServiceDatabase,owner:string,language:Language,clo
   ownerRecordsSince(db,owner,shiftMonth(clock.today.slice(0,7),-12)+'-01').then(rows=>rows.sort((a,b)=>a.name.localeCompare(b.name))),
   db.read<Category[]>(`/rest/v1/transaction_categories?select=id,name,direction&user_id=eq.${owner}`),
   db.read<Array<{currencies?:string[]}>>('/rest/v1/user_preferences?select=currencies&user_id=eq.'+owner),
-  // Typed text may be an entry, which the owner's rules help categorise. Without the rules table it is guessed from history alone.
-  typed?db.read<TransactionRule[]>(`/rest/v1/transaction_rules?select=*&user_id=eq.${owner}&order=created_at.desc`).catch(()=>[]):Promise.resolve([] as TransactionRule[]),
+  // Typed text may be an entry, which the owner's rules help categorise. Without the rules (an older database, or a read
+  // that failed) it is guessed from history alone; the failure is reported so one that keeps happening alerts.
+  typed?db.read<TransactionRule[]>(`/rest/v1/transaction_rules?select=*&user_id=eq.${owner}&order=created_at.desc`).catch(async(reason:unknown)=>{await reportError('telegram-rules',reason,{status:503},{alert:'repeated',db});return [] as TransactionRule[];}):Promise.resolve([] as TransactionRule[]),
   // Built-in categories the workspace deleted (migration 122). A workspace that deleted none has no row, which reads as
   // []; a failed read throws like the others, so the webhook answers 503 and Telegram retries instead of the bot
   // offering categories the workspace removed.

@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "部分收入无法换算。所显示的图表金额不完整。",
   "Income source": "收入来源",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "实心柱表示已记录的收入。轮廓柱表示当前和未来的每月估算，并非已收收入。首次收款之前的空月份将被未来月份取代。",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "请在股票的“追踪”中将股票股息记为“已收收入”。工资和其他定期计划在“收入与支出”中管理。此图表使用当前汇率。",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "请在股票的“追踪”中将股票股息记为“已收收入”。工资和其他定期计划在“收入与支出”中管理。",
+  "Each receipt converts at the exchange rate of its day.": "每笔收入按其当日汇率换算。",
   "Accounts": "账户",
   "Account": "账户",
   "Account activity": "账户活动",
@@ -2763,5 +2764,6 @@
   "This month so far": "本月至今",
   "3-month average": "3 个月平均",
   "Compared with average": "与平均相比",
-  "Item": "项目"
+  "Item": "项目",
+  "Amounts are compared as entered, in each transaction’s own currency.": "金额按录入时的数值比较，以每笔交易自身的货币计。"
 }

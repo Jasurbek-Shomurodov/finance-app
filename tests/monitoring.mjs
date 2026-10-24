@@ -201,7 +201,8 @@ test('the Telegram webhook, the sign-in code hook and the assistant report their
  class Fake{constructor(){this.beta={messages:{create:async()=>{throw next;}}};}}
  Fake.RateLimitError=class extends Error{};Fake.AuthenticationError=class extends Error{};
  let next=new Fake.AuthenticationError('invalid x-api-key'),records=async()=>[];
- const assistant=loadTS('app/api/assistant/route.ts',{...monitor,'@anthropic-ai/sdk':{__esModule:true,default:Fake},'@/lib/supabase':{session:async()=>({token:'t',user:{id:'u1'}}),sameOrigin:()=>true},'@/lib/server-records':{readOwnerRows:(...args)=>records(...args)},'@/lib/rate-limit':{limits:{assistant:[]},rateLimited:async()=>false}});
+ // Day rates are read by their own helper (tests/transaction-rates.mjs covers its failure report), so here they pass through.
+ const assistant=loadTS('app/api/assistant/route.ts',{...monitor,'@anthropic-ai/sdk':{__esModule:true,default:Fake},'@/lib/viewer-day-rates':{withViewerDayRates:async data=>data},'@/lib/supabase':{session:async()=>({token:'t',user:{id:'u1'}}),sameOrigin:()=>true},'@/lib/server-records':{readOwnerRows:(...args)=>records(...args)},'@/lib/rate-limit':{limits:{assistant:[]},rateLimited:async()=>false}});
  const ask=()=>assistant.POST(new Request('https://local/api/assistant',{method:'POST',body:JSON.stringify({messages:[{role:'user',content:'Hi'}],currency:'USD',rates:{USD:1},language:'en'})}));
  const key=process.env.ANTHROPIC_API_KEY;process.env.ANTHROPIC_API_KEY='test-key';
  try{

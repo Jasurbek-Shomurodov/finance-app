@@ -6,7 +6,7 @@ import { filterRecords, type RecordFiltersValue } from './record-filters';
 import { isTransactionHistory } from './transaction-history';
 
 export type SectionKey = 'assets' | 'cashflow' | 'debts' | 'all';
-export const recordsPerPage = 10;
+const recordsPerPage = 10;
 
 /** The record table's slice of the workspace for a drawer section. */
 export const sectionKeyOf = (section: string): SectionKey => section === 'Assets & investments' ? 'assets' : section === 'Income & expenses' ? 'cashflow' : section === 'Loans & debts' ? 'debts' : 'all';
@@ -18,7 +18,7 @@ export const recordsCurrencyFilter = ({ sectionKey, currency, market, marketFail
  sectionKey === 'assets' || market?.rates?.[currency] || (!market && !marketFailed) ? '' : currency;
 
 /** Newest first; money lent counts from the day it was lent. */
-export const sortRecords = (entries: Entry[]) => [...entries].sort((a, b) => compareRecordDates(a.kind === 'Money lent' ? a.lent_date || a.date : a.date, b.kind === 'Money lent' ? b.lent_date || b.date : b.date) || b.id.localeCompare(a.id));
+const sortRecords = (entries: Entry[]) => [...entries].sort((a, b) => compareRecordDates(a.kind === 'Money lent' ? a.lent_date || a.date : a.date, b.kind === 'Money lent' ? b.lent_date || b.date : b.date) || b.id.localeCompare(a.id));
 
 const sectionKinds = (section: string): readonly string[] | null => section === 'Overview' ? null : section === 'Assets & investments' ? assetRecordKinds : section === 'Loans & debts' ? lendingRecordKinds : [...income, ...expenses];
 

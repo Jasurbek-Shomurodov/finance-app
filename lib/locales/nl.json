@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "Sommige inkomsten kunnen niet worden omgerekend. De getoonde grafiekbedragen zijn onvolledig.",
   "Income source": "Inkomstenbron",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "Gevulde balken tonen geregistreerde inkomsten. Omlijnde balken tonen huidige en toekomstige maandschattingen, geen ontvangen inkomsten. Lege maanden vóór de eerste ontvangst worden vervangen door toekomstige maanden.",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "Registreer aandelendividenden als Ontvangen inkomsten in de Tracker van het aandeel. Salaris en andere terugkerende plannen beheert u onder Inkomsten en uitgaven. Voor deze grafiek worden de huidige wisselkoersen gebruikt.",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "Registreer aandelendividenden als Ontvangen inkomsten in de Tracker van het aandeel. Salaris en andere terugkerende plannen beheert u onder Inkomsten en uitgaven.",
+  "Each receipt converts at the exchange rate of its day.": "Elke ontvangst wordt omgerekend tegen de wisselkoers van die dag.",
   "Accounts": "Rekeningen",
   "Account": "Rekening",
   "Account activity": "Rekeningactiviteit",
@@ -2763,5 +2764,6 @@
   "This month so far": "Deze maand tot nu toe",
   "3-month average": "Gemiddelde over 3 maanden",
   "Compared with average": "Ten opzichte van gemiddelde",
-  "Item": "Post"
+  "Item": "Post",
+  "Amounts are compared as entered, in each transaction’s own currency.": "Bedragen worden vergeleken zoals ingevoerd, in de eigen valuta van elke transactie."
 }

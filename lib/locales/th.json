@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "บางรายได้ไม่สามารถแปลงได้ จำนวนเงินที่แสดงในแผนภูมิไม่ครบถ้วน",
   "Income source": "แหล่งรายได้",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "แท่งทึบแสดงรายได้ที่บันทึกไว้ แท่งเส้นขอบแสดงประมาณการรายเดือนปัจจุบันและอนาคต ไม่ใช่รายได้ที่ได้รับแล้ว เดือนว่างก่อนรายรับครั้งแรกจะถูกแทนที่ด้วยเดือนในอนาคต",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "บันทึกเงินปันผลหุ้นเป็น \"รายได้ที่ได้รับ\" ในตัวติดตามของหุ้นนั้น เงินเดือนและแผนประจำอื่น ๆ จัดการได้ใน \"รายรับและรายจ่าย\" แผนภูมินี้ใช้อัตราแลกเปลี่ยนปัจจุบัน",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "บันทึกเงินปันผลหุ้นเป็น \"รายได้ที่ได้รับ\" ในตัวติดตามของหุ้นนั้น เงินเดือนและแผนประจำอื่น ๆ จัดการได้ใน \"รายรับและรายจ่าย\"",
+  "Each receipt converts at the exchange rate of its day.": "รายรับแต่ละรายการแปลงตามอัตราแลกเปลี่ยนของวันนั้น",
   "Accounts": "บัญชี",
   "Account": "บัญชี",
   "Account activity": "กิจกรรมของบัญชี",
@@ -2763,5 +2764,6 @@
   "This month so far": "เดือนนี้จนถึงตอนนี้",
   "3-month average": "ค่าเฉลี่ย 3 เดือน",
   "Compared with average": "เทียบกับค่าเฉลี่ย",
-  "Item": "รายการ"
+  "Item": "รายการ",
+  "Amounts are compared as entered, in each transaction’s own currency.": "เปรียบเทียบจำนวนเงินตามที่บันทึกไว้ ในสกุลเงินของแต่ละรายการเอง"
 }

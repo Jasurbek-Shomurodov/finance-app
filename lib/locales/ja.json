@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "換算できない収入があります。表示されているチャートの金額は不完全です。",
   "Income source": "収入源",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "塗りつぶしのバーは記録された収入、枠線のバーは受取済みの収入ではなく、現在と今後の月次推定額です。最初の受取より前の空の月は、今後の月に置き換えられます。",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "株式の配当は、その株式のトラッカーで「受取収入」として記録してください。給与やその他の定期的な計画は「収入と支出」で管理します。このチャートには現在の為替レートを使用しています。",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "株式の配当は、その株式のトラッカーで「受取収入」として記録してください。給与やその他の定期的な計画は「収入と支出」で管理します。",
+  "Each receipt converts at the exchange rate of its day.": "各受取額はその日の為替レートで換算されます。",
   "Accounts": "口座",
   "Account": "口座",
   "Account activity": "口座の動き",
@@ -2763,5 +2764,6 @@
   "This month so far": "今月これまで",
   "3-month average": "3か月平均",
   "Compared with average": "平均との差",
-  "Item": "項目"
+  "Item": "項目",
+  "Amounts are compared as entered, in each transaction’s own currency.": "金額は入力されたまま、各取引自身の通貨で比較されます。"
 }

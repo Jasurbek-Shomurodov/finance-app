@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "Не все доходы удалось конвертировать. Суммы на графике неполные.",
   "Income source": "Источник дохода",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "Сплошные столбцы показывают записанные доходы. Контурные столбцы показывают оценки на текущий и будущие месяцы, а не полученные средства. Пустые месяцы до первого поступления заменены будущими месяцами.",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "Записывайте дивиденды как «Полученный доход» в Трекере акции. Зарплата и другие регулярные планы настраиваются в разделе «Доходы и расходы». График использует текущие курсы валют.",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "Записывайте дивиденды как «Полученный доход» в Трекере акции. Зарплата и другие регулярные планы настраиваются в разделе «Доходы и расходы».",
+  "Each receipt converts at the exchange rate of its day.": "Каждое поступление пересчитывается по курсу своего дня.",
   "Accounts": "Счета",
   "Account": "Счёт",
   "Account activity": "Операции по счетам",
@@ -2763,5 +2764,6 @@
   "This month so far": "Этот месяц пока",
   "3-month average": "Среднее за 3 месяца",
   "Compared with average": "К среднему",
-  "Item": "Статья"
+  "Item": "Статья",
+  "Amounts are compared as entered, in each transaction’s own currency.": "Суммы сравниваются как введены, в собственной валюте каждой операции."
 }

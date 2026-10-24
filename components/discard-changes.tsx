@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { ConfirmDialog } from '@/components/presentation-foundation/confirm-dialog';
 import { useLanguage } from '@/components/language-provider';
 export function useDiscardChanges(dirty:boolean,onClose:()=>void,busy=false){
@@ -18,18 +18,20 @@ export function useDraftDialog(value:{id:string}|null,onClose:()=>void,busy=fals
  if(baseline.key!==key)setBaseline({key,serialized});
  return useDiscardChanges(!!value&&baseline.key===key&&baseline.serialized!==serialized,onClose,busy);
 }
-// Page forms use the same prompt as dialogs. Capture before the router handles links.
+// Page forms use the same prompt as dialogs. Capture before the router handles links. The guard is a new object each
+// render, so the listener reaches it through an effect event and is attached once per dirty stretch, not once per render.
 export function useUnsavedNavigation(dirty:boolean){
  const guard=useDiscardChanges(dirty,()=>{});
+ const request=useEffectEvent((action:()=>void)=>guard.request(action));
  useEffect(()=>{
   if(!dirty)return;
   const navigate=(event:MouseEvent)=>{
    if(event.defaultPrevented||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
    const link=event.target instanceof Element?event.target.closest('a'):null;
    if(!link||link.target==='_blank'||link.hasAttribute('download')||!link.href||link.href.startsWith(window.location.href.split('#')[0]+'#'))return;
-   event.preventDefault();event.stopPropagation();guard.request(()=>window.location.assign(link.href));
+   event.preventDefault();event.stopPropagation();request(()=>window.location.assign(link.href));
   };
   document.addEventListener('click',navigate,true);return()=>document.removeEventListener('click',navigate,true);
- },[dirty,guard]);
+ },[dirty]);
  return guard.confirmation;
 }

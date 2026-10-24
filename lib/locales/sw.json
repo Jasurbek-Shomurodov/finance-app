@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "Mapato mengine hayawezi kubadilishwa. Kiasi kinachoonyeshwa kwenye chati hakijakamilika.",
   "Income source": "Chanzo cha mapato",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "Nguzo thabiti zinaonyesha mapato yaliyorekodiwa. Nguzo za mstari zinaonyesha makadirio ya sasa na ya baadaye ya kila mwezi, si mapato yaliyopokelewa. Miezi tupu kabla ya risiti ya kwanza hubadilishwa na miezi ijayo.",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "Rekodi gawio la hisa kama Mapato yaliyopokelewa kwenye Kifuatiliaji cha hisa. Mshahara na mipango mingine ya kujirudia husimamiwa kwenye Mapato na matumizi. Chati hii hutumia viwango vya sasa vya ubadilishaji.",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "Rekodi gawio la hisa kama Mapato yaliyopokelewa kwenye Kifuatiliaji cha hisa. Mshahara na mipango mingine ya kujirudia husimamiwa kwenye Mapato na matumizi.",
+  "Each receipt converts at the exchange rate of its day.": "Kila mapokezi hubadilishwa kwa kiwango cha ubadilishaji cha siku yake.",
   "Accounts": "Akaunti",
   "Account": "Akaunti",
   "Account activity": "Shughuli za akaunti",
@@ -2763,5 +2764,6 @@
   "This month so far": "Mwezi huu hadi sasa",
   "3-month average": "Wastani wa miezi 3",
   "Compared with average": "Ukilinganisha na wastani",
-  "Item": "Kipengele"
+  "Item": "Kipengele",
+  "Amounts are compared as entered, in each transaction’s own currency.": "Kiasi hulinganishwa kama kilivyoingizwa, kwa sarafu ya kila muamala wenyewe."
 }

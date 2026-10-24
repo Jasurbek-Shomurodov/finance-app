@@ -3,10 +3,13 @@ import { assistantContext, assistantInstructions, assistantRequestSchema, assist
 import { shiftMonth } from '@/lib/calendar-days';
 import { depositToday } from '@/lib/deposit-interest';
 import { normalizeEntry, type Entry } from '@/lib/finance';
+import { isLanguage, translate } from '@/lib/i18n';
+import { marketSymbols } from '@/lib/market';
 import { planningReadFilters } from '@/lib/planning-reads';
 import type { PlanningData } from '@/lib/planning';
 import { readOwnerRows } from '@/lib/server-records';
 import { crossSite, readJson, signInAgain, tooManyAttempts } from '@/lib/api-route';
+import { loadMarket } from '@/lib/server-market';
 import { reportError } from '@/lib/monitoring';
 import { limits, rateLimited } from '@/lib/rate-limit';
 import { session, sameOrigin } from '@/lib/supabase';
@@ -40,9 +43,12 @@ export async function POST(req: Request) {
    readOwnerRows<PlanningData['goals'][number]>('savings_goals', auth.token), readOwnerRows<PlanningData['occurrences'][number]>('payment_occurrences', auth.token),
    readOwnerRows<PlanningData['activity'][number]>('account_activity', auth.token, filters.activity),
   ]);
-  // Income and spending count at the official rates of their own day.
-  const dated = await withViewerDayRates({ records: records.map(normalizeEntry), activity }, auth);
-  snapshot = assistantContext({ ...dated, categories, goals, occurrences, investmentLinks: [] }, today, currency, rates, language);
+  // Income and spending count at the official rates of their own day; holdings are worth their live quotes, as the
+  // Net worth card shows them, so the feed is read only when there is a symbol to quote.
+  const symbols = marketSymbols(records), quoted = symbols.crypto.length + symbols.stocks.length + symbols.metals.length > 0;
+  const [dated, market] = await Promise.all([withViewerDayRates({ records: records.map(normalizeEntry), activity }, auth), quoted ? loadMarket(symbols.crypto, symbols.stocks, true, symbols.metals) : null]);
+  const spoken = isLanguage(language) ? language : 'en';
+  snapshot = assistantContext({ ...dated, categories, goals, occurrences, investmentLinks: [] }, today, currency, rates, { language, market, t: key => translate(spoken, key) });
  } catch (error) {
   await reportError('assistant', error, { route, status: 503, userId: auth.user.id }, { alert: 'repeated' });
   return Response.json({ error: 'Could not load your records. Please try again.' }, { status: 503 });

@@ -111,7 +111,13 @@ test('upcoming payments put overdue ones first, show formatted dates and colour 
  const backlog=Array.from({length:7},(_,i)=>entry('Debt '+i,'Debt',10,{date:shiftDay(today,-(i+1))}));
  assert.match(plain(cards({planning:{records:backlog,occurrences:[],categories:[],goals:[],activity:[],debtPayments:[]}}).upcoming),/Upcoming payments 7 overdue/);
  const ahead=cards({planning:{records:[records[0],records[2]],occurrences:[],categories:[],goals:[],activity:[],debtPayments:[]}});
- assert.match(plain(ahead.upcoming),/Upcoming payments \d+ due soon/);
+ // Review S2: the pill counted the salary coming in as "due soon" while the Due tile counts payments only (dueCounts).
+ assert.match(plain(ahead.upcoming),/Upcoming payments 1 due soon/,'the car loan; income on its way is not due');
+ assert.match(ahead.upcoming,/Salary/,'the salary still shows in the list');
+ const incomeOnly=cards({planning:{records:[records[2]],occurrences:[],categories:[],goals:[],activity:[],debtPayments:[]}});
+ assert.doesNotMatch(plain(incomeOnly.upcoming),/due soon|overdue/,'nothing to pay, no pill');
+ const lateIncome=cards({planning:{records:[records[0],entry('Late pay','Salary',10,{date:late})],occurrences:[],categories:[],goals:[],activity:[],debtPayments:[]}});
+ assert.match(plain(lateIncome.upcoming),/Upcoming payments 1 due soon/,'a late income is not an overdue payment');
  assert.ok(upcoming.indexOf('Old debt')<upcoming.indexOf('Car loan'),'overdue first');
  assert.match(upcoming,new RegExp(`<small class="negative">Overdue · ${formatDate(late,'en-US')}</small>`));
  // Each due payment links to Recurring's Record payment for that date.

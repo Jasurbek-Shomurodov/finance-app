@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "일부 수입을 환산하지 못했어요. 차트에 표시된 금액이 완전하지 않아요.",
   "Income source": "수입원",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "채워진 막대는 기록된 수입이에요. 테두리만 있는 막대는 현재와 미래의 월 추정액이며 받은 수입이 아니에요. 첫 수입 이전의 빈 달은 미래의 달로 대체돼요.",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "주식 배당금은 해당 주식의 트래커에서 받은 수입으로 기록하세요. 급여와 기타 반복 계획은 수입 및 지출에서 관리해요. 이 차트에는 현재 환율이 사용돼요.",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "주식 배당금은 해당 주식의 트래커에서 받은 수입으로 기록하세요. 급여와 기타 반복 계획은 수입 및 지출에서 관리해요.",
+  "Each receipt converts at the exchange rate of its day.": "각 수입은 받은 날의 환율로 환산돼요.",
   "Accounts": "계좌",
   "Account": "계좌",
   "Account activity": "계정 활동",
@@ -2763,5 +2764,6 @@
   "This month so far": "이번 달 지금까지",
   "3-month average": "3개월 평균",
   "Compared with average": "평균 대비",
-  "Item": "항목"
+  "Item": "항목",
+  "Amounts are compared as entered, in each transaction’s own currency.": "금액은 입력된 그대로, 각 거래 자체의 통화로 비교돼요."
 }

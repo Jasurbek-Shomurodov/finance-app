@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {loadTS} from './helpers/load-ts.mjs';
 import {recordsFor} from './helpers/telegram-cron.mjs';
-const {handleTelegramUpdate}=loadTS('lib/telegram-bot.ts');
+// Failures the bot reports (a rules read on a database without the table) stay out of the test output; one test records them.
+const quiet={reportError:async()=>{}};
+const {handleTelegramUpdate}=loadTS('lib/telegram-bot.ts',{'../monitoring':quiet,'./monitoring':quiet,'@/lib/monitoring':quiet});
 const now=new Date('2026-09-30T09:00:00Z');
 const clock={now,today:'2026-09-30',newId:()=>'99999999-9999-4999-8999-999999999999'};
 const owner='11111111-1111-4111-8111-111111111111',other='22222222-2222-4222-8222-222222222222';
@@ -255,6 +257,19 @@ test('a typed message becomes a card read with the owner\'s own rules, and only 
  assert.match(saved.replies[0].text,/^Saved\./);
  // Without the rules table (an older database) typed entries still work.
  assert.match((await handleTelegramUpdate(message(500,'coffee 4500'),fakeDb(both()),clock,env())).replies[0].text,/^<b>Save this\?<\/b>\nExpense · Living expense/);
+});
+
+test('a rules read that fails is reported (alerting once it keeps happening) while the typed entry is still guessed from history',async()=>{
+ const reported=[];const monitoring={reportError:async(...args)=>{reported.push(args);}};
+ const {handleTelegramUpdate:handle}=loadTS('lib/telegram-bot.ts',{'../monitoring':monitoring,'./monitoring':monitoring,'@/lib/monitoring':monitoring});
+ const db=fakeDb(both());
+ const card=await handle(message(500,'coffee 4500'),db,clock,env());
+ assert.match(card.replies[0].text,/^<b>Save this\?<\/b>\nExpense · Living expense/);
+ const rules=reported.filter(args=>args[0]==='telegram-rules');
+ assert.equal(rules.length,1);assert.match(rules[0][1].message,/unexpected read/);assert.equal(rules[0][3].alert,'repeated');assert.equal(rules[0][3].db,db);
+ // A database that has the rules reports nothing.
+ reported.length=0;await handle(message(500,'coffee 4500'),fakeDb({...both(),rules:[]}),clock,env());
+ assert.deepEqual(reported.filter(args=>args[0]==='telegram-rules'),[]);
 });
 
 test('a typed entry in another currency fetches the dated rate and saves it with the rate day; without one it asks',async()=>{

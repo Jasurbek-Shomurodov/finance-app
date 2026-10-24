@@ -4,6 +4,7 @@ import {actionMessage,type ActionEvent,type ActionLookup} from '../action-messag
 import {expenses,type Entry} from '../finance';
 import type {Language} from '../i18n';
 import {planningSchemas} from '../planning-schemas';
+import {accountAmount} from '../record-balance';
 import {recordSchema} from '../record-schema';
 import type {ServiceDatabase} from '../service-role';
 import type {Commit,FlowContext} from '../telegram-flow';
@@ -21,7 +22,7 @@ function commitEvent(commit:Commit):ActionEvent{
 }
 /** The cash account a save would overdraw, when the amount it takes (in the account's currency) is more than the account holds. */
 function overdrawn(commit:Commit,accounts:Entry[]):Entry|undefined{
- const [accountId,debit]=commit.type==='record'?[commit.record.account_id,expenses.includes(commit.record.kind)?commit.record.amount/(commit.record.account_exchange_rate??1):0]:[commit.data.account_id,(commit.action==='mortgage'?commit.data.amount+commit.data.fee:commit.data.amount)/(commit.type==='fxpayment'?commit.rate:1)];
+ const [accountId,debit]=commit.type==='record'?[commit.record.account_id,expenses.includes(commit.record.kind)?accountAmount(commit.record.amount,commit.record.account_exchange_rate):0]:[commit.data.account_id,(commit.action==='mortgage'?commit.data.amount+commit.data.fee:commit.data.amount)/(commit.type==='fxpayment'?commit.rate:1)];
  const account=accounts.find(item=>item.id===accountId);
  return account&&debit>Number(account.amount)?account:undefined;
 }

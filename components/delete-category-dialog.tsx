@@ -1,7 +1,7 @@
 "use client";
 import { showDeleted } from '@/lib/feedback';
 import { Trash2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { ErrorPopup } from '@/components/presentation-foundation/error-popup';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
 import { AlertDialog, AlertDialogContent, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter } from '@/components/ui/alert-dialog';
@@ -11,23 +11,22 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { useLanguage } from '@/components/language-provider';
 import { formatNumber } from '@/lib/format';
 import { requestJson } from '@/lib/api-client';
+import { useSessionResource } from '@/hooks/use-owner-resource';
 import { offeredKinds } from '@/lib/removed-categories';
 import type { Category } from '@/lib/planning';
 
 /** What uses a category. Rules and entry templates are counted only for a built-in category (migration 122). */
 type Usage={records:number;deleted:number;watchlists:number;rules?:number};
+const noUsage:Usage|null=null;
 /** Deletes an added category, or a built-in one (its `id` is the kind) from this workspace; linked records move first, to any
  * other kept category of the same type, built-in or added, or to a new one. `removed` lists the built-in kinds already deleted. */
 export function DeleteCategoryDialog({category,categories,removed=[],onClose,onDeleted}:{category:Category;categories:Category[];removed?:readonly string[];onClose:()=>void;onDeleted:()=>void}){
  const {t,locale}=useLanguage();
- const [usage,setUsage]=useState<Usage|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[retry,setRetry]=useState(0),[replacement,setReplacement]=useState(''),[name,setName]=useState('');
+ const [error,setError]=useState(''),[busy,setBusy]=useState(false),[retry,setRetry]=useState(0),[replacement,setReplacement]=useState(''),[name,setName]=useState('');
  const submitting=useRef(false);
- useEffect(()=>{
-  const controller=new AbortController();
-  requestJson<Usage>('/api/categories?id='+encodeURIComponent(category.id),{method:'GET',signal:controller.signal,fallback:'Could not load category usage. Please try again.'})
-   .then(data=>{if(!controller.signal.aborted)setUsage(data);}).catch(reason=>{if(!controller.signal.aborted)setError((reason as Error).message);});
-  return()=>controller.abort();
- },[category.id,retry]);
+ // The usage preview; while it is read (again) there is no usage to decide by.
+ const remote=useSessionResource<Usage|null>('/api/categories?id='+encodeURIComponent(category.id),true,retry,noUsage,'Could not load category usage. Please try again.');
+ const usage=remote.loading?null:remote.data,loadError=remote.loading?'':remote.error;
  const inUse=!!usage&&(usage.records+usage.deleted+usage.watchlists+(usage.rules??0)>0);
  const kinds=offeredKinds(category.direction,removed).filter(kind=>kind!==category.id);
  const targets=categories.filter(item=>item.id!==category.id&&item.direction===category.direction);
@@ -42,14 +41,14 @@ export function DeleteCategoryDialog({category,categories,removed=[],onClose,onD
   }catch(reason){
    const message=(reason as Error).message;
    // The category gained records since the preview: read its usage again so a replacement can be chosen.
-   if(message==='This category is in use. Choose a replacement category.'){setUsage(null);setRetry(value=>value+1);}
+   if(message==='This category is in use. Choose a replacement category.')setRetry(value=>value+1);
    setError(message);
   }finally{submitting.current=false;setBusy(false);}
  }
  return <AlertDialog open onOpenChange={open=>{if(!open&&!busy)onClose();}}><AlertDialogContent onEscapeKeyDown={event=>{if(busy)event.preventDefault();}}>
   <AlertDialogTitle>{t('Delete {name}?',{name:category.name})}</AlertDialogTitle>
   <AlertDialogDescription>{t(inUse?'This category has linked records. Choose where to move them before deleting the category. Amounts, dates and account balances stay unchanged.':'Delete this category from your available categories?')}</AlertDialogDescription>
-  {!usage&&!error&&<p role="status">{t('Checking linked records…')}</p>}
+  {!usage&&!loadError&&<p role="status">{t('Checking linked records…')}</p>}
   {usage&&inUse&&<><ul className="list-disc pl-5">
    {usage.records>0&&<li>{t('Transactions and schedules: {count}',{count:formatNumber(usage.records,locale,0)})}</li>}
    {usage.deleted>0&&<li>{t('Recently deleted records: {count}',{count:formatNumber(usage.deleted,locale,0)})}</li>}
@@ -59,7 +58,7 @@ export function DeleteCategoryDialog({category,categories,removed=[],onClose,onD
   {replacement==='new'&&<label>{t('New category')}<Input value={name} disabled={busy} required maxLength={80} onChange={event=>setName(event.target.value)}/></label>}
   <p className="muted">{t('Only categories of the same type can receive these records. Split allocations and Recently deleted records are moved too.')}</p></>}
   {usage&&!inUse&&<p>{t('No linked records. Your transactions will not be changed.')}</p>}
-  {error&&!usage&&<InlineError message={t(error)} onRetry={()=>{setError('');setUsage(null);setRetry(value=>value+1);}}/>}<ErrorPopup message={usage?error:''}/>
+  {loadError&&!usage&&<InlineError message={t(loadError)} onRetry={remote.retry}/>}<ErrorPopup message={usage?error:''}/>
   <AlertDialogFooter><Button type="button" variant="outline" disabled={busy} onClick={onClose}>{t('Cancel')}</Button><Button type="button" variant="destructive" disabled={!valid||busy} onClick={()=>void remove()}><Trash2 aria-hidden="true"/>{t(busy?'Saving…':inUse?'Move records and delete':'Delete category')}</Button></AlertDialogFooter>
  </AlertDialogContent></AlertDialog>;
 }

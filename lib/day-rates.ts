@@ -2,7 +2,7 @@
 export type DayRate = (from: string, to: string, date: string) => Promise<number>;
 
 /** How many dated-rate requests one read keeps open at a time. */
-export const dayRateConcurrency = 4;
+const dayRateConcurrency = 4;
 
 /** A day rate asked for once per currency pair and day, with at most `limit` requests under way at a time. One planning
  * read shares it between loan payments and scheduled payments, so a payment day in several lists costs one request,

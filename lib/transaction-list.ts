@@ -72,15 +72,19 @@ export function transactionsIn(records: readonly Entry[], range: { from: string;
 type Convert = (amount: number, currency: string, record?: Entry) => number | null;
 /** The money a record moved: income counts up, outgoings down. A mortgage payment shows its whole payment, principal plus interest. */
 export const signedAmount = (record: Pick<Entry, 'kind' | 'amount'>) => income.includes(record.kind) ? Number(record.amount) : -Number(record.amount);
+/** What a record adds to a total: income up, spending down by the shared definition (`lib/spending.ts`), so a mortgage
+ * payment's principal, a transfer to the debt, counts in neither a day's total nor the Summary while its row still
+ * shows the whole payment (`signedAmount`). */
+export const netAmount = (record: Parameters<typeof spendingAmount>[0]) => income.includes(record.kind) ? Number(record.amount) : -spendingAmount(record);
 
-/** Rows grouped by day; a day's total adds up its rows and is null when a currency cannot be converted. */
+/** Rows grouped by day; a day's total adds up its rows' `netAmount` and is null when a currency cannot be converted. */
 export function groupByDay(records: readonly Entry[], convert: Convert) {
  const days: Array<{ date: string; records: Entry[]; total: number | null }> = [];
  for (const record of records) {
   let day = days.at(-1);
   if (!day || day.date !== record.date) { day = { date: record.date, records: [], total: 0 }; days.push(day); }
   day.records.push(record);
-  const value = convert(signedAmount(record), record.currency, record);
+  const value = convert(netAmount(record), record.currency, record);
   day.total = value === null || day.total === null ? null : day.total + value;
  }
  return days;

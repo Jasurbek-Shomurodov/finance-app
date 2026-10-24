@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {loadTS} from './helpers/load-ts.mjs';
-const {assetAllocation,changePercent,nextPayments}=loadTS('lib/overview.ts');
+const {assetAllocation,changePercent,nextPayments,dueCounts}=loadTS('lib/overview.ts');
 const entry=(id,kind,amount,extra={})=>({id,name:id,kind,amount,quantity:1,cost:0,rate:0,currency:'USD',frequency:'Once',date:'2026-09-01',...extra});
 
 test('allocation lists only owned asset kinds, largest first, with precise shares',()=>{
@@ -122,8 +122,17 @@ test('Due in 7 days counts what falls due this week, overdue included, in the di
  const bill=(id,date,amount,currency='USD')=>({id,name:id,kind:'Living expense',amount,currency,frequency:'Monthly',date,notes:'',quantity:1,cost:0,rate:0});
  const today='2026-10-20';
  const data={records:[bill('gym','2026-10-22',60),bill('rent','2026-10-01',1000),bill('later','2026-10-28',99),bill('euro','2026-10-24',10,'EUR'),{...bill('pay','2026-10-21',5000),kind:'Salary'}],occurrences:[{record_id:'rent',due_on:'2026-10-01',status:'paid'}],debtPayments:[]};
- assert.deepEqual(dueSoon(data,today,7,'USD',{USD:1,EUR:0.5}),{count:2,total:80,next:{name:'gym',date:'2026-10-22'}},'gym $60 and €10 = $20; rent is paid; the 28th is after the week; the salary coming in is not due');
- assert.deepEqual(dueSoon(data,today,7,'USD',{USD:1}),{count:2,total:null,next:{name:'gym',date:'2026-10-22'}},'no rate for EUR: the total is missing, never $60 under USD');
- assert.deepEqual(dueSoon({...data,occurrences:[]},today,7,'USD',{USD:1,EUR:0.5}),{count:3,total:1080,next:{name:'rent',date:'2026-10-01'}},'an unpaid earlier date is overdue, counts and comes next');
+ assert.deepEqual(dueSoon(data,today,7,'USD',{USD:1,EUR:0.5}),{count:2,overdue:0,total:80,next:{name:'gym',date:'2026-10-22'}},'gym $60 and €10 = $20; rent is paid; the 28th is after the week; the salary coming in is not due');
+ assert.deepEqual(dueSoon(data,today,7,'USD',{USD:1}),{count:2,overdue:0,total:null,next:{name:'gym',date:'2026-10-22'}},'no rate for EUR: the total is missing, never $60 under USD');
+ assert.deepEqual(dueSoon({...data,occurrences:[]},today,7,'USD',{USD:1,EUR:0.5}),{count:2,overdue:1,total:1080,next:{name:'rent',date:'2026-10-01'}},'an unpaid earlier date is overdue: in the total and next, counted apart from the two due soon');
  assert.equal(dueSoon({records:[],occurrences:[],debtPayments:[]},today,7,'USD').next,null,'nothing due, nothing next');
+});
+
+test('the Overview pill and the Due tile count the same set: payments only, the overdue ones apart (review S2)',()=>{
+ const item=(name,kind,overdue)=>({key:name,record:{id:name,name,kind,currency:'USD'},date:'2026-10-20',overdue,type:'scheduled',amount:10});
+ const items=[item('rent','Rent expense',true),item('gym','Living expense',false),item('pay','Salary',false),item('bonus','Salary',true),item('card','Debt',false)];
+ const counts=dueCounts(items);
+ assert.deepEqual([counts.overdue,counts.dueSoon],[1,2],'the salary and the late bonus are income on its way, not payments due');
+ assert.deepEqual(counts.payments.map(entry=>entry.key),['rent','gym','card']);
+ assert.deepEqual(dueCounts([]),{payments:[],overdue:0,dueSoon:0});
 });

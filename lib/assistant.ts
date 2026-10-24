@@ -6,7 +6,8 @@ import { formatDate, formatMoney, formatMonthYear, formatNumber } from './format
 import { goalCurrentValue } from './goal-projection';
 import { investmentGoalProgress } from './investment-goals';
 import { isLanguage, locales } from './languages';
-import { convertAmount } from './market';
+import { convertAmount, marketEntry, type MarketData } from './market';
+import type { RecurringItem } from './recurring';
 import { upcomingPayments, type PlanningData } from './planning';
 import { monthOccurrences } from './recurring';
 
@@ -28,6 +29,9 @@ export const assistantRequestSchema = z.object({
  language: z.string().max(20),
 });
 
+/** A scheduled item's status as Recurring words it. */
+const statusLabels: Record<RecurringItem['status'], string> = { overdue: 'Overdue', due: 'Upcoming', paid: 'Paid', skipped: 'Skipped' };
+
 /** The server's answer while no model key is configured; the screen then shows the assistant as unavailable. */
 export const assistantUnavailable = 'The assistant is not set up yet.';
 
@@ -36,26 +40,32 @@ export const assistantSuggestions = ['What recurring expenses do I have?', 'How 
 /** A compact, factual snapshot of the user's money for the assistant: holdings, debts, recent cash flow by category,
  * this month's scheduled items and goals. Amounts and dates are written the way the app shows them ("$1,200", "30 September 2026"),
  * in the person's own language and number style, so the assistant repeats them the way they read them everywhere else;
- * every amount is in `currency`, and one without a rate to it is written as a dash and counted, never shown under its own currency. */
-export function assistantContext(data: Pick<PlanningData, 'records' | 'categories' | 'goals' | 'occurrences' | 'activity' | 'investmentLinks' | 'holdingAccounts'>, today: string, currency: string, rates: Record<string, number>, language = 'en') {
- const month = today.slice(0, 7);
+ * every amount is in `currency`, and one without a rate to it is written as a dash and counted, never shown under its own currency.
+ * A holding is worth what the Net worth card says: its live quote through `market` (`marketEntry`), the stored price only
+ * without one. Kinds, frequencies and statuses are words the person reads in the app, so `t` translates them (the
+ * server's `translate`); without it they stay English. */
+export function assistantContext(data: Pick<PlanningData, 'records' | 'categories' | 'goals' | 'occurrences' | 'activity' | 'investmentLinks' | 'holdingAccounts'>, today: string, currency: string, rates: Record<string, number>, options: { language?: string; market?: MarketData | null; t?: (key: string) => string } = {}) {
+ const month = today.slice(0, 7), { language = 'en', market = null, t = (key: string) => key } = options;
  const locale = isLanguage(language) ? locales[language] : locales.en, money = (amount: number, unit = currency) => formatMoney(amount, unit, locale), day = (date: string) => formatDate(date, locale);
  let unconverted = 0;
- const inCurrency = (amount: number, unit: string) => { const converted = convertAmount(amount, unit, currency, rates); if (converted === null) unconverted++; return converted === null ? '— (Exchange rate unavailable)' : money(converted); };
+ const shown = (converted: number | null) => { if (converted === null) unconverted++; return converted === null ? '— (Exchange rate unavailable)' : money(converted); };
+ const inCurrency = (amount: number, unit: string) => shown(convertAmount(amount, unit, currency, rates));
+ // A holding at its live quote in `unit`, as Overview values it; the stored price through the request's rates without one.
+ const holdingValue = (record: Entry, unit: string) => { const live = marketEntry(record, unit, market); return live ? value(live) : convertAmount(value(record), record.currency, unit, rates); };
  const categoryName = (key: string) => data.categories.find(category => category.id === key)?.name ?? key;
  const records = data.records as Entry[];
- const holdings = records.filter(record => assets.includes(record.kind) && value(record) > 0).map(record => `${record.name} (${record.kind}): ${inCurrency(value(record), record.currency)}`);
- const debts = records.filter(record => liabilities.includes(record.kind) && record.amount > 0).map(record => `${record.name} (${record.kind}): ${inCurrency(record.amount, record.currency)}${record.date ? `, due ${day(record.date)}` : ''}`);
+ const holdings = records.filter(record => assets.includes(record.kind) && value(record) > 0).map(record => `${record.name} (${t(record.kind)}): ${shown(holdingValue(record, currency))}`);
+ const debts = records.filter(record => liabilities.includes(record.kind) && record.amount > 0).map(record => `${record.name} (${t(record.kind)}): ${inCurrency(record.amount, record.currency)}${record.date ? `, due ${day(record.date)}` : ''}`);
  const months = [shiftMonth(month, -2), shiftMonth(month, -1), month];
  const flows = months.map(item => {
   const report = cashFlowReport(data, [], [item], currency, today, rates);
   const top = report.categories.expense.slice(0, 8).map(entry => `${categoryName(entry.key)} ${money(entry.amount)}`).join(', ');
   return `${formatMonthYear(item, locale)}${item === month ? ' (so far)' : ''}: income ${money(report.income)}, spending ${money(report.expenses)}${top ? ` (${top})` : ''}${report.missing ? `; ${formatNumber(report.missing, locale, 0)} amounts in currencies without a rate are left out` : ''}`;
  });
- const recurring = monthOccurrences(records, data.occurrences, month, today).map(item => `${day(item.date)} ${item.record.name} (${item.record.kind}, ${item.record.frequency}): ${inCurrency(item.amount, item.record.currency)}, ${item.status}`);
- const reminders = upcomingPayments(records, data.occurrences, today).filter(item => item.type !== 'scheduled').map(item => `${day(item.date)} ${item.record.name} (${item.record.kind}): ${inCurrency(item.amount, item.record.currency)}${item.overdue ? ', overdue' : ''}`);
+ const recurring = monthOccurrences(records, data.occurrences, month, today).map(item => `${day(item.date)} ${item.record.name} (${t(item.record.kind)}, ${t(item.record.frequency)}): ${inCurrency(item.amount, item.record.currency)}, ${t(statusLabels[item.status])}`);
+ const reminders = upcomingPayments(records, data.occurrences, today).filter(item => item.type !== 'scheduled').map(item => `${day(item.date)} ${item.record.name} (${t(item.record.kind)}): ${inCurrency(item.amount, item.record.currency)}${item.overdue ? `, ${t('Overdue')}` : ''}`);
  // Net worth in a goal's currency, for a net-worth goal; null when a holding or debt has no rate into it.
- const netWorthIn = (unit: string) => { let total = 0; for (const record of records) { if (!assets.includes(record.kind) && !liabilities.includes(record.kind)) continue; const amount = convertAmount(liabilities.includes(record.kind) ? -Number(record.amount) : value(record), record.currency, unit, rates); if (amount === null) return null; total += amount; } return total; };
+ const netWorthIn = (unit: string) => { let total = 0; for (const record of records) { if (!assets.includes(record.kind) && !liabilities.includes(record.kind)) continue; const amount = liabilities.includes(record.kind) ? convertAmount(-Number(record.amount), record.currency, unit, rates) : holdingValue(record, unit); if (amount === null) return null; total += amount; } return total; };
  // A goal reads by its kind, as the Goals card does: an investment goal counts units of its symbol, a net-worth goal its current net worth, a savings goal its money.
  const goals = data.goals.filter(goal => !goal.archived).map(goal => {
   const unit = goal.currency ?? currency, monthly = goal.funding_monthly ?? goal.monthly_contribution, when = goal.target_date ? ` by ${day(goal.target_date)}` : '';

@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "Hindi ma-convert ang ilang kita. Hindi kumpleto ang mga halagang ipinapakita sa tsart.",
   "Income source": "Pinagmumulan ng kita",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "Ipinapakita ng mga solidong bar ang naitalang kita. Ipinapakita ng mga bar na may balangkas ang kasalukuyan at susunod na buwanang pagtatantya, hindi natanggap na kita. Pinapalitan ng mga susunod na buwan ang mga walang lamang buwan bago ang unang natanggap.",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "Itala ang mga dibidendo ng stock bilang Natanggap na kita sa Tracker ng stock. Pinamamahalaan sa Kita at gastos ang sahod at iba pang paulit-ulit na plano. Ginagamit sa tsart na ito ang kasalukuyang mga exchange rate.",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "Itala ang mga dibidendo ng stock bilang Natanggap na kita sa Tracker ng stock. Pinamamahalaan sa Kita at gastos ang sahod at iba pang paulit-ulit na plano.",
+  "Each receipt converts at the exchange rate of its day.": "Bawat natanggap ay kino-convert sa exchange rate ng araw nito.",
   "Accounts": "Mga account",
   "Account": "Account",
   "Account activity": "Aktibidad ng account",
@@ -2763,5 +2764,6 @@
   "This month so far": "Ngayong buwan hanggang ngayon",
   "3-month average": "3-buwang average",
   "Compared with average": "Kumpara sa average",
-  "Item": "Item"
+  "Item": "Item",
+  "Amounts are compared as entered, in each transaction’s own currency.": "Ikinukumpara ang mga halaga gaya ng inilagay, sa sariling currency ng bawat transaksyon."
 }

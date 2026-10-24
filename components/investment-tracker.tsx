@@ -26,6 +26,7 @@ import { depositInterest, depositProjection, depositToday } from '@/lib/deposit-
 import { AssetMovementDialog, type MovementDraft } from '@/components/planning/asset-movement-dialog';
 import { isHolding, type AssetMovement } from '@/lib/asset-movements';
 import { interestCompounding, interestKinds, valuedKinds, type Entry } from '@/lib/finance';
+import { accountAmount } from '@/lib/record-balance';
 import { categoryColor } from '@/lib/category-colors';
 import { requestJson, type RequestError } from '@/lib/api-client';
 import { Textarea } from '@/components/ui/textarea';
@@ -85,7 +86,7 @@ export function InvestmentTracker({inline=false,onDraftState,initialType,record,
  const selectedAccount=cashAccounts.find(account=>account.id===draft.account_id);
  const fx=useDatedExchangeRate(selectedAccount?.currency,record.currency,draft.date);
  const crossCurrency=!!selectedAccount&&selectedAccount.currency!==record.currency;
- const cashAmount=fx.rate?draft.amount/fx.rate:null;
+ const cashAmount=fx.rate?accountAmount(draft.amount,fx.rate):null;
  const cashDelta=cashAmount===null?null:historyCashDelta(record.kind,draft.type,cashAmount);
  const accountMoney=(amount:number)=>formatMoney(amount,selectedAccount?.currency??record.currency,locale);
  const cashOutgoing=historyCashDelta(record.kind,draft.type,1)<0;

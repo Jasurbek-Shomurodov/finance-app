@@ -204,7 +204,7 @@ test('an account’s balance and the directory totals are display-currency figur
 test('Recently deleted names an unnamed transaction as Transactions does, and shows no empty state over an error', async () => {
  const fs = await import('node:fs');
  const source = fs.readFileSync('components/recently-deleted.tsx', 'utf8');
- assert.match(source, /!visible\.length\?error\?null:<EmptyState/, 'InlineError and the empty state never render together');
+ assert.match(source, /!visible\.length\?loadError\?null:<EmptyState/, 'InlineError and the empty state never render together');
  const r = createRenderer(), ui = stubs();
  const { RecentlyDeleted } = r.load('components/recently-deleted.tsx', { ...ui.modules, ...inEuros, ...foundation('confirm-dialog', 'empty-state', 'inline-error', 'page-header', 'category-badge', 'screen-skeletons', 'pagination'), 'lucide-react': hostModule(), '@/lib/api-client': { requestJson: async () => ({}) }, '@/lib/feedback': { showDeleted() {}, showNotice() {} } });
  const unnamed = { id: 'd1', source: 'finance_records', deleted_at: '2026-10-20T10:00:00Z', data: { ...entry('Living expense', 'Living expense', 'USD', 12), notes: 'Coffee beans' } };

@@ -13,7 +13,9 @@ export function harness(file,name,dependencies){
  // The shared JSON client, sending through the test's fetch.
  const client=ts.transpileModule(fs.readFileSync('lib/api-client.ts','utf8').replace(/export /g,''),{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
  const requestJson=new Function('fetch',client+';return requestJson;')((...args)=>(dependencies.fetch??globalThis.fetch)(...args));
- const bindings={...hooks,showSaved:()=>{},refreshRead:dependencies.fetch,requestJson,...(file!=='hooks/use-owner-resource.ts'?{useOwnerResource:harness('hooks/use-owner-resource.ts','useOwnerResource',dependencies)}:{}),...dependencies};
+ // The shared loaders, each with its own hook state, for a hook that reads through them.
+ const loaders=file==='hooks/use-owner-resource.ts'?{}:{useOwnerResource:harness('hooks/use-owner-resource.ts','useOwnerResource',dependencies),useSessionResource:harness('hooks/use-owner-resource.ts','useSessionResource',dependencies)};
+ const bindings={...hooks,showSaved:()=>{},refreshRead:dependencies.fetch,requestJson,...loaders,...dependencies};
  const source=fs.readFileSync(file,'utf8').replace(/^import .*;\n/gm,'').replace(/export /g,'');
  const js=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
  const hook=new Function(...Object.keys(bindings),js+`;return ${name};`)(...Object.values(bindings));

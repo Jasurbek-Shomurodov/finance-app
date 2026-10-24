@@ -34,7 +34,7 @@ export const emptyBudget: BudgetState = { mode: 'category', applyForward: false,
 export const flexBucketKey = 'flex:flexible';
 // Loan and mortgage principal are transfers (`lib/spending.ts`), so repayments never become budget categories.
 const fixedKinds = ['Rent expense'];
-export const defaultGroups: Record<BudgetDirection | BudgetType, string> = { income: 'Income', expense: 'Everyday spending', fixed: 'Bills & recurring', flexible: 'Everyday spending', non_monthly: 'Future spending' };
+const defaultGroups: Record<BudgetDirection | BudgetType, string> = { income: 'Income', expense: 'Everyday spending', fixed: 'Bills & recurring', flexible: 'Everyday spending', non_monthly: 'Future spending' };
 export const budgetTypeLabels: Record<BudgetType, string> = { fixed: 'Fixed', flexible: 'Flexible', non_monthly: 'Non-monthly' };
 export const historyMonths = 6;
 

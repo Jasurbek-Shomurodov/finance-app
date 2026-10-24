@@ -2,7 +2,8 @@
 import { Trash2 } from 'lucide-react';
 import { showNotice } from '@/lib/feedback';
 import { ErrorPopup } from '@/components/presentation-foundation/error-popup';
-import {useEffect,useId,useState} from 'react';
+import {useId,useState} from 'react';
+import {useSessionResource} from '@/hooks/use-owner-resource';
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
 import {useLanguage} from '@/components/language-provider';
@@ -11,14 +12,17 @@ import {Button} from '@/components/ui/button';
 import {maxPasswordLength,minPasswordLength} from '@/lib/password-policy';
 import {signInPath} from '@/lib/sign-in-path';
 import {requestAccountAccess} from '@/lib/account-access-request';
+const noCapabilities:{deletion?:unknown;phoneOnly?:unknown}={};
 /** Account security in Settings, and the emailed-link confirmation. Create account and Forgot password are `AccountAccessCard`. */
 export function AccountAccessPanel({settings=false,tokenHash='',tokenType='email',onSignedOut}:{onSignedOut?:()=>void;settings?:boolean;tokenHash?:string;tokenType?:string}){
  const {t}=useLanguage();const router=useRouter();const [chosenMode,setMode]=useState(settings?'change_password':'verify'),[email,setEmail]=useState(''),[current,setCurrent]=useState(''),[password,setPassword]=useState(''),[repeat,setRepeat]=useState(''),[confirmation,setConfirmation]=useState('');
- const [capabilities,setCapabilities]=useState({deletion:false,phoneOnly:false}),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const [busy,setBusy]=useState(false),[error,setError]=useState('');
+ // What the account may do; a failed read leaves both off, without a message (the form says when deletion is not set up).
+ const {data:served}=useSessionResource('/api/account-access',true,0,noCapabilities);
+ const capabilities={deletion:served.deletion===true,phoneOnly:served.phoneOnly===true};
  const passwordHint=useId();
  // A phone-only account has no password to change: it can add an email and password, or delete the account.
  const mode=settings&&capabilities.phoneOnly&&chosenMode==='change_password'?'add_email':chosenMode;
- useEffect(()=>{const controller=new AbortController();fetch('/api/account-access',{signal:controller.signal}).then(r=>r.json()).then(data=>{if(!controller.signal.aborted)setCapabilities({deletion:(data as {deletion?:unknown}).deletion===true,phoneOnly:(data as {phoneOnly?:unknown}).phoneOnly===true});}).catch(()=>{});return()=>controller.abort();},[]);
  const needsPassword=['reset','change_password','add_email'].includes(mode);
  const Heading=settings?'h2':'h1';
  return <section className={settings?"panel tools-panel account-security-panel":"panel tools-panel"} data-mode={mode}>{/* On its own page (an emailed link) the panel is the page's one h1; inside Settings it is a section. */}<Heading>{t(settings?(mode==='add_email'?'Add an email and password':'Account security'):'Account access')}</Heading>{mode==='add_email'&&<p>{t('Your account was created with a phone number. Add an email and password to sign in with them too.')}</p>}

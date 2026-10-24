@@ -43,8 +43,22 @@ test('shared owner resource aborts superseded reads, keeps errors visible, and c
 
 test('portfolio history is discarded on logout even when the next account uses the same email identifier',async()=>{
  const requests=[];const fetch=(url,options={})=>new Promise(resolve=>requests.push({url,options,reply:data=>resolve(Response.json(data))}));
- const run=harness('hooks/use-portfolio-snapshots.ts','usePortfolioSnapshots',{fetch});const render=owner=>run(owner,null,false,0);
+ const run=harness('hooks/use-portfolio-snapshots.ts','usePortfolioSnapshots',{fetch,depositToday:loadTS('lib/deposit-interest.ts').depositToday});const render=owner=>run(owner,null,false,0);
  render('same@example.com');requests[0].reply({snapshots:[{occurred_on:'2026-09-18',assets:100,debt:0,rates:{USD:1},updated_at:'2026-09-18T00:00:00Z'}]});await flush();assert.equal(render('same@example.com').snapshots.length,1);assert.deepEqual(render(null).snapshots,[]);assert.deepEqual(render('same@example.com').snapshots,[]);
+});
+test('today\'s snapshot is posted once per owner and day, not on every price refresh, and again when the day or records change',async()=>{
+ const requests=[];let today='2026-10-24';
+ const fetch=(url,options={})=>{requests.push({url,options});return Promise.resolve(Response.json(options.method==='POST'?{snapshot:{occurred_on:today,assets:1,debt:0,rates:{USD:1},updated_at:today+'T00:00:00Z'}}:{snapshots:[]}));};
+ const run=harness('hooks/use-portfolio-snapshots.ts','usePortfolioSnapshots',{fetch,depositToday:()=>today});
+ const posts=()=>requests.filter(request=>request.options.method==='POST').length;
+ const market=()=>({quotes:{},rates:{USD:1},fx:null});
+ run('one',null,true,0);assert.equal(posts(),0,'nothing is posted before prices arrive');
+ run('one',market(),true,0);assert.equal(posts(),1);
+ run('one',market(),true,0);run('one',market(),true,0);assert.equal(posts(),1,'a fresh market object every five minutes posts nothing new');
+ today='2026-10-25';run('one',market(),true,0);assert.equal(posts(),2,'a new day records its own point');
+ run('one',market(),true,1);assert.equal(posts(),3,'changed records refresh today\'s point');
+ run('two',market(),true,1);assert.equal(posts(),4,'another owner records their own');
+ await flush();assert.equal(run('two',market(),true,1).snapshots.length,1);
 });
 test('the JSON client sends the body, returns the reply and shapes failures with their translation key',async()=>{
  const original=globalThis.fetch,calls=[];let reply=()=>Response.json({ok:true});
@@ -131,4 +145,40 @@ test('identical reads that start together share one request, each with its own c
  e.abort();f.abort();assert.equal(requests[4].signal.aborted,true);
  // Once cancelled, a reader starting in the same task (a remount) asks again rather than joining the cancelled one.
  sharedRead('one:/api/y','/api/y',reader().signal).catch(()=>{});assert.equal(requests.length,6);
+});
+test('a session resource is the owner loader keyed to the session: its fallback names the read, and a proxy page is no parse error',async()=>{
+ const requests=[];const fetch=(url,options={})=>new Promise(resolve=>requests.push({url,options,reply:response=>resolve(response)}));
+ const run=harness('hooks/use-owner-resource.ts','useSessionResource',{fetch});const empty={records:0};
+ const render=(revision=0,enabled=true)=>run('/api/categories?id=x',enabled,revision,empty,'Could not load category usage. Please try again.');
+ assert.equal(render().loading,true);
+ requests[0].reply(new Response('<html>502</html>',{status:502}));await flush();
+ assert.equal(render().error,'Could not load category usage. Please try again.','an HTML error page reads as the fallback');assert.deepEqual(render().data,empty);
+ render().retry();render();requests[1].reply(Response.json({error:'Signed out.'},{status:401}));await flush();
+ assert.equal(render().error,'Signed out.','the reply\'s own message comes first');
+ render().retry();render();requests[2].reply(Response.json({records:3}));await flush();
+ assert.deepEqual(render().data,{records:3});assert.equal(render().error,'');
+ render().retry();render();requests[3].reply(new Response('not json',{status:200}));await flush();
+ assert.match(render().error,/JSON/,'an OK reply must be JSON');assert.deepEqual(render().data,{records:3},'the data already shown stays');
+ assert.equal(requests.every(request=>request.url==='/api/categories?id=x'),true);
+ const disabled=render(0,false);assert.equal(disabled.loading,false,'a disabled read never loads');assert.deepEqual(disabled.data,empty);assert.equal(requests.length,4);
+});
+test('a dated exchange rate is read once per pair and day, rejects an unusable or mismatched quote, and asks again on retry',async()=>{
+ const requests=[];const fetch=(url,options={})=>new Promise(resolve=>requests.push({url,options,reply:(data,status=200)=>resolve(Response.json(data,{status}))}));
+ const run=harness('hooks/use-dated-exchange-rate.ts','useDatedExchangeRate',{fetch});
+ const same=run('USD','USD','2026-10-01');assert.deepEqual([same.rate,same.quote,same.error,same.loading],[1,undefined,undefined,false],'the same currency needs no read');
+ assert.equal(requests.length,0);assert.equal(run(undefined,'UZS','2026-10-01').rate,null);
+ assert.equal(run('USD','UZS','2026-10-01').loading,true);assert.equal(requests.length,1);
+ assert.equal(requests[0].url,'/api/exchange-rate?from=USD&to=UZS&date=2026-10-01');
+ const quote={from:'USD',to:'UZS',date:'2026-10-01',rate:12000,source:'CBU'};
+ requests[0].reply(quote);await flush();
+ const loaded=run('USD','UZS','2026-10-01');assert.equal(loaded.rate,12000);assert.deepEqual(loaded.quote,quote);assert.equal(loaded.loading,false);assert.equal(loaded.error,undefined);
+ // Another day asks again; a quote for a day other than the one asked is unusable.
+ run('USD','UZS','2026-10-02');requests[1].reply({...quote,date:'2026-10-01'});await flush();
+ const other=run('USD','UZS','2026-10-02');assert.equal(other.rate,null);assert.equal(other.quote,undefined);assert.equal(other.error,'Historical exchange rates are unavailable.');
+ other.retry();run('USD','UZS','2026-10-02');requests[2].reply({...quote,date:'2026-10-02',rate:0});await flush();
+ assert.equal(run('USD','UZS','2026-10-02').error,'Historical exchange rates are unavailable.','a zero rate is unusable');
+ run('USD','UZS','2026-10-02').retry();run('USD','UZS','2026-10-02');requests[3].reply({error:'Rates are unavailable.'},503);await flush();
+ assert.equal(run('USD','UZS','2026-10-02').error,'Rates are unavailable.');assert.equal(run('USD','UZS','2026-10-02').loading,false);
+ // A server failure is retried before it is reported.
+ assert.equal(requests.length,4);
 });

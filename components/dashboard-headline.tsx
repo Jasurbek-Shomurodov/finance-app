@@ -1,4 +1,5 @@
 "use client";
+import { useMemo } from 'react';
 import { TrendingDown, TrendingUp } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { StatTile, StatTiles } from '@/components/presentation-foundation/stat-tile';
@@ -82,7 +83,8 @@ function DueTile({ data, currency, rates }: { data: PlanningData | null; currenc
  * rate to the display currency (MONEY-008). */
 function LowestBalanceTile({ data, budget, loading, failed, currency, rates }: { data: PlanningData | null; budget?: CashForecastBudget; loading: boolean; failed: boolean; currency: string; rates: Rates }) {
  const { t, locale } = useLanguage();
- const forecast = !data || loading || failed ? null : cashForecast({ records: data.records, occurrences: data.occurrences, debtPayments: data.debtPayments, budget, today: depositToday(), days: 90, currency, rates });
+ const today = depositToday();
+ const forecast = useMemo(() => !data || loading || failed ? null : cashForecast({ records: data.records, occurrences: data.occurrences, debtPayments: data.debtPayments, budget, today, days: 90, currency, rates }), [data, budget, loading, failed, today, currency, rates]);
  const total = forecast && forecast.missing === 0 ? forecast.totals[0] ?? null : null;
  return <StatTile label={t('Lowest balance ahead')} value={total ? formatMoney(total.lowest.balance, total.currency, locale) : '—'} tone={total ? signTone(total.lowest.balance, true) : undefined} href="/income-expenses#forecast">
   {forecast && forecast.missing > 0 ? <p>{t('Exchange rate unavailable.')}</p>

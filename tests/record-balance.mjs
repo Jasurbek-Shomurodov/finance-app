@@ -1,7 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {loadTS} from './helpers/load-ts.mjs';
-const {applyRecordChange,withSavedRecord}=loadTS('lib/record-balance.ts');
+const {applyRecordChange,withSavedRecord,accountAmount}=loadTS('lib/record-balance.ts');
+test('accountAmount is the one division into the account currency (DRY-001): the dated rate, 1 without one, never a bad rate',()=>{
+ assert.equal(accountAmount(250.125,2),125.0625);
+ assert.equal(accountAmount(40,null),40);assert.equal(accountAmount(40,undefined),40);
+ for(const rate of [0,-1,NaN,Infinity])assert.throws(()=>accountAmount(40,rate),/Check the dated exchange rate\./);
+ assert.throws(()=>applyRecordChange([cash],undefined,{...expense,account_exchange_rate:0}),/Check the dated exchange rate\./,'the cash effect goes through the same guard');
+});
 const cash={id:'cash',kind:'Cash',amount:1000,currency:'USD'};
 const expense={id:'expense',kind:'Other expense',amount:250.125,account_id:'cash',frequency:'Once',account_exchange_rate:2,currency:'EUR'};
 test('create, edit, delete and restore apply exactly one precise cash effect',()=>{

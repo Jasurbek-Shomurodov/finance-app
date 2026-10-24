@@ -454,6 +454,8 @@ test('RuleDialog more conditions: account, required category, business and amoun
  button(findAll(render(),n=>n.type==='PopoverContent')[0],'Rent expense').props.onClick();
  // Amounts: an upper bound below the lower one is refused with a formatted message.
  const amounts=()=>findAll(render(),n=>n.type==='FormattedNumberInput');
+ // Review S2: the range compares the stored amount whatever its currency (transaction_rule_matches), so the dialog says so.
+ assert.match(text(render()),/Amounts are compared as entered, in each transaction’s own currency\./);
  assert.equal(amounts()[0].props.value,50);
  assert.equal(amounts()[1].props.value,0);
  amounts()[0].props.onValueChange(1000,false);

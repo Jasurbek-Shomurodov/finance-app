@@ -16,20 +16,40 @@ test('the assistant snapshot lists holdings, debts, monthly cash flow, scheduled
  assert.match(text, /- Car loan \(Loan\): \$10,000, due 1 January 2027/);
  assert.match(text, /September 2026: income \$3,000, spending \$121 \(Living expense \$121\)/);
  assert.match(text, /October 2026 \(so far\): income \$0, spending \$80 \(Pets \$80\)/);
- assert.match(text, /3 October 2026 Rent \(Rent expense, Monthly\): \$900, due/);
+ assert.match(text, /3 October 2026 Rent \(Rent expense, Monthly\): \$900, Upcoming/);
  assert.match(text, /Emergency fund: \$4,200 of \$10,000 by 2 December 2027, saving \$400 a month/);
  assert.doesNotMatch(text, /Old goal/);
  assert.doesNotMatch(text, /\d{4}-\d{2}/, 'no ISO dates or months reach the model');
  assert.match(assistantInstructions, /exactly as the snapshot writes them/);
  // The snapshot follows the person's language, so the assistant's figures match the rest of the app.
- const ru = assistantContext(data, '2026-10-02', 'USD', { USD: 1, UZS: 12500 }, 'ru');
+ const ru = assistantContext(data, '2026-10-02', 'USD', { USD: 1, UZS: 12500 }, { language: 'ru' });
  assert.match(ru, /Today is 2 октября 2026\./);
  assert.match(ru, /Main account \(Cash\): 5\s000\s\$/);
  assert.match(ru, /Сентябрь 2026: income 3\s000\s\$/);
- assert.match(assistantContext(data, '2026-10-02', 'USD', { USD: 1, UZS: 12500 }, 'de'), /Car loan \(Loan\): 10\.000\s\$, due 1\. Januar 2027/);
- assert.equal(assistantContext(data, '2026-10-02', 'USD', { USD: 1 }, 'xx'), assistantContext(data, '2026-10-02', 'USD', { USD: 1 }), 'an unknown language reads as English');
+ assert.match(assistantContext(data, '2026-10-02', 'USD', { USD: 1, UZS: 12500 }, { language: 'de' }), /Car loan \(Loan\): 10\.000\s\$, due 1\. Januar 2027/);
+ assert.equal(assistantContext(data, '2026-10-02', 'USD', { USD: 1 }, { language: 'xx' }), assistantContext(data, '2026-10-02', 'USD', { USD: 1 }), 'an unknown language reads as English');
  assert.match(assistantContext(data, '2026-10-02', 'USD', { USD: 1 }), /Car loan \(Loan\): — \(Exchange rate unavailable\), due/, 'no inferred exchange rate');
  assert.doesNotMatch(assistantInstructions, /\d{4}-\d{2}-\d{2}/, 'the instructions carry no per-request data, so they cache');
+});
+
+test('holdings are worth their live quote, as the Net worth card shows them, and kinds, frequencies and statuses read in the person\'s language', () => {
+ // Review S2: the snapshot valued a stock at its stored price while Overview showed the live quote, and wrote "Rent expense, Monthly, due" in English whatever the language.
+ const stock = record('aapl', 'AAPL', 'Stock', 100, '2026-01-01', { quantity: 2 });
+ const market = { rates: { USD: 1, UZS: 12500 }, fx: null, quotes: { 'Stock:AAPL': { usd: 150, source: 'test', fetchedAt: '2026-10-02T00:00:00Z' } }, errors: {}, stocksConfigured: true };
+ const records = [...data.records, stock];
+ const stored = assistantContext({ ...data, records }, '2026-10-02', 'USD', { USD: 1, UZS: 12500 });
+ assert.match(stored, /- AAPL \(Stock\): \$200\n/, 'without market data the stored price stands');
+ const live = assistantContext({ ...data, records }, '2026-10-02', 'USD', { USD: 1, UZS: 12500 }, { market });
+ assert.match(live, /- AAPL \(Stock\): \$300\n/, '2 × the $150 quote');
+ const goals = [{ id: 'n', name: 'Net worth', kind: 'net_worth', allocated: 0, target: 20000, archived: false, currency: 'USD' }];
+ assert.match(assistantContext({ ...data, records, goals }, '2026-10-02', 'USD', { USD: 1, UZS: 12500 }, { market }), /- Net worth: −\$4,700 of \$20,000/, '$5,000 cash + $300 of stock − the $10,000 loan, at the live quote');
+ assert.match(assistantContext({ ...data, records }, '2026-10-02', 'EUR', { USD: 1, UZS: 12500 }, { market }), /- AAPL \(Stock\): — \(Exchange rate unavailable\)/, 'no rate into the display currency: missing, never under USD');
+ const words = { 'Rent expense': 'Аренда', Monthly: 'Ежемесячно', Upcoming: 'Скоро', Loan: 'Кредит', Cash: 'Наличные' };
+ const ru = assistantContext(data, '2026-10-02', 'USD', { USD: 1, UZS: 12500 }, { language: 'ru', t: key => words[key] ?? key });
+ assert.match(ru, /Rent \(Аренда, Ежемесячно\): 900\s\$, Скоро/);
+ assert.match(ru, /Car loan \(Кредит\)/);
+ assert.match(ru, /Main account \(Наличные\)/);
+ assert.doesNotMatch(ru, /\(Rent expense|\(Loan\)|\(Cash\)|, Monthly/, 'no English kind, frequency or status reaches a Russian reader');
 });
 
 test('an investment goal reads in units of its symbol and a net-worth goal by its net worth, never allocated money (MONEY-006)', () => {
@@ -71,16 +91,19 @@ test('assistant requests start and end with the user and stay small', () => {
 });
 
 test('the assistant route needs a key and a session, reads only the owner rows and asks Claude with fallbacks', async () => {
- const calls = [], reads = [];
+ const calls = [], reads = [], markets = [];
+ let records = data.records;
  let reply = { stop_reason: 'end_turn', content: [{ type: 'text', text: 'You spent 121 USD.' }] };
  const clients = [], options = [];
  class Fake { constructor(settings) { clients.push(settings); this.beta = { messages: { create: async (body, opts) => { calls.push(body); options.push(opts); if (opts?.signal?.aborted) throw Error('aborted'); return reply; } } }; } }
  Fake.RateLimitError = class extends Error {}; Fake.AuthenticationError = class extends Error {};
  let auth = { token: 'owner-token', user: { id: 'u1' } };
  const route = loadTS('app/api/assistant/route.ts', {
+  '@/lib/viewer-day-rates': { withViewerDayRates: async data => data },
   '@anthropic-ai/sdk': { __esModule: true, default: Fake },
   '@/lib/supabase': { session: async () => auth, sameOrigin: () => true },
-  '@/lib/server-records': { readOwnerRows: async (table, token) => { reads.push([table, token]); return table === 'finance_records' ? data.records : table === 'savings_goals' ? data.goals : table === 'transaction_categories' ? data.categories : []; } },
+  '@/lib/server-records': { readOwnerRows: async (table, token) => { reads.push([table, token]); return table === 'finance_records' ? records : table === 'savings_goals' ? data.goals : table === 'transaction_categories' ? data.categories : []; } },
+  '@/lib/server-market': { loadMarket: async (...args) => { markets.push(args); return { rates: { USD: 1, UZS: 12500 }, fx: null, quotes: { 'Stock:AAPL': { usd: 150, source: 'test', fetchedAt: '2026-10-02T00:00:00Z' } }, errors: {}, stocksConfigured: true }; } },
  });
  const request = body => new Request('https://app.example/api/assistant', { method: 'POST', body: JSON.stringify(body) });
  const body = { messages: [{ role: 'user', content: 'How much did I spend?' }], currency: 'USD', rates: { USD: 1 }, language: 'en' };
@@ -103,6 +126,15 @@ test('the assistant route needs a key and a session, reads only the owner rows a
   assert.deepEqual(sent.messages[0].content[0].cache_control, { type: 'ephemeral' });
   assert.deepEqual(sent.messages.at(-1), body.messages[0]);
   assert.deepEqual(clients.at(-1), { timeout: 60_000, maxRetries: 1 });
+  assert.equal(markets.length, 0, 'no holding to quote, no market feed read');
+  // A holding is quoted live for the snapshot, as the Net worth card shows it, and the labels follow the language asked for.
+  records = [...data.records, record('aapl', 'AAPL', 'Stock', 100, '2026-01-01', { quantity: 2 })];
+  assert.equal((await route.POST(request({ ...body, language: 'ru' }))).status, 200);
+  assert.deepEqual(markets.at(-1), [[], ['AAPL'], true, []]);
+  const snapshot = calls.at(-1).messages[0].content[0].text;
+  assert.match(snapshot, /AAPL \(Акции\): 300\s\$/);
+  assert.match(snapshot, /Rent \(Расходы на аренду, Ежемесячно\)/);
+  records = data.records;
   assert.ok(options.at(-1).signal instanceof AbortSignal);
   // A visitor who leaves before the answer is not reported as an assistant failure.
   const left = new AbortController(); left.abort();

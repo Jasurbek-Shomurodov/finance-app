@@ -66,8 +66,6 @@ function paymentGroups<T>(items:DueItem[],today:string,{t,locale}:Kit,line:(item
  return groups;
 }
 const greetingOf=({t}:Kit,name:string|undefined,today:string)=>({title:name?t('Good morning, {name}',{name}):t('Good morning'),note:t(motivation[Math.floor(Date.parse(today)/86400000)%motivation.length])});
-/** The currency every amount of a message is shown in, and the rates (units per US dollar) that convert into it. */
-export type MessageDisplay={currency:string;rates?:RateTable|null};
 /** The overdue and upcoming payments, grouped by day, each as it was entered (its own amount and currency, so no rate is
  * needed); null when there are none. Also the bot's Upcoming payments answer. */
 export function paymentsSection(items:DueItem[],language:Language,today:string):string|null{

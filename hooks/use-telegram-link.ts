@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { showSaved } from '@/lib/feedback';
 import { useOwnerResource } from '@/hooks/use-owner-resource';
 import { requestJson } from '@/lib/api-client';
+import { refreshRead } from '@/lib/refresh-read';
 import { telegramBotUrl, type TelegramStatus } from '@/lib/telegram-link';
 // The bot's web sign-in link lasts fifteen minutes (connectMinutes in telegram-connect.ts).
 const pollMs=3000,pollMinutes=15;
@@ -31,7 +32,7 @@ export function useTelegramLink(demo:boolean){
    if(Date.now()-waitingSince.current>pollMinutes*60000){setWaiting(false);return;}
    running=true;
    try{
-    const response=await fetch('/api/telegram',{cache:'no-store',signal:controller.signal});
+    const response=await refreshRead('/api/telegram',{signal:controller.signal});
     if(!response.ok||controller.signal.aborted)return;
     const result=await response.json() as TelegramStatus;
     if(result.linked&&!controller.signal.aborted){setStatus(result);setWaiting(false);showSaved();}

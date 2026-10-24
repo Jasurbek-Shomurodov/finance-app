@@ -17,7 +17,7 @@ import { useDisplayMoney } from '@/components/display-money';
 import { categoryColor } from '@/lib/category-colors';
 import { estimatedCashFlow, financialTotals, income, type Entry } from '@/lib/finance';
 import { formatDate, formatMoney, formatNumber, formatPercent } from '@/lib/format';
-import { allocationRows, assetAllocation, nextPayments } from '@/lib/overview';
+import { allocationRows, assetAllocation, dueCounts, nextPayments } from '@/lib/overview';
 import { otherShareKey } from '@/lib/cash-flow-report';
 import { upcomingPayments, type PlanningData } from '@/lib/planning';
 import { payLink } from '@/lib/recurring';
@@ -47,8 +47,9 @@ export function useOverviewCards({ entries, currency, excludedCurrencies, foreca
  const rowLabel = (kind: string) => kind === otherShareKey ? t('Other') : t(kind);
  const upcomingItems = planning ? upcomingPayments(planning.records, planning.occurrences, undefined, undefined, planning.debtPayments) : [];
  const due = nextPayments(upcomingItems);
- // The pill counts every item, not just the rows shown, and never calls an overdue item "due soon".
- const overdueCount = upcomingItems.filter(item => item.overdue).length;
+ // The pill counts every payment, not just the rows shown, the way the dashboard's Due tile does (dueCounts): income on
+ // its way is not due, and an overdue item is never "due soon".
+ const counts = dueCounts(upcomingItems);
  const figure = (value: string) => <span className="panel-figure">{value}</span>;
  // Every commitment figure waits for the forecast, as Expenses does: a partial forecast never prints as a total (MONEY-008).
  const ready = (amount: number) => forecastReady ? money(amount) : '—';
@@ -76,7 +77,7 @@ export function useOverviewCards({ entries, currency, excludedCurrencies, foreca
   </div> : <EmptyState icon={<Landmark/>} description={t("Add your first asset to see its allocation.")}/>}
  </section>;
  const upcoming = <section className="panel overview-panel" key="upcoming">
-  <PanelTitle title={<>{t('Upcoming payments')} {overdueCount > 0 ? <span className="panel-figure negative">{t('{count} overdue', { count: formatNumber(overdueCount, locale, 0) })}</span> : upcomingItems.length > 0 && figure(t('{count} due soon', { count: formatNumber(upcomingItems.length, locale, 0) }))}</>}><DrawerLink href="/upcoming">{t('View all')}</DrawerLink></PanelTitle>
+  <PanelTitle title={<>{t('Upcoming payments')} {counts.overdue > 0 ? <span className="panel-figure negative">{t('{count} overdue', { count: formatNumber(counts.overdue, locale, 0) })}</span> : counts.dueSoon > 0 && figure(t('{count} due soon', { count: formatNumber(counts.dueSoon, locale, 0) }))}</>}><DrawerLink href="/upcoming">{t('View all')}</DrawerLink></PanelTitle>
   {due.length ? <ul className="overview-list overview-due">{due.map(item => {
    const incoming = income.includes(item.record.kind);
    return <li key={item.key} {...openProps(openRecurring, t('Open {name}', { name: item.record.name }))}><CategoryIcon kind={item.record.kind}/><span>{item.record.name}<small className={item.overdue ? 'negative' : undefined}>{item.overdue ? t('Overdue') + ' · ' : ''}{formatDate(item.date, locale)}</small><DrawerLink href={payLink(item.record.id, item.date)} className="overview-due-pay" aria-label={`${t('Record payment')}: ${item.record.name}`}>{t('Record payment')}</DrawerLink></span><strong className={incoming ? 'positive' : undefined}>{incoming ? '+' : ''}{entered(item.amount, item.record.currency)}</strong></li>;

@@ -34,4 +34,8 @@ test('the Spending and Income tabs show their total, or — while an amount has 
  r.mount(React.createElement(AttributeTab, { ...props, missing: 1 }));
  assert.deepEqual(tiles(r)[0], ['Total income', '—', undefined]);
  assert.deepEqual(tiles(r)[1], ['Transactions', '1', undefined]);
+ // A split transaction is one transaction with several ledger lines; the tile counts transactions, as the Transactions panel does.
+ const parts = [line('expense', 100), { ...line('expense', 50), id: 'part-a', record: { id: 'split' } }, { ...line('expense', 30), id: 'part-b', record: { id: 'split' } }];
+ r.mount(React.createElement(AttributeTab, { ...props, direction: 'expense', lines: parts, trendLines: parts }));
+ assert.deepEqual(tiles(r), [['Total spending', usd(180), undefined], ['Transactions', '2', undefined]]);
 });

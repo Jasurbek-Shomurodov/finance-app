@@ -4,7 +4,7 @@ import { loadTS } from './helpers/load-ts.mjs';
 const { spendingAmount, transferAmount } = loadTS('lib/spending.ts');
 const { monthlyReview } = loadTS('lib/transaction-tools.ts');
 const { cashFlowReport, sankeyFlows } = loadTS('lib/cash-flow-report.ts');
-const { transactionsIn, summarizeTransactions, groupByDay, signedAmount, emptyTransactionFilter, transactionsHref, transactionsQuery } = loadTS('lib/transaction-list.ts');
+const { transactionsIn, summarizeTransactions, groupByDay, signedAmount, netAmount, emptyTransactionFilter, transactionsHref, transactionsQuery } = loadTS('lib/transaction-list.ts');
 const { periodTotals } = loadTS('lib/period-summary.ts');
 const { monthActuals, budgetCategories, budgetRows } = loadTS('lib/budget.ts');
 const { spendingPace } = loadTS('lib/spending-pace.ts');
@@ -63,7 +63,10 @@ test('Cash flow, Transactions, Dashboard, Budget and the Telegram digest agree o
  assert.equal(summary.received, 1500);
  assert.deepEqual(summary.largest, { name: 'Home', amount: 200, entered: { amount: 200, currency: 'USD' } });
  assert.equal(signedAmount(records[3]), -900, 'the mortgage row shows the whole payment, principal plus interest');
- assert.equal(groupByDay(listed, convert).find(day => day.date === '2026-10-05').total, -900, 'day totals add up the rows shown');
+ // Review S2: day headings summed the whole payment while the Summary counted its interest, so days never added up to Net.
+ assert.equal(groupByDay(listed, convert).find(day => day.date === '2026-10-05').total, -200, 'the day total counts the interest, as the Summary does; the row keeps the whole payment');
+ assert.equal(netAmount(records[3]), -200);
+ assert.equal(netAmount(records.find(row => row.kind === 'Salary')), 1500, 'income counts in full');
 
  assert.equal(periodTotals(records, '2026-10-01', today, 'USD').spending, spending, 'Telegram digest');
  assert.equal(spendingPace({ records, splits: [], snapshots: [], activity, investmentLinks: links }, today, 'USD', rates).spent, spending, 'Dashboard Spending card');

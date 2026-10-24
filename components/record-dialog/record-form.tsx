@@ -10,7 +10,7 @@ import { InstrumentPicker } from '@/components/instrument-picker';
 import { RecordIcon } from '@/components/presentation-foundation/record-icon';
 import { RecordNameInput } from '@/components/record-name-input';
 import { DatePicker } from '@/components/presentation-foundation/date-picker';
-import { PaymentDayField } from './payment-day-field';
+import { DateFields, RecurrenceFields, openingDated } from './date-fields';
 import { FormattedNumberInput } from '@/components/presentation-foundation/formatted-number-input';
 import { useLanguage } from '@/components/language-provider';
 import { instrumentFor } from '@/lib/market';
@@ -85,27 +85,6 @@ function InterestFields({form}:{form:FormContext}){
  // What the kind is for sits behind the rate's ⓘ, not as a paragraph under it.
  const rateHint=editing.kind==='Treasury bill'?<p>{t('Use Treasury bill for a government bill held to maturity. Enter its annual yield; it accrues without compounding until the maturity date.')}</p>:editing.kind==='Bond'?<p>{t('Use Bond for a government or corporate bond. Enter its face value and annual coupon rate; it earns without compounding until the maturity date.')}</p>:editing.kind==='Deposit'?<><p>{t('Use Deposit for an interest-bearing savings account. Enter an annual rate. Interest follows dated top-ups, withdrawals and the selected compounding schedule.')}</p>{accountMode&&<p>{t('To fund this deposit from cash, start with a zero balance. Then use Top-up to transfer from a cash account.')}</p>}</>:null;
  return <>{[...interestKinds, 'Money lent', ...liabilities].includes(editing.kind) && (rateHint ? <HintedLabel label={t(editing.kind === 'Treasury bill' ? "Annual yield (%)" : editing.kind === 'Bond' ? "Coupon rate (%)" : "Annual interest rate (%)")} hint={rateHint}><FormattedNumberInput key={editing.id + ":rate"} value={editing.rate} required={false} max={1000} onValueChange={value => field('rate', value)}/></HintedLabel> : <label>{t(editing.kind === 'Treasury bill' ? "Annual yield (%)" : editing.kind === 'Bond' ? "Coupon rate (%)" : "Annual interest rate (%)")}<FormattedNumberInput key={editing.id + ":rate"} value={editing.rate} required={false} max={1000} onValueChange={value => field('rate', value)}/></label>)}{editing.kind === 'Deposit' && <label>{t('Interest compounding')}<NativeSelect value={editing.deposit_compounding??'monthly'} onChange={event=>setEditing({...editing,deposit_compounding:event.target.value as Entry['deposit_compounding']})}><option value="monthly">{t('Monthly compounding')}</option><option value="daily">{t('Daily compounding')}</option><option value="none">{t('No compounding')}</option></NativeSelect></label>}{['Cash',...interestKinds,...unitPricedKinds].includes(editing.kind)&&!rows.some(row=>row.id===editing.id)&&<HintedLabel label={t(simpleInterestKinds.includes(editing.kind)||editing.kind==='Precious metals'?'Purchase date':'Opening balance date')} hint={t('The date this starting balance was held. Enter later transactions in date order.')}><DatePicker value={editing.opened_on??today()} onChange={date=>setEditing({...editing,opened_on:date,...(openingDated(form)?{date}:{})})}/></HintedLabel>}</>;
-}
-/** When: the start of a debt, the day money was lent, the due or maturity date, and whether a cash flow repeats. */
-function DateFields({form}:{form:FormContext}){
- const {t}=useLanguage();
- const {editing,setEditing,editingCashFlow,field,existing,liability}=form;
- return <><div className="form-grid">{liability&&<HintedLabel label={t('Start date')} hint={t(existing?'Monthly payments fall on this day of each month. It cannot be after a recorded payment.':'When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.')}><DatePicker value={existing?editing.opened_on??'':editing.opened_on??today()} max={editing.date&&editing.date<today()?editing.date:today()} onChange={date=>field('opened_on',date)}/></HintedLabel>}{liability&&<PaymentDayField record={editing} onChange={date=>field('opened_on',date)}/>}{editing.kind === 'Money lent' && <label>{t("Date lent")}<DatePicker value={editing.lent_date || ''} max={editing.lent_from ? today() : undefined} onChange={value => field('lent_date', value)}/></label>}<DueDateField form={form}/>{editingCashFlow && <label>{t("Repeats")}<NativeSelect value={editing.frequency} onChange={e => setEditing({...editing,frequency:e.target.value as Entry['frequency'],account_id:null,end_date:e.target.value==='Once'?null:editing.end_date})}><option value="Once">{t("One time")}</option><option value="Monthly">{t("Every month")}</option><option value="Yearly">{t("Every year")}</option></NativeSelect></label>}</div></>;
-}
-/** A new account or holding is dated by its opening balance or purchase date alone; its record date follows that one. */
-const openingDated=(form:FormContext)=>['Cash','Stock','Crypto','Precious metals'].includes(form.editing.kind)&&!form.rows.some(row=>row.id===form.editing.id);
-/** The record's own date: when money lent is due, when a bill or deposit matures, or when a cash flow is recorded or starts. */
-function DueDateField({form}:{form:FormContext}){
- const {t}=useLanguage();
- const {editing,editingCashFlow,field,existing,liability}=form;
- if(openingDated(form))return null;
- return <><label>{editing.kind === 'Money lent' ? t("Due date (optional)") : simpleInterestKinds.includes(editing.kind) ? t("Maturity date") : editing.kind === 'Equity compensation' ? t("Vesting date") : ['Deposit', ...liabilities].includes(editing.kind) ? t("Due / maturity date") : editingCashFlow && editing.frequency !== 'Once' ? t("Start date") : t("Record date")}<DatePicker value={editing.date} required={editing.kind !== 'Money lent'} min={editing.kind === 'Money lent' ? editing.lent_date || undefined : liability || simpleInterestKinds.includes(editing.kind) ? editing.opened_on??(existing?undefined:today()) : undefined} onChange={value => field('date', value)}/></label></>;
-}
-/** Until when a repeating cash flow runs, and what it means. */
-function RecurrenceFields({form}:{form:FormContext}){
- const {t}=useLanguage();
- const {editing,setEditing,editingCashFlow,money,formatDate}=form;
- return <>{editingCashFlow && editing.frequency !== 'Once' && <label>{t("End date (optional)")}<DatePicker value={editing.end_date||''} required={false} min={editing.date} onChange={end_date=>setEditing({...editing,end_date:end_date||null})}/></label>}{editingCashFlow && editing.frequency !== 'Once' && <p className="recurrence-help">{t('{amount} {frequency} from {date}. This is a recurring plan; it does not automatically create transactions or change account balances.', { amount: money(editing.amount, editing.currency), frequency: t(editing.frequency === 'Monthly' ? 'every month' : 'every year'), date: formatDate(editing.date) })}</p>}</>;
 }
 /** The rarely used fields, folded away: the investment account that holds it, the business an account belongs to, and notes.
  * They open by themselves when one is filled in. */

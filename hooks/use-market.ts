@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Entry } from '@/lib/finance';
 import { instrumentFor, marketSymbols, type MarketData } from '@/lib/market';
+import { refreshRead } from '@/lib/refresh-read';
 
 /** A failed request leaves its symbols on their saved prices, each with the same note. */
 const markUnavailable = (market: MarketData, keys: string[]) => { for (const key of keys) market.errors[key] = 'Price unavailable. Saved price is shown.'; };
@@ -17,7 +18,7 @@ export async function fetchMarket(entries: Array<Pick<Entry, 'kind' | 'name' | '
     // The four metals fit in the first request.
     const params=new URLSearchParams({crypto:coinBatch.join(','),stocks:stockBatch.join(','),...(index===0&&metals.length?{metals:metals.join(',')}:{})});
     try{
-      const response=await fetch('/api/market?'+params,{signal});
+      const response=await refreshRead('/api/market?'+params,{signal});
       if(!response.ok)throw new Error('Market prices unavailable. Saved prices are shown.');
       const result=await response.json() as MarketData;
       completed++;

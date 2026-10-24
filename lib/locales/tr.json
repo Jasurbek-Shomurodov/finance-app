@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "Bazı gelirler dönüştürülemiyor. Gösterilen grafik tutarları eksik.",
   "Income source": "Gelir kaynağı",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "Dolu çubuklar kaydedilen geliri gösterir. Çerçeveli çubuklar alınan geliri değil, güncel ve gelecekteki aylık tahminleri gösterir. İlk tahsilattan önceki boş aylar gelecek aylarla değiştirilir.",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "Hisse temettülerini hissenin Takipçi bölümünde Alınan gelir olarak kaydedin. Maaş ve diğer yinelenen planlar Gelir ve giderler bölümünde yönetilir. Bu grafik için güncel döviz kurları kullanılır.",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "Hisse temettülerini hissenin Takipçi bölümünde Alınan gelir olarak kaydedin. Maaş ve diğer yinelenen planlar Gelir ve giderler bölümünde yönetilir.",
+  "Each receipt converts at the exchange rate of its day.": "Her tahsilat kendi gününün döviz kuruyla çevrilir.",
   "Accounts": "Hesaplar",
   "Account": "Hesap",
   "Account activity": "Hesap hareketleri",
@@ -2763,5 +2764,6 @@
   "This month so far": "Bu ay şu ana kadar",
   "3-month average": "3 aylık ortalama",
   "Compared with average": "Ortalamaya göre",
-  "Item": "Kalem"
+  "Item": "Kalem",
+  "Amounts are compared as entered, in each transaction’s own currency.": "Tutarlar girildiği gibi, her işlemin kendi para biriminde karşılaştırılır."
 }

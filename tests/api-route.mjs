@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {z} from 'zod';
 import {loadTS} from './helpers/load-ts.mjs';
-const {reply,signInAgain,sameOrigin,readJson,parseAction,postgrestFailure,tooManyAttempts}=loadTS('lib/api-route.ts');
+const {reply,signInAgain,crossSite,requestRejected,sameOrigin,readJson,parseAction,postgrestFailure,tooManyAttempts}=loadTS('lib/api-route.ts');
 const {readAllPages}=loadTS('lib/owner-rows.ts');
 const {rateLimited,clientIp}=loadTS('lib/rate-limit.ts');
 
@@ -54,6 +54,9 @@ test('shared replies are never cached and keep their existing words',async()=>{
  assert.equal(reply({},200,{noReferrer:true}).headers.get('referrer-policy'),'no-referrer');
  assert.deepEqual([signInAgain().status,await signInAgain().json()],[401,{error:'Please sign in again.'}]);
  assert.deepEqual([tooManyAttempts().status,await tooManyAttempts().json()],[429,{error:'Too many attempts. Please try again later.'}]);
+ assert.deepEqual([requestRejected().status,await requestRejected().json()],[403,{error:'Request rejected.'}]);
+ assert.equal(crossSite().status,403);assert.equal(await crossSite().text(),'');
+ for(const refusal of [signInAgain(),crossSite(),requestRejected(),tooManyAttempts()])assert.equal(refusal.headers.get('cache-control'),'no-store','a refusal is never cached either');
  const en=JSON.parse(fs.readFileSync('lib/locales/en.json','utf8'));
  for(const message of ['Please sign in again.','Request rejected.','Too many attempts. Please try again later.'])assert.ok(en[message],message);
 });

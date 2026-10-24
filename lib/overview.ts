@@ -31,17 +31,26 @@ export function nextPayments(due: readonly DueItem[], limit = 5) {
  return [...due].sort((a, b) => Number(b.overdue) - Number(a.overdue) || a.date.localeCompare(b.date) || a.record.name.localeCompare(b.record.name)).slice(0, limit);
 }
 
-/** What falls due to be paid by `days` from today, overdue included: how many payments, and their total in `currency`.
- * Income on its way is not a payment due. The total is null when one has no rate to convert it, never a figure under the
- * wrong currency. */
+/** How the Overview's Upcoming pill and the dashboard's Due tile count what is coming, so they agree: `payments` are the
+ * items to pay (income on its way is not a payment due), `overdue` how many of them are late and `dueSoon` the rest, so
+ * no overdue item ever reads as "due soon". */
+export function dueCounts(items: readonly DueItem[]) {
+ const payments = items.filter(item => !income.includes(item.record.kind));
+ const overdue = payments.filter(item => item.overdue).length;
+ return { payments, overdue, dueSoon: payments.length - overdue };
+}
+
+/** What falls due to be paid by `days` from today, overdue included: how many are due soon and how many overdue
+ * (`dueCounts`), and their total in `currency`. The total is null when one has no rate to convert it, never a figure
+ * under the wrong currency. */
 export function dueSoon(data: Pick<PlanningData, 'records' | 'occurrences' | 'debtPayments'>, today: string, days: number, currency: string, rates?: RateTable | PairRate | null) {
- const items = upcomingPayments(data.records, data.occurrences, today, shiftDay(today, days), data.debtPayments).filter(item => !income.includes(item.record.kind));
+ const { payments, overdue, dueSoon: count } = dueCounts(upcomingPayments(data.records, data.occurrences, today, shiftDay(today, days), data.debtPayments));
  let total: number | null = 0;
- for (const item of items) {
+ for (const item of payments) {
   const amount = amountIn({ amount: item.amount, currency: item.record.currency }, currency, rates);
   total = total === null || amount === null ? null : total + amount;
  }
  // The first item is the next one due: upcomingPayments lists them by date.
- const next = items[0] ? { name: items[0].record.name, date: items[0].date } : null;
- return { count: items.length, total, next };
+ const next = payments[0] ? { name: payments[0].record.name, date: payments[0].date } : null;
+ return { count, overdue, total, next };
 }

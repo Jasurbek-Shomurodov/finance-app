@@ -15,11 +15,11 @@ type Table='movements'|'holdingAccounts'|'records'|'categories'|'goals'|'occurre
 
 /** How much transaction history the pattern finders read: two years and a month, enough for two yearly charges and
  * the 24 newest monthly ones they look at. */
-export const insightMonths=25;
+const insightMonths=25;
 /** The columns the pattern finders, the review drafts made from them and the goal income links read. */
 export const insightColumns='id,name,kind,amount,currency,quantity,cost,rate,date,frequency,recurrence_days,end_date,notes,custom_category_id,account_id,business_id,property_id,income_source_id,source_paused,archived,earning_source_id,operation_id,history_event_id,mortgage_payment_id,movement_id,ownership_percentage';
 /** The columns the Recent activity view of Accounts lists for income and spending booked to an account. */
-export const accountActivityColumns='id,name,kind,amount,currency,date,account_id';
+const accountActivityColumns='id,name,kind,amount,currency,date,account_id';
 
 /** The tables a scope reads, and whether it carries loan payments (`debtPayments`) or only transaction history
  * (no later scheduled payments and no deposit estimates). */

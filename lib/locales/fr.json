@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "Certains revenus ne peuvent pas être convertis. Les montants affichés dans le graphique sont incomplets.",
   "Income source": "Source de revenus",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "Les barres pleines indiquent les revenus enregistrés. Les barres en contour indiquent les estimations mensuelles actuelles et futures, et non des revenus perçus. Les mois vides avant la première recette sont remplacés par des mois futurs.",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "Enregistrez les dividendes d’actions comme Revenus perçus dans le suivi de l’action. Le salaire et les autres plans récurrents se gèrent dans Revenus et dépenses. Les taux de change actuels sont utilisés pour ce graphique.",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "Enregistrez les dividendes d’actions comme Revenus perçus dans le suivi de l’action. Le salaire et les autres plans récurrents se gèrent dans Revenus et dépenses.",
+  "Each receipt converts at the exchange rate of its day.": "Chaque encaissement est converti au taux de change de son jour.",
   "Accounts": "Comptes",
   "Account": "Compte",
   "Account activity": "Activité du compte",
@@ -2763,5 +2764,6 @@
   "This month so far": "Ce mois-ci à ce jour",
   "3-month average": "Moyenne sur 3 mois",
   "Compared with average": "Écart à la moyenne",
-  "Item": "Élément"
+  "Item": "Élément",
+  "Amounts are compared as entered, in each transaction’s own currency.": "Les montants sont comparés tels que saisis, dans la devise propre à chaque transaction."
 }

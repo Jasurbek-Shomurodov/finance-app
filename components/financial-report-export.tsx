@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/components/language-provider';
 import { pdfUnsupportedLanguages } from '@/lib/languages';
 import { canvasEmojiImage } from '@/lib/emoji-image';
+import { refreshRead } from '@/lib/refresh-read';
 
 /** The owner's report from their backup; in the sample workspace `sample` builds the backup from the sample data instead. */
 export function FinancialReportExport({demo,market=null,currency,sample}:{demo:boolean;market?:MarketData|null;currency?:string;sample?:()=>unknown}){
  const {t,language}=useLanguage();const [busy,setBusy]=useState(false),[error,setError]=useState(''),[done,setDone]=useState(false);const downloading=useRef(false);
  const unavailable=demo&&!sample;
  async function ownerBackup(model:typeof import('@/lib/financial-report')){
-  const response=await fetch('/api/backup',{cache:'no-store'});
+  const response=await refreshRead('/api/backup');
   if(!response.ok)throw Error('Could not export all data. No incomplete backup was created.');
   const backup=await response.json();
   // Combined figures add each transaction at the official rates of its own day.
@@ -22,7 +23,7 @@ export function FinancialReportExport({demo,market=null,currency,sample}:{demo:b
   // A day without rates leaves the combined figures "Not available"; it never stops the report.
   for(let index=0;index<days.length;index+=300){
    try{
-    const answer=await fetch(`/api/exchange-rate?days=${days.slice(index,index+300).join(',')}&currencies=${currencies.join(',')}`,{cache:'no-store'});
+    const answer=await refreshRead(`/api/exchange-rate?days=${days.slice(index,index+300).join(',')}&currencies=${currencies.join(',')}`);
     if(answer.ok)Object.assign(dayRates,(await answer.json() as {days:Record<string,Record<string,number>>}).days);
    }catch{/* Left missing. */}
   }

@@ -13,13 +13,25 @@ const {validDay}=loadTS('lib/benchmark-data.ts');
 const {paletteColors}=loadTS('lib/business.ts');
 const benchmarkHistoryStart='2016-01-01';
 const compile=path=>ts.transpileModule(fs.readFileSync(path,'utf8').replace(/^import .*;\n/gm,'').replace(/export /g,''),{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
-let authenticated=true,calls=[],rows=[],updated=[];
-const supa=async(path,init,token)=>{calls.push({path,init,token});return Response.json(path.includes('mark_app_started')?{started_at:'2026-09-01T00:00:00Z',source:'first_visit'}:init?.method==='PATCH'?updated:path.includes('preferences?select')?rows:[]);};
+let authenticated=true,calls=[],rows=[],updated=[],activity=[{started_at:'2026-09-01T00:00:00Z',source:'first_visit'}];
+const supa=async(path,init,token)=>{calls.push({path,init,token});return Response.json(path.includes('mark_app_started')?{started_at:'2026-09-02T00:00:00Z',source:'first_visit'}:path.includes('user_app_activity')?activity:init?.method==='PATCH'?updated:path.includes('preferences?select')?rows:[]);};
 const deps={workspaceOwner:auth=>auth.owner??auth.user.id,validDay,paletteColors,benchmarkHistoryStart,benchmarkSelectionSchema,stockBenchmarks,diversifiedPortfolioSchema,z,isCurrency,benchmarkKeys,investmentKinds,defaultComparisonPreferences,session:async()=>authenticated?{user:{id:'owner'},token:'owner-token'}:null,supa,sameOrigin:req=>req.headers.get('origin')==='https://local'};
 const api=apiFunction(...Object.keys(deps),compile('app/api/comparison-profile/route.ts')+';return {GET,PUT,POST,PATCH};')(...Object.values(deps));
 const req=body=>new Request('https://local',{method:'POST',headers:{origin:'https://local','Content-Type':'application/json'},body:JSON.stringify(body)});
 test('owner-scoped settings default to Bitcoin and first-use timestamp comes from the database',async()=>{
- calls=[];const response=await api.GET();assert.equal(response.status,200);const data=await response.json();assert.deepEqual(data.preferences,defaultComparisonPreferences);assert.equal(data.activity.source,'first_visit');assert.equal(data.baseline,null);assert.ok(calls.every(call=>call.token==='owner-token'));assert.equal(response.headers.get('cache-control'),'no-store');
+ calls=[];const response=await api.GET();assert.equal(response.status,200);const data=await response.json();assert.deepEqual(data.preferences,defaultComparisonPreferences);assert.deepEqual(data.activity,{started_at:'2026-09-01T00:00:00Z',source:'first_visit'});assert.equal(data.baseline,null);assert.ok(calls.every(call=>call.token==='owner-token'));assert.equal(response.headers.get('cache-control'),'no-store');
+});
+test('the profile read, repeated on every focus, writes no app-start mark: that is the session check\'s; it marks only a first visit whose mark has not landed',async()=>{
+ calls=[];await api.GET();
+ assert.ok(calls.some(call=>call.path==='/rest/v1/user_app_activity?select=started_at,source'&&!call.init.method),'the activity is read');
+ assert.ok(!calls.some(call=>call.path.includes('mark_app_started')),'nothing is written on a read');
+ activity=[];calls=[];const data=await (await api.GET()).json();
+ assert.equal(calls.filter(call=>call.path.includes('mark_app_started')).length,1,'without a row yet the mark is written once');
+ assert.equal(data.activity.started_at,'2026-09-02T00:00:00Z');
+ activity=[{started_at:'2026-09-01T00:00:00Z',source:'first_visit'}];
+ // The session check is the one place the mark is written on every app start.
+ assert.match(fs.readFileSync('app/api/auth/route.ts','utf8'),/mark_app_started/);
+ assert.equal((fs.readFileSync('app/api/comparison-profile/route.ts','utf8').match(/mark_app_started/g)||[]).length,1,'the route calls the RPC in the fallback alone');
 });
 test('saving benchmark choices cannot change the immutable initial money',async()=>{
  calls=[];assert.equal((await api.PUT(req({benchmarks:['BTC','depositUZS'],custom_symbol:'',starting_amount:999,user_id:'other'}))).status,200);

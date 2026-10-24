@@ -37,7 +37,7 @@ export function sampleBackup(data: PlanningData, splits: readonly TransactionSpl
 /** A saved number, or null when it is missing or not a number (never zero in its place). */
 export const reportNumber = (v: unknown): number | null => v === null || v === undefined || v === '' || !Number.isFinite(Number(v)) ? null : Number(v);
 /** The sum, or null when any part is unknown. */
-export const reportSum = (values: (number | null)[]) => values.some(v => v === null) ? null : values.reduce<number>((total, v) => total + v!, 0);
+const reportSum = (values: (number | null)[]) => values.some(v => v === null) ? null : values.reduce<number>((total, v) => total + v!, 0);
 /** Whether a day falls in `period` (YYYY-MM) up to `cutoff`. */
 export const inPeriod = (day: string, period: string, cutoff: string) => !!day && day.slice(0, 7) === period && day <= cutoff;
 
@@ -118,7 +118,7 @@ export function reportCashFlow(ledger: ReportLedger, currency: string, period: s
 }
 
 /** One cash-flow figure over every currency, converted into `reporting`; null when one is unknown or has no rate. */
-export function consolidatedFlow(flows: ReadonlyMap<string, ReportCashFlow>, key: 'received' | 'spent' | 'principal' | 'net', reporting: string, market: MarketData | null) {
+function consolidatedFlow(flows: ReadonlyMap<string, ReportCashFlow>, key: 'received' | 'spent' | 'principal' | 'net', reporting: string, market: MarketData | null) {
  const rates = marketRates(market);
  return reportSum([...flows].map(([currency, flow]) => flow[key] === null ? null : convertAmount(flow[key]!, currency, reporting, rates)));
 }

@@ -7,6 +7,7 @@ import { ExchangeRatePreview } from '@/components/presentation-foundation/exchan
 import { useDatedExchangeRate } from '@/hooks/use-dated-exchange-rate';
 import { formatAccountOption, formatMoney } from '@/lib/format';
 import { income, type Entry } from '@/lib/finance';
+import { accountAmount } from '@/lib/record-balance';
 
 /** `onSuggest`, for a new transaction: once the accounts have loaded, a blank account starts as the one last used in its
  * currency (or the only one), and the person can change it. */
@@ -34,6 +35,6 @@ export function CashAccountField({entry,records,loading,error,busy,onSuggest,onC
   {error&&<p className="error" role="alert">{t(error)}</p>}
   {entry.frequency!=='Once'&&<p className="muted">{t('Choose a cash account when recording the actual payment.')}</p>}
   <input type="hidden" name="account_exchange_rate" value={cross&&rate?rate:''}/>
-  {cross&&<>{!savedRate&&<ExchangeRatePreview fx={fx}/>} {rate&&<p className="muted">{t('Account amount')}: <strong>{formatMoney(entry.amount/rate,account.currency,locale)}</strong></p>}</>}
+  {cross&&<>{!savedRate&&<ExchangeRatePreview fx={fx}/>} {rate&&<p className="muted">{t('Account amount')}: <strong>{formatMoney(accountAmount(entry.amount,rate),account.currency,locale)}</strong></p>}</>}
  </div>;
 }

@@ -145,7 +145,7 @@ test('deleting an account that still has savings goals explains what blocks it',
 test('QA 2026-10-02: dialogs explain limits, prefill scheduled amounts and offer the right choices',()=>{
  const read=file=>fs.readFileSync(file,'utf8');
  // Add transaction offers income as well as expense, through the existing forms.
- const transactions=read('components/workspace/screens/transactions-screen.tsx');
+ const transactions=read('components/transactions/add-transaction-menu.tsx');
  assert.match(transactions,/onAdd\('Other income'\)/);assert.match(transactions,/onAdd\('Other expense'\)/);
  // Split choices are built-in plus added categories of the transaction's type.
  assert.match(read('components/transaction-tools-panel.tsx'),/categoryChoices\(categories,income\.includes\(record\.kind\)\?'income':'expense',removed\)/);

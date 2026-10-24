@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "برخی درآمدها قابل تبدیل نیستند. مبالغ نمودار ناقص نمایش داده می‌شوند.",
   "Income source": "منبع درآمد",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "ستون‌های پر درآمد ثبت‌شده را نشان می‌دهند. ستون‌های توخالی برآورد ماه‌های فعلی و آینده‌اند، نه درآمد دریافت‌شده. ماه‌های خالی پیش از اولین دریافتی با ماه‌های آینده جایگزین می‌شوند.",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "سود سهام را به‌صورت «درآمد دریافت‌شده» در ردیاب همان سهم ثبت کنید. حقوق و سایر برنامه‌های تکرارشونده در «درآمد و هزینه‌ها» مدیریت می‌شوند. این نمودار از نرخ‌های تبدیل فعلی استفاده می‌کند.",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "سود سهام را به‌صورت «درآمد دریافت‌شده» در ردیاب همان سهم ثبت کنید. حقوق و سایر برنامه‌های تکرارشونده در «درآمد و هزینه‌ها» مدیریت می‌شوند.",
+  "Each receipt converts at the exchange rate of its day.": "هر دریافتی با نرخ تبدیل روز خودش تبدیل می‌شود.",
   "Accounts": "حساب‌ها",
   "Account": "حساب",
   "Account activity": "فعالیت حساب",
@@ -2763,5 +2764,6 @@
   "This month so far": "این ماه تاکنون",
   "3-month average": "میانگین ۳ ماهه",
   "Compared with average": "نسبت به میانگین",
-  "Item": "قلم"
+  "Item": "قلم",
+  "Amounts are compared as entered, in each transaction’s own currency.": "مبالغ همان‌طور که وارد شده‌اند مقایسه می‌شوند، به واحد پول خودِ هر تراکنش."
 }

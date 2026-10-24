@@ -6,7 +6,8 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {loadTS} from './helpers/load-ts.mjs';
 function render(settings,deletion=false,mode){
  const {AccountAccessPanel}=loadTS('components/account-access-panel.tsx',{
-  react:{...React,useEffect(){},useState(initial){return [typeof initial==='object'?{signup:false,deletion}:initial==='change_password'&&mode?mode:initial,()=>{}];}},
+  react:{...React,useEffect(){},useState(initial){return [initial==='change_password'&&mode?mode:initial,()=>{}];}},
+  '@/hooks/use-owner-resource':{useSessionResource:()=>({data:{deletion}})},
   'next/navigation':{useRouter:()=>({})},
   'next/link':{__esModule:true,default:({children})=>React.createElement('a',null,children)},
   '@/components/language-provider':{useLanguage:()=>({t:(key,values={})=>key.replace(/\{(\w+)\}/g,(_,name)=>values[name]??name)})},
@@ -130,7 +131,8 @@ test('results are shown as popups, never as inline text, and the cards are trans
 test('settings for a phone-only account offers adding an email and password, and deleting the account without one',()=>{
  const render=mode=>{
   const {AccountAccessPanel}=loadTS('components/account-access-panel.tsx',{
-   react:{...React,useEffect(){},useState(initial){return [initial&&typeof initial==='object'&&'phoneOnly' in initial?{...initial,phoneOnly:true,deletion:true}:initial==='change_password'?mode:initial===null?null:initial,()=>{}];}},
+   react:{...React,useEffect(){},useState(initial){return [initial==='change_password'?mode:initial===null?null:initial,()=>{}];}},
+   '@/hooks/use-owner-resource':{useSessionResource:()=>({data:{phoneOnly:true,deletion:true}})},
    'next/navigation':{useRouter:()=>({})},
    'next/link':{__esModule:true,default:({children})=>React.createElement('a',null,children)},
    '@/components/language-provider':{useLanguage:()=>({t:key=>key})},

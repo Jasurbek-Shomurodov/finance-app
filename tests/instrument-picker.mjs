@@ -5,7 +5,8 @@ import ts from 'typescript';
 import {coins,coinName,instrumentFor,marketSymbols} from '../lib/market.ts';
 const compile=source=>ts.transpileModule(source.replace(/^import .*;\n/gm,'').replace(/export /g,''),{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
 const {stocks,instrumentOptions,matchingInstruments,customStockSymbol}=new Function('coins','coinName',compile(fs.readFileSync('lib/instrument-catalog.ts','utf8'))+';return {stocks,instrumentOptions,matchingInstruments,customStockSymbol};')(coins,coinName);
-const {fetchMarket}=new Function('instrumentFor','marketSymbols',compile(fs.readFileSync('hooks/use-market.ts','utf8').split('export function useMarket')[0])+';return {fetchMarket};')(instrumentFor,marketSymbols);
+// The market read goes through the shared `refreshRead`; here it is the test's fetch, so each test's replies reach it unchanged.
+const {fetchMarket}=new Function('instrumentFor','marketSymbols','refreshRead',compile(fs.readFileSync('hooks/use-market.ts','utf8').split('export function useMarket')[0])+';return {fetchMarket};')(instrumentFor,marketSymbols,(url,options)=>globalThis.fetch(url,options));
 
 test('crypto catalogue includes TON and preserves existing names and symbol recognition',()=>{
  assert.equal(coins.length,174);

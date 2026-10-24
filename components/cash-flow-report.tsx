@@ -27,7 +27,7 @@ import type { TransactionSplit } from '@/lib/transaction-tools';
 
 const periodLabels: Record<ReportPeriod, string> = { month: 'Month', quarter: 'Quarter', year: 'Year' };
 const trendTitles: Record<ReportPeriod, string> = { month: 'Income and spending by month', quarter: 'Income and spending by quarter', year: 'Income and spending by year' };
-type Props = { /** Opens a transaction's details, as a row on Transactions does. */onOpenRecord?: (record: Entry) => void; owner: string | null; demo: boolean; revision: number; data: PlanningData; splits: TransactionSplit[]; month: string; currency: string; market: MarketData | null };
+type Props = { /** Opens a transaction's details, as a row on Transactions does. */onOpenRecord?: (record: Entry) => void; owner: string | null; demo: boolean; revision: number; data: PlanningData; splits: TransactionSplit[]; month: string; currency: string; market: MarketData | null; /** A compact Monthly review of `month` sits above, with its own conversion note. */ monthReviewAbove?: boolean };
 
 /** One side of the breakdown: proportional bars with amount and share, the Income / Expenses panels. The largest ten
  * are named and the rest share one "Other" row, so the rows add up to the total.
@@ -76,7 +76,7 @@ function useDrill(data: PlanningData, t: (key: string) => string, search: string
 }
 
 /** Cash flow: figures for the period, monthly bars, and where money came from and went, as bars or a Sankey diagram. */
-export function CashFlowReport({ onOpenRecord, owner, demo, revision, data: provided, splits, month, currency, market }: Props) {
+export function CashFlowReport({ onOpenRecord, owner, demo, revision, data: provided, splits, month, currency, market, monthReviewAbove = false }: Props) {
  const { t, locale } = useLanguage();
  const today = depositToday();
  const [period, setPeriod] = useState<ReportPeriod>('month');
@@ -110,7 +110,8 @@ export function CashFlowReport({ onOpenRecord, owner, demo, revision, data: prov
   </div>
   {/* A month's figures are the page's headline tiles already; a quarter or a year adds its own (the user's choice, 20 October 2026). */}
   {period !== 'month' && <CashFlowTiles report={report} currency={currency}/>}
-  {unknown && <p className="partial-total" role="status">{t('Some transactions could not be converted. Current or previous month totals are incomplete.')}</p>}
+  {/* The compact Monthly review above already says so for the month; a quarter or a year has amounts of its own to report. */}
+  {unknown && !(monthReviewAbove && period === 'month') && <p className="partial-total" role="status">{t('Some transactions could not be converted. Current or previous month totals are incomplete.')}</p>}
   <section className="panel">
    <PanelTitle title={t(trendTitles[period])}/>
    <div className="cash-flow-chart"><ResponsiveContainer width="100%" height={chartHeight.regular}>

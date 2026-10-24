@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState, type KeyboardEvent, type MouseEvent } from 'react';
-import { ListChecks, Paperclip, Plus, ReceiptText, Search, Wand2 } from 'lucide-react';
+import { ListChecks, Paperclip, ReceiptText, Search, Wand2 } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { useDisplayMoney } from '@/components/display-money';
 import { CategoryIcon } from '@/components/presentation-foundation/category-icon';
@@ -10,9 +10,10 @@ import { TransactionsSkeleton } from '@/components/presentation-foundation/scree
 import { DateRangePicker, type DateRange } from '@/components/presentation-foundation/date-range-picker';
 import { PageHeader } from '@/components/presentation-foundation/page-header';
 import { Pagination } from '@/components/presentation-foundation/pagination';
-import { PanelTitle } from '@/components/presentation-foundation/panel-title';
 import { Segmented } from '@/components/presentation-foundation/segmented';
+import { AddTransactionMenu } from '@/components/transactions/add-transaction-menu';
 import { BulkEditBar, BulkEditSheet } from '@/components/transactions/bulk-edit';
+import { TransactionsSummary } from '@/components/transactions/transactions-summary';
 import { BusinessPicker, CategoryPicker, OwnerPicker, useChoiceName } from '@/components/transactions/pickers';
 import { RuleDialog } from '@/components/transactions/rule-dialog';
 import { RulesDialog } from '@/components/transactions/rules-list';
@@ -26,7 +27,6 @@ import { queryList, useLocationSearch } from '@/hooks/use-location-search';
 import { canAssignBusiness, nextPaletteColor } from '@/lib/business';
 import { tagsByRecord } from '@/lib/tags';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
@@ -35,21 +35,20 @@ import { useTransactionRules } from '@/hooks/use-transaction-rules';
 import { depositToday } from '@/lib/deposit-interest';
 import { showAction, showError, showNotice } from '@/lib/feedback';
 import { normalizeEntry, type Entry } from '@/lib/finance';
-import { formatMoney, formatNumber } from '@/lib/format';
+import { formatNumber } from '@/lib/format';
 import { convertAmount, marketRates } from '@/lib/market';
 import { emptyPlanning } from '@/lib/planning';
 import { ratesOf } from '@/lib/transaction-rates';
 import { chunks, emptyTransactionFilter, filtersTransactions, groupPageByDay, earliestTransactionDay, periodDays, signedAmount, summarizeTransactions, transactionPeriodLabels, transactionPeriods, transactionsIn, transactionsQuery, type TransactionPeriod } from '@/lib/transaction-list';
 import { canRecategorize, canTakeCategory, categoryChoices, choiceKey, newRule, ruleFromBusiness, ruleFromChange, type CategoryChoice, type TransactionRule } from '@/lib/transaction-rules';
 import { TransactionInsights } from '@/components/transaction-insights';
-import { RollingText } from '@/components/presentation-foundation/rolling-text';
 import { shownName } from '@/lib/record-names';
 
 const transactionsPerPage = 20;
 
 export function TransactionsScreen() {
  const { t, locale } = useLanguage();
- const { enteredSigned, entered: enteredMoney } = useDisplayMoney();
+ const { enteredSigned } = useDisplayMoney();
  const { user, demo, reload, currency, market, planning, transactionTools, workspaceLoading, addCashFlow, setViewing, storedRecord, categorize, assignTransactionsBusiness, businessList, tags, attachments, refreshRecords, household, readOnly, assignRecordOwner, removedCategories, reviewRecurring } = useWorkspace();
  // In a shared household: whose transactions to show, and who each one belongs to.
  const homes = household.state;
@@ -97,7 +96,6 @@ export function TransactionsScreen() {
  const days = groupPageByDay(records, (page - 1) * transactionsPerPage, page * transactionsPerPage, convert);
  const summary = summarizeTransactions(records, convert);
  const accounts = new Map(data.records.filter(record => record.kind === 'Cash').map(record => [record.id, record.name]));
- const total = (amount: number) => summary.missing ? '—' : formatMoney(amount, currency, locale);
  const chosen = records.filter(record => selected.has(record.id));
  const categoryOptions = [...categoryChoices(data.categories, 'income', removedCategories.kinds), ...categoryChoices(data.categories, 'expense', removedCategories.kinds)];
 
@@ -190,34 +188,11 @@ export function TransactionsScreen() {
     </DayGroup>) : <EmptyState icon={<ReceiptText/>} title={t('No transactions')} description={t(filtersTransactions(filter) || ownerFilter.length ? 'Nothing matches these filters in this period.' : 'Income and spending you record appear here, grouped by day.')}><AddTransactionMenu onAdd={addCashFlow}/></EmptyState>}
     <Pagination label={t('Transaction pages')} summary={t('Page {page} of {pages} · {count} transactions', { page: formatNumber(page, locale, 0), pages: formatNumber(pageCount, locale, 0), count: formatNumber(records.length, locale, 0) })} page={page} pageCount={pageCount} hasNext={page < pageCount} onPage={next => { setPaging({ key: listKey, page: next }); document.querySelector('.transactions-list')?.scrollIntoView({ block: 'start', behavior: 'smooth' }); }}/>
    </section>
-   <aside className="panel transactions-summary" aria-label={t('Summary')}>
-    <PanelTitle title={t('Summary')}/>
-    <dl className="budget-left-summary">
-     <div><dt>{t('Transactions')}</dt><dd>{formatNumber(summary.count, locale, 0)}</dd></div>
-     {/* A total that adds amounts no rate converts is missing, never a partial figure (MONEY-008). */}
-     <div><dt>{t('Income')}</dt><dd className={!summary.missing && summary.received > 0 ? 'positive' : undefined}><RollingText text={total(summary.received)}/></dd></div>
-     <div><dt>{t('Spending')}</dt><dd><RollingText text={total(summary.spent)}/></dd></div>
-     {summary.largest && <div><dt>{t('Largest expense')}</dt><dd><RollingText text={enteredMoney(summary.largest.entered.amount, summary.largest.entered.currency)}/></dd></div>}
-     <div className="budget-left-total"><dt>{t('Net')}</dt><dd className={!summary.missing && summary.received - summary.spent > 0 ? 'positive' : undefined}><RollingText text={total(summary.received - summary.spent)}/></dd></div>
-    </dl>
-    {summary.missing > 0 && <p role="status" className="muted">{t('Exchange rate unavailable.')}</p>}
-   </aside>
+   <TransactionsSummary summary={summary} currency={currency}/>
   </div>}
   {!loading && !error && <TransactionInsights owner={user} demo={demo} revision={reload} records={planning.data.records} today={today} onReview={reviewRecurring}/>}
   {editingMany && <BulkEditSheet records={chosen} categories={data.categories} removed={removedCategories.kinds} businesses={businessList} owners={owners} tags={tags.data.tags} tagsOf={tagsOf} onCreateTag={createTag} onSave={editMany} onClose={() => setEditingMany(false)}/>}
   {rule && <RuleDialog key={rule.id} rule={rule} records={data.records} categories={data.categories} removed={removedCategories.kinds} businesses={businessList} accounts={[...accounts].map(([id, name]) => ({ id, name }))} tags={tags.data.tags} tagsOf={tagsOf} onCreateTag={createTag} splits={splits} onSave={async (next, apply) => { const changed = await rules.save(next, apply); if (apply) showNotice(t('{changed} updated', { changed })); return changed; }} onClose={() => setRule(null)}/>}
   {rulesOpen && !rule && <RulesDialog rules={rules.rules} categories={data.categories} businesses={businessList} tags={tags.data.tags} onEdit={setRule} onAdd={() => setRule(newRule())} onRemove={item => rules.remove(item.id)} onClose={() => setRulesOpen(false)}/>}
  </div>;
-}
-
-/** "Add transaction" offers both directions; each opens the existing income or expense form. */
-function AddTransactionMenu({ onAdd }: { onAdd: (kind: Entry['kind']) => void }) {
- const { t } = useLanguage();
- return <DropdownMenu>
-  <DropdownMenuTrigger asChild><Button><Plus size={16} aria-hidden="true"/>{t('Add transaction')}</Button></DropdownMenuTrigger>
-  <DropdownMenuContent align="end">
-   <DropdownMenuItem onSelect={() => onAdd('Other income')}>{t('Add income')}</DropdownMenuItem>
-   <DropdownMenuItem onSelect={() => onAdd('Other expense')}>{t('Add expense')}</DropdownMenuItem>
-  </DropdownMenuContent>
- </DropdownMenu>;
 }

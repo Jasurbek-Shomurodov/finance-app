@@ -54,7 +54,7 @@ export function ChartGradient({ id, color = 'var(--primary)' }: { id: string; co
 /** End labels: each line's latest figure on a second value axis at the right, as a pill in the line's colour. Pass the
  * label positions from `spreadLabels` as `ticks` and render them with `EndLabelTick`. */
 export const chartEndAxis = { axisLine: false, tickLine: false, tickMargin: 6, orientation: 'right', interval: 0, allowDataOverflow: true } as const;
-export type EndLabel = { at: number; text: string; color: string };
+type EndLabel = { at: number; text: string; color: string };
 /** Room the end-label axis needs for its longest label. */
 export const endLabelWidth = (labels: readonly EndLabel[]) => labels.length ? Math.ceil(Math.max(...labels.map(label => label.text.length)) * 7.4 + 22) : 0;
 export function EndLabelTick({ x, y, payload, labels }: { x?: number; y?: number; payload?: { value: number }; labels: readonly EndLabel[] }) {

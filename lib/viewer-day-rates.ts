@@ -2,15 +2,18 @@ import { after } from 'next/server';
 import { withPlanningDayRates } from '@/lib/day-rate-tables';
 import { depositToday } from '@/lib/deposit-interest';
 import { personalRequest } from '@/lib/household';
+import { reportError } from '@/lib/monitoring';
 import { supa } from '@/lib/supabase';
 
-/** The signed-in person's preferred currencies: the ones the top bar can show totals in. */
+/** The signed-in person's preferred currencies: the ones the top bar can show totals in. A read that fails leaves the
+ * records' own currencies to decide, and is reported so a database that keeps failing alerts (no one's id travels). */
 async function preferredCurrencies(auth: { token: string; user: { id: string } }) {
  try {
   const response = await supa('/rest/v1/user_preferences?select=currencies&user_id=eq.' + auth.user.id, personalRequest(), auth.token);
-  const rows = response.ok ? await response.json() as { currencies?: string[] | null }[] : [];
+  if (!response.ok) throw Object.assign(new Error(`Preferred currencies could not be read (HTTP ${response.status}).`), { name: 'DatabaseError', stack: '' });
+  const rows = await response.json() as { currencies?: string[] | null }[];
   return rows[0]?.currencies ?? [];
- } catch { return []; }
+ } catch (error) { await reportError('day-rates', error, { status: 503 }, { alert: 'repeated' }); return []; }
 }
 
 /** `data` with each transaction's day rates (lib/day-rate-tables.ts) in the currencies this person can show; days not

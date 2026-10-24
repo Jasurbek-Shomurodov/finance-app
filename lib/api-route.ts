@@ -10,10 +10,10 @@ const noStore = { 'Cache-Control': 'no-store' };
 export function reply(body: unknown, status = 200, { noReferrer = false } = {}) {
  return Response.json(body, { status, headers: noReferrer ? { ...noStore, 'Referrer-Policy': 'no-referrer' } : noStore });
 }
-export const signInAgain = () => Response.json({ error: 'Please sign in again.' }, { status: 401 });
+export const signInAgain = () => reply({ error: 'Please sign in again.' }, 401);
 /** A cross-site mutation, refused without a body. */
-export const crossSite = () => new Response(null, { status: 403 });
-export const requestRejected = () => Response.json({ error: 'Request rejected.' }, { status: 403 });
+export const crossSite = () => new Response(null, { status: 403, headers: noStore });
+export const requestRejected = () => reply({ error: 'Request rejected.' }, 403);
 /** Over a rate limit (lib/rate-limit.ts). */
 export const tooManyAttempts = (noReferrer = false) => reply({ error: 'Too many attempts. Please try again later.' }, 429, { noReferrer });
 

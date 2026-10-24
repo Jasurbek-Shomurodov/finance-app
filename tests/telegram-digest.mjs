@@ -295,7 +295,7 @@ test('the bot\'s Upcoming payments answer shows each bill as entered, in its own
 test('a chat that blocked the bot keeps its claim, has its digest switched off and is not counted as a failure; a refused release is reported',async()=>{
  // Review BOT-005: a blocked bot failed every run, gave the claim back and alerted the operator forever.
  const reported=[];
- const {deliverToSubscribers}=loadTS('lib/telegram-owner.ts',{'./monitoring':{reportError:async(...args)=>{reported.push(args);}}});
+ const {deliverToSubscribers}=loadTS('lib/telegram-owner.ts',{'./monitoring':{...loadTS('lib/monitoring.ts'),reportError:async(...args)=>{reported.push(args);}}});
  const deliveries=deliveryTable(),patches=[],digest={kind:'digest',period:'2026-09-30'};
  const db={read:async()=>[{user_id:'a',chat_id:1},{user_id:'b',chat_id:2},{user_id:'c',chat_id:3}],async write(path,init){
   if(path.startsWith('/rest/v1/telegram_subscriptions')){patches.push({path,method:init.method,body:JSON.parse(init.body)});return new Response(null,{status:204});}

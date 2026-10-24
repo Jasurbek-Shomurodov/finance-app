@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "কিছু আয় রূপান্তর করা যায়নি। চার্টে দেখানো পরিমাণ অসম্পূর্ণ।",
   "Income source": "আয়ের উৎস",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "গাঢ় বার রেকর্ড করা আয় দেখায়। আউটলাইন বার বর্তমান ও ভবিষ্যতের মাসিক অনুমান দেখায়, প্রাপ্ত আয় নয়। প্রথম প্রাপ্তির আগের ফাঁকা মাসগুলো ভবিষ্যতের মাস দিয়ে প্রতিস্থাপিত হয়।",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "স্টকের লভ্যাংশ স্টকের ট্র্যাকারে প্রাপ্ত আয় হিসেবে রেকর্ড করুন। বেতন ও অন্যান্য পুনরাবৃত্ত পরিকল্পনা আয় ও ব্যয়-এ পরিচালিত হয়। এই চার্টে বর্তমান বিনিময় হার ব্যবহৃত হয়।",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "স্টকের লভ্যাংশ স্টকের ট্র্যাকারে প্রাপ্ত আয় হিসেবে রেকর্ড করুন। বেতন ও অন্যান্য পুনরাবৃত্ত পরিকল্পনা আয় ও ব্যয়-এ পরিচালিত হয়।",
+  "Each receipt converts at the exchange rate of its day.": "প্রতিটি প্রাপ্তি তার দিনের বিনিময় হারে রূপান্তরিত হয়।",
   "Accounts": "অ্যাকাউন্টসমূহ",
   "Account": "অ্যাকাউন্ট",
   "Account activity": "অ্যাকাউন্টের কার্যকলাপ",
@@ -2763,5 +2764,6 @@
   "This month so far": "এই মাসে এখন পর্যন্ত",
   "3-month average": "৩ মাসের গড়",
   "Compared with average": "গড়ের তুলনায়",
-  "Item": "খাত"
+  "Item": "খাত",
+  "Amounts are compared as entered, in each transaction’s own currency.": "পরিমাণগুলো যেমন লেখা হয়েছে তেমনই তুলনা করা হয়, প্রতিটি লেনদেনের নিজস্ব মুদ্রায়।"
 }

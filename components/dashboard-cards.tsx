@@ -1,5 +1,5 @@
 "use client";
-import type { KeyboardEvent } from 'react';
+import { useMemo, type KeyboardEvent } from 'react';
 import { ChartPie, Goal as GoalIcon, ReceiptText } from 'lucide-react';
 import { BudgetProgress } from '@/components/budget/budget-rows';
 import type { WorkspaceBudget } from '@/hooks/use-budget';
@@ -96,9 +96,11 @@ export function useMonthBudget({ owner = null, demo = false, revision = 0, budge
  // Rollover categories need every month since their rollover started.
  const range = budgetReadRange(month, 'month', budgetCategories(provided.categories, budget.state.categories, removed));
  const remote = useOwnerResource(`/api/planning?scope=budget&month=${month}&from=${range.from}`, owner, !!owner && !demo && !skip, revision, emptyPlanning);
- const data = owner && !demo ? { ...remote.data, records: remote.data.records.map(normalizeEntry) } : provided;
+ const live = !!owner && !demo;
+ const data = useMemo(() => live ? { ...remote.data, records: remote.data.records.map(normalizeEntry) } : provided, [live, remote.data, provided]);
  const rates = marketRates(market);
- const history = new Map(monthsBetween(range.from, month).map(item => [item, monthActuals(data, splits, item, currency, today, rates)]));
+ // Up to 24 months of actuals: worked out again only when the records, the range or the display currency change.
+ const history = useMemo(() => new Map(monthsBetween(range.from, month).map(item => [item, monthActuals(data, splits, item, currency, today, rates)])), [data, splits, range.from, month, currency, today, rates]);
  const categories = budgetCategories(data.categories, budget.state.categories, removed);
  const rows = budgetRows(categories, budget.state.amounts, history, month, currency, rates, provided.records).filter(row => row.direction === 'expense' && !row.excluded);
  // The Flexible plan as Budget and the forecasts count it.

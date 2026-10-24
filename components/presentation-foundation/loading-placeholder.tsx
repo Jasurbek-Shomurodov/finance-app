@@ -27,7 +27,7 @@ export function PanelSkeleton({ label, rows = 3, className }: { label: string; r
 }
 
 /** The dashboard board's two columns of cards, in the person's saved order. */
-export type DashboardSkeletonColumns = { left: readonly string[]; right: readonly string[] };
+type DashboardSkeletonColumns = { left: readonly string[]; right: readonly string[] };
 const defaultDashboardSkeleton: DashboardSkeletonColumns = { left: ['net_worth', 'spending'], right: ['upcoming', 'goals', 'transactions'] };
 const chartCards = new Set(['spending', 'allocation', 'income']);
 

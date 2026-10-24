@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "Sesetengah pendapatan tidak dapat ditukar. Jumlah carta yang dipaparkan tidak lengkap.",
   "Income source": "Sumber pendapatan",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "Bar penuh menunjukkan pendapatan direkodkan. Bar bergaris menunjukkan anggaran bulanan semasa dan akan datang, bukan pendapatan diterima. Bulan kosong sebelum penerimaan pertama digantikan dengan bulan akan datang.",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "Catat dividen saham sebagai Pendapatan diterima dalam Penjejak saham tersebut. Gaji dan pelan berulang lain diurus dalam Pendapatan & perbelanjaan. Kadar pertukaran semasa digunakan untuk carta ini.",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "Catat dividen saham sebagai Pendapatan diterima dalam Penjejak saham tersebut. Gaji dan pelan berulang lain diurus dalam Pendapatan & perbelanjaan.",
+  "Each receipt converts at the exchange rate of its day.": "Setiap penerimaan ditukar pada kadar pertukaran hari itu.",
   "Accounts": "Akaun",
   "Account": "Akaun",
   "Account activity": "Aktiviti akaun",
@@ -2763,5 +2764,6 @@
   "This month so far": "Bulan ini setakat ini",
   "3-month average": "Purata 3 bulan",
   "Compared with average": "Berbanding purata",
-  "Item": "Butiran"
+  "Item": "Butiran",
+  "Amounts are compared as entered, in each transaction’s own currency.": "Jumlah dibandingkan seperti yang dimasukkan, dalam mata wang setiap transaksi itu sendiri."
 }

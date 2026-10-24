@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "Einige Einnahmen können nicht umgerechnet werden. Die angezeigten Diagrammbeträge sind unvollständig.",
   "Income source": "Einnahmequelle",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "Gefüllte Balken zeigen erfasste Einnahmen. Umrandete Balken zeigen aktuelle und künftige Monatsschätzungen, nicht erhaltene Einnahmen. Leere Monate vor dem ersten Zahlungseingang werden durch künftige Monate ersetzt.",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "Erfassen Sie Aktiendividenden als erhaltene Einnahmen im Tracker der Aktie. Gehalt und andere wiederkehrende Pläne verwalten Sie unter Einnahmen & Ausgaben. Für dieses Diagramm werden aktuelle Wechselkurse verwendet.",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "Erfassen Sie Aktiendividenden als erhaltene Einnahmen im Tracker der Aktie. Gehalt und andere wiederkehrende Pläne verwalten Sie unter Einnahmen & Ausgaben.",
+  "Each receipt converts at the exchange rate of its day.": "Jeder Eingang wird zum Wechselkurs seines Tages umgerechnet.",
   "Accounts": "Konten",
   "Account": "Konto",
   "Account activity": "Kontoaktivität",
@@ -2763,5 +2764,6 @@
   "This month so far": "Dieser Monat bisher",
   "3-month average": "3-Monats-Durchschnitt",
   "Compared with average": "Abweichung vom Durchschnitt",
-  "Item": "Posten"
+  "Item": "Posten",
+  "Amounts are compared as entered, in each transaction’s own currency.": "Beträge werden wie eingegeben verglichen, in der eigenen Währung jeder Transaktion."
 }

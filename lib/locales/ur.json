@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "کچھ آمدنی تبدیل نہیں ہو سکتی۔ دکھائی گئی چارٹ کی رقوم نامکمل ہیں۔",
   "Income source": "آمدنی کا ذریعہ",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "ٹھوس بارز درج شدہ آمدنی دکھاتے ہیں۔ خاکہ دار بارز موجودہ اور آئندہ ماہانہ تخمینے دکھاتے ہیں، وصول شدہ آمدنی نہیں۔ پہلی وصولی سے پہلے کے خالی مہینے آئندہ مہینوں سے بدل دیے جاتے ہیں۔",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "اسٹاک ڈیویڈنڈ کو اسٹاک کے ٹریکر میں وصول شدہ آمدنی کے طور پر درج کریں۔ تنخواہ اور دیگر دہرائے جانے والے منصوبے آمدنی اور اخراجات میں سنبھالے جاتے ہیں۔ اس چارٹ کے لیے موجودہ زرِ مبادلہ کی شرحیں استعمال ہوتی ہیں۔",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "اسٹاک ڈیویڈنڈ کو اسٹاک کے ٹریکر میں وصول شدہ آمدنی کے طور پر درج کریں۔ تنخواہ اور دیگر دہرائے جانے والے منصوبے آمدنی اور اخراجات میں سنبھالے جاتے ہیں۔",
+  "Each receipt converts at the exchange rate of its day.": "ہر وصولی اپنے دن کی شرحِ مبادلہ پر تبدیل ہوتی ہے۔",
   "Accounts": "اکاؤنٹس",
   "Account": "اکاؤنٹ",
   "Account activity": "اکاؤنٹ کی سرگرمی",
@@ -2763,5 +2764,6 @@
   "This month so far": "یہ مہینہ اب تک",
   "3-month average": "3 ماہ کی اوسط",
   "Compared with average": "اوسط کے مقابلے میں",
-  "Item": "مد"
+  "Item": "مد",
+  "Amounts are compared as entered, in each transaction’s own currency.": "رقموں کا موازنہ ویسے ہی ہوتا ہے جیسے درج کی گئیں، ہر لین دین کی اپنی کرنسی میں۔"
 }

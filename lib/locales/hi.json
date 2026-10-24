@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "कुछ आय बदली नहीं जा सकती। दिखाई गई चार्ट राशियाँ अधूरी हैं।",
   "Income source": "आय का स्रोत",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "ठोस बार दर्ज आय दिखाते हैं। आउटलाइन वाले बार मौजूदा और आगे के मासिक अनुमान दिखाते हैं, प्राप्त आय नहीं। पहली प्राप्ति से पहले के खाली महीने आगे के महीनों से बदल दिए जाते हैं।",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "स्टॉक डिविडेंड को स्टॉक के ट्रैकर में \"प्राप्त आय\" के रूप में दर्ज करें। सैलरी और अन्य आवर्ती योजनाएँ \"आय और खर्च\" में प्रबंधित होती हैं। इस चार्ट के लिए मौजूदा विनिमय दरों का उपयोग होता है।",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "स्टॉक डिविडेंड को स्टॉक के ट्रैकर में \"प्राप्त आय\" के रूप में दर्ज करें। सैलरी और अन्य आवर्ती योजनाएँ \"आय और खर्च\" में प्रबंधित होती हैं।",
+  "Each receipt converts at the exchange rate of its day.": "हर प्राप्ति उसके दिन की विनिमय दर पर बदली जाती है।",
   "Accounts": "अकाउंट",
   "Account": "अकाउंट",
   "Account activity": "अकाउंट गतिविधि",
@@ -2763,5 +2764,6 @@
   "This month so far": "यह महीना अब तक",
   "3-month average": "3 महीने का औसत",
   "Compared with average": "औसत की तुलना में",
-  "Item": "मद"
+  "Item": "मद",
+  "Amounts are compared as entered, in each transaction’s own currency.": "राशियों की तुलना वैसे ही होती है जैसे दर्ज की गईं, हर लेन-देन की अपनी मुद्रा में।"
 }

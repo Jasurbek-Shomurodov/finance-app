@@ -1,12 +1,18 @@
 import { income, expenses, type Entry } from './finance';
 
+/** An amount in its cash account's currency: the record's amount divided by the dated rate it was saved with
+ * (`account_exchange_rate`, record units per account unit), 1 when none. A rate that is not a positive number is refused. */
+export function accountAmount(amount: number, rate: number | null | undefined): number {
+ const divisor = rate ?? 1;
+ if (!Number.isFinite(divisor) || divisor <= 0) throw Error('Check the dated exchange rate.');
+ return amount / divisor;
+}
+
 // A transaction's account delta is independent of its display currency/rounding.
 function recordCashEffect(record: Entry): number {
  if (!record.account_id || record.frequency !== 'Once') return 0;
  if (![...income, ...expenses].includes(record.kind)) return 0;
- const rate = record.account_exchange_rate ?? 1;
- if (!Number.isFinite(rate) || rate <= 0) throw Error('Check the dated exchange rate.');
- return (income.includes(record.kind) ? 1 : -1) * record.amount / rate;
+ return (income.includes(record.kind) ? 1 : -1) * accountAmount(record.amount, record.account_exchange_rate);
 }
 
 export function applyRecordChange(rows: Entry[], previous?: Entry, next?: Entry): Entry[] {

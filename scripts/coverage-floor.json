@@ -46,7 +46,6 @@
   "components/household-panel.tsx",
   "components/import-history.tsx",
   "components/import-profiles.tsx",
-  "components/investment-comparison-settings.tsx",
   "components/legal-page.tsx",
   "components/planning/corporate-event-dialog.tsx",
   "components/planning/goal-detail.tsx",

@@ -123,6 +123,17 @@ test('Cash flow adds its four tiles for a quarter or a year (a month has the pag
  assert.deepEqual(tiles(), [['Income', '—'], ['Expenses', '—'], ['Total savings', '—'], ['Savings rate', '—']], 'never $1,000 as if complete');
  assert.equal(text(note()), 'Some transactions could not be converted. Current or previous month totals are incomplete.');
  assert.deepEqual(r.find(node => node.type === 'BarChart').props.data.at(-1).income, null, 'the bar is missing, not too low');
+ // Review S2: Cash flow › Month showed the note twice, in the compact Monthly review and again here; with the review
+ // above, the month leaves the note to it, while a quarter or a year still reports its own amounts.
+ const mixed = [record('a', 'Pay', 'Salary', 1000, month + '-01'), record('x', 'Bonus', 'Salary', 5, month + '-01', { currency: 'EUR' })];
+ open(mixed, { rates: { USD: 1 }, quotes: {} });
+ period('month');
+ assert.equal(note().length, 1, 'alone, the report says so for the month');
+ r.mount(React.createElement(CashFlowReport, { owner: null, demo: true, revision: 0, data: { categories: [], activity: [], investmentLinks: [], records: mixed }, splits: [], month, currency: 'USD', market: { rates: { USD: 1 }, quotes: {} }, monthReviewAbove: true }));
+ period('month');
+ assert.equal(note().length, 0, 'the review above already shows it');
+ period('year');
+ assert.equal(note().length, 1, 'a year has its own amounts to report');
 });
 
 test('the PDF budget actual follows Budget: a split counts in its own categories, a mortgage payment its interest', () => {

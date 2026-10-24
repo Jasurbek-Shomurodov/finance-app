@@ -21,7 +21,7 @@ export function cbuDayTable(rows: unknown, day: string): DayTable {
 }
 
 /** One day's rates from the archive; a past day is kept in the fetch cache for a month. */
-export async function fetchCbuDay(day: string, fetcher: typeof fetch = fetch): Promise<DayTable> {
+async function fetchCbuDay(day: string, fetcher: typeof fetch = fetch): Promise<DayTable> {
  const response = await fetcher(`https://cbu.uz/ru/arkhiv-kursov-valyut/json/all/${day}/`, { next: { revalidate: datedRateRevalidate(day) }, signal: AbortSignal.timeout(8000) } as RequestInit);
  if (!response.ok) throw Error('Historical exchange rates are unavailable.');
  return cbuDayTable(await response.json(), day);

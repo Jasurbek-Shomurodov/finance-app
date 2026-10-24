@@ -24,7 +24,7 @@ export function TaxTab({ preferences, save, names, onOpen }: { preferences: read
  const saved = preferences.find((item): item is Extract<WorkspacePreference, { key: 'tax_lines' }> => item.key === 'tax_lines')?.data as TaxSettings | undefined;
  const [sample, setSample] = useState<TaxSettings>(defaultTaxSettings);
  const settings = demo ? sample : saved ?? defaultTaxSettings;
- const range = taxPeriodRange(year, period);
+ const range = useMemo(() => taxPeriodRange(year, period), [year, period]);
  const { data, loading, error, retry } = useRangeData(range);
  const rates = marketRates(market);
  const lines = useMemo(() => reportLedger(data, transactionTools.data.splits, range, currency, today, rates).lines.filter(line => line.business === (businessList.some(item => item.id === business) ? business : businessList[0]?.id)), [data, transactionTools.data.splits, range, currency, today, rates, business, businessList]);

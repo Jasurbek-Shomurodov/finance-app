@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "Một số thu nhập không thể quy đổi. Số liệu trên biểu đồ chưa đầy đủ.",
   "Income source": "Nguồn thu nhập",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "Cột đặc thể hiện thu nhập đã ghi nhận. Cột viền thể hiện ước tính hằng tháng hiện tại và tương lai, không phải thu nhập đã nhận. Các tháng trống trước lần nhận đầu tiên được thay bằng các tháng trong tương lai.",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "Hãy ghi cổ tức cổ phiếu dưới dạng Thu nhập đã nhận trong Trình theo dõi của cổ phiếu đó. Lương và các kế hoạch định kỳ khác được quản lý trong Thu nhập & chi phí. Biểu đồ này dùng tỷ giá hiện tại.",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "Hãy ghi cổ tức cổ phiếu dưới dạng Thu nhập đã nhận trong Trình theo dõi của cổ phiếu đó. Lương và các kế hoạch định kỳ khác được quản lý trong Thu nhập & chi phí.",
+  "Each receipt converts at the exchange rate of its day.": "Mỗi khoản nhận được quy đổi theo tỷ giá của ngày đó.",
   "Accounts": "Tài khoản",
   "Account": "Tài khoản",
   "Account activity": "Hoạt động tài khoản",
@@ -2763,5 +2764,6 @@
   "This month so far": "Tháng này đến nay",
   "3-month average": "Trung bình 3 tháng",
   "Compared with average": "So với trung bình",
-  "Item": "Khoản mục"
+  "Item": "Khoản mục",
+  "Amounts are compared as entered, in each transaction’s own currency.": "Số tiền được so sánh như đã nhập, theo đơn vị tiền tệ riêng của từng giao dịch."
 }

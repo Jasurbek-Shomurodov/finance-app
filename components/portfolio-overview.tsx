@@ -25,6 +25,8 @@ import { useComparisonProfile } from '@/hooks/use-comparison-profile';
 import { type MarketData, marketRates } from '@/lib/market';
 import type { PortfolioHistory } from '@/hooks/use-portfolio-history';
 
+/** One empty history for every render, so the comparison's memos keyed on it hold until the real one loads. */
+const noHistory: PortfolioHistory = { records: [], events: [] };
 /** `savedHistory` is the screen's read (`usePortfolioHistory`), started before this card mounts; the sample workspace builds its own. */
 export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecords, currency, market, demo, savedHistory, historyError: error, onHistoryRetry, onAddIncome, board }: { savedHistory: PortfolioHistory | null; historyError: boolean; onHistoryRetry: () => void; board: (cards: { netWorth: ReactNode; income: ReactNode }) => ReactNode; onAddIncome?: () => void; demoRecords?: Entry[]; excludedCurrencies?:string[]; snapshots: PortfolioSnapshot[]; snapshotError: string; onSnapshotRetry: () => void; entries: Entry[]; currency: string; market: MarketData | null; demo: boolean }) {
  const { t, locale } = useLanguage();
@@ -35,11 +37,10 @@ export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecord
  const history: PortfolioHistory | null = useMemo(() => demo ? demoHistory(demoRecords ?? [], today) : savedHistory, [demo, demoRecords, today, savedHistory]);
  const money = (amount: number) => formatMoney(amount, currency, locale);
  const {totalAssets:assetTotal,totalDebt:debt}=financialTotals(entries);
- const allRecords = history?.records ?? [];
  const rates = marketRates(market);
- const recorded = portfolioHistory(allRecords, history?.events ?? [], currency, rates, today, true);
+ const recorded = useMemo(() => portfolioHistory(history?.records ?? noHistory.records, history?.events ?? noHistory.events, currency, rates, today, true), [history, currency, rates, today]);
  const portfolioValue = assetTotal - debt;
- const points = mergePortfolioPoints(recorded.points, [], {date:today,assets:assetTotal,debt,net:portfolioValue});
+ const points = useMemo(() => mergePortfolioPoints(recorded.points, [], {date:today,assets:assetTotal,debt,net:portfolioValue}), [recorded.points, today, assetTotal, debt, portfolioValue]);
  const windowStart = trackingWindowStart(range, today, comparison.trackingStart);
  const visible = portfolioWindow(points, range, today, comparison.trackingStart);
  const partialHistory = visible.some(point=>point.partial);
@@ -62,7 +63,7 @@ export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecord
     <Segmented label={t('History period')} options={[30, 90, 365, null].map(days => ({ value: days, label: days === null ? t('All history') : t('{days} days', { days: formatNumber(days, locale, 0) }) }))} value={range} onChange={setRange}/>
    </header>
    {loading ? <NetWorthBodySkeleton label={t('Loading history…')}/> : error ? <InlineError message={t('Could not load portfolio history.')} onRetry={onHistoryRetry}/> : <>
-    <InvestmentComparison history={history??{records:[],events:[]}} today={today} currency={currency} market={market} demo={demo} windowStart={windowStart} points={visible} profile={comparison.profile} profileError={comparison.error} trackingStart={comparison.trackingStart} onTrackingStartChange={comparison.saveTrackingStart} onGrowth={setGrowth} summary={fx=><InvestmentPeriodSummary input={{records:allRecords,events:history?.events??[],cashflows:history?.cashflows,movements:history?.movements,market,currency,today,fx}} start={windowStart}/>}/>
+    <InvestmentComparison history={history??noHistory} today={today} currency={currency} market={market} demo={demo} windowStart={windowStart} points={visible} profile={comparison.profile} profileError={comparison.error} trackingStart={comparison.trackingStart} onTrackingStartChange={comparison.saveTrackingStart} onGrowth={setGrowth} summary={fx=><InvestmentPeriodSummary input={{records:history?.records??noHistory.records,events:history?.events??noHistory.events,cashflows:history?.cashflows,movements:history?.movements,market,currency,today,fx}} start={windowStart}/>}/>
     {recorded.missing > 0 && <p className="muted overview-hero-note">{t('Some holdings have no recorded history yet.')}</p>}
     {excludedCurrencies.length > 0 && <p className="muted overview-hero-note">{t('Some currencies could not be converted and are excluded from totals.')}</p>}
    </>}

@@ -379,7 +379,8 @@
   "Some income cannot be converted. Displayed chart amounts are incomplete.": "לא ניתן להמיר חלק מההכנסות. הסכומים בתרשים חלקיים.",
   "Income source": "מקור הכנסה",
   "Solid bars show recorded income. Outlined bars show current and future monthly estimates, not received income. Empty months before the first receipt are replaced with future months.": "עמודות מלאות מציגות הכנסה שנרשמה. עמודות מתוחמות מציגות הערכות חודשיות נוכחיות ועתידיות, לא הכנסה שהתקבלה. חודשים ריקים לפני הקבלה הראשונה מוחלפים בחודשים עתידיים.",
-  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses. Current exchange rates are used for this chart.": "תעדו דיבידנדים ממניות כ\"הכנסה שהתקבלה\" במעקב של המניה. משכורת ותוכניות חוזרות אחרות מנוהלות ב\"הכנסות והוצאות\". התרשים משתמש בשערי החליפין הנוכחיים.",
+  "Record stock dividends as Income received in the stock’s Tracker. Salary and other recurring plans are managed in Income & expenses.": "תעדו דיבידנדים ממניות כ\"הכנסה שהתקבלה\" במעקב של המניה. משכורת ותוכניות חוזרות אחרות מנוהלות ב\"הכנסות והוצאות\".",
+  "Each receipt converts at the exchange rate of its day.": "כל תקבול מומר לפי שער החליפין של יומו.",
   "Accounts": "חשבונות",
   "Account": "חשבון",
   "Account activity": "פעילות בחשבון",
@@ -2763,5 +2764,6 @@
   "This month so far": "החודש עד כה",
   "3-month average": "ממוצע 3 חודשים",
   "Compared with average": "ביחס לממוצע",
-  "Item": "פריט"
+  "Item": "פריט",
+  "Amounts are compared as entered, in each transaction’s own currency.": "הסכומים מושווים כפי שהוזנו, במטבע של כל עסקה עצמה."
 }

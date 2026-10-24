@@ -341,7 +341,7 @@ test('budget History reads on every bar and fits the window; the Year view marks
  assert.match(css,/@media\(pointer:coarse\)\{\.budget-history-forward\{min-height:44px\}\}/);
  assert.match(fs.readFileSync('components/budget/planned-input.tsx','utf8'),/className="budget-history-popover"[^>]*collisionPadding=\{16\}/);
  assert.match(css,/\.budget-year \[data-current\]\{background-image:/);
- const screen=fs.readFileSync('components/workspace/screens/budget-screen.tsx','utf8');
+ const screen=fs.readFileSync('components/budget/budget-year.tsx','utf8');
  assert.equal((screen.match(/'data-current': months\[position\] === current/g)||[]).length,2,'category and overall cells mark the current month');
 });
 
