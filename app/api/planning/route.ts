@@ -15,7 +15,7 @@ import { categoryNameTaken, duplicateCategoryMessage } from '@/lib/category-name
 import type { Category, ExtraPayment, Occurrence } from '@/lib/planning';
 import { queueMilestoneCheck } from '@/lib/notify-action';
 import type { ActionEvent } from '@/lib/action-messages';
-import { keepDayRates } from '@/lib/day-rate-tables';
+import { keepDayRates, keptDayRate } from '@/lib/day-rate-tables';
 import { depositToday } from '@/lib/deposit-interest';
 /** Later payments for recorded occurrences add to them; limited scopes leave those transactions out of `records`.
  * A failed read answers 503 like the other reads: counting none would show scheduled payments as less paid than they are. */
@@ -36,8 +36,9 @@ export async function GET(req?:Request){
  const extraPayments=readExtraPayments(plan.historyOnly,auth.token);
  // Awaited below; marked handled now so a failure while the other reads run is not an unhandled rejection.
  extraPayments.catch(()=>null);
- // One rate per currency pair and payment day for the whole read, a few requests at a time.
- const dayRate=sharedDayRate(async(from,to,date)=>(await loadDatedExchangeRate(from,to,date)).rate);
+ // One rate per currency pair and payment day for the whole read, a few requests at a time: the kept day tables first
+ // (the archive is often out of reach from the server), the live feeds only for a day or pair they lack.
+ const dayRate=sharedDayRate(keptDayRate({today:depositToday()},async(from,to,date)=>(await loadDatedExchangeRate(from,to,date)).rate));
  const results=await reads;
  const data={records:[],categories:[],goals:[],occurrences:[],activity:[],movements:[],investmentLinks:[],...Object.fromEntries(results)} as Record<string,unknown>;
  // Each transaction carries its own day's rates, read while the rest of the answer is put together.

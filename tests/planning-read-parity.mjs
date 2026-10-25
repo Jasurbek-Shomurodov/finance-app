@@ -116,7 +116,7 @@ test('every planning scope answers the same as the offset reader, for the owner,
    try{return Response.json(JSON.parse((await db.query(sql,values)).rows[0].rows));}catch(error){return Response.json({message:error.message},{status:400});}
   });queue=run.catch(()=>{});return run;};
   const supabase={session:async()=>({token:viewer,user:{id:viewer}}),supa,sameOrigin:()=>true};
-  const quiet={'@/lib/notify-action':{queueMilestoneCheck:()=>{}},'@/lib/dated-exchange-rate':{loadDatedExchangeRate:async()=>{throw Error('unused');}}};
+  const quiet={'@/lib/notify-action':{queueMilestoneCheck:()=>{}},'@/lib/day-rate-tables':{keepDayRates:async()=>{},keptDayRate:(deps,fallback)=>fallback},'@/lib/dated-exchange-rate':{loadDatedExchangeRate:async()=>{throw Error('unused');}}};
   let viewer=owner;
   const current=loadTS('app/api/planning/route.ts',{'@/lib/supabase':supabase,'./supabase':supabase,...quiet,'@/lib/viewer-day-rates':{withViewerDayRates:async data=>data}});
   // The reader before this change: offset pages, and deposits read again for their estimates.

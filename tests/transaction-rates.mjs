@@ -5,7 +5,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { loadTS } from './helpers/load-ts.mjs';
 
 const { ratesOf, ratesOrPair, happened } = loadTS('lib/transaction-rates.ts');
-const { cbuDayTable, dayTables, withPlanningDayRates, withDayRates } = loadTS('lib/day-rate-tables.ts', { './service-role': { serviceDatabase: () => null } });
+const { cbuDayTable, dayTables, keptDayRate, withPlanningDayRates, withDayRates } = loadTS('lib/day-rate-tables.ts', { './service-role': { serviceDatabase: () => null } });
 const { drillFlows } = loadTS('lib/cash-flow-drill.ts');
 const { cashFlowReport } = loadTS('lib/cash-flow-report.ts');
 const { reportLedger } = loadTS('lib/business-report.ts');
@@ -83,6 +83,19 @@ test('kept days are read at once; missing days are fetched and kept, late days f
  // Before migration 149 the table is missing: every day is fetched and nothing breaks.
  const before = await dayTables(['2026-09-01'], { db: { read: async () => { throw Error('missing'); }, write: async () => { throw Error('missing'); } }, fetchDay: async () => ({ USD: 1, UZS: 1 }), today: '2026-10-20' });
  assert.deepEqual(before.get('2026-09-01'), { USD: 1, UZS: 1 });
+});
+
+test('a payment day\'s rate comes from the kept tables; a pair or day they lack goes to the live feed', async () => {
+ const reads = [], live = [];
+ const db = { read: async path => { reads.push(path); return [{ day: '2026-10-05', rates: { USD: 1, UZS: 11772.95, EUR: 0.9 } }]; }, write: async () => new Response(null, { status: 201 }) };
+ const rate = keptDayRate({ db, fetchDay: async () => { throw Error('down'); }, today: '2026-10-20' }, async (from, to, date) => { live.push([from, to, date]); return 7; });
+ assert.equal(await rate('UZS', 'USD', '2026-10-05'), 1 / 11772.95);
+ assert.equal(await rate('USD', 'EUR', '2026-10-05'), 0.9);
+ assert.equal(reads.length, 1, 'a day is read once for every pair');
+ assert.equal(await rate('UZS', 'GBP', '2026-10-05'), 7);
+ assert.equal(await rate('UZS', 'USD', '2026-10-06'), 7);
+ assert.deepEqual(live, [['UZS', 'GBP', '2026-10-05'], ['UZS', 'USD', '2026-10-06']]);
+ await assert.rejects(keptDayRate({ db, fetchDay: async () => { throw Error('down'); }, today: '2026-10-20' })('UZS', 'USD', '2026-10-06'));
 });
 
 test('a read attaches each transaction\'s and each transfer\'s day, cut to the currencies it can be shown in', async () => {

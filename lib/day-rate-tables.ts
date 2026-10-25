@@ -4,6 +4,7 @@
 import { datedRateRevalidate } from './dated-exchange-rate';
 import { serviceDatabase, type ServiceDatabase } from './service-role';
 import { happened, type DayTable } from './transaction-rates';
+import type { DayRate } from './day-rates';
 
 const validDay = (day: string) => /^\d{4}-\d{2}-\d{2}$/.test(day) && new Date(day + 'T00:00:00Z').toISOString().slice(0, 10) === day;
 const positive = (value: unknown) => Number.isFinite(Number(value)) && Number(value) > 0;
@@ -73,6 +74,19 @@ export async function dayTables(days: Iterable<string>, deps: DayTableDeps): Pro
  for (const [day, rates] of found) tables.set(day, rates);
  if (left.length && deps.later) deps.later(async () => { await fetchDays(left, options); });
  return tables;
+}
+
+/** A day's official rate (units of `to` for one `from`) from the kept day tables, the same ones each transaction converts
+ * at; a day not kept is fetched once and kept. A pair or day the tables cannot answer goes to `fallback` (the live feeds). */
+export function keptDayRate(deps: DayTableDeps, fallback?: DayRate): DayRate {
+ const days = new Map<string, Promise<DayTable | undefined>>();
+ return async (from, to, date) => {
+  if (!days.has(date)) days.set(date, dayTables([date], deps).then(tables => tables.get(date), () => undefined));
+  const table = await days.get(date), a = table?.[from], b = table?.[to];
+  if (positive(a) && positive(b)) return Number(b) / Number(a);
+  if (fallback) return fallback(from, to, date);
+  throw Error('Historical exchange rates are unavailable.');
+ };
 }
 
 type Dated = { kind: string; currency: string; date?: string | null; frequency?: string; account_currency?: string | null; day_rates?: DayTable | null };

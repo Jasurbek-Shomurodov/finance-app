@@ -13,6 +13,8 @@ function harness(){
   '@/lib/server-records':{readOwnerRows:async(table,token,extra)=>{state.reads.push({table,token,extra});if(state.readError)throw state.readError;return state.rows[table]??[];}},
   '@/lib/deposit-forecasts':{depositForecasts:async token=>{state.forecastCalls++;assert.equal(token,'owner-token');return state.forecasts;}},
   '@/lib/dated-exchange-rate':{loadDatedExchangeRate:async(...args)=>{state.rateCalls.push(args);await state.rateHook?.();if(state.rateError)throw state.rateError;return state.rate;}},
+  // The kept day tables (`state.tables`, by day) answer first; a day or pair they lack goes to the live feed above.
+  '@/lib/day-rate-tables':{...loadTS('lib/day-rate-tables.ts'),keepDayRates:async()=>{},keptDayRate:(deps,fallback)=>async(from,to,date)=>{const table=state.tables?.[date];return table?.[from]&&table?.[to]?table[to]/table[from]:fallback(from,to,date);}},
   '@/lib/notify-action':{queueMilestoneCheck:(auth,event)=>{assert.equal(auth.token,'owner-token');state.events.push(event);}},
  });
  return {api,state};
@@ -106,6 +108,21 @@ test('GET asks for each foreign payment day once, shared by loan and scheduled p
  assert.deepEqual([...days].sort(),['UZS USD 2026-04-01','UZS USD 2026-05-01','UZS USD 2026-06-01','UZS USD 2026-07-01','UZS USD 2026-08-01','UZS USD 2026-09-01'],'one request per pair and day');
  assert.ok(peak<=4,'at most four rate requests at a time');
  assert.equal(body.debtPayments.length,7);assert.ok(body.debtPayments.every(payment=>payment.currency==='USD'&&Math.abs(payment.amount-100)<1e-9));
+});
+
+test('GET counts a scheduled payment in another currency at its kept day rate, even when the live feed is down',async()=>{
+ const {api,state}=harness();
+ state.rows.finance_records=[{id:'club',kind:'Business income',currency:'USD',amount:1000,frequency:'Monthly',date:'2026-09-01'}];
+ state.rows.payment_occurrences=[{id:'o1',record_id:'club',due_on:'2026-10-01',status:'paid',transaction_id:'t1',transaction:{amount:5e6,currency:'UZS',date:'2026-10-06'}}];
+ state.tables={'2026-10-06':{USD:1,UZS:12500}};state.rateError=Error('archive out of reach');
+ const body=await (await api.GET(get('?scope=workspace'))).json();
+ const {amount,...rest}=body.occurrences[0].transaction;
+ assert.ok(Math.abs(amount-400)<1e-9);assert.deepEqual(rest,{currency:'USD',date:'2026-10-06',entered:{amount:5e6,currency:'UZS'}});
+ assert.equal(state.rateCalls.length,0,'a kept day never asks the live feed');
+ // A day nobody kept and the feed cannot give stays in its own currency, which Recurring shows as unavailable.
+ state.tables={};
+ const missing=await (await api.GET(get('?scope=workspace'))).json();
+ assert.deepEqual(missing.occurrences[0].transaction,{amount:5e6,currency:'UZS',date:'2026-10-06'});
 });
 
 test('GET answers 503 when a read fails',async()=>{
