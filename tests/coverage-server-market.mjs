@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {loadTS} from './helpers/load-ts.mjs';
 
-const {loadMarket,krakenCoins}=loadTS('lib/server-market.ts');
+const {loadMarket,krakenCoins,loadBudgetMs}=loadTS('lib/server-market.ts');
 const KEY='test-only-market-key';
 
 // Every upstream request goes to a stub; nothing reaches the network.
@@ -224,3 +224,18 @@ test('stocks and gold share one Twelve Data quote reader: the symbol must match,
   assert.equal((await loadMarket([],[],true,['XAU'])).errors['Metal:XAU'],'Price unavailable. Saved price is shown.','gold answered under another symbol is refused');
  });
 });
+
+test('feeds that never answer cannot hold the load past its budget: the answered feeds are kept, the rest read as unavailable',async()=>{
+ // A hanging feed only ends when its signal aborts, as a real stalled connection does.
+ const hang=(url,calls)=>new Promise((_,reject)=>{const {signal}=calls.at(-1).init;if(signal.aborted)reject(signal.reason);signal.addEventListener('abort',()=>reject(signal.reason),{once:true});});
+ await withFeeds((url,calls)=>url.includes('open.er-api.com')?er():hang(url,calls),async({warnings})=>{
+  const started=Date.now();
+  // Six slow quotes behind four workers used to queue for well over a minute (8 s, retry, 8 s each).
+  const data=await loadMarket(['BTC','ETH','SOL','ADA','XRP'],[],false);
+  const spent=Date.now()-started;
+  assert.ok(spent<loadBudgetMs+1000,`the load ended after ${spent} ms`);
+  assert.equal(data.errors.fx,'Exchange rate unavailable.');assert.equal(data.rates.EUR,.9);
+  for(const coin of ['BTC','ETH','SOL','ADA','XRP'])assert.equal(data.errors[`Crypto:${coin}`],'Price unavailable. Saved price is shown.');
+  assert.ok(warnings.some(args=>args.includes('load_budget_spent')));
+ });
+},{timeout:20000});
