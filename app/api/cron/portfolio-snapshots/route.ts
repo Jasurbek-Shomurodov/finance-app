@@ -3,6 +3,7 @@ import { cronAuthorized } from '@/lib/cron-auth';
 import { recordCronRun, runFailure } from '@/lib/cron-runs';
 import { reportError } from '@/lib/monitoring';
 import { loadMarket } from '@/lib/server-market';
+import { keepMarket } from '@/lib/market-cache';
 import { readIdPages } from '@/lib/owner-rows';
 import { serviceDatabase } from '@/lib/service-role';
 import { announceNetWorthHigh } from '@/lib/telegram-milestones';
@@ -29,6 +30,8 @@ export async function GET(req:Request){
  const symbols=marketSymbols(records);
  // Upstream requests have bounded concurrency and named missing-price failures.
  const market:MarketData=await loadMarket(symbols.crypto,symbols.stocks,true,symbols.metals);
+ // The nightly run's live prices refresh the kept ones every reader starts from.
+ await keepMarket(db,market);
  const owners=new Map<string,Entry[]>();
  for(const record of records){const list=owners.get(record.user_id);if(list)list.push(record);else owners.set(record.user_id,[record]);}
  let captured=0,skipped=0,celebrated=0;const day=depositToday();

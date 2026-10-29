@@ -1,4 +1,5 @@
-import { loadMarket } from '@/lib/server-market';
+import { cachedMarket } from '@/lib/market-cache';
+import { afterResponse } from '@/lib/after-response';
 import { marketSymbols } from '@/lib/market';
 import { crossSite,postgrestFailure,signInAgain,tooManyAttempts } from '@/lib/api-route';
 import { limits,rateLimited } from '@/lib/rate-limit';
@@ -24,7 +25,8 @@ export async function POST(req:Request){
   const params=new URLSearchParams({select:'*',kind:`in.(${trackedKinds.join(',')})`,order:'id.asc'});
   const records=await readAllPages<Entry>(range=>supa(pagePath('/rest/v1/finance_records?'+params,range),{},auth.token));
   const symbols=marketSymbols(records);
-  const market=await loadMarket(symbols.crypto,symbols.stocks,true,symbols.metals);
+  // The same kept prices the dashboard shows, so the saved day matches what the person sees.
+  const market=await cachedMarket({fx:true,rates:true,...symbols,stockAccess:true,metalAccess:true},{later:afterResponse});
   const totals=snapshotTotals(records,market);
   if(!totals)return Response.json({error:'Complete prices and exchange rates are needed to save today’s portfolio.'},{status:409});
   const response=await supa('/rest/v1/rpc/capture_portfolio_snapshot',{method:'POST',body:JSON.stringify({p_assets:totals.assets,p_debt:totals.debt,p_rates:totals.rates})},auth.token);

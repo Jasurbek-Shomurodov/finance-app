@@ -1,4 +1,5 @@
-import { loadMarket } from '@/lib/server-market';
+import { cachedMarket } from '@/lib/market-cache';
+import { afterResponse } from '@/lib/after-response';
 import { tooManyAttempts } from '@/lib/api-route';
 import { limits, rateLimited } from '@/lib/rate-limit';
 import { session } from '@/lib/supabase';
@@ -18,6 +19,7 @@ export async function GET(req: Request) {
   if(auth?await rateLimited(req,'market-user',limits.market,auth.user.id,{perIp:false}):await rateLimited(req,'market',limits.publicMarket))return tooManyAttempts();
   const stockAccess=signedIn&&stocks.length+metals.length>0&&!!process.env.TWELVE_DATA_API_KEY;
   // Metals also have a free source (gold-api.com), so a signed-in reader gets them without the market-data key.
-  const data=await loadMarket(crypto,stocks,stockAccess,metals,signedIn&&metals.length>0);
+  // Kept prices answer at once; only a feed nobody holds yet is fetched before replying (lib/market-cache.ts).
+  const data=await cachedMarket({fx:true,rates:true,crypto,stocks,metals,stockAccess,metalAccess:signedIn&&metals.length>0},{later:afterResponse});
   return Response.json(data,{headers:{'Cache-Control':'private, no-store'}});
 }

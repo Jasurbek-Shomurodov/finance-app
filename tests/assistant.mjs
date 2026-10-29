@@ -103,7 +103,7 @@ test('the assistant route needs a key and a session, reads only the owner rows a
   '@anthropic-ai/sdk': { __esModule: true, default: Fake },
   '@/lib/supabase': { session: async () => auth, sameOrigin: () => true },
   '@/lib/server-records': { readOwnerRows: async (table, token) => { reads.push([table, token]); return table === 'finance_records' ? records : table === 'savings_goals' ? data.goals : table === 'transaction_categories' ? data.categories : []; } },
-  '@/lib/server-market': { loadMarket: async (...args) => { markets.push(args); return { rates: { USD: 1, UZS: 12500 }, fx: null, quotes: { 'Stock:AAPL': { usd: 150, source: 'test', fetchedAt: '2026-10-02T00:00:00Z' } }, errors: {}, stocksConfigured: true }; } },
+  '@/lib/market-cache': { cachedMarket: async request => { const args = [request.crypto, request.stocks, request.stockAccess, request.metals]; markets.push(args); return { rates: { USD: 1, UZS: 12500 }, fx: null, quotes: { 'Stock:AAPL': { usd: 150, source: 'test', fetchedAt: '2026-10-02T00:00:00Z' } }, errors: {}, stocksConfigured: true }; } },
  });
  const request = body => new Request('https://app.example/api/assistant', { method: 'POST', body: JSON.stringify(body) });
  const body = { messages: [{ role: 'user', content: 'How much did I spend?' }], currency: 'USD', rates: { USD: 1 }, language: 'en' };

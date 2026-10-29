@@ -6,7 +6,7 @@ import { isCurrency } from '@/lib/currencies';
 import { depositToday } from '@/lib/deposit-interest';
 import { loadDatedExchangeRate } from '@/lib/dated-exchange-rate';
 import { dayTables } from '@/lib/day-rate-tables';
-import { after } from 'next/server';
+import { afterResponse } from '@/lib/after-response';
 
 /** At most this many days in one read of `days`. */
 const maxDays=400;
@@ -15,7 +15,7 @@ async function daysAnswer(params:URLSearchParams){
  const days=(params.get('days')??'').split(',').filter(Boolean),currencies=(params.get('currencies')??'').split(',').filter(Boolean);
  if(!days.length||days.length>maxDays||!days.every(day=>isoDate.safeParse(day).success&&day<=depositToday())||!currencies.length||currencies.length>20||!currencies.every(isCurrency))return Response.json({error:'Choose valid dates ending today or earlier.'},{status:400});
  const shown=new Set(['USD',...currencies]);
- const tables=await dayTables(days,{today:depositToday(),later:work=>{try{after(work);}catch{void work();}}});
+ const tables=await dayTables(days,{today:depositToday(),later: afterResponse});
  const answer=Object.fromEntries([...tables].map(([day,table])=>[day,Object.fromEntries(Object.entries(table).filter(([currency])=>shown.has(currency)))]));
  return Response.json({days:answer},{headers:{'Cache-Control':'private, no-store'}});
 }

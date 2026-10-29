@@ -9,7 +9,8 @@ import { planningReadFilters } from '@/lib/planning-reads';
 import type { PlanningData } from '@/lib/planning';
 import { readOwnerRows } from '@/lib/server-records';
 import { crossSite, readJson, signInAgain, tooManyAttempts } from '@/lib/api-route';
-import { loadMarket } from '@/lib/server-market';
+import { cachedMarket } from '@/lib/market-cache';
+import { afterResponse } from '@/lib/after-response';
 import { reportError } from '@/lib/monitoring';
 import { limits, rateLimited } from '@/lib/rate-limit';
 import { session, sameOrigin } from '@/lib/supabase';
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
   // Income and spending count at the official rates of their own day; holdings are worth their live quotes, as the
   // Net worth card shows them, so the feed is read only when there is a symbol to quote.
   const symbols = marketSymbols(records), quoted = symbols.crypto.length + symbols.stocks.length + symbols.metals.length > 0;
-  const [dated, market] = await Promise.all([withViewerDayRates({ records: records.map(normalizeEntry), activity }, auth), quoted ? loadMarket(symbols.crypto, symbols.stocks, true, symbols.metals) : null]);
+  const [dated, market] = await Promise.all([withViewerDayRates({ records: records.map(normalizeEntry), activity }, auth), quoted ? cachedMarket({ fx: true, rates: true, ...symbols, stockAccess: true, metalAccess: true }, { later: afterResponse }) : null]);
   const spoken = isLanguage(language) ? language : 'en';
   snapshot = assistantContext({ ...dated, categories, goals, occurrences, investmentLinks: [] }, today, currency, rates, { language, market, t: key => translate(spoken, key) });
  } catch (error) {

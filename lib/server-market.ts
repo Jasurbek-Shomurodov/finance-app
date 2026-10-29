@@ -77,20 +77,27 @@ async function goldApiMetal(symbol: string, deadline: AbortSignal): Promise<Quot
   return quote;
 }
 /** `metalAccess` defaults to `stockAccess`; metals need no key of their own (gold-api.com), only a signed-in reader. */
-export async function loadMarket(crypto:string[],stocks:string[],stockAccess:boolean,metals:string[]=[],metalAccess=stockAccess):Promise<MarketData> {
+export function loadMarket(crypto:string[],stocks:string[],stockAccess:boolean,metals:string[]=[],metalAccess=stockAccess):Promise<MarketData> {
+  return loadFeeds({ fx: true, rates: true, crypto, stocks, metals, stockAccess, metalAccess });
+}
+/** The feeds to ask: the two exchange-rate feeds and each instrument. The kept-price layer (lib/market-cache.ts) asks only
+ * for what it does not hold fresh. */
+export type FeedRequest = { fx: boolean; rates: boolean; crypto: string[]; stocks: string[]; metals: string[]; stockAccess: boolean; metalAccess: boolean };
+export async function loadFeeds({ fx, rates, crypto, stocks, metals, stockAccess, metalAccess }: FeedRequest): Promise<MarketData> {
   const key = process.env.TWELVE_DATA_API_KEY;
   const data: MarketData = { fx: null, quotes: {}, errors: {}, stocksConfigured: !!key };
   // Feeds still unanswered when the budget is spent count as unavailable; the rest of the answer is kept.
   const budget = new AbortController(), deadline = budget.signal, budgetTimer = setTimeout(() => budget.abort(new DOMException('Market load budget spent', 'TimeoutError')), loadBudgetMs);
-  const jobs: Array<() => Promise<void>> = [async () => {
+  const jobs: Array<() => Promise<void>> = [];
+  if (fx) jobs.push(async () => {
     try {
       const rows = await read('https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/', 3600, deadline) as Array<{ Ccy: string; Rate: string; Nominal: string; Date: string }>;
       const usd = rows.find(row => row.Ccy === 'USD');
       if (!usd || !/^\d{2}\.\d{2}\.\d{4}$/.test(usd.Date)) throw new Error('invalid_fx');
       data.fx = { rate: positive(usd.Rate) / positive(usd.Nominal), date: usd.Date.split('.').reverse().join('-'), source: 'CBU' };
     } catch { data.errors.fx = 'Exchange rate unavailable.'; }
-  }];
-  jobs.push(async () => {
+  });
+  if (rates) jobs.push(async () => {
     try {
       const result = await read('https://open.er-api.com/v6/latest/USD', 86400, deadline) as { result: string; base_code: string; rates: Record<string, number>; time_last_update_unix: number };
       if (result.result !== 'success' || result.base_code !== 'USD' || !Number.isFinite(result.time_last_update_unix)) throw Error('invalid_fx');

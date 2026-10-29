@@ -1,4 +1,4 @@
-export const requiredSchemaVersion = 155;
+export const requiredSchemaVersion = 156;
 export const databaseUpdateMessage = 'The app database needs an update. Ask the administrator to apply the latest migrations.';
 /** The migration number `finance_capabilities()` reports, or null when the answer carries none. */
 export function schemaVersionOf(value: unknown): number | null {

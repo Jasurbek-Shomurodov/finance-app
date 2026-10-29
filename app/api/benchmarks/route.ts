@@ -5,7 +5,8 @@ import { signInAgain, tooManyAttempts } from '@/lib/api-route';
 import { limits, rateLimited } from '@/lib/rate-limit';
 import { session } from '@/lib/supabase';
 import { depositToday } from '@/lib/deposit-interest';
-import { cbuDayTable } from '@/lib/day-rate-tables';
+import { dayTables } from '@/lib/day-rate-tables';
+import { afterResponse } from '@/lib/after-response';
 import { checkpointDates, loadFxCheckpoints, dateMillis, dayMillis, shiftDay, validDay, type BenchmarkData, type PricePoint, type FxPoint } from '@/lib/benchmark-data';
 
 async function read(url: string, fresh = false): Promise<unknown> {
@@ -99,8 +100,17 @@ async function cryptoHistory(start: string, end: string, symbol = 'BTC'): Promis
  }
  throw Error('Unavailable');
 }
-async function fxAt(date: string): Promise<FxPoint> {
- return { date, rates: cbuDayTable(await read(`https://cbu.uz/ru/arkhiv-kursov-valyut/json/all/${date}/`), date) };
+/** The checkpoints' official rates from the kept day tables (`exchange_rate_days`), shared by every workspace: a past day
+ * never changes, so only a day nobody has read yet goes to the archive. A day the archive misses falls back to the closest
+ * earlier one (loadFxCheckpoints), each fetched on demand, all within one budget; a day not reached is kept afterwards. */
+async function fxCheckpoints(dates: string[], budgetMs = 6000): Promise<FxPoint[]> {
+ const deadline = Date.now() + budgetMs, deps = () => ({ today: depositToday(), later: afterResponse, budgetMs: Math.max(0, deadline - Date.now()) });
+ const tables = await dayTables(dates, deps());
+ return loadFxCheckpoints(dates, async date => {
+  const rates = tables.get(date) ?? (await dayTables([date], deps())).get(date);
+  if (!rates) throw Error('Historical exchange rates are unavailable.');
+  return { date, rates };
+ });
 }
 async function loadBenchmarks(req: Request) {
  try {
@@ -136,7 +146,7 @@ async function loadBenchmarks(req: Request) {
   if(selected.includes('BTC'))jobs.push(async () => { try { data.prices.BTC = await history('crypto','BTC'); } catch { data.errors.BTC = 'Market history is unavailable for this period.'; } });
   if(selected.includes('PORTFOLIO')&&portfolioCrypto)jobs.push(async()=>{try{data.prices.portfolioCrypto=await history('crypto',portfolioCrypto);}catch{data.errors.portfolioCrypto='Market history is unavailable for this period.';}});
   jobs.push(async () => {
-   try { data.fx = await loadFxCheckpoints(checkpointDates(start, end), fxAt); } catch { data.errors.fx = 'Historical exchange rates are unavailable.'; }
+   try { data.fx = await fxCheckpoints(checkpointDates(start, end)); } catch { data.errors.fx = 'Historical exchange rates are unavailable.'; }
   });
   let index = 0;
   await Promise.all(Array.from({ length: 3 }, async () => { while (index < jobs.length) await jobs[index++](); }));

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {loadTS} from './helpers/load-ts.mjs';
 const market={fx:null,quotes:{},rates:{USD:1}};
-const api=(session,supa,snapshotTotals,loadMarket=async()=>market)=>loadTS('app/api/portfolio-snapshots/route.ts',{'@/lib/supabase':{session,supa,sameOrigin:req=>req.headers.get('origin')==='https://local'},'@/lib/portfolio-snapshots':{snapshotTotals},'@/lib/server-market':{loadMarket}});
+const api=(session,supa,snapshotTotals,loadMarket=async()=>market)=>loadTS('app/api/portfolio-snapshots/route.ts',{'@/lib/supabase':{session,supa,sameOrigin:req=>req.headers.get('origin')==='https://local'},'@/lib/portfolio-snapshots':{snapshotTotals},'@/lib/server-market':{loadMarket},'@/lib/market-cache':{cachedMarket:request=>loadMarket(request.crypto,request.stocks,request.stockAccess,request.metals)}});
 const request=body=>new Request('https://local',{method:'POST',headers:{origin:'https://local','Content-Type':'application/json'},body:JSON.stringify(body)});
 test('snapshots use owner holdings and server quotes, ignoring forged client totals, dates and rates',async()=>{
  const calls=[];let fetched=false;

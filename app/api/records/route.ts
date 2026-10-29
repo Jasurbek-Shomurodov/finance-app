@@ -74,12 +74,12 @@ if(method==='GET' && new URL(req.url).searchParams.get('section')==='assets'){
  data.records=records;data.total=records.length;
  data.page=Math.min(data.page ?? 1,Math.max(1,Math.ceil(records.length/10)));
 }
-if(method==='GET' && data.records && new URL(req.url).searchParams.get('section')!=='assets')data.records=(await withViewerDayRates({records:data.records},s)).records as Entry[];
+// The page's day rates and the summary's deposit forecasts are independent reads, so they run side by side.
+const pageRecords=data.records,datedPage=method==='GET' && pageRecords && new URL(req.url).searchParams.get('section')!=='assets'?withViewerDayRates({records:pageRecords},s):null;
+const [dated,deposits]=await Promise.all([datedPage,method==='GET' && data.summary?depositForecasts(s.token):null]);
+if(dated)data.records=dated.records as Entry[];
 // A saved transaction comes back with its day's rates too, so totals do not move until the next read.
 if(method==='POST' && 'kind' in data && 'currency' in data){const saved=data as unknown as Entry;const [dated]=(await withViewerDayRates({records:[saved]},s)).records;return Response.json(dated);}
-if(method==='GET' && data.summary){
- const deposits=await depositForecasts(s.token);
- data.summary=[...data.summary.filter((entry:{kind:string})=>!interestKinds.includes(entry.kind)),...deposits];
-}
+if(deposits && data.summary)data.summary=[...data.summary.filter((entry:{kind:string})=>!interestKinds.includes(entry.kind)),...deposits];
 return Response.json(data);}catch{return Response.json({error:'Connection unavailable. Your changes have not been saved.'},{status:503});}}
 export const GET=(r:Request)=>handle(r,'GET');export const POST=(r:Request)=>handle(r,'POST');export const DELETE=(r:Request)=>handle(r,'DELETE');

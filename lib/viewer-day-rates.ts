@@ -1,4 +1,4 @@
-import { after } from 'next/server';
+import { afterResponse } from '@/lib/after-response';
 import { withPlanningDayRates } from '@/lib/day-rate-tables';
 import { depositToday } from '@/lib/deposit-interest';
 import { personalRequest } from '@/lib/household';
@@ -19,5 +19,5 @@ async function preferredCurrencies(auth: { token: string; user: { id: string } }
 /** `data` with each transaction's day rates (lib/day-rate-tables.ts) in the currencies this person can show; days not
  * loaded in time are fetched after the response, so the next read has them. */
 export async function withViewerDayRates<D extends Parameters<typeof withPlanningDayRates>[0]>(data: D, auth: { token: string; user: { id: string } }): Promise<D> {
- return withPlanningDayRates(data, await preferredCurrencies(auth), { today: depositToday(), later: work => { try { after(work); } catch { void work(); } } });
+ return withPlanningDayRates(data, await preferredCurrencies(auth), { today: depositToday(), later: afterResponse });
 }
