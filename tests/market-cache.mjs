@@ -98,8 +98,11 @@ test('keepMarket keeps only answered feeds: an errored rate feed is not kept ove
  const {db,writes}=database();
  await keepMarket(db,{fx:null,rates:{USD:1},errors:{fx:'Exchange rate unavailable.',rates:'Exchange rate unavailable.'},quotes:{'Crypto:BTC':quote(1)},stocksConfigured:false});
  assert.deepEqual(writes[0].rows.map(row=>row.key),['Crypto:BTC']);
+ // A load that asked only for the CBU rate holds USD and UZS in `rates`: the kept global table is not replaced by it.
+ await keepMarket(db,{fx:{rate:12100,date:'2026-10-30',source:'CBU'},rates:{USD:1,UZS:12100},errors:{},quotes:{},stocksConfigured:false});
+ assert.deepEqual(writes[1].rows.map(row=>row.key),['fx']);
  assert.equal(writes[0].path,'/rest/v1/market_quotes?on_conflict=key');
  await keepMarket(null,{fx:null,rates:undefined,errors:{},quotes:{},stocksConfigured:false});
  await keepMarket(db,{fx:null,errors:{},quotes:{},stocksConfigured:false});
- assert.equal(writes.length,1,'nothing to keep writes nothing');
+ assert.equal(writes.length,2,'nothing to keep writes nothing');
 });

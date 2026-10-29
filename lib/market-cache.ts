@@ -30,7 +30,9 @@ async function readKept(db: ServiceDatabase, keys: string[]): Promise<Kept[]> {
 function keepable(data: MarketData) {
  const rows: Array<{ key: string; data: unknown; fetched_at: string }> = [], at = new Date().toISOString();
  if (data.fx && !data.errors.fx) rows.push({ key: 'fx', data: data.fx, fetched_at: at });
- if (data.rates && !data.errors.rates) rows.push({ key: 'rates', data: { rates: data.rates, ratesDate: data.ratesDate }, fetched_at: at });
+ // Only an answer of the global rate table carries its date; a load that asked for the CBU rate alone holds just
+ // USD and UZS in `rates`, which must never replace the kept table.
+ if (data.rates && data.ratesDate && !data.errors.rates) rows.push({ key: 'rates', data: { rates: data.rates, ratesDate: data.ratesDate }, fetched_at: at });
  for (const [key, quote] of Object.entries(data.quotes)) rows.push({ key, data: quote, fetched_at: quote.fetchedAt });
  return rows;
 }

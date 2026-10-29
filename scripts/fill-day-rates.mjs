@@ -3,7 +3,7 @@
 // app's servers cannot read the archive themselves; every day they convert with must be kept here first. A past day
 // never changes, so each is read once. Run it with no arguments for the days the app reads most (every month's last
 // day since 2015 and each of the last 14 days), or name days: `npm run rates:fill -- 2026-10-01 2026-10-02`.
-// Needs SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env / .env.local; writes only public rates, never prints keys.
+// Each run also keeps today's CBU dollar rate (`fx` in market_quotes). Needs SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env / .env.local; writes only public rates, never prints keys.
 import { pathToFileURL } from 'node:url';
 import { readEnv } from './check-migrations.mjs';
 
@@ -27,7 +27,14 @@ export async function fill(days, { env, loadTS, today, log = console.log }) {
  const tables = await dayTables(wanted, { db, today, budgetMs: Infinity, concurrency: 4 });
  const missing = wanted.filter(day => !tables.has(day));
  log(`kept ${tables.size} new days${missing.length ? `; not answered: ${missing.join(', ')}` : ''}`);
- return { kept: tables.size, missing };
+ // Today's CBU dollar rate for the top bar and every total (`fx` in market_quotes): the servers cannot refresh it
+ // either, so it is kept from here too.
+ const { loadFeeds } = loadTS('lib/server-market.ts');
+ const { keepMarket } = loadTS('lib/market-cache.ts', { './service-role': { serviceDatabase: () => db } });
+ const current = await loadFeeds({ fx: true, rates: false, crypto: [], stocks: [], metals: [], stockAccess: false, metalAccess: false });
+ if (current.fx && !current.errors.fx) { await keepMarket(db, current); log(`kept today's CBU rate: ${current.fx.rate} (${current.fx.date})`); }
+ else log('today\'s CBU rate was not answered');
+ return { kept: tables.size, missing, current: !!current.fx };
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
@@ -36,5 +43,5 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
  const env = { ...readEnv(['.env', '.env.local']), ...process.env };
  const today = depositToday(), named = process.argv.slice(2);
  const result = await fill(named.length ? named.sort() : defaultDays(today), { env, loadTS, today });
- process.exit(result.missing.length ? 1 : 0);
+ process.exit(result.missing.length || !result.current ? 1 : 0);
 }
