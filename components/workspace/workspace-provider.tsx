@@ -44,6 +44,7 @@ import { useArchive, useDeleteSchedule } from './state/use-archive';
 import { useDemoBin } from './state/use-demo-bin';
 import { useRecordFormTool } from './state/use-record-form-tool';
 import { useRecordSave } from './state/use-record-save';
+import { useDashboardWarmup } from './state/use-dashboard-warmup';
 import { useOpenDialogs } from './state/use-open-dialogs';
 import { useSampleWorkspace } from './state/use-sample-workspace';
 import { useForecastBudget } from './state/use-forecast-budget';
@@ -96,6 +97,7 @@ function useWorkspaceState() {
         setRows(previous=>schedule?[...previous.filter(row=>row.id!==schedule.id),schedule]:previous.map(row=>row.id===source.schedule_id?{...row,source_paused:true}:row));
     },legacyEarningSources(rows));
     const workspacePreferences=useWorkspacePreferences(user,demo,reload);
+    useDashboardWarmup(user,demo,section==='Overview',reload);
     const removedCategories=useRemovedCategories(workspacePreferences,user,demo);
     // Accounts in the person's own order (Accounts page), wherever an account is picked.
     const planning={...basePlanning,data:{...basePlanning.data,removedKinds:removedCategories.kinds,records:inAccountOrder(basePlanning.data.records,savedOrder(workspacePreferences.data.preferences,'account_order')),occurrences:demo?onScheduleDays([...basePlanning.data.occurrences,...rows.filter(row=>row.occurrence_record_id&&row.occurrence_due_on&&!basePlanning.data.occurrences.some(item=>item.record_id===row.occurrence_record_id&&item.due_on===row.occurrence_due_on)).map(row=>({id:row.id,record_id:row.occurrence_record_id!,due_on:row.occurrence_due_on!,status:'paid' as const,transaction_id:row.id}))],basePlanning.data.records):basePlanning.data.occurrences}};

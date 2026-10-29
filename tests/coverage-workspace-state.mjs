@@ -24,7 +24,7 @@ function browser(href, { framed = false } = {}) {
 }
 
 // The server: each route answers from `server`, and every request is kept.
-const requests = [];
+const requests = [], warmed = [];
 const server = { session: { configured: true, user: null }, settings: { ...defaultPreferences, currencies: ['EUR', 'USD'], onboarded: true }, records: { records: [], total: 0, page: 1, summary: [], businesses: [] }, fail: {} };
 const reply = (body, status = 200) => ({ ok: status < 400, status, json: async () => body });
 globalThis.fetch = async (url, options = {}) => {
@@ -63,7 +63,7 @@ const { WorkspaceProvider } = r.load('components/workspace/workspace-provider.ts
  '@/hooks/use-tags': { useTags: () => ({ data: { tags: [] } }) },
  '@/hooks/use-record-attachments': { useRecordAttachments: () => ({}) },
  // A stateful stand-in: `update` shows a change at once, as the real hook does, so saves can be read back from the state.
- '@/hooks/use-owner-resource': { useOwnerResource: (url, user, enabled, reload, empty) => { const [data, setData] = r.react.useState(empty); return { data, loading: false, initialLoading: false, error: '', retry() {}, update: change => setData(previous => change(previous)), invalidate() { setData(empty); } }; },
+ '@/hooks/use-owner-resource': { warmRead: (...args) => warmed.push(args), useOwnerResource: (url, user, enabled, reload, empty) => { const [data, setData] = r.react.useState(empty); return { data, loading: false, initialLoading: false, error: '', retry() {}, update: change => setData(previous => change(previous)), invalidate() { setData(empty); } }; },
   // The session loader reads from the test server: settings arrive the way the real loader delivers them (data, then loading false).
   useSessionResource: (url, enabled, revision, empty) => { const key = url + ':' + revision; const [state, setState] = r.react.useState({ key: '', data: empty, error: '' }); r.react.useEffect(() => { if (!enabled) return; let live = true; fetch(url).then(async response => { const body = await response.json(); if (live) setState(response.ok ? { key, data: body, error: '' } : { key, data: empty, error: body.error }); }); return () => { live = false; }; }, [url, enabled, revision]); return { data: enabled && state.key === key ? state.data : empty, error: enabled && state.key === key ? state.error : '', loading: enabled && state.key !== key, retry() {} }; },
   saveOwnerResource: async (url, action, data) => { const response = await fetch(url, { method: 'POST', body: JSON.stringify({ action, data }) }); if (!response.ok) throw Error('Could not save changes.'); return response.json(); } },
@@ -114,6 +114,8 @@ test('a failed Google sign-in shows why, and email sign-in opens the account', a
  delete server.gateway;
  await ws().login(formEvent({ email: 'me@example.com' }));await settle();
  assert.equal(ws().user, 'me@example.com');
+ // On the Dashboard its own reads start beside the workspace reads, once the owner is known.
+ assert.ok(pathname !== '/' || warmed.some(([owner, url]) => owner === 'me@example.com' && url === '/api/portfolio-history'));
 });
 
 test('the sample workspace starts from the backend and changes only its own copy', async () => {

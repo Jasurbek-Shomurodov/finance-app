@@ -5,7 +5,7 @@ import type { Entry } from '@/lib/finance';
 import type { BenchmarkMovement } from '@/lib/investment-benchmarks';
 import type { HistoryEvent } from '@/lib/investment-history';
 import { historyIncomeRecords } from '@/lib/portfolio-history';
-import { refreshRead } from '@/lib/refresh-read';
+import { ownerReadKey, sharedRead } from '@/hooks/use-owner-resource';
 
 export type PortfolioHistory = { movements?: BenchmarkMovement[]; records: Entry[]; events: HistoryEvent[]; cashflows?: Entry[]; incomeRecords?: Entry[] };
 type Read = { owner: string | null; history: PortfolioHistory | null; error: boolean };
@@ -20,9 +20,10 @@ export function usePortfolioHistory(owner: string | null, demo: boolean, revisio
  useEffect(() => {
   if (demo || !owner) return;
   const controller = new AbortController();
-  refreshRead('/api/portfolio-history', { signal: controller.signal }).then(async response => {
-   if (!response.ok) throw Error();
-   const data = await response.json() as PortfolioHistory & { recurringIncome?: Entry[] };
+  // Shared with the dashboard's early read (useDashboardWarmup), which asks for the same key.
+  sharedRead(ownerReadKey(owner, '/api/portfolio-history', revision, attempt), '/api/portfolio-history', controller.signal).then(reply => {
+   if (!reply.ok) throw Error();
+   const data = JSON.parse(reply.text) as PortfolioHistory & { recurringIncome?: Entry[] };
    if (!controller.signal.aborted) setRead({ owner, history: { ...data, incomeRecords: historyIncomeRecords(data) }, error: false });
   }).catch(() => { if (!controller.signal.aborted) setRead({ owner, history: null, error: true }); });
   return () => controller.abort();

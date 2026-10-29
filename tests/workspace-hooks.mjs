@@ -182,3 +182,23 @@ test('a dated exchange rate is read once per pair and day, rejects an unusable o
  // A server failure is retried before it is reported.
  assert.equal(requests.length,4);
 });
+test('an early dashboard read is found by the card that mounts later, while ordinary reads still ask again',async()=>{
+ const requests=[];
+ const refreshRead=(url,options)=>new Promise(resolve=>requests.push({url,signal:options.signal,reply:(data,status=200)=>resolve(Response.json(data,{status}))}));
+ const {sharedRead,warmRead,ownerReadKey}=loadTS('hooks/use-owner-resource.ts',{'@/lib/refresh-read':{refreshRead},'@/lib/feedback':{showSaved:()=>{}},'@/lib/api-client':{requestJson:async()=>({})},react:{useEffect:()=>{},useRef:()=>({}),useState:()=>[]}});
+ const url='/api/portfolio-history';
+ warmRead('owner',url,3);
+ assert.equal(requests.length,1);
+ requests[0].reply({records:[{id:'kept'}]});
+ await new Promise(resolve=>setTimeout(resolve,0));
+ // The card mounts after the reply: it reads the same answer, with no second request.
+ const card=new AbortController(),reply=await sharedRead(ownerReadKey('owner',url,3),url,card.signal);
+ assert.equal(requests.length,1);assert.deepEqual(JSON.parse(reply.text),{records:[{id:'kept'}]});
+ // Leaving does not cancel or forget it for a second card; a new revision asks again.
+ card.abort();
+ await sharedRead(ownerReadKey('owner',url,3),url,new AbortController().signal);assert.equal(requests.length,1);
+ void sharedRead(ownerReadKey('owner',url,4),url,new AbortController().signal);assert.equal(requests.length,2);
+ // A failed early read is not kept: the card asks again.
+ warmRead('other',url,0);requests[2].reply({error:'Offline'},503);await new Promise(resolve=>setTimeout(resolve,0));
+ void sharedRead(ownerReadKey('other',url,0),url,new AbortController().signal);assert.equal(requests.length,4);
+});

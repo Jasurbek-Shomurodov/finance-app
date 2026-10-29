@@ -97,7 +97,6 @@
   "hooks/use-telegram-link.ts",
   "hooks/use-transaction-rules.ts",
   "hooks/use-transaction-tools.ts",
-  "hooks/use-workspace-preferences.ts",
-  "lib/deleted-items.ts"
+  "hooks/use-workspace-preferences.ts"
  ]
 }

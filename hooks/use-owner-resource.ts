@@ -4,25 +4,33 @@ import { useEffect,useRef,useState } from 'react';
 import { refreshRead } from '@/lib/refresh-read';
 import { requestJson } from '@/lib/api-client';
 
-type SharedRead={url:string;controller:AbortController;readers:number;reply:Promise<{ok:boolean;text:string}>};
+type SharedRead={url:string;controller:AbortController;readers:number;answered?:boolean;reply:Promise<{ok:boolean;text:string}>};
 const sharedReads=new Map<string,SharedRead>();
-/** Identical reads share one request while it is under way, and each reader parses its own copy of the reply. The key
- * names the owner, the URL and the revision the reader asks for, so two cards of one screen share a read whenever they
- * start, while a read started after a save (a new revision, a retry, or a save to the same URL) asks again. The request
- * is cancelled once every reader has let go of it, and forgotten when it answers. */
-export function sharedRead(key:string,url:string,signal:AbortSignal):Promise<{ok:boolean;text:string}>{
+/** How long an early read (`warmRead`) stays shared once answered, for the card that shows it to find. */
+const keepAnsweredMs=20_000;
+/** The key of one read: the owner, the URL, the revision and the retry the reader asks for. */
+export const ownerReadKey=(owner:string,url:string,revision:number,retry=0)=>`${owner}:${url}:${revision}:${retry}`;
+/** Identical reads share one request, and each reader parses its own copy of the reply. The key names the owner, the URL
+ * and the revision the reader asks for, so two cards of one screen share a read whenever they start, while a read started
+ * after a save (a new revision, a retry, or a save to the same URL) asks again. The request is cancelled once every
+ * reader has let go of it, and forgotten when it answers; an early read (`keep`) keeps a good answer for `keepAnsweredMs`. */
+export function sharedRead(key:string,url:string,signal:AbortSignal,keep=false):Promise<{ok:boolean;text:string}>{
  let read=sharedReads.get(key);
  if(!read){
   const controller=new AbortController(),started:SharedRead={url,controller,readers:0,reply:refreshRead(url,{signal:controller.signal}).then(async response=>({ok:response.ok,text:await response.text()}))};
   sharedReads.set(key,started);read=started;
   const forget=()=>{if(sharedReads.get(key)===started)sharedReads.delete(key);};
-  started.reply.then(forget,forget);
+  started.reply.then(reply=>{if(!keep||!reply.ok)return forget();started.answered=true;setTimeout(forget,keepAnsweredMs);},forget);
  }
  const joined=read;joined.readers++;
- const leave=()=>{if(--joined.readers>0)return;joined.controller.abort();if(sharedReads.get(key)===joined)sharedReads.delete(key);};
+ // An answered read stays for the next reader until it expires; one still under way stops when nobody waits for it.
+ const leave=()=>{if(--joined.readers>0||joined.answered)return;joined.controller.abort();if(sharedReads.get(key)===joined)sharedReads.delete(key);};
  signal.addEventListener('abort',leave,{once:true});
  return joined.reply;
 }
+/** Starts a read before the card that shows it mounts (the dashboard's reads, as soon as the owner is known), so the card
+ * finds the reply under way or answered. The read is never cancelled by a reader leaving. */
+export function warmRead(owner:string,url:string,revision:number){void sharedRead(ownerReadKey(owner,url,revision),url,new AbortController().signal,true).catch(()=>undefined);}
 /** A save to an address makes the reads of it already under way, whatever their query, out of date: later readers ask again. */
 function forgetReads(url:string){const path=url.split('?')[0];for(const [key,read] of sharedReads)if(read.url.split('?')[0]===path)sharedReads.delete(key);}
 type Resource<T>={url:string;owner:string|null;enabled:boolean;revision:number;empty:T;fallback?:string};
@@ -39,7 +47,7 @@ function useResource<T>({url,owner,enabled,revision,empty,fallback='Could not lo
  const scope=`${owner}:${url}`;
  useEffect(()=>{current.current=enabled&&owner?scope:'';return()=>{current.current='';};},[scope,enabled,owner]);
  const [retryCount,setRetry]=useState(0);
- const key=`${scope}:${revision}:${retryCount}`;
+ const key=ownerReadKey(owner??'',url,revision,retryCount);
  const [state,setState]=useState<{scope:string;key:string;data:T;error:string}>({scope:'',key:'',data:empty,error:''});
  useEffect(()=>{
   if(!owner||!enabled)return;
