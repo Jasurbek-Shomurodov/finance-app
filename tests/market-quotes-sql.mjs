@@ -8,7 +8,7 @@ async function db(sql){const d=new PGlite();await d.exec(`CREATE ROLE anon;CREAT
 
 test('migration 156 is in setup.sql, safe to re-run, and bumps the schema version the app requires',async()=>{
  assert.ok(setup.includes(migration),'setup.sql includes migration 156');
- assert.equal(Number(fs.readFileSync('lib/database-capabilities.ts','utf8').match(/requiredSchemaVersion = (\d+);/)[1]),156);
+ assert.ok(Number(fs.readFileSync('lib/database-capabilities.ts','utf8').match(/requiredSchemaVersion = (\d+);/)[1])>=156);
  const d=await db(setup.slice(0,setup.indexOf(migration)));
  try{await d.exec(migration);await d.exec(migration);assert.equal((await d.query('SELECT finance_capabilities() AS c')).rows[0].c.schema_version,156);}finally{await d.close();}
 });

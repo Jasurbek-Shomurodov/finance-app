@@ -6,6 +6,7 @@ import { limits, rateLimited } from '@/lib/rate-limit';
 import { session } from '@/lib/supabase';
 import { depositToday } from '@/lib/deposit-interest';
 import { dayTables } from '@/lib/day-rate-tables';
+import { keptHistory } from '@/lib/price-history-cache';
 import { afterResponse } from '@/lib/after-response';
 import { checkpointDates, loadFxCheckpoints, dateMillis, dayMillis, shiftDay, validDay, type BenchmarkData, type PricePoint, type FxPoint } from '@/lib/benchmark-data';
 
@@ -133,7 +134,8 @@ async function loadBenchmarks(req: Request) {
   const histories = new Map<string,Promise<PricePoint[]>>();
   function history(kind:'crypto'|'stock',symbol:string) {
    const id=kind+':'+symbol;
-   if(!histories.has(id))histories.set(id,kind==='crypto'?cryptoHistory(start,end,symbol):stockHistory(symbol,start,end,key!));
+   // Kept closes answer at once; the feeds are asked only for the days not kept yet (lib/price-history-cache.ts).
+   if(!histories.has(id))histories.set(id,keptHistory(id,start,end,(from,to)=>kind==='crypto'?cryptoHistory(from,to,symbol):stockHistory(symbol,from,to,key!),{later:afterResponse}));
    return histories.get(id)!;
   }
   const symbols = [...portfolioRows.filter(asset=>asset.kind==='stock').map(asset=>({id:portfolioAssetKey(asset,portfolio!),symbol:asset.symbol})),...stockBenchmarks(selected),{id:'SPY',symbol:'SPY'},{id:'HYG',symbol:'HYG'},{id:'BIL',symbol:'BIL'},...(custom ? [{id:'CUSTOM',symbol:custom}] : []),...(selected.includes('PORTFOLIO')&&portfolioStock?[{id:'portfolioStock',symbol:portfolioStock}]:[])];
