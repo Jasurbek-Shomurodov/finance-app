@@ -53,8 +53,9 @@ this repository:
 | `diff` | `git diff HEAD` plus `git show HEAD`; review the changed lines and everything they call or that calls them. Map files to areas with the table below. |
 | commit, `A..B`, branch or PR number | The same as `diff`, against that range (`gh pr diff <n>` for a PR). |
 | path or glob | Those files plus their direct imports and callers. |
+| screen name (`dashboard`, `accounts`, `transactions`, `cash-flow`, `reports`, `budget`, `recurring`, `investments`, `loans`, `goals`, `assistant`, `recently-deleted`, `settings`) | That screen's files (the screen → route → file map in `.claude/skills/dr/SKILL.md` §1), the hooks and `app/api/**` routes it reads on load, and **always** the page load path below (PERF-010 … PERF-020). A path or glob inside one screen runs the load path too. |
 | area code | That area's cases across the whole codebase. |
-| `fix` (modifier) | Apply the confirmed fixes afterwards (`review-core` section 4). |
+| `fix` (modifier) | Apply the confirmed fixes afterwards (`review-core` section 4). For a screen, that includes every failed load-path case, fixed with the helpers each case names. |
 
 | Area | Where it lives |
 |---|---|
@@ -71,7 +72,7 @@ this repository:
 | RES | client components with effects, timers, listeners, observers, `fetch` without timeouts, streams |
 | CONC | save paths (`lib/record-save.ts`, `components/workspace/state/`), SQL functions that read-then-write, Telegram flows, imports |
 | ERR | every `catch`, every `.catch(() => null)`, `postgrestFailure` use |
-| PERF | PostgREST reads, `readAllPages`, N+1 loops, SQL without indexes, heavy client bundles |
+| PERF | PostgREST reads, `readAllPages`, N+1 loops, SQL without indexes, heavy client bundles, each screen's load path (hooks, `app/api/**`, `lib/market-cache.ts`, `lib/price-history-cache.ts`, `lib/day-rate-tables.ts`, `hooks/use-owner-resource.ts`) |
 | DEP | `package.json`, lockfile, `scripts/`, `.github/workflows/` |
 | BOT | `lib/telegram*`, `lib/telegram-bot/`, `lib/telegram-flow/`, `app/api/telegram/**` |
 | TEST | `tests/`, `e2e/`, `scripts/coverage-floor.json` |
@@ -119,6 +120,34 @@ grep -rnE "setInterval|addEventListener|new (Resize|Intersection|Mutation)Observ
 grep -niE "security definer" database/setup.sql migrations/*.sql
 git log -p --all -S "sb_secret_" --oneline | head
 ```
+
+### Page load path (PERF-010 … PERF-020)
+
+Run this for every screen-scoped review, for a path inside a screen, and in `full` runs (group 3). It is what made
+the Dashboard wait 20 s and show "unavailable" (2026-10-29); every other screen gets the same pass.
+
+1. **List the load.** From the screen file down: every hook it mounts and every URL they read
+   (`useOwnerResource`, `useSessionResource`, `sharedRead`, `refreshRead`, `requestJson`, `fetch`), plus the
+   provider's reads (`components/workspace/workspace-provider.tsx`). For each one, write down what it waits for
+   before it starts (the session, settings, a parent's data, the card mounting) and what its result gates (the
+   skeleton, a card). A request that waits on another it does not need is PERF-013 (or PERF-014 for `/api/auth`).
+2. **Follow each route.** In `app/api/**`, count the round trips and mark sequential `await`s that do not depend on
+   each other (PERF-015), every outside host it calls before replying (PERF-010), their timeouts and retries
+   (PERF-011), and what it answers when that host fails (PERF-012).
+3. **Duplicates.** The same URL read twice in one load, and reads re-triggered by focus or a changing JSON
+   signature (PERF-016).
+4. **Client work.** Objects or arrays rebuilt every render that feed memo dependencies (PERF-017); static imports
+   of dialogs and other routes' pages (PERF-018); `after` copies (PERF-019).
+5. **Database.** `get_advisors` (performance) and `pg_stat_statements` for the screen's RPCs (PERF-020,
+   PERF-006); quote the numbers.
+6. **Measure, then compare.** Time the screen's routes on production next to `/api/health` (curl from this Mac
+   adds its own 0.5–1.5 s per database round trip, so local timings measure the network, not the app) and quote
+   before and after. A signed-in browser trace needs the user's session (memory `browser-preview-and-sign-in`).
+
+In fix mode, use what exists rather than new code: `cachedMarket`, `keptHistory`, `dayTables`, `warmRead` /
+`ownerReadKey`, `cookieUser`, `afterResponse`, `workspace-lazy.tsx`, `Promise.all`, `useMemo`. A fix that needs a
+table or migration is written and tested here, then handed to the user to apply (the agent may not run production
+DDL). Each fix carries a test, as the cases' guards do.
 
 ### Database evidence (DB, MIG, PERF)
 
@@ -177,7 +206,7 @@ format of §4:
 
 1. SEC + API + AUTHZ (trust boundaries)
 2. LEAK + ERR + BOT (what leaves the server, and failure paths)
-3. DB + MIG + PERF (schema, policies, functions, indexes, queries)
+3. DB + MIG + PERF (schema, policies, functions, indexes, queries, and the page load path for every screen)
 4. MONEY + CONC (financial correctness and races)
 5. DRY + SOLID + ARCH (design and boundaries)
 6. RES + DEP + TEST (resources, supply chain, coverage)
