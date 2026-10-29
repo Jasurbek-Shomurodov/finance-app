@@ -10,11 +10,12 @@ const dates=loadTS('lib/benchmark-data.ts');
 const source=ts.transpileModule(fs.readFileSync('app/api/benchmarks/route.ts','utf8').replace(/^import .*;\n/gm,'').replace(/export /g,''),{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
 let auth=true,limited=false;const counted=[];
 const {signInAgain,tooManyAttempts}=loadTS('lib/api-route.ts');
-const {cbuDayTable,dayTables}=loadTS('lib/day-rate-tables.ts',{'./service-role':{serviceDatabase:()=>null}});
+const {cbuDayTable}=loadTS('lib/day-rate-tables.ts',{'./service-role':{serviceDatabase:()=>null}});
+const {benchmarkFx}=loadTS('lib/benchmark-fx.ts',{'./service-role':{serviceDatabase:()=>null}});
 const afterResponse=work=>{void work();};
 // No service database in tests: every series is read from the stubbed feeds, as before migration 157.
 const {keptHistory}=loadTS('lib/price-history-cache.ts',{'./service-role':{serviceDatabase:()=>null}});
-const deps={cbuDayTable,dayTables,afterResponse,keptHistory,isCurrency,portfolioAssets,portfolioAssetKey,diversifiedPortfolioSchema,benchmarkSelectionSchema,stockBenchmarks,...dates,signInAgain,tooManyAttempts,limits:{benchmarks:[]},rateLimited:async(req,name,limits,key)=>{counted.push([name,key]);return limited;},session:async()=>auth?{token:'owner',user:{id:'owner-id'}}:null,depositToday:()=> '2026-09-17'};
+const deps={cbuDayTable,benchmarkFx,afterResponse,keptHistory,isCurrency,portfolioAssets,portfolioAssetKey,diversifiedPortfolioSchema,benchmarkSelectionSchema,stockBenchmarks,...dates,signInAgain,tooManyAttempts,limits:{benchmarks:[]},rateLimited:async(req,name,limits,key)=>{counted.push([name,key]);return limited;},session:async()=>auth?{token:'owner',user:{id:'owner-id'}}:null,depositToday:()=> '2026-09-17'};
 const GET=new Function(...Object.keys(deps),source+';return GET;')(...Object.values(deps));
 const request=(params='start=2026-09-14&end=2026-09-17')=>new Request('https://local/api/benchmarks?'+params);
 test('rejects anonymous users, invalid dates, future or reversed periods, and arbitrary symbols',async()=>{
@@ -282,8 +283,9 @@ test('a day the exchange-rate feed misses uses the closest earlier published day
   globalThis.fetch=async raw=>{const url=new URL(raw);if(url.hostname!=='cbu.uz')throw Error('offline');const date=url.pathname.split('/').filter(Boolean).at(-1);if(date==='2026-09-16')return new Response('',{status:503});if(date==='2026-09-17'&&!flaky++)throw Error('reset');return rates(date);};
   const data=await(await GET(request('start=2026-09-14&end=2026-09-17&benchmarks=depositUSD'))).json();
   assert.equal(data.errors.fx,undefined);
-  assert.deepEqual(data.fx.map(point=>point.date),['2026-09-14','2026-09-15','2026-09-17']);
-  assert.equal(dates.historicalRate(data.fx,'UZS','2026-09-16'),12000);
+  // The end missed once: the latest published day within a week of it stands for the end, as a rate stays in force.
+  assert.deepEqual(data.fx.map(point=>point.date),['2026-09-14','2026-09-15']);
+  assert.equal(dates.historicalRate(data.fx,'UZS','2026-09-16'),12000);assert.equal(dates.historicalRate(data.fx,'UZS','2026-09-17'),12000);
   // A feed that is down across the whole lookback still reports the gap rather than guessing.
   globalThis.fetch=async raw=>{const url=new URL(raw);const date=url.pathname.split('/').filter(Boolean).at(-1);return date<='2026-09-14'?new Response('',{status:503}):rates(date);};
   const down=await(await GET(request('start=2026-09-14&end=2026-09-17&benchmarks=depositUSD'))).json();

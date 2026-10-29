@@ -17,6 +17,7 @@
     "test:integration": "node scripts/test.mjs --integration",
     "test:coverage": "node scripts/test.mjs --coverage",
     "migrations:check": "node scripts/check-migrations.mjs",
+    "rates:fill": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/fill-day-rates.mjs",
     "build:production": "next build --webpack",
     "typecheck": "tsc --noEmit --incremental false",
     "test:e2e": "playwright test",

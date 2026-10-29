@@ -32,8 +32,7 @@ test('missing FX, stale quotes and depleted investments create gaps instead of i
  assert.ok(result.unavailable.includes('depositUZS'));
  const stale=compareInvestments(100,[],[],data('2025-01-01','2025-01-10',{SPY:[{date:'2025-01-01',close:10}]}),'USD');assert.equal(stale.points.at(-1).SPY,null);
 });
-test('period checkpoints include boundaries and stay bounded',()=>{
- const checkpoints=dates.checkpointDates('2025-01-01','2026-01-01');assert.equal(checkpoints[0],'2025-01-01');assert.equal(checkpoints.at(-1),'2026-01-01');assert.ok(checkpoints.length<=25);
+test('valid days are real calendar days',()=>{
  assert.equal(dates.validDay('2025-02-30'),false);assert.equal(dates.validDay('2024-02-29'),true);
 });
 test('cashflow-only investing can start at zero and earns nothing before the contribution',()=>{

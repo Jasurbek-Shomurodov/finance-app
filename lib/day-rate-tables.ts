@@ -21,11 +21,31 @@ export function cbuDayTable(rows: unknown, day: string): DayTable {
  return Object.fromEntries(Object.entries(uzs).map(([currency, value]) => [currency, currency === 'USD' ? 1 : uzs.USD / value]));
 }
 
-/** One day's rates from the archive; a past day is kept in the fetch cache for a month. */
-async function fetchCbuDay(day: string, fetcher: typeof fetch = fetch): Promise<DayTable> {
- const response = await fetcher(`https://cbu.uz/ru/arkhiv-kursov-valyut/json/all/${day}/`, { next: { revalidate: datedRateRevalidate(day) }, signal: AbortSignal.timeout(8000) } as RequestInit);
+/** How long the archive is left alone after it did not answer. cbu.uz answers only addresses in Uzbekistan (checked
+ * 2026-10-29 from twelve countries: every one timed out), so a server elsewhere would otherwise wait out the timeout
+ * on every read. */
+export const archiveRestMs = 10 * 60_000;
+let archiveSilentUntil = 0;
+/** One day's rates from the archive; a past day is kept in the fetch cache for a month. A connection that does not
+ * answer within 4 s (a timeout, not a refused or reset one) rests the archive for `archiveRestMs`, so later days fail
+ * at once instead of each waiting. */
+async function fetchCbuDay(day: string, fetcher: typeof fetch = fetch, now = Date.now): Promise<DayTable> {
+ if (now() < archiveSilentUntil) throw Error('Historical exchange rates are unavailable.');
+ let response: Response;
+ try { response = await fetcher(`https://cbu.uz/ru/arkhiv-kursov-valyut/json/all/${day}/`, { next: { revalidate: datedRateRevalidate(day) }, signal: AbortSignal.timeout(4000) } as RequestInit); }
+ catch (error) { if ((error as Error)?.name === 'TimeoutError') archiveSilentUntil = now() + archiveRestMs; throw error; }
  if (!response.ok) throw Error('Historical exchange rates are unavailable.');
  return cbuDayTable(await response.json(), day);
+}
+/** Every kept day from `from` through `to`, in one read: for a reader that can use any published day of a period. */
+export async function keptDaysBetween(from: string, to: string, db: ServiceDatabase | null = serviceDatabase()): Promise<Map<string, DayTable>> {
+ const kept = new Map<string, DayTable>();
+ if (!db || !validDay(from) || !validDay(to)) return kept;
+ try {
+  const rows = await db.read<{ day: string; rates: DayTable }[]>(`/rest/v1/exchange_rate_days?select=day,rates&day=gte.${from}&day=lte.${to}&order=day.asc`);
+  for (const row of rows) kept.set(row.day, row.rates);
+ } catch { /* Nothing kept reads as nothing kept. */ }
+ return kept;
 }
 
 export type DayTableDeps = { db?: ServiceDatabase | null; fetchDay?: (day: string) => Promise<DayTable>; today: string; budgetMs?: number; concurrency?: number; later?: (work: () => Promise<void>) => void };
@@ -49,7 +69,13 @@ async function fetchDays(days: string[], deps: Required<Pick<DayTableDeps, 'fetc
   // The budget is checked before a day is taken, so a day not started stays in the queue for later.
   while (queue.length && Date.now() < deadline) {
    const day = queue.shift()!;
-   try { found.set(day, await deps.fetchDay(day)); } catch { /* That day stays missing. */ }
+   // A day still loading when the budget is spent is not waited for: the reply goes out without it, and the next
+   // read asks again. (The budget used to stop only new days, so one slow day held the reply up to its timeout.)
+   const loading = deps.fetchDay(day).then(table => { found.set(day, table); }, () => undefined);
+   if (!Number.isFinite(deadline)) { await loading; continue; }
+   let timer: ReturnType<typeof setTimeout> | undefined;
+   await Promise.race([loading, new Promise(resolve => { timer = setTimeout(resolve, Math.max(0, deadline - Date.now())); })]);
+   clearTimeout(timer);
   }
  };
  await Promise.all(Array.from({ length: Math.min(deps.concurrency, days.length) }, worker));
