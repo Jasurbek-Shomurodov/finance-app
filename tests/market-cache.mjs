@@ -22,9 +22,9 @@ function feeds(answer={}){
  const load=async request=>{
   asked.push(request);
   const data={fx:null,quotes:{},errors:{},stocksConfigured:false};
-  if(request.fx)answer.fx===null?data.errors.fx='Exchange rate unavailable.':data.fx=answer.fx??{rate:12500,date:'2026-10-29',source:'CBU'};
-  if(request.rates)answer.rates===null?data.errors.rates='Exchange rate unavailable.':data.rates={EUR:.9,USD:1};
-  for(const symbol of request.crypto)answer[symbol]===null?data.errors[`Crypto:${symbol}`]='Price unavailable. Saved price is shown.':data.quotes[`Crypto:${symbol}`]=quote(answer[symbol]??100);
+  if(request.fx&&answer.fx===null)data.errors.fx='Exchange rate unavailable.';else if(request.fx)data.fx=answer.fx??{rate:12500,date:'2026-10-29',source:'CBU'};
+  if(request.rates&&answer.rates===null)data.errors.rates='Exchange rate unavailable.';else if(request.rates)data.rates={EUR:.9,USD:1};
+  for(const symbol of request.crypto){if(answer[symbol]===null)data.errors[`Crypto:${symbol}`]='Price unavailable. Saved price is shown.';else data.quotes[`Crypto:${symbol}`]=quote(answer[symbol]??100);}
   for(const symbol of request.stocks)data.errors[`Stock:${symbol}`]='Sign in to fetch stock prices.';
   if(data.fx)data.rates={...data.rates,USD:1,UZS:data.fx.rate};
   return data;
