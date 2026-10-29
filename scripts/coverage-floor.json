@@ -81,7 +81,6 @@
   "components/workspace/screens/upcoming-screen.tsx",
   "components/workspace/workspace-dialogs.tsx",
   "components/workspace/workspace-shell.tsx",
-  "hooks/use-comparison-profile.ts",
   "hooks/use-dashboard-layout.ts",
   "hooks/use-earning-sources.ts",
   "hooks/use-goal-order.ts",

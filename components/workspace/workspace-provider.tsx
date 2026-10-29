@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { showError } from '@/lib/feedback';
 import { requestJson } from '@/lib/api-client';
@@ -100,7 +100,10 @@ function useWorkspaceState() {
     useDashboardWarmup(user,demo,section==='Overview',reload);
     const removedCategories=useRemovedCategories(workspacePreferences,user,demo);
     // Accounts in the person's own order (Accounts page), wherever an account is picked.
-    const planning={...basePlanning,data:{...basePlanning.data,removedKinds:removedCategories.kinds,records:inAccountOrder(basePlanning.data.records,savedOrder(workspacePreferences.data.preferences,'account_order')),occurrences:demo?onScheduleDays([...basePlanning.data.occurrences,...rows.filter(row=>row.occurrence_record_id&&row.occurrence_due_on&&!basePlanning.data.occurrences.some(item=>item.record_id===row.occurrence_record_id&&item.due_on===row.occurrence_due_on)).map(row=>({id:row.id,record_id:row.occurrence_record_id!,due_on:row.occurrence_due_on!,status:'paid' as const,transaction_id:row.id}))],basePlanning.data.records):basePlanning.data.occurrences}};
+    // The planning data every screen reads, built once per change of its parts rather than on every render.
+    const removedKey=removedCategories.kinds.join('\u0000'),accountOrder=workspacePreferences.data.preferences;
+    const planningData=useMemo(()=>({...basePlanning.data,removedKinds:removedCategories.kinds,records:inAccountOrder(basePlanning.data.records,savedOrder(workspacePreferences.data.preferences,'account_order')),occurrences:demo?onScheduleDays([...basePlanning.data.occurrences,...rows.filter(row=>row.occurrence_record_id&&row.occurrence_due_on&&!basePlanning.data.occurrences.some(item=>item.record_id===row.occurrence_record_id&&item.due_on===row.occurrence_due_on)).map(row=>({id:row.id,record_id:row.occurrence_record_id!,due_on:row.occurrence_due_on!,status:'paid' as const,transaction_id:row.id}))],basePlanning.data.records):basePlanning.data.occurrences}),[basePlanning.data,removedKey,accountOrder,demo,rows]); // eslint-disable-line react-hooks/exhaustive-deps
+    const planning={...basePlanning,data:planningData};
     const transactionTools=useTransactionTools(user,demo,reload,refreshRecords);
     const categoryIcons=useCategoryIcons(workspacePreferences,user,demo,planning.data.categories);
     const tagResource=useTags(user,demo,reload,planning.data.records,sample.demoTags);
