@@ -12,7 +12,7 @@ const resources=[];let remote={data:null,loading:false};let budget={state:{mode:
 const completion=new Map();
 const cards=loadTS('components/dashboard-cards.tsx',{
  '@/components/language-provider':{useLanguage:()=>({locale:'en-US',t})},
- '@/lib/deposit-interest':{...realDeposit,depositToday:()=>today},
+ '@/lib/deposit-interest':{...realDeposit,depositToday:()=>today,depositMonth:()=>month},
  '@/lib/expense-plans':{expensePlanMonth:()=>month},
  '@/hooks/use-owner-resource':{useOwnerResource:(url,owner,enabled,revision,empty)=>{resources.push({url,owner,enabled,revision});return {data:remote.data??empty,loading:remote.loading};}},
  '@/components/budget/budget-rows':{BudgetProgress:({row})=>React.createElement('meter',{'data-progress':row.progress.toFixed?String(Math.round(row.progress*100)):'','data-remaining':String(row.remaining)})},
