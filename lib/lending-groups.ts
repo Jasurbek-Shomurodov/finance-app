@@ -1,4 +1,5 @@
 import type { Entry } from './finance';
+import { recordDay } from './record-filters';
 
 /** A borrower group as it groups loans: spaces trimmed, case ignored. No name is no group. */
 export const borrowerKey = (name: string | null | undefined) => name?.trim().toLocaleLowerCase() || null;
@@ -30,4 +31,15 @@ export function lendingSequence<T>(rows: readonly T[], entryOf: (row: T) => Entr
   group.rows.push(row);
  }
  return items;
+}
+
+/** A list split into one section per month of each record's date, in the list's order. The month is the lent date for
+ * money lent and the due date for the rest, the day the list sorts by; borrowers gather within their month. */
+export function lendingMonths<T>(rows: readonly T[], entryOf: (row: T) => Entry) {
+ const months = new Map<string, T[]>();
+ for (const row of rows) {
+  const month = recordDay(entryOf(row))?.slice(0, 7) ?? '';
+  months.set(month, [...months.get(month) ?? [], row]);
+ }
+ return [...months].map(([month, list]) => ({ month, rows: list, items: lendingSequence(list, entryOf) }));
 }

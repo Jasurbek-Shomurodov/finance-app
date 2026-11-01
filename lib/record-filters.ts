@@ -9,7 +9,7 @@ export function changeFilterStart(filters:RecordFiltersValue,from:string):Record
  return {...filters,from,to:from&&filters.to&&from>filters.to?'':filters.to};
 }
 // Money lent is dated by the day it was lent; its due date is optional.
-const recordDay=(record:Entry)=>record.kind==='Money lent'?record.lent_date||record.date:record.date;
+export const recordDay=(record:Entry)=>record.kind==='Money lent'?record.lent_date||record.date:record.date;
 export function filterRecords(records:Entry[],filters:RecordFiltersValue,locale:string) {
  return records.filter(record=>(!filters.query.trim()||`${record.name} ${record.notes}`.toLocaleLowerCase(locale).includes(filters.query.trim().toLocaleLowerCase(locale)))&&(filters.category==='all'||record.kind===filters.category||record.custom_category_id===filters.category)&&matchesRecordDate(recordDay(record),filters.from,filters.to)).sort((a,b)=>filters.order==='name'?a.name.localeCompare(b.name,locale):compareRecordDates(recordDay(a),recordDay(b),filters.order)||a.id.localeCompare(b.id));
 }

@@ -6,7 +6,7 @@ import { PanelTitle } from '@/components/presentation-foundation/panel-title';
 import { Pagination } from '@/components/presentation-foundation/pagination';
 import { Fragment, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
 import { useDisplayMoney } from '@/components/display-money';
-import { lendingSequence } from '@/lib/lending-groups';
+import { lendingMonths, lendingSequence, type LendingItem } from '@/lib/lending-groups';
 import { Plus, Wallet } from 'lucide-react';
 import { CategoryBadge } from '@/components/presentation-foundation/category-badge';
 import { useLanguage } from '@/components/language-provider';
@@ -17,7 +17,7 @@ import { RowMenu } from '@/components/presentation-foundation/row-menu';
 import { Button } from '@/components/ui/button';
 import { expenses, income, kinds, lendingRecordKinds, liabilities, unitPricedKinds, value, type Entry } from '@/lib/finance'
 import { metalWeight } from '@/lib/precious-metals';
-import { formatDate, formatNumber, formatSignedMoney } from '@/lib/format';
+import { formatDate, formatMonthYear, formatNumber, formatSignedMoney } from '@/lib/format';
 import { signedAmount } from '@/lib/transaction-list';
 import { trackedKinds } from '@/lib/investment-history';
 import { isTransactionHistory } from '@/lib/transaction-history';
@@ -76,6 +76,16 @@ export function RecordsTable({ title, transactions = false, limit, pagination = 
       ] : []),
      ]}/></div></td>
    </tr>;
+ // Loans of the same borrower group under one heading with what they owe together, in the display currency.
+ const lendingRows = (items: LendingItem<(typeof shown)[number]>[]) => items.map(item => 'row' in item ? row(item.row) : <Fragment key={'borrower:' + item.borrower}>
+  <tr className="table-group-row lending-group-row lending-borrower-row"><th colSpan={5}><div className="table-group-label"><span>{item.borrower}<Count value={item.rows.length}/></span><span>{showSum(item.rows.map(r => ({ amount: value(r), currency: r.currency })))}</span></div></th></tr>
+  {item.rows.map(row)}
+ </Fragment>);
+ // One section per month, its total what is lent less what is owed, as Net lending position counts them. Sorted by name, months would break the order.
+ const lendingList = () => filters.order === 'name' ? lendingRows(lendingSequence(shown, r => r)) : lendingMonths(shown, r => r).map(section => <Fragment key={'month:' + section.month}>
+  <tr className="table-group-row lending-group-row"><th colSpan={5}><div className="table-group-label"><span>{formatMonthYear(section.month, locale)}<Count value={section.rows.length}/></span><span>{showSum(section.rows.map(r => ({ amount: r.kind === 'Money lent' ? value(r) : -value(r), currency: r.currency })))}</span></div></th></tr>
+  {lendingRows(section.items)}
+ </Fragment>);
  return <section id="workspace-records" className={`panel records${historyOnly ? ' transaction-history' : ''}`}>
   {/* A preview counts the rows it lists; the full list counts every matching record. */}
   <PanelTitle title={title} count={<Count value={limit === undefined ? totalRecords : shown.length} loading={tableLoading}/>}/>
@@ -84,11 +94,7 @@ export function RecordsTable({ title, transactions = false, limit, pagination = 
   {useFilteredRecords&&planning.error&&<InlineError message={t(planning.error)}/>}
   {tableLoading ? <LoadingPlaceholder label={t("Loading records…")}/> : visible.length ? <div className="table-scroll"><table>
    <thead><tr><th>{t("Name")}</th><th>{t("Category")}</th><th>{transactions ? t("Date") : t("Date / due date")}</th><th>{transactions ? t("Amount") : t("Value")}</th><th>{t("Actions")}</th></tr></thead>
-   <tbody>{sectionKey === 'debts' ? lendingSequence(shown, r => r).map(item => 'row' in item ? row(item.row) : <Fragment key={'borrower:' + item.borrower}>
-    {/* Loans of the same borrower group under one heading with what they owe together, in the display currency. */}
-    <tr className="table-group-row lending-group-row"><th colSpan={5}><div className="table-group-label"><span>{item.borrower}<Count value={item.rows.length}/></span><span>{showSum(item.rows.map(r => ({ amount: value(r), currency: r.currency })))}</span></div></th></tr>
-    {item.rows.map(row)}
-   </Fragment>) : shown.map(row)}</tbody>
+   <tbody>{sectionKey === 'debts' ? lendingList() : shown.map(row)}</tbody>
   </table></div> : <EmptyState icon={<Wallet />} title={t(filtersActive?'No matching records':'A fresh start')} description={t(filtersActive?'Try another search or clear the filters.':'Add a record in {currency} to start building your overview.', { currency })}>{filtersActive&&<Button variant="outline" onClick={()=>setFilters(emptyRecordFilters)}>{t('Clear filters')}</Button>}<Button variant="outline" onClick={addRecord}><Plus />{transactions ? t("Add your first expense") : t("Add your first record")}</Button></EmptyState>}
   {children}
   {!tableLoading && pagination && <Pagination label={t('Record pages')} summary={t('Page {page} of {pages} · {count} records', { page: formatNumber(tablePage, locale, 0), pages: formatNumber(pageCount, locale, 0), count: formatNumber(totalRecords, locale, 0) })} page={tablePage} pageCount={pageCount} hasNext={tablePage < pageCount} disabled={recordsLoading || busy} onPage={showPage}/>}

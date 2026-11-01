@@ -25,7 +25,7 @@ export function LoansDebtsScreen() {
    <ScreenNotices/>
    {view === 'overview' && (workspaceLoading ? <LoansSkeleton label={t("Loading your workspace…")}/> : <>
     <DebtSummary entries={current} currency={currency}/>
-    <RecordsTable title={t('Loans & debts')}/>
+    <RecordsTable title={t('Loans & debts')} pagination={false}/>
    </>)}
   </div>
   {view === 'payoff' && planning.loading&&<div className="content review-content"><PanelSkeleton label={t('Loading records…')}/></div>}

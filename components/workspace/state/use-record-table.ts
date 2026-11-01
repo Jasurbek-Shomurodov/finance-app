@@ -30,7 +30,8 @@ export function useRecordTable({ user, demo, section, locale, currency, market, 
     const setFilters=(next:RecordFiltersValue)=>{updateFilters(next);setPageState({key:'',page:1});};
     const filtersActive = sectionKey !== 'assets' && (activeFilterCount(filters) > 0);
     const historyOnly = sectionKey === 'cashflow';
-    const useFilteredRecords = filtersActive || historyOnly;
+    // Loans & debts lists every record: a month's section and its total must not stop at a page edge.
+    const useFilteredRecords = filtersActive || historyOnly || sectionKey === 'debts';
     const remoteHistory = historyOnly && !demo;
     const currencyFilter = recordsCurrencyFilter({ sectionKey, currency, market, marketFailed });
     const paginationKey = user + ':' + sectionKey + ':' + currencyFilter + ':' + JSON.stringify(filters);

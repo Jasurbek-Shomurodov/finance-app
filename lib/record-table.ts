@@ -2,7 +2,7 @@ import { sortAssetsByWorth } from './asset-sort';
 import { assetRecordKinds, expenses, income, lendingRecordKinds, normalizeEntry, type Entry } from './finance';
 import { marketEntry, type MarketData } from './market';
 import { compareRecordDates } from './record-dates';
-import { filterRecords, type RecordFiltersValue } from './record-filters';
+import { filterRecords, recordDay, type RecordFiltersValue } from './record-filters';
 import { isTransactionHistory } from './transaction-history';
 
 export type SectionKey = 'assets' | 'cashflow' | 'debts' | 'all';
@@ -18,7 +18,7 @@ export const recordsCurrencyFilter = ({ sectionKey, currency, market, marketFail
  sectionKey === 'assets' || market?.rates?.[currency] || (!market && !marketFailed) ? '' : currency;
 
 /** Newest first; money lent counts from the day it was lent. */
-const sortRecords = (entries: Entry[]) => [...entries].sort((a, b) => compareRecordDates(a.kind === 'Money lent' ? a.lent_date || a.date : a.date, b.kind === 'Money lent' ? b.lent_date || b.date : b.date) || b.id.localeCompare(a.id));
+const sortRecords = (entries: Entry[]) => [...entries].sort((a, b) => compareRecordDates(recordDay(a), recordDay(b)) || b.id.localeCompare(a.id));
 
 const sectionKinds = (section: string): readonly string[] | null => section === 'Overview' ? null : section === 'Assets & investments' ? assetRecordKinds : section === 'Loans & debts' ? lendingRecordKinds : [...income, ...expenses];
 
@@ -51,7 +51,7 @@ export function recordTableView(input: RecordTableInput) {
  const tableLoading = remoteHistory ? input.historyLoading : !demo && (useFilteredRecords ? input.planningLoading : input.loadedKey !== input.requestKey);
  const slice = <T,>(list: T[], at: number) => list.slice((at - 1) * recordsPerPage, at * recordsPerPage);
  const visible = remoteHistory ? historyPage.records.map(record => display(normalizeEntry(record)))
-  : useFilteredRecords ? slice(filtered, tablePage).map(display)
+  : useFilteredRecords ? (sectionKey === 'debts' ? filtered : slice(filtered, tablePage)).map(display)
   : demo ? slice(demoVisible, page)
   : tableLoading ? []
   : sectionKey === 'assets' ? slice(sortAssetsByWorth(rows, record => marketEntry(record, currency, market)), page).map(display)
