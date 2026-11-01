@@ -257,7 +257,7 @@
   "Sale / withdrawal": "出售 / 提取",
   "Mortgage payment": "房贷还款",
   "Tracked cash movements cannot be edited or deleted.": "已追踪的资金流动无法编辑或删除。",
-  "Tracked records must keep their category and currency.": "已追踪的记录必须保持其类别和币种不变。",
+  "Records with linked payments keep their category and currency.": "有关联付款的记录需保留其类别和币种。",
   "This record has investment history and cannot be deleted.": "此记录有投资历史，无法删除。",
   "Check the tracker fields.": "请检查追踪字段。",
   "Investment not found.": "未找到该投资。",

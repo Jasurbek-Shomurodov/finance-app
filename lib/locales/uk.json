@@ -257,7 +257,7 @@
   "Sale / withdrawal": "Продаж / виведення",
   "Mortgage payment": "Платіж за іпотекою",
   "Tracked cash movements cannot be edited or deleted.": "Відстежені рухи коштів не можна редагувати чи видаляти.",
-  "Tracked records must keep their category and currency.": "Відстежувані записи повинні зберігати свою категорію та валюту.",
+  "Records with linked payments keep their category and currency.": "Записи зі зв’язаними платежами зберігають свою категорію та валюту.",
   "This record has investment history and cannot be deleted.": "Цей запис має історію інвестицій, його не можна видалити.",
   "Check the tracker fields.": "Перевірте поля трекера.",
   "Investment not found.": "Інвестицію не знайдено.",

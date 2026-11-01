@@ -257,7 +257,7 @@
   "Sale / withdrawal": "Bán / rút tiền",
   "Mortgage payment": "Trả thế chấp",
   "Tracked cash movements cannot be edited or deleted.": "Không thể sửa hoặc xóa các dòng tiền đã theo dõi.",
-  "Tracked records must keep their category and currency.": "Các bản ghi đã theo dõi phải giữ nguyên danh mục và tiền tệ.",
+  "Records with linked payments keep their category and currency.": "Bản ghi có khoản thanh toán liên kết giữ nguyên danh mục và tiền tệ.",
   "This record has investment history and cannot be deleted.": "Bản ghi này có lịch sử đầu tư nên không thể xóa.",
   "Check the tracker fields.": "Hãy kiểm tra các trường của trình theo dõi.",
   "Investment not found.": "Không tìm thấy khoản đầu tư.",

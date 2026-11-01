@@ -257,7 +257,7 @@
   "Sale / withdrawal": "Sprzedaż / wypłata",
   "Mortgage payment": "Rata hipoteki",
   "Tracked cash movements cannot be edited or deleted.": "Zapisanych przepływów gotówki nie można edytować ani usuwać.",
-  "Tracked records must keep their category and currency.": "Śledzone rekordy muszą zachować swoją kategorię i walutę.",
+  "Records with linked payments keep their category and currency.": "Rekordy z powiązanymi płatnościami zachowują kategorię i walutę.",
   "This record has investment history and cannot be deleted.": "Ten rekord ma historię inwestycji i nie można go usunąć.",
   "Check the tracker fields.": "Sprawdź pola rejestru.",
   "Investment not found.": "Nie znaleziono inwestycji.",

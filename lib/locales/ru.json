@@ -257,7 +257,7 @@
   "Sale / withdrawal": "Продажа / изъятие",
   "Mortgage payment": "Ипотечный платёж",
   "Tracked cash movements cannot be edited or deleted.": "Проведённые операции нельзя изменить или удалить.",
-  "Tracked records must keep their category and currency.": "У записей с историей нельзя менять категорию и валюту.",
+  "Records with linked payments keep their category and currency.": "У записей со связанными платежами нельзя менять категорию и валюту.",
   "This record has investment history and cannot be deleted.": "У этой записи есть история инвестиций, её нельзя удалить.",
   "Check the tracker fields.": "Проверьте поля истории и дату: она не должна быть в будущем.",
   "Investment not found.": "Инвестиция не найдена.",

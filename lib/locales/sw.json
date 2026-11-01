@@ -257,7 +257,7 @@
   "Sale / withdrawal": "Mauzo / uondoaji",
   "Mortgage payment": "Malipo ya rehani",
   "Tracked cash movements cannot be edited or deleted.": "Mienendo ya fedha iliyofuatiliwa haiwezi kuhaririwa wala kufutwa.",
-  "Tracked records must keep their category and currency.": "Rekodi zinazofuatiliwa lazima zibaki na kategoria na sarafu yake.",
+  "Records with linked payments keep their category and currency.": "Rekodi zilizo na malipo yaliyounganishwa hubaki na aina na sarafu zake.",
   "This record has investment history and cannot be deleted.": "Rekodi hii ina historia ya uwekezaji na haiwezi kufutwa.",
   "Check the tracker fields.": "Kagua sehemu za kifuatiliaji.",
   "Investment not found.": "Uwekezaji haujapatikana.",

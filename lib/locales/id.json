@@ -257,7 +257,7 @@
   "Sale / withdrawal": "Penjualan / penarikan",
   "Mortgage payment": "Pembayaran KPR",
   "Tracked cash movements cannot be edited or deleted.": "Arus kas terlacak tidak dapat diubah atau dihapus.",
-  "Tracked records must keep their category and currency.": "Catatan terlacak harus mempertahankan kategori dan mata uangnya.",
+  "Records with linked payments keep their category and currency.": "Catatan dengan pembayaran tertaut tetap memakai kategori dan mata uangnya.",
   "This record has investment history and cannot be deleted.": "Catatan ini memiliki riwayat investasi dan tidak dapat dihapus.",
   "Check the tracker fields.": "Periksa kolom pelacak.",
   "Investment not found.": "Investasi tidak ditemukan.",

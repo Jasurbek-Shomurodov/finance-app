@@ -257,7 +257,7 @@
   "Sale / withdrawal": "Venda / resgate",
   "Mortgage payment": "Pagamento do financiamento",
   "Tracked cash movements cannot be edited or deleted.": "Movimentações de caixa acompanhadas não podem ser editadas nem excluídas.",
-  "Tracked records must keep their category and currency.": "Registros acompanhados devem manter sua categoria e moeda.",
+  "Records with linked payments keep their category and currency.": "Registos com pagamentos associados mantêm a categoria e a moeda.",
   "This record has investment history and cannot be deleted.": "Este registro tem histórico de investimento e não pode ser excluído.",
   "Check the tracker fields.": "Verifique os campos do acompanhamento.",
   "Investment not found.": "Investimento não encontrado.",

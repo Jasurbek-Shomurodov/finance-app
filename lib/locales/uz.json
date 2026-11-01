@@ -257,7 +257,7 @@
   "Sale / withdrawal": "Sotuv / pul yechish",
   "Mortgage payment": "Ipoteka to‘lovi",
   "Tracked cash movements cannot be edited or deleted.": "Saqlangan pul harakatlarini o‘zgartirish yoki o‘chirish mumkin emas.",
-  "Tracked records must keep their category and currency.": "Tarixi mavjud yozuvlarning toifasi va valyutasi o‘zgarmasligi kerak.",
+  "Records with linked payments keep their category and currency.": "Bog‘langan to‘lovlari bor yozuvlarning toifasi va valyutasi o‘zgarmaydi.",
   "This record has investment history and cannot be deleted.": "Bu yozuvning investitsiya tarixi bor va uni o‘chirib bo‘lmaydi.",
   "Check the tracker fields.": "Maydonlar va sanani tekshiring: sana kelajakda bo‘lmasligi kerak.",
   "Investment not found.": "Investitsiya topilmadi.",

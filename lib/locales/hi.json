@@ -257,7 +257,7 @@
   "Sale / withdrawal": "बिक्री / निकासी",
   "Mortgage payment": "मॉर्गेज भुगतान",
   "Tracked cash movements cannot be edited or deleted.": "ट्रैक किए गए नकद लेन-देन संपादित या हटाए नहीं जा सकते।",
-  "Tracked records must keep their category and currency.": "ट्रैक किए गए रिकॉर्ड की श्रेणी और मुद्रा नहीं बदली जा सकती।",
+  "Records with linked payments keep their category and currency.": "लिंक किए गए भुगतान वाले रिकॉर्ड की श्रेणी और मुद्रा नहीं बदलती।",
   "This record has investment history and cannot be deleted.": "इस रिकॉर्ड का निवेश इतिहास है, इसलिए इसे हटाया नहीं जा सकता।",
   "Check the tracker fields.": "ट्रैकर के फ़ील्ड जांचें।",
   "Investment not found.": "निवेश नहीं मिला।",

@@ -257,7 +257,7 @@
   "Sale / withdrawal": "Pagbebenta / pag-withdraw",
   "Mortgage payment": "Bayad sa mortgage",
   "Tracked cash movements cannot be edited or deleted.": "Hindi maaaring i-edit o burahin ang mga subaybay na galaw ng cash.",
-  "Tracked records must keep their category and currency.": "Dapat panatilihin ng mga subaybay na record ang kategorya at currency nito.",
+  "Records with linked payments keep their category and currency.": "Pinananatili ng mga talaang may naka-link na bayad ang kanilang kategorya at pera.",
   "This record has investment history and cannot be deleted.": "May kasaysayan ng pamumuhunan ang record na ito kaya hindi ito mabubura.",
   "Check the tracker fields.": "Suriin ang mga field ng tracker.",
   "Investment not found.": "Hindi nahanap ang pamumuhunan.",

@@ -257,7 +257,7 @@
   "Sale / withdrawal": "Prodej / výběr",
   "Mortgage payment": "Splátka hypotéky",
   "Tracked cash movements cannot be edited or deleted.": "Sledované pohyby hotovosti nelze upravovat ani mazat.",
-  "Tracked records must keep their category and currency.": "Sledované záznamy musí zachovat kategorii a měnu.",
+  "Records with linked payments keep their category and currency.": "Záznamy s propojenými platbami si ponechávají kategorii a měnu.",
   "This record has investment history and cannot be deleted.": "Tento záznam má historii investic a nelze jej smazat.",
   "Check the tracker fields.": "Zkontrolujte pole sledování.",
   "Investment not found.": "Investice nenalezena.",

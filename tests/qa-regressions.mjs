@@ -162,7 +162,7 @@ test('QA 2026-10-02: dialogs explain limits, prefill scheduled amounts and offer
  for(const file of ['components/planning/asset-movement-dialog.tsx','components/planning/account-operation.tsx','components/planning/goals-page.tsx','components/data-tools.tsx','components/cash-account-field.tsx'])assert.match(read(file),/formatAccountOption\(/,file);
  assert.doesNotMatch(read('components/planning/account-operation.tsx'),/\{a\.name\} · \{a\.currency\}/);
  // Loans & debts: currency choice for new records, loan-only filter, payments for loans and debts, plural counts.
- assert.match(sourceWithParts('components/record-dialog.tsx'),/!existing&&\(assetRecord\|\|lendingRecordKinds\.includes\(editing\.kind\)\)/);
+ assert.match(sourceWithParts('components/record-dialog.tsx'),/assetRecord\|\|lendingRecordKinds\.includes\(editing\.kind\)\)\?<CurrencySelect/);
  const table=read('components/workspace/records-table.tsx');
  assert.match(table,/categories=\{sectionKey === 'debts' \? \[\] : planning\.data\.categories\}/);
  assert.match(table,/\(r\.kind === 'Loan' \|\| r\.kind === 'Debt'\) && <Button.*?setDebtPayment/);

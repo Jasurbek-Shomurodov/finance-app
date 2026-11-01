@@ -257,7 +257,7 @@
   "Sale / withdrawal": "بيع / سحب",
   "Mortgage payment": "دفعة رهن عقاري",
   "Tracked cash movements cannot be edited or deleted.": "لا يمكن تعديل الحركات النقدية المتتبَّعة أو حذفها.",
-  "Tracked records must keep their category and currency.": "يجب أن تحتفظ السجلات المتتبَّعة بفئتها وعملتها.",
+  "Records with linked payments keep their category and currency.": "تحتفظ السجلات المرتبطة بمدفوعات بفئتها وعملتها.",
   "This record has investment history and cannot be deleted.": "لهذا السجل تاريخ استثماري ولا يمكن حذفه.",
   "Check the tracker fields.": "تحقق من حقول المتتبّع.",
   "Investment not found.": "لم يُعثر على الاستثمار.",

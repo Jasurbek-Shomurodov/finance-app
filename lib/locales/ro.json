@@ -257,7 +257,7 @@
   "Sale / withdrawal": "Vânzare / retragere",
   "Mortgage payment": "Plată ipotecă",
   "Tracked cash movements cannot be edited or deleted.": "Mișcările de numerar urmărite nu pot fi editate sau șterse.",
-  "Tracked records must keep their category and currency.": "Înregistrările urmărite trebuie să-și păstreze categoria și moneda.",
+  "Records with linked payments keep their category and currency.": "Înregistrările cu plăți asociate își păstrează categoria și moneda.",
   "This record has investment history and cannot be deleted.": "Această înregistrare are istoric de investiții și nu poate fi ștearsă.",
   "Check the tracker fields.": "Verifică câmpurile monitorizării.",
   "Investment not found.": "Investiția nu a fost găsită.",

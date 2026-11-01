@@ -257,7 +257,7 @@
   "Sale / withdrawal": "Satış / çekim",
   "Mortgage payment": "İpotek ödemesi",
   "Tracked cash movements cannot be edited or deleted.": "Takip edilen nakit hareketleri düzenlenemez veya silinemez.",
-  "Tracked records must keep their category and currency.": "Takip edilen kayıtlar kategorisini ve para birimini korumalıdır.",
+  "Records with linked payments keep their category and currency.": "Bağlı ödemeleri olan kayıtlar kategorisini ve para birimini korur.",
   "This record has investment history and cannot be deleted.": "Bu kaydın yatırım geçmişi var ve silinemez.",
   "Check the tracker fields.": "Takip alanlarını kontrol edin.",
   "Investment not found.": "Yatırım bulunamadı.",

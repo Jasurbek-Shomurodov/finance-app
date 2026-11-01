@@ -257,7 +257,7 @@
   "Sale / withdrawal": "فروخت / نکلوانا",
   "Mortgage payment": "مورگیج ادائیگی",
   "Tracked cash movements cannot be edited or deleted.": "ٹریک شدہ نقدی کی نقل و حرکت میں ترمیم یا اسے حذف نہیں کیا جا سکتا۔",
-  "Tracked records must keep their category and currency.": "ٹریک شدہ ریکارڈ کا زمرہ اور کرنسی برقرار رہنی چاہیے۔",
+  "Records with linked payments keep their category and currency.": "منسلک ادائیگیوں والے ریکارڈ اپنی زمرہ اور کرنسی برقرار رکھتے ہیں۔",
   "This record has investment history and cannot be deleted.": "اس ریکارڈ کی سرمایہ کاری کی تاریخ موجود ہے اور اسے حذف نہیں کیا جا سکتا۔",
   "Check the tracker fields.": "ٹریکر کے خانے چیک کریں۔",
   "Investment not found.": "سرمایہ کاری نہیں ملی۔",

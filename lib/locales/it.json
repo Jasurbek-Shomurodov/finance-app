@@ -257,7 +257,7 @@
   "Sale / withdrawal": "Vendita / prelievo",
   "Mortgage payment": "Rata del mutuo",
   "Tracked cash movements cannot be edited or deleted.": "I movimenti di cassa monitorati non possono essere modificati o eliminati.",
-  "Tracked records must keep their category and currency.": "Le voci monitorate devono mantenere categoria e valuta.",
+  "Records with linked payments keep their category and currency.": "I record con pagamenti collegati mantengono categoria e valuta.",
   "This record has investment history and cannot be deleted.": "Questa voce ha una cronologia di investimento e non può essere eliminata.",
   "Check the tracker fields.": "Controlla i campi del monitoraggio.",
   "Investment not found.": "Investimento non trovato.",

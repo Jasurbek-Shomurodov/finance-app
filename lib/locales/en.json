@@ -257,7 +257,7 @@
   "Sale / withdrawal": "Sale / withdrawal",
   "Mortgage payment": "Mortgage payment",
   "Tracked cash movements cannot be edited or deleted.": "Tracked cash movements cannot be edited or deleted.",
-  "Tracked records must keep their category and currency.": "Tracked records must keep their category and currency.",
+  "Records with linked payments keep their category and currency.": "Records with linked payments keep their category and currency.",
   "This record has investment history and cannot be deleted.": "This record has investment history and cannot be deleted.",
   "Check the tracker fields.": "Check the tracker fields.",
   "Investment not found.": "Investment not found.",

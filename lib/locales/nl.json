@@ -257,7 +257,7 @@
   "Sale / withdrawal": "Verkoop / opname",
   "Mortgage payment": "Hypotheekbetaling",
   "Tracked cash movements cannot be edited or deleted.": "Vastgelegde geldstromen kunnen niet worden bewerkt of verwijderd.",
-  "Tracked records must keep their category and currency.": "Vastgelegde posten moeten hun categorie en valuta behouden.",
+  "Records with linked payments keep their category and currency.": "Records met gekoppelde betalingen behouden hun categorie en valuta.",
   "This record has investment history and cannot be deleted.": "Deze post heeft beleggingsgeschiedenis en kan niet worden verwijderd.",
   "Check the tracker fields.": "Controleer de trackervelden.",
   "Investment not found.": "Belegging niet gevonden.",

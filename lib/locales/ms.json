@@ -257,7 +257,7 @@
   "Sale / withdrawal": "Jualan / pengeluaran",
   "Mortgage payment": "Bayaran gadai janji",
   "Tracked cash movements cannot be edited or deleted.": "Pergerakan tunai terjejak tidak boleh diedit atau dipadam.",
-  "Tracked records must keep their category and currency.": "Rekod terjejak mesti mengekalkan kategori dan mata wangnya.",
+  "Records with linked payments keep their category and currency.": "Rekod dengan pembayaran dipautkan mengekalkan kategori dan mata wangnya.",
   "This record has investment history and cannot be deleted.": "Rekod ini mempunyai sejarah pelaburan dan tidak boleh dipadam.",
   "Check the tracker fields.": "Semak medan penjejak.",
   "Investment not found.": "Pelaburan tidak ditemui.",

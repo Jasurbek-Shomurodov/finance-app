@@ -257,7 +257,7 @@
   "Sale / withdrawal": "ขาย / ถอน",
   "Mortgage payment": "การชำระสินเชื่อที่อยู่อาศัย",
   "Tracked cash movements cannot be edited or deleted.": "ไม่สามารถแก้ไขหรือลบการเคลื่อนไหวของเงินสดที่ติดตามไว้ได้",
-  "Tracked records must keep their category and currency.": "รายการที่ติดตามต้องคงหมวดหมู่และสกุลเงินเดิมไว้",
+  "Records with linked payments keep their category and currency.": "รายการที่มีการชำระเงินเชื่อมโยงอยู่จะคงหมวดหมู่และสกุลเงินเดิมไว้",
   "This record has investment history and cannot be deleted.": "รายการนี้มีประวัติการลงทุนและไม่สามารถลบได้",
   "Check the tracker fields.": "ตรวจสอบช่องข้อมูลของตัวติดตาม",
   "Investment not found.": "ไม่พบการลงทุน",

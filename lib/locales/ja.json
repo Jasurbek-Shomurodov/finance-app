@@ -257,7 +257,7 @@
   "Sale / withdrawal": "売却／引き出し",
   "Mortgage payment": "住宅ローンの支払い",
   "Tracked cash movements cannot be edited or deleted.": "記録された資金の動きは編集も削除もできません。",
-  "Tracked records must keep their category and currency.": "トラッカーの記録は、カテゴリと通貨を変更できません。",
+  "Records with linked payments keep their category and currency.": "支払いが連携された記録のカテゴリと通貨は変更できません。",
   "This record has investment history and cannot be deleted.": "この記録には投資履歴があるため、削除できません。",
   "Check the tracker fields.": "トラッカーの入力内容を確認してください。",
   "Investment not found.": "投資が見つかりません。",

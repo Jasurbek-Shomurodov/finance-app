@@ -257,7 +257,7 @@
   "Sale / withdrawal": "מכירה / משיכה",
   "Mortgage payment": "תשלום משכנתא",
   "Tracked cash movements cannot be edited or deleted.": "לא ניתן לערוך או למחוק תנועות מזומנים שנרשמו.",
-  "Tracked records must keep their category and currency.": "רשומות במעקב חייבות לשמור על הקטגוריה והמטבע שלהן.",
+  "Records with linked payments keep their category and currency.": "רשומות עם תשלומים מקושרים שומרות על הקטגוריה והמטבע שלהן.",
   "This record has investment history and cannot be deleted.": "לרשומה זו יש היסטוריית השקעה ולא ניתן למחוק אותה.",
   "Check the tracker fields.": "בדקו את שדות המעקב.",
   "Investment not found.": "ההשקעה לא נמצאה.",

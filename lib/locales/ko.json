@@ -257,7 +257,7 @@
   "Sale / withdrawal": "매도 / 출금",
   "Mortgage payment": "주택담보대출 납부",
   "Tracked cash movements cannot be edited or deleted.": "추적된 현금 흐름은 수정하거나 삭제할 수 없어요.",
-  "Tracked records must keep their category and currency.": "추적 중인 기록은 카테고리와 통화를 바꿀 수 없어요.",
+  "Records with linked payments keep their category and currency.": "연결된 결제가 있는 기록은 카테고리와 통화를 유지합니다.",
   "This record has investment history and cannot be deleted.": "투자 내역이 있는 기록은 삭제할 수 없어요.",
   "Check the tracker fields.": "트래커 항목을 확인해 주세요.",
   "Investment not found.": "투자를 찾을 수 없어요.",

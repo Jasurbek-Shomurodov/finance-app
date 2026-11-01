@@ -174,10 +174,10 @@ test('a new cash account offers the investment option, an investment account and
  assert.deepEqual(business.children.map(text),['Household','Cafe']);
  owned.r.fire(business,'onChange',{target:{value:'cafe'}});assert.equal(owned.state.editing.business_id,'cafe');
  owned.r.fire(owned.labelled('Business (optional)','NativeSelect'),'onChange',{target:{value:''}});assert.equal(owned.state.editing.business_id,null);
- // Saved records show their currency without a picker and skip the opening date.
+ // A saved account's currency can be corrected, and it skips the opening date.
  const saved=dialog(t,record('cash','Cash'),{rows:[record('cash','Cash')]});
  assert.equal(saved.r.all(byType('CashInvestmentOption')).length,0);
- assert.ok(saved.r.find(byType('CurrencyValue')));assert.equal(saved.r.all(byType('CurrencySelect')).length,0);
+ assert.ok(saved.r.find(byType('CurrencySelect')));assert.equal(saved.r.all(byType('CurrencyValue')).length,0);
  assert.equal(saved.labelled('Current balance').children[0],'Current balance');
  assert.ok(saved.r.find(byType('RecordEditHistory')),'a saved record shows its edit history');
  assert.equal(dialog(t,record('cash','Cash'),{rows:[record('cash','Cash')],demo:true}).r.all(byType('RecordEditHistory')).length,0,'not in the sample workspace');

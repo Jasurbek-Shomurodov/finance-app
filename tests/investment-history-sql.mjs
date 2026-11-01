@@ -23,7 +23,9 @@ test('tracker SQL preserves history, scopes owners and records rental cash atomi
   await assert.rejects(save(4,'valuation',0,130000,'2999-01-01'),/Check the tracker/);
   await assert.rejects(db.query('UPDATE finance_records SET amount=1 WHERE id=$1',[id(3)]),/cannot be edited/);
   await assert.rejects(db.query('DELETE FROM investment_history'),/permission denied/);
+  // The rent above is money tied to the record: it keeps its category and currency.
   await assert.rejects(db.query("UPDATE finance_records SET currency='UZS' WHERE id=$1",[asset]),/keep their category/);
+  await assert.rejects(db.query("UPDATE finance_records SET kind='Valuables' WHERE id=$1",[asset]),/keep their category/);
   // Colliding ledger id forces a failure after event insertion: whole transaction rolls back.
   await db.query("INSERT INTO finance_records(id,user_id,name,kind,currency,amount,date) VALUES($1,$2,'Existing','Salary','USD',1,$3)",[id(9),owner,today]);
   await assert.rejects(save(9,'income',100,null),/duplicate key/);
@@ -34,5 +36,31 @@ test('tracker SQL preserves history, scopes owners and records rental cash atomi
   await db.exec(`SET request.jwt.claim.sub='${other}';`);
   assert.equal((await db.query('SELECT * FROM investment_history')).rows.length,0);
   await assert.rejects(save(11,'valuation',0,1),/Investment not found/);
+ }finally{await db.close();}
+});
+
+test('a record with no linked money changes category and currency, and keeps its history', {skip:!process.env.PGLITE_MODULE}, async()=>{
+ const {PGlite}=await import(process.env.PGLITE_MODULE);const db=new PGlite();
+ const owner='10000000-0000-4000-8000-000000000001',plain='20000000-0000-4000-8000-000000000011',cash='20000000-0000-4000-8000-000000000012',bill='20000000-0000-4000-8000-000000000013';
+ const row=async id=>(await db.query('SELECT kind,currency,amount,opened_on FROM finance_records WHERE id=$1',[id])).rows[0];
+ try{
+  await db.exec(`CREATE ROLE anon;CREATE ROLE authenticated;CREATE SCHEMA auth;CREATE TABLE auth.users(id uuid PRIMARY KEY);CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;INSERT INTO auth.users VALUES('${owner}');SET request.jwt.claim.sub='${owner}';`);
+  await db.exec(fs.readFileSync('database/setup.sql','utf8'));
+  await db.exec(`INSERT INTO finance_records(id,user_id,name,kind,currency,amount,date,opened_on) VALUES('${plain}','${owner}','Family','Debt','USD',2075,'2030-01-01','2026-01-01'),('${cash}','${owner}','Wallet','Cash','USD',500,'2026-01-01',NULL)`);
+  const history=async()=>(await db.query('SELECT count(*)::int AS n FROM investment_history WHERE record_id=$1',[plain])).rows[0].n;
+  const before=await history();assert.ok(before>0,'every record starts with a baseline');
+  await db.query("UPDATE finance_records SET kind='Money lent',lent_date='2026-01-01',currency='UZS' WHERE id=$1",[plain]);
+  let saved=await row(plain);
+  assert.equal(saved.kind,'Money lent');assert.equal(saved.currency,'UZS');assert.equal(Number(saved.amount),2075);
+  assert.equal(saved.opened_on,null,'money lent has no opening date');
+  assert.equal(await history(),before);
+  await db.query("UPDATE finance_records SET kind='Loan',lent_date=NULL,opened_on='2026-01-01' WHERE id=$1",[plain]);
+  saved=await row(plain);assert.equal(saved.kind,'Loan');assert.ok(saved.opened_on);
+  // The same record's start date still follows the old rules.
+  await assert.rejects(db.query('UPDATE finance_records SET opened_on=NULL WHERE id=$1',[plain]),/start date cannot change/);
+  // An account with a transaction keeps its category and currency; without one it would strand that transaction.
+  await db.query("INSERT INTO finance_records(id,user_id,name,kind,currency,amount,date,account_id) VALUES($1,$2,'Lunch','Other expense','USD',10,'2026-01-02',$3)",[bill,owner,cash]);
+  await assert.rejects(db.query("UPDATE finance_records SET currency='UZS' WHERE id=$1",[cash]),/linked payments keep their category/);
+  await assert.rejects(db.query("UPDATE finance_records SET kind='Deposit' WHERE id=$1",[cash]),/linked payments keep their category/);
  }finally{await db.close();}
 });

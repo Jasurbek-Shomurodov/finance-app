@@ -257,7 +257,7 @@
   "Sale / withdrawal": "فروش / برداشت",
   "Mortgage payment": "پرداخت وام مسکن",
   "Tracked cash movements cannot be edited or deleted.": "جابه‌جایی‌های نقدی ردیابی‌شده قابل ویرایش یا حذف نیستند.",
-  "Tracked records must keep their category and currency.": "موارد ردیابی‌شده باید دسته‌بندی و ارز خود را حفظ کنند.",
+  "Records with linked payments keep their category and currency.": "سوابق دارای پرداخت مرتبط، دسته و ارز خود را حفظ می‌کنند.",
   "This record has investment history and cannot be deleted.": "این مورد تاریخچهٔ سرمایه‌گذاری دارد و قابل حذف نیست.",
   "Check the tracker fields.": "فیلدهای ردیاب را بررسی کنید.",
   "Investment not found.": "سرمایه‌گذاری پیدا نشد.",

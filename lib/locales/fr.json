@@ -257,7 +257,7 @@
   "Sale / withdrawal": "Vente / retrait",
   "Mortgage payment": "Remboursement de prêt immobilier",
   "Tracked cash movements cannot be edited or deleted.": "Les mouvements de trésorerie suivis ne peuvent être ni modifiés ni supprimés.",
-  "Tracked records must keep their category and currency.": "Les enregistrements suivis doivent conserver leur catégorie et leur devise.",
+  "Records with linked payments keep their category and currency.": "Les fiches liées à des paiements conservent leur catégorie et leur devise.",
   "This record has investment history and cannot be deleted.": "Cet enregistrement a un historique d’investissement et ne peut pas être supprimé.",
   "Check the tracker fields.": "Vérifiez les champs du suivi.",
   "Investment not found.": "Investissement introuvable.",

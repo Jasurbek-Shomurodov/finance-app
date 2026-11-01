@@ -19,14 +19,14 @@ visit(tree);
 assert.ok(condition && change, 'Currency selector and change handler exist');
 const visible = new Function('editing', 'existing', 'assetRecord', 'income', 'lendingRecordKinds', `return ${condition};`);
 
-test('every new asset and lending record offers currency selection; existing currencies stay locked', () => {
+test('every asset and lending record offers currency selection, new or saved', () => {
  for (const kind of assetRecordKinds) {
   assert.equal(visible({kind}, false, true, income, lendingRecordKinds), true, kind);
-  assert.equal(visible({kind}, true, true, income, lendingRecordKinds), false, kind);
+  assert.equal(visible({kind}, true, true, income, lendingRecordKinds), true, kind);
  }
  for (const kind of lendingRecordKinds) {
   assert.equal(visible({kind}, false, false, income, lendingRecordKinds), true, kind);
-  assert.equal(visible({kind}, true, false, income, lendingRecordKinds), false, kind);
+  assert.equal(visible({kind}, true, false, income, lendingRecordKinds), true, kind);
  }
  assert.equal(visible({kind:'Living expense'}, false, false, income, lendingRecordKinds), false);
 });
