@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "所选现金账户中的资金不足。",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "请选择用于此交易的现金账户。现金余额和未偿本金将同时变动；本金不属于收入或支出。",
   "Choose a cash account in the record currency.": "请选择与记录币种一致的现金账户。",
-  "Enter transactions on or after the latest cash balance date.": "请录入不早于最新现金余额日期的交易。",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "此债务或贷款的开始时间。请输入当日的未偿本金，之后的还款请在“追踪”中记录。",
   "Check the start and due dates.": "请检查开始日期和到期日。",
   "The start date cannot change after creation.": "开始日期创建后无法更改。",

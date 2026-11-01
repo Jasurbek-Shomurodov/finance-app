@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "Wang tidak mencukupi dalam akaun tunai yang dipilih.",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "Pilih akaun tunai yang digunakan untuk transaksi ini. Baki tunai dan prinsipal tertunggak berubah bersama; prinsipal bukan pendapatan atau perbelanjaan.",
   "Choose a cash account in the record currency.": "Pilih akaun tunai dalam mata wang rekod.",
-  "Enter transactions on or after the latest cash balance date.": "Masukkan transaksi pada atau selepas tarikh baki tunai terkini.",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "Bila hutang atau pinjaman ini bermula. Masukkan prinsipal tertunggak pada tarikh itu, kemudian catat bayaran balik seterusnya dalam Penjejak.",
   "Check the start and due dates.": "Semak tarikh mula dan tarikh akhir.",
   "The start date cannot change after creation.": "Tarikh mula tidak boleh diubah selepas dicipta.",

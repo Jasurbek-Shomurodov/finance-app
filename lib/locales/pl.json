@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "Za mało pieniędzy na wybranym koncie gotówkowym.",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "Wybierz konto gotówkowe użyte w tej transakcji. Saldo gotówkowe i kapitał do spłaty zmieniają się razem; kapitał nie jest przychodem ani wydatkiem.",
   "Choose a cash account in the record currency.": "Wybierz konto gotówkowe w walucie rekordu.",
-  "Enter transactions on or after the latest cash balance date.": "Wpisuj transakcje z datą równą lub późniejszą niż ostatnie saldo gotówkowe.",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "Kiedy ten dług lub kredyt się zaczął. Wpisz kapitał pozostający na ten dzień, a późniejsze spłaty zapisuj w Rejestrze.",
   "Check the start and due dates.": "Sprawdź daty rozpoczęcia i terminu.",
   "The start date cannot change after creation.": "Daty rozpoczęcia nie można zmienić po utworzeniu.",

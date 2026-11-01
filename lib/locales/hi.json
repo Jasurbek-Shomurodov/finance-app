@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "चुने गए नकद अकाउंट में पर्याप्त पैसा नहीं है।",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "इस लेन-देन के लिए उपयोग किया गया नकद अकाउंट चुनें। नकद बैलेंस और बकाया मूलधन एक साथ बदलते हैं; मूलधन आय या खर्च नहीं है।",
   "Choose a cash account in the record currency.": "रिकॉर्ड की मुद्रा में नकद अकाउंट चुनें।",
-  "Enter transactions on or after the latest cash balance date.": "नवीनतम नकद बैलेंस की तारीख या उसके बाद के लेन-देन दर्ज करें।",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "यह कर्ज़ या लोन कब शुरू हुआ। उस तारीख का बकाया मूलधन दर्ज करें, फिर बाद की चुकौतियाँ ट्रैकर में दर्ज करें।",
   "Check the start and due dates.": "शुरू और देय तारीखें जांचें।",
   "The start date cannot change after creation.": "शुरू होने की तारीख बनाने के बाद नहीं बदली जा सकती।",

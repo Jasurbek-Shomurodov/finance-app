@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "เงินในบัญชีเงินสดที่เลือกไม่เพียงพอ",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "เลือกบัญชีเงินสดที่ใช้สำหรับธุรกรรมนี้ ยอดเงินสดและเงินต้นคงค้างจะเปลี่ยนพร้อมกัน เงินต้นไม่ใช่รายรับหรือรายจ่าย",
   "Choose a cash account in the record currency.": "เลือกบัญชีเงินสดในสกุลเงินของรายการ",
-  "Enter transactions on or after the latest cash balance date.": "ป้อนธุรกรรมตรงกับหรือหลังวันที่ยอดเงินสดล่าสุด",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "วันที่หนี้หรือเงินกู้นี้เริ่มต้น ป้อนเงินต้นคงค้าง ณ วันนั้น แล้วบันทึกการชำระคืนครั้งถัดไปใน \"ตัวติดตาม\"",
   "Check the start and due dates.": "ตรวจสอบวันที่เริ่มต้นและวันครบกำหนด",
   "The start date cannot change after creation.": "ไม่สามารถเปลี่ยนวันที่เริ่มต้นหลังสร้างแล้ว",

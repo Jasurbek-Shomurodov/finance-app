@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "Fonduri insuficiente în contul de numerar selectat.",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "Selectează contul de numerar folosit pentru această tranzacție. Soldul de numerar și principalul restant se modifică împreună; principalul nu este venit sau cheltuială.",
   "Choose a cash account in the record currency.": "Alege un cont de numerar în moneda înregistrării.",
-  "Enter transactions on or after the latest cash balance date.": "Introdu tranzacții la data ultimului sold de numerar sau după aceasta.",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "Când a început această datorie sau acest împrumut. Introdu principalul restant la acea dată, apoi înregistrează rambursările ulterioare în Monitorizare.",
   "Check the start and due dates.": "Verifică datele de început și scadență.",
   "The start date cannot change after creation.": "Data de început nu poate fi schimbată după creare.",

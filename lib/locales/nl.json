@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "Niet genoeg geld op de geselecteerde contante rekening.",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "Selecteer de contante rekening voor deze transactie. Het contante saldo en de openstaande hoofdsom veranderen samen; de hoofdsom is geen inkomen of uitgave.",
   "Choose a cash account in the record currency.": "Kies een contante rekening in de valuta van de post.",
-  "Enter transactions on or after the latest cash balance date.": "Voer transacties in op of na de laatste datum van het contante saldo.",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "Wanneer deze schuld of lening begon. Voer de openstaande hoofdsom op die datum in en registreer latere aflossingen in de Tracker.",
   "Check the start and due dates.": "Controleer de start- en vervaldatum.",
   "The start date cannot change after creation.": "De startdatum kan na aanmaak niet meer worden gewijzigd.",

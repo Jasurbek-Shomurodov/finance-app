@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "Nicht genug Geld auf dem gewählten Bargeldkonto.",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "Wählen Sie das Bargeldkonto für diese Transaktion. Bargeldsaldo und offene Hauptforderung ändern sich gemeinsam; die Hauptforderung ist weder Einnahme noch Ausgabe.",
   "Choose a cash account in the record currency.": "Wählen Sie ein Bargeldkonto in der Währung des Eintrags.",
-  "Enter transactions on or after the latest cash balance date.": "Erfassen Sie Transaktionen am oder nach dem letzten Bargeldsaldodatum.",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "Wann diese Schuld oder dieser Kredit begann. Geben Sie die an diesem Datum offene Hauptforderung ein und erfassen Sie spätere Rückzahlungen im Tracker.",
   "Check the start and due dates.": "Prüfen Sie Start- und Fälligkeitsdatum.",
   "The start date cannot change after creation.": "Das Startdatum kann nach der Erstellung nicht geändert werden.",

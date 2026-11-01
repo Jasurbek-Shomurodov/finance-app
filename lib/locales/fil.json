@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "Hindi sapat ang pera sa napiling cash account.",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "Piliin ang cash account na ginamit sa transaksyong ito. Sabay na nagbabago ang balanse ng cash at natitirang principal; hindi kita o gastos ang principal.",
   "Choose a cash account in the record currency.": "Pumili ng cash account sa currency ng record.",
-  "Enter transactions on or after the latest cash balance date.": "Maglagay ng mga transaksyong kapareho o pagkatapos ng pinakahuling petsa ng balanse ng cash.",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "Kailan nagsimula ang utang o pautang na ito. Ilagay ang principal na natitira sa petsang iyon, saka itala ang mga susunod na pagbabayad sa Tracker.",
   "Check the start and due dates.": "Suriin ang mga petsa ng simula at takda.",
   "The start date cannot change after creation.": "Hindi na mababago ang petsa ng simula pagkatapos gawin.",

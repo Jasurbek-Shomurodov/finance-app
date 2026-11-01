@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "Fondi insufficienti nel conto di cassa selezionato.",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "Seleziona il conto di cassa usato per questa transazione. Il saldo di cassa e il capitale residuo cambiano insieme; il capitale non è un’entrata né una spesa.",
   "Choose a cash account in the record currency.": "Scegli un conto di cassa nella valuta della voce.",
-  "Enter transactions on or after the latest cash balance date.": "Inserisci le transazioni alla data dell’ultimo saldo di cassa o successivamente.",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "Quando è iniziato questo debito o prestito. Inserisci il capitale residuo a quella data, poi registra i rimborsi successivi nel Monitoraggio.",
   "Check the start and due dates.": "Controlla le date di inizio e di scadenza.",
   "The start date cannot change after creation.": "La data di inizio non può cambiare dopo la creazione.",

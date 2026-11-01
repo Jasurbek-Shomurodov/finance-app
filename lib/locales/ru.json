@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "На выбранном денежном счёте недостаточно средств.",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "Выберите денежный счёт для этой операции. Остаток средств и основной долг изменятся вместе; основной долг не считается доходом или расходом.",
   "Choose a cash account in the record currency.": "Выберите денежный счёт в валюте записи.",
-  "Enter transactions on or after the latest cash balance date.": "Указывайте дату операции не раньше последнего остатка денежного счёта.",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "Дата возникновения долга или кредита. Укажите основной долг на эту дату, а последующие погашения запишите в трекере.",
   "Check the start and due dates.": "Проверьте дату начала и срок погашения.",
   "The start date cannot change after creation.": "Дату начала нельзя изменить после создания записи.",

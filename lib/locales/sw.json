@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "Hakuna pesa za kutosha kwenye akaunti ya fedha taslimu iliyochaguliwa.",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "Chagua akaunti ya fedha taslimu iliyotumika kwa muamala huu. Salio la fedha taslimu na mkuu uliosalia hubadilika pamoja; mkuu si mapato wala matumizi.",
   "Choose a cash account in the record currency.": "Chagua akaunti ya fedha taslimu yenye sarafu ya rekodi.",
-  "Enter transactions on or after the latest cash balance date.": "Weka miamala kwenye tarehe ya mwisho ya salio la fedha taslimu au baada yake.",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "Wakati deni au mkopo huu ulipoanza. Weka mkuu uliosalia katika tarehe hiyo, kisha rekodi marejesho ya baadaye kwenye Kifuatiliaji.",
   "Check the start and due dates.": "Kagua tarehe za kuanza na mwisho.",
   "The start date cannot change after creation.": "Tarehe ya kuanza haiwezi kubadilika baada ya kuundwa.",

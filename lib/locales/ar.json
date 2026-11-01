@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "لا يوجد مال كافٍ في الحساب النقدي المحدد.",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "اختر الحساب النقدي المستخدم في هذه المعاملة. يتغير الرصيد النقدي وأصل الدين المستحق معًا؛ وأصل الدين ليس دخلًا ولا مصروفًا.",
   "Choose a cash account in the record currency.": "اختر حسابًا نقديًا بعملة السجل.",
-  "Enter transactions on or after the latest cash balance date.": "أدخل المعاملات في تاريخ آخر رصيد نقدي أو بعده.",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "متى بدأ هذا الدين أو القرض. أدخل أصل الدين المستحق في ذلك التاريخ، ثم سجّل السداد اللاحق في المتتبّع.",
   "Check the start and due dates.": "تحقق من تاريخَي البدء والاستحقاق.",
   "The start date cannot change after creation.": "لا يمكن تغيير تاريخ البدء بعد الإنشاء.",

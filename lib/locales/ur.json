@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "منتخب نقد اکاؤنٹ میں کافی رقم نہیں ہے۔",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "اس لین دین کے لیے استعمال ہونے والا نقد اکاؤنٹ منتخب کریں۔ نقد بیلنس اور بقایا اصل رقم ایک ساتھ بدلتے ہیں؛ اصل رقم آمدنی یا خرچ نہیں ہے۔",
   "Choose a cash account in the record currency.": "ریکارڈ کی کرنسی میں نقد اکاؤنٹ منتخب کریں۔",
-  "Enter transactions on or after the latest cash balance date.": "تازہ ترین نقد بیلنس کی تاریخ یا اس کے بعد لین دین درج کریں۔",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "یہ قرض یا لون کب شروع ہوا۔ اس تاریخ پر بقایا اصل رقم درج کریں، پھر بعد کی واپسیاں ٹریکر میں درج کریں۔",
   "Check the start and due dates.": "شروع اور آخری تاریخیں چیک کریں۔",
   "The start date cannot change after creation.": "شروع کی تاریخ بنانے کے بعد تبدیل نہیں ہو سکتی۔",

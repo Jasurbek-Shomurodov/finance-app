@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "Uang di rekening kas terpilih tidak cukup.",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "Pilih rekening kas yang digunakan untuk transaksi ini. Saldo kas dan pokok tertunggak berubah bersamaan; pokok bukan pemasukan atau pengeluaran.",
   "Choose a cash account in the record currency.": "Pilih rekening kas dalam mata uang catatan.",
-  "Enter transactions on or after the latest cash balance date.": "Masukkan transaksi pada atau setelah tanggal saldo kas terakhir.",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "Kapan utang atau pinjaman ini dimulai. Masukkan pokok yang tertunggak pada tanggal itu, lalu catat pelunasan berikutnya di Pelacak.",
   "Check the start and due dates.": "Periksa tanggal mulai dan jatuh tempo.",
   "The start date cannot change after creation.": "Tanggal mulai tidak dapat diubah setelah dibuat.",

@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "Na vybraném hotovostním účtu není dost peněz.",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "Vyberte hotovostní účet použitý pro tuto transakci. Hotovostní zůstatek a neuhrazená jistina se mění společně; jistina není příjem ani výdaj.",
   "Choose a cash account in the record currency.": "Vyberte hotovostní účet v měně záznamu.",
-  "Enter transactions on or after the latest cash balance date.": "Zadejte transakce k datu posledního hotovostního zůstatku nebo později.",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "Kdy tento dluh nebo půjčka začaly. Zadejte jistinu neuhrazenou k tomuto datu a pozdější splátky zaznamenejte ve Sledování.",
   "Check the start and due dates.": "Zkontrolujte data zahájení a splatnosti.",
   "The start date cannot change after creation.": "Datum zahájení nelze po vytvoření změnit.",

@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "پول کافی در حساب نقدی انتخاب‌شده نیست.",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "حساب نقدی مورد استفاده برای این تراکنش را انتخاب کنید. موجودی نقدی و اصل معوق با هم تغییر می‌کنند؛ اصل پول درآمد یا هزینه نیست.",
   "Choose a cash account in the record currency.": "یک حساب نقدی به ارز این مورد انتخاب کنید.",
-  "Enter transactions on or after the latest cash balance date.": "تراکنش‌ها را در تاریخ آخرین موجودی نقدی یا پس از آن وارد کنید.",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "زمان شروع این بدهی یا وام. اصل معوق در آن تاریخ را وارد کنید، سپس بازپرداخت‌های بعدی را در ردیاب ثبت کنید.",
   "Check the start and due dates.": "تاریخ‌های شروع و سررسید را بررسی کنید.",
   "The start date cannot change after creation.": "تاریخ شروع پس از ایجاد قابل تغییر نیست.",

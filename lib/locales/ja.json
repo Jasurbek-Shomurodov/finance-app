@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "選択した現金口座の残高が不足しています。",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "この取引に使用する現金口座を選択してください。現金残高と未払い元本は同時に変動します。元本は収入でも支出でもありません。",
   "Choose a cash account in the record currency.": "記録の通貨の現金口座を選択してください。",
-  "Enter transactions on or after the latest cash balance date.": "最新の現金残高の日付以降の取引を入力してください。",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "この債務またはローンが始まった日です。その日の未払い元本を入力し、以降の返済はトラッカーで記録してください。",
   "Check the start and due dates.": "開始日と期日を確認してください。",
   "The start date cannot change after creation.": "開始日は、作成後に変更できません。",

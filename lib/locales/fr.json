@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "Fonds insuffisants sur le compte d’espèces sélectionné.",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "Sélectionnez le compte d’espèces utilisé pour cette transaction. Le solde en espèces et le capital restant dû évoluent ensemble ; le capital n’est ni un revenu ni une dépense.",
   "Choose a cash account in the record currency.": "Choisissez un compte d’espèces dans la devise de l’enregistrement.",
-  "Enter transactions on or after the latest cash balance date.": "Saisissez les transactions à la date du dernier solde en espèces ou après.",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "Date de début de cette dette ou de ce prêt. Saisissez le capital restant dû à cette date, puis enregistrez les remboursements ultérieurs dans Suivi.",
   "Check the start and due dates.": "Vérifiez les dates de début et d’échéance.",
   "The start date cannot change after creation.": "La date de début ne peut pas être modifiée après la création.",

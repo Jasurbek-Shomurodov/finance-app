@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "אין מספיק כסף בחשבון המזומן שנבחר.",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "בחרו את חשבון המזומן ששימש לעסקה זו. יתרת המזומן והקרן הפתוחה משתנות יחד; קרן אינה הכנסה או הוצאה.",
   "Choose a cash account in the record currency.": "בחרו חשבון מזומן במטבע הרשומה.",
-  "Enter transactions on or after the latest cash balance date.": "הזינו עסקאות בתאריך יתרת המזומן האחרונה או אחריו.",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "מתי החוב או ההלוואה התחילו. הזינו את הקרן הפתוחה בתאריך זה, ולאחר מכן תעדו החזרים מאוחרים יותר במעקב.",
   "Check the start and due dates.": "בדקו את תאריכי ההתחלה והיעד.",
   "The start date cannot change after creation.": "לא ניתן לשנות את תאריך ההתחלה לאחר היצירה.",

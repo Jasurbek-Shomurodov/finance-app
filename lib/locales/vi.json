@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "Tài khoản tiền mặt đã chọn không đủ tiền.",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "Chọn tài khoản tiền mặt dùng cho giao dịch này. Số dư tiền mặt và dư nợ gốc thay đổi cùng nhau; tiền gốc không phải thu nhập hay chi phí.",
   "Choose a cash account in the record currency.": "Hãy chọn tài khoản tiền mặt cùng tiền tệ với bản ghi.",
-  "Enter transactions on or after the latest cash balance date.": "Hãy nhập giao dịch từ ngày số dư tiền mặt gần nhất trở đi.",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "Thời điểm khoản nợ hoặc khoản vay này bắt đầu. Hãy nhập dư nợ gốc vào ngày đó, sau đó ghi nhận các khoản trả nợ về sau trong Trình theo dõi.",
   "Check the start and due dates.": "Hãy kiểm tra ngày bắt đầu và ngày đến hạn.",
   "The start date cannot change after creation.": "Không thể đổi ngày bắt đầu sau khi tạo.",

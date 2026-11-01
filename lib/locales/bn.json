@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "নির্বাচিত নগদ অ্যাকাউন্টে পর্যাপ্ত অর্থ নেই।",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "এই লেনদেনে ব্যবহৃত নগদ অ্যাকাউন্ট নির্বাচন করুন। নগদ ব্যালেন্স ও বকেয়া আসল একসাথে পরিবর্তিত হয়; আসল আয় বা ব্যয় নয়।",
   "Choose a cash account in the record currency.": "রেকর্ডের মুদ্রার একটি নগদ অ্যাকাউন্ট বেছে নিন।",
-  "Enter transactions on or after the latest cash balance date.": "সর্বশেষ নগদ ব্যালেন্সের তারিখ বা তার পরের তারিখে লেনদেন লিখুন।",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "এই ঋণ বা লোন কখন শুরু হয়েছিল। সেই তারিখে বকেয়া আসল লিখুন, তারপর পরবর্তী পরিশোধ ট্র্যাকারে রেকর্ড করুন।",
   "Check the start and due dates.": "শুরু ও নির্ধারিত তারিখ পরীক্ষা করুন।",
   "The start date cannot change after creation.": "তৈরি করার পর শুরুর তারিখ পরিবর্তন করা যায় না।",

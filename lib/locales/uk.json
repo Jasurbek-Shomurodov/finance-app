@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "Недостатньо коштів на вибраному готівковому рахунку.",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "Виберіть готівковий рахунок, який використовується для цієї транзакції. Готівковий баланс і непогашена основна сума змінюються разом; основна сума — це не дохід і не витрата.",
   "Choose a cash account in the record currency.": "Виберіть готівковий рахунок у валюті запису.",
-  "Enter transactions on or after the latest cash balance date.": "Вводьте транзакції не раніше дати останнього готівкового балансу.",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "Коли почався цей борг чи кредит. Введіть основну суму, непогашену на цю дату, а пізніші погашення записуйте в трекері.",
   "Check the start and due dates.": "Перевірте дати початку та строку.",
   "The start date cannot change after creation.": "Дату початку не можна змінити після створення.",

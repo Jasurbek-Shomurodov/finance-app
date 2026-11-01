@@ -56,7 +56,7 @@ test('migration keeps owner RLS, atomic locks, idempotency and newer balances in
 
 test('database refusals are shown in their own words as 409, like every other route; unknown failures and a missing function are not',async()=>{
  try{
-  for(const error of ['Choose a cash account in the record currency.','Not enough money in the selected cash account.','Enter transactions on or after the latest cash balance date.','This update was already saved without an account.']){
+  for(const error of ['Choose a cash account in the record currency.','Not enough money in the selected cash account.','This update was already saved without an account.']){
    rpcError=error;const result=await api.POST(request({account_id:'10000000-0000-4000-8000-000000000003'}));
    assert.equal(result.status,409);assert.equal((await result.json()).error,error);
   }

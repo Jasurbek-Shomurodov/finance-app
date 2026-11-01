@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "No hay suficiente dinero en la cuenta de efectivo seleccionada.",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "Selecciona la cuenta de efectivo usada en esta transacción. El saldo en efectivo y el capital pendiente cambian a la vez; el capital no es un ingreso ni un gasto.",
   "Choose a cash account in the record currency.": "Elige una cuenta de efectivo en la moneda del registro.",
-  "Enter transactions on or after the latest cash balance date.": "Introduce las transacciones en la fecha del último saldo en efectivo o después.",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "Cuándo comenzó esta deuda o préstamo. Introduce el capital pendiente en esa fecha y registra los reembolsos posteriores en Seguimiento.",
   "Check the start and due dates.": "Revisa las fechas de inicio y vencimiento.",
   "The start date cannot change after creation.": "La fecha de inicio no se puede cambiar después de crear el registro.",

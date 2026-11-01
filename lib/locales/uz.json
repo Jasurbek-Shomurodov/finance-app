@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "Tanlangan pul hisobida mablag‘ yetarli emas.",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "Ushbu operatsiya uchun pul hisobini tanlang. Pul qoldig‘i va asosiy qarz birgalikda o‘zgaradi; asosiy qarz daromad yoki xarajat hisoblanmaydi.",
   "Choose a cash account in the record currency.": "Yozuv valyutasidagi pul hisobini tanlang.",
-  "Enter transactions on or after the latest cash balance date.": "Operatsiya sanasi pul hisobining oxirgi qoldiq sanasidan oldin bo‘lmasin.",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "Qarz yoki kredit boshlangan sana. O‘sha sanadagi asosiy qarz qoldig‘ini kiriting, keyingi to‘lovlarni esa kuzatuvda qayd eting.",
   "Check the start and due dates.": "Boshlanish sanasi va to‘lov muddatini tekshiring.",
   "The start date cannot change after creation.": "Yozuv yaratilgandan keyin boshlanish sanasini o‘zgartirib bo‘lmaydi.",

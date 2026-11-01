@@ -698,7 +698,6 @@
   "Not enough money in the selected cash account.": "Not enough money in the selected cash account.",
   "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.": "Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.",
   "Choose a cash account in the record currency.": "Choose a cash account in the record currency.",
-  "Enter transactions on or after the latest cash balance date.": "Enter transactions on or after the latest cash balance date.",
   "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.": "When this debt or loan began. Enter the principal outstanding on that date, then record later repayments in Tracker.",
   "Check the start and due dates.": "Check the start and due dates.",
   "The start date cannot change after creation.": "The start date cannot change after creation.",
