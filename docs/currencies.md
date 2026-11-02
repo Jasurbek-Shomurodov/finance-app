@@ -14,7 +14,9 @@ and the app reads the saved rows: the Currency API's dated USD file
 (https://github.com/fawazahmed0/exchange-api) for each day, and
 https://www.exchangerate-api.com/docs/free for the global table, with provider attribution
 in the UI. cbu.uz answers only addresses in Uzbekistan, so days through 1 November 2026 are
-CBU's and later ones the Currency API's; `exchange_rate_days.source` names which. Never invent a rate for an unsupported currency;
+CBU's and later ones the Currency API's; `exchange_rate_days.source` names which. Each daily run also adds the currencies older days lack,
+back to the provider's first file (2 March 2024), keeping every saved rate. When a currency joins
+the catalogue, move `catalogueChangedAt` and the runs complete every saved day again. Never invent a rate for an unsupported currency;
 keep original amounts visible and disclose exclusions from converted totals.
 
 Run migrations in numeric order. 004 adds account preferences with owner RLS,

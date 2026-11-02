@@ -13,11 +13,12 @@ function database(days={},ratesAt=null){
  const read=async path=>{
   if(path.includes('market_quotes'))return ratesAt?[{fetched_at:ratesAt}]:[];
   const list=Object.entries(days).sort().map(([day,row])=>({day,...row}));
+  if(path.includes('fetched_at=lt'))return list.filter(row=>row.old).reverse().slice(0,Number(path.match(/limit=(\d+)/)[1]));
   if(path.includes('order=day.desc'))return list.reverse().slice(0,1);
   const from=path.match(/day=gte\.([\d-]+)/)?.[1],to=path.match(/day=lte\.([\d-]+)/)?.[1];
   return list.filter(row=>row.day>=from&&row.day<=to);
  };
- return {days,writes,db:{read,write:async(path,init)=>{const rows=JSON.parse(init.body);writes.push({path,rows});if(path.includes('exchange_rate_days'))for(const row of rows)days[row.day]={rates:row.rates,source:row.source};return new Response(null,{status:201});}}};
+ return {days,writes,db:{read,write:async(path,init)=>{const rows=JSON.parse(init.body);writes.push({path,rows});if(path.includes('exchange_rate_days'))for(const row of rows)days[row.day]={rates:row.rates,source:row.source,saved:row.fetched_at};return new Response(null,{status:201});}}};
 }
 async function withFeeds(feed,run){
  const original=globalThis.fetch,calls=[];
@@ -39,7 +40,7 @@ test('a run downloads each missing day once and names its source, sets the dolla
  const {db,writes,days}=database({'2026-10-31':{rates:{USD:1,UZS:12023.46},source:'CBU'}});
  await withFeeds(feed,async calls=>{
   const result=await refreshExchangeRates(['2026-10-31','2026-11-01',TODAY],{db,today:TODAY,now:NOW});
-  assert.deepEqual(result,{asked:3,kept:2,missing:[],dollar:12033.43,global:'kept'});
+  assert.deepEqual(result,{asked:3,kept:2,missing:[],completed:0,dollar:12033.43,global:'kept'});
   assert.equal(calls.filter(url=>url.includes('2026-10-31')).length,0,'a kept day is never downloaded');
   assert.equal(calls.length,3,'two days and one global table');
   assert.ok(calls.every(url=>!url.includes('cbu.uz')));
@@ -60,7 +61,7 @@ test('the second host answers when the first does not, and a day neither has sta
  const {db,days}=database({},new Date(NOW).toISOString());
  await withFeeds(url=>{if(url.includes('jsdelivr'))throw Error('down');if(url.includes(TODAY))return new Response('',{status:404});return feed(url);},async()=>{
   const result=await refreshExchangeRates(['2026-11-01',TODAY],{db,today:TODAY,now:NOW});
-  assert.deepEqual(result,{asked:2,kept:1,missing:[TODAY],dollar:12033.43,global:'fresh'});
+  assert.deepEqual(result,{asked:2,kept:1,missing:[TODAY],completed:0,dollar:12033.43,global:'fresh'});
   assert.deepEqual(Object.keys(days),['2026-11-01']);
  });
 });
@@ -69,7 +70,7 @@ test('a table the feed refuses is reported, never kept, and an old saved day set
  const {refreshExchangeRates,loadGlobalRates}=fresh();
  const {db,writes}=database({'2026-01-01':{rates:{USD:1,UZS:12000},source:'CBU'}});
  await withFeeds(url=>url.includes('er-api')?Response.json({...globalBody,base_code:'EUR'}):new Response('',{status:404}),async()=>{
-  assert.deepEqual(await refreshExchangeRates([TODAY],{db,today:TODAY,now:NOW}),{asked:1,kept:0,missing:[TODAY],dollar:null,global:'failed'});
+  assert.deepEqual(await refreshExchangeRates([TODAY],{db,today:TODAY,now:NOW}),{asked:1,kept:0,missing:[TODAY],completed:0,dollar:null,global:'failed'});
   assert.equal(writes.length,0);
   await assert.rejects(loadGlobalRates());
  });
@@ -82,6 +83,38 @@ test('a day the database refuses is named as missing',async()=>{
  await withFeeds(feed,async()=>{
   assert.deepEqual((await refreshExchangeRates(['2026-11-01'],{db,today:TODAY,now:NOW})).missing,['2026-11-01']);
  });
+});
+
+test('older days gain the currencies they lack once: every saved rate and source stays, and a run is bounded',async()=>{
+ const {completeOlderDays,refreshExchangeRates}=fresh();
+ const saved={};
+ for(let n=1;n<=70;n++)saved[`2025-01-${String(n%28+1).padStart(2,'0')}`.replace('2025-01',`2025-${String(Math.ceil(n/28)).padStart(2,'0')}`)]={rates:{USD:1,UZS:12000,EUR:.8},source:'CBU',old:true};
+ const {db,days,writes}=database(saved);
+ await withFeeds(feed,async calls=>{
+  assert.equal(await completeOlderDays(db,'2026-11-03T00:00:00Z'),60);
+  assert.equal(calls.length,60,'at most sixty downloads a run');
+  const [day]=writes[0].rows.map(row=>row.day);
+  assert.deepEqual(days[day].rates,{USD:1,UZS:12000,EUR:.8,INR:95},'a saved rate is never replaced');
+  assert.equal(days[day].source,'CBU');assert.equal(writes[0].rows[0].fetched_at,'2026-11-03T00:00:00Z','so the day is not asked again');
+ });
+ // A day the provider has no file for is marked too; one it could not be asked about stays for the next run.
+ const gap=database({'2025-03-01':{rates:{USD:1,UZS:1},source:'CBU',old:true},'2025-03-02':{rates:{USD:1,UZS:2},source:'CBU',old:true}});
+ await withFeeds(url=>{if(url.includes('2025-03-01'))return new Response('',{status:404});throw Error('down');},async()=>{
+  assert.equal(await completeOlderDays(gap.db),1);
+  assert.deepEqual(gap.writes[0].rows.map(row=>[row.day,row.rates.UZS]),[['2025-03-01',1]]);
+ });
+ const refused=database({'2025-03-01':{rates:{USD:1,UZS:1},source:'CBU',old:true}});
+ refused.db.write=async()=>new Response(null,{status:500});
+ await withFeeds(feed,async()=>assert.equal(await completeOlderDays(refused.db),0));
+ // A failure here never fails the day's download.
+ const {db:broken}=database({},new Date(NOW).toISOString());
+ const read=broken.read;broken.read=path=>path.includes('fetched_at=lt')?Promise.reject(Error('down')):read(path);
+ await withFeeds(feed,async()=>assert.equal((await refreshExchangeRates([TODAY],{db:broken,today:TODAY,now:NOW})).completed,0));
+});
+
+test('a new currency moves catalogueChangedAt, so saved days are completed for it',()=>{
+ const {fiatCurrencies}=loadTS('lib/currencies.ts');
+ assert.equal(fiatCurrencies.length,156,'the catalogue changed: move catalogueChangedAt in lib/exchange-rate-service.ts to now, then update this count');
 });
 
 test('the daily route is the cron\'s alone, asks this week, and reports a failed table',async()=>{
