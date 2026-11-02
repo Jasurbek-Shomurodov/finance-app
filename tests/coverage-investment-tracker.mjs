@@ -251,8 +251,9 @@ test('money lent tracks additions and repayments against the outstanding balance
  assert.match(html, /Delete newer balance updates first/);
  assert.match(html, /History starts with a balance snapshot/);
  assert.match(html, /Enter updates on or after the latest balance date/);
- assert.ok(html.includes(`Cash deducted from Wallet: ${money(200)}`));
- assert.ok(html.includes(`Cash added to Cash account: ${money(90, 'EUR')}`));
+ assert.ok(html.includes('<small>from Wallet</small>'));
+ assert.ok(html.includes('<small>to Cash account</small>'));
+ assert.ok(!html.includes(money(90, 'EUR')), 'a history row never shows the converted cash figure');
  assert.ok(html.includes(`<strong>${money(200)}</strong><span>Amount owed to you: ${money(1200)}</span>`));
  assert.ok(html.includes(`<time>${formatDate('2026-03-01', 'en-US')}</time><p>Opening</p>`));
  assert.equal(view.all(element => element.props?.label === 'Delete update').length, 2);
@@ -397,6 +398,16 @@ test('a history row is headed by the money that moved, and the value it set come
  assert.ok(!row('1 March 2026').includes('Value (your share): '));
  assert.match(row('1 April 2026'), new RegExp(`<strong>\\${money(40000)}</strong><span>Cash amount \\(your share\\): \\${money(250)}</span>`));
  assert.ok(row('1 January 2026').includes(`<strong>${money(33000)}</strong>`));
+});
+
+test('a payment linked to the asset reads as entered, and only the tracker\'s own updates can be deleted', async () => {
+ const events = [event('b', 'baseline', '2026-01-01', { balance: 5000 }), event('p', 'contribution', '2026-02-01', { amount: 12, notes: 'Sheep feed', entered: { amount: 1000000, currency: 'UZS' }, account_link: { account_id: 'cash', amount: -1000000 } }), event('u', 'contribution', '2026-03-01', { amount: 0, entered: { amount: 500000, currency: 'UZS' } })];
+ const { view } = await open(record('Business'), events);
+ const html = view.html();
+ assert.ok(html.includes(`<strong>Money invested</strong><time>${formatDate('2026-02-01', 'en-US')}</time><p>Sheep feed</p><small>from Wallet</small>`));
+ assert.ok(html.includes(`<strong>${money(1000000, 'UZS')}</strong>`));
+ assert.ok(html.includes(`<strong>${money(500000, 'UZS')}</strong>`), 'a payment no rate converts still shows what was paid');
+ assert.equal(view.all(element => element.props?.label === 'Delete update').length, 0);
 });
 
 test('business updates can be deleted after confirmation, and a failed delete reports its error', async () => {

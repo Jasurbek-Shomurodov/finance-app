@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { isoDate, nonnegativeAmount, uuid } from '@/lib/api-validation';
 import { crossSite, postgrestFailure, readJson, signInAgain } from '@/lib/api-route';
+import { assetPaymentEvents, assetPaymentsQuery } from '@/lib/asset-payments';
+import { byHistoryDate, type HistoryEvent } from '@/lib/investment-history';
 import { readAllPages } from '@/lib/owner-rows';
 import { session, supa, sameOrigin } from '@/lib/supabase';
 const schema = z.object({ account_id:uuid.optional(),id:uuid,record_id:uuid,type:z.enum(['valuation','contribution','withdrawal','income','expense']),date:isoDate,amount:nonnegativeAmount,balance:nonnegativeAmount.nullable(),notes:z.string().max(2000) }).refine(p => (p.type==='valuation' ? p.amount===0 : p.amount>0) && (p.type==='valuation' ? p.balance!==null : ['income','expense'].includes(p.type) ? p.balance===null : true));
@@ -12,8 +14,9 @@ export async function GET(req:Request) {
   const id=new URL(req.url).searchParams.get('record');
   if(!uuid.safeParse(id).success)return Response.json({error:'Investment not found.'},{status:400});
   // Explicit pagination avoids PostgREST's default row cap silently truncating history.
-  const collected=await readAllPages(range=>supa(`/rest/v1/investment_history?select=*,account_link:investment_account_links(account_id,amount,account_currency,record_currency,exchange_rate,rate_date)&record_id=eq.${id}&order=occurred_on.asc,created_at.asc,id.asc&${range}`,{},auth.token),'missing');
-  return Response.json(collected);
+  const collected=await readAllPages<HistoryEvent>(range=>supa(`/rest/v1/investment_history?select=*,account_link:investment_account_links(account_id,amount,account_currency,record_currency,exchange_rate,rate_date)&record_id=eq.${id}&order=occurred_on.asc,created_at.asc,id.asc&${range}`,{},auth.token),'missing');
+  const payments=await readAllPages<Parameters<typeof assetPaymentEvents>[0][number]>(range=>supa(`/rest/v1/finance_records?${assetPaymentsQuery(id!)}&${range}`,{},auth.token),'missing');
+  return Response.json([...collected,...assetPaymentEvents(payments,id!)].sort(byHistoryDate));
  }catch(error){return Response.json({error:(error as Error).message==='missing'?'Could not load history. Apply the tracker migration and try again.':'Could not load history. Please try again.'},{status:503});}
 }
 export async function POST(req:Request){

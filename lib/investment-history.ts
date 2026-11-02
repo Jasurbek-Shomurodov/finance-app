@@ -12,6 +12,8 @@ export type HistoryEvent = {
  id:string; record_id:string; event_type:'baseline'|'valuation'|'contribution'|'withdrawal'|'income'|'expense'|'mortgage_payment';
  occurred_on:string; amount:number; balance:number|null; ownership_percentage:number; principal:number; interest:number; notes:string; created_at:string;
  account_link?:{account_id:string;amount:number;account_currency?:string|null;record_currency?:string|null;exchange_rate?:number|null;rate_date?:string|null}|null;
+ /** A payment linked to the asset (`assetPaymentEvents`), as it was entered; it is managed from Transactions, not here. */
+ entered?:{amount:number;currency:string};
 };
 const historyLabels: Record<HistoryEvent['event_type'],string> = {
  baseline:'Starting snapshot',valuation:'Value update',contribution:'Money invested',withdrawal:'Sale / withdrawal',income:'Income received',expense:'Expense paid',mortgage_payment:'Mortgage payment',
@@ -46,9 +48,11 @@ export function historyEventLabel(kind:string,type:HistoryEvent['event_type']):s
  return historyLabels[type];
 }
 /** A row headed by the money that moved; a baseline or valuation is headed by the value it set. */
-export const historyEventMovesCash = (event:Pick<HistoryEvent,'event_type'|'amount'>) => !['baseline','valuation'].includes(event.event_type)&&Number(event.amount)>0;
+export const historyEventMovesCash = (event:Pick<HistoryEvent,'event_type'|'amount'|'entered'>) => !!event.entered||!['baseline','valuation'].includes(event.event_type)&&Number(event.amount)>0;
+/** Tracker updates and linked payments in one dated list, oldest first. */
+export const byHistoryDate = (a:HistoryEvent,b:HistoryEvent) => a.occurred_on.localeCompare(b.occurred_on)||a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id);
 export function historySeries(events:HistoryEvent[]) {
- const sorted=[...events].sort((a,b)=>a.occurred_on.localeCompare(b.occurred_on)||a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id));
+ const sorted=[...events].sort(byHistoryDate);
  let balance:number|null=null, contributions=0, additions=0, repayments=0, receipts=0, expenses=0, principal=0, interest=0;
  const days=new Map<string,{date:string;timestamp:number;balance:number|null;contributions:number;receipts:number}>();
  for(const e of sorted){
