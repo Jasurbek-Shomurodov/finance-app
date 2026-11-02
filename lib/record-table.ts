@@ -17,7 +17,7 @@ export const sectionKeyOf = (section: string): SectionKey => section === 'Assets
 export const recordsCurrencyFilter = ({ sectionKey, currency, market, marketFailed }: { sectionKey: SectionKey; currency: string; market: MarketData | null; marketFailed: boolean }) =>
  sectionKey === 'assets' || market?.rates?.[currency] || (!market && !marketFailed) ? '' : currency;
 
-/** Newest first; money lent counts from the day it was lent. */
+/** Newest first; money lent and loans count from the day they began. */
 const sortRecords = (entries: Entry[]) => [...entries].sort((a, b) => compareRecordDates(recordDay(a), recordDay(b)) || b.id.localeCompare(a.id));
 
 const sectionKinds = (section: string): readonly string[] | null => section === 'Overview' ? null : section === 'Assets & investments' ? assetRecordKinds : section === 'Loans & debts' ? lendingRecordKinds : [...income, ...expenses];

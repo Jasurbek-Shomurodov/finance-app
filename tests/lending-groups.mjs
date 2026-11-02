@@ -4,6 +4,7 @@ import {loadTS} from './helpers/load-ts.mjs';
 
 const {borrowers,borrowerKey,lendingMonths,lendingSequence}=loadTS('lib/lending-groups.ts');
 const {recordSchema}=loadTS('lib/record-schema.ts');
+const {emptyRecordFilters,filterRecords}=loadTS('lib/record-filters.ts');
 const lent=(id,group,extra={})=>({id,name:id,kind:'Money lent',borrower_group:group,amount:100,currency:'USD',...extra});
 
 test('loans to the same borrower gather under one heading where the first of them was; everything else stays a row',()=>{
@@ -14,14 +15,21 @@ test('loans to the same borrower gather under one heading where the first of the
  assert.deepEqual(borrowers([...rows,{id:'x',kind:'Debt',borrower_group:'Bank'}]),['Aziz','Family'],'each borrower once, money lent only, in order');
 });
 
-test('records split into months in the list\'s order: the lent date for money lent, the due date otherwise',()=>{
- const rows=[{id:'mortgage',kind:'Mortgage',date:'2032-05-05',opened_on:'2026-09-10'},lent('late','Family',{lent_date:'2026-10-31',date:'2027-01-01'}),{id:'car',kind:'Debt',date:'2026-10-05',opened_on:'2026-08-23'},lent('a','Family',{lent_date:'2026-05-06',date:''}),lent('b',' family ',{lent_date:'2026-05-01',date:''}),lent('c',null,{lent_date:'',date:'2026-05-01'})];
+test('records split into months by the day they began: lent or started, else the due date',()=>{
+ const rows=[lent('late','Family',{lent_date:'2026-10-31',date:'2027-01-01'}),{id:'mortgage',kind:'Mortgage',date:'2032-05-05',opened_on:'2026-09-10'},{id:'car',kind:'Debt',date:'2026-10-05',opened_on:'2026-08-23'},{id:'undated',kind:'Loan',date:'2026-08-02',opened_on:null},lent('a','Family',{lent_date:'2026-05-06',date:''}),lent('b',' family ',{lent_date:'2026-05-01',date:''}),lent('c',null,{lent_date:'',date:'2026-05-01'})];
  const months=lendingMonths(rows,row=>row);
- assert.deepEqual(months.map(group=>[group.month,group.rows.map(row=>row.id).join()]),[['2032-05','mortgage'],['2026-10','late,car'],['2026-05','a,b,c']]);
- assert.deepEqual(months[2].items.map(item=>'row' in item?item.row.id:item.borrower),['Family','c'],'a borrower gathers within the month');
- assert.deepEqual(months[1].items.map(item=>item.row.id),['late','car'],'one loan of a borrower in a month is a plain row');
+ assert.deepEqual(months.map(group=>[group.month,group.rows.map(row=>row.id).join()]),[['2026-10','late'],['2026-09','mortgage'],['2026-08','car,undated'],['2026-05','a,b,c']]);
+ assert.deepEqual(months[3].items.map(item=>'row' in item?item.row.id:item.borrower),['Family','c'],'a borrower gathers within the month');
+ assert.deepEqual(months[0].items.map(item=>item.row.id),['late'],'one loan of a borrower in a month is a plain row');
  assert.equal(lendingMonths([{id:'x',kind:'Debt',date:null}],row=>row)[0].month,'','no date is a section of its own, not a crash');
  assert.deepEqual(lendingMonths([],row=>row),[]);
+ // The list reaches the sections sorted by the same day, whatever the order of the stored records, and date filters read it too.
+ const named=rows.map(row=>({name:row.id,notes:'',...row})).reverse();
+ assert.deepEqual(filterRecords(named,emptyRecordFilters,'en-US').slice(0,3).map(row=>row.id),['late','mortgage','car']);
+ assert.deepEqual(filterRecords(named,{...emptyRecordFilters,order:'oldest'},'en-US').at(-1).id,'late');
+ assert.deepEqual(filterRecords(named,{...emptyRecordFilters,from:'2026-09-01',to:'2026-09-30'},'en-US').map(row=>row.id),['mortgage'],'a mortgage is found by its start, not by 2032');
+ // Income and spending keep their own date.
+ assert.equal(filterRecords([{id:'pay',name:'Pay',notes:'',kind:'Salary',date:'2026-09-02',opened_on:'2020-01-01'}],{...emptyRecordFilters,from:'2026-09-01'},'en-US').length,1);
 });
 
 test('only money lent may name a borrower, of at most 120 characters, trimmed',()=>{

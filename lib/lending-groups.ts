@@ -33,8 +33,8 @@ export function lendingSequence<T>(rows: readonly T[], entryOf: (row: T) => Entr
  return items;
 }
 
-/** A list split into one section per month of each record's date, in the list's order. The month is the lent date for
- * money lent and the due date for the rest, the day the list sorts by; borrowers gather within their month. */
+/** A list split into one section per month, in the list's order. The month is the day the list sorts by: the lent date
+ * for money lent and the start date for the rest, else the due date; borrowers gather within their month. */
 export function lendingMonths<T>(rows: readonly T[], entryOf: (row: T) => Entry) {
  const months = new Map<string, T[]>();
  for (const row of rows) {

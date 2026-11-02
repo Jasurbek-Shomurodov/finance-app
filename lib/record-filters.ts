@@ -1,5 +1,5 @@
 import { compareRecordDates, matchesRecordDate } from './record-dates';
-import type { Entry } from './finance';
+import { liabilities, type Entry } from './finance';
 export type RecordFiltersValue = {query:string;category:string;from:string;to:string;order:'newest'|'oldest'|'name'};
 export const emptyRecordFilters:RecordFiltersValue = {query:'',category:'all',from:'',to:'',order:'newest'};
 export function activeFilterCount(filters:RecordFiltersValue) {
@@ -8,8 +8,8 @@ export function activeFilterCount(filters:RecordFiltersValue) {
 export function changeFilterStart(filters:RecordFiltersValue,from:string):RecordFiltersValue {
  return {...filters,from,to:from&&filters.to&&from>filters.to?'':filters.to};
 }
-// Money lent is dated by the day it was lent; its due date is optional.
-export const recordDay=(record:Entry)=>record.kind==='Money lent'?record.lent_date||record.date:record.date;
+// Money lent is dated by the day it was lent, and a loan, debt or mortgage by the day it started; their due date comes after.
+export const recordDay=(record:Entry)=>record.kind==='Money lent'?record.lent_date||record.date:liabilities.includes(record.kind)?record.opened_on||record.date:record.date;
 export function filterRecords(records:Entry[],filters:RecordFiltersValue,locale:string) {
  return records.filter(record=>(!filters.query.trim()||`${record.name} ${record.notes}`.toLocaleLowerCase(locale).includes(filters.query.trim().toLocaleLowerCase(locale)))&&(filters.category==='all'||record.kind===filters.category||record.custom_category_id===filters.category)&&matchesRecordDate(recordDay(record),filters.from,filters.to)).sort((a,b)=>filters.order==='name'?a.name.localeCompare(b.name,locale):compareRecordDates(recordDay(a),recordDay(b),filters.order)||a.id.localeCompare(b.id));
 }
