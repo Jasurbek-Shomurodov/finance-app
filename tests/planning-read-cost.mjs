@@ -5,7 +5,6 @@ import {loadTS} from './helpers/load-ts.mjs';
 const {sharedDayRate}=loadTS('lib/day-rates.ts');
 const {debtPaymentsInLoanCurrency}=loadTS('lib/planning.ts');
 const {planningReadFilters,planningReadPlan,planningScopes,insightColumns}=loadTS('lib/planning-reads.ts');
-const {datedRateRevalidate,loadDatedExchangeRate}=loadTS('lib/dated-exchange-rate.ts');
 const tick=()=>new Promise(resolve=>setTimeout(resolve,0));
 
 test('a shared day rate asks once per pair and day, keeps failures, and holds at most four requests at a time',async()=>{
@@ -51,16 +50,6 @@ test('each scope reads only its tables',()=>{
  assert.deepEqual(plan('insights'),['records',false,true]);
  assert.deepEqual(plan('account-activity'),['records',false,true]);
  assert.deepEqual([...planningScopes].sort(),['account-activity','accounts','budget','full','insights','review','workspace']);
-});
-
-test('a past day’s official rate is kept for a month, today’s for an hour',async()=>{
- assert.equal(datedRateRevalidate('2026-10-08','2026-10-09'),30*24*3600);
- assert.equal(datedRateRevalidate('2026-10-09','2026-10-09'),3600);
- assert.equal(datedRateRevalidate('2026-10-10','2026-10-09'),3600);
- const seen=[],original=globalThis.fetch;
- globalThis.fetch=async(url,init)=>{seen.push([String(url).split('/')[2],init.next.revalidate]);return Response.json({base:'EUR',date:'2025-03-03',rates:{USD:1.04}});};
- try{assert.equal((await loadDatedExchangeRate('EUR','USD','2025-03-03')).rate,1.04);}finally{globalThis.fetch=original;}
- assert.deepEqual(seen,[['api.frankfurter.dev',30*24*3600]]);
 });
 
 test('identical reads share one request while it is under way, and a save to the same address asks again',async()=>{

@@ -1,6 +1,6 @@
 // What the bot is handed for each update: the update itself, its clock, and the environment it may use.
 import {accountOrigin} from '../account-access';
-import {loadDatedExchangeRate} from '../dated-exchange-rate';
+import { loadOfficialRate } from '../official-rate';
 import type {ServiceDatabase} from '../service-role';
 import {adminAccounts,loginSecrets,type AdminAccounts} from '../telegram-account';
 import type {TelegramMessage} from '../telegram';
@@ -13,7 +13,7 @@ export type TelegramUpdate={update_id?:number;message?:{message_id?:number;chat:
  * (ECB, with the Central Bank of Uzbekistan as fallback) for entries in another currency than their account. Missing pieces switch those features off. */
 export type RateLookup=(from:string,to:string,date:string)=>Promise<{rate:number;effective_date:string}>;
 export type BotEnv={appOrigin:string|null;loginSecret:string|null;admin:AdminAccounts|null;rates?:RateLookup};
-export const botEnvFromProcess=():BotEnv=>({appOrigin:accountOrigin(),loginSecret:loginSecrets()?.current??null,admin:adminAccounts(),rates:loadDatedExchangeRate});
+export const botEnvFromProcess=():BotEnv=>({appOrigin:accountOrigin(),loginSecret:loginSecrets()?.current??null,admin:adminAccounts(),rates:loadOfficialRate});
 export type BotOutcome={replies:TelegramMessage[];callbackId?:string};
 export type BotClock={now:Date;today:string;newId:()=>string};
 /** One update's handling: the database, the chat it came from, the clock and the environment. */

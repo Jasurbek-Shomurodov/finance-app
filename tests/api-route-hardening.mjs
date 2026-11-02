@@ -102,7 +102,7 @@ test('signed-in market reads and portfolio saves are counted per person against 
 test('historical exchange rates are counted per person against the signed-in market limit (API-002)',async()=>{
  const {limits}=loadTS('lib/rate-limit.ts');
  let over=new Set(['market-user']);const loads=[];
- const route=loadTS('app/api/exchange-rate/route.ts',{'@/lib/rate-limit':{limits,rateLimited:async(req,name,list,key,options)=>{loads.push({name,list,key,options});return over.has(name);}},'@/lib/supabase':{session:async()=>({user:{id:owner},token:'owner'})},'@/lib/dated-exchange-rate':{loadDatedExchangeRate:async(...args)=>{loads.push(args);return {rate:2,effective_date:'2026-10-01'};}}});
+ const route=loadTS('app/api/exchange-rate/route.ts',{'@/lib/rate-limit':{limits,rateLimited:async(req,name,list,key,options)=>{loads.push({name,list,key,options});return over.has(name);}},'@/lib/supabase':{session:async()=>({user:{id:owner},token:'owner'})},'@/lib/official-rate':{loadOfficialRate:async(...args)=>{loads.push(args);return {rate:2,effective_date:'2026-10-01'};}}});
  const read=()=>route.GET(new Request('https://local/api/exchange-rate?from=USD&to=EUR&date=2026-10-01'));
  assert.equal((await read()).status,429);
  assert.deepEqual(loads,[{name:'market-user',list:limits.market,key:owner,options:{perIp:false}}],'no rate is fetched once over the limit');

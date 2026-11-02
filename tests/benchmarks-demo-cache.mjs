@@ -18,8 +18,8 @@ class RequestBoundResponse extends NativeResponse{
  json(){this.#use();return super.json();}
  get body(){this.#use();return super.body;}
 }
-function route({today=()=>'2026-09-17'}={}){
- return loadTS('app/api/benchmarks/route.ts',{'@/lib/supabase':{session:async()=>null},'@/lib/deposit-interest':{depositToday:today}}).GET;
+function route({today=()=>'2026-09-17',fx=async()=>[{date:'2025-09-17',rates:{USD:1,UZS:12500}},{date:'2026-09-17',rates:{USD:1,UZS:12500}}]}={}){
+ return loadTS('app/api/benchmarks/route.ts',{'@/lib/supabase':{session:async()=>null},'@/lib/deposit-interest':{depositToday:today},'@/lib/benchmark-fx':{benchmarkFx:fx}}).GET;
 }
 const demo=()=>new Request('https://local/api/benchmarks?demo=1');
 async function withRuntime(feed,run){
@@ -36,8 +36,7 @@ function liveFeed(counter){
    for(let date=start;date<end;date=dates.shiftDay(date,1))rows.push([dates.dateMillis(date)/1000,0,0,0,65000,1]);
    return Response.json(rows);
   }
-  const date=url.pathname.split('/').filter(Boolean).at(-1);
-  return Response.json([{Ccy:'USD',Rate:'12500',Nominal:'1',Date:date.split('-').reverse().join('.')}]);
+  throw Error('unexpected '+url);
  };
 }
 
@@ -76,7 +75,7 @@ test('demo visitors arriving during the first load share it and each receive a r
 
 test('demo feed failures stay explicit JSON errors for every request',async()=>{
  await withRuntime(async()=>{throw Error('offline');},async()=>{
-  const GET=route();
+  const GET=route({fx:async()=>{throw Error('Historical exchange rates are unavailable.');}});
   const first=await visit(GET,1),later=await visit(GET,2);
   assert.equal(later.cache,'private, no-store');
   assert.deepEqual(later.data,first.data);assert.deepEqual(later.data.prices,{});

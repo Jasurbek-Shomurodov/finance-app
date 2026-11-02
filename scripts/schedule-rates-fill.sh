@@ -1,8 +1,8 @@
 #!/bin/sh
 # Installs a daily job on this Mac that keeps the Central Bank of Uzbekistan's official rates in exchange_rate_days
 # (npm run rates:fill). cbu.uz answers only addresses in Uzbekistan, so the app's servers cannot read it; this Mac
-# can. The job runs at 10:00 and 18:30 and when you log in; a run missed while the Mac sleeps happens on wake, and
-# each run also fills the last 14 days, so a gap closes by itself. Re-run this script after moving the checkout or
+# can. The job runs at 09:00 and 18:30 and when you log in; a run missed while the Mac sleeps happens on wake, and
+# each run fills any day still missing, so a gap closes by itself. Re-run this script after moving the checkout or
 # upgrading Node (the job remembers both paths). `sh scripts/schedule-rates-fill.sh remove` uninstalls it.
 set -eu
 label=com.hoggish.rates-fill
@@ -31,7 +31,7 @@ cat > "$plist" <<PLIST
  </array>
  <key>StartCalendarInterval</key>
  <array>
-  <dict><key>Hour</key><integer>10</integer><key>Minute</key><integer>0</integer></dict>
+  <dict><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer></dict>
   <dict><key>Hour</key><integer>18</integer><key>Minute</key><integer>30</integer></dict>
  </array>
  <key>RunAtLoad</key><true/>
@@ -41,4 +41,4 @@ cat > "$plist" <<PLIST
 </plist>
 PLIST
 launchctl bootstrap "$domain" "$plist"
-echo "Installed $label: daily at 10:00 and 18:30 and at login, from $repo. Log: $log"
+echo "Installed $label: daily at 09:00 and 18:30 and at login, from $repo. Log: $log"

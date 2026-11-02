@@ -1,6 +1,6 @@
 import { planningReadFilters,planningReadPlan,planningScopes,currentReviewMonth,type PlanningScope } from '@/lib/planning-reads';
 import { sharedDayRate } from '@/lib/day-rates';
-import { loadDatedExchangeRate } from '@/lib/dated-exchange-rate';
+import { loadOfficialRate } from '@/lib/official-rate';
 import { depositForecasts } from '@/lib/deposit-forecasts';
 import { interestKinds, type Entry } from '@/lib/finance';
 import { fiatCurrency, isoDate } from '@/lib/api-validation';
@@ -15,7 +15,7 @@ import { categoryNameTaken, duplicateCategoryMessage } from '@/lib/category-name
 import type { Category, ExtraPayment, Occurrence } from '@/lib/planning';
 import { queueMilestoneCheck } from '@/lib/notify-action';
 import type { ActionEvent } from '@/lib/action-messages';
-import { keepDayRates, keptDayRate } from '@/lib/day-rate-tables';
+import { keptDayRate } from '@/lib/day-rate-tables';
 import { depositToday } from '@/lib/deposit-interest';
 /** Later payments for recorded occurrences add to them; limited scopes leave those transactions out of `records`.
  * A failed read answers 503 like the other reads: counting none would show scheduled payments as less paid than they are. */
@@ -38,7 +38,7 @@ export async function GET(req?:Request){
  extraPayments.catch(()=>null);
  // One rate per currency pair and payment day for the whole read, a few requests at a time: the kept day tables first
  // (the archive is often out of reach from the server), the live feeds only for a day or pair they lack.
- const dayRate=sharedDayRate(keptDayRate({today:depositToday()},async(from,to,date)=>(await loadDatedExchangeRate(from,to,date)).rate));
+ const dayRate=sharedDayRate(keptDayRate({today:depositToday()},async(from,to,date)=>(await loadOfficialRate(from,to,date)).rate));
  const results=await reads;
  const data={records:[],categories:[],goals:[],occurrences:[],activity:[],movements:[],investmentLinks:[],...Object.fromEntries(results)} as Record<string,unknown>;
  // Each transaction carries its own day's rates, read while the rest of the answer is put together.
@@ -67,7 +67,6 @@ export async function POST(req:Request){
  const input=parseAction(await readJson(req),planningSchemas);if(!input)return Response.json({error:'Check the account fields.'},{status:400});
  const action=input.action,value=input.data;
  // A payment is saved with the official rates of its day (migration 150), so that day is kept first.
- await keepDayRates([(value as {date?:string}).date],{today:depositToday()});
  if(action==='delete_goal'){
   // Moves the goal and its activity to Recently deleted; retries are harmless.
   const response=await supa('/rest/v1/rpc/delete_savings_goal',{method:'POST',body:JSON.stringify({p_id:(value as {id:string}).id})},auth.token);
@@ -129,7 +128,7 @@ export async function POST(req:Request){
    let rate:number,rateDate:string;
    if(priorPayment){rate=Number(priorPayment.exchange_rate);rateDate=priorPayment.rate_date;}
    else if(prior){rate=Number(prior.account_exchange_rate);rateDate=prior.account_rate_date!;}
-   else{try{const quote=await loadDatedExchangeRate(account.currency,currency,rateDay);rate=quote.rate;rateDate=quote.effective_date;}catch{return Response.json({error:'Historical exchange rates are unavailable.'},{status:422});}}
+   else{try{const quote=await loadOfficialRate(account.currency,currency,rateDay);rate=quote.rate;rateDate=quote.effective_date;}catch{return Response.json({error:'Historical exchange rates are unavailable.'},{status:422});}}
    if(rate!==p.exchange_rate)return Response.json({error:'The exchange rate changed. Refresh the rate and review the amounts.'},{status:409});
    if(action==='occurrence')paymentData={...value,account_exchange_rate:rate,account_rate_date:rateDate,account_currency:account.currency};
    else{

@@ -4,42 +4,34 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import ts from 'typescript';
 import {z} from 'zod';
-import {parseDatedExchangeRate,parseEcbExchangeRate,loadDatedExchangeRate} from '../lib/dated-exchange-rate.ts';
+import {loadTS} from './helpers/load-ts.mjs';
 const compile=path=>ts.transpileModule(fs.readFileSync(path,'utf8').replace(/^import .*;\n/gm,'').replace(/export /g,''),{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
 const id=n=>`40000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
-const rows=[{Ccy:'USD',Rate:'12000',Nominal:'1',Date:'01.01.2020'},{Ccy:'EUR',Rate:'1300000',Nominal:'100',Date:'01.01.2020'},{Ccy:'USD',Rate:'99999',Nominal:'1',Date:'03.01.2020'}];
-test('dated rates use effective archive dates, nominal units, and fail closed for missing or invalid currencies',()=>{
- assert.deepEqual(parseDatedExchangeRate(rows,'USD','UZS','2020-01-02'),{from:'USD',to:'UZS',date:'2020-01-02',effective_date:'2020-01-01',rate:12000,source:'CBU'});
- assert.equal(parseDatedExchangeRate(rows,'EUR','UZS','2020-01-02').rate,13000);
- assert.equal(parseDatedExchangeRate(rows,'UZS','USD','2020-01-02').rate,1/12000);
- assert.equal(parseDatedExchangeRate(rows,'USD','EUR','2020-01-02').rate,12000/13000);
- for(const bad of [[],[{...rows[0],Nominal:0}],[{...rows[0],Rate:-1}],[rows[2]],[{...rows[0],Date:'31.02.2020'}]])assert.throws(()=>parseDatedExchangeRate(bad,'USD','UZS','2020-01-02'),/unavailable/);
- assert.throws(()=>parseDatedExchangeRate(rows,'GBP','UZS','2020-01-02'),/unavailable/);
-});
-test('provider request always includes the selected date',async()=>{
- const original=global.fetch;
- try{global.fetch=async url=>{assert.equal(url,'https://cbu.uz/ru/arkhiv-kursov-valyut/json/all/2020-01-02/');return Response.json(rows);};assert.equal((await loadDatedExchangeRate('USD','UZS','2020-01-02')).rate,12000);}
- finally{global.fetch=original;}
-});
-test('international pairs use ECB reference rates and fall back to the CBU cross rate',async()=>{
- const ecb={amount:1,base:'EUR',date:'2020-01-02',rates:{USD:1.12}};
- assert.deepEqual(parseEcbExchangeRate(ecb,'EUR','USD','2020-01-03'),{from:'EUR',to:'USD',date:'2020-01-03',effective_date:'2020-01-02',rate:1.12,source:'ECB'});
- for(const bad of [null,{...ecb,base:'USD'},{...ecb,rates:{}},{...ecb,rates:{USD:0}},{...ecb,date:'2020-01-04'}])assert.throws(()=>parseEcbExchangeRate(bad,'EUR','USD','2020-01-03'),/unavailable/);
- const original=global.fetch,urls=[];
+const {loadOfficialRate}=loadTS('lib/official-rate.ts');
+/** A stand-in for exchange_rate_days. */
+const keptRates=days=>({read:async path=>{const url=decodeURIComponent(path),listed=url.match(/day=in\.\((.*?)\)/)?.[1].split(',');const from=url.match(/day=gte\.([\d-]+)/)?.[1],to=url.match(/day=lte\.([\d-]+)/)?.[1];return Object.entries(days).filter(([day])=>listed?listed.includes(day):day>=from&&day<=to).sort().map(([day,rates])=>({day,rates}));},write:async()=>new Response(null,{status:201})});
+test('a saved day answers at once, and any pair goes through the dollar',async()=>{
+ const original=global.fetch;global.fetch=async url=>assert.fail('no service is asked: '+url);
  try{
-  global.fetch=async url=>{urls.push(url);return url.includes('frankfurter')?Response.json(ecb):Response.json(rows);};
-  assert.equal((await loadDatedExchangeRate('EUR','USD','2020-01-03')).source,'ECB');
-  assert.equal(urls[0],'https://api.frankfurter.dev/v1/2020-01-03?from=EUR&to=USD');
-  urls.length=0;assert.equal((await loadDatedExchangeRate('USD','UZS','2020-01-02')).source,'CBU');
-  assert.ok(urls.every(url=>url.includes('cbu.uz')),'the sum never asks the ECB');
-  global.fetch=async url=>url.includes('frankfurter')?new Response('',{status:404}):Response.json(rows);
-  const fallback=await loadDatedExchangeRate('USD','EUR','2020-01-02');
-  assert.equal(fallback.source,'CBU');assert.equal(fallback.rate,12000/13000);
+  const db=keptRates({'2026-10-21':{USD:1,UZS:12012.3,EUR:.9,INR:88}});
+  assert.deepEqual(await loadOfficialRate('USD','UZS','2026-10-21',{db,today:'2026-11-02'}),{from:'USD',to:'UZS',date:'2026-10-21',effective_date:'2026-10-21',rate:12012.3,source:'CBU'});
+  assert.equal((await loadOfficialRate('UZS','USD','2026-10-21',{db,today:'2026-11-02'})).rate,1/12012.3);
+  assert.equal((await loadOfficialRate('EUR','USD','2026-10-21',{db,today:'2026-11-02'})).rate,1/.9);
+  assert.equal((await loadOfficialRate('EUR','UZS','2026-10-21',{db,today:'2026-11-02'})).rate,12012.3/.9,'never a direct EUR/UZS quote');
+  assert.equal((await loadOfficialRate('INR','EUR','2026-10-21',{db,today:'2026-11-02'})).rate,.9/88);
  }finally{global.fetch=original;}
 });
+test('a day not saved yet uses the rate still in force and names its day, and a week without rates stays unavailable',async()=>{
+ const db=keptRates({'2026-10-20':{USD:1,UZS:12044.72},'2026-10-26':{USD:1,UZS:11838.92}});
+ const quote=await loadOfficialRate('USD','UZS','2026-11-02',{db,today:'2026-11-02'});
+ assert.equal(quote.date,'2026-11-02');assert.equal(quote.effective_date,'2026-10-26');assert.equal(quote.rate,11838.92);
+ await assert.rejects(loadOfficialRate('USD','UZS','2026-11-03',{db,today:'2026-11-03'}),/Historical exchange rates are unavailable/);
+ await assert.rejects(loadOfficialRate('USD','GBP','2026-10-26',{db,today:'2026-11-02'}),/Historical exchange rates are unavailable/);
+});
+
 test('exchange payment API verifies rates server-side and reuses committed rates on retry during an outage',async()=>{
  let rate=12000,prior=[],calls=[],offline=false,authenticated=true;
- const post=apiFunction('z','session','supa','sameOrigin','loadDatedExchangeRate','depositToday',compile('app/api/investment-history/exchange/route.ts')+';return POST;')(z,async()=>authenticated?{token:'owner'}:null,async(path,init,token)=>{
+ const post=apiFunction('z','session','supa','sameOrigin','loadOfficialRate','depositToday',compile('app/api/investment-history/exchange/route.ts')+';return POST;')(z,async()=>authenticated?{token:'owner'}:null,async(path,init,token)=>{
   assert.equal(token,'owner');if(path.includes('finance_records?'))return Response.json([{id:id(1),kind:'Debt',currency:'UZS'},{id:id(2),kind:'Cash',currency:'USD'}]);
   if(path.includes('investment_account_links?'))return Response.json(prior);
   calls.push(JSON.parse(init.body));return Response.json({ok:true});
@@ -93,7 +85,7 @@ test('converted debt, mortgage and transfers cannot spend more than the locked s
 
 test('transfer API requires the selected date rate and does not trust a submitted conversion rate',async()=>{
  let calls=[],offline=false,prior=[];
- const post=apiFunction('z','session','sameOrigin','supa','loadDatedExchangeRate','queueMilestoneCheck',compile('app/api/asset-movements/route.ts')+';return POST;')(z,async()=>({token:'owner'}),()=>true,async(path,init)=>{
+ const post=apiFunction('z','session','sameOrigin','supa','loadOfficialRate','queueMilestoneCheck',compile('app/api/asset-movements/route.ts')+';return POST;')(z,async()=>({token:'owner'}),()=>true,async(path,init)=>{
   if(path.includes('finance_records?'))return Response.json([{id:id(2),currency:'USD'},{id:id(3),currency:'UZS'}]);
   if(path.includes('asset_movements?'))return Response.json(prior);
   calls.push({path,args:JSON.parse(init.body)});return Response.json({ok:true});

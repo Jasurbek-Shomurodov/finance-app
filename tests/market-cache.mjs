@@ -45,7 +45,7 @@ test('kept and current prices answer at once, with no feed asked',async()=>{
 test('a feed nobody holds yet is fetched before replying and kept after it',async()=>{
  const {db,writes}=database(kept),{asked,load}=feeds({ETH:3000}),later=[];
  const data=await cachedMarket(ask({crypto:['BTC','ETH']}),{db,load,now:()=>NOW,later:work=>later.push(work)});
- assert.deepEqual(asked.map(r=>[r.fx,r.rates,r.crypto]),[[false,false,['ETH']]],'only the missing coin is asked');
+ assert.deepEqual(asked.map(r=>r.crypto),[['ETH']],'only the missing coin is asked');
  assert.equal(data.quotes['Crypto:ETH'].usd,3000);assert.equal(data.quotes['Crypto:BTC'].usd,70000);
  assert.equal(writes.length,0,'the write waits until the reply is sent');
  for(const work of later)await work();
@@ -59,7 +59,7 @@ test('a kept price past its freshness answers now and is refreshed after the rep
  assert.equal(data.quotes['Crypto:BTC'].usd,69000,'the reader is not held for the refresh');
  assert.equal(asked.length,0);
  for(const work of later)await work();
- assert.deepEqual(asked.map(r=>[r.fx,r.rates,r.crypto]),[[false,false,['BTC']]]);
+ assert.deepEqual(asked.map(r=>r.crypto),[['BTC']]);
  assert.equal(writes[0].rows[0].data.usd,71000);
 });
 
@@ -69,10 +69,19 @@ test('a failing feed keeps its last good answer instead of reading as unavailabl
  const data=await cachedMarket(ask({crypto:['BTC','SOL']}),{db,load,now:()=>NOW,later:()=>{}});
  assert.equal(data.quotes['Crypto:SOL'],undefined,'a price kept longer than three days is never shown');
  assert.equal(data.errors['Crypto:SOL'],'Price unavailable. Saved price is shown.');
- // The rate feeds fail live, but a kept answer stands in.
- const {db:empty}=database([kept[0],kept[1]]),{load:down}=feeds({fx:null,rates:null});
- const stale=await cachedMarket(ask(),{db:empty,load:down,now:()=>NOW+freshForMs.rates+1,later:work=>work()});
- assert.equal(stale.fx.rate,12400);assert.equal(stale.rates.EUR,.91);assert.deepEqual(stale.errors,{});
+});
+
+test('exchange rates are read from the kept rows alone: no reader asks for one, however old',async()=>{
+ const {db}=database([kept[0],kept[1]]),{asked,load}=feeds(),later=[];
+ const day=86400000;
+ const late=await cachedMarket(ask(),{db,load,now:()=>NOW+day,later:work=>later.push(work)});
+ assert.equal(late.fx.rate,12400);assert.equal(late.rates.EUR,.91);assert.deepEqual(late.errors,{});
+ // A dollar rate over three days old gives way to the global table, which stays in use for two weeks.
+ const old=await cachedMarket(ask(),{db,load,now:()=>NOW+usableForMs,later:work=>later.push(work)});
+ assert.equal(old.fx,null);assert.equal(old.rates.EUR,.91);assert.equal(old.errors.fx,'Exchange rate unavailable.');assert.equal(old.errors.rates,undefined);
+ const gone=await cachedMarket(ask(),{db,load,now:()=>NOW+15*day,later:work=>later.push(work)});
+ assert.equal(gone.errors.rates,'Exchange rate unavailable.');
+ assert.equal(asked.length,0);assert.equal(later.length,0);
 });
 
 test('a reader who may not fetch stocks is never answered from kept stock prices',async()=>{
@@ -85,13 +94,13 @@ test('a reader who may not fetch stocks is never answered from kept stock prices
  }finally{if(before===undefined)delete process.env.TWELVE_DATA_API_KEY;else process.env.TWELVE_DATA_API_KEY=before;}
 });
 
-test('before migration 156, or without the server key, every feed is fetched as before',async()=>{
- const {asked,load}=feeds();
+test('before migration 156, or without the server key, every quote is fetched and the rates read as missing',async()=>{
+ const {load}=feeds();
  const failing={read:async()=>{throw Error('relation does not exist');},write:async()=>new Response(null,{status:404})};
  const data=await cachedMarket(ask({crypto:['BTC']}),{db:failing,load,now:()=>NOW,later:work=>work()});
- assert.equal(data.quotes['Crypto:BTC'].usd,100);assert.equal(asked[0].fx,true);
+ assert.equal(data.quotes['Crypto:BTC'].usd,100);assert.equal(data.errors.fx,'Exchange rate unavailable.');
  const offline=await cachedMarket(ask({crypto:['BTC']}),{db:null,load,now:()=>NOW});
- assert.equal(offline.fx.rate,12500);
+ assert.equal(offline.quotes['Crypto:BTC'].usd,100);assert.equal(offline.fx,null);
 });
 
 test('keepMarket keeps only answered feeds: an errored rate feed is not kept over a good one',async()=>{

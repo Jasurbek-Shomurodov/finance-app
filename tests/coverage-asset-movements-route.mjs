@@ -16,7 +16,7 @@ function harness(){
    if(path.startsWith('/rest/v1/asset_movements'))return state.failPrior?new Response('{}',{status:500}):Response.json(state.prior);
    return state.rpc(path);
   }},
-  '@/lib/dated-exchange-rate':{loadDatedExchangeRate:async(...args)=>{state.rateCalls.push(args);if(state.rateError)throw state.rateError;return state.rate;}},
+  '@/lib/official-rate':{loadOfficialRate:async(...args)=>{state.rateCalls.push(args);if(state.rateError)throw state.rateError;return state.rate;}},
   '@/lib/notify-action':{queueMilestoneCheck:(auth,event)=>{assert.equal(auth.token,'owner-token');state.events.push(event);}},
   '@/lib/monitoring':{reportError:async(...args)=>{state.reports.push(args);}},
  });

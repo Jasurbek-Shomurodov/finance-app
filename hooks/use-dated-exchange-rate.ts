@@ -1,6 +1,6 @@
 "use client";
 import { useSessionResource } from '@/hooks/use-owner-resource';
-import type { DatedExchangeRate } from '@/lib/dated-exchange-rate';
+import type { DatedExchangeRate } from '@/lib/official-rate';
 const noQuote:DatedExchangeRate|null=null;
 /** A reply for another pair or day, or without a positive rate, is no quote. */
 const usableQuote=(answer:DatedExchangeRate,from:string|undefined,to:string|undefined,date:string)=>Number.isFinite(answer.rate)&&answer.rate>0&&answer.from===from&&answer.to===to&&answer.date===date;

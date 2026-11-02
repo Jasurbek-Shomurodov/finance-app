@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { isoDate, nonnegativeAmount, uuid } from '@/lib/api-validation';
 import { crossSite, postgrestFailure, readJson, signInAgain } from '@/lib/api-route';
 import { session,supa,sameOrigin } from '@/lib/supabase';
-import { loadDatedExchangeRate } from '@/lib/dated-exchange-rate';
+import { loadOfficialRate } from '@/lib/official-rate';
 import { depositToday } from '@/lib/deposit-interest';
 const money=nonnegativeAmount;
 const schema=z.object({id:uuid,record_id:uuid,account_id:uuid,type:z.enum(['contribution','withdrawal','income','expense','mortgage_payment']),amount:money.positive(),balance:money.nullable(),date:isoDate.refine(date=>date<=depositToday()),notes:z.string().max(2000),exchange_rate:z.number().finite().positive().max(1e15),principal:money.default(0),interest:money.default(0)}).refine(data=>data.type!=='mortgage_payment'||data.balance===null&&data.amount===data.principal+data.interest);
@@ -28,7 +28,7 @@ export async function POST(req:Request){
    rate=Number(prior.exchange_rate);rateDate=prior.rate_date;
   }else if(account.currency===record.currency){rate=1;rateDate=p.date;}
   else{
-   try{const quote=await loadDatedExchangeRate(account.currency,record.currency,p.date);rate=quote.rate;rateDate=quote.effective_date;}
+   try{const quote=await loadOfficialRate(account.currency,record.currency,p.date);rate=quote.rate;rateDate=quote.effective_date;}
    catch{return Response.json({error:'Historical exchange rates are unavailable.'},{status:422});}
   }
   if(rate!==p.exchange_rate)return Response.json({error:'The exchange rate changed. Refresh the rate and review the amounts.'},{status:409});

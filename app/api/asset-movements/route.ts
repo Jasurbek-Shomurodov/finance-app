@@ -1,4 +1,4 @@
-import { loadDatedExchangeRate } from '@/lib/dated-exchange-rate';
+import { loadOfficialRate } from '@/lib/official-rate';
 import { z } from 'zod';
 import { isoDate, nonnegativeAmount, uuid } from '@/lib/api-validation';
 import { crossSite, postgrestFailure, readJson, signInAgain } from '@/lib/api-route';
@@ -30,7 +30,7 @@ export async function POST(req:Request) {
     const [prior]=await priorResponse.json() as {exchange_rate:number|null;rate_date:string}[];
     let rate:number,rateDate:string;
     if(prior){if(!prior.exchange_rate)return Response.json({error:'This operation was already saved with different details.'},{status:409});rate=Number(prior.exchange_rate);rateDate=prior.rate_date;}
-    else{try{const quote=await loadDatedExchangeRate(source.currency,target.currency,p.date);rate=quote.rate;rateDate=quote.effective_date;}catch{return Response.json({error:'Historical exchange rates are unavailable.'},{status:422});}}
+    else{try{const quote=await loadOfficialRate(source.currency,target.currency,p.date);rate=quote.rate;rateDate=quote.effective_date;}catch{return Response.json({error:'Historical exchange rates are unavailable.'},{status:422});}}
     if(rate!==p.exchange_rate)return Response.json({error:'The exchange rate changed. Refresh the rate and review the amounts.'},{status:409});
     rpc='record_transfer_with_fx';args={p_data:p,p_rate:rate,p_rate_date:rateDate,p_source_currency:source.currency,p_target_currency:target.currency};
    }

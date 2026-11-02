@@ -13,7 +13,7 @@ async function withinTime<T>(deadline: AbortSignal, run: (signal: AbortSignal) =
  try { return await Promise.race([run(controller.signal), aborted]); }
  finally { clearTimeout(timer); deadline.removeEventListener('abort', stop); }
 }
-async function read(url: string, seconds: number, deadline: AbortSignal): Promise<unknown> {
+export async function feedRead(url: string, seconds: number, deadline: AbortSignal): Promise<unknown> {
  for (let attempt = 0; attempt < 2; attempt++) {
   try {
    const response = await withinTime(deadline, signal => fetch(url, { next: { revalidate: seconds }, signal }).then(async answer => answer.ok ? { answer, body: await answer.json() } : { answer }));
@@ -51,7 +51,7 @@ export function marketQuote(value: unknown) {
 // Coinbase's spot endpoint has no market for these coins, or answers with an unrelated asset that shares the ticker (JUP).
 export const krakenCoins = new Set(['XMR', 'JUP', 'KAS', 'MNT', 'OKB', 'BGB', 'NEO', 'XDC', 'QTUM', 'CELO', 'AR', 'RUNE', 'A', 'DYDX', 'GMX', 'LRC', 'STORJ', 'GRASS', 'GALA', 'ENJ', 'NOT', 'MEW', 'USDE', 'RLUSD', 'XAUT']);
 async function krakenPrice(symbol: string, deadline: AbortSignal) {
-  const result = await read(`https://api.kraken.com/0/public/Ticker?pair=${symbol}USD`, 300, deadline) as { error?: string[]; result?: Record<string, { c?: string[] }> };
+  const result = await feedRead(`https://api.kraken.com/0/public/Ticker?pair=${symbol}USD`, 300, deadline) as { error?: string[]; result?: Record<string, { c?: string[] }> };
   const pairs = Object.entries(result.result ?? {});
   // Kraken names some pairs in its own style (XXMRZUSD), so accept one USD pair that carries the symbol.
   if (result.error?.length || pairs.length !== 1 || !pairs[0][0].includes(symbol) || !pairs[0][0].endsWith('USD')) throw new Error('invalid_quote');
@@ -61,7 +61,7 @@ async function krakenPrice(symbol: string, deadline: AbortSignal) {
 async function twelveDataQuote(symbol: string, key: string, deadline: AbortSignal, usdOnly = false): Promise<Quote> {
   const url = new URL('https://api.twelvedata.com/quote');
   url.searchParams.set('symbol', symbol); url.searchParams.set('apikey', key);
-  const result = await read(url.href, 300, deadline) as { symbol?: string; currency?: string; close?: string; timestamp?: number };
+  const result = await feedRead(url.href, 300, deadline) as { symbol?: string; currency?: string; close?: string; timestamp?: number };
   if (result.symbol !== symbol || (usdOnly && result.currency !== 'USD')) throw new Error('invalid_quote');
   const quote: Quote = { usd: marketQuote(result.close), source: 'Twelve Data', fetchedAt: new Date().toISOString() };
   if (Number.isFinite(result.timestamp)) quote.marketTime = new Date(result.timestamp! * 1000).toISOString();
@@ -69,7 +69,7 @@ async function twelveDataQuote(symbol: string, key: string, deadline: AbortSigna
 }
 /** A metal's spot price per fine troy ounce in USD from gold-api.com, which needs no key. */
 async function goldApiMetal(symbol: string, deadline: AbortSignal): Promise<Quote> {
-  const result = await read(`https://api.gold-api.com/price/${symbol}`, 300, deadline) as { symbol?: string; currency?: string; price?: number; updatedAt?: string };
+  const result = await feedRead(`https://api.gold-api.com/price/${symbol}`, 300, deadline) as { symbol?: string; currency?: string; price?: number; updatedAt?: string };
   if (result.symbol !== symbol || result.currency !== 'USD') throw new Error('invalid_quote');
   const quote: Quote = { usd: marketQuote(result.price), source: 'gold-api.com', fetchedAt: new Date().toISOString() };
   const marketTime = Date.parse(result.updatedAt ?? '');
@@ -78,38 +78,21 @@ async function goldApiMetal(symbol: string, deadline: AbortSignal): Promise<Quot
 }
 /** `metalAccess` defaults to `stockAccess`; metals need no key of their own (gold-api.com), only a signed-in reader. */
 export function loadMarket(crypto:string[],stocks:string[],stockAccess:boolean,metals:string[]=[],metalAccess=stockAccess):Promise<MarketData> {
-  return loadFeeds({ fx: true, rates: true, crypto, stocks, metals, stockAccess, metalAccess });
+  return loadFeeds({ crypto, stocks, metals, stockAccess, metalAccess });
 }
-/** The feeds to ask: the two exchange-rate feeds and each instrument. The kept-price layer (lib/market-cache.ts) asks only
- * for what it does not hold fresh. */
-export type FeedRequest = { fx: boolean; rates: boolean; crypto: string[]; stocks: string[]; metals: string[]; stockAccess: boolean; metalAccess: boolean };
-export async function loadFeeds({ fx, rates, crypto, stocks, metals, stockAccess, metalAccess }: FeedRequest): Promise<MarketData> {
+/** The feeds to ask: each instrument. The kept-price layer (lib/market-cache.ts) asks only for what it does not hold
+ * fresh. Exchange rates are not among them: only lib/exchange-rate-service.ts downloads those. */
+export type FeedRequest = { crypto: string[]; stocks: string[]; metals: string[]; stockAccess: boolean; metalAccess: boolean };
+export async function loadFeeds({ crypto, stocks, metals, stockAccess, metalAccess }: FeedRequest): Promise<MarketData> {
   const key = process.env.TWELVE_DATA_API_KEY;
   const data: MarketData = { fx: null, quotes: {}, errors: {}, stocksConfigured: !!key };
   // Feeds still unanswered when the budget is spent count as unavailable; the rest of the answer is kept.
   const budget = new AbortController(), deadline = budget.signal, budgetTimer = setTimeout(() => budget.abort(new DOMException('Market load budget spent', 'TimeoutError')), loadBudgetMs);
   const jobs: Array<() => Promise<void>> = [];
-  if (fx) jobs.push(async () => {
-    try {
-      const rows = await read('https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/', 3600, deadline) as Array<{ Ccy: string; Rate: string; Nominal: string; Date: string }>;
-      const usd = rows.find(row => row.Ccy === 'USD');
-      if (!usd || !/^\d{2}\.\d{2}\.\d{4}$/.test(usd.Date)) throw new Error('invalid_fx');
-      data.fx = { rate: positive(usd.Rate) / positive(usd.Nominal), date: usd.Date.split('.').reverse().join('-'), source: 'CBU' };
-    } catch { data.errors.fx = 'Exchange rate unavailable.'; }
-  });
-  if (rates) jobs.push(async () => {
-    try {
-      const result = await read('https://open.er-api.com/v6/latest/USD', 86400, deadline) as { result: string; base_code: string; rates: Record<string, number>; time_last_update_unix: number };
-      if (result.result !== 'success' || result.base_code !== 'USD' || !Number.isFinite(result.time_last_update_unix)) throw Error('invalid_fx');
-      data.rates = Object.fromEntries(Object.entries(result.rates).filter(([code, rate]) => /^[A-Z]{3}$/.test(code) && typeof rate === 'number' && Number.isFinite(rate) && rate > 0));
-      data.rates.USD = 1;
-      data.ratesDate = new Date(result.time_last_update_unix * 1000).toISOString().slice(0, 10);
-    } catch { data.errors.rates = 'Exchange rate unavailable.'; }
-  });
   for (const symbol of crypto) jobs.push(async () => {
     try {
       if (krakenCoins.has(symbol)) { data.quotes[`Crypto:${symbol}`] = { usd: await krakenPrice(symbol, deadline), source: 'Kraken', fetchedAt: new Date().toISOString() }; return; }
-      const result = await read(`https://api.coinbase.com/v2/prices/${symbol}-USD/spot`, 300, deadline) as { data?: { base: string; currency: string; amount: string } };
+      const result = await feedRead(`https://api.coinbase.com/v2/prices/${symbol}-USD/spot`, 300, deadline) as { data?: { base: string; currency: string; amount: string } };
       if (result.data?.base !== symbol || result.data.currency !== 'USD') throw new Error('invalid_quote');
       data.quotes[`Crypto:${symbol}`] = { usd: positive(result.data.amount), source: 'Coinbase', fetchedAt: new Date().toISOString() };
     } catch { data.errors[`Crypto:${symbol}`] = 'Price unavailable. Saved price is shown.'; }

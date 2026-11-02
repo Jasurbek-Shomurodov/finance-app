@@ -8,9 +8,11 @@ test/no-currency codes, funds and accounting units. Use ISO minor units for
 money formatting (e.g. JPY 0, USD 2, KWD 3), with up to eight decimals for unit
 prices. Currency labels use the active language.
 
-Daily USD-based conversion rates: https://www.exchangerate-api.com/docs/free
-Cache for 24 hours and retain provider attribution in the UI. CBU remains the
-source for the USD/UZS pair. Never invent a rate for an unsupported currency;
+Rates are USD-based only (UZS/USD, EUR/USD, INR/USD); any other pair goes through the
+dollar. `lib/exchange-rate-service.ts` alone downloads them, once a day, and the app reads
+the saved rows: https://www.exchangerate-api.com/docs/free for today's table, with
+provider attribution in the UI, and the CBU archive for each day's official table and for
+UZS. Never invent a rate for an unsupported currency;
 keep original amounts visible and disclose exclusions from converted totals.
 
 Run migrations in numeric order. 004 adds account preferences with owner RLS,

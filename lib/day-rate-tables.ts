@@ -1,7 +1,7 @@
-// A transaction counts in another currency at the official rates of its own day (migration 149). One request to the
-// Central Bank of Uzbekistan archive gives every currency of a day; each past day is fetched once and kept in
-// `exchange_rate_days` for every workspace, because the archive takes seconds per day.
-import { datedRateRevalidate } from './dated-exchange-rate';
+// A transaction counts in another currency at the official rates of its own day (migration 149). Every day's rates are
+// kept in `exchange_rate_days` for every workspace and read from there alone; only the daily jobs download them
+// (lib/exchange-rate-service.ts).
+import { readAllPages } from './owner-rows';
 import { serviceDatabase, type ServiceDatabase } from './service-role';
 import { happened, type DayTable } from './transaction-rates';
 import type { DayRate } from './day-rates';
@@ -9,101 +9,33 @@ import type { DayRate } from './day-rates';
 const validDay = (day: string) => /^\d{4}-\d{2}-\d{2}$/.test(day) && new Date(day + 'T00:00:00Z').toISOString().slice(0, 10) === day;
 const positive = (value: unknown) => Number.isFinite(Number(value)) && Number(value) > 0;
 
-/** A day's archive rows (UZS per `Nominal` units, effective on or before the day) as units of each currency per US dollar. */
-export function cbuDayTable(rows: unknown, day: string): DayTable {
- if (!validDay(day) || !Array.isArray(rows)) throw Error('Historical exchange rates are unavailable.');
- const uzs: Record<string, number> = { UZS: 1 };
- for (const row of rows as Record<string, unknown>[]) {
-  const effective = typeof row?.Date === 'string' && /^\d{2}\.\d{2}\.\d{4}$/.test(row.Date) ? row.Date.split('.').reverse().join('-') : '';
-  if (typeof row?.Ccy === 'string' && /^[A-Z]{3}$/.test(row.Ccy) && row.Ccy !== 'UZS' && validDay(effective) && effective <= day && positive(row.Rate) && positive(row.Nominal)) uzs[row.Ccy] = Number(row.Rate) / Number(row.Nominal);
- }
- if (!uzs.USD) throw Error('Historical exchange rates are unavailable.');
- return Object.fromEntries(Object.entries(uzs).map(([currency, value]) => [currency, currency === 'USD' ? 1 : uzs.USD / value]));
+/** Every kept day from `from` through `to`, oldest first: the days alone, since years of tables are megabytes. */
+export async function keptDaysBetween(from: string, to: string, db: ServiceDatabase | null = serviceDatabase()): Promise<string[]> {
+ if (!db || !validDay(from) || !validDay(to)) return [];
+ try { return (await readAllPages<{ day: string }>(range => db.read(`/rest/v1/exchange_rate_days?select=day&day=gte.${from}&day=lte.${to}&order=day.asc&${range}`))).map(row => row.day); }
+ catch { return []; /* Nothing kept reads as nothing kept. */ }
 }
 
-/** How long the archive is left alone after it did not answer. cbu.uz answers only addresses in Uzbekistan (checked
- * 2026-10-29 from twelve countries: every one timed out), so a server elsewhere would otherwise wait out the timeout
- * on every read. */
-export const archiveRestMs = 10 * 60_000;
-let archiveSilentUntil = 0;
-/** One day's rates from the archive; a past day is kept in the fetch cache for a month. A connection that does not
- * answer within 4 s (a timeout, not a refused or reset one) rests the archive for `archiveRestMs`, so later days fail
- * at once instead of each waiting. */
-async function fetchCbuDay(day: string, fetcher: typeof fetch = fetch, now = Date.now): Promise<DayTable> {
- if (now() < archiveSilentUntil) throw Error('Historical exchange rates are unavailable.');
- let response: Response;
- try { response = await fetcher(`https://cbu.uz/ru/arkhiv-kursov-valyut/json/all/${day}/`, { next: { revalidate: datedRateRevalidate(day) }, signal: AbortSignal.timeout(4000) } as RequestInit); }
- catch (error) { if ((error as Error)?.name === 'TimeoutError') archiveSilentUntil = now() + archiveRestMs; throw error; }
- if (!response.ok) throw Error('Historical exchange rates are unavailable.');
- return cbuDayTable(await response.json(), day);
-}
-/** Every kept day from `from` through `to`, in one read: for a reader that can use any published day of a period. */
-export async function keptDaysBetween(from: string, to: string, db: ServiceDatabase | null = serviceDatabase()): Promise<Map<string, DayTable>> {
- const kept = new Map<string, DayTable>();
- if (!db || !validDay(from) || !validDay(to)) return kept;
- try {
-  const rows = await db.read<{ day: string; rates: DayTable }[]>(`/rest/v1/exchange_rate_days?select=day,rates&day=gte.${from}&day=lte.${to}&order=day.asc`);
-  for (const row of rows) kept.set(row.day, row.rates);
- } catch { /* Nothing kept reads as nothing kept. */ }
- return kept;
-}
-
-export type DayTableDeps = { db?: ServiceDatabase | null; fetchDay?: (day: string) => Promise<DayTable>; today: string; budgetMs?: number; concurrency?: number; later?: (work: () => Promise<void>) => void };
+export type DayTableDeps = { db?: ServiceDatabase | null; today: string };
 const chunk = <T,>(items: T[], size: number) => Array.from({ length: Math.ceil(items.length / size) }, (_, index) => items.slice(index * size, index * size + size));
 
-async function readKept(db: ServiceDatabase, days: string[]) {
+/** The official rates of each day in `days` (today or earlier) that is kept; a day not kept is missing from the answer. */
+export async function dayTables(days: Iterable<string>, deps: DayTableDeps): Promise<Map<string, DayTable>> {
+ const wanted = [...new Set(days)].filter(day => validDay(day) && day <= deps.today);
+ const db = deps.db === undefined ? serviceDatabase() : deps.db;
  const kept = new Map<string, DayTable>();
- for (const part of chunk(days, 150)) {
+ if (!db) return kept;
+ for (const part of chunk(wanted, 150)) {
   try {
    const rows = await db.read<{ day: string; rates: DayTable }[]>(`/rest/v1/exchange_rate_days?select=day,rates&day=in.(${part.join(',')})`);
    for (const row of rows) kept.set(row.day, row.rates);
-  } catch { return kept; /* Before migration 149 nothing is kept; every day is fetched. */ }
+  } catch { return kept; }
  }
  return kept;
 }
 
-/** Fetches `days` a few at a time; a day still waiting when `deadline` passes is left for later. Each day found is kept. */
-async function fetchDays(days: string[], deps: Required<Pick<DayTableDeps, 'fetchDay' | 'concurrency'>> & { db: ServiceDatabase | null; today: string }, deadline = Infinity) {
- const found = new Map<string, DayTable>(), queue = [...days];
- const worker = async () => {
-  // The budget is checked before a day is taken, so a day not started stays in the queue for later.
-  while (queue.length && Date.now() < deadline) {
-   const day = queue.shift()!;
-   // A day still loading when the budget is spent is not waited for: the reply goes out without it, and the next
-   // read asks again. (The budget used to stop only new days, so one slow day held the reply up to its timeout.)
-   const loading = deps.fetchDay(day).then(table => { found.set(day, table); }, () => undefined);
-   if (!Number.isFinite(deadline)) { await loading; continue; }
-   let timer: ReturnType<typeof setTimeout> | undefined;
-   await Promise.race([loading, new Promise(resolve => { timer = setTimeout(resolve, Math.max(0, deadline - Date.now())); })]);
-   clearTimeout(timer);
-  }
- };
- await Promise.all(Array.from({ length: Math.min(deps.concurrency, days.length) }, worker));
- // The archive publishes a day's rates before it starts, so today's are final too.
- const keep = [...found].filter(([day]) => day <= deps.today).map(([day, rates]) => ({ day, rates, source: 'CBU' }));
- if (deps.db && keep.length) {
-  try { await deps.db.write('/rest/v1/exchange_rate_days?on_conflict=day', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(keep) }); } catch { /* Kept next time. */ }
- }
- return { found, left: queue };
-}
-
-/** The official rates of each day in `days` (today or earlier): kept days at once, the rest fetched within `budgetMs`.
- * A day not reached in time is missing from the answer and is fetched and kept after the response (`later`). */
-export async function dayTables(days: Iterable<string>, deps: DayTableDeps): Promise<Map<string, DayTable>> {
- const wanted = [...new Set(days)].filter(day => validDay(day) && day <= deps.today).sort().reverse();
- const db = deps.db === undefined ? serviceDatabase() : deps.db;
- const tables = db ? await readKept(db, wanted) : new Map<string, DayTable>();
- const missing = wanted.filter(day => !tables.has(day));
- if (!missing.length) return tables;
- const options = { db, today: deps.today, fetchDay: deps.fetchDay ?? (day => fetchCbuDay(day)), concurrency: deps.concurrency ?? 8 };
- const { found, left } = await fetchDays(missing, options, Date.now() + (deps.budgetMs ?? 6000));
- for (const [day, rates] of found) tables.set(day, rates);
- if (left.length && deps.later) deps.later(async () => { await fetchDays(left, options); });
- return tables;
-}
-
 /** A day's official rate (units of `to` for one `from`) from the kept day tables, the same ones each transaction converts
- * at; a day not kept is fetched once and kept. A pair or day the tables cannot answer goes to `fallback` (the live feeds). */
+ * at. A pair or day the tables cannot answer goes to `fallback`. */
 export function keptDayRate(deps: DayTableDeps, fallback?: DayRate): DayRate {
  const days = new Map<string, Promise<DayTable | undefined>>();
  return async (from, to, date) => {
@@ -144,14 +76,4 @@ export async function withPlanningDayRates<D extends Dateable>(data: D, currenci
 /** `records` with each transaction's day rates attached, as `withPlanningDayRates` does. */
 export async function withDayRates<T extends Dated>(records: readonly T[], currencies: Iterable<string>, deps: DayTableDeps): Promise<T[]> {
  return (await withPlanningDayRates({ records }, currencies, deps)).records as T[];
-}
-
-/** Keeps the official rates of `dates` (today or earlier) in exchange_rate_days before transactions on them are saved, so
- * the database saves each one with its day's rates (migration 150). A day the archive cannot give in time is skipped:
- * the transaction saves without rates and its day is looked up when it is read. Without the server-only key nothing can be
- * kept, so nothing is fetched. Never fails a save. */
-export async function keepDayRates(dates: Iterable<string | null | undefined>, deps: DayTableDeps): Promise<void> {
- const db = deps.db === undefined ? serviceDatabase() : deps.db;
- if (!db) return;
- try { await dayTables([...dates].filter((day): day is string => !!day), { budgetMs: 8000, ...deps, db }); } catch { /* The save goes on. */ }
 }

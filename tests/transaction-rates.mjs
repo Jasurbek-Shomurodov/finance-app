@@ -5,7 +5,9 @@ import { PGlite } from '@electric-sql/pglite';
 import { loadTS } from './helpers/load-ts.mjs';
 
 const { ratesOf, ratesOrPair, happened } = loadTS('lib/transaction-rates.ts');
-const { cbuDayTable, dayTables, keptDayRate, withPlanningDayRates, withDayRates } = loadTS('lib/day-rate-tables.ts', { './service-role': { serviceDatabase: () => null } });
+const { dayTables, keptDayRate, withPlanningDayRates, withDayRates } = loadTS('lib/day-rate-tables.ts', { './service-role': { serviceDatabase: () => null } });
+/** A stand-in for exchange_rate_days: `table(day)` gives a kept day's rates, or nothing for a day not kept. */
+const keptDb = table => ({ read: async path => decodeURIComponent(path).match(/day=in\.\((.*?)\)/)[1].split(',').flatMap(day => { const rates = table(day); return rates ? [{ day, rates }] : []; }) });
 const { drillFlows } = loadTS('lib/cash-flow-drill.ts');
 const { cashFlowReport } = loadTS('lib/cash-flow-report.ts');
 const { reportLedger } = loadTS('lib/business-report.ts');
@@ -50,57 +52,33 @@ test('only income and spending that happened carry a day; schedules, future entr
  assert.equal(happened(record('d', 'Wallet', 'Cash', 1, '2026-10-15'), '2026-10-20'), false);
 });
 
-test('the archive\'s rows become units per dollar, ignoring rows published after the day', () => {
- const rows = [{ Ccy: 'USD', Rate: '11963.16', Nominal: '1', Date: '14.10.2026' }, { Ccy: 'EUR', Rate: '13000', Nominal: '1', Date: '14.10.2026' }, { Ccy: 'JPY', Rate: '800', Nominal: '10', Date: '14.10.2026' }, { Ccy: 'GBP', Rate: '15000', Nominal: '1', Date: '16.10.2026' }];
- const table = cbuDayTable(rows, '2026-10-15');
- assert.equal(table.USD, 1);
- assert.equal(table.UZS, 11963.16);
- assert.equal(table.EUR, 11963.16 / 13000);
- assert.equal(table.JPY, 11963.16 / 80);
- assert.equal(table.GBP, undefined);
- assert.throws(() => cbuDayTable([{ Ccy: 'EUR', Rate: '1', Nominal: '1', Date: '14.10.2026' }], '2026-10-15'), /unavailable/, 'no dollar, no table');
- assert.throws(() => cbuDayTable({}, '2026-10-15'), /unavailable/);
-});
-
-test('kept days are read at once; missing days are fetched and kept, late days follow the response', async () => {
- const writes = [], later = [];
- const db = {
-  read: async path => { assert.match(path, /exchange_rate_days\?select=day,rates&day=in\./); return [{ day: '2026-10-01', rates: { USD: 1, UZS: 12000 } }]; },
-  write: async (path, init) => { writes.push(JSON.parse(init.body)); return new Response(null, { status: 201 }); },
- };
- const fetched = [];
- const fetchDay = async date => { fetched.push(date); if (date === '2026-10-03') throw Error('down'); return { USD: 1, UZS: 12000 + Number(date.slice(8)) }; };
- const tables = await dayTables(['2026-10-01', '2026-10-15', '2026-10-15', '2026-10-20', '2026-10-03', '2026-10-21', 'not a day'], { db, fetchDay, today: '2026-10-20', later: work => later.push(work) });
- assert.deepEqual([...tables.keys()].sort(), ['2026-10-01', '2026-10-15', '2026-10-20']);
- assert.deepEqual(fetched.sort(), ['2026-10-03', '2026-10-15', '2026-10-20'], 'a kept day and a future day are never fetched');
- assert.deepEqual(writes.flat().map(row => row.day).sort(), ['2026-10-15', '2026-10-20'], 'every day found is kept, today\'s too (it is published before it starts); a failed day is not');
- assert.equal(later.length, 0);
- // A day not reached within the budget is fetched after the response.
- const slow = await dayTables(['2026-09-01', '2026-09-02'], { db: null, fetchDay: async date => ({ USD: 1, UZS: 1 + Number(date.slice(8)) }), today: '2026-10-20', budgetMs: -1, later: work => later.push(work) });
- assert.equal(slow.size, 0);
- assert.equal(later.length, 1);
- await later[0]();
- // Before migration 149 the table is missing: every day is fetched and nothing breaks.
- const before = await dayTables(['2026-09-01'], { db: { read: async () => { throw Error('missing'); }, write: async () => { throw Error('missing'); } }, fetchDay: async () => ({ USD: 1, UZS: 1 }), today: '2026-10-20' });
- assert.deepEqual(before.get('2026-09-01'), { USD: 1, UZS: 1 });
+test('days are read from the database alone: a day not kept is simply missing, and nothing is written', async () => {
+ const reads = [];
+ const db = { read: async path => { reads.push(path); assert.match(path, /exchange_rate_days\?select=day,rates&day=in\./); return [{ day: '2026-10-01', rates: { USD: 1, UZS: 12000 } }]; }, write: async () => assert.fail('a reader writes nothing') };
+ const tables = await dayTables(['2026-10-01', '2026-10-15', '2026-10-15', '2026-10-21', 'not a day'], { db, today: '2026-10-20' });
+ assert.deepEqual([...tables.keys()], ['2026-10-01']);
+ assert.equal(reads.length, 1);
+ assert.ok(!reads[0].includes('2026-10-21'), 'a future day is never asked');
+ assert.equal((await dayTables(['2026-09-01'], { db: null, today: '2026-10-20' })).size, 0);
+ // Before migration 149 the table is missing: nothing is kept and nothing breaks.
+ assert.equal((await dayTables(['2026-09-01'], { db: { read: async () => { throw Error('missing'); } }, today: '2026-10-20' })).size, 0);
 });
 
 test('a payment day\'s rate comes from the kept tables; a pair or day they lack goes to the live feed', async () => {
  const reads = [], live = [];
  const db = { read: async path => { reads.push(path); return [{ day: '2026-10-05', rates: { USD: 1, UZS: 11772.95, EUR: 0.9 } }]; }, write: async () => new Response(null, { status: 201 }) };
- const rate = keptDayRate({ db, fetchDay: async () => { throw Error('down'); }, today: '2026-10-20' }, async (from, to, date) => { live.push([from, to, date]); return 7; });
+ const rate = keptDayRate({ db, today: '2026-10-20' }, async (from, to, date) => { live.push([from, to, date]); return 7; });
  assert.equal(await rate('UZS', 'USD', '2026-10-05'), 1 / 11772.95);
  assert.equal(await rate('USD', 'EUR', '2026-10-05'), 0.9);
  assert.equal(reads.length, 1, 'a day is read once for every pair');
  assert.equal(await rate('UZS', 'GBP', '2026-10-05'), 7);
  assert.equal(await rate('UZS', 'USD', '2026-10-06'), 7);
  assert.deepEqual(live, [['UZS', 'GBP', '2026-10-05'], ['UZS', 'USD', '2026-10-06']]);
- await assert.rejects(keptDayRate({ db, fetchDay: async () => { throw Error('down'); }, today: '2026-10-20' })('UZS', 'USD', '2026-10-06'));
+ await assert.rejects(keptDayRate({ db, today: '2026-10-20' })('UZS', 'USD', '2026-10-06'));
 });
 
 test('a read attaches each transaction\'s and each transfer\'s day, cut to the currencies it can be shown in', async () => {
- const fetchDay = async date => date === '2026-10-02' ? Promise.reject(Error('down')) : { USD: 1, UZS: 12000, EUR: 0.9, JPY: 150 };
- const deps = { db: null, fetchDay, today: '2026-10-20' };
+ const deps = { db: keptDb(date => date === '2026-10-02' ? null : { USD: 1, UZS: 12000, EUR: 0.9, JPY: 150 }), today: '2026-10-20' };
  const data = {
   records: [record('a', 'Lunch', 'Living expense', 100, '2026-10-01'), record('b', 'Taxi', 'Living expense', 100, '2026-10-02'), record('w', 'Wallet', 'Cash', 1, '2026-10-01'), record('s', 'Rent', 'Rent expense', 1, '2026-10-01', { frequency: 'Monthly' })],
   activity: [{ id: 't', occurred_on: '2026-10-01' }],
@@ -177,11 +155,10 @@ test('migration 149 keeps a day\'s rates for the server alone, is in setup.sql a
  } finally { await d.close(); }
 });
 
-test('a read dates transactions in the viewer\'s preferred currencies and fills late days after the response', async () => {
- const calls = [], later = [];
- const tables = { withPlanningDayRates: async (data, currencies, deps) => { calls.push({ currencies, today: deps.today }); deps.later(async () => {}); return { ...data, dated: true }; } };
+test('a read dates transactions in the viewer\'s preferred currencies', async () => {
+ const calls = [];
+ const tables = { withPlanningDayRates: async (data, currencies, deps) => { calls.push({ currencies, today: deps.today }); return { ...data, dated: true }; } };
  const { withViewerDayRates } = loadTS('lib/viewer-day-rates.ts', {
-  'next/server': { after: work => later.push(work) },
   '@/lib/day-rate-tables': tables,
   '@/lib/supabase': { supa: async (path, init, token) => { assert.match(path, /user_preferences\?select=currencies&user_id=eq\.me/); assert.equal(token, 't'); assert.equal(new Headers(init.headers).get('x-workspace-owner'), '', 'preferences are the viewer\'s own'); return Response.json([{ currencies: ['EUR', 'UZS'] }]); } },
  });
@@ -189,7 +166,6 @@ test('a read dates transactions in the viewer\'s preferred currencies and fills 
  assert.equal(out.dated, true);
  assert.deepEqual(calls[0].currencies, ['EUR', 'UZS']);
  assert.match(calls[0].today, /^\d{4}-\d{2}-\d{2}$/);
- assert.equal(later.length, 1);
  // Without preferences, or when the read fails, the records' own currencies still decide.
  const reported = [];
  const monitoring = { reportError: async (...args) => { reported.push(args); } };
@@ -223,24 +199,12 @@ test('the rate route answers several days\' official rates in the asked currenci
 
 test('a transaction saved with its day\'s rates keeps them on read; only unsaved days are looked up', async () => {
  const looked = [];
- const deps = { db: null, today: '2026-10-20', fetchDay: async date => { looked.push(date); return { USD: 1, UZS: 12500, EUR: 0.9 }; } };
+ const deps = { db: keptDb(date => { looked.push(date); return { USD: 1, UZS: 12500, EUR: 0.9 }; }), today: '2026-10-20' };
  const stored = { USD: 1, UZS: 11963.16, EUR: 0.86, JPY: 150 };
  const out = await withPlanningDayRates({ records: [record('a', 'Mother-in-law', 'Charity', 4_800_000, '2026-10-15', { day_rates: stored }), record('b', 'Lunch', 'Living expense', 1, '2026-10-16', { day_rates: null })] }, ['EUR'], deps);
  assert.deepEqual(out.records[0].day_rates, { USD: 1, UZS: 11963.16, EUR: 0.86 }, 'the saved rates, cut to the currencies it can be shown in');
  assert.deepEqual(looked, ['2026-10-16'], 'the saved day is never looked up again');
  assert.equal(out.records[1].day_rates.UZS, 12500);
-});
-
-test('the day is kept before a save; without the server key nothing is fetched, and a failure never stops the save', async () => {
- const { keepDayRates } = loadTS('lib/day-rate-tables.ts', { './service-role': { serviceDatabase: () => null } });
- let fetched = 0;
- await keepDayRates(['2026-10-15'], { today: '2026-10-20', fetchDay: async () => { fetched++; return { USD: 1 }; } });
- assert.equal(fetched, 0);
- const writes = [];
- const db = { read: async () => [], write: async (path, init) => { writes.push(JSON.parse(init.body)); return new Response(null, { status: 201 }); } };
- await keepDayRates(['2026-10-15', null, undefined], { db, today: '2026-10-20', fetchDay: async () => ({ USD: 1, UZS: 11963.16 }) });
- assert.deepEqual(writes.flat().map(row => row.day), ['2026-10-15']);
- await keepDayRates(['2026-10-15'], { db: { read: async () => { throw Error('down'); }, write: async () => { throw Error('down'); } }, today: '2026-10-20', fetchDay: async () => { throw Error('down'); } });
 });
 
 const sqlId = n => `79000000-0000-4000-8000-${String(n).padStart(12, '0')}`;

@@ -269,11 +269,6 @@
       "count": 2
     }
   },
-  "lib/dated-exchange-rate.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "lib/demo-finance.ts": {
     "complexity": {
       "count": 1

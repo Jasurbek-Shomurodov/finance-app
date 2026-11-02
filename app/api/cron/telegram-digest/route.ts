@@ -16,7 +16,7 @@ import { monthMoves } from '@/lib/digest-flow';
 import { digestBudget, digestForecast, digestGoal } from '@/lib/digest-plan';
 import type { Entry } from '@/lib/finance';
 import type { ServiceDatabase } from '@/lib/service-role';
-import { keepDayRates, withDayRates } from '@/lib/day-rate-tables';
+import { withDayRates } from '@/lib/day-rate-tables';
 export const maxDuration=60;
 const defaultReminders:ReminderSettings={enabled:true,days_ahead:7,snoozed:[]};
 type PlanInput={records:Entry[];occurrences:Occurrence[];debtPayments:DebtPayment[];categories:Category[];spending:Record<string,number>;today:string;currency:string;rates:Record<string,number>};
@@ -39,8 +39,6 @@ export async function GET(req:Request){
  try{
   // One digest per owner and day: a retried or overlapping run skips the owners already sent today.
   // This month from the 1st to today, and the same days of last month for the comparison.
-  // Today's official rates are kept every morning, so whatever saves a transaction today saves it with them.
-  await keepDayRates([today],{today,db});
   const {from,previousFrom:before,previousTo}=digestPeriods(today);
   const counts=await deliverToSubscribers(db,{kind:'digest',period:today},async({user_id,chat_id})=>{
     const [stored,occurrences,profile,snapshots,reminders,[activity,mortgagePayments],categories,operations]=await Promise.all([

@@ -31,7 +31,8 @@ export function renderInvestmentSql(snapshot){
 if(process.argv[1]&&import.meta.url===pathToFileURL(path.resolve(process.argv[1])).href){
  try{
   const envFile=path.join(root,'.env.local');if(fs.existsSync(envFile))process.loadEnvFile(envFile);
-  const market=await loadMarket(['BTC','ETH'],['SPY'],true);
+  const {loadTS}=await import('../tests/helpers/load-ts.mjs');
+  const market={...await loadMarket(['BTC','ETH'],['SPY'],true),...await loadTS('lib/exchange-rate-service.ts').loadGlobalRates()};
   const snapshot=investmentMarketSnapshot(market);
   const destination=path.join(root,'outputs/allocate-test-cash.sql');
   fs.mkdirSync(path.dirname(destination),{recursive:true});

@@ -10,12 +10,15 @@ const dates=loadTS('lib/benchmark-data.ts');
 const source=ts.transpileModule(fs.readFileSync('app/api/benchmarks/route.ts','utf8').replace(/^import .*;\n/gm,'').replace(/export /g,''),{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
 let auth=true,limited=false;const counted=[];
 const {signInAgain,tooManyAttempts}=loadTS('lib/api-route.ts');
-const {cbuDayTable}=loadTS('lib/day-rate-tables.ts',{'./service-role':{serviceDatabase:()=>null}});
-const {benchmarkFx}=loadTS('lib/benchmark-fx.ts',{'./service-role':{serviceDatabase:()=>null}});
+// The kept day tables the comparison reads: every day of the periods asked, unless a test says otherwise.
+const everyDay=(from,to)=>{const days={};for(let day=from;day<=to;day=dates.shiftDay(day,1))days[day]={USD:1,UZS:12000,JPY:150};return days;};
+let keptRates=everyDay('2025-07-01','2026-09-17');
+const fxDb={read:async path=>{const listed=path.match(/day=in\.\((.*?)\)/)?.[1].split(','),from=path.match(/day=gte\.([\d-]+)/)?.[1],to=path.match(/day=lte\.([\d-]+)/)?.[1];return Object.entries(keptRates).filter(([day])=>listed?listed.includes(day):day>=from&&day<=to).sort().map(([day,rates])=>({day,rates}));}};
+const {benchmarkFx}=loadTS('lib/benchmark-fx.ts',{'./service-role':{serviceDatabase:()=>fxDb}});
 const afterResponse=work=>{void work();};
 // No service database in tests: every series is read from the stubbed feeds, as before migration 157.
 const {keptHistory}=loadTS('lib/price-history-cache.ts',{'./service-role':{serviceDatabase:()=>null}});
-const deps={cbuDayTable,benchmarkFx,afterResponse,keptHistory,isCurrency,portfolioAssets,portfolioAssetKey,diversifiedPortfolioSchema,benchmarkSelectionSchema,stockBenchmarks,...dates,signInAgain,tooManyAttempts,limits:{benchmarks:[]},rateLimited:async(req,name,limits,key)=>{counted.push([name,key]);return limited;},session:async()=>auth?{token:'owner',user:{id:'owner-id'}}:null,depositToday:()=> '2026-09-17'};
+const deps={benchmarkFx,afterResponse,keptHistory,isCurrency,portfolioAssets,portfolioAssetKey,diversifiedPortfolioSchema,benchmarkSelectionSchema,stockBenchmarks,...dates,signInAgain,tooManyAttempts,limits:{benchmarks:[]},rateLimited:async(req,name,limits,key)=>{counted.push([name,key]);return limited;},session:async()=>auth?{token:'owner',user:{id:'owner-id'}}:null,depositToday:()=> '2026-09-17'};
 const GET=new Function(...Object.keys(deps),source+';return GET;')(...Object.values(deps));
 const request=(params='start=2026-09-14&end=2026-09-17')=>new Request('https://local/api/benchmarks?'+params);
 test('rejects anonymous users, invalid dates, future or reversed periods, and arbitrary symbols',async()=>{
@@ -33,8 +36,7 @@ test('fetches adjusted fund history, validates USD, parses candles and dated nom
     const symbol=url.searchParams.get('symbol');return Response.json({meta:{symbol,currency:symbol==='BAD'?'EUR':'USD'},values:[{datetime:'2026-09-14',close:'100'},{datetime:'2026-09-17',close:'110'}]});
    }
    if(url.hostname==='api.exchange.coinbase.com')return Response.json(['2026-09-14','2026-09-15','2026-09-16','2026-09-17'].map(date=>[dates.dateMillis(date)/1000,0,0,0,50000,1]));
-   const date=url.pathname.split('/').filter(Boolean).at(-1),display=date.split('-').reverse().join('.');
-   return Response.json([{Ccy:'USD',Rate:'12000',Nominal:'1',Date:display},{Ccy:'JPY',Rate:'8000',Nominal:'100',Date:display}]);
+   throw Error('unexpected '+url);
   };
   const response=await GET(request('start=2026-09-14&end=2026-09-17&symbol=BAD'));assert.equal(response.status,200);
   const data=await response.json();assert.equal(data.prices.SPY[0].close,100);assert.equal(data.prices.BTC.length,4);assert.equal(data.fx[0].rates.UZS,12000);assert.equal(data.fx[0].rates.JPY,150);assert.ok(data.errors.CUSTOM);assert.ok(!JSON.stringify(data).includes('test-secret'));assert.ok(calls.length<40);
@@ -42,7 +44,7 @@ test('fetches adjusted fund history, validates USD, parses candles and dated nom
 });
 test('missing connections and failing feeds remain explicit rather than generating sample prices',async()=>{
  const original=globalThis.fetch,key=process.env.TWELVE_DATA_API_KEY;
- try{delete process.env.TWELVE_DATA_API_KEY;globalThis.fetch=async()=>{throw Error('offline');};const data=await(await GET(request())).json();assert.deepEqual(data.prices,{});assert.deepEqual(data.fx,[]);for(const name of ['SPY','HYG','BTC','fx'])assert.ok(data.errors[name]);}
+ try{delete process.env.TWELVE_DATA_API_KEY;const saved=keptRates;keptRates={};globalThis.fetch=async()=>{throw Error('offline');};const data=await(await GET(request())).json();keptRates=saved;assert.deepEqual(data.prices,{});assert.deepEqual(data.fx,[]);for(const name of ['SPY','HYG','BTC','fx'])assert.ok(data.errors[name]);}
  finally{globalThis.fetch=original;if(key!==undefined)process.env.TWELVE_DATA_API_KEY=key;}
 });
 test('first-day comparison uses the latest completed BTC candle, while interior gaps still fail',async()=>{
@@ -273,24 +275,22 @@ test('Tashkent midnight carries the latest completed UTC candle across a two-day
   assert.equal(result.errors.BTC,undefined);assert.equal(result.prices.BTC[0].date,'2026-09-15');
  }finally{globalThis.fetch=original;}
 });
-test('a day the exchange-rate feed misses uses the closest earlier published day instead of failing the comparison',async()=>{
- const original=globalThis.fetch,key=process.env.TWELVE_DATA_API_KEY;
- const rates=date=>{const display=date.split('-').reverse().join('.');return Response.json([{Ccy:'USD',Rate:'12000',Nominal:'1',Date:display}]);};
+test('a day not kept uses the closest earlier kept day instead of failing the comparison, and no rate service is asked',async()=>{
+ const original=globalThis.fetch,key=process.env.TWELVE_DATA_API_KEY,saved=keptRates;
  try{
   delete process.env.TWELVE_DATA_API_KEY;
-  // 16 September is unavailable on every attempt; 17 September fails once, then recovers.
-  let flaky=0;
-  globalThis.fetch=async raw=>{const url=new URL(raw);if(url.hostname!=='cbu.uz')throw Error('offline');const date=url.pathname.split('/').filter(Boolean).at(-1);if(date==='2026-09-16')return new Response('',{status:503});if(date==='2026-09-17'&&!flaky++)throw Error('reset');return rates(date);};
+  globalThis.fetch=async raw=>assert.fail('no feed is asked: '+raw);
+  keptRates=everyDay('2026-09-14','2026-09-15');
   const data=await(await GET(request('start=2026-09-14&end=2026-09-17&benchmarks=depositUSD'))).json();
   assert.equal(data.errors.fx,undefined);
-  // The end missed once: the latest published day within a week of it stands for the end, as a rate stays in force.
+  // The latest kept day within a week of the end stands for it, as a rate stays in force.
   assert.deepEqual(data.fx.map(point=>point.date),['2026-09-14','2026-09-15']);
   assert.equal(dates.historicalRate(data.fx,'UZS','2026-09-16'),12000);assert.equal(dates.historicalRate(data.fx,'UZS','2026-09-17'),12000);
-  // A feed that is down across the whole lookback still reports the gap rather than guessing.
-  globalThis.fetch=async raw=>{const url=new URL(raw);const date=url.pathname.split('/').filter(Boolean).at(-1);return date<='2026-09-14'?new Response('',{status:503}):rates(date);};
+  // Nothing kept on or before the start still reports the gap rather than guessing.
+  keptRates=everyDay('2026-09-15','2026-09-17');
   const down=await(await GET(request('start=2026-09-14&end=2026-09-17&benchmarks=depositUSD'))).json();
   assert.ok(down.errors.fx);assert.deepEqual(down.fx,[]);
- }finally{globalThis.fetch=original;if(key!==undefined)process.env.TWELVE_DATA_API_KEY=key;}
+ }finally{keptRates=saved;globalThis.fetch=original;if(key!==undefined)process.env.TWELVE_DATA_API_KEY=key;}
 });
 
 test('signed-in comparison loads are counted per person and refused over the limit',async()=>{

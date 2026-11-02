@@ -7,17 +7,17 @@ let source=fs.readFileSync(new URL('../app/api/market/route.ts',import.meta.url)
 // The route answers through the kept-price layer; with no service database it asks the feeds every time.
 source=fs.readFileSync(new URL('../lib/server-market.ts',import.meta.url),'utf8')+'\n'+fs.readFileSync(new URL('../lib/market-cache.ts',import.meta.url),'utf8')+'\n'+source;
 source=source.replace(/import .* from .*;\n/g,'');
-source='const serviceDatabase=()=>null; const afterResponse=work=>{void work();}; const coins = '+JSON.stringify(coins)+'; const isMetalCode=value=>'+JSON.stringify(metalCodes)+'.includes(value); const session=async()=>globalThis.marketTestSession; const limits={publicMarket:[],market:[]}; const rateLimited=async(...args)=>globalThis.marketTestLimited?.(...args)??false; const tooManyAttempts=()=>Response.json({error:\'Too many attempts. Please try again later.\'},{status:429});\n'+source;
+source='const serviceDatabase=()=>globalThis.marketDb??null; const afterResponse=work=>{void work();}; const coins = '+JSON.stringify(coins)+'; const isMetalCode=value=>'+JSON.stringify(metalCodes)+'.includes(value); const session=async()=>globalThis.marketTestSession; const limits={publicMarket:[],market:[]}; const rateLimited=async(...args)=>globalThis.marketTestLimited?.(...args)??false; const tooManyAttempts=()=>Response.json({error:\'Too many attempts. Please try again later.\'},{status:429});\n'+source;
 const js=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
 const {GET}=await import('data:text/javascript;base64,'+Buffer.from(js).toString('base64'));
 test('market endpoint validates symbols, isolates failures, and protects stock access',async()=>{
  const original=globalThis.fetch, key=process.env.TWELVE_DATA_API_KEY;
  try {
   process.env.TWELVE_DATA_API_KEY='test-only';globalThis.marketTestSession=null;
+  const fetched_at=new Date().toISOString();
+  globalThis.marketDb={read:async()=>[{key:'fx',data:{rate:12000,date:'2026-09-16',source:'CBU'},fetched_at},{key:'rates',data:{rates:{USD:1,EUR:.9,UZS:11000},ratesDate:'2026-09-16'},fetched_at}],write:async()=>new Response(null,{status:201})};
   let stockCalls=0;
   globalThis.fetch=async(url)=>{
-   if(url.includes('open.er-api.com')) return Response.json({result:'success',base_code:'USD',rates:{USD:1,EUR:.9,UZS:11000,BAD:-1},time_last_update_unix:1700000000});
-   if(url.includes('cbu.uz')) return Response.json([{Ccy:'USD',Rate:'12000',Nominal:'1',Date:'16.09.2026'}]);
    if(url.includes('twelvedata')) {stockCalls++;return Response.json({symbol:'AAPL',currency:'USD',close:'200',timestamp:1700000000});}
    if(url.includes('TON-USD')) return Response.json({data:{base:'TON',currency:'USD',amount:'1.33'}});
    if(url.includes('ETH-USD')) return Response.json({data:{base:'ETH',currency:'USD',amount:'NaN'}});
@@ -25,7 +25,7 @@ test('market endpoint validates symbols, isolates failures, and protects stock a
   };
   assert.equal((await GET(new Request('http://localhost/api/market?stocks=bad%20symbol'))).status,400);
   let data=await (await GET(new Request('http://localhost/api/market?crypto=BTC,ETH&stocks=AAPL'))).json();
-  assert.equal(data.fx.rate,12000);assert.equal(data.rates.EUR,.9);assert.equal(data.rates.UZS,12000);assert.equal(data.rates.BAD,undefined);assert.equal(data.quotes['Crypto:BTC'].usd,60000);
+  assert.equal(data.fx.rate,12000);assert.equal(data.rates.EUR,.9);assert.equal(data.rates.UZS,12000);assert.equal(data.quotes['Crypto:BTC'].usd,60000);
   assert.ok(data.errors['Crypto:ETH']);assert.equal(stockCalls,0);assert.ok(data.errors['Stock:AAPL']);
   globalThis.marketTestSession={user:{id:'test'}};
   data=await (await GET(new Request('http://localhost/api/market?stocks=AAPL'))).json();
@@ -34,9 +34,10 @@ test('market endpoint validates symbols, isolates failures, and protects stock a
   assert.equal(ton.quotes['Crypto:TON'].usd,1.33);
   assert.equal((await GET(new Request('http://localhost/api/market?crypto='+coins.slice(0,17).map(coin=>coin[0]).join(',')))).status,400);
   globalThis.fetch=async()=>{throw Error('network failure');};
+  delete globalThis.marketDb;
   data=await (await GET(new Request('http://localhost/api/market?crypto=BTC'))).json();
   assert.equal(data.fx,null);assert.deepEqual(data.quotes,{});assert.ok(data.errors.fx);
- } finally {globalThis.fetch=original;delete globalThis.marketTestSession;if(key===undefined)delete process.env.TWELVE_DATA_API_KEY;else process.env.TWELVE_DATA_API_KEY=key;}
+ } finally {globalThis.fetch=original;delete globalThis.marketDb;delete globalThis.marketTestSession;if(key===undefined)delete process.env.TWELVE_DATA_API_KEY;else process.env.TWELVE_DATA_API_KEY=key;}
 });
 
 test('BTC spot recovers from temporary rate limiting',async()=>{

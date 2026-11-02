@@ -65,7 +65,7 @@ this repository:
 | DB | `database/setup.sql`, `migrations/*.sql`, `lib/*-schemas.ts`, `lib/record-schema.ts` |
 | MIG | `migrations/` naming, order and idempotency; `tests/*-sql.mjs` |
 | API | `app/api/**`, `lib/api-route.ts`, `lib/api-validation.ts`, `lib/api-client.ts`, `lib/rate-limit.ts` |
-| MONEY | `lib/money.ts`, `lib/market.ts`, `lib/dated-exchange-rate.ts`, `lib/decimal-amounts.ts`, `lib/schedule-currency.ts`, `lib/workspace-totals.ts`, `lib/format.ts`, anything that sums amounts |
+| MONEY | `lib/money.ts`, `lib/market.ts`, `lib/exchange-rate-service.ts`, `lib/official-rate.ts`, `lib/decimal-amounts.ts`, `lib/schedule-currency.ts`, `lib/workspace-totals.ts`, `lib/format.ts`, anything that sums amounts |
 | DRY | `lib/`, `components/`, `hooks/` — duplicated rules, calculations, fetch wrappers, schemas |
 | SOLID | `lib/`, `components/workspace/state/`, large components |
 | ARCH | `components/workspace/**`, `components/presentation-foundation/**`, `app/(workspace)/**`, `tests/workspace-structure.mjs` |

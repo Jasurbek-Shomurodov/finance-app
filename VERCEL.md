@@ -59,7 +59,9 @@ delays apply; up to 20 unique stock tickers are requested per refresh.
 Crypto spot prices use Coinbase's public feed, and Kraken's public ticker for the
 coins Coinbase does not price (`krakenCoins` in `lib/server-market.ts`); USD/UZS uses the CBU official
 rate and displays its effective date. The app refreshes every five minutes
-while visible, with upstream caching (five minutes for quotes, one hour for FX).
+while visible, with upstream caching for quotes (five minutes). Exchange rates are
+downloaded only by the daily jobs (`lib/exchange-rate-service.ts`) and read from the
+database everywhere else, so nobody waits for one.
 Saved values are used when a quote fails. Without FX, only records in the
 selected currency are included. Display conversion never rewrites stored
 currency, purchase cost, or balances. Coin/ticker identity uses the record name,
@@ -204,7 +206,7 @@ menu and an example. When the owner has businesses, expenses and income may name
 one (business income must). Expenses and income may be entered in another
 preferred currency than their account, and loans and mortgages may be paid from
 an account in another currency: the bot converts with the app's dated rates
-(ECB, then the Central Bank of Uzbekistan) and, when no rate exists for the day,
+(the Central Bank of Uzbekistan's, kept per day against the dollar) and, when no rate exists for the day,
 asks for the converted amount or the rate instead of guessing. Transfers across
 currencies ask for the amount received. Saving goes through
 `telegram_save_finance_record`, `telegram_planning_action` and

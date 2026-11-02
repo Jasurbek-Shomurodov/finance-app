@@ -33,6 +33,9 @@ export async function createDatabase(setupPath = new URL('../database/setup.sql'
   const db = new PGlite();
   await db.exec(shim);
   await db.exec(fs.readFileSync(setupPath, 'utf8'));
+  // The rates the daily jobs keep in production, fixed so a run's figures are the same everywhere (units per US dollar).
+  await db.exec(`INSERT INTO exchange_rate_days(day,rates) SELECT d::date,'{"USD":1,"EUR":0.92,"UZS":12700}' FROM generate_series(current_date-800,current_date+1,'1 day') d;
+   INSERT INTO market_quotes(key,data) VALUES('fx',jsonb_build_object('rate',12700,'date',current_date,'source','CBU')),('rates',jsonb_build_object('rates','{"USD":1,"EUR":0.92,"UZS":12700}'::jsonb,'ratesDate',current_date));`);
   return db;
 }
 

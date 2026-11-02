@@ -12,7 +12,7 @@ function harness(){
   '@/lib/supabase':{session:async()=>state.auth,supa:async(path,init,token)=>{state.calls.push({path,init,token,body:init?.body?JSON.parse(init.body):undefined});return state.handler(path,init,token);},sameOrigin:loadTS('lib/api-route.ts').sameOrigin},
   '@/lib/server-records':{readOwnerRows:async(table,token,extra)=>{state.reads.push({table,token,extra});if(state.readError)throw state.readError;return state.rows[table]??[];}},
   '@/lib/deposit-forecasts':{depositForecasts:async token=>{state.forecastCalls++;assert.equal(token,'owner-token');return state.forecasts;}},
-  '@/lib/dated-exchange-rate':{loadDatedExchangeRate:async(...args)=>{state.rateCalls.push(args);await state.rateHook?.();if(state.rateError)throw state.rateError;return state.rate;}},
+  '@/lib/official-rate':{loadOfficialRate:async(...args)=>{state.rateCalls.push(args);await state.rateHook?.();if(state.rateError)throw state.rateError;return state.rate;}},
   // The kept day tables (`state.tables`, by day) answer first; a day or pair they lack goes to the live feed above.
   '@/lib/day-rate-tables':{...loadTS('lib/day-rate-tables.ts'),keepDayRates:async()=>{},keptDayRate:(deps,fallback)=>async(from,to,date)=>{const table=state.tables?.[date];return table?.[from]&&table?.[to]?table[to]/table[from]:fallback(from,to,date);}},
   '@/lib/notify-action':{queueMilestoneCheck:(auth,event)=>{assert.equal(auth.token,'owner-token');state.events.push(event);}},

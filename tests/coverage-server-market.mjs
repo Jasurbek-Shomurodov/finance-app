@@ -26,38 +26,6 @@ function feeds(extra={}){
  };
 }
 
-test('exchange rates combine the CBU rate per unit with the filtered global table',async()=>{
- await withFeeds(feeds(),async({calls})=>{
-  const data=await loadMarket([],[],false);
-  assert.deepEqual(data.fx,{rate:12500,date:'2026-09-29',source:'CBU'});
-  // Only positive finite three-letter codes survive; UZS comes from the CBU rate and USD is always 1.
-  assert.deepEqual(data.rates,{EUR:.9,GBP:.8,UZS:12500,USD:1});
-  assert.equal(data.ratesDate,new Date(1790640000*1000).toISOString().slice(0,10));
-  assert.deepEqual(data.errors,{});assert.deepEqual(data.quotes,{});assert.equal(data.stocksConfigured,true);
-  const cbuCall=calls.find(call=>call.url.includes('cbu.uz'));
-  assert.equal(cbuCall.init.next.revalidate,3600);assert.ok(cbuCall.init.signal instanceof AbortSignal);
-  assert.equal(calls.find(call=>call.url.includes('er-api')).init.next.revalidate,86400);
- });
-});
-
-test('invalid exchange-rate answers are reported without hiding the other feed',async()=>{
- for(const rows of [[{Ccy:'EUR',Rate:'1',Nominal:'1',Date:'29.09.2026'}],[{Ccy:'USD',Rate:'12000',Nominal:'1',Date:'2026-09-29'}],[{Ccy:'USD',Rate:'-5',Nominal:'1',Date:'29.09.2026'}],[{Ccy:'USD',Rate:'12000',Nominal:null,Date:'29.09.2026'}]]){
-  await withFeeds(feeds({'cbu.uz':cbu(rows)}),async()=>{
-   const data=await loadMarket([],[],true);
-   assert.equal(data.fx,null);assert.equal(data.errors.fx,'Exchange rate unavailable.');
-   assert.equal(data.rates.UZS,11000,'without the CBU rate the global table keeps its own UZS');
-  });
- }
- for(const body of [{result:'error',base_code:'USD',rates:{},time_last_update_unix:1},{result:'success',base_code:'EUR',rates:{},time_last_update_unix:1},{result:'success',base_code:'USD',rates:{},time_last_update_unix:'soon'}]){
-  await withFeeds(feeds({'open.er-api.com':er(body)}),async()=>{
-   const data=await loadMarket([],[],true);
-   assert.equal(data.errors.rates,'Exchange rate unavailable.');
-   assert.deepEqual(data.rates,{USD:1,UZS:12500},'the CBU rate still fills USD and UZS');
-   assert.equal(data.ratesDate,undefined);
-  });
- }
-});
-
 test('crypto prices come from Coinbase, and Kraken for the coins Coinbase cannot price',async()=>{
  assert.ok(krakenCoins.has('XMR'));assert.ok(krakenCoins.has('JUP'));assert.ok(!krakenCoins.has('BTC'));
  await withFeeds(feeds({
@@ -144,16 +112,22 @@ test('a rate-limited or failing feed is retried once, and warnings never include
   assert.deepEqual(warnings,[['Market feed unavailable','api.coinbase.com',404]]);
  });
  // A network failure is retried once and then reported.
- await withFeeds(feeds({'cbu.uz':()=>{throw TypeError('fetch failed');}}),async({calls,warnings})=>{
-  const data=await loadMarket([],[],true);
-  assert.equal(data.errors.fx,'Exchange rate unavailable.');
-  assert.equal(calls.filter(call=>call.url.includes('cbu.uz')).length,2);
-  assert.deepEqual(warnings,[['Market feed unavailable','cbu.uz','network_or_response_error']]);
+ await withFeeds(feeds({'BTC-USD':()=>{throw TypeError('fetch failed');}}),async({calls,warnings})=>{
+  const data=await loadMarket(['BTC'],[],true);
+  assert.ok(data.errors['Crypto:BTC']);
+  assert.equal(calls.filter(call=>call.url.includes('BTC-USD')).length,2);
+  assert.deepEqual(warnings,[['Market feed unavailable','api.coinbase.com','network_or_response_error']]);
  });
- // A single network blip recovers; malformed JSON counts as a failure too.
- await withFeeds(feeds({'cbu.uz':(()=>{let n=0;return()=>{if(++n===1)throw TypeError('reset');return cbu();};})(),'open.er-api.com':new Response('not json',{status:200})}),async()=>{
-  const data=await loadMarket([],[],true);
-  assert.equal(data.fx.rate,12500);assert.equal(data.errors.rates,'Exchange rate unavailable.');
+ // A single network blip recovers.
+ await withFeeds(feeds({'BTC-USD':(()=>{let n=0;return()=>{if(++n===1)throw TypeError('reset');return Response.json({data:{base:'BTC',currency:'USD',amount:'10'}});};})()}),async()=>{
+  assert.equal((await loadMarket(['BTC'],[],true)).quotes['Crypto:BTC'].usd,10);
+ });
+});
+
+test('the market load never asks for an exchange rate: only the rate service does',async()=>{
+ await withFeeds(feeds(),async({calls})=>{
+  const data=await loadMarket([],[],false);
+  assert.equal(calls.length,0);assert.equal(data.fx,null);assert.equal(data.rates,undefined);assert.deepEqual(data.errors,{});
  });
 });
 
@@ -234,7 +208,6 @@ test('feeds that never answer cannot hold the load past its budget: the answered
   const data=await loadMarket(['BTC','ETH','SOL','ADA','XRP'],[],false);
   const spent=Date.now()-started;
   assert.ok(spent<loadBudgetMs+1000,`the load ended after ${spent} ms`);
-  assert.equal(data.errors.fx,'Exchange rate unavailable.');assert.equal(data.rates.EUR,.9);
   for(const coin of ['BTC','ETH','SOL','ADA','XRP'])assert.equal(data.errors[`Crypto:${coin}`],'Price unavailable. Saved price is shown.');
   assert.ok(warnings.some(args=>args.includes('load_budget_spent')));
  });

@@ -136,7 +136,7 @@ async function loadBenchmarks(req: Request) {
   if(selected.includes('BTC'))jobs.push(async () => { try { data.prices.BTC = await history('crypto','BTC'); } catch { data.errors.BTC = 'Market history is unavailable for this period.'; } });
   if(selected.includes('PORTFOLIO')&&portfolioCrypto)jobs.push(async()=>{try{data.prices.portfolioCrypto=await history('crypto',portfolioCrypto);}catch{data.errors.portfolioCrypto='Market history is unavailable for this period.';}});
   jobs.push(async () => {
-   try { data.fx = await benchmarkFx(start, end, { today: depositToday(), later: afterResponse }); } catch { data.errors.fx = 'Historical exchange rates are unavailable.'; }
+   try { data.fx = await benchmarkFx(start, end, { today: depositToday() }); } catch { data.errors.fx = 'Historical exchange rates are unavailable.'; }
   });
   let index = 0;
   await Promise.all(Array.from({ length: 3 }, async () => { while (index < jobs.length) await jobs[index++](); }));

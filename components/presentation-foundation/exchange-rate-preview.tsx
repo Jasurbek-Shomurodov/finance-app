@@ -2,7 +2,7 @@
 import { useLanguage } from '@/components/language-provider';
 import { formatDate,formatNumber } from '@/lib/format';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
-import type { DatedExchangeRate } from '@/lib/dated-exchange-rate';
+import type { DatedExchangeRate } from '@/lib/official-rate';
 
 /** The shape `useDatedExchangeRate` returns; typed structurally so this stays a pure display piece. */
 type ExchangeRateState={loading:boolean;error?:string;quote?:DatedExchangeRate;retry:()=>void};

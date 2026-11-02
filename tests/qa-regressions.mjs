@@ -28,7 +28,7 @@ test('entered amounts add and subtract without binary floating point tails',()=>
 const compile=path=>ts.transpileModule(fs.readFileSync(path,'utf8').replace(/^import .*;\n/gm,'').replace(/export /g,''),{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
 function recordsApi(calls){
  const kinds=['Cash','Living expense','Other income','Mortgage'];
- return apiFunction('cashFlowAmountMissing','requiresCashAccount','loadDatedExchangeRate','depositForecasts','isCurrency','z','kinds','income','expenses','assetRecordKinds','session','supa','sameOrigin',compile('app/api/records/route.ts')+';return POST;')
+ return apiFunction('cashFlowAmountMissing','requiresCashAccount','loadOfficialRate','depositForecasts','isCurrency','z','kinds','income','expenses','assetRecordKinds','session','supa','sameOrigin',compile('app/api/records/route.ts')+';return POST;')
   .bind(null,cashFlowAmountMissing,requiresCashAccount)(async()=>({rate:1,effective_date:'2026-09-01'}),()=>[],value=>['USD','UZS'].includes(value),z,kinds,['Other income'],['Living expense'],['Cash'],async()=>({user:{id:'owner'},token:'owner'}),
   async(path,init)=>{if(path.includes('select='))return Response.json([{id:'00000000-0000-4000-8000-000000000010',kind:'Cash',currency:'USD'}]);calls.push(JSON.parse(init.body).p_record);return Response.json([]);},()=>true);
 }
@@ -135,7 +135,7 @@ test('account activity shows spending as money out and income as money in',()=>{
 
 test('deleting an account that still has savings goals explains what blocks it',async()=>{
  const kinds=['Cash','Living expense','Other income','Mortgage'];
- const remove=apiFunction('cashFlowAmountMissing','requiresCashAccount','loadDatedExchangeRate','depositForecasts','isCurrency','z','kinds','income','expenses','assetRecordKinds','session','supa','sameOrigin',compile('app/api/records/route.ts')+';return DELETE;')
+ const remove=apiFunction('cashFlowAmountMissing','requiresCashAccount','loadOfficialRate','depositForecasts','isCurrency','z','kinds','income','expenses','assetRecordKinds','session','supa','sameOrigin',compile('app/api/records/route.ts')+';return DELETE;')
   .bind(null,cashFlowAmountMissing,requiresCashAccount)(async()=>({rate:1,effective_date:'2026-09-01'}),()=>[],()=>true,z,kinds,['Other income'],['Living expense'],['Cash'],async()=>({user:{id:'owner'},token:'owner'}),
   async()=>Response.json({code:'23503',message:'update or delete on table "finance_records" violates foreign key constraint',details:'Key (id) is still referenced from table "savings_goals".'},{status:409}),()=>true);
  const response=await remove(new Request('https://local',{method:'DELETE',body:JSON.stringify({id:expense.account_id})}));
