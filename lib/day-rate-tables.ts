@@ -1,5 +1,5 @@
 // A transaction counts in another currency at the official rates of its own day (migration 149). Every day's rates are
-// kept in `exchange_rate_days` for every workspace and read from there alone; only the daily jobs download them
+// kept in `exchange_rate_days` for every workspace and read from there alone; only the daily Vercel job downloads them
 // (lib/exchange-rate-service.ts).
 import { readAllPages } from './owner-rows';
 import { serviceDatabase, type ServiceDatabase } from './service-role';
@@ -14,6 +14,13 @@ export async function keptDaysBetween(from: string, to: string, db: ServiceDatab
  if (!db || !validDay(from) || !validDay(to)) return [];
  try { return (await readAllPages<{ day: string }>(range => db.read(`/rest/v1/exchange_rate_days?select=day&day=gte.${from}&day=lte.${to}&order=day.asc&${range}`))).map(row => row.day); }
  catch { return []; /* Nothing kept reads as nothing kept. */ }
+}
+
+/** One kept day's rates and where they came from. */
+export async function keptDay(day: string, db: ServiceDatabase | null = serviceDatabase()): Promise<{ rates: DayTable; source: string } | undefined> {
+ if (!db || !validDay(day)) return undefined;
+ try { return (await db.read<{ rates: DayTable; source: string }[]>(`/rest/v1/exchange_rate_days?select=rates,source&day=eq.${day}`))[0]; }
+ catch { return undefined; }
 }
 
 export type DayTableDeps = { db?: ServiceDatabase | null; today: string };

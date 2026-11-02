@@ -9,24 +9,24 @@ const compile=path=>ts.transpileModule(fs.readFileSync(path,'utf8').replace(/^im
 const id=n=>`40000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 const {loadOfficialRate}=loadTS('lib/official-rate.ts');
 /** A stand-in for exchange_rate_days. */
-const keptRates=days=>({read:async path=>{const url=decodeURIComponent(path),listed=url.match(/day=in\.\((.*?)\)/)?.[1].split(',');const from=url.match(/day=gte\.([\d-]+)/)?.[1],to=url.match(/day=lte\.([\d-]+)/)?.[1];return Object.entries(days).filter(([day])=>listed?listed.includes(day):day>=from&&day<=to).sort().map(([day,rates])=>({day,rates}));},write:async()=>new Response(null,{status:201})});
+const keptRates=days=>({read:async path=>{const url=decodeURIComponent(path),one=url.match(/day=eq\.([\d-]+)/)?.[1];if(one)return days[one]?[{rates:days[one],source:'CBU'}]:[];const listed=url.match(/day=in\.\((.*?)\)/)?.[1].split(',');const from=url.match(/day=gte\.([\d-]+)/)?.[1],to=url.match(/day=lte\.([\d-]+)/)?.[1];return Object.entries(days).filter(([day])=>listed?listed.includes(day):day>=from&&day<=to).sort().map(([day,rates])=>({day,rates}));},write:async()=>new Response(null,{status:201})});
 test('a saved day answers at once, and any pair goes through the dollar',async()=>{
  const original=global.fetch;global.fetch=async url=>assert.fail('no service is asked: '+url);
  try{
   const db=keptRates({'2026-10-21':{USD:1,UZS:12012.3,EUR:.9,INR:88}});
-  assert.deepEqual(await loadOfficialRate('USD','UZS','2026-10-21',{db,today:'2026-11-02'}),{from:'USD',to:'UZS',date:'2026-10-21',effective_date:'2026-10-21',rate:12012.3,source:'CBU'});
-  assert.equal((await loadOfficialRate('UZS','USD','2026-10-21',{db,today:'2026-11-02'})).rate,1/12012.3);
-  assert.equal((await loadOfficialRate('EUR','USD','2026-10-21',{db,today:'2026-11-02'})).rate,1/.9);
-  assert.equal((await loadOfficialRate('EUR','UZS','2026-10-21',{db,today:'2026-11-02'})).rate,12012.3/.9,'never a direct EUR/UZS quote');
-  assert.equal((await loadOfficialRate('INR','EUR','2026-10-21',{db,today:'2026-11-02'})).rate,.9/88);
+  assert.deepEqual(await loadOfficialRate('USD','UZS','2026-10-21',{db}),{from:'USD',to:'UZS',date:'2026-10-21',effective_date:'2026-10-21',rate:12012.3,source:'CBU'});
+  assert.equal((await loadOfficialRate('UZS','USD','2026-10-21',{db})).rate,1/12012.3);
+  assert.equal((await loadOfficialRate('EUR','USD','2026-10-21',{db})).rate,1/.9);
+  assert.equal((await loadOfficialRate('EUR','UZS','2026-10-21',{db})).rate,12012.3/.9,'never a direct EUR/UZS quote');
+  assert.equal((await loadOfficialRate('INR','EUR','2026-10-21',{db})).rate,.9/88);
  }finally{global.fetch=original;}
 });
 test('a day not saved yet uses the rate still in force and names its day, and a week without rates stays unavailable',async()=>{
  const db=keptRates({'2026-10-20':{USD:1,UZS:12044.72},'2026-10-26':{USD:1,UZS:11838.92}});
- const quote=await loadOfficialRate('USD','UZS','2026-11-02',{db,today:'2026-11-02'});
+ const quote=await loadOfficialRate('USD','UZS','2026-11-02',{db});
  assert.equal(quote.date,'2026-11-02');assert.equal(quote.effective_date,'2026-10-26');assert.equal(quote.rate,11838.92);
- await assert.rejects(loadOfficialRate('USD','UZS','2026-11-03',{db,today:'2026-11-03'}),/Historical exchange rates are unavailable/);
- await assert.rejects(loadOfficialRate('USD','GBP','2026-10-26',{db,today:'2026-11-02'}),/Historical exchange rates are unavailable/);
+ await assert.rejects(loadOfficialRate('USD','UZS','2026-11-03',{db}),/Historical exchange rates are unavailable/);
+ await assert.rejects(loadOfficialRate('USD','GBP','2026-10-26',{db}),/Historical exchange rates are unavailable/);
 });
 
 test('exchange payment API verifies rates server-side and reuses committed rates on retry during an outage',async()=>{

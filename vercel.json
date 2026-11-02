@@ -15,7 +15,7 @@
     },
     {
       "path": "/api/cron/exchange-rates",
-      "schedule": "30 4 * * *"
+      "schedule": "0 6 * * *"
     },
     {
       "path": "/api/cron/telegram-recap",

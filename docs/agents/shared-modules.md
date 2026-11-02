@@ -6,7 +6,7 @@
   go through `readAllPages` (`lib/owner-rows.ts`) or `readOwnerRows`
   (`lib/server-records.ts`).
 - Exchange rates: only `lib/exchange-rate-service.ts` downloads them, from the daily
-  jobs (`npm run rates:fill` on the Mac, `/api/cron/exchange-rates` on the server).
+  Vercel cron `/api/cron/exchange-rates`.
   Everything else reads the database: `loadOfficialRate` (`lib/official-rate.ts`) for
   a day's pair, `dayTables` / `ratesOf` for transactions, `cachedMarket` for today's.
   Each table is units per US dollar; any other pair goes through the dollar. Never

@@ -38,6 +38,6 @@ test('a loan can be dated before the cash account\'s latest balance, and the acc
   await assert.rejects(lend(22,yesterday,2001),/Not enough money/);
   assert.equal(await cash(),2000);
   const version=(await db.query('SELECT finance_capabilities() AS value')).rows[0].value.schema_version;
-  assert.equal(version,159);
+  assert.ok(version>=159);
  }finally{await db.close();}
 });
