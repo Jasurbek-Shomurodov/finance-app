@@ -233,16 +233,25 @@ test('a schedule’s details show its totals, payments and chart in the currency
  assert.ok(r.all(node => node.props?.['data-bar']).length > 0);
 });
 
-test('a business card offers Add investment, which opens the Tracker on Money invested; other assets and the sample workspace do not', () => {
+test('tapping any card in Other assets opens the Tracker on Money invested; its details start open, the sample workspace and accounts keep their tap', () => {
  const invested = [];
- const WithActions = Object.assign(({ record, children }) => React.createElement('article', { 'data-id': record.id }, children), { displayName: 'AssetCard' });
+ const cards = [];
+ const Spy = Object.assign(props => { cards.push(props); return React.createElement('article', { 'data-id': props.record.id }, props.children); }, { displayName: 'AssetCard' });
  const props = { accounts: [], accountsLoading: false, accountsError: '', onRetryAccounts() {}, onAddHolding() {}, currency: 'USD', market, netWorth: 0, debt: 0, loading: false, onAdd() {}, onEdit() {}, onTrack() {}, onDelete() {}, quoteLabel: () => '', onInvest: record => invested.push(record.id) };
- const records = [entry('Club', 'Business', 'USD', 33000), entry('Flat', 'Property', 'USD', 60000)];
- const mount = demo => { const r = createRenderer(), ui = stubs(); const { AssetDashboard } = r.load('components/asset-dashboard.tsx', { ...ui.modules, ...inEuros, ...assetModules, '@/components/presentation-foundation/asset-card': { AssetCard: WithActions }, '@/components/asset-accounts': hostModule() }); r.mount(React.createElement(AssetDashboard, { ...props, records, demo })); return r; };
+ const records = [entry('Club', 'Business', 'USD', 33000), entry('Flat', 'Property', 'USD', 60000), entry('Car', 'Vehicle', 'USD', 9000), entry('Term', 'Deposit', 'USD', 1000)];
+ const mount = demo => { cards.length = 0; const r = createRenderer(), ui = stubs(); const { AssetDashboard } = r.load('components/asset-dashboard.tsx', { ...ui.modules, ...inEuros, ...assetModules, '@/components/presentation-foundation/asset-card': { AssetCard: Spy }, '@/components/asset-accounts': hostModule() }); r.mount(React.createElement(AssetDashboard, { ...props, records, demo })); return r; };
  const r = mount(false);
- const buttons = r.all(node => node.type === 'article').map(card => [card.props['data-id'], text(card)]);
- assert.deepEqual(buttons, [['Flat', ''], ['Club', 'Add investment']], 'only the business has the button (cards sorted by worth)');
- r.find(node => node.type?.displayName === 'Button' && text(node) === 'Add investment').props.onClick();
- assert.deepEqual(invested, ['Club']);
- assert.ok(!text(mount(true).tree).includes('Add investment'), 'the sample workspace has no Tracker');
+ const other = id => cards.find(card => card.record.id === id);
+ assert.deepEqual(['Flat', 'Club', 'Car'].map(id => [other(id).detailsOpen, other(id).openLabel]), [[true, 'Open Tracker for Flat'], [true, 'Open Tracker for Club'], [true, 'Open Tracker for Car']]);
+ ['Flat', 'Club', 'Car'].forEach(id => other(id).onOpen());
+ assert.deepEqual(invested, ['Flat', 'Club', 'Car']);
+ assert.equal(other('Term').onOpen, undefined, 'a deposit stays in Accounts and keeps opening its details');
+ assert.equal(other('Term').detailsOpen, undefined);
+ assert.ok(!text(r.tree).includes('Add investment'), 'the button is gone');
+ r.find(node => node.props?.['aria-label'] === 'Compact view').props.onClick();
+ r.update();
+ assert.equal(cards.findLast(card => card.record.id === 'Flat').detailsOpen, false, 'compact view stays one line per holding');
+ mount(true);
+ assert.equal(other('Flat').onOpen, undefined, 'the sample workspace has no Tracker');
+ assert.equal(other('Flat').detailsOpen, true);
 });

@@ -2,7 +2,7 @@
 // Each test names its catalog cases. Expected figures are worked out from the fixture, never read off the screen.
 import { test, expect } from '@playwright/test';
 import { accountBalance, chooseOption, closeDialog, dollars, figureAfter, open, pageText, resetDatabase } from './helpers.mjs';
-import { expected } from './fixture.mjs';
+import { expected, today } from './fixture.mjs';
 import { testAccount } from './settings.mjs';
 
 test.beforeEach(async () => { await resetDatabase(); });
@@ -217,6 +217,37 @@ test('INV-003 selling part of a holding adds the proceeds to cash and keeps the 
   await expect(dialog).toBeHidden();
   await expect.poll(() => accountBalance(page, 'E2E Checking')).toBe(dollars(expected.checking + 250));
   await expect.poll(async () => /AAPL\n\n?1 unit/.test(await pageText(page))).toBe(true);
+});
+
+test('INV-053 tapping a property card records money invested from cash, and the card\'s own controls stay separate', async ({ page, baseURL }) => {
+  const flat = { id: 'e2e00000-0000-4000-8000-000000000050', name: 'E2E Flat', kind: 'Property', currency: 'USD', amount: 60000, quantity: 1, cost: 0, rate: 0, frequency: 'Once', notes: '', estimated_monthly_payment: 0, estimated_monthly_income: 0, ownership_percentage: 100, date: today };
+  expect((await page.request.post('/api/records', { data: flat, headers: { origin: baseURL } })).ok()).toBe(true);
+  await page.goto('/assets');
+  const card = page.locator('.asset-card', { hasText: 'E2E Flat' });
+  const dialog = page.getByRole('dialog');
+  const details = card.locator('details');
+  await expect(details).toHaveJSProperty('open', true);
+  await expect(card.getByRole('button', { name: 'Add investment' })).toHaveCount(0);
+  await card.locator('summary').click();
+  await expect(details).toHaveJSProperty('open', false);
+  await card.locator('summary').click();
+  await expect(details).toHaveJSProperty('open', true);
+  await card.getByRole('button', { name: 'Actions for E2E Flat' }).click();
+  await expect(page.getByRole('menuitem', { name: 'Edit E2E Flat' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await card.locator('.asset-card-worth').click();
+  await expect(dialog.getByRole('heading', { name: /E2E Flat/ })).toBeVisible();
+  await expect(dialog.locator('select').first()).toHaveValue('contribution');
+  await chooseOption(dialog.locator('select').nth(1), 'E2E Checking');
+  await dialog.getByLabel(/Cash amount/).fill('1200');
+  await dialog.getByRole('button', { name: 'Save update' }).click();
+  await expect(dialog.locator('.tracker-history')).toContainText('Money invested');
+  await expect(dialog.locator('.tracker-history')).toContainText('Cash deducted from E2E Checking: $1,200');
+  await closeDialog(page);
+  await expect(card.locator('.asset-card-worth')).toContainText('$60,000');
+  await open(page, 'Accounts');
+  await expect.poll(() => accountBalance(page, 'E2E Checking')).toBe(dollars(expected.checking - 1200));
 });
 
 test('SET-011 the financial report downloads as a multi-page PDF built from the owner\'s backup', async ({ page }, testInfo) => {

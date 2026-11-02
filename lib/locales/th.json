@@ -543,7 +543,6 @@
   "Investment account": "บัญชีลงทุน",
   "No investment account": "ไม่มีบัญชีลงทุน",
   "Add holding": "เพิ่มสินทรัพย์ที่ถือ",
-  "Add investment": "เพิ่มการลงทุน",
   "Interest-bearing deposit": "เงินฝากที่มีดอกเบี้ย",
   "Cash and deposits hold a balance. Stocks and crypto are holdings within an account.": "เงินสดและเงินฝากมียอดคงเหลือ ส่วนหุ้นและคริปโตเป็นสินทรัพย์ที่ถืออยู่ในบัญชี",
   "Current balance": "ยอดคงเหลือปัจจุบัน",

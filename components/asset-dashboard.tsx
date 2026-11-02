@@ -8,7 +8,7 @@ import { signTone } from '@/components/presentation-foundation/tone';
 import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import { AssetCard } from '@/components/presentation-foundation/asset-card';
 import { AnimatedMoney } from '@/components/presentation-foundation/animated-money';
-import { Ellipsis, LayoutGrid, List, Plus, Search, Trash2 } from 'lucide-react';
+import { Ellipsis, LayoutGrid, List, Search, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AssetAccounts } from '@/components/asset-accounts';
 import type { HoldingAccount } from '@/lib/holding-accounts';
@@ -31,7 +31,7 @@ type Props = {
  records: Entry[]; currency: string; market: MarketData | null; netWorth: number; debt: number;
  forecast: ReturnType<typeof estimatedCashFlow>; forecastReady: boolean; loading: boolean; demo: boolean;
  onAdd: () => void; onEdit: (entry: Entry) => void; onTrack: (entry: Entry) => void; onDelete: (entry: Entry) => void;
- /** Opens the Tracker on Money invested for a business (a purchase it keeps, paid from a cash account). */
+ /** Opens the Tracker on Money invested for an asset (a purchase or a repair, paid from a cash account). */
  onInvest?: (entry: Entry) => void;
  quoteLabel: (entry: Entry) => string;
  /** Each property's rent and costs since 1 January in `currency`; null while they load. */
@@ -79,6 +79,7 @@ export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoadin
  const renderCard = ({ original, converted }: (typeof holdings)[number]) => {
     // Every figure in the display currency; without a rate they read "—" with a note, never under the saved currency.
     const record = converted ?? original;
+    const isAccount = ['Cash','Deposit'].includes(original.kind);
     const worth = value(record);
     const shown = (amount: number) => converted ? money(amount) : '—';
     // A quote the conversion or a live price changed is a calculation, read to the cent; the person's own keeps its decimals.
@@ -91,13 +92,13 @@ export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoadin
      : record.kind === 'Business' ? { label: t('Ownership'), value: formatPercent(record.ownership_percentage ?? 100, locale, 8) }
      : undefined;
     return <AssetCard key={original.id} record={original} label={t(record.kind)} worth={shown(worth)} fact={fact}
+     onOpen={!isAccount && !demo && onInvest ? () => onInvest(original) : undefined} openLabel={t('Open Tracker for {name}', { name: original.name })}
+     detailsOpen={isAccount ? undefined : layout === 'grid'}
      share={converted && total > 0 ? worth / total * 100 : null}
      note={!converted && <small>{t('Exchange rate unavailable.')}</small>}
      menu={<DropdownMenu><DropdownMenuTrigger asChild><Button size="icon" variant="ghost" aria-label={t('Actions for {name}', { name: original.name })}><Ellipsis size={18}/></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => onEdit(original)}>{t('Edit {name}', { name: original.name })}</DropdownMenuItem>{!demo && <DropdownMenuItem onSelect={() => onTrack(original)}>{t('Open Tracker for {name}', { name: original.name })}</DropdownMenuItem>}{!original.history_event_id && <DropdownMenuItem variant="destructive" onSelect={() => onDelete(original)}><Trash2 aria-hidden="true"/>{t('Delete {name}', { name: original.name })}</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>}
-     detailsLabel={t(['Cash','Deposit'].includes(original.kind)?'Account details':'Asset details')}
-     details={<dl><div><dt>{t('Date / due date')}</dt><dd>{formatDate(original.date, locale)}</dd></div>{record.kind === 'Business' && <div><dt>{t('Ownership')}</dt><dd>{formatPercent(record.ownership_percentage ?? 100, locale, 8)}</dd></div>}{hasQuote && <><div><dt>{t('Quantity')}</dt><dd>{formatNumber(record.quantity, locale)}</dd></div><div><dt>{t('Price per unit')}</dt><dd>{quote}</dd></div><div><dt>{t('Price source')}</dt><dd>{quoteLabel(record)}</dd></div></>}{original.kind === 'Property' && <PropertyYear totals={propertyTotals?.get(original.id)} money={money}/>}{original.currency !== currency && <div><dt>{t('Saved value')}</dt><dd>{money(value(original), original.currency)}</dd></div>}{original.notes && <div><dt>{t('Notes')}</dt><dd>{original.notes}</dd></div>}</dl>}>
-     {record.kind === 'Business' && !demo && onInvest && <Button variant="outline" onClick={() => onInvest(original)}><Plus size={16} aria-hidden="true"/>{t('Add investment')}</Button>}
-    </AssetCard>;
+     detailsLabel={t(isAccount?'Account details':'Asset details')}
+     details={<dl><div><dt>{t('Date / due date')}</dt><dd>{formatDate(original.date, locale)}</dd></div>{record.kind === 'Business' && <div><dt>{t('Ownership')}</dt><dd>{formatPercent(record.ownership_percentage ?? 100, locale, 8)}</dd></div>}{hasQuote && <><div><dt>{t('Quantity')}</dt><dd>{formatNumber(record.quantity, locale)}</dd></div><div><dt>{t('Price per unit')}</dt><dd>{quote}</dd></div><div><dt>{t('Price source')}</dt><dd>{quoteLabel(record)}</dd></div></>}{original.kind === 'Property' && <PropertyYear totals={propertyTotals?.get(original.id)} money={money}/>}{original.currency !== currency && <div><dt>{t('Saved value')}</dt><dd>{money(value(original), original.currency)}</dd></div>}{original.notes && <div><dt>{t('Notes')}</dt><dd>{original.notes}</dd></div>}</dl>}/>;
    };
 
  return <div className="asset-dashboard" aria-busy={loading}>

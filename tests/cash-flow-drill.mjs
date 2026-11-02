@@ -890,6 +890,25 @@ test('a holdings Sankey shows what bought them; an Investments card tap opens it
  assert.doesNotMatch(screen, /setSankey|onOpen=\{|onOpenAccount/);
 });
 
+test('a card with onOpen runs it on a tap instead of toggling, and its own controls do not', () => {
+ const r = createRenderer();
+ const { AssetCard } = r.load('components/presentation-foundation/asset-card.tsx', { '@/components/language-provider': language('en-US'), 'lucide-react': hostModule(), '@/components/presentation-foundation/asset-icon': hostModule(), '@/components/presentation-foundation/category-badge': hostModule() });
+ let opened = 0;
+ r.mount(React.createElement(AssetCard, { record: { id: 'flat', name: 'Flat', kind: 'Property' }, label: 'Property', worth: '$600', share: 50, detailsLabel: 'Details', details: null, onOpen: () => { opened += 1; }, openLabel: 'Open Tracker for Flat', detailsOpen: true }));
+ const card = r.find(node => node.type === 'article').props;
+ assert.equal(card['aria-label'], 'Open Tracker for Flat');
+ assert.equal(r.find(node => node.type === 'details').props.open, true);
+ const details = { open: true }, summary = { parentElement: details, closest: () => null };
+ const inCard = { contains: () => true, querySelector: () => summary };
+ card.onClick({ target: { closest: () => null }, currentTarget: inCard });
+ assert.equal(opened, 1);
+ assert.equal(details.open, true, 'the tap leaves the details as they are');
+ card.onClick({ target: { closest: () => ({}) }, currentTarget: inCard });
+ assert.equal(opened, 1, 'the menu and the details toggle do only their own thing');
+ card.onKeyDown({ key: 'Enter', target: inCard, currentTarget: inCard, preventDefault() {} });
+ assert.equal(opened, 2);
+});
+
 test('picking an account shows its card; a holding or other asset opens its details, never a Sankey', () => {
  const { openProps } = loadTS('lib/row-open.ts');
  let opened = 0;

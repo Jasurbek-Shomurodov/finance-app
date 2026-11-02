@@ -20,9 +20,9 @@ export function useOpenDialogs() {
     /** The Sankey a Money flow button opens over its page (`TransactionSankey`), with what its own node's details open. */
     const [sankey,setSankey]=useState<SankeyRequest|null>(null);
     const [tracking, setTracking] = useState<Entry | null>(null);
-    /** The Tracker's first update type when it was opened for one, such as Add investment on a business card. */
+    /** The Tracker's first update type when it was opened for one, such as Money invested from an asset card. */
     const [trackingType, setTrackingType] = useState<HistoryUpdateType | null>(null);
-    /** Opens the Tracker on Money invested: a purchase for the business (a computer) paid from a cash account. */
+    /** Opens the Tracker on Money invested: a purchase or a repair for the asset, paid from a cash account. */
     const investIn = (record: Entry) => { setTrackingType('contribution'); setTracking(record); };
     const closeTracker = () => { setTracking(null); setTrackingType(null); };
     const [payingMortgage, setPayingMortgage] = useState<Entry | null>(null);
