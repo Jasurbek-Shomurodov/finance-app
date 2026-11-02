@@ -253,7 +253,7 @@ test('money lent tracks additions and repayments against the outstanding balance
  assert.match(html, /Enter updates on or after the latest balance date/);
  assert.ok(html.includes(`Cash deducted from Wallet: ${money(200)}`));
  assert.ok(html.includes(`Cash added to Cash account: ${money(90, 'EUR')}`));
- assert.ok(html.includes(`Principal amount: ${money(200)}`));
+ assert.ok(html.includes(`<strong>${money(200)}</strong><span>Amount owed to you: ${money(1200)}</span>`));
  assert.ok(html.includes(`<time>${formatDate('2026-03-01', 'en-US')}</time><p>Opening</p>`));
  assert.equal(view.all(element => element.props?.label === 'Delete update').length, 2);
  assert.equal(view.find(byType(ui.DatePicker)).props.min, '2026-05-01');
@@ -378,13 +378,25 @@ test('mortgages show principal and interest paid and hand payments to the paymen
  assert.ok(html.includes(`<small>Principal repaid</small><strong>${money(1000)}</strong>`));
  assert.ok(html.includes(`<small>Interest paid</small><strong>${money(500)}</strong>`));
  assert.ok(html.includes(`Principal repayment: ${money(1000)} · Interest paid: ${money(500)}`));
- assert.ok(html.includes(`Cash amount (your share): ${money(1500)}`));
+ assert.ok(html.includes(`<strong>${money(1500)}</strong>`));
+ assert.ok(!html.includes('Cash amount (your share): '));
  assert.ok(html.includes(`<small>Outstanding balance</small><strong>${money(100000)}</strong>`));
  assert.deepEqual(typeSelect().props.children.map(text), ['Additional borrowing']);
  assert.match(html, /Receive into cash account/);
  button('Record payment').props.onClick();
  assert.equal(calls.payments, 1);
  assert.equal(view.all(element => element.props?.label === 'Delete update').length, 0);
+});
+
+test('a history row is headed by the money that moved, and the value it set comes second', async () => {
+ const events = [event('b', 'baseline', '2026-01-01', { balance: 33000 }), event('c', 'contribution', '2026-02-01', { amount: 6336, balance: 36000 }), event('k', 'contribution', '2026-03-01', { amount: 500 }), event('v', 'valuation', '2026-04-01', { balance: 40000, amount: 250 })];
+ const { view } = await open(record('Property'), events);
+ const row = id => view.html().split('<li>').find(item => item.includes(id));
+ assert.match(row('1 February 2026'), new RegExp(`<strong>\\${money(6336)}</strong><span>Value \\(your share\\): \\${money(36000)}</span>`));
+ assert.ok(row('1 March 2026').includes(`<strong>${money(500)}</strong>`), 'a cash move that kept the value still has a headline');
+ assert.ok(!row('1 March 2026').includes('Value (your share): '));
+ assert.match(row('1 April 2026'), new RegExp(`<strong>\\${money(40000)}</strong><span>Cash amount \\(your share\\): \\${money(250)}</span>`));
+ assert.ok(row('1 January 2026').includes(`<strong>${money(33000)}</strong>`));
 });
 
 test('business updates can be deleted after confirmation, and a failed delete reports its error', async () => {

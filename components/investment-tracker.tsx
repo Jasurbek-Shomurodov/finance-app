@@ -21,7 +21,7 @@ import { FormattedNumberInput } from '@/components/presentation-foundation/forma
 import { useLanguage } from '@/components/language-provider';
 import { formatAccountOption, formatMoney, formatDate, formatMonthYear } from '@/lib/format';
 import { chartAxis, chartDot, chartGrid, chartHeight, chartLegend, chartLine, chartMargin, chartTooltip, chartValueAxis, leadLine } from '@/components/presentation-foundation/chart';
-import { historyCashDelta, historySeries, historyChartDate, historyEventLabel, historyUpdateTypes, isLendingKind, type HistoryUpdateType, type HistoryEvent } from '@/lib/investment-history';
+import { historyCashDelta, historySeries, historyChartDate, historyEventLabel, historyEventMovesCash, historyUpdateTypes, isLendingKind, type HistoryUpdateType, type HistoryEvent } from '@/lib/investment-history';
 import { depositInterest, depositProjection, depositToday } from '@/lib/deposit-interest';
 import { AssetMovementDialog, type MovementDraft } from '@/components/planning/asset-movement-dialog';
 import { isHolding, type AssetMovement } from '@/lib/asset-movements';
@@ -71,6 +71,8 @@ export function InvestmentTracker({inline=false,onDraftState,initialType,record,
  }
  const eventLabel=(type:HistoryEvent['event_type'])=>historyEventLabel(record.kind,type);
  const money=(n:number)=>formatMoney(n,record.currency,locale);
+ const eventShare=(e:HistoryEvent)=>Number(e.balance)*Number(e.ownership_percentage)/100;
+ const valueLabel=lending?(record.kind==='Money lent'?'Amount owed to you':'Outstanding balance'):cash||deposit?'Account balance':'Value (your share)';
  useEffect(()=>{
   const controller=new AbortController();
   fetch('/api/investment-history?record='+record.id,{signal:controller.signal}).then(async r=>{const data=await r.json() as HistoryEvent[] & {error?:string};if(!r.ok)throw Error(data.error);if(!controller.signal.aborted){setEvents(data);setLoading(false);}}).catch(e=>{if(!controller.signal.aborted){setError(e.message);setLoading(false);}});
@@ -142,7 +144,7 @@ export function InvestmentTracker({inline=false,onDraftState,initialType,record,
      <YAxis tickFormatter={money} {...chartValueAxis}/>
      <Tooltip {...chartTooltip} labelFormatter={date=>formatDate(historyChartDate(Number(date)),locale)} formatter={v=>money(Number(v))}/>
      <Legend {...chartLegend}/>
-     <Line type="linear" dataKey="balance" name={t(lending?(record.kind==='Money lent'?'Amount owed to you':'Outstanding balance'):cash||deposit?'Account balance':'Value (your share)')} {...leadLine} dot={chartDot} connectNulls={false}/>
+     <Line type="linear" dataKey="balance" name={t(valueLabel)} {...leadLine} dot={chartDot} connectNulls={false}/>
      {!lending&&!cash&&<Line type="stepAfter" dataKey="contributions" name={t('Net contributions recorded')} {...chartLine} stroke={categoryColor('Property')} strokeDasharray="5 4"/>}
      {!lending&&!cash&&<Line type="stepAfter" dataKey="receipts" name={t('Income received')} {...chartLine} stroke={categoryColor('Deposit')}/>}
     </LineChart></ResponsiveContainer>
@@ -154,7 +156,7 @@ export function InvestmentTracker({inline=false,onDraftState,initialType,record,
   {mortgage&&<Button type="button" variant="outline" disabled={busy} onClick={onPayment}>{t('Record payment')}</Button>}
   {paymentFields}
   <div className="tracker-history"><h3>{t('History')}</h3>{(valuedKinds.includes(record.kind)||lending)&&<p className="muted">{t('Delete newer balance updates first. Starting snapshots and other transaction types are protected.')}</p>}{!events.length&&!loading&&<p>{t('No history yet.')}</p>}
-   <ul>{[...events].reverse().map(e=><li key={e.id}><div><strong>{t(eventLabel(e.event_type))}</strong><time>{formatDate(e.occurred_on,locale)}</time>{e.notes&&<p>{e.notes}</p>}{e.account_link&&<small>{t(Number(e.account_link.amount)<0?'Cash deducted from {account}: {amount}':'Cash added to {account}: {amount}',{account:accounts.find(account=>account.id===e.account_link?.account_id)?.name??t('Cash account'),amount:formatMoney(Math.abs(Number(e.account_link.amount)),e.account_link.account_currency??record.currency,locale)})}</small>}</div><div>{e.balance!==null&&<strong>{money(Number(e.balance)*Number(e.ownership_percentage)/100)}</strong>}{e.amount>0&&<span>{t(lending&&['contribution','withdrawal'].includes(e.event_type)?'Principal amount':'Cash amount (your share)')}: {money(Number(e.amount))}</span>}{e.event_type==='mortgage_payment'&&<small>{t('Principal repayment')}: {money(Number(e.principal))} · {t('Interest paid')}: {money(Number(e.interest))}</small>}{deletableUpdate(e.event_type)&&<DeleteButton disabled={busy||loading||submitted||dirty} label={t('Delete update')} onClick={()=>setDeleting(e)}/>}</div></li>)}</ul>
+   <ul>{[...events].reverse().map(e=><li key={e.id}><div><strong>{t(eventLabel(e.event_type))}</strong><time>{formatDate(e.occurred_on,locale)}</time>{e.notes&&<p>{e.notes}</p>}{e.account_link&&<small>{t(Number(e.account_link.amount)<0?'Cash deducted from {account}: {amount}':'Cash added to {account}: {amount}',{account:accounts.find(account=>account.id===e.account_link?.account_id)?.name??t('Cash account'),amount:formatMoney(Math.abs(Number(e.account_link.amount)),e.account_link.account_currency??record.currency,locale)})}</small>}</div><div>{historyEventMovesCash(e)?<><strong>{money(Number(e.amount))}</strong>{e.balance!==null&&<span>{t(valueLabel)}: {money(eventShare(e))}</span>}</>:<>{e.balance!==null&&<strong>{money(eventShare(e))}</strong>}{e.amount>0&&<span>{t('Cash amount (your share)')}: {money(Number(e.amount))}</span>}</>}{e.event_type==='mortgage_payment'&&<small>{t('Principal repayment')}: {money(Number(e.principal))} · {t('Interest paid')}: {money(Number(e.interest))}</small>}{deletableUpdate(e.event_type)&&<DeleteButton disabled={busy||loading||submitted||dirty} label={t('Delete update')} onClick={()=>setDeleting(e)}/>}</div></li>)}</ul>
   </div>
  </DialogContent></Dialog>{guard.confirmation}<ConfirmDialog deletes open={!!deleting} onClose={()=>setDeleting(null)} busy={busy} title={t('Delete this tracker update?')} description={<>{t('This removes the update. If it changed the asset value, the previous value and ownership are restored. Any linked cash movement is reversed using its original amount. This cannot be undone from the app.')}{deleting&&<> {t(eventLabel(deleting.event_type))} · {formatDate(deleting.occurred_on,locale)}{deleting.amount>0&&<> · {money(Number(deleting.amount))}</>}</>}</>} confirmLabel={t(busy?'Deleting…':'Delete update')} onConfirm={()=>void deleteUpdate()}/></>;
 }

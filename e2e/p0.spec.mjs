@@ -244,6 +244,7 @@ test('INV-053 tapping a property card records money invested from cash, and the 
   await dialog.getByRole('button', { name: 'Save update' }).click();
   await expect(dialog.locator('.tracker-history')).toContainText('Money invested');
   await expect(dialog.locator('.tracker-history')).toContainText('Cash deducted from E2E Checking: $1,200');
+  await expect(dialog.locator('.tracker-history li').first().locator('strong').last()).toHaveText('$1,200');
   await closeDialog(page);
   await expect(card.locator('.asset-card-worth')).toContainText('$60,000');
   await open(page, 'Accounts');

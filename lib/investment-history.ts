@@ -45,6 +45,8 @@ export function historyEventLabel(kind:string,type:HistoryEvent['event_type']):s
  if(type==='withdrawal')return simpleInterestKinds.includes(kind)?'Redeem':kind==='Deposit'||kind==='Cash'?'Withdraw':unitPricedKinds.includes(kind)?'Sell / convert':historyLabels[type];
  return historyLabels[type];
 }
+/** A row headed by the money that moved; a baseline or valuation is headed by the value it set. */
+export const historyEventMovesCash = (event:Pick<HistoryEvent,'event_type'|'amount'>) => !['baseline','valuation'].includes(event.event_type)&&Number(event.amount)>0;
 export function historySeries(events:HistoryEvent[]) {
  const sorted=[...events].sort((a,b)=>a.occurred_on.localeCompare(b.occurred_on)||a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id));
  let balance:number|null=null, contributions=0, additions=0, repayments=0, receipts=0, expenses=0, principal=0, interest=0;
