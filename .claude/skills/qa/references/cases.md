@@ -552,6 +552,7 @@ currencies (USD primary). Compute every expected figure yourself first.
 | INV-051 | P2 | Metal quantities in their weight unit `[qa 2026-10-09]` | QA silver (troy ounces) › Tracker › Sell / convert | The form says "Available: 10 oz" and the result line "QA silver: 6 oz". 2026-10-09: "Available: 10 units" and "QA silver: 6 units" (`unitCount` in `lib/asset-movements.ts`) Fixed 2026-10-09: `holdingQuantity` (`lib/asset-movements.ts`) words a metal by its weight ("6 troy oz", "100 g") in the sell/buy form, holding rows and Recent activity; guarded by `tests/display-currency-lists.mjs`. |
 | INV-052 | P1 | Add asset by kind | Investments › Add asset | 11 tiles (no Cash or Deposit), none overflowing; Bond opens Add asset on Bond with Coupon rate and Purchase date hints behind ⓘ; a component test covers `add-asset-dialog.tsx` (CI coverage lists it untested since 332c6a6) [qa 2026-10-20]. Live PASS. Fixed 2026-10-20: `tests/add-asset-dialog.mjs`
 | INV-053 | P0 | Tap a card to add investment | Investments › Other assets › tap a Property card, pick a cash account, 1,200 | Asset details start open and no Add investment button; the Tracker opens on Money invested; cash falls 1,200, the asset value stays; ⋯ and the Asset details toggle do not open it `[e2e]` |
+| INV-054 | P2 | Account details start open | Investments › Accounts, with a deposit, a stock account and a crypto account | Every card shows its Account details on arrival, without a tap; the toggle or a tap on the card still closes them, a row at a time `[test]` |
 
 ## LOAN — loans and debts
 

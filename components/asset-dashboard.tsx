@@ -93,7 +93,7 @@ export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoadin
      : undefined;
     return <AssetCard key={original.id} record={original} label={t(record.kind)} worth={shown(worth)} fact={fact}
      onOpen={!isAccount && !demo && onInvest ? () => onInvest(original) : undefined} openLabel={t('Open Tracker for {name}', { name: original.name })}
-     detailsOpen={isAccount ? undefined : layout === 'grid'}
+     detailsOpen={isAccount || layout === 'grid'}
      share={converted && total > 0 ? worth / total * 100 : null}
      note={!converted && <small>{t('Exchange rate unavailable.')}</small>}
      menu={<DropdownMenu><DropdownMenuTrigger asChild><Button size="icon" variant="ghost" aria-label={t('Actions for {name}', { name: original.name })}><Ellipsis size={18}/></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => onEdit(original)}>{t('Edit {name}', { name: original.name })}</DropdownMenuItem>{!demo && <DropdownMenuItem onSelect={() => onTrack(original)}>{t('Open Tracker for {name}', { name: original.name })}</DropdownMenuItem>}{!original.history_event_id && <DropdownMenuItem variant="destructive" onSelect={() => onDelete(original)}><Trash2 aria-hidden="true"/>{t('Delete {name}', { name: original.name })}</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>}

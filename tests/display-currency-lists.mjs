@@ -246,11 +246,12 @@ test('tapping any card in Other assets opens the Tracker on Money invested; its 
  ['Flat', 'Club', 'Car'].forEach(id => other(id).onOpen());
  assert.deepEqual(invested, ['Flat', 'Club', 'Car']);
  assert.equal(other('Term').onOpen, undefined, 'a deposit stays in Accounts and keeps opening its details');
- assert.equal(other('Term').detailsOpen, undefined);
+ assert.equal(other('Term').detailsOpen, true, 'its details start open too');
  assert.ok(!text(r.tree).includes('Add investment'), 'the button is gone');
  r.find(node => node.props?.['aria-label'] === 'Compact view').props.onClick();
  r.update();
  assert.equal(cards.findLast(card => card.record.id === 'Flat').detailsOpen, false, 'compact view stays one line per holding');
+ assert.equal(cards.findLast(card => card.record.id === 'Term').detailsOpen, true, 'the layout switch belongs to Other assets, not to Accounts');
  mount(true);
  assert.equal(other('Flat').onOpen, undefined, 'the sample workspace has no Tracker');
  assert.equal(other('Flat').detailsOpen, true);

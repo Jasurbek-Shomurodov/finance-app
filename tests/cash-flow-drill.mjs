@@ -878,6 +878,7 @@ test('a holdings Sankey shows what bought them; an Investments card tap opens it
  r.mount(React.createElement(AssetCard, { record: vt, label: 'Stock', worth: '$600', share: 50, detailsLabel: 'Details', details: null }));
  const card = r.find(node => node.type === 'article').props;
  assert.equal(card['aria-label'], 'View details for VT');
+ assert.equal(r.find(node => node.type === 'details').props.open, true, 'a card starts with its details open');
  const details = { open: false }, summary = { parentElement: details, closest: () => null };
  const inCard = { contains: () => true, querySelector: () => summary };
  card.onClick({ target: { closest: () => null }, currentTarget: inCard });

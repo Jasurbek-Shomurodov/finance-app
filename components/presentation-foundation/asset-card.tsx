@@ -20,7 +20,7 @@ type Props = {
 
 
 /** One holding or account: what it is, what it is worth, and its weight in the portfolio. */
-export function AssetCard({ record, label, menu, worth, note, fact, share, detailsLabel, details, children, onOpen, openLabel, detailsOpen }: Props) {
+export function AssetCard({ record, label, menu, worth, note, fact, share, detailsLabel, details, children, onOpen, openLabel, detailsOpen = true }: Props) {
  const { t, locale } = useLanguage();
  // Without `onOpen`, a tap anywhere on the card (but its own controls) opens or closes its details, as its summary does.
  const toggle = (event: MouseEvent | KeyboardEvent) => {
