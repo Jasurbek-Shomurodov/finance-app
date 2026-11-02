@@ -98,11 +98,14 @@ test('the assistant route needs a key and a session, reads only the owner rows a
  class Fake { constructor(settings) { clients.push(settings); this.beta = { messages: { create: async (body, opts) => { calls.push(body); options.push(opts); if (opts?.signal?.aborted) throw Error('aborted'); return reply; } } }; } }
  Fake.RateLimitError = class extends Error {}; Fake.AuthenticationError = class extends Error {};
  let auth = { token: 'owner-token', user: { id: 'u1' } };
+ let planningFails = false;
+ const planningReads = [];
  const route = loadTS('app/api/assistant/route.ts', {
-  '@/lib/viewer-day-rates': { withViewerDayRates: async data => data },
   '@anthropic-ai/sdk': { __esModule: true, default: Fake },
   '@/lib/supabase': { session: async () => auth, sameOrigin: () => true },
-  '@/lib/server-records': { readOwnerRows: async (table, token) => { reads.push([table, token]); return table === 'finance_records' ? records : table === 'savings_goals' ? data.goals : table === 'transaction_categories' ? data.categories : []; } },
+  '@/app/api/planning/route': { GET: async req => { planningReads.push(req.url); return planningFails ? Response.json({ error: 'Could not load' }, { status: 503 }) : Response.json({ ...data, records }); } },
+  '@/lib/server-records': { readOwnerRows: async (table, token) => { reads.push([table, token]); return [{ record_id: 'food', position: 0, category_id: 'pets', amount: 120.6 }]; } },
+  '@/lib/monitoring': { reportError: async () => {} },
   '@/lib/market-cache': { cachedMarket: async request => { const args = [request.crypto, request.stocks, request.stockAccess, request.metals]; markets.push(args); return { rates: { USD: 1, UZS: 12500 }, fx: null, quotes: { 'Stock:AAPL': { usd: 150, source: 'test', fetchedAt: '2026-10-02T00:00:00Z' } }, errors: {}, stocksConfigured: true }; } },
  });
  const request = body => new Request('https://app.example/api/assistant', { method: 'POST', body: JSON.stringify(body) });
@@ -118,6 +121,14 @@ test('the assistant route needs a key and a session, reads only the owner rows a
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { answer: 'You spent 121 USD.' });
   assert.ok(reads.every(([, token]) => token === 'owner-token'));
+  assert.deepEqual(reads.map(([table]) => table), ['transaction_splits']);
+  // The Budget and Reports read, with the loan payments, for the current month and the two before it.
+  const asked = new URL(planningReads[0]);
+  assert.deepEqual([asked.pathname, asked.searchParams.get('scope'), asked.searchParams.has('debts')], ['/api/planning', 'budget', true]);
+  assert.match(calls.at(-1).messages[0].content[0].text, /Pets \$121/, 'a split transaction counts under the category it was split into');
+  planningFails = true;
+  assert.equal((await route.POST(request(body))).status, 503, 'a failed read answers, and asks the model nothing');
+  planningFails = false;
   const sent = calls.at(-1);
   assert.equal(sent.model, 'claude-opus-5-5');
   assert.equal(sent.fallbacks, 'default');
@@ -143,4 +154,35 @@ test('the assistant route needs a key and a session, reads only the owner rows a
   reply = { stop_reason: 'refusal', content: [] };
   assert.equal((await route.POST(request(body))).status, 422);
  } finally { delete process.env.ANTHROPIC_API_KEY; }
+});
+
+test('an answer longer than a question comes back in the history without failing the next question', () => {
+ const ok = { currency: 'USD', rates: { USD: 1 }, language: 'en' };
+ const long = 'x'.repeat(20000);
+ const parsed = assistantRequestSchema.safeParse({ ...ok, messages: [{ role: 'user', content: 'List my bills' }, { role: 'assistant', content: long }, { role: 'user', content: 'And the total?' }] });
+ assert.ok(parsed.success, 'review API-001: one long answer blocked every later question');
+ assert.equal(parsed.data.messages.at(-1).content, 'And the total?');
+ assert.equal(parsed.data.messages.reduce((total, turn) => total + turn.content.length, 0) <= 12000, true, 'the newest turns that fit still go to the model');
+ assert.ok(!assistantRequestSchema.safeParse({ ...ok, messages: [{ role: 'user', content: 'x'.repeat(4001) }] }).success, 'a question stays capped');
+ assert.ok(!assistantRequestSchema.safeParse({ ...ok, messages: [{ role: 'user', content: 'a' }, { role: 'assistant', content: 'x'.repeat(40001) }, { role: 'user', content: 'b' }] }).success);
+});
+
+test('the snapshot counts what the screens count: every target of an investment goal, split categories, Tracker expenses and loan installments', () => {
+ const wallet = { id: 'h', name: 'Coinbase', kind: 'Crypto', currency: 'USD' }, broker = { id: 's', name: 'Broker', kind: 'Stock', currency: 'USD' };
+ const coin = record('btc', 'BTC', 'Crypto', 60000, '2026-01-01', { quantity: 0.2, holding_account_id: 'h' }), shares = record('aapl', 'AAPL', 'Stock', 100, '2026-01-01', { quantity: 3, holding_account_id: 's' });
+ const goals = [{ id: 'i', name: 'Portfolio', kind: 'investment', allocated: 0, target: 0, archived: false, investment_targets: [{ holding_account_id: 'h', asset_kind: 'Crypto', asset_symbol: 'BTC', target: 0.5 }, { holding_account_id: 's', asset_kind: 'Stock', asset_symbol: 'AAPL', target: 10 }] },
+  { id: 'gone', name: 'Moved', kind: 'investment', allocated: 0, target: 1, archived: false, holding_account_id: 'old', asset_kind: 'Crypto', asset_symbol: 'ETH' }];
+ const records = [...data.records, coin, shares];
+ const text = assistantContext({ ...data, goals, records, holdingAccounts: [wallet, broker] }, '2026-10-02', 'USD', { USD: 1, UZS: 12500 });
+ assert.match(text, /- Portfolio: 0\.2 BTC of 0\.5 BTC, 3 AAPL of 10 AAPL\n/);
+ assert.match(text, /- Moved: — of 1 ETH/, 'an account no longer there reads unknown, never 0');
+ const words = assistantContext(data, '2026-10-02', 'USD', { USD: 1, UZS: 12500 }, { t: key => key === 'Living expense' ? 'Расходы' : key });
+ assert.match(words, /spending \$121 \(Расходы \$121\)/, 'a built-in category reads in the person\'s language');
+ const splits = [{ record_id: 'food', position: 0, category_id: 'pets', amount: 100.6 }, { record_id: 'food', position: 1, category_id: 'Living expense', amount: 20 }];
+ assert.match(assistantContext(data, '2026-10-02', 'USD', { USD: 1, UZS: 12500 }, { splits }), /September 2026: income \$3,000, spending \$121 \(Pets \$101, Living expense \$20\)/);
+ const loan = record('monthly', 'Bank loan', 'Loan', 1000, '2028-01-15', { estimated_monthly_payment: 100, opened_on: '2026-01-15', created_at: '2026-10-01T00:00:00Z' });
+ const planned = { ...data, goals: [], records: [...data.records, loan] };
+ const reminders = debtPayments => assistantContext({ ...planned, debtPayments }, '2026-10-02', 'USD', { USD: 1, UZS: 12500 }).split('## Debt and deposit reminders')[1].split('## Savings goals')[0];
+ assert.match(reminders([]), /15 October 2026 Bank loan \(Loan\): \$100/, 'an unpaid month is listed');
+ assert.doesNotMatch(reminders([{ record_id: 'monthly', date: '2026-10-05', amount: 100 }]), /15 October 2026 Bank loan/, 'a paid month is not');
 });

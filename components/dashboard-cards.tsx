@@ -13,6 +13,7 @@ import { useDisplayMoney } from '@/components/display-money';
 import { CategoryIcon } from '@/components/presentation-foundation/category-icon';
 import { DrawerLink } from '@/components/presentation-foundation/drawer-link';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
+import { InlineError } from '@/components/presentation-foundation/inline-error';
 import { LoadingPlaceholder } from '@/components/presentation-foundation/loading-placeholder';
 import { PanelTitle } from '@/components/presentation-foundation/panel-title';
 import { useOwnerResource } from '@/hooks/use-owner-resource';
@@ -42,7 +43,7 @@ export function RecentTransactionsCard({ owner = null, demo = false, revision = 
  const recent = recentTransactions(records, today);
  return <section className="panel overview-panel dashboard-transactions">
   <PanelTitle title={t('Transactions')}><DrawerLink href="/transactions">{t('View all')}</DrawerLink></PanelTitle>
-  {owner && !demo && remote.loading ? <LoadingPlaceholder label={t('Loading records…')} rows={4}/> : recent.length ? <ul className="overview-list overview-due">{recent.map(record => {
+  {owner && !demo && remote.loading ? <LoadingPlaceholder label={t('Loading records…')} rows={4}/> : owner && !demo && remote.error ? <InlineError message={t(remote.error)} onRetry={remote.retry}/> : recent.length ? <ul className="overview-list overview-due">{recent.map(record => {
    const incoming = income.includes(record.kind);
    const open = onOpen ? { role: 'button', tabIndex: 0, 'aria-label': t('View details for {name}', { name: shownName(record, t) }), onClick: () => onOpen(record), onKeyDown: (event: KeyboardEvent) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen(record); } } } : {};
    return <li key={record.id} {...open}><CategoryIcon kind={record.kind}/><span>{shownName(record, t)}<small>{t(record.kind)} · {formatDate(record.date, locale)}</small></span><strong className={incoming ? 'positive' : undefined}>{incoming ? '+' : ''}{entered(Math.abs(signedAmount(record)), record.currency)}</strong></li>;
@@ -74,54 +75,65 @@ export function GoalsCard({ goals, order, data, currency, netWorth }: { goals: G
  </section>;
 }
 
-/** Weekly recap: last week's money in and out against the week before, where most went, and what is due this week. */
-/** Spent against planned. A plan no rate converts is unknown: it reads — with the note, rather than leaving that amount out. */
-function BudgetCardTotal({ plan, spent, currency }: { plan: number | null; spent: number; currency: string }) {
+/** Spent against planned. A plan no rate converts, or spending with an amount no rate converts, is unknown: it reads — with the note, rather than leaving that amount out. */
+function BudgetCardTotal({ plan, spent, missing, currency }: { plan: number | null; spent: number; missing: number; currency: string }) {
  const { t, locale } = useLanguage();
  const money = (amount: number) => formatMoney(amount, currency, locale);
- if (plan === null) return <div className="dashboard-budget-total"><p><strong>{money(spent)}</strong><span>{t('of {amount}', { amount: '—' })}</span></p><small>{t('Exchange rate unavailable.')}</small></div>;
+ if (plan === null || missing) return <div className="dashboard-budget-total"><p><strong>{missing ? '—' : money(spent)}</strong><span>{t('of {amount}', { amount: plan === null ? '—' : money(plan) })}</span></p><small>{t('Exchange rate unavailable.')}</small></div>;
  return <>
   <div className="dashboard-budget-total"><p><strong>{money(spent)}</strong><span>{t('of {amount}', { amount: money(plan) })}</span></p><small data-tone={remainingTone(plan - spent)}>{t(plan - spent < 0 ? '{amount} over' : '{amount} remaining', { amount: money(Math.abs(plan - spent)) })}</small></div>
   <BudgetProgress row={{ progress: spent / plan, direction: 'expense', remaining: plan - spent }}/>
  </>;
 }
 
-/** This month's budget at a glance: planned spending against what is spent, and the categories closest to their limit.
- * `budget` is the workspace's one Budget (`useWorkspace().budget`), so an edit on Budget shows here at once. */
 /** This month's budget for spending, as Budget counts it: what was spent, the plan, and the categories closest to their
- * limit. The dashboard works it out once for its Budget card and its headline row; `skip` leaves the read to that caller. */
-export function useMonthBudget({ owner = null, demo = false, revision = 0, budget, data: provided, currency, market, splits, skip = false }: { owner?: string | null; demo?: boolean; revision?: number; budget: Pick<WorkspaceBudget, 'state' | 'loading'>; data: PlanningData; currency: string; market: MarketData | null; splits: TransactionSplit[] ; skip?: boolean }) {
+ * limit. The dashboard works it out once for its Budget card and its headline row. `budget` is the workspace's one
+ * Budget (`useWorkspace().budget`), so an edit on Budget shows here at once. Everything but the removed kinds comes from
+ * this read, which carries the schedules and categories too, so no figure waits on, or goes wrong with, the planning read.
+ * `error` is a read that failed, `missing` the month's amounts no rate converts: either way the totals are unknown. */
+export function useMonthBudget({ owner = null, demo = false, revision = 0, budget, data: provided, currency, market, splits }: { owner?: string | null; demo?: boolean; revision?: number; budget: Pick<WorkspaceBudget, 'state' | 'loading' | 'error' | 'retry'>; data: PlanningData; currency: string; market: MarketData | null; splits: TransactionSplit[] }) {
  const today = depositToday(), month = depositMonth();
  const removed = provided.removedKinds ?? [];
- // Rollover categories need every month since their rollover started.
- const range = budgetReadRange(month, 'month', budgetCategories(provided.categories, budget.state.categories, removed));
- const remote = useOwnerResource(`/api/planning?scope=budget&month=${month}&from=${range.from}`, owner, !!owner && !demo && !skip, revision, emptyPlanning);
  const live = !!owner && !demo;
+ // Rollover funds need every month since they started. The saved settings say when, so the read waits for them and starts once, at its final range.
+ const range = budgetReadRange(month, 'month', budget.state.categories.map(item => ({ rollover: item.rollover, rolloverStart: item.rollover ? item.rollover_start?.slice(0, 7) ?? null : null })));
+ const remote = useOwnerResource(`/api/planning?scope=budget&month=${month}&from=${range.from}`, owner, live && !budget.loading, revision, emptyPlanning);
  const data = useMemo(() => live ? { ...remote.data, records: remote.data.records.map(normalizeEntry) } : provided, [live, remote.data, provided]);
  const rates = marketRates(market);
  // Up to 24 months of actuals: worked out again only when the records, the range or the display currency change.
  const history = useMemo(() => new Map(monthsBetween(range.from, month).map(item => [item, monthActuals(data, splits, item, currency, today, rates)])), [data, splits, range.from, month, currency, today, rates]);
  const categories = budgetCategories(data.categories, budget.state.categories, removed);
- const rows = budgetRows(categories, budget.state.amounts, history, month, currency, rates, provided.records).filter(row => row.direction === 'expense' && !row.excluded);
+ const rows = budgetRows(categories, budget.state.amounts, history, month, currency, rates, data.records).filter(row => row.direction === 'expense' && !row.excluded);
  // The Flexible plan as Budget and the forecasts count it.
- const flexible = budget.state.mode === 'flex' ? { budget: flexPlan({ amounts: budget.state.amounts, schedules: provided.records }, categories, month, currency, rates), rollover: 0 } : null;
+ const flexible = budget.state.mode === 'flex' ? { budget: flexPlan({ amounts: budget.state.amounts, schedules: data.records }, categories, month, currency, rates), rollover: 0 } : null;
  const plan = leftToBudget(rows, budget.state.mode, flexible, 0).expenses, spent = rows.reduce((sum, row) => sum + row.actual, 0);
  // In flex mode flexible categories share one bucket, so only fixed categories keep a budget of their own here, as on the Budget page.
  const watched = budgetRowsForMode(rows, budget.state.mode).filter(row => row.budget).sort((a, b) => b.progress - a.progress).slice(0, 3);
- const loading = !!((owner && !demo && remote.loading) || budget.loading);
- return { month, rows, plan, spent, watched, loading };
+ const loading = !!((live && remote.loading) || budget.loading);
+ const error = budget.error || (live ? remote.error : '');
+ return { month, rows, plan, spent, watched, loading, error, missing: history.get(month)?.missing ?? 0, retry: () => { budget.retry(); remote.retry(); } };
 }
+type MonthBudget = ReturnType<typeof useMonthBudget>;
 
-export function BudgetCard({ owner = null, demo = false, revision = 0, budget, data: provided, currency, market, splits, figures }: { owner?: string | null; demo?: boolean; revision?: number; budget: Pick<WorkspaceBudget, 'state' | 'loading'>; data: PlanningData; currency: string; market: MarketData | null; splits: TransactionSplit[]; /** Worked out already by the caller (useMonthBudget). */figures?: ReturnType<typeof useMonthBudget> }) {
+function BudgetCardView({ figures, currency }: { figures: MonthBudget; currency: string }) {
  const { t, locale } = useLanguage();
- const own = useMonthBudget({ owner, demo, revision, budget, data: provided, currency, market, splits, skip: !!figures });
- const { month, plan, spent, watched, loading } = figures ?? own;
+ const { month, plan, spent, watched, loading, error, missing, retry } = figures;
  const money = (amount: number) => formatMoney(amount, currency, locale);
  return <section className="panel overview-panel dashboard-budget" aria-label={t('Budget')}>
   <PanelTitle title={<>{t('Budget')} <span className="panel-figure">{formatMonthYear(month, locale)}</span></>}><DrawerLink href="/budget">{t('View all')}</DrawerLink></PanelTitle>
-  {loading ? <LoadingPlaceholder label={t('Loading records…')} rows={3}/> : plan === null || plan > 0 ? <>
-   <BudgetCardTotal plan={plan} spent={spent} currency={currency}/>
+  {loading ? <LoadingPlaceholder label={t('Loading records…')} rows={3}/> : error ? <InlineError message={t(error)} onRetry={retry}/> : plan === null || plan > 0 ? <>
+   <BudgetCardTotal plan={plan} spent={spent} missing={missing} currency={currency}/>
    <ul className="overview-list dashboard-budget-list">{watched.map(row => <li key={row.key}><CategoryIcon kind={row.custom ? row.name : row.key} size="sm"/><span>{row.custom ? row.name : t(row.name)}<BudgetProgress row={row}/></span><strong data-tone={remainingTone(row.remaining)}>{row.remaining === null ? '—' : t(row.remaining < 0 ? '{amount} over' : '{amount} left', { amount: money(Math.abs(row.remaining)) })}</strong></li>)}</ul>
   </> : <EmptyState icon={<ChartPie/>} description={t('Plan this month’s spending to track it here.')}><DrawerLink href="/budget">{t('Set up a budget')}</DrawerLink></EmptyState>}
  </section>;
+}
+
+type OwnBudget = Parameters<typeof useMonthBudget>[0];
+function OwnBudgetCard({ currency, ...rest }: OwnBudget) {
+ return <BudgetCardView figures={useMonthBudget({ ...rest, currency })} currency={currency}/>;
+}
+
+/** The Budget card. `figures`, when the caller worked them out already (`useMonthBudget`), are shown as they are; otherwise it reads its own. */
+export function BudgetCard(props: { figures: MonthBudget; currency: string } | (OwnBudget & { figures?: undefined })) {
+ return props.figures ? <BudgetCardView figures={props.figures} currency={props.currency}/> : <OwnBudgetCard {...props}/>;
 }

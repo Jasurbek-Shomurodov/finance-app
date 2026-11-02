@@ -45,7 +45,7 @@ test('each scope reads only its tables',()=>{
  assert.deepEqual(plan('full'),['movements,holdingAccounts,records,categories,goals,occurrences,activity,investmentLinks',true,false]);
  assert.deepEqual(plan('accounts'),plan('full'),'Accounts keeps every operation and movement');
  assert.deepEqual(plan('workspace'),['holdingAccounts,records,categories,goals,occurrences',true,false]);
- assert.deepEqual(plan('review'),['holdingAccounts,records,categories,goals,occurrences,activity,investmentLinks',false,false]);
+ assert.deepEqual(plan('review'),['holdingAccounts,records,categories,goals,occurrences,activity,investmentLinks',true,false],'Cash flow’s Forecast and the overdue count need what was paid on each loan');
  assert.deepEqual(plan('budget'),['movements,holdingAccounts,records,categories,goals,occurrences,activity,investmentLinks',false,false],'Cash flow traces the period’s transfers, buys and sales');
  assert.deepEqual(plan('insights'),['records',false,true]);
  assert.deepEqual(plan('account-activity'),['records',false,true]);

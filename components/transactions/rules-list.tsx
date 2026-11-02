@@ -12,6 +12,8 @@ import { Count } from '@/components/presentation-foundation/count';
 import { PanelTitle } from '@/components/presentation-foundation/panel-title';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { InlineError } from '@/components/presentation-foundation/inline-error';
+import { LoadingPlaceholder } from '@/components/presentation-foundation/loading-placeholder';
 import { formatNumber } from '@/lib/format';
 import type { Category } from '@/lib/planning';
 import { extraCriteria, ruleChoice, type TransactionRule } from '@/lib/transaction-rules';
@@ -42,7 +44,10 @@ function useRuleCriteriaText() {
 }
 
 /** Saved rules as rows: what each matches and what it sets. Clicking a row edits it. */
-function ruleList({ rules, categories, businesses, tags, onEdit }: RulesProps, t: ReturnType<typeof useLanguage>['t'], criteria: (rule: TransactionRule) => string, onDelete: (rule: TransactionRule) => void) {
+function ruleList({ rules, categories, businesses, tags, onEdit, loading, error, onRetry }: RulesProps, t: ReturnType<typeof useLanguage>['t'], criteria: (rule: TransactionRule) => string, onDelete: (rule: TransactionRule) => void) {
+ // A failed or unfinished read is never "no rules yet".
+ if (error) return <InlineError message={t(error)} onRetry={onRetry}/>;
+ if (loading) return <LoadingPlaceholder label={t('Loading records…')}/>;
  return rules.length ? <ul className="rule-list">{rules.map(rule => <li key={rule.id}>
   <button type="button" onClick={() => onEdit(rule)}><span>{criteria(rule)}</span><span className="rule-arrow" aria-hidden="true">→</span><RuleActionsSummary rule={rule} categories={categories} businesses={businesses} tags={tags}/></button>
   <DeleteButton variant="ghost" label={t('Delete {name}', { name: criteria(rule) })} onClick={() => onDelete(rule)}/>
@@ -66,7 +71,7 @@ function useRuleRemoval(onRemove: (rule: TransactionRule) => Promise<void>) {
  return { ask, dialog, criteria };
 }
 
-type RulesProps = { rules: TransactionRule[]; categories: readonly Category[]; businesses?: readonly BusinessOption[]; tags?: readonly Tag[]; onEdit: (rule: TransactionRule) => void; onAdd: () => void; onRemove: (rule: TransactionRule) => Promise<void> };
+type RulesProps = { rules: TransactionRule[]; categories: readonly Category[]; businesses?: readonly BusinessOption[]; tags?: readonly Tag[]; onEdit: (rule: TransactionRule) => void; onAdd: () => void; onRemove: (rule: TransactionRule) => Promise<void>; loading?: boolean; error?: string; onRetry?: () => void };
 /** Every saved rule, with a way to add, edit or remove one. */
 export function RulesDialog({ onClose, ...props }: RulesProps & { onClose: () => void }) {
  const { t } = useLanguage();

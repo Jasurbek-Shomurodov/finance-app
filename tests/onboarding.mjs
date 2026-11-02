@@ -103,7 +103,7 @@ test('the shell shows the setup instead of the drawer, and Settings can run it a
  assert.match(provider,/savePreferences\(\{ \.\.\.preferencesData, onboarded: false \}\)/);
  const panel=fs.readFileSync('components/settings-panel.tsx','utf8');
  // The Settings form never re-stamps the setup; only the wizard and "Run setup again" do.
- assert.match(panel,/requestJson<typeof next>\('\/api\/settings', \{ method: 'PUT', body: \{ \.\.\.snapshot, onboarded: undefined \} \}\)/);
+ assert.match(panel,/requestJson<typeof next>\('\/api\/settings', \{ method: 'PUT', body: \{ \.\.\.snapshot, onboarded: undefined \}/);
  assert.match(panel,/Run setup again/);
 });
 
@@ -120,7 +120,7 @@ test('the workspace waits for the settings of a signed-in owner, so the dashboar
 
 test('an account that has not finished the setup keeps the language already showing, and the wizard preselects it',()=>{
  const provider=workspaceSource();
- assert.match(provider,/useEffectEvent\(\(loaded: Preferences\) => applyPreferences\(loaded\.onboarded === false \? \{ \.\.\.loaded, language \} : loaded\)\)/);
+ assert.match(provider,/useEffectEvent\(\(loaded: Preferences\) => \{ applyPreferences\(loaded\.onboarded === false \? \{ \.\.\.loaded, language \} : loaded\);/);
 });
 
 test('the welcome setup and Settings list every language from one catalogue and suggest no local currency first',()=>{

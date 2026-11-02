@@ -51,3 +51,16 @@ test('the mortgage payment dialog says a saved payment is undone from Transactio
  assert.match(dialog, /To undo a payment, delete it from Transactions; you can restore it from Recently deleted\./);
  assert.doesNotMatch(dialog, /Saved payments cannot be edited or deleted/);
 });
+
+test('a refused linked delete says why, in the database\'s words; a plain delete keeps the record route\'s answers', async () => {
+ const refusal = message => loadTS('app/api/records/route.ts', { '@/lib/supabase': { session: async () => ({ token: 'owner', user: { id: 'owner' } }), sameOrigin: () => true, supa: async () => Response.json({ code: 'P0001', message }, { status: 400 }) } }).DELETE;
+ const remove = (message, linked) => refusal(message)(new Request('https://local/api/records', { method: 'DELETE', body: JSON.stringify({ id: '10000000-0000-4000-8000-000000000001', ...(linked ? { linked } : {}) }) }));
+ for (const message of ['Delete later trades of this holding first.', 'The cash reversal would create an invalid balance.']) {
+  const response = await remove(message, true);
+  assert.equal(response.status, 409); assert.deepEqual(await response.json(), { error: message });
+ }
+ const plain = await remove('Something else.', false);
+ assert.deepEqual([plain.status, (await plain.json()).error], [409, 'Insufficient balance or invalid amount.']);
+ const broken = await loadTS('app/api/records/route.ts', { '@/lib/supabase': { session: async () => ({ token: 'owner', user: { id: 'owner' } }), sameOrigin: () => true, supa: async () => new Response('', { status: 500 }) }, '@/lib/monitoring': { reportError: async () => {} } }).DELETE(new Request('https://local/api/records', { method: 'DELETE', body: JSON.stringify({ id: '10000000-0000-4000-8000-000000000001', linked: true }) }));
+ assert.deepEqual([broken.status, (await broken.json()).error], [503, 'Could not delete this transaction. Please try again.']);
+});

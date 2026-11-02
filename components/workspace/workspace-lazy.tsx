@@ -16,4 +16,7 @@ export const SplitTransactionDialog = dynamic(() => import('@/components/transac
 export const BusinessSetupFlow = dynamic(() => import('@/components/business-setup-flow').then(module => module.BusinessSetupFlow), { ssr: false });
 export const JoinHouseholdDialog = dynamic(() => import('@/components/household-panel').then(module => module.JoinHouseholdDialog), { ssr: false });
 export const IncomeSourceEditor = dynamic(() => import('@/components/income-sources-panel').then(module => module.IncomeSourceEditor), { ssr: false });
+export const RuleDialog = dynamic(() => import('@/components/transactions/rule-dialog').then(module => module.RuleDialog), { ssr: false });
+export const DeleteCategoryDialog = dynamic(() => import('@/components/delete-category-dialog').then(module => module.DeleteCategoryDialog), { ssr: false });
+export const EditCategoryDialog = dynamic(() => import('@/components/edit-category-dialog').then(module => module.EditCategoryDialog), { ssr: false });
 export const StopScheduleDialog = dynamic(() => import('@/components/stop-schedule-dialog').then(module => module.StopScheduleDialog), { ssr: false });

@@ -64,10 +64,11 @@ function periods(gap: number, rule: CadenceRule) {
  return rule.skips && gap >= rule.min * 2 && gap <= rule.max * 2 ? 2 : 0;
 }
 
-/** Only actual, recorded income and spending; scheduled plans, generated rows and future dates are not history. */
+/** Only actual, recorded income and spending; scheduled plans, generated rows and future dates are not history. A payment
+ * of a schedule belongs to it by id, whatever its name or currency, so it never reads as a charge to find. */
 function isCharge(row: Entry, today: string) {
  return cashflow.includes(row.kind) && row.frequency === 'Once' && !!row.date && row.date <= today
-  && !row.earning_source_id && !row.operation_id && !row.history_event_id && !row.mortgage_payment_id && !row.movement_id;
+  && !row.occurrence_record_id && !row.earning_source_id && !row.operation_id && !row.history_event_id && !row.mortgage_payment_id && !row.movement_id;
 }
 
 export type PriceChange = { date: string; from: number; to: number; percent: number };

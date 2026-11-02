@@ -14,6 +14,9 @@ export function workspaceTotals({ records, planningRecords, currency, market }: 
  return { current, monthlyIncomeEntries, unconvertedPlanning: planningRecords.length - monthlyIncomeEntries.length, excludedCurrencies, totalDebt, netWorth };
 }
 
+/** The records whose instruments the market quotes. Settings reads no records page, so no summary: there the planning read's holdings stand in. */
+export const quotedRecords = (section: string, summary: Entry[], planningRecords: Entry[]) => section === 'Settings' && !summary.length ? planningRecords : summary;
+
 /** A signed-in workspace shows its loading state until its settings, its first records (or summary) and, the first
  * time, the market have arrived. The sample workspace never waits. */
 export const workspaceLoading = ({ demo, settingsLoading, summaryLoaded, tableLoading, marketReady, marketLoading }: { demo: boolean; settingsLoading: boolean; summaryLoaded: boolean; tableLoading: boolean; marketReady: boolean; marketLoading: boolean }) =>

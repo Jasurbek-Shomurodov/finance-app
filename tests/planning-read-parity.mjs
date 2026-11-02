@@ -40,7 +40,10 @@ function postgrest(){
      const embed=/^investment_history(!inner)?\((.*)\)$/.exec(column);
      // A to-one embed through a foreign key column, as PostgREST reads `alias:table!column(fields)`: the row it points to, or null.
      const toOne=/^(\w+):(\w+)!(\w+)\((.*)\)$/.exec(column);
+     // A row that shares this row's id, as `alias:table(fields)` reads a one-to-one table.
+     const sameId=/^(\w+):(\w+)\((.*)\)$/.exec(column);
      if(column==='*')columns.push('t.*');
+     else if(sameId)columns.push(`(SELECT json_build_object(${sameId[3].split(',').map(name=>`'${name}',x."${name}"`).join(',')}) FROM public."${sameId[2]}" x WHERE x.id=t.id) AS "${sameId[1]}"`);
      else if(toOne)columns.push(`(SELECT json_build_object(${toOne[4].split(',').map(name=>`'${name}',x."${name}"`).join(',')}) FROM public."${toOne[2]}" x WHERE x.id=t."${toOne[3]}") AS "${toOne[1]}"`);
      else if(embed){
       const filter=embedded?' AND '+condition('h','and'+embedded,values):'';
@@ -166,8 +169,8 @@ test('every planning scope answers the same as the offset reader, for the owner,
   assert.deepEqual(accounts.records.map(record=>record.id),full.records.filter(record=>record.frequency!=='Once'||!['Salary','Rent income','Business income','Other income','Rent expense','Living expense','Charity','Other expense'].includes(record.kind)).map(record=>record.id));
   assert.ok(accounts.records.length<full.records.length);
   for(const key of ['activity','movements','investmentLinks','occurrences','goals','debtPayments'])assert.deepEqual(accounts[key],full[key],key);
-  assert.deepEqual(booked.records.map(record=>record.id),full.records.filter(record=>record.account_id).map(record=>record.id));
-  assert.ok(booked.records.length>0&&booked.records.every(record=>Object.keys(record).length===7));
+  assert.deepEqual(booked.records.map(record=>record.id),full.records.filter(record=>record.account_id&&record.frequency==='Once').map(record=>record.id));
+  assert.ok(booked.records.length>0&&booked.records.every(record=>record.frequency==='Once'&&record.revision!=null));
   viewer=stranger;workspace=null;
   const own=await read(current,'?scope=full');assert.ok(own.records.length>0&&own.records.length<200);
   assert.ok(!own.records.some(record=>full.records.some(other=>other.id===record.id)));

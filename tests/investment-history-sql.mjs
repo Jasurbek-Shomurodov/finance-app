@@ -25,7 +25,8 @@ test('tracker SQL preserves history, scopes owners and records rental cash atomi
   await assert.rejects(db.query('DELETE FROM investment_history'),/permission denied/);
   // The rent above is money tied to the record: it keeps its category and currency.
   await assert.rejects(db.query("UPDATE finance_records SET currency='UZS' WHERE id=$1",[asset]),/keep their category/);
-  await assert.rejects(db.query("UPDATE finance_records SET kind='Valuables' WHERE id=$1",[asset]),/keep their category/);
+  // Its rent names it now (migration 161), so the income source rule refuses first.
+  await assert.rejects(db.query("UPDATE finance_records SET kind='Valuables' WHERE id=$1",[asset]),/keep their category|This income source has linked records/);
   // Colliding ledger id forces a failure after event insertion: whole transaction rolls back.
   await db.query("INSERT INTO finance_records(id,user_id,name,kind,currency,amount,date) VALUES($1,$2,'Existing','Salary','USD',1,$3)",[id(9),owner,today]);
   await assert.rejects(save(9,'income',100,null),/duplicate key/);

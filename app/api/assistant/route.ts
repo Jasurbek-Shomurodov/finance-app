@@ -2,10 +2,9 @@ import Anthropic from '@anthropic-ai/sdk';
 import { assistantContext, assistantInstructions, assistantRequestSchema, assistantUnavailable } from '@/lib/assistant';
 import { shiftMonth } from '@/lib/calendar-days';
 import { depositToday } from '@/lib/deposit-interest';
-import { normalizeEntry, type Entry } from '@/lib/finance';
+import { normalizeEntry } from '@/lib/finance';
 import { isLanguage, translate } from '@/lib/i18n';
 import { marketSymbols } from '@/lib/market';
-import { planningReadFilters } from '@/lib/planning-reads';
 import type { PlanningData } from '@/lib/planning';
 import { readOwnerRows } from '@/lib/server-records';
 import { crossSite, readJson, signInAgain, tooManyAttempts } from '@/lib/api-route';
@@ -14,7 +13,8 @@ import { afterResponse } from '@/lib/after-response';
 import { reportError } from '@/lib/monitoring';
 import { limits, rateLimited } from '@/lib/rate-limit';
 import { session, sameOrigin } from '@/lib/supabase';
-import { withViewerDayRates } from '@/lib/viewer-day-rates';
+import { normalizeSplits } from '@/lib/transaction-tools';
+import { GET as readPlanning } from '@/app/api/planning/route';
 
 /** Whether the assistant can answer at all, so the screen can say so before anyone types. Reveals nothing but a yes or no. */
 export const dynamic = 'force-dynamic';
@@ -38,18 +38,15 @@ export async function POST(req: Request) {
  const today = depositToday(), month = today.slice(0, 7);
  let snapshot: string;
  try {
-  const filters = planningReadFilters('budget', month, shiftMonth(month, -2));
-  const [records, categories, goals, occurrences, activity] = await Promise.all([
-   readOwnerRows<Entry>('finance_records', auth.token, filters.records), readOwnerRows<PlanningData['categories'][number]>('transaction_categories', auth.token),
-   readOwnerRows<PlanningData['goals'][number]>('savings_goals', auth.token), readOwnerRows<PlanningData['occurrences'][number]>('payment_occurrences', auth.token),
-   readOwnerRows<PlanningData['activity'][number]>('account_activity', auth.token, filters.activity),
-  ]);
-  // Income and spending count at the official rates of their own day; holdings are worth their live quotes, as the
-  // Net worth card shows them, so the feed is read only when there is a symbol to quote.
+  // The read Budget and Reports use, with the loan payments, so the figures are the ones those screens show.
+  const planning = await readPlanning(new Request(new URL(`/api/planning?scope=budget&debts=1&month=${month}&from=${shiftMonth(month, -2)}`, req.url)));
+  if (!planning.ok) throw Error(`Planning read failed (HTTP ${planning.status}).`);
+  const data = await planning.json() as PlanningData, records = data.records.map(normalizeEntry);
+  // Holdings are worth their live quotes, as the Net worth card shows them, so the feed is read only when there is a symbol to quote.
   const symbols = marketSymbols(records), quoted = symbols.crypto.length + symbols.stocks.length + symbols.metals.length > 0;
-  const [dated, market] = await Promise.all([withViewerDayRates({ records: records.map(normalizeEntry), activity }, auth), quoted ? cachedMarket({ fx: true, rates: true, ...symbols, stockAccess: true, metalAccess: true }, { later: afterResponse }) : null]);
+  const [splits, market] = await Promise.all([readOwnerRows<Parameters<typeof normalizeSplits>[0][number]>('transaction_splits', auth.token, { order: 'record_id.asc,position.asc' }).then(normalizeSplits), quoted ? cachedMarket({ fx: true, rates: true, ...symbols, stockAccess: true, metalAccess: true }, { later: afterResponse }) : null]);
   const spoken = isLanguage(language) ? language : 'en';
-  snapshot = assistantContext({ ...dated, categories, goals, occurrences, investmentLinks: [] }, today, currency, rates, { language, market, t: key => translate(spoken, key) });
+  snapshot = assistantContext({ ...data, records }, today, currency, rates, { language, market, splits, t: key => translate(spoken, key) });
  } catch (error) {
   await reportError('assistant', error, { route, status: 503, userId: auth.user.id }, { alert: 'repeated' });
   return Response.json({ error: 'Could not load your records. Please try again.' }, { status: 503 });

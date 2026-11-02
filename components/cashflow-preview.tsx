@@ -14,7 +14,8 @@ import { useDisplayMoney } from '@/components/display-money';
 import { incomeCardTotals, monthlyIncomeCards } from '@/lib/monthly-income-cards';
 import type { Entry } from '@/lib/finance';
 import type { EarningSource } from '@/lib/earning-sources';
-import type { RateTable } from '@/lib/money';
+import { amountIn, type RateTable } from '@/lib/money';
+import { ratesOrPair } from '@/lib/transaction-rates';
 
 /** Cash flow's overview: the month's income by source beside this month's budget and mortgage payments. `rates` converts
  * a payment no rate converted into the display currency into its card's; without one its amount is missing. */
@@ -25,8 +26,8 @@ export function CashflowPreview({entries,sources,month,currency,rates,loading,er
  const [allSources,setAllSources]=useState(false);
  const allCards=monthlyIncomeCards(entries,month,sources,undefined,rates);
  const cards=allSources?allCards:allCards.slice(0,5);
- // Each card in its source's own currency; the headline adds them in the display currency.
- const income=incomeCardTotals(allCards,convert);
+ // Each card in its source's own currency; the headline adds them in the display currency, what came in at each payment's day's rates.
+ const income=incomeCardTotals(allCards,convert,payment=>amountIn({amount:payment.amount,currency:payment.currency},currency,ratesOrPair(payment,rates)));
  if(error)return <InlineError message={t(error)} onRetry={onRetry}/>;
  if(loading)return <CashflowPreviewSkeleton label={t('Loading records…')}/>;
  return <div className="cashflow-preview-grid">

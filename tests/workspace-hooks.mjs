@@ -182,6 +182,20 @@ test('a dated exchange rate is read once per pair and day, rejects an unusable o
  // A server failure is retried before it is reported.
  assert.equal(requests.length,4);
 });
+test('signing out forgets kept and running reads, so the next account on this page asks for its own',async()=>{
+ const requests=[];
+ const refreshRead=(url,options)=>new Promise(resolve=>requests.push({url,signal:options.signal,reply:data=>resolve(Response.json(data))}));
+ const {sharedRead,warmRead,ownerReadKey,forgetSharedReads}=loadTS('hooks/use-owner-resource.ts',{'@/lib/refresh-read':{refreshRead},'@/lib/feedback':{showSaved:()=>{}},'@/lib/api-client':{requestJson:async()=>({})},react:{useEffect:()=>{},useRef:()=>({}),useState:()=>[]}});
+ const url='/api/comparison-profile';
+ warmRead('session',url,0);requests[0].reply({preferences:'first account'});
+ await new Promise(resolve=>setTimeout(resolve,0));
+ warmRead('session','/api/deleted-items?page=1',0);
+ forgetSharedReads();
+ assert.equal(requests[1].signal.aborted,true,'a read under way is cancelled');
+ void sharedRead(ownerReadKey('session',url,0),url,new AbortController().signal);
+ assert.equal(requests.length,3,'the kept reply is not handed to the next account');
+});
+
 test('an early dashboard read is found by the card that mounts later, while ordinary reads still ask again',async()=>{
  const requests=[];
  const refreshRead=(url,options)=>new Promise(resolve=>requests.push({url,signal:options.signal,reply:(data,status=200)=>resolve(Response.json(data,{status}))}));

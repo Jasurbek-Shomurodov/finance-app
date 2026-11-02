@@ -123,7 +123,7 @@ export type TaxExportDetail = 'lines' | 'categories' | 'transactions';
 /** The export as rows: line, category and transaction, by the level of detail chosen, closed by gross income,
  * expenses and net profit or loss when `totals` names them. Amounts stay unrounded numbers. */
 export function taxExportRows(sheet: ReturnType<typeof taxSheet>, template: TaxTemplate, detail: TaxExportDetail, label: (text: string) => string, nameOf: (key: string) => string, totals = false) {
- const rows: Array<{ line: string; description: string; category: string; date: string; amount: number }> = [];
+ const rows: Array<{ line: string; description: string; category: string; date: string; amount: number; entered?: LedgerLine['entered'] }> = [];
  for (const item of sheet.lines) {
   if (item.line.manual || (!item.total && !item.categories.length)) continue;
   const line = template === 'schedule_c' ? item.line.number : '';
@@ -131,7 +131,7 @@ export function taxExportRows(sheet: ReturnType<typeof taxSheet>, template: TaxT
   if (detail === 'lines') continue;
   for (const category of item.categories) {
    rows.push({ line, description: '', category: nameOf(category.key), date: '', amount: category.amount });
-   if (detail === 'transactions') for (const transaction of category.transactions) rows.push({ line, description: transaction.name, category: nameOf(category.key), date: transaction.date, amount: transaction.amount });
+   if (detail === 'transactions') for (const transaction of category.transactions) rows.push({ line, description: transaction.name, category: nameOf(category.key), date: transaction.date, amount: transaction.amount, entered: transaction.entered });
   }
  }
  if (totals && rows.length) for (const [text, amount] of [['Gross income', sheet.grossIncome], ['Expenses', sheet.totalExpenses], ['Net profit or loss', sheet.net]] as const) rows.push({ line: '', description: label(text), category: '', date: '', amount });

@@ -1,25 +1,33 @@
 "use client";
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { saveOwnerResource, useOwnerResource } from '@/hooks/use-owner-resource';
 import { showSaved } from '@/lib/feedback';
-import type { Entry } from '@/lib/finance';
+import { normalizeEntry, type Entry } from '@/lib/finance';
 import { emptyPlanning } from '@/lib/planning';
 import type { SubscriptionDecision } from '@/lib/recurring-insights';
 
 const emptyDecisions: { decisions: SubscriptionDecision[] } = { decisions: [] };
 
+/** The last two years of income and spending up to today, whatever a page shows: read only while `enabled`.
+ * The sample workspace reads its records in memory. */
+export function useInsightHistory(owner: string | null, demo: boolean, revision: number, sampleRecords: Entry[], enabled = true) {
+ const history = useOwnerResource('/api/planning?scope=insights', owner, !!owner && !demo && enabled, revision, emptyPlanning);
+ const records = useMemo(() => demo ? sampleRecords : history.data.records.map(normalizeEntry), [demo, sampleRecords, history.data.records]);
+ return { records, initialLoading: history.initialLoading, error: history.error, retry: history.retry };
+}
+
 /**
- * The full transaction history that subscriptions are found in, and the owner's decisions about them.
- * The sample workspace reads its records in memory and keeps decisions for the visit.
+ * The transaction history that subscriptions are found in, and the owner's decisions about them, read only while the
+ * Subscriptions view is open (`enabled`). The sample workspace keeps decisions for the visit.
  */
-export function useSubscriptions(owner: string | null, demo: boolean, revision: number, sampleRecords: Entry[]) {
- const live = !!owner && !demo;
- const history = useOwnerResource('/api/planning?scope=insights', owner, live, revision, emptyPlanning);
+export function useSubscriptions(owner: string | null, demo: boolean, revision: number, sampleRecords: Entry[], enabled = true) {
+ const live = !!owner && !demo && enabled;
+ const history = useInsightHistory(owner, demo, revision, sampleRecords, enabled);
  const remote = useOwnerResource('/api/subscriptions', owner, live, revision, emptyDecisions);
  const [sample, setSample] = useState<SubscriptionDecision[]>([]);
  const same = (a: Pick<SubscriptionDecision, 'merchant' | 'currency'>, b: Pick<SubscriptionDecision, 'merchant' | 'currency'>) => a.merchant === b.merchant && a.currency === b.currency;
  return {
-  records: demo ? sampleRecords : history.data.records,
+  records: history.records,
   decisions: demo ? sample : remote.data.decisions,
   loading: live && (history.initialLoading || remote.initialLoading),
   error: live ? history.error || remote.error : '',

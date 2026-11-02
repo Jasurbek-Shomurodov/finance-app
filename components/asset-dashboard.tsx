@@ -19,7 +19,7 @@ import { categoryColor } from '@/lib/category-colors';
 import { formatConvertedQuote, formatDate, formatMoney, formatNumber, formatPercent } from '@/lib/format';
 import { assetRecordKinds, interestKinds, unitPricedKinds, value, totalValue, type Entry, type estimatedCashFlow } from '@/lib/finance';
 import { sortAssetsByWorth } from '@/lib/asset-sort';
-import { isInvestmentRecord } from '@/lib/comparison-profile';
+import { portfolioHoldings } from '@/lib/portfolio-performance';
 import { marketEntry, type MarketData } from '@/lib/market';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { Pagination } from '@/components/presentation-foundation/pagination';
@@ -56,7 +56,7 @@ export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoadin
  const holdingsRef = useRef<HTMLElement>(null), accountsRef = useRef<HTMLElement>(null);
  const [layout, setLayout] = useState<'grid' | 'list'>('grid');
  const [assetPage, setAssetPage] = useState(1);
- const holdings = useMemo(() => sortAssetsByWorth(records.filter(record => assetRecordKinds.includes(record.kind) && (record.kind !== 'Cash' || isInvestmentRecord(record))), record => marketEntry(record, currency, market)).map(original => ({ original, converted: marketEntry(original, currency, market) })), [records, currency, market]);
+ const holdings = useMemo(() => sortAssetsByWorth(portfolioHoldings(records), record => marketEntry(record, currency, market)).map(original => ({ original, converted: marketEntry(original, currency, market) })), [records, currency, market]);
  const total = totalValue(holdings.flatMap(holding => holding.converted ? [holding.converted] : []));
  const categories = assetRecordKinds.map(kind => ({ kind, count: holdings.filter(h => h.original.kind === kind).length, amount: totalValue(holdings.flatMap(holding => holding.converted ? [holding.converted] : []), [kind]) })).filter(group => group.count).sort((a, b) => b.amount - a.amount);
  const groupedIds = new Set(records.filter(record=>accounts.some(account=>account.id===record.holding_account_id&&(record.kind===account.kind||record.kind==='Cash'))).map(record=>record.id));

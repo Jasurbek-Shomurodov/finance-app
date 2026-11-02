@@ -35,11 +35,10 @@ import { formatAccountOption,formatDate,formatNumber,formatPercent } from '@/lib
 import { addMonths } from '@/lib/calendar-days';
 import { type Goal,type PlanningData } from '@/lib/planning';
 import { investmentGoalItems, investmentGoalTargets, investmentGoalCompletion } from '@/lib/investment-goals';
-import { InvestmentGoalPlan } from './investment-goal-plan';
+import { GoalForecast, GoalSetupFlow, InvestmentGoalPlan } from './goals-lazy';
 import type { ForecastBudget } from '@/lib/budget-forecast';
 import { goalCurrency as measuredIn, goalCurrentValue, goalFinancials, goalStatus, goalSummary } from '@/lib/goal-projection';
 import { GoalSummaryRow } from './goal-summary-row';
-import { GoalSetupFlow } from './goal-setup-flow';
 import { savingsDefaults } from '@/lib/goal-setup';
 import { depositToday } from '@/lib/deposit-interest';
 import { marketRates, type MarketData } from '@/lib/market';
@@ -48,7 +47,6 @@ import { GoalFundingPanel } from './goal-funding-panel';
 import { fundingRoom } from '@/lib/goal-funding';
 import {GoalScenarios} from './goal-scenarios';
 import type {PreferenceResource} from '@/hooks/use-workspace-preferences';
-import { GoalForecast } from './goal-forecast';
 import type { EarningSource } from '@/lib/earning-sources';
 
 type Props={preferences:PreferenceResource;owner:string|null;demo:boolean;revision:number;onSaved:()=>void;data:PlanningData;save:(action:string,data:unknown)=>Promise<void>;currencies:string[];currency:string;market:MarketData|null;snapshots:PortfolioSnapshot[];historyError:string;/** Budget, which the monthly surplus counts. */budget?:ForecastBudget;/** Income sources, whose variable estimates the surplus counts. */sources?:readonly EarningSource[]};

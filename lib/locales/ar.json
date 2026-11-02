@@ -464,7 +464,6 @@
   "Could not import the file. Retry the same file safely.": "تعذّر استيراد الملف. يمكنك إعادة محاولة الملف نفسه بأمان.",
   "Keep the currency and start date of an existing budget.": "لا يمكنك تغيير عملة الخطة القائمة أو تاريخ بدئها. أعد القيم الأصلية لتتمكن من الحفظ.",
   "Include": "ضمّن",
-  "Select at least one transaction.": "اختر معاملة واحدة على الأقل.",
   "Import limit exceeded. Split this file into smaller files.": "تم تجاوز حد الاستيراد. قسّم هذا الملف إلى ملفات أصغر.",
   "{name} has used {percent}% of its budget.": "استخدم {name} {percent}% من ميزانيته.",
   "Choose a different destination.": "اختر وجهة مختلفة.",
@@ -2763,5 +2762,9 @@
   "3-month average": "متوسط 3 أشهر",
   "Compared with average": "مقارنة بالمتوسط",
   "Item": "البند",
-  "Amounts are compared as entered, in each transaction’s own currency.": "تُقارَن المبالغ كما أُدخلت، بعملة كل معاملة نفسها."
+  "Amounts are compared as entered, in each transaction’s own currency.": "تُقارَن المبالغ كما أُدخلت، بعملة كل معاملة نفسها.",
+  "It changes at most the newest {count} matching transactions.": "يغيّر هذا {count} من أحدث المعاملات المطابقة على الأكثر.",
+  "{changed} updated; {category} could not change category and {business} could not change business here.": "تم تحديث {changed}؛ وتعذّر تغيير الفئة في {category} وتغيير النشاط التجاري في {business} هنا.",
+  "Could not delete this transaction. Please try again.": "تعذّر حذف هذه المعاملة. يُرجى المحاولة مرة أخرى.",
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "لقد سجّلت الدخول عبر Google، لذا قد لا تكون لهذا الحساب كلمة مرور بعد. عيّن واحدة عبر نسيت كلمة المرور، ثم أدخلها هنا."
 }

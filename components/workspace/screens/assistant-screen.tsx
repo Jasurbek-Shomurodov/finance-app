@@ -21,8 +21,7 @@ function useAssistantAvailability(live: boolean, user: string | null) {
  useEffect(() => {
   if (!live) return;
   const controller = new AbortController();
-  fetch('/api/assistant', { signal: controller.signal, cache: 'no-store' })
-   .then(response => response.ok ? response.json() as Promise<{ available?: boolean }> : { available: true })
+  requestJson<{ available?: boolean }>('/api/assistant', { method: 'GET', signal: controller.signal })
    .then(result => setStatus({ owner: user, available: result.available !== false }))
    .catch(() => { if (!controller.signal.aborted) setStatus({ owner: user, available: true }); });
   return () => controller.abort();

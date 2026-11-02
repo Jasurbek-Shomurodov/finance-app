@@ -464,7 +464,6 @@
   "Could not import the file. Retry the same file safely.": "Soubor se nepodařilo importovat. Zkuste stejný soubor bezpečně znovu.",
   "Keep the currency and start date of an existing budget.": "Měnu a datum zahájení stávajícího plánu nelze změnit. Pro uložení obnovte původní hodnoty.",
   "Include": "Zahrnout",
-  "Select at least one transaction.": "Vyberte alespoň jednu transakci.",
   "Import limit exceeded. Split this file into smaller files.": "Překročen limit importu. Rozdělte tento soubor na menší.",
   "{name} has used {percent}% of its budget.": "{name} vyčerpal(a) {percent}% svého rozpočtu.",
   "Choose a different destination.": "Vyberte jiný cíl.",
@@ -2763,5 +2762,9 @@
   "3-month average": "Průměr za 3 měsíce",
   "Compared with average": "Oproti průměru",
   "Item": "Položka",
-  "Amounts are compared as entered, in each transaction’s own currency.": "Částky se porovnávají tak, jak byly zadány, ve vlastní měně každé transakce."
+  "Amounts are compared as entered, in each transaction’s own currency.": "Částky se porovnávají tak, jak byly zadány, ve vlastní měně každé transakce.",
+  "It changes at most the newest {count} matching transactions.": "Změní nejvýše {count} nejnovějších odpovídajících transakcí.",
+  "{changed} updated; {category} could not change category and {business} could not change business here.": "Aktualizováno: {changed}; zde nešlo změnit kategorii u {category} a firmu u {business}.",
+  "Could not delete this transaction. Please try again.": "Tuto transakci se nepodařilo smazat. Zkuste to znovu.",
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Přihlásili jste se přes Google, takže tento účet možná ještě nemá heslo. Nastavte ho přes Zapomenuté heslo a pak ho zadejte sem."
 }

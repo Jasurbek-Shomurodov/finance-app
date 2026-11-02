@@ -120,7 +120,7 @@ function cronRoute({subscriptions,records={},splits={},links={},movements={},bud
    if(path.startsWith('/rest/v1/portfolio_snapshots'))return [...(snapshots[owner]??[])].reverse();
    if(path.startsWith('/rest/v1/transaction_categories'))return [];
    if(path.startsWith('/rest/v1/workspace_preferences'))return owner in reminders?[{data:reminders[owner]}]:[];
-   if(path.startsWith('/rest/v1/account_activity')||path.startsWith('/rest/v1/mortgage_payments'))return [];
+   if(path.startsWith('/rest/v1/account_activity')||path.startsWith('/rest/v1/mortgage_payments')||path.startsWith('/rest/v1/investment_history'))return [];
    if(path.startsWith('/rest/v1/transaction_splits'))return splits[owner]??[];
    if(path.startsWith('/rest/v1/investment_account_links'))return links[owner]??[];
    if(path.startsWith('/rest/v1/asset_movements'))return movements[owner]??[];
@@ -278,7 +278,7 @@ test('the bot\'s Upcoming payments answer shows each bill as entered, in its own
   reads.push(path);
   if(path.startsWith('/rest/v1/finance_records'))return recordsFor([{...rent,currency:'USD',amount:500,date:'2026-09-02'}],path);
   if(path.startsWith('/rest/v1/account_activity'))return path.includes('offset=0')?activity:[];
-  if(path.startsWith('/rest/v1/payment_occurrences')||path.startsWith('/rest/v1/mortgage_payments'))return [];
+  if(path.startsWith('/rest/v1/payment_occurrences')||path.startsWith('/rest/v1/mortgage_payments')||path.startsWith('/rest/v1/investment_history'))return [];
   throw Error('unexpected '+path);
  }});
  // A USD bill reads in dollars although the primary currency is UZS: no rate is needed, so neither preferences nor snapshots are read.

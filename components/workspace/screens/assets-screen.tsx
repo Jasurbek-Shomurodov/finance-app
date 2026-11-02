@@ -10,7 +10,7 @@ import { PageHeader } from '@/components/presentation-foundation/page-header';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { PortfolioAllocationPlan } from '@/components/portfolio-allocation-plan';
 import { Button } from '@/components/ui/button';
-import { ScreenNotices } from '@/components/workspace/screen-notices';
+import { PlanningError, ScreenNotices } from '@/components/workspace/screen-notices';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
 import { usePropertyTotals } from '@/hooks/use-property-totals';
 
@@ -30,6 +30,7 @@ export function AssetsScreen() {
    {view === 'holdings' && (workspaceLoading ? <InvestmentsSkeleton label={t("Loading your workspace…")}/> : <AssetDashboard excludedCurrencies={excludedCurrencies} accounts={planning.data.holdingAccounts??[]} accountsLoading={planning.loading} accountsError={planning.error} onRetryAccounts={refreshRecords} onAddHolding={addAccountRecord} records={rows} currency={currency} market={market} netWorth={netWorth} debt={totalDebt} forecast={forecast} forecastReady={forecastReady} loading={tableLoading} demo={demo} onAdd={() => setChoosing(true)} onEdit={editRecord} onTrack={setTracking} onInvest={investIn} onDelete={requestDelete} quoteLabel={quoteLabel} propertyTotals={properties}/>)}
   </div>
   {view === 'allocation' && planning.loading&&<div className="content review-content"><PanelSkeleton label={t('Loading records…')}/></div>}
+  {view === 'allocation' && planning.error&&<div className="content review-content"><PlanningError/></div>}
   {view === 'allocation' && !planning.loading&&!planning.error&&<div className="content review-content" key={user??'demo'}><PortfolioAllocationPlan currencies={preferencesData.currencies} records={planning.data.records} currency={currency} market={market} preferences={workspacePreferences}/></div>}
  </>;
 }

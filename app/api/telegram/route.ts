@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { crossSite, postgrestFailure, readJson, signInAgain } from '@/lib/api-route';
+import { crossSite, postgrestFailure, readJson, reply, signInAgain } from '@/lib/api-route';
 import { session, supa, sameOrigin } from '@/lib/supabase';
 import { telegramConfig } from '@/lib/telegram';
 import { subscriptionStatus, unlinkedChat, type TelegramSubscription } from '@/lib/telegram-link';
@@ -42,6 +42,6 @@ export async function POST(req:Request){
   const response=await supa(table+'?user_id=eq.'+s.user.id,{method:'PATCH',body:JSON.stringify(patch)},s.token);
   // The database's refusal keeps its status and words (a view-only member answers 403); only a missing function is a setup problem.
   if(!response.ok)return postgrestFailure(response,notSaved,{codes:{PGRST202:[notSaved,503]}});
-  return Response.json(subscriptionStatus(await own(s.token,s.user.id),config.botUsername));
+  return reply(subscriptionStatus(await own(s.token,s.user.id),config.botUsername));
  }catch(error){return failure(error,notSaved);}
 }

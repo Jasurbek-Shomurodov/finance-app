@@ -99,10 +99,9 @@ test('a failed save reports the error once and retries only after another change
  assert.deepEqual(s.errors,['Settings service is down.']);
  await s.settle(1000);
  assert.equal(s.requests.length,1,'the failed draft is not retried in a loop');
- s.replies.push(Error(''));
  s.r.fire(s.select('es'),'onChange',{target:{value:'de'}});
  await s.settle();
- assert.deepEqual(s.errors.at(-1),'Could not save settings. Try again.','an empty message falls back to the generic one');
+ assert.equal(s.requests.at(-1)[1].fallback,'Could not save settings. Try again.','a reply without a message reads as this one');
  s.r.fire(s.select('de'),'onChange',{target:{value:'it'}});
  await s.settle();
  assert.equal(s.saved.at(-1).language,'it');

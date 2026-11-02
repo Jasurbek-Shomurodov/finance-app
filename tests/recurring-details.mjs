@@ -64,7 +64,7 @@ const h = React.createElement;
 const pass = name => Object.assign(({ children }) => h('div', { 'data-part': name }, children), { displayName: name });
 const Bar = Object.assign(({ dataKey }) => h('span', { 'data-bar': dataKey }), { displayName: 'Bar' });
 const chart = { ...Object.fromEntries(['ResponsiveContainer', 'BarChart', 'CartesianGrid', 'XAxis', 'YAxis', 'Tooltip'].map(name => [name, pass(name)])), Bar };
-const { RecurringDetails, useRecurringDetails } = r.load('components/planning/recurring-details.tsx', { ...ui.modules, recharts: chart, '@/components/presentation-foundation/rolling-text': { RollingText: ({ text }) => text } });
+const { RecurringDetails } = r.load('components/planning/recurring-details.tsx', { ...ui.modules, recharts: chart, '@/components/presentation-foundation/rolling-text': { RollingText: ({ text }) => text } });
 const mount = props => (r.mount(h(RecurringDetails, props)), r);
 
 test('tapping a schedule shows its totals, next payment, history chart and payments, and only reads: no Close, Edit or Record payment at its foot', () => {
@@ -87,6 +87,7 @@ test('tapping a schedule shows its totals, next payment, history chart and payme
 });
 
 test('the list opens the details on a tap and its close dismisses them', () => {
+ const { useRecurringDetails } = r.load('components/planning/recurring-lazy.tsx', { 'next/dynamic': { __esModule: true, default: () => RecurringDetails } });
  let hook;
  const Host = () => { hook = useRecurringDetails(data, '2026-10-20'); return hook.dialog; };
  r.mount(h(Host));

@@ -28,6 +28,8 @@ export function sharedRead(key:string,url:string,signal:AbortSignal,keep=false):
  signal.addEventListener('abort',leave,{once:true});
  return joined.reply;
 }
+/** Signing out forgets every read kept or under way: a later account on this page never finds the last one's reply. */
+export function forgetSharedReads(){for(const read of sharedReads.values())read.controller.abort();sharedReads.clear();}
 /** Starts a read before the card that shows it mounts (the dashboard's reads, as soon as the owner is known), so the card
  * finds the reply under way or answered. The read is never cancelled by a reader leaving. */
 export function warmRead(owner:string,url:string,revision:number){void sharedRead(ownerReadKey(owner,url,revision),url,new AbortController().signal,true).catch(()=>undefined);}

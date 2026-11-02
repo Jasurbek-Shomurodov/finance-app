@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import React from 'react';
+import {createRenderer} from './helpers/component-tree.mjs';
 import {loadTS} from './helpers/load-ts.mjs';
 import {botDb,ownerId,subscription} from './helpers/bot-db.mjs';
 const {createConnectRequest,findConnectRequest,consumeConnectRequest,cancelConnectRequest,linkChat,linkRefusal,unlinkChat,connectCookie,connectPage}=loadTS('lib/telegram-connect.ts');
@@ -180,3 +182,24 @@ test('the confirmation page refuses to hand an account made in Telegram to anoth
  assert.match(source,/Connecting lets this Telegram chat see and change everything in this account\. Only connect if you pressed Sign in in your own Telegram just now/);
  assert.match(source,/<bdi>\{view\.telegram/);
 });
+
+test('the confirmation offers Cancel beside Connect, so a link pressed by mistake can be refused',async()=>{
+ const r=createRenderer(),sent=[];
+ const {default:Page}=r.load('app/connect/telegram/page.tsx',{
+  'next/link':{__esModule:true,default:'a'},'next/navigation':{useRouter:()=>({push(){}})},
+  '@/components/language-provider':{LanguageProvider:({children})=>children,useLanguage:()=>({t:key=>key})},
+  '@/components/presentation-foundation/brand':{Brand:()=>null},'@/components/presentation-foundation/loading-placeholder':{LoadingPlaceholder:()=>null},
+  '@/components/ui/button':{Button:'button'},
+  '@/lib/api-client':{requestJson:async(url,{body})=>{sent.push(body.action);return body.action==='preview'?{state:'confirm',telegram:'Someone',account:'me@example.com',bot:'hoggish_bot'}:{state:'cancelled',bot:'hoggish_bot'};}},
+ });
+ r.mount(React.createElement(Page));
+ const settle=async()=>{for(let i=0;i<3;i++){await new Promise(resolve=>setTimeout(resolve,0));r.update();}};
+ await settle();
+ const named=label=>r.all(node=>node.type==='button'&&JSON.stringify(node.props.children)===JSON.stringify(label))[0];
+ assert.ok(named('Connect'));
+ r.fire(named('Cancel'),'onClick');
+ await settle();
+ assert.deepEqual(sent,['preview','cancel']);
+ assert.ok(!named('Connect'),'nothing left to connect');
+});
+

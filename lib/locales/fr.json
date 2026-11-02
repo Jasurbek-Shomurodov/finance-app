@@ -464,7 +464,6 @@
   "Could not import the file. Retry the same file safely.": "Impossible d’importer le fichier. Vous pouvez réessayer le même fichier sans risque.",
   "Keep the currency and start date of an existing budget.": "Vous ne pouvez pas modifier la devise ni la date de début d’un budget existant. Rétablissez les valeurs d’origine pour enregistrer.",
   "Include": "Inclure",
-  "Select at least one transaction.": "Sélectionnez au moins une transaction.",
   "Import limit exceeded. Split this file into smaller files.": "Limite d’importation dépassée. Divisez ce fichier en fichiers plus petits.",
   "{name} has used {percent}% of its budget.": "{name} a utilisé {percent} % de son budget.",
   "Choose a different destination.": "Choisissez une autre destination.",
@@ -2763,5 +2762,9 @@
   "3-month average": "Moyenne sur 3 mois",
   "Compared with average": "Écart à la moyenne",
   "Item": "Élément",
-  "Amounts are compared as entered, in each transaction’s own currency.": "Les montants sont comparés tels que saisis, dans la devise propre à chaque transaction."
+  "Amounts are compared as entered, in each transaction’s own currency.": "Les montants sont comparés tels que saisis, dans la devise propre à chaque transaction.",
+  "It changes at most the newest {count} matching transactions.": "Cela modifie au plus les {count} transactions correspondantes les plus récentes.",
+  "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} mises à jour ; ici, la catégorie de {category} et l’entreprise de {business} n’ont pas pu être modifiées.",
+  "Could not delete this transaction. Please try again.": "Impossible de supprimer cette transaction. Veuillez réessayer.",
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Vous vous êtes connecté avec Google, ce compte n’a donc peut-être pas encore de mot de passe. Créez-en un avec « Mot de passe oublié », puis saisissez-le ici."
 }

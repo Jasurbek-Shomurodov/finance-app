@@ -63,7 +63,7 @@ const { WorkspaceProvider } = r.load('components/workspace/workspace-provider.ts
  '@/hooks/use-tags': { useTags: () => ({ data: { tags: [] } }) },
  '@/hooks/use-record-attachments': { useRecordAttachments: () => ({}) },
  // A stateful stand-in: `update` shows a change at once, as the real hook does, so saves can be read back from the state.
- '@/hooks/use-owner-resource': { warmRead: (...args) => warmed.push(args), useOwnerResource: (url, user, enabled, reload, empty) => { const [data, setData] = r.react.useState(empty); return { data, loading: false, initialLoading: false, error: '', retry() {}, update: change => setData(previous => change(previous)), invalidate() { setData(empty); } }; },
+ '@/hooks/use-owner-resource': { forgetSharedReads() {}, warmRead: (...args) => warmed.push(args), useOwnerResource: (url, user, enabled, reload, empty) => { const [data, setData] = r.react.useState(empty); return { data, loading: false, initialLoading: false, error: '', retry() {}, update: change => setData(previous => change(previous)), invalidate() { setData(empty); } }; },
   // The session loader reads from the test server: settings arrive the way the real loader delivers them (data, then loading false).
   useSessionResource: (url, enabled, revision, empty) => { const key = url + ':' + revision; const [state, setState] = r.react.useState({ key: '', data: empty, error: '' }); r.react.useEffect(() => { if (!enabled) return; let live = true; fetch(url).then(async response => { const body = await response.json(); if (live) setState(response.ok ? { key, data: body, error: '' } : { key, data: empty, error: body.error }); }); return () => { live = false; }; }, [url, enabled, revision]); return { data: enabled && state.key === key ? state.data : empty, error: enabled && state.key === key ? state.error : '', loading: enabled && state.key !== key, retry() {} }; },
   saveOwnerResource: async (url, action, data) => { const response = await fetch(url, { method: 'POST', body: JSON.stringify({ action, data }) }); if (!response.ok) throw Error('Could not save changes.'); return response.json(); } },
@@ -391,4 +391,24 @@ test('the record page is read unfiltered until the market answers, so the first 
  assert.equal(filter({rates:{USD:1}}),'EUR','no rate for the display currency');
  assert.equal(filter(null,true),'EUR','the market read failed');
  assert.equal(filter(null,true,'assets'),'','holdings are never filtered');
+});
+
+test('the transaction history stays whole without a rate: each row reads as entered', () => {
+ const table = loadTS('lib/record-table.ts');
+ const row = (id, currency) => ({ id, name: id, kind: 'Living expense', frequency: 'Once', amount: 1, currency, date: '2026-10-01', notes: '', quantity: 1, cost: 0, rate: 0 });
+ const rows = [row('usd', 'USD'), row('uzs', 'UZS')];
+ const base = { demo: true, section: 'Income & expenses', sectionKey: 'cashflow', locale: 'en-US', currency: 'UZS', market: null, rows, current: rows, planningRecords: rows, planningLoading: false, filters: { query: '', category: 'all', from: '', to: '', order: 'newest' }, currencyFilter: 'UZS', page: 1, remoteHistory: false, useFilteredRecords: true, historyPage: { records: [], total: 0, page: 1 }, historyLoading: false, recordTotal: 0, loadedKey: '', requestKey: '' };
+ assert.equal(table.recordTableView({ ...base, historyOnly: true }).visible.length, 2);
+ assert.deepEqual(table.recordTableView({ ...base, section: 'Loans & debts', sectionKey: 'all', historyOnly: false }).visible.map(item => item.id), ['uzs'], 'a list of converted values still filters');
+});
+test('Cash flow asks the history for every currency whatever rate is missing', () => {
+ const urls = [];
+ const { useRecordTable } = loadTS('components/workspace/state/use-record-table.ts', {
+  react: { useState: initial => [initial, () => {}] },
+  '@/hooks/use-owner-resource': { useOwnerResource: url => { urls.push(url); return { data: { records: [], total: 0, page: 1 }, loading: false, error: '' }; } },
+  '@/hooks/use-record-filters': { useRecordFilters: () => ({ filters: { query: '', category: 'all', from: '', to: '', order: 'newest' }, setFilters() {} }) },
+  './use-record-reads': { useRecordReads: () => ({ recordTotal: 0, loadedKey: '', recordsLoading: false, summaryLoaded: true, businesses: [], resetReads() {} }) },
+ });
+ useRecordTable({ user: 'owner', demo: false, section: 'Income & expenses', locale: 'en-US', currency: 'UZS', market: null, marketFailed: true, reload: 0, rows: [], setRows() {}, setSummary() {}, setError() {}, current: [], planning: { loading: false, data: { records: [] } } });
+ assert.doesNotMatch(urls[0], /currency=/);
 });

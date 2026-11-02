@@ -464,7 +464,6 @@
   "Could not import the file. Retry the same file safely.": "ไม่สามารถนำเข้าไฟล์ได้ ลองไฟล์เดิมอีกครั้งได้อย่างปลอดภัย",
   "Keep the currency and start date of an existing budget.": "คงสกุลเงินและวันที่เริ่มต้นของงบประมาณที่มีอยู่ไว้",
   "Include": "รวม",
-  "Select at least one transaction.": "เลือกอย่างน้อยหนึ่งธุรกรรม",
   "Import limit exceeded. Split this file into smaller files.": "เกินขีดจำกัดการนำเข้า โปรดแบ่งไฟล์นี้เป็นไฟล์ที่เล็กลง",
   "{name} has used {percent}% of its budget.": "{name} ใช้งบไปแล้ว {percent}%",
   "Choose a different destination.": "เลือกปลายทางอื่น",
@@ -2763,5 +2762,9 @@
   "3-month average": "ค่าเฉลี่ย 3 เดือน",
   "Compared with average": "เทียบกับค่าเฉลี่ย",
   "Item": "รายการ",
-  "Amounts are compared as entered, in each transaction’s own currency.": "เปรียบเทียบจำนวนเงินตามที่บันทึกไว้ ในสกุลเงินของแต่ละรายการเอง"
+  "Amounts are compared as entered, in each transaction’s own currency.": "เปรียบเทียบจำนวนเงินตามที่บันทึกไว้ ในสกุลเงินของแต่ละรายการเอง",
+  "It changes at most the newest {count} matching transactions.": "เปลี่ยนรายการที่ตรงกันล่าสุดได้สูงสุด {count} รายการ",
+  "{changed} updated; {category} could not change category and {business} could not change business here.": "อัปเดตแล้ว {changed} รายการ; ที่นี่เปลี่ยนหมวดหมู่ของ {category} รายการและธุรกิจของ {business} รายการไม่ได้",
+  "Could not delete this transaction. Please try again.": "ไม่สามารถลบธุรกรรมนี้ได้ โปรดลองอีกครั้ง",
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "คุณลงชื่อเข้าใช้ด้วย Google บัญชีนี้จึงอาจยังไม่มีรหัสผ่าน ตั้งรหัสผ่านผ่าน ลืมรหัสผ่าน แล้วป้อนที่นี่"
 }

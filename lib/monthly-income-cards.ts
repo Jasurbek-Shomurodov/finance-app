@@ -8,8 +8,9 @@ import { ratesOrPair } from './transaction-rates';
 /** One income source's card, in that source's own currency (`entry.currency`): its estimate and what came in. `entered` is
  * what came in as it was entered, when every payment shares one currency (a mix leaves it null and `receivedAmount`, in the
  * card's currency, is shown). `missing` counts payments in another currency that no rate converts: the card is marked
- * received, but its received amount is unknown (—, with "Exchange rate unavailable."), never counted as zero. */
-type IncomeCard = { entry: Entry; amount: number; asset: boolean; excluded: boolean; notes: string[]; received: boolean; receivedAmount: number; missing: number; entered?: Money | null };
+ * received, but its received amount is unknown (—, with "Exchange rate unavailable."), never counted as zero. `paid` lists
+ * the month's payments, so a total can convert each one at the rates of its own day. */
+type IncomeCard = { entry: Entry; amount: number; asset: boolean; excluded: boolean; notes: string[]; received: boolean; receivedAmount: number; missing: number; paid: Entry[]; entered?: Money | null };
 
 /** Unlinked one-time receipts group only by the ids they carry (AGENTS: never by name); without one each stands alone. */
 function receiptKey(entry: Entry): string {
@@ -47,7 +48,7 @@ export function approximateIncome(sources: readonly EarningSource[], currency: s
 /** A variable source's approximate monthly income, as a card that this month's receipts from it join. */
 const approximateCard = (source: EarningSource): IncomeCard => ({
  entry: { id: 'source:' + source.id, earning_source_id: source.id, name: source.name, kind: source.kind, currency: source.currency, amount: source.approx_monthly!, date: '', frequency: 'Monthly', quantity: 1, cost: 0, rate: 0, notes: '' },
- amount: source.approx_monthly!, asset: false, excluded: false, notes: [], received: false, receivedAmount: 0, missing: 0,
+ amount: source.approx_monthly!, asset: false, excluded: false, notes: [], received: false, receivedAmount: 0, missing: 0, paid: [],
 });
 
 /** The card a payment belongs to, joined by ids only: the asset it pays into, else the schedule it names
@@ -59,11 +60,14 @@ function linkedCard(cards: readonly IncomeCard[], entry: Entry, sources: readonl
  // into its property/business card. Resolve that asset before the schedule.
  const assetId = entry.kind === 'Business income' ? entry.business_id ?? source?.linked_record_id : entry.kind === 'Rent income' ? entry.income_source_id ?? source?.linked_record_id : null;
  const scheduleId = entry.occurrence_record_id;
- const joins = assetId ? (card: IncomeCard) => card.entry.id === assetId
-  : scheduleId ? (card: IncomeCard) => card.entry.id === scheduleId
-  : entry.earning_source_id ? (card: IncomeCard) => card.entry.earning_source_id === entry.earning_source_id : null;
- const candidates = joins ? cards.filter(card => (card.asset || card.entry.frequency !== 'Once') && joins(card)) : [];
- return candidates.length === 1 ? candidates[0] : undefined;
+ // A property with a rent schedule but no estimate has no card of its own: its payment joins the schedule's.
+ const joins = [assetId ? (card: IncomeCard) => card.entry.id === assetId : null, scheduleId ? (card: IncomeCard) => card.entry.id === scheduleId : null,
+  !assetId && !scheduleId && entry.earning_source_id ? (card: IncomeCard) => card.entry.earning_source_id === entry.earning_source_id : null];
+ for (const join of joins) {
+  const candidates = join ? cards.filter(card => (card.asset || card.entry.frequency !== 'Once') && join(card)) : [];
+  if (candidates.length === 1) return candidates[0];
+ }
+ return undefined;
 }
 
 // Requires individual dated records, never the all-time valuation summary. A payment in another currency than its
@@ -75,8 +79,8 @@ export function monthlyIncomeCards(entries: Entry[], month: string, sources: Ear
  const recurring = entries.filter(entry => income.includes(entry.kind) && !entry.source_paused && !entry.archived);
  const included = recurring.filter(entry => monthly(entry, month) > 0 && !duplicatesAssetEstimate(entry, businessIds, propertyIds));
  const cards: IncomeCard[] = [
-  ...included.map(entry => ({ entry, amount: monthly(entry, month), asset: false, excluded: false, notes: [] as string[], received: false, receivedAmount: 0, missing: 0 })),
-  ...assets.map(entry => ({ entry, amount: entry.estimated_monthly_income ?? 0, asset: true, excluded: false, notes: [] as string[], received: false, receivedAmount: 0, missing: 0 })),
+  ...included.map(entry => ({ entry, amount: monthly(entry, month), asset: false, excluded: false, notes: [] as string[], received: false, receivedAmount: 0, missing: 0, paid: [] as Entry[] })),
+  ...assets.map(entry => ({ entry, amount: entry.estimated_monthly_income ?? 0, asset: true, excluded: false, notes: [] as string[], received: false, receivedAmount: 0, missing: 0, paid: [] as Entry[] })),
   ...sources.filter(estimatedVariably).map(approximateCard),
  ];
  for (const entry of recurring.filter(entry => !included.includes(entry))) {
@@ -95,10 +99,10 @@ export function monthlyIncomeCards(entries: Entry[], month: string, sources: Ear
    existing.received ||= received;
    const value = received ? amountIn({ amount: entry.amount, currency: entry.currency }, existing.entry.currency, ratesOrPair(entry, rates)) : 0;
    if (value === null) existing.missing += 1; else existing.receivedAmount += value;
-   if (received) existing.entered = enteredWith(existing.entered, entry);
+   if (received) { existing.entered = enteredWith(existing.entered, entry); existing.paid.push(entry); }
    if (!existing.notes.includes(note)) existing.notes.push(note);
   } else {
-   cards.push({ entry, amount: entry.amount, asset: false, excluded: true, notes: [note], received, receivedAmount: received ? entry.amount : 0, missing: 0, entered: received ? { amount: entry.amount, currency: entry.currency } : undefined });
+   cards.push({ entry, amount: entry.amount, asset: false, excluded: true, notes: [note], received, receivedAmount: received ? entry.amount : 0, missing: 0, paid: received ? [entry] : [], entered: received ? { amount: entry.amount, currency: entry.currency } : undefined });
   }
  }
  // Larger sources first, compared in one currency: each card is in its own (a source in sums is not larger than one in dollars).
@@ -114,10 +118,14 @@ function enteredWith(before: Money | null | undefined, payment: Entry): Money | 
 
 /** A month's income headline: what was received against the estimate, over every card (not only the previewed five).
  * Each card is in its own currency; `convert` brings it into the headline's (the display currency), and without it the
- * cards must already share one. `missing` counts amounts no rate converts; the received total is then unknown. */
-export function incomeCardTotals(cards: readonly (Pick<IncomeCard, 'amount' | 'excluded' | 'receivedAmount' | 'missing'> & { entry?: Pick<Entry, 'currency'> })[], convert: (amount: number, currency: string) => number | null = amount => amount) {
+ * cards must already share one. `convertPaid` brings one payment there at the rates of its own day, as every figure that
+ * adds transactions does, so the received total reads as the Income received tile; the estimate stays at `convert`, today's.
+ * `missing` counts amounts no rate converts; the received total is then unknown. */
+export function incomeCardTotals(cards: readonly (Pick<IncomeCard, 'amount' | 'excluded' | 'receivedAmount' | 'missing'> & { entry?: Pick<Entry, 'currency'>; paid?: readonly Entry[] })[], convert: (amount: number, currency: string) => number | null = amount => amount, convertPaid?: (payment: Entry) => number | null) {
  return cards.reduce((sum, card) => {
-  const currency = card.entry?.currency ?? '', estimate = card.excluded ? 0 : convert(card.amount, currency), received = convert(card.receivedAmount, currency);
-  return { estimate: sum.estimate + (estimate ?? 0), received: sum.received + (received ?? 0), missing: sum.missing + (card.missing ?? 0) + Number(estimate === null) + Number(received === null) };
+  const currency = card.entry?.currency ?? '', estimate = card.excluded ? 0 : convert(card.amount, currency);
+  const paid = convertPaid ? (card.paid ?? []).map(convertPaid) : [convert(card.receivedAmount, currency)];
+  const unknown = (convertPaid ? 0 : card.missing ?? 0) + paid.filter(value => value === null).length;
+  return { estimate: sum.estimate + (estimate ?? 0), received: paid.reduce<number>((total, value) => total + (value ?? 0), sum.received), missing: sum.missing + unknown + Number(estimate === null) };
  }, { estimate: 0, received: 0, missing: 0 });
 }

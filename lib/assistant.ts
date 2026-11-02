@@ -4,15 +4,20 @@ import { cashFlowReport } from './cash-flow-report';
 import { assets, liabilities, value, type Entry } from './finance';
 import { formatDate, formatMoney, formatMonthYear, formatNumber } from './format';
 import { goalCurrentValue } from './goal-projection';
-import { investmentGoalProgress } from './investment-goals';
+import { investmentGoalItems } from './investment-goals';
 import { isLanguage, locales } from './languages';
 import { convertAmount, marketEntry, type MarketData } from './market';
 import type { RecurringItem } from './recurring';
 import { upcomingPayments, type PlanningData } from './planning';
 import { monthOccurrences } from './recurring';
+import type { TransactionSplit } from './transaction-tools';
 
 /** Characters of conversation sent to the model with one question; older turns beyond it are left out. */
 export const assistantHistoryLimit = 12000;
+/** The longest question a person may send. */
+const questionLimit = 4000;
+/** Far above what `max_tokens` lets one answer reach: an answer of ours coming back in the history never fails the request. */
+const answerLimit = 40000;
 type Turn = { role: 'user' | 'assistant'; content: string };
 /** The newest turns that fit the limit, still starting with a question. */
 export function recentTurns(list: Turn[], limit = assistantHistoryLimit) {
@@ -23,7 +28,7 @@ export function recentTurns(list: Turn[], limit = assistantHistoryLimit) {
 }
 /** A chat turn sent to /api/assistant. History is capped so one request stays small. */
 export const assistantRequestSchema = z.object({
- messages: z.array(z.object({ role: z.enum(['user', 'assistant']), content: z.string().trim().min(1).max(4000) })).min(1).max(20).refine(list => list[0]?.role === 'user' && list.at(-1)?.role === 'user').transform(list => recentTurns(list)),
+ messages: z.array(z.discriminatedUnion('role', [z.object({ role: z.literal('user'), content: z.string().trim().min(1).max(questionLimit) }), z.object({ role: z.literal('assistant'), content: z.string().trim().min(1).max(answerLimit) })])).min(1).max(20).refine(list => list[0]?.role === 'user' && list.at(-1)?.role === 'user').transform(list => recentTurns(list)),
  currency: z.string().regex(/^[A-Z]{3}$/),
  rates: z.record(z.string().regex(/^[A-Z]{3}$/), z.number().finite().positive()).refine(value => Object.keys(value).length <= 200),
  language: z.string().max(20),
@@ -41,35 +46,36 @@ export const assistantSuggestions = ['What recurring expenses do I have?', 'How 
  * this month's scheduled items and goals. Amounts and dates are written the way the app shows them ("$1,200", "30 September 2026"),
  * in the person's own language and number style, so the assistant repeats them the way they read them everywhere else;
  * every amount is in `currency`, and one without a rate to it is written as a dash and counted, never shown under its own currency.
- * A holding is worth what the Net worth card says: its live quote through `market` (`marketEntry`), the stored price only
+ * `data` is what the Budget and Reports read returns (`/api/planning?scope=budget`) and `splits` the split transactions, so
+ * these figures are the ones those screens show. A holding is worth what the Net worth card says: its live quote through `market` (`marketEntry`), the stored price only
  * without one. Kinds, frequencies and statuses are words the person reads in the app, so `t` translates them (the
  * server's `translate`); without it they stay English. */
-export function assistantContext(data: Pick<PlanningData, 'records' | 'categories' | 'goals' | 'occurrences' | 'activity' | 'investmentLinks' | 'holdingAccounts'>, today: string, currency: string, rates: Record<string, number>, options: { language?: string; market?: MarketData | null; t?: (key: string) => string } = {}) {
- const month = today.slice(0, 7), { language = 'en', market = null, t = (key: string) => key } = options;
+export function assistantContext(data: Pick<PlanningData, 'records' | 'categories' | 'goals' | 'occurrences' | 'activity' | 'investmentLinks' | 'holdingAccounts' | 'debtPayments'>, today: string, currency: string, rates: Record<string, number>, options: { language?: string; market?: MarketData | null; splits?: TransactionSplit[]; t?: (key: string) => string } = {}) {
+ const month = today.slice(0, 7), { language = 'en', market = null, splits = [], t = (key: string) => key } = options;
  const locale = isLanguage(language) ? locales[language] : locales.en, money = (amount: number, unit = currency) => formatMoney(amount, unit, locale), day = (date: string) => formatDate(date, locale);
  let unconverted = 0;
  const shown = (converted: number | null) => { if (converted === null) unconverted++; return converted === null ? '— (Exchange rate unavailable)' : money(converted); };
  const inCurrency = (amount: number, unit: string) => shown(convertAmount(amount, unit, currency, rates));
  // A holding at its live quote in `unit`, as Overview values it; the stored price through the request's rates without one.
  const holdingValue = (record: Entry, unit: string) => { const live = marketEntry(record, unit, market); return live ? value(live) : convertAmount(value(record), record.currency, unit, rates); };
- const categoryName = (key: string) => data.categories.find(category => category.id === key)?.name ?? key;
+ const categoryName = (key: string) => data.categories.find(category => category.id === key)?.name ?? t(key);
  const records = data.records as Entry[];
  const holdings = records.filter(record => assets.includes(record.kind) && value(record) > 0).map(record => `${record.name} (${t(record.kind)}): ${shown(holdingValue(record, currency))}`);
  const debts = records.filter(record => liabilities.includes(record.kind) && record.amount > 0).map(record => `${record.name} (${t(record.kind)}): ${inCurrency(record.amount, record.currency)}${record.date ? `, due ${day(record.date)}` : ''}`);
  const months = [shiftMonth(month, -2), shiftMonth(month, -1), month];
  const flows = months.map(item => {
-  const report = cashFlowReport(data, [], [item], currency, today, rates);
+  const report = cashFlowReport(data, splits, [item], currency, today, rates);
   const top = report.categories.expense.slice(0, 8).map(entry => `${categoryName(entry.key)} ${money(entry.amount)}`).join(', ');
   return `${formatMonthYear(item, locale)}${item === month ? ' (so far)' : ''}: income ${money(report.income)}, spending ${money(report.expenses)}${top ? ` (${top})` : ''}${report.missing ? `; ${formatNumber(report.missing, locale, 0)} amounts in currencies without a rate are left out` : ''}`;
  });
  const recurring = monthOccurrences(records, data.occurrences, month, today).map(item => `${day(item.date)} ${item.record.name} (${t(item.record.kind)}, ${t(item.record.frequency)}): ${inCurrency(item.amount, item.record.currency)}, ${t(statusLabels[item.status])}`);
- const reminders = upcomingPayments(records, data.occurrences, today).filter(item => item.type !== 'scheduled').map(item => `${day(item.date)} ${item.record.name} (${t(item.record.kind)}): ${inCurrency(item.amount, item.record.currency)}${item.overdue ? `, ${t('Overdue')}` : ''}`);
+ const reminders = upcomingPayments(records, data.occurrences, today, undefined, data.debtPayments).filter(item => item.type !== 'scheduled').map(item => `${day(item.date)} ${item.record.name} (${t(item.record.kind)}): ${inCurrency(item.amount, item.record.currency)}${item.overdue ? `, ${t('Overdue')}` : ''}`);
  // Net worth in a goal's currency, for a net-worth goal; null when a holding or debt has no rate into it.
  const netWorthIn = (unit: string) => { let total = 0; for (const record of records) { if (!assets.includes(record.kind) && !liabilities.includes(record.kind)) continue; const amount = liabilities.includes(record.kind) ? convertAmount(-Number(record.amount), record.currency, unit, rates) : holdingValue(record, unit); if (amount === null) return null; total += amount; } return total; };
  // A goal reads by its kind, as the Goals card does: an investment goal counts units of its symbol, a net-worth goal its current net worth, a savings goal its money.
  const goals = data.goals.filter(goal => !goal.archived).map(goal => {
   const unit = goal.currency ?? currency, monthly = goal.funding_monthly ?? goal.monthly_contribution, when = goal.target_date ? ` by ${day(goal.target_date)}` : '';
-  if (goal.kind === 'investment') { const units = (amount: number) => `${formatNumber(amount, locale)} ${goal.asset_symbol ?? ''}`.trim(); return `${goal.name}: ${units(investmentGoalProgress(goal, { records, holdingAccounts: data.holdingAccounts })?.current ?? 0)} of ${units(Number(goal.target))}${when}`; }
+  if (goal.kind === 'investment') { const units = (amount: number, symbol: string) => `${formatNumber(amount, locale)} ${symbol}`; return `${goal.name}: ${investmentGoalItems(goal, { records, holdingAccounts: data.holdingAccounts }).map(({ target, progress }) => `${progress ? units(progress.current, target.asset_symbol) : '—'} of ${units(Number(target.target), target.asset_symbol)}`).join(', ') || '—'}${when}`; }
   const current = goalCurrentValue(goal, netWorthIn(unit));
   return `${goal.name}: ${current === null ? '— (Exchange rate unavailable)' : inCurrency(current, unit)} of ${inCurrency(Number(goal.target), unit)}${when}${monthly ? `, saving ${inCurrency(Number(monthly), unit)} a month` : ''}`;
  });

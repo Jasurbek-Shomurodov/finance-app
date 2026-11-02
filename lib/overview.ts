@@ -31,11 +31,16 @@ export function nextPayments(due: readonly DueItem[], limit = 5) {
  return [...due].sort((a, b) => Number(b.overdue) - Number(a.overdue) || a.date.localeCompare(b.date) || a.record.name.localeCompare(b.record.name)).slice(0, limit);
 }
 
+/** A deposit, bill or bond maturing, or money lent coming back: it comes in by itself, with no payment to record against a schedule. */
+export const collectedDue = (item: Pick<DueItem, 'record' | 'type'>) => item.type === 'maturity' || item.record.kind === 'Money lent';
+/** Money on its way to the person: income and `collectedDue`. It is never a payment due. */
+export const incomingDue = (item: Pick<DueItem, 'record' | 'type'>) => income.includes(item.record.kind) || collectedDue(item);
+
 /** How the Overview's Upcoming pill and the dashboard's Due tile count what is coming, so they agree: `payments` are the
- * items to pay (income on its way is not a payment due), `overdue` how many of them are late and `dueSoon` the rest, so
+ * items to pay (`incomingDue` is not a payment due), `overdue` how many of them are late and `dueSoon` the rest, so
  * no overdue item ever reads as "due soon". */
 export function dueCounts(items: readonly DueItem[]) {
- const payments = items.filter(item => !income.includes(item.record.kind));
+ const payments = items.filter(item => !incomingDue(item));
  const overdue = payments.filter(item => item.overdue).length;
  return { payments, overdue, dueSoon: payments.length - overdue };
 }

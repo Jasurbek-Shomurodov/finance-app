@@ -20,7 +20,7 @@ test('a month lists every scheduled income and bill by date and name, with paid,
  ]);
  assert.equal(items.find(item => item.record.id === 'pay').direction, 'income');
  const summary = recurringSummary(items, (amount, unit) => unit === 'USD' ? amount : null);
- assert.deepEqual(summary, { income: { done: 0, remaining: 3000 }, expense: { done: 1200, remaining: 160 }, missing: 0 });
+ assert.deepEqual(summary, { income: { done: 0, remaining: 3000, missing: 0 }, expense: { done: 1200, remaining: 160, missing: 0 }, missing: 0 });
  assert.equal(recurringSummary(monthOccurrences([record('x', 'X', 'Salary', 5, '2026-10-01', { currency: 'EUR' })], [], '2026-10', '2026-10-10'), () => null).missing, 1);
 });
 
@@ -59,7 +59,7 @@ test('a loan with a monthly payment is due on its start day each month until the
  // Payments stop at the due date, which keeps its own repayment reminder.
  assert.deepEqual(monthOccurrences(records, [], '2027-01', '2026-10-15', payments).filter(item => item.record.id === 'loan'), []);
  const summary = recurringSummary(october, amount => amount);
- assert.deepEqual(summary.expense, { done: 250.4, remaining: 900 });
+ assert.deepEqual(summary.expense, { done: 250.4, remaining: 900, missing: 0 });
  const due = upcomingPayments(records, [], '2026-10-15', '2026-11-30', payments).filter(item => item.type === 'installment');
  assert.deepEqual(due.map(item => [item.record.id, item.date, item.overdue, item.amount]), [['loan', '2026-09-30', true, 250.4], ['flat', '2026-10-12', true, 900], ['flat', '2026-11-12', false, 900], ['loan', '2026-11-30', false, 250.4]]);
 });
@@ -75,7 +75,7 @@ test('a loan month counts what its payments paid, so a partial mortgage payment 
  const counted = await debtPaymentsInLoanCurrency(payments, currencyOf, async (from, to) => { assert.deepEqual([from, to], ['UZS', 'USD']); return 1 / 12700; });
  const october = monthOccurrences([mortgage, cash, som, loan], [], '2026-10', '2026-10-08', counted);
  assert.deepEqual(october.map(item => [item.record.id, item.status, item.recorded]), [['home', 'paid', 450], ['loan', 'paid', 100]]);
- assert.deepEqual(recurringSummary(october, amount => amount).expense, { done: 550, remaining: 0 });
+ assert.deepEqual(recurringSummary(october, amount => amount).expense, { done: 550, remaining: 0, missing: 0 });
  // A debt is counted the same way, and a second payment in the month adds to the first (QA REC-035).
  const debt = record('debt', 'Card debt', 'Debt', 800, '2027-01-01', { frequency: 'Once', opened_on: '2026-01-05', estimated_monthly_payment: 300 });
  const debtMonth = debtPaymentsFrom([{ id: 'd1', action: 'repayment', target_id: 'debt', occurred_on: '2026-10-01', amount: 100, fee: 0, account_id: 'cash' }, { id: 'd2', action: 'repayment', target_id: 'debt', occurred_on: '2026-10-06', amount: 150, fee: 20, account_id: 'cash' }], [], new Map([['debt', 'USD'], ['cash', 'USD']]));

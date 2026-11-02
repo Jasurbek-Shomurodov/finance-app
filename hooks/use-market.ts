@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Entry } from '@/lib/finance';
 import { instrumentFor, marketSymbols, type MarketData } from '@/lib/market';
 import { refreshRead } from '@/lib/refresh-read';
@@ -42,7 +42,8 @@ export function useMarket(entries: Entry[], enabled: boolean) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [refreshId, setRefreshId] = useState(0);
-  const signature = JSON.stringify(entries.map(e => ({ kind: e.kind, name: e.name, metal: e.metal })).filter(e => instrumentFor(e)));
+  // Each instrument once, in a fixed order: the same holdings read from another list ask for nothing new.
+  const signature = useMemo(() => JSON.stringify([...new Set(entries.filter(e => instrumentFor(e)).map(e => JSON.stringify({ kind: e.kind, name: e.name, metal: e.metal })))].sort()), [entries]);
   if (!enabled && market !== null) setMarket(null);
   const refresh = useCallback(() => setRefreshId(id => id + 1), []);
   useEffect(() => {
@@ -52,8 +53,9 @@ export function useMarket(entries: Entry[], enabled: boolean) {
     const load = async () => {
       if (running) return;
       running = true; setLoading(true); setError('');
-      try { const data = await fetchMarket(JSON.parse(signature), controller.signal); if (!controller.signal.aborted) setMarket(data); }
-      catch { if (!controller.signal.aborted) { setMarket(null); setError('Market prices unavailable. Saved prices are shown.'); } }
+      try { const data = await fetchMarket((JSON.parse(signature) as string[]).map(entry => JSON.parse(entry)), controller.signal); if (!controller.signal.aborted) setMarket(data); }
+      // A failed refresh keeps the last good answer: rates already on screen do not vanish until the next one.
+      catch { if (!controller.signal.aborted) setError('Market prices unavailable. Saved prices are shown.'); }
       finally { running = false; if (!controller.signal.aborted) setLoading(false); }
     };
     void load();

@@ -10,6 +10,12 @@ import { Button } from '@/components/ui/button';
 import { intervalOf, intervals, type Interval, type ReportRange } from '@/lib/business-report';
 import { intervalLabels } from './report-labels';
 
+/** Under a Trends chart: its bars leave out `count` transactions no rate converts. */
+export function TrendRateNote({ count }: { count: number }) {
+ const { t } = useLanguage();
+ return count > 0 ? <p role="status" className="muted">{t('Some currencies could not be converted and are excluded from totals.')}</p> : null;
+}
+
 const stepLabels: Record<Interval, [string, string]> = { month: ['Previous month', 'Next month'], quarter: ['Previous quarter', 'Next quarter'], year: ['Previous year', 'Next year'] };
 
 /** The Reports bar's filters: businesses, owners (in a shared household) and the period, a month, quarter or year

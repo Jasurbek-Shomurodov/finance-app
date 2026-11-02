@@ -532,6 +532,54 @@ test('LeftToBudgetCard reads — for plans no rate converts, never $0',()=>{
  assert.equal(text(byClass(unknown,'budget-left-summary')[0]),`T:Planned income—T:Planned spending—T:Contributions${money(0)}T:Left to budget—`);
 });
 
+// Budget's plans read the schedules and its actuals the splits; the page waits for them, and Recalculate for all of it.
+test('a failed or unfinished read stops the Budget page, and Recalculate saves nothing from it (MONEY-015)',async()=>{
+ const {emptyPlanning}=loadTS('lib/planning.ts');
+ const saves=[];
+ const read=(extra={})=>({data:{splits:[]},loading:false,error:'',retry(){},...extra});
+ const workspace={user:'me',demo:false,reload:0,refreshRecords(){workspace.refreshed=true;},currency:'USD',market:null,planning:{data:{...emptyPlanning,removedKinds:[]},loading:false,error:''},transactionTools:read(),workspaceLoading:false,
+  budget:{state:{mode:'flex',applyForward:false,categories:[],amounts:[]},loading:false,error:'',retry(){},saveAmounts:async(...call)=>saves.push(call)},addCashFlow(){},editRecord(){},archiveSchedule:async()=>{},readOnly:false,setSankey(){}};
+ let remote={data:emptyPlanning,loading:false,initialLoading:false,error:'',retry(){}};
+ const {BudgetScreen}=loadTS('components/workspace/screens/budget-screen.tsx',{...overrides,
+  '@/components/workspace/workspace-provider':{useWorkspace:()=>workspace},
+  '@/hooks/use-owner-resource':{useOwnerResource:(url,owner,enabled)=>{workspace.enabled=enabled;return remote;}},
+  '@/hooks/use-subscriptions':{useInsightHistory:()=>({records:[]})},
+  '@/components/display-money':{useDisplayMoney:()=>({show:value=>String(value)})},
+  '@/components/presentation-foundation/tone':{signTone:()=>undefined},
+  '@/components/budget/budget-lazy':{BudgetSettingsDialog:host('settings'),CategoryDetailsDialog:host('details'),CategorySettingsDialog:host('category')},
+  ...Object.fromEntries([['inline-error','InlineError'],['today-button','TodayButton'],['page-header','PageHeader'],['row-menu','RowMenu']].map(([file,name])=>[`@/components/presentation-foundation/${file}`,{[name]:host(file)}])),
+  '@/components/presentation-foundation/loading-placeholder':{PanelSkeleton:host('panel-skeleton'),LoadingPlaceholder:host('loading-placeholder')},
+  '@/components/presentation-foundation/screen-skeletons':{BudgetSkeleton:host('budget-skeleton')},
+  '@/components/presentation-foundation/stat-tile':{StatTile:host('stat-tile'),StatTiles:host('stat-tiles')},
+ });
+ const open=()=>{const view=mount(React.createElement(BudgetScreen));nodes(one(view,'x-page-header'),node=>node.props?.onClick&&text(node).includes('T:Settings'))[0].props.onClick();view.render();return view;};
+ const settings=open();
+ assert.equal(one(settings,'x-settings').props.canRecalculate,true,'everything read');
+ workspace.planning={...workspace.planning,error:'Could not load planning data.'};
+ let view=open();
+ assert.equal(one(view,'x-inline-error').props.message,'T:Could not load planning data.');
+ view=open();
+ one(view,'x-inline-error').props.onRetry();
+ assert.equal(workspace.refreshed,true,'Try again reads the workspace again');
+ assert.equal(one(view,'x-settings').props.canRecalculate,false);
+ await one(view,'x-settings').props.onRecalculate();
+ assert.deepEqual(saves,[],'a failed read saves no 0 over the Flexible plan');
+ workspace.planning={...workspace.planning,error:'',loading:true};
+ assert.equal(one(open(),'x-budget-skeleton').type,'x-budget-skeleton');
+ workspace.planning={...workspace.planning,loading:false};
+ workspace.transactionTools=read({error:'Could not load transaction tools.'});
+ assert.equal(one(open(),'x-inline-error').props.message,'T:Could not load transaction tools.');
+ workspace.transactionTools=read({loading:true});
+ assert.equal(one(open(),'x-settings').props.canRecalculate,false);
+ workspace.transactionTools=read();
+ remote={...remote,initialLoading:true};
+ assert.equal(one(open(),'x-settings').props.canRecalculate,false,'the months are still loading');
+ remote={...remote,initialLoading:false};
+ workspace.budget={...workspace.budget,loading:true};
+ mount(React.createElement(BudgetScreen));
+ assert.equal(workspace.enabled,false,'the read waits for the saved budget: its range follows the rollover funds');
+});
+
 // TEST-004: the Budget page itself, with the workspace and the planning read stubbed, so the row menu's Make recurring
 // is exercised rather than matched in the source.
 test('Make recurring presets the bill from its row: a custom row with history starts at its first recent payment, one without starts today, a built-in kind starts today (TEST-004)',()=>{

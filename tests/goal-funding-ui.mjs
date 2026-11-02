@@ -133,3 +133,13 @@ test('a History row is the goal’s history itself, never a link to a Sankey', (
  assert.match(html, /<li><div><strong>savings goal<\/strong><small>14 August 2026 · contribution · Card<\/small><\/div>/);
  assert.doesNotMatch(html, /income-expenses\?open=goal/);
 });
+
+test('the Overview funding card reads no goal activity; the History tab does', () => {
+ const { component, calls } = setup();
+ const html = part => renderToStaticMarkup(React.createElement(component, { ...props([goal()]), part }));
+ html('funding');
+ assert.equal(calls.find(call => call[0] === '/api/goal-tools')[2], false);
+ calls.length = 0;
+ html('activity');
+ assert.equal(calls.find(call => call[0] === '/api/goal-tools')[2], true);
+});

@@ -431,7 +431,7 @@ test('a history row is headed by the money that moved, and the value it set come
 });
 
 test('a payment linked to the asset reads as entered, and its bin deletes the transaction, not a tracker update', async () => {
- const events = [event('b', 'baseline', '2026-01-01', { balance: 5000 }), event('p', 'contribution', '2026-02-01', { amount: 12, notes: 'Sheep feed', entered: { amount: 1000000, currency: 'UZS' }, account_link: { account_id: 'cash', amount: -1000000 } }), event('u', 'contribution', '2026-03-01', { amount: 0, entered: { amount: 500000, currency: 'UZS' } })];
+ const events = [event('b', 'baseline', '2026-01-01', { balance: 5000 }), event('p', 'contribution', '2026-02-01', { amount: 12, notes: 'Sheep feed', entered: { amount: 1000000, currency: 'UZS', name: 'Sheep feed' }, account_link: { account_id: 'cash', amount: -1000000 } }), event('u', 'contribution', '2026-03-01', { amount: 0, entered: { amount: 500000, currency: 'UZS' } })];
  const { showTab, view } = await open(record('Business'), events);
  showTab('history');
  const html = view.html();
@@ -449,6 +449,19 @@ test('a payment linked to the asset reads as entered, and its bin deletes the tr
  await view.find(byType(ConfirmDialog)).props.onConfirm();
  assert.deepEqual(api.calls[0], { url: '/api/records', method: 'DELETE', body: { id: 'p' } });
  api.calls.length = 0;
+});
+
+test('a linked payment no rate converts leaves the tiles it adds to unknown, with the note, and its row as entered', async () => {
+ const paid = event('p', 'income', '2026-02-01', { amount: null, notes: 'Rent', entered: { amount: 500000, currency: 'UZS', name: 'Rent' } });
+ const { showTab, view } = await open(record('Property'), [event('b', 'baseline', '2026-01-01', { balance: 5000 }), paid]);
+ assert.match(view.html(), /<small>Income received<\/small><strong>—<\/strong>/);
+ assert.match(view.html(), /Exchange rate unavailable\./);
+ assert.ok(view.html().includes(`<strong>${money(0)}</strong>`), 'an expense total nothing is missing from stays a number');
+ showTab('history');
+ assert.ok(view.html().includes(`<strong>${money(500000, 'UZS')}</strong>`));
+ const known = await open(record('Property'), [event('b', 'baseline', '2026-01-01', { balance: 5000 }), event('i', 'income', '2026-02-01', { amount: 70 })]);
+ assert.ok(known.view.html().includes(`<strong>${money(70)}</strong>`));
+ assert.doesNotMatch(known.view.html(), /Exchange rate unavailable/);
 });
 
 test('business updates can be deleted after confirmation, and a failed delete reports its error', async () => {

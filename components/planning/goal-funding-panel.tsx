@@ -39,7 +39,7 @@ export function GoalFundingPanel({ data, currency, surplus, surplusParts, today,
  const savingsGoals = data.goals.filter(goal => (goal.kind ?? 'savings') === 'savings');
  const activeSavings = savingsGoals.filter(goal => !goal.archived);
  const activeGoals = data.goals.filter(goal => !goal.archived);
- const activity = useOwnerResource('/api/goal-tools', owner, !demo && savingsGoals.length > 0, revision, empty);
+ const activity = useOwnerResource('/api/goal-tools', owner, !demo && part !== 'funding' && savingsGoals.length > 0, revision, empty);
  const plan = fundingPlan(data.goals, surplus, currency, today, rates);
  const [busy, setBusy] = useState(false), [error, setError] = useState('');
  const [activityOpen, setActivityOpen] = useState(false), [planning, setPlanning] = useState(false);

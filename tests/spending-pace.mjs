@@ -10,7 +10,7 @@ const records=[
  record('c','Living expense',40,'2026-09-01'),record('d','Living expense',60,'2026-09-15'),record('e','Charity',10,'2026-09-30'),
  record('later','Living expense',500,'2026-10-20'),record('plan','Living expense',70,'2026-09-03',{frequency:'Monthly'}),
 ];
-const input={records,splits:[],snapshots:[]};
+const input={records,splits:[]};
 
 test('spending pace is the Monthly review total with each day as the cut-off, for this month and last',()=>{
  const pace=spendingPace(input,'2026-10-02','USD',{USD:1});
@@ -27,17 +27,17 @@ test('spending pace is the Monthly review total with each day as the cut-off, fo
 
 test('spending pace handles year boundaries, February and missing exchange rates',()=>{
  assert.equal(shiftMonth('2026-01',-1),'2025-12');assert.equal(shiftMonth('2028-03',-1),'2028-02');
- const march=spendingPace({records:[record('x','Living expense',5,'2028-02-29')],splits:[],snapshots:[]},'2028-03-31','USD',{USD:1});
+ const march=spendingPace({records:[record('x','Living expense',5,'2028-02-29')],splits:[]},'2028-03-31','USD',{USD:1});
  assert.equal(march.points.length,31);assert.equal(march.points[28].previous,5);assert.equal(march.points[30].previous,5);
- const foreign=spendingPace({records:[record('y','Living expense',50000,'2026-10-01',{currency:'UZS'})],splits:[],snapshots:[]},'2026-10-01','USD',{USD:1});
+ const foreign=spendingPace({records:[record('y','Living expense',50000,'2026-10-01',{currency:'UZS'})],splits:[]},'2026-10-01','USD',{USD:1});
  assert.equal(foreign.missing,true,'no rate is inferred');
 });
 
 test('a month and previous month without spending is empty, so the card shows an empty state instead of a $0–$1 axis',()=>{
- const empty=spendingPace({records:[record('salary','Salary',3000,'2026-10-02')],splits:[],snapshots:[]},'2026-10-02','USD',{USD:1});
+ const empty=spendingPace({records:[record('salary','Salary',3000,'2026-10-02')],splits:[]},'2026-10-02','USD',{USD:1});
  assert.equal(empty.empty,true);assert.equal(empty.spent,0);
  assert.equal(spendingPace(input,'2026-10-02','USD',{USD:1}).empty,false);
- assert.equal(spendingPace({records:[record('x','Living expense',5,'2026-09-03',{currency:'EUR'})],splits:[],snapshots:[]},'2026-10-02','USD',{USD:1}).empty,false,'missing rates are not an empty month');
+ assert.equal(spendingPace({records:[record('x','Living expense',5,'2026-09-03',{currency:'EUR'})],splits:[]},'2026-10-02','USD',{USD:1}).empty,false,'missing rates are not an empty month');
 });
 
 test('the tooltip shows where the money went on a day: that day\'s spending only, largest first',()=>{
@@ -47,7 +47,7 @@ test('the tooltip shows where the money went on a day: that day\'s spending only
  // Each item carries the transaction as entered (MONEY-011): the euro expense reads in euros, its converted amount only orders it.
  assert.deepEqual(spendingOnDay(day,'2026-09-15','USD',{USD:1,EUR:.5}).map(item=>item.entered),[{amount:1200,currency:'USD'},{amount:100,currency:'EUR'},{amount:60,currency:'USD'}]);
  assert.deepEqual(spendingOnDay(day,'2026-09-16','USD',{USD:1}),[]);
- const pace=spendingPace({records:day,splits:[],snapshots:[]},'2026-10-02','USD',{USD:1});
+ const pace=spendingPace({records:day,splits:[]},'2026-10-02','USD',{USD:1});
  assert.equal(pace.points[14].previous-pace.points[13].previous,spendingOnDay(day,'2026-09-15','USD',{USD:1}).reduce((sum,item)=>sum+item.amount,0),'the day\'s items add up to the jump in the line');
 });
 

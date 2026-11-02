@@ -54,3 +54,9 @@ name, amount or date that happens to match (migration 119).
   workspace does the same through `onScheduleDays`. The amount and the currency may
   change after payments (they count at the day's rate, migration 120); the kind and
   the cadence may not. `tests/schedule-day-sql.mjs` covers this.
+- A loan's month is settled by a payment dated in it, whichever way it was recorded: Recurring's Record payment
+  (`account_activity`, action `repayment`) or Loans › Record payment (an `investment_history` withdrawal), joined by
+  `withTrackerRepayments` (`lib/planning.ts`), deduped by id, for the planning read, the bot and the PDF. Rent and
+  costs name their property on every path (`income_source_id` on rent, `property_id` on an expense; migration 161):
+  the Property card (`paymentProperty`) and its Tracker (`assetPaymentsQuery`, following the schedule's id) count the
+  same payments.

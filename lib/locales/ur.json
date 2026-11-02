@@ -464,7 +464,6 @@
   "Could not import the file. Retry the same file safely.": "فائل درآمد نہیں ہو سکی۔ وہی فائل محفوظ طریقے سے دوبارہ آزمائیں۔",
   "Keep the currency and start date of an existing budget.": "موجودہ بجٹ کی کرنسی اور شروع کی تاریخ برقرار رکھیں۔",
   "Include": "شامل کریں",
-  "Select at least one transaction.": "کم از کم ایک لین دین منتخب کریں۔",
   "Import limit exceeded. Split this file into smaller files.": "درآمد کی حد سے تجاوز ہو گیا۔ اس فائل کو چھوٹی فائلوں میں تقسیم کریں۔",
   "{name} has used {percent}% of its budget.": "{name} اپنے بجٹ کا {percent}% استعمال کر چکا ہے۔",
   "Choose a different destination.": "کوئی اور منزل منتخب کریں۔",
@@ -2763,5 +2762,9 @@
   "3-month average": "3 ماہ کی اوسط",
   "Compared with average": "اوسط کے مقابلے میں",
   "Item": "مد",
-  "Amounts are compared as entered, in each transaction’s own currency.": "رقموں کا موازنہ ویسے ہی ہوتا ہے جیسے درج کی گئیں، ہر لین دین کی اپنی کرنسی میں۔"
+  "Amounts are compared as entered, in each transaction’s own currency.": "رقموں کا موازنہ ویسے ہی ہوتا ہے جیسے درج کی گئیں، ہر لین دین کی اپنی کرنسی میں۔",
+  "It changes at most the newest {count} matching transactions.": "یہ زیادہ سے زیادہ {count} تازہ ترین مماثل لین دین تبدیل کرتا ہے۔",
+  "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} اپ ڈیٹ ہوئے؛ یہاں {category} کی کیٹیگری اور {business} کا کاروبار تبدیل نہیں ہو سکا۔",
+  "Could not delete this transaction. Please try again.": "یہ لین دین حذف نہیں ہو سکا۔ براہ کرم دوبارہ کوشش کریں۔",
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "آپ نے Google سے سائن ان کیا ہے، اس لیے ممکن ہے اس اکاؤنٹ کا ابھی کوئی پاس ورڈ نہ ہو۔ پاس ورڈ بھول گئے سے ایک سیٹ کریں، پھر اسے یہاں درج کریں۔"
 }

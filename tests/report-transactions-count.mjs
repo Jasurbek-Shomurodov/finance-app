@@ -10,7 +10,7 @@ const Count = Object.assign(({ value }) => React.createElement('b', null, String
 const { ReportTransactions } = r.load('components/business-reports.tsx', { ...ui.modules, 'lucide-react': hostModule(), 'recharts': hostModule(), '@/components/presentation-foundation/count': { Count }, '@/components/presentation-foundation/panel-title': { PanelTitle: ({ title, count, children }) => React.createElement('header', null, title, count, children) }, ...Object.fromEntries(['category-icon', 'pagination', 'chart'].map(name => ['@/components/presentation-foundation/' + name, hostModule()])) });
 const names = { category: key => key, icon: key => key, group: key => key, business: () => 'Household', businessRecord: () => null };
 const market = { id: 'm', name: 'Market', kind: 'Living expense', currency: 'USD', amount: 60, date: '2026-10-02', frequency: 'Once' };
-const line = (id, record, amount, category) => ({ id, record, name: record?.name ?? 'Fee', date: '2026-10-02', direction: 'expense', amount, category, business: null });
+const line = (id, record, amount, category) => ({ id, record, name: record?.name ?? 'Fee', date: '2026-10-02', direction: 'expense', amount, entered: { amount, currency: 'USD' }, category, business: null });
 
 test('a transaction split into two categories counts once; an item without a record counts by its own id', () => {
  const lines = [line('m:1', market, 40, 'Living expense'), line('m:2', market, 20, 'Pets'), line('fee', null, 5, 'Other expense')];

@@ -21,20 +21,26 @@ import type { useAccountFilters } from './use-account-filters';
 /** The account shown beside the directory: the one picked, else the first one listed. */
 export const selectedItem=(visible:DirectoryItem[],selected:string|null)=>visible.find(item=>item.key===selected)??visible[0];
 
-/** The Overview view of Accounts: the total in the display currency, the filters, the directory beside the selected account, and
- * the holdings that belong to no account yet. */
-export function AccountsOverview({ items, data, filters, order, businesses, cardActions, holdingActions, onEditAccount, onAdd, onAddAccount, selected, onSelect }: { /** The account picked in the directory; the page keeps it, so Transfer money can start from it. */selected: string|null; onSelect: (key: string) => void; items: DirectoryItem[]; data: PlanningData; filters: ReturnType<typeof useAccountFilters>; order: Parameters<typeof AccountDirectory>[0]['order']; businesses: readonly BusinessOption[]; cardActions: BalanceCardActions; holdingActions: HoldingActions; onEditAccount: (account: HoldingAccount) => void; onAdd: (kind: HoldingAccount['kind'], accountId: string) => void; onAddAccount: () => void }) {
+/** The total of what is listed, in the display currency: a search or a filter narrows it with the groups below. */
+function AccountsTotal({ visible }: { visible: DirectoryItem[] }) {
  const { t } = useLanguage();
  const display = useDisplayMoney();
- const totals = currencyTotals(items), total = totals.every(item => item.total !== null) ? display.sum(totals.map(item => ({ amount: item.total!, currency: item.currency }))) : null;
+ const totals = currencyTotals(visible), total = totals.every(item => item.total !== null) ? display.sum(totals.map(item => ({ amount: item.total!, currency: item.currency }))) : null;
+ return <StatTiles columns="auto" label={t('About account totals')}>
+  <StatTile label={t('Total')} value={total===null?'—':<AnimatedMoney value={total} currency={display.currency??totals[0]?.currency??'USD'}/>}>{total===null&&<p role="status">{t('Exchange rate unavailable.')}</p>}</StatTile>
+ </StatTiles>;
+}
+
+/** The Overview view of Accounts: the total in the display currency, the filters, the directory beside the selected account, and
+ * the holdings that belong to no account yet. */
+export function AccountsOverview({ loadFailed = false, items, data, filters, order, businesses, cardActions, holdingActions, onEditAccount, onAdd, onAddAccount, selected, onSelect }: { /** The accounts could not be read: an empty list then says nothing about them. */loadFailed?: boolean; /** The account picked in the directory; the page keeps it, so Transfer money can start from it. */selected: string|null; onSelect: (key: string) => void; items: DirectoryItem[]; data: PlanningData; filters: ReturnType<typeof useAccountFilters>; order: Parameters<typeof AccountDirectory>[0]['order']; businesses: readonly BusinessOption[]; cardActions: BalanceCardActions; holdingActions: HoldingActions; onEditAccount: (account: HoldingAccount) => void; onAdd: (kind: HoldingAccount['kind'], accountId: string) => void; onAddAccount: () => void }) {
+ const { t } = useLanguage();
  const { query, setQuery, businessFilter, setBusinessFilter, owners, ownerFilter, setOwnerFilter, visible, details, businessHoldings } = filters;
  const active=selectedItem(visible,selected);
  const balances=balanceAccounts(data.records), investmentAccounts=data.holdingAccounts??[], unassigned=unassignedHoldings(data.records);
  const market=holdingActions.market;
  return <>
-  {!!items.length&&<StatTiles columns="auto" label={t('About account totals')}>
-   <StatTile label={t('Total')} value={total===null?'—':<AnimatedMoney value={total} currency={display.currency??totals[0]?.currency??'USD'}/>}>{total===null&&<p role="status">{t('Exchange rate unavailable.')}</p>}</StatTile>
-  </StatTiles>}
+  {!!items.length&&<AccountsTotal visible={visible}/>}
   {(businesses.length>0||owners.length>0)&&!!items.length&&<div className="transactions-tools">{businesses.length>0&&<BusinessFilter businesses={businesses} value={businessFilter} onChange={setBusinessFilter}/>}{owners.length>0&&<OwnerFilter owners={owners} value={ownerFilter} onChange={setOwnerFilter}/>}</div>}
   {!!items.length&&<div className="accounts-master-detail">
    <AccountDirectory count={items.length} visible={visible} activeKey={active?.key} query={query} onQuery={setQuery} onSelect={onSelect} order={order} details={details}/>
@@ -43,7 +49,7 @@ export function AccountsOverview({ items, data, filters, order, businesses, card
    {investmentAccounts.filter(account=>active?.key===`investment:${account.id}`).map(account=><InvestmentAccountCard key={account.id} account={account} records={data.records} onEditAccount={onEditAccount} onAdd={onAdd} holdingActions={holdingActions}/>)}
    </div>
   </div>}
-  {!balances.length&&!investmentAccounts.length&&<EmptyState className="panel" icon={<Wallet aria-hidden="true"/>} description={t('Add a cash, deposit, stock or crypto account to get started.')}><Button onClick={onAddAccount}><Plus size={17} aria-hidden="true"/>{t('Add account')}</Button></EmptyState>}
+  {!loadFailed&&!balances.length&&!investmentAccounts.length&&<EmptyState className="panel" icon={<Wallet aria-hidden="true"/>} description={t('Add a cash, deposit, stock or crypto account to get started.')}><Button onClick={onAddAccount}><Plus size={17} aria-hidden="true"/>{t('Add account')}</Button></EmptyState>}
   {businessHoldings.length>0&&<BusinessHoldings records={businessHoldings} market={market} onOpen={holdingActions.onOpen}/>}
   {!!unassigned.length&&<section className="panel account-unassigned"><PanelTitle title={t('Holdings without an account')} hint={t('Assign existing holdings to an account without changing their value or cash balances.')}/><HoldingRows records={unassigned} {...holdingActions}/></section>}
  </>;

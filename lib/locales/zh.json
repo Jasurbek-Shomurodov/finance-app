@@ -464,7 +464,6 @@
   "Could not import the file. Retry the same file safely.": "无法导入该文件。可放心重试同一文件。",
   "Keep the currency and start date of an existing budget.": "请保持现有预算的币种和开始日期不变。",
   "Include": "包含",
-  "Select at least one transaction.": "请至少选择一笔交易。",
   "Import limit exceeded. Split this file into smaller files.": "超出导入上限。请将此文件拆分为更小的文件。",
   "{name} has used {percent}% of its budget.": "{name} 已使用其预算的 {percent}%。",
   "Choose a different destination.": "请选择其他目标账户。",
@@ -2763,5 +2762,9 @@
   "3-month average": "3 个月平均",
   "Compared with average": "与平均相比",
   "Item": "项目",
-  "Amounts are compared as entered, in each transaction’s own currency.": "金额按录入时的数值比较，以每笔交易自身的货币计。"
+  "Amounts are compared as entered, in each transaction’s own currency.": "金额按录入时的数值比较，以每笔交易自身的货币计。",
+  "It changes at most the newest {count} matching transactions.": "最多更改最新的 {count} 笔匹配交易。",
+  "{changed} updated; {category} could not change category and {business} could not change business here.": "已更新 {changed} 笔；此处无法更改 {category} 笔的类别和 {business} 笔的业务。",
+  "Could not delete this transaction. Please try again.": "无法删除此交易。请重试。",
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "您是通过 Google 登录的，因此此账户可能还没有密码。请通过“忘记密码”设置密码，然后在此输入。"
 }

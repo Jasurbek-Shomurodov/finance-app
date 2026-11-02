@@ -42,15 +42,17 @@ const paidByPayment = (record: Entry) => record.kind === 'Mortgage' || record.ki
 
 export function RecordsTable({ title, transactions = false, limit, pagination = true, children }: Props) {
  const { t, locale } = useLanguage();
- const { showSum } = useDisplayMoney();
+ const { showSum, entered } = useDisplayMoney();
  const { filters, setFilters, filtersActive, historyOnly, useFilteredRecords, remoteHistory, historyPage, visible, totalRecords, pageCount, tablePage, tableLoading, recordsLoading, showPage,
-  sectionKey, planning, transactionTools, demo, busy, currency, money, storedRecord,
+  sectionKey, planning, transactionTools, demo, busy, currency, money, storedRecord, refreshRecords,
   addRecord, editRecord, requestDelete, setViewing, setStopping, setTracking, setPayingMortgage, setDebtPayment, setSplitting } = useWorkspace();
  const date = (day: string) => formatDate(day, locale);
  const shown = limit === undefined ? visible : visible.slice(0, limit);
+ // One schedule reads as it was entered, in the mortgage's own currency, whatever the row's value is shown in.
+ const estimate = (r: Entry) => { const saved = storedRecord(r); return t("Estimated payment: {amount}/month", { amount: entered(saved.estimated_monthly_payment ?? 0, saved.currency) }); };
  // One line of context under each name: the fact that tells this record apart, or nothing.
  const detail = (r: (typeof visible)[number]) => r.mortgage_payment_id ? t("Mortgage payment · Principal: {principal} · Interest: {interest}", { principal: money(Number(r.payment_principal), r.currency), interest: money(Number(r.payment_interest), r.currency) })
-  : r.kind === 'Mortgage' && (r.estimated_monthly_payment ?? 0) > 0 ? t("Estimated payment: {amount}/month", { amount: money(r.estimated_monthly_payment!, r.currency) })
+  : r.kind === 'Mortgage' && (r.estimated_monthly_payment ?? 0) > 0 ? estimate(r)
   : r.kind === 'Precious metals' ? t('{weight} · Gain/loss {amount}', { weight: metalWeight(r, locale, t), amount: money((r.amount - r.cost) * r.quantity, r.currency) })
   : unitPricedKinds.includes(r.kind) ? t(r.quantity === 1 ? '1 unit · Gain/loss {amount}' : '{quantity} units · Gain/loss {amount}', { quantity: formatNumber(r.quantity, locale), amount: money((r.amount - r.cost) * r.quantity, r.currency) })
   : r.frequency !== 'Once' ? t(r.frequency)
@@ -91,11 +93,11 @@ export function RecordsTable({ title, transactions = false, limit, pagination = 
   <PanelTitle title={title} count={<Count value={limit === undefined ? totalRecords : shown.length} loading={tableLoading}/>}/>
   {(limit === undefined || filtersActive) && <RecordFilters value={filters} onChange={setFilters} categories={sectionKey === 'debts' ? [] : planning.data.categories} kinds={sectionKey === 'debts' ? lendingRecordKinds : sectionKey === 'cashflow' ? [...income,...expenses] : kinds}/>}
   {remoteHistory&&historyPage.error&&<InlineError message={t(historyPage.error)} onRetry={historyPage.retry}/>}
-  {useFilteredRecords&&planning.error&&<InlineError message={t(planning.error)}/>}
+  {useFilteredRecords&&planning.error&&<InlineError message={t(planning.error)} onRetry={refreshRecords}/>}
   {tableLoading ? <LoadingPlaceholder label={t("Loading records…")}/> : visible.length ? <div className="table-scroll"><table>
    <thead><tr><th>{t("Name")}</th><th>{t("Category")}</th><th>{transactions ? t("Date") : t("Date / due date")}</th><th>{transactions ? t("Amount") : t("Value")}</th><th>{t("Actions")}</th></tr></thead>
    <tbody>{sectionKey === 'debts' ? lendingList() : shown.map(row)}</tbody>
-  </table></div> : <EmptyState icon={<Wallet />} title={t(filtersActive?'No matching records':'A fresh start')} description={t(filtersActive?'Try another search or clear the filters.':'Add a record in {currency} to start building your overview.', { currency })}>{filtersActive&&<Button variant="outline" onClick={()=>setFilters(emptyRecordFilters)}>{t('Clear filters')}</Button>}<Button variant="outline" onClick={addRecord}><Plus />{transactions ? t("Add your first expense") : t("Add your first record")}</Button></EmptyState>}
+  </table></div> : useFilteredRecords && planning.error ? null : <EmptyState icon={<Wallet />} title={t(filtersActive?'No matching records':'A fresh start')} description={t(filtersActive?'Try another search or clear the filters.':'Add a record in {currency} to start building your overview.', { currency })}>{filtersActive&&<Button variant="outline" onClick={()=>setFilters(emptyRecordFilters)}>{t('Clear filters')}</Button>}<Button variant="outline" onClick={addRecord}><Plus />{transactions ? t("Add your first expense") : t("Add your first record")}</Button></EmptyState>}
   {children}
   {!tableLoading && pagination && <Pagination label={t('Record pages')} summary={t('Page {page} of {pages} · {count} records', { page: formatNumber(tablePage, locale, 0), pages: formatNumber(pageCount, locale, 0), count: formatNumber(totalRecords, locale, 0) })} page={tablePage} pageCount={pageCount} hasNext={tablePage < pageCount} disabled={recordsLoading || busy} onPage={showPage}/>}
  </section>;

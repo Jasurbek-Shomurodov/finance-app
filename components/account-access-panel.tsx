@@ -10,16 +10,16 @@ import {useLanguage} from '@/components/language-provider';
 import {Input} from '@/components/ui/input';
 import {Button} from '@/components/ui/button';
 import {maxPasswordLength,minPasswordLength} from '@/lib/password-policy';
-import {signInPath} from '@/lib/sign-in-path';
+import {recoverPath,signInPath} from '@/lib/sign-in-path';
 import {requestAccountAccess} from '@/lib/account-access-request';
-const noCapabilities:{deletion?:unknown;phoneOnly?:unknown}={};
+const noCapabilities:{deletion?:unknown;phoneOnly?:unknown;googleOnly?:unknown}={};
 /** Account security in Settings, and the emailed-link confirmation. Create account and Forgot password are `AccountAccessCard`. */
 export function AccountAccessPanel({settings=false,tokenHash='',tokenType='email',onSignedOut}:{onSignedOut?:()=>void;settings?:boolean;tokenHash?:string;tokenType?:string}){
  const {t}=useLanguage();const router=useRouter();const [chosenMode,setMode]=useState(settings?'change_password':'verify'),[email,setEmail]=useState(''),[current,setCurrent]=useState(''),[password,setPassword]=useState(''),[repeat,setRepeat]=useState(''),[confirmation,setConfirmation]=useState('');
  const [busy,setBusy]=useState(false),[error,setError]=useState('');
  // What the account may do; a failed read leaves both off, without a message (the form says when deletion is not set up).
  const {data:served}=useSessionResource('/api/account-access',true,0,noCapabilities);
- const capabilities={deletion:served.deletion===true,phoneOnly:served.phoneOnly===true};
+ const capabilities={deletion:served.deletion===true,phoneOnly:served.phoneOnly===true,googleOnly:served.googleOnly===true};
  const passwordHint=useId();
  // A phone-only account has no password to change: it can add an email and password, or delete the account.
  const mode=settings&&capabilities.phoneOnly&&chosenMode==='change_password'?'add_email':chosenMode;
@@ -30,8 +30,9 @@ export function AccountAccessPanel({settings=false,tokenHash='',tokenType='email
  <fieldset disabled={busy||(mode==='delete_account'&&!capabilities.deletion)} className="tracker-fields">
  {mode==='add_email'&&<label>{t('Email address')}<Input type="email" autoComplete="email" required value={email} onChange={event=>setEmail(event.target.value)}/></label>}
  {(mode==='change_password'||(mode==='delete_account'&&!capabilities.phoneOnly))&&<label>{t('Current password')}<Input type="password" autoComplete="current-password" required value={current} onChange={event=>setCurrent(event.target.value)}/></label>}
+ {capabilities.googleOnly&&(mode==='change_password'||mode==='delete_account')&&<p className="muted">{t('You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.')} <Link href={recoverPath}>{t('Forgot password?')}</Link></p>}
  {needsPassword&&<><label>{t('New password')}<Input type="password" autoComplete="new-password" aria-describedby={passwordHint} minLength={minPasswordLength} maxLength={maxPasswordLength} required value={password} onChange={event=>setPassword(event.target.value)}/><small id={passwordHint} className="muted">{t('Use a unique password with at least 8 characters.')}</small></label><label>{t('Confirm password')}<Input type="password" autoComplete="new-password" required value={repeat} onChange={event=>setRepeat(event.target.value)}/></label></>}
- {mode==='delete_account'&&<><p role="alert">{t('This permanently deletes your account and financial records. Download a backup first. This cannot be undone.')}</p><Link href="/api/backup">{t('Download complete backup')}</Link><label>{t('Type DELETE to confirm')}<Input value={confirmation} onChange={event=>setConfirmation(event.target.value)} required pattern="DELETE"/></label></>}
+ {mode==='delete_account'&&<><p role="alert">{t('This permanently deletes your account and financial records. Download a backup first. This cannot be undone.')}</p><a href="/api/backup">{t('Download complete backup')}</a><label>{t('Type DELETE to confirm')}<Input value={confirmation} onChange={event=>setConfirmation(event.target.value)} required pattern="DELETE"/></label></>}
  {mode==='verify'&&<p>{t('Continue to verify this email link. Links expire and can only be used once.')}</p>}
  </fieldset>{mode==='delete_account'&&!capabilities.deletion&&<p role="status">{t('Account deletion is awaiting server setup.')}</p>}<Button variant={mode==='delete_account'?'destructive':'default'} disabled={busy||(needsPassword&&password!==repeat)||(mode==='delete_account'&&(!capabilities.deletion||confirmation!=='DELETE'||(!current&&!capabilities.phoneOnly)))}>{t(busy?'Saving…':mode==='change_password'?'Change password':mode==='verify'?'Verify email link':mode==='delete_account'?'Permanently delete account':'Continue')}</Button>
  {mode==='delete_account'&&<Button type="button" variant="outline" disabled={busy} onClick={()=>{setMode('change_password');setCurrent('');setConfirmation('');setError('');}}>{t('Cancel')}</Button>}

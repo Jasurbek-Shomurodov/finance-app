@@ -210,9 +210,9 @@ test('the Telegram webhook, the sign-in code hook and the assistant report their
   assert.equal((await ask()).status,503);
   next=new Error('overloaded');assert.equal((await ask()).status,502);
   next=new Fake.RateLimitError('busy');assert.equal((await ask()).status,429);
-  records=async()=>{throw Error('records failed');};assert.equal((await ask()).status,503);
+  records=async()=>{throw Error('records failed');};assert.equal((await ask()).status,503);// The shared planning read answers 503, and only its status is reported.
  }finally{if(key===undefined)delete process.env.ANTHROPIC_API_KEY;else process.env.ANTHROPIC_API_KEY=key;}
- assert.deepEqual(reported.map(([source,error,context,options])=>[source,error.message,context.status,context.userId,options.alert]),[['assistant','invalid x-api-key',503,'u1',true],['assistant','overloaded',502,'u1','repeated'],['assistant','records failed',503,'u1','repeated']]);
+ assert.deepEqual(reported.map(([source,error,context,options])=>[source,error.message,context.status,context.userId,options.alert]),[['assistant','invalid x-api-key',503,'u1',true],['assistant','overloaded',502,'u1','repeated'],['assistant','Planning read failed (HTTP 503).',503,'u1','repeated']]);
 });
 
 test('a reply Telegram would not take is reported with counts only, by the webhook and the connect page alike',async()=>{

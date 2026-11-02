@@ -228,7 +228,7 @@ test('going back to an earlier Transactions period opens its first page, not the
 
 test('Edit multiple says how many rows kept their category instead of a bare "1 updated"',()=>{
  const screen=fs.readFileSync('components/workspace/screens/transactions-screen.tsx','utf8');
- assert.match(screen,/fixedCategory = chosen\.length - movable\.length;/);
+ assert.match(screen,/bulkEditPlan\(chosen, change, splits\)/);
  assert.match(screen,/fixedCategory \? t\('\{changed\} updated; \{skipped\} could not change category here\.'/);
 });
 

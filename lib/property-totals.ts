@@ -14,6 +14,12 @@ export function paymentProperty(entry: Entry, byId: ReadonlyMap<string, Entry>):
  return null;
 }
 
+/** The read behind `propertyTotals`: a year's rent and payments that name a property or a schedule, and those schedules. */
+export const propertyPaymentsFilter = (from: string) => ({
+ select: 'id,name,kind,amount,currency,date,frequency,occurrence_record_id,income_source_id,property_id,account_currency,account_exchange_rate,day_rates',
+ or: `(and(frequency.neq.Once,or(kind.eq.Rent income,property_id.not.is.null)),and(frequency.eq.Once,date.gte.${from},or(kind.eq.Rent income,property_id.not.is.null,occurrence_record_id.not.is.null)))`,
+});
+
 /** The name of the property a payment belongs to, for its details; undefined when it names none we know. */
 export function propertyNameOf(entry: Entry, records: readonly Entry[]): string | undefined {
  const byId = new Map(records.map(record => [record.id, record]));

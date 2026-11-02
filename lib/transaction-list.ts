@@ -1,9 +1,11 @@
 import { monthEnd, shiftMonth } from './calendar-days';
-import { inBusinessFilter } from './business';
 import { income, type Entry } from './finance';
 import { spendingAmount } from './spending';
+import { canAssignBusiness, inBusinessFilter } from './business';
 import { matchesTags, type TagMatch } from './tags';
 import { isTransactionHistory } from './transaction-history';
+import { canTakeCategory, type CategoryChoice } from './transaction-rules';
+import type { TransactionSplit } from './transaction-tools';
 
 /** `two_years` is the longest a transaction read covers; links from a tag or a business open it so older history is in view. */
 export const transactionPeriods = ['this_month', 'last_month', 'three_months', 'this_year', 'twelve_months', 'two_years'] as const;
@@ -93,7 +95,7 @@ export function groupByDay(records: readonly Entry[], convert: Convert) {
 /** One page of rows grouped by day. Each day's total covers the whole day, also the rows on the pages before or after it. */
 export function groupPageByDay(records: readonly Entry[], from: number, to: number, convert: Convert) {
  const totals = new Map(groupByDay(records, convert).map(day => [day.date, day.total]));
- return groupByDay(records.slice(from, to), convert).map(day => ({ ...day, total: totals.get(day.date) ?? day.total }));
+ return groupByDay(records.slice(from, to), convert).map(day => ({ ...day, total: totals.has(day.date) ? totals.get(day.date)! : day.total }));
 }
 
 /** Summary card: how many, money in and out, and the largest single expense. Spending follows `lib/spending.ts`, so a mortgage payment counts only its interest. */
@@ -116,4 +118,15 @@ export function chunks<T>(list: readonly T[], size: number): T[][] {
  const parts: T[][] = [];
  for (let index = 0; index < list.length; index += size) parts.push(list.slice(index, index + size));
  return parts;
+}
+
+/** What Edit multiple can do to the chosen transactions: which take the category and how many keep their category or
+ * their business. A business moves first, so a transaction taking one may also take Business income in the same edit. */
+export function bulkEditPlan(chosen: readonly Entry[], { choice, business }: { choice: CategoryChoice | null; business: string | null | undefined }, splits: readonly TransactionSplit[] = []) {
+ const moved = (record: Entry) => business !== undefined && canAssignBusiness(record, business) ? { ...record, business_id: business } : record;
+ const movable = choice ? chosen.filter(record => canTakeCategory(moved(record), choice, splits)) : [];
+ return {
+  movable, fixedCategory: choice ? chosen.length - movable.length : 0,
+  kept: business === undefined ? 0 : chosen.filter(record => (record.business_id ?? null) !== business && !canAssignBusiness(record, business)).length,
+ };
 }

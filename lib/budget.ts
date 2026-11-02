@@ -1,11 +1,12 @@
-import { shiftMonth } from './calendar-days';
-import { income, type Entry } from './finance';
+import { monthEnd, shiftMonth } from './calendar-days';
+import { budgetKey, type Entry } from './finance';
 // budget-schedules reads the amounts saved here and this file reads the plans it makes of them with Recurring: one rule each way.
 import { plannedIn, scheduledByCategory, type PlanSource } from './budget-schedules';
 import { convertAmount } from './market';
 import { fundingBudget, inFundingPlan } from './goal-funding';
 import type { Category, Goal, PlanningData } from './planning';
 import { offeredKinds } from './removed-categories';
+import { cashFlowItems } from './spending';
 import { monthlyReview, type TransactionSplit } from './transaction-tools';
 import { ratesOf } from './transaction-rates';
 import { rolloverBalance } from './budget-rollover';
@@ -109,14 +110,13 @@ export type MonthActuals = { month: string; byCategory: Actuals; missing: number
 export function monthActuals(data: Pick<PlanningData, 'records' | 'activity' | 'investmentLinks'>, splits: TransactionSplit[], month: string, currency: string, today: string, rates: Rates): MonthActuals {
  const review = monthlyReview(data.records, splits, [], month, currency, today, data.activity ?? [], rates, data.investmentLinks ?? []);
  const byCategory: Actuals = new Map(review.categories.map(item => [item.id, item.amount]));
- const seen = new Set<string>();
- for (const record of data.records as Entry[]) {
-  if (seen.has(record.id) || record.frequency !== 'Once' || !income.includes(record.kind) || record.date.slice(0, 7) !== month || record.date > today) continue;
-  seen.add(record.id);
-  const value = convertAmount(Number(record.amount), record.currency, currency, ratesOf(record, rates));
+ const end = monthEnd(month);
+ for (const item of cashFlowItems(data.records as Entry[], month + '-01', today < end ? today : end)) {
+  if (!item.income || !item.record || item.currency === null) continue;
+  const value = convertAmount(item.amount, item.currency, currency, ratesOf(item.dated, rates));
   // The review already counted an income amount it could not convert.
   if (value === null) continue;
-  const key = record.custom_category_id ?? record.kind;
+  const key = budgetKey(item.record);
   byCategory.set(key, (byCategory.get(key) ?? 0) + value);
  }
  return { month, byCategory, missing: review.missing };
@@ -157,6 +157,16 @@ export function budgetHistory(keys: string | readonly string[], month: string, h
 }
 /** Suggested budgets are whole amounts, rounded up so the suggestion covers the average. */
 export const suggestedBudget = (average: number) => Math.max(0, Math.ceil(average - 1e-9));
+/** What Recalculate saves: each counted category's six-month average, and in flex mode the bucket's. Nothing unless all six
+ * months before `month` were read: a month that was not read is unknown, never 0 (MONEY-013). An average of 0 leaves a
+ * plan as it is, for the bucket as for a category. */
+export function recalculationTargets(rows: readonly BudgetRow[], month: string, history: ReadonlyMap<string, MonthActuals>, flex: boolean) {
+ if (!monthsBetween(shiftMonth(month, -historyMonths), shiftMonth(month, -1)).every(past => history.has(past))) return [];
+ const average = (keys: string | readonly string[]) => suggestedBudget(budgetHistory(keys, month, history).average);
+ const targets = rows.filter(row => !row.excluded).map(row => ({ key: row.key, amount: average(row.key) }));
+ if (flex) targets.push({ key: flexBucketKey, amount: average(rows.filter(isFlexibleCategory).map(row => row.key)) });
+ return targets.filter(item => item.amount > 0);
+}
 
 /** `missing`: the budget or the money rolled over is in a currency no rate converts, so the plan and remaining are unknown
  * (shown as —, with the Exchange rate unavailable note), never counted as zero. */

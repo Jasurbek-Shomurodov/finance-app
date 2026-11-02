@@ -464,7 +464,6 @@
   "Could not import the file. Retry the same file safely.": "Hindi ma-import ang file. Ligtas na ulitin ang parehong file.",
   "Keep the currency and start date of an existing budget.": "Hindi mo mababago ang currency o petsa ng simula ng umiiral na plano. Ibalik ang orihinal na mga halaga para ma-save.",
   "Include": "Isama",
-  "Select at least one transaction.": "Pumili ng kahit isang transaksyon.",
   "Import limit exceeded. Split this file into smaller files.": "Lampas sa limitasyon ng import. Hatiin ang file na ito sa mas maliliit na file.",
   "{name} has used {percent}% of its budget.": "Nagamit na ng {name} ang {percent}% ng budget nito.",
   "Choose a different destination.": "Pumili ng ibang destinasyon.",
@@ -2763,5 +2762,9 @@
   "3-month average": "3-buwang average",
   "Compared with average": "Kumpara sa average",
   "Item": "Item",
-  "Amounts are compared as entered, in each transaction’s own currency.": "Ikinukumpara ang mga halaga gaya ng inilagay, sa sariling currency ng bawat transaksyon."
+  "Amounts are compared as entered, in each transaction’s own currency.": "Ikinukumpara ang mga halaga gaya ng inilagay, sa sariling currency ng bawat transaksyon.",
+  "It changes at most the newest {count} matching transactions.": "Binabago nito ang hanggang {count} pinakabagong tumutugmang transaksyon.",
+  "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} ang na-update; hindi nabago rito ang kategorya ng {category} at ang negosyo ng {business}.",
+  "Could not delete this transaction. Please try again.": "Hindi na-delete ang transaksyong ito. Pakisubukan ulit.",
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Nag-sign in ka gamit ang Google, kaya maaaring wala pang password ang account na ito. Gumawa ng isa sa Nakalimutan ang password, saka ito ilagay rito."
 }

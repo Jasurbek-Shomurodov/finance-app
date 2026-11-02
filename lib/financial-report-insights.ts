@@ -6,7 +6,7 @@ import { trendMonths } from './cash-flow-report';
 import { assets, income, liabilities } from './finance';
 import { formatCompactMoney, formatMonthShort, formatNumber, formatPercent, formatSignedMoney } from './format';
 import { convertAmount, marketRates } from './market';
-import { debtPaymentsFrom, upcomingPayments, type DueItem, type Occurrence } from './planning';
+import { debtPaymentsFrom, upcomingPayments, withTrackerRepayments, type DueItem, type Occurrence, type TrackerRepayment } from './planning';
 import { reportNumber as number, wealthTotals } from './report-figures';
 import { axisTicks, cashFlow, categoryLooks, plain, type Flow } from './financial-report-visuals';
 import type { Report } from './financial-report-context';
@@ -44,7 +44,8 @@ const isIncoming = (item: DueItem) => income.includes(item.record.kind) || item.
 function nextDays(r: Report) {
  const through = shiftDay(r.today, 30);
  // Monthly loan installments count as Overview counts them: a month without a recorded payment is still due.
- const paid = debtPaymentsFrom(r.ledger.activity as Parameters<typeof debtPaymentsFrom>[0], (r.tables.mortgage_payments ?? []) as unknown as Parameters<typeof debtPaymentsFrom>[1]);
+ const tracked = (r.tables.investment_history ?? []).filter(event => event.event_type === 'withdrawal' && ['Loan', 'Debt'].includes(String(r.byId.get(event.record_id)?.kind))) as unknown as TrackerRepayment[];
+ const paid = debtPaymentsFrom(withTrackerRepayments(r.ledger.activity as Parameters<typeof debtPaymentsFrom>[0], tracked), (r.tables.mortgage_payments ?? []) as unknown as Parameters<typeof debtPaymentsFrom>[1]);
  const items = upcomingPayments(r.records, (r.tables.payment_occurrences ?? []) as Occurrence[], r.today, through, paid).filter(item => !item.overdue && Number(item.amount) > 0);
  const sum = (incoming: boolean) => items.filter(item => isIncoming(item) === incoming).reduce<number | null>((total, item) => {
   const value = convert(r, Number(item.amount), item.record.currency);

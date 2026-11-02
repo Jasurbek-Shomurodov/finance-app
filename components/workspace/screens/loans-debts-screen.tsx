@@ -11,7 +11,7 @@ import { DebtPayoffPanel } from '@/components/planning/debt-payoff-panel';
 import { Button } from '@/components/ui/button';
 import { depositToday } from '@/lib/deposit-interest';
 import { RecordsTable } from '@/components/workspace/records-table';
-import { ScreenNotices } from '@/components/workspace/screen-notices';
+import { PlanningError, ScreenNotices } from '@/components/workspace/screen-notices';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
 
 export function LoansDebtsScreen() {
@@ -29,6 +29,7 @@ export function LoansDebtsScreen() {
    </>)}
   </div>
   {view === 'payoff' && planning.loading&&<div className="content review-content"><PanelSkeleton label={t('Loading records…')}/></div>}
+  {view === 'payoff' && planning.error&&<div className="content review-content"><PlanningError/></div>}
   {view === 'payoff' && !planning.loading&&!planning.error&&<div className="content review-content" key={user??'demo'}><DebtPayoffPanel records={planning.data.records} currency={currency} today={depositToday()} preferences={workspacePreferences}/></div>}
  </>;
 }

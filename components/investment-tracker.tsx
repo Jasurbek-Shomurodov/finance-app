@@ -22,7 +22,7 @@ import { Segmented } from '@/components/presentation-foundation/segmented';
 import { TrackerHistory } from '@/components/investment-tracker-history';
 import { formatAccountOption, formatMoney, formatDate, formatMonthYear } from '@/lib/format';
 import { chartAxis, chartDot, chartGrid, chartHeight, chartLegend, chartLine, chartMargin, chartTooltip, chartValueAxis, leadLine } from '@/components/presentation-foundation/chart';
-import { historyCashDelta, historySeries, historyChartDate, historyEventLabel, historyUpdateTypes, isLendingKind, type HistoryUpdateType, type HistoryEvent } from '@/lib/investment-history';
+import { historyCashDelta, historySeries, historyChartDate, historyEventLabel, historyUpdateTypes, isLendingKind, type HistoryEvent, type HistoryUpdateType, type TrackerEvent } from '@/lib/investment-history';
 import { depositInterest, depositProjection, depositToday } from '@/lib/deposit-interest';
 import { AssetMovementDialog, type MovementDraft } from '@/components/planning/asset-movement-dialog';
 import { isHolding, type AssetMovement } from '@/lib/asset-movements';
@@ -35,8 +35,8 @@ import { Textarea } from '@/components/ui/textarea';
 type Draft={exchange_rate?:number;account_id?:string;id:string;record_id:string;type:HistoryUpdateType;date:string;amount:number;balance:number|null;notes:string};
 export function InvestmentTracker({inline=false,onDraftState,initialType,record,accounts=[],accountsReady=true,onClose,onSaved,onPayment}:{inline?:boolean;onDraftState?:(dirty:boolean,busy:boolean)=>void;initialType?:HistoryUpdateType;accounts?:Entry[];accountsReady?:boolean;record:Entry;onClose:()=>void;onSaved:()=>void;onPayment:()=>void}){
  const {t,locale}=useLanguage();
- const [events,setEvents]=useState<HistoryEvent[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState(''),[busy,setBusy]=useState(false),[submitted,setSubmitted]=useState(false),[reload,setReload]=useState(0);
- const [deleting,setDeleting]=useState<HistoryEvent|null>(null);
+ const [events,setEvents]=useState<TrackerEvent[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState(''),[busy,setBusy]=useState(false),[submitted,setSubmitted]=useState(false),[reload,setReload]=useState(0);
+ const [deleting,setDeleting]=useState<TrackerEvent|null>(null);
  const [tab,setTab]=useState<'overview'|'history'>('overview');
  async function deleteUpdate(){
   if(!deleting||busy)return;setBusy(true);setError('');
@@ -66,18 +66,21 @@ export function InvestmentTracker({inline=false,onDraftState,initialType,record,
  const deposit=interestKinds.includes(record.kind);
  // Units at a quoted price: stocks, crypto, metals and vested equity are bought and sold by quantity.
  const security=isHolding(record);
- const projection=depositProjection(events,record.rate,undefined,interestCompounding(record));
+ // A deposit has no linked payments, so every amount of its history is known.
+ const ledger=events.filter((event):event is HistoryEvent=>event.amount!==null);
+ const projection=depositProjection(ledger,record.rate,undefined,interestCompounding(record));
  const movementRecords=accounts.some(account=>account.id===record.id)?accounts:[...accounts,record];
  async function saveMovement(payload:AssetMovement){
   await requestJson('/api/asset-movements',{body:payload});
   showSaved();onSaved();onClose();
  }
- const eventLabel=(type:HistoryEvent['event_type'])=>historyEventLabel(record.kind,type);
+ const eventLabel=(type:TrackerEvent['event_type'])=>historyEventLabel(record.kind,type);
  const money=(n:number)=>formatMoney(n,record.currency,locale);
+ const total=(n:number|null)=>n===null?'—':money(n);
  const valueLabel=lending?(record.kind==='Money lent'?'Amount owed to you':'Outstanding balance'):cash||deposit?'Account balance':'Value (your share)';
  useEffect(()=>{
   const controller=new AbortController();
-  fetch('/api/investment-history?record='+record.id,{signal:controller.signal}).then(async r=>{const data=await r.json() as HistoryEvent[] & {error?:string};if(!r.ok)throw Error(data.error);if(!controller.signal.aborted){setEvents(data);setLoading(false);}}).catch(e=>{if(!controller.signal.aborted){setError(e.message);setLoading(false);}});
+  fetch('/api/investment-history?record='+record.id,{signal:controller.signal}).then(async r=>{const data=await r.json() as TrackerEvent[] & {error?:string};if(!r.ok)throw Error(data.error);if(!controller.signal.aborted){setEvents(data);setLoading(false);}}).catch(e=>{if(!controller.signal.aborted){setError(e.message);setLoading(false);}});
   return ()=>controller.abort();
  },[record.id,reload]);
  const stats=historySeries(events);
@@ -137,18 +140,19 @@ export function InvestmentTracker({inline=false,onDraftState,initialType,record,
   {tab==='history'&&<ErrorPopup message={error}/>}
   {tab==='history'?(loading?<LoadingPlaceholder label={t('Loading history…')}/>:<TrackerHistory events={events} record={record} accounts={accounts} valueLabel={valueLabel} help={historyHelp} deletable={e=>!!e.entered||deletableUpdate(e.event_type)} deleteDisabled={busy||loading||submitted||dirty} onDelete={setDeleting}/>):<>
   {loading?<LoadingPlaceholder label={t('Loading history…')}/>:<>
-   {deposit&&<div className="ownership-summary"><p>{t('Estimated interest for {month}: {amount}', {month:formatMonthYear(depositToday().slice(0,7),locale),amount:money(depositInterest(events,record.rate,undefined,interestCompounding(record)))})}</p><p>{t('Estimated balance including interest')}: {money(projection.total)}</p><p className="muted">{t(({monthly:'Monthly compounding',daily:'Daily compounding',none:'No compounding'})[record.deposit_compounding??'monthly'])}. {t('Top-ups and withdrawals affect interest from their recorded date. Estimates use the current annual rate. A confirmed balance or interest credit replaces the projection.')}</p><p className="muted">{t('Estimates start at the first dated balance. Record confirmed capitalized interest to update the available balance. Projections are not spendable cash.')}</p></div>}
+   {deposit&&<div className="ownership-summary"><p>{t('Estimated interest for {month}: {amount}', {month:formatMonthYear(depositToday().slice(0,7),locale),amount:money(depositInterest(ledger,record.rate,undefined,interestCompounding(record)))})}</p><p>{t('Estimated balance including interest')}: {money(projection.total)}</p><p className="muted">{t(({monthly:'Monthly compounding',daily:'Daily compounding',none:'No compounding'})[record.deposit_compounding??'monthly'])}. {t('Top-ups and withdrawals affect interest from their recorded date. Estimates use the current annual rate. A confirmed balance or interest credit replaces the projection.')}</p><p className="muted">{t('Estimates start at the first dated balance. Record confirmed capitalized interest to update the available balance. Projections are not spendable cash.')}</p></div>}
    <div className="tracker-metrics">
     <div><small>{t(lending?(record.kind==='Money lent'?'Amount owed to you':'Outstanding balance'):cash||deposit?'Account balance':'Latest tracked value (your share)')}</small><strong>{stats.balance===null?'—':money(stats.balance)}</strong></div>
-    {!cash&&<div><small>{t(mortgage?'Principal repaid':lending?'Repayments recorded':'Income received')}</small><strong>{money(mortgage?stats.principal:lending?stats.repayments:stats.receipts)}</strong></div>}
+    {!cash&&<div><small>{t(mortgage?'Principal repaid':lending?'Repayments recorded':'Income received')}</small><strong>{total(mortgage?stats.principal:lending?stats.repayments:stats.receipts)}</strong></div>}
     {!cash&&<div><small>{t(mortgage?'Interest paid':lending?'Additions recorded':'Expense paid')}</small><strong>{money(mortgage?stats.interest:lending?stats.additions:stats.expenses)}</strong></div>}
    </div>
+   {stats.missing&&<p className="muted">{t('Exchange rate unavailable.')}</p>}
    {stats.points.length>0&&<div className="tracker-chart" aria-label={t('Investment history chart')}>
     <ResponsiveContainer width="100%" height={chartHeight.regular}><LineChart data={stats.points} margin={chartMargin} accessibilityLayer>
      <CartesianGrid {...chartGrid}/>
      <XAxis dataKey="timestamp" type="number" scale="time" domain={['dataMin','dataMax']} tickFormatter={date=>formatDate(historyChartDate(Number(date)),locale)} minTickGap={80} {...chartAxis}/>
      <YAxis tickFormatter={money} {...chartValueAxis}/>
-     <Tooltip {...chartTooltip} labelFormatter={date=>formatDate(historyChartDate(Number(date)),locale)} formatter={v=>money(Number(v))}/>
+     <Tooltip {...chartTooltip} labelFormatter={date=>formatDate(historyChartDate(Number(date)),locale)} formatter={v=>total(v===null||v===undefined?null:Number(v))}/>
      <Legend {...chartLegend}/>
      <Line type="linear" dataKey="balance" name={t(valueLabel)} {...leadLine} dot={chartDot} connectNulls={false}/>
      {!lending&&!cash&&<Line type="stepAfter" dataKey="contributions" name={t('Net contributions recorded')} {...chartLine} stroke={categoryColor('Property')} strokeDasharray="5 4"/>}
@@ -161,5 +165,5 @@ export function InvestmentTracker({inline=false,onDraftState,initialType,record,
   {mortgage&&<Button type="button" variant="outline" disabled={busy} onClick={onPayment}>{t('Record payment')}</Button>}
   {paymentFields}
   </>}
- </DialogContent></Dialog>{guard.confirmation}<ConfirmDialog deletes open={!!deleting} onClose={()=>setDeleting(null)} busy={busy} title={t(deleting?.entered?'Delete this record?':'Delete this tracker update?')} description={deleting?.entered?t('Move {name} to Recently deleted? It will be removed from your records, totals and all planning months. Separate transactions stay unchanged. You can restore it from Recently deleted.',{name:deleting.notes}):<>{t('This removes the update. If it changed the asset value, the previous value and ownership are restored. Any linked cash movement is reversed using its original amount. This cannot be undone from the app.')}{deleting&&<> {t(eventLabel(deleting.event_type))} · {formatDate(deleting.occurred_on,locale)}{deleting.amount>0&&<> · {money(Number(deleting.amount))}</>}</>}</>} confirmLabel={t(busy?'Deleting…':deleting?.entered?'Delete record':'Delete update')} onConfirm={()=>void deleteUpdate()}/></>;
+ </DialogContent></Dialog>{guard.confirmation}<ConfirmDialog deletes open={!!deleting} onClose={()=>setDeleting(null)} busy={busy} title={t(deleting?.entered?'Delete this record?':'Delete this tracker update?')} description={deleting?.entered?t('Move {name} to Recently deleted? It will be removed from your records, totals and all planning months. Separate transactions stay unchanged. You can restore it from Recently deleted.',{name:deleting.entered.name}):<>{t('This removes the update. If it changed the asset value, the previous value and ownership are restored. Any linked cash movement is reversed using its original amount. This cannot be undone from the app.')}{deleting&&<> {t(eventLabel(deleting.event_type))} · {formatDate(deleting.occurred_on,locale)}{Number(deleting.amount)>0&&<> · {money(Number(deleting.amount))}</>}</>}</>} confirmLabel={t(busy?'Deleting…':deleting?.entered?'Delete record':'Delete update')} onConfirm={()=>void deleteUpdate()}/></>;
 }

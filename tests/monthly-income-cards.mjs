@@ -188,3 +188,23 @@ test('each income card stays in its source\'s own currency, a payment shows as e
  assert.deepEqual(incomeCardTotals(cards, usd), { estimate: 3950, received: 2500, missing: 0 });
  assert.equal(incomeCardTotals(cards, (amount, currency) => currency === 'USD' ? amount : null).missing, 2, 'a card no rate converts leaves the headline unknown');
 });
+
+test('the month\'s received headline adds each payment at its own day\'s rates, so it reads as the Income received tile (MONEY-012)', () => {
+ const { incomeCardTotals } = loadTS('lib/monthly-income-cards.ts');
+ const rows = [entry('epam', 'Salary', { amount: 1000 }), entry('paid', 'Salary', { frequency: 'Once', currency: 'UZS', amount: 12000000, date: '2026-09-05', occurrence_record_id: 'epam', day_rates: { USD: 1, UZS: 12000 } })];
+ const cards = monthlyIncomeCards(rows, '2026-09', [], '2026-09-25', { USD: 1, UZS: 12500 });
+ const today = (amount, currency) => currency === 'UZS' ? amount : amount * 12500;
+ assert.equal(incomeCardTotals(cards, today).received, 12500000, 'through the card at today\'s rate it drifts');
+ const totals = incomeCardTotals(cards, today, payment => payment.amount);
+ assert.deepEqual(totals, { estimate: 12500000, received: 12000000, missing: 0 }, 'as entered in the display currency; the estimate stays at today\'s rate');
+ assert.equal(incomeCardTotals(cards, today, () => null).missing, 1, 'a payment no rate converts leaves the headline unknown');
+});
+
+test('rent that names its property joins the schedule\'s card when the property has no card of its own',()=>{
+ const flat={id:'flat',name:'Flat',kind:'Property',currency:'USD',amount:90000,date:'2026-01-01',frequency:'Once',quantity:1,cost:0,rate:0,notes:''};
+ const plan={...flat,id:'plan',kind:'Rent income',amount:800,date:'2026-01-05',frequency:'Monthly',income_source_id:'flat'};
+ const paid={...plan,id:'paid',date:'2026-03-05',frequency:'Once',occurrence_record_id:'plan'};
+ const cards=monthlyIncomeCards([flat,plan,paid],'2026-03',[],'2026-03-20');
+ assert.equal(cards.length,1);
+ assert.equal(cards[0].entry.id,'plan');assert.equal(cards[0].received,true);assert.equal(cards[0].receivedAmount,800);
+});

@@ -9,7 +9,7 @@ import {ownerRows,pagePath,readAllPages,readIdPages} from './owner-rows';
 import type {BudgetSource} from './budget-forecast';
 import type {BudgetState} from './budget';
 import type {MonthOperations} from './digest-flow';
-import type {Category,Goal} from './planning';
+import {withTrackerRepayments,type Category,type Goal,type TrackerRepayment} from './planning';
 import {cashflowKinds,standingRecords} from './planning-reads';
 import type {PortfolioSnapshot} from './portfolio-snapshots';
 import type {ServiceDatabase} from './service-role';
@@ -76,12 +76,15 @@ export async function ownerRecordsSince(db:ServiceDatabase,owner:string,from:str
  return [...kept,...recent];
 }
 /** What marks a loan installment or mortgage payment as paid, for debtPaymentsFrom: repayments in the activity log and
- * the mortgage payments, both paged in full. A failed page throws. */
-export function ownerDebtPayments(db:ServiceDatabase,owner:string){
- return Promise.all([
-  readAllPages<{action:string;target_id:string|null;occurred_on:string}>(range=>db.read(`/rest/v1/account_activity?select=action,target_id,occurred_on&action=in.(repayment,mortgage)&user_id=eq.${owner}&order=id.asc&${range}`)),
+ * in a loan's Tracker history, and the mortgage payments, all paged in full. A failed page throws. */
+export async function ownerDebtPayments(db:ServiceDatabase,owner:string){
+ const [activity,mortgagePayments,tracked]=await Promise.all([
+  readAllPages<{id:string;action:string;target_id:string|null;occurred_on:string}>(range=>db.read(`/rest/v1/account_activity?select=id,action,target_id,occurred_on&action=in.(repayment,mortgage)&user_id=eq.${owner}&order=id.asc&${range}`)),
   ownerRows<{mortgage_id:string;paid_on:string}>(db,'mortgage_payments',owner,'mortgage_id,paid_on'),
+  // A sale's withdrawal comes along: payments are looked up by a loan's own id, so it settles nothing.
+  readAllPages<TrackerRepayment>(range=>db.read(`/rest/v1/investment_history?select=id,record_id,occurred_on&event_type=eq.withdrawal&user_id=eq.${owner}&order=id.asc&${range}`)),
  ]);
+ return [withTrackerRepayments(activity,tracked),mortgagePayments] as const;
 }
 /** The account operations dated `from` on that move money between accounts, for where the month's money went
  * (lib/digest-flow.ts): transfers, repayments and mortgage payments, buys and sales, and cash moved in or out of the

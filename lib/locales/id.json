@@ -464,7 +464,6 @@
   "Could not import the file. Retry the same file safely.": "Tidak dapat mengimpor file. Ulangi file yang sama dengan aman.",
   "Keep the currency and start date of an existing budget.": "Anda tidak dapat mengubah mata uang atau tanggal mulai rencana yang sudah ada. Kembalikan nilai asli untuk menyimpan.",
   "Include": "Sertakan",
-  "Select at least one transaction.": "Pilih setidaknya satu transaksi.",
   "Import limit exceeded. Split this file into smaller files.": "Batas impor terlampaui. Pisahkan file ini menjadi file yang lebih kecil.",
   "{name} has used {percent}% of its budget.": "{name} telah menggunakan {percent}% dari anggarannya.",
   "Choose a different destination.": "Pilih tujuan yang berbeda.",
@@ -2763,5 +2762,9 @@
   "3-month average": "Rata-rata 3 bulan",
   "Compared with average": "Dibandingkan rata-rata",
   "Item": "Pos",
-  "Amounts are compared as entered, in each transaction’s own currency.": "Jumlah dibandingkan sebagaimana dimasukkan, dalam mata uang masing-masing transaksi."
+  "Amounts are compared as entered, in each transaction’s own currency.": "Jumlah dibandingkan sebagaimana dimasukkan, dalam mata uang masing-masing transaksi.",
+  "It changes at most the newest {count} matching transactions.": "Ini mengubah paling banyak {count} transaksi cocok terbaru.",
+  "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} diperbarui; di sini kategori {category} dan bisnis {business} tidak dapat diubah.",
+  "Could not delete this transaction. Please try again.": "Transaksi ini tidak dapat dihapus. Silakan coba lagi.",
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Anda masuk dengan Google, jadi akun ini mungkin belum punya kata sandi. Buat dengan Lupa kata sandi, lalu masukkan di sini."
 }

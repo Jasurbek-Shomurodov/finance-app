@@ -56,7 +56,7 @@ function grouped(lines: readonly PnlLine[], groupOf: (key: string) => string) {
 /** Profit and loss table: total income (household income and each business's net income, made of gross
  * income less business expenses), household expenses and net cash flow. A section's chevron folds its lines away;
  * hovering a row offers its transactions. */
-export function ProfitLossTable({ pnl, breakdown, names, groupOf, currency, onDrill }: { pnl: ProfitAndLoss; breakdown: Breakdown; names: ReportNames; groupOf: (key: string) => string; currency: string; onDrill: (drill: Drill) => void }) {
+export function ProfitLossTable({ pnl, breakdown, names, groupOf, currency, missing = false, onDrill }: { pnl: ProfitAndLoss; breakdown: Breakdown; names: ReportNames; groupOf: (key: string) => string; currency: string; /** An amount in the period has no rate: every sum above its own category lines reads —. */ missing?: boolean; onDrill: (drill: Drill) => void }) {
  const { t, locale } = useLanguage();
  const [closed, setClosed] = useState<string[]>([]);
  // Each drill button is named by its own words and its row's label, which may hold an icon or a business mark.
@@ -65,7 +65,7 @@ export function ProfitLossTable({ pnl, breakdown, names, groupOf, currency, onDr
  const toggle = (key: string) => setClosed(list => list.includes(key) ? list.filter(item => item !== key) : [...list, key]);
  const row = (key: string, label: React.ReactNode, amount: number, level: number, drill: Drill | null, kind: 'line' | 'subtotal' | 'total' = 'line', tone?: 'positive' | 'negative', section?: string) => <tr key={key} data-kind={kind} style={{ '--level': level } as CSSProperties}>
   <th scope="row">{section && <button type="button" className="pnl-toggle" aria-expanded={!closed.includes(key)} aria-label={t(closed.includes(key) ? 'Show {name}' : 'Hide {name}', { name: section })} onClick={() => toggle(key)}><ChevronDown size={15} aria-hidden="true"/></button>}<span className="pnl-label" id={rowId(key) + ":label"}>{label}</span>{drill && <button type="button" className="pnl-drill" id={rowId(key) + ":drill"} aria-label={t('Show transactions')} aria-labelledby={[`${rowId(key)}:drill`, `${rowId(key)}:label`, ...(/^b:[^:]+:/.test(key) ? [`${rowId(key.split(':').slice(0, 2).join(':'))}:label`] : [])].join(' ')} title={t('Show transactions')} onClick={() => onDrill(drill)}><ReceiptText size={14} aria-hidden="true"/></button>}</th>
-  <td className={tone}>{tone === 'negative' && amount > 0 ? '−' + money(amount) : money(amount)}</td>
+  {missing && kind !== 'line' ? <td>—</td> : <td className={tone}>{tone === 'negative' && amount > 0 ? '−' + money(amount) : money(amount)}</td>}
  </tr>;
  const lines = (items: readonly PnlLine[], level: number, base: Drill, prefix: string) => breakdown === 'category'
   ? items.map(item => row(`${prefix}:${item.key}`, <><CategoryIcon kind={names.icon(item.key)} size="sm"/>{names.category(item.key)}</>, item.amount, level, { ...base, category: item.key }))
@@ -170,8 +170,8 @@ export function attributeColor(attribute: 'category' | 'group' | 'business', key
 }
 
 const reportLinesPerPage = 20;
-/** The transactions behind a report, narrowed by the last click on a chart or table. A row opens its transaction. */
-export function ReportTransactions({ lines, drill, label, names, currency, onClear, onOpen }: { lines: readonly LedgerLine[]; drill: Drill | null; label: string | null; names: ReportNames; currency: string; onClear: () => void; onOpen?: (line: LedgerLine) => void }) {
+/** The transactions behind a report, narrowed by the last click on a chart or table. Each reads as it was entered. A row opens its transaction. */
+export function ReportTransactions({ lines, drill, label, names, onClear, onOpen }: { lines: readonly LedgerLine[]; drill: Drill | null; label: string | null; names: ReportNames; onClear: () => void; onOpen?: (line: LedgerLine) => void }) {
  const { t, locale } = useLanguage();
  // Twenty a page; narrowing by another chart part starts again at the first page.
  const listKey = JSON.stringify([label, lines.length, lines[0]?.id]);
@@ -185,7 +185,7 @@ export function ReportTransactions({ lines, drill, label, names, currency, onCle
     <CategoryIcon kind={names.icon(line.category)} size="sm"/>
     <span><strong>{shownName(line, t)}</strong><small>{formatDate(line.date, locale)} · {names.category(line.category)}</small></span>
     <BusinessName id={line.business} names={names}/>
-    <strong className={line.direction === 'income' ? 'positive' : undefined}>{formatSignedMoney(line.direction === 'income' ? line.amount : -line.amount, currency, locale)}</strong>
+    <strong className={line.direction === 'income' ? 'positive' : undefined}>{formatSignedMoney(line.direction === 'income' ? line.entered.amount : -line.entered.amount, line.entered.currency, locale)}</strong>
    </>;
    return <li key={line.id}>{onOpen && line.record ? <button type="button" aria-label={t('View details for {name}', { name: shownName(line, t) })} onClick={() => onOpen(line)}>{cells}</button> : <div>{cells}</div>}</li>;
   })}</ul> : <EmptyState icon={<ReceiptText/>} description={t('Nothing recorded in this period.')}/>}
@@ -193,11 +193,12 @@ export function ReportTransactions({ lines, drill, label, names, currency, onCle
  </section>;
 }
 
-/** The figures beside a report's transactions: how many, the largest and the average, totals, the first and last
- * dates, and the same transactions as a CSV file. `mixed` reports show income and spending apart. */
-export function ReportSummary({ lines, mixed, names, currency, fileName }: { lines: readonly LedgerLine[]; mixed: boolean; names: ReportNames; currency: string; fileName: string }) {
+/** The figures beside a report's transactions: how many, the largest as it was entered and the average, totals, the first
+ * and last dates, and the same transactions as a CSV file. `mixed` reports show income and spending apart. `missing` counts
+ * transactions no rate converts: the sums then read —. */
+export function ReportSummary({ lines, mixed, missing = 0, names, currency, fileName }: { lines: readonly LedgerLine[]; mixed: boolean; missing?: number; names: ReportNames; currency: string; fileName: string }) {
  const { t, locale } = useLanguage();
- const summary = summarizeLines(lines), money = (amount: number) => formatMoney(amount, currency, locale);
+ const summary = summarizeLines(lines), money = (amount: number) => missing ? '—' : formatMoney(amount, currency, locale);
  const net = summary.income - summary.expenses, total = summary.income + summary.expenses;
  function download() {
   const headers = [t('Date'), t('Name'), t('Category'), t('Business'), t('Amount')];
@@ -210,9 +211,9 @@ export function ReportSummary({ lines, mixed, names, currency, fileName }: { lin
   <PanelTitle title={t('Summary')}/>
   <dl className="budget-left-summary">
    <div><dt>{t('Total transactions')}</dt><dd>{formatNumber(summary.count, locale, 0)}</dd></div>
-   <div><dt>{t('Largest transaction')}</dt><dd><RollingText text={summary.largest ? money(summary.largest.amount) : '—'}/></dd></div>
-   <div><dt>{t('Average transaction')}</dt><dd><RollingText text={summary.count ? (mixed ? formatSignedMoney(net / summary.count, currency, locale) : money(total / summary.count)) : '—'}/></dd></div>
-   {mixed ? <><div><dt>{t('Total income')}</dt><dd className={summary.income > 0 ? 'positive' : undefined}><RollingText text={money(summary.income)}/></dd></div><div><dt>{t('Total spending')}</dt><dd><RollingText text={money(summary.expenses)}/></dd></div></>
+   <div><dt>{t('Largest transaction')}</dt><dd><RollingText text={summary.largest ? formatMoney(summary.largest.entered.amount, summary.largest.entered.currency, locale) : '—'}/></dd></div>
+   <div><dt>{t('Average transaction')}</dt><dd><RollingText text={summary.count && !missing ? (mixed ? formatSignedMoney(net / summary.count, currency, locale) : money(total / summary.count)) : '—'}/></dd></div>
+   {mixed ? <><div><dt>{t('Total income')}</dt><dd className={summary.income > 0 && !missing ? 'positive' : undefined}><RollingText text={money(summary.income)}/></dd></div><div><dt>{t('Total spending')}</dt><dd><RollingText text={money(summary.expenses)}/></dd></div></>
     : <div><dt>{t('Total')}</dt><dd><RollingText text={money(total)}/></dd></div>}
    <div><dt>{t('First transaction')}</dt><dd>{formatDate(summary.first ?? '', locale)}</dd></div>
    <div><dt>{t('Last transaction')}</dt><dd>{formatDate(summary.last ?? '', locale)}</dd></div>

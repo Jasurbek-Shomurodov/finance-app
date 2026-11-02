@@ -41,7 +41,7 @@ test('report names translate built-in categories, keep custom names, and call no
 const r = createRenderer();
 const ui = stubs();
 const sankeys = [];
-const workspace = { user: { id: 'me' }, demo: true, reload() {}, currency: 'USD', market: null, transactionTools: { data: { splits: [] } }, businessList: [], workspacePreferences: { data: { preferences: [] }, save: async preference => saved.push(preference) }, setViewing: record => viewed.push(record.id), setSankey: request => sankeys.push(request.title), storedRecord: record => record, household: { state: null }, planning: { data: null, loading: false, error: '' }, budget: { state: { categories: [] } } };
+const workspace = { user: { id: 'me' }, demo: true, reload() {}, currency: 'USD', market: null, transactionTools: { data: { splits: [] }, retry() {} }, businessList: [], workspacePreferences: { data: { preferences: [] }, save: async preference => saved.push(preference) }, setViewing: record => viewed.push(record.id), setSankey: request => sankeys.push(request.title), storedRecord: record => record, household: { state: null }, planning: { data: null, loading: false, error: '' }, budget: { state: { categories: [] } } };
 const saved = [], viewed = [];
 let search = '', range = { data: null, loading: false, error: '', retry() { range.retried = true; } };
 const charts = hostModule({ attributeColor: (attribute, key) => attribute + ':' + key });
@@ -178,6 +178,31 @@ test('the period is a month, quarter or year the arrows move, and loading or fai
  range = { ...range, loading: false, error: 'Could not load records.' };r.update();
  r.fire(r.find(byType('InlineError')), 'onRetry');
  assert.equal(range.retried, true);
+});
+
+test('an amount no rate converts blanks only the period it falls in, and Trends say they leave it out', () => {
+ const lastYear = { ...food, id: 'old', currency: 'XYZ', day_rates: null, date: `${Number(year) - 1}-03-01` };
+ open({ records: [salary, food, lastYear] });
+ assert.notEqual(tile('Income').value, '—', 'last year is not this period');
+ assert.equal(r.all(node => node.type === 'p' && String(node.props.children).includes('left out')).length, 0);
+ assert.equal(r.all(node => node.props?.role === 'status').length, 0);
+ pick('Report view', 'trends');
+ assert.equal(r.all(node => node.props?.role === 'status').length, 1, 'the trend window holds it');
+ open({ records: [salary, food, { ...lastYear, date: day(8) }] });
+ assert.equal(tile('Income').value, '—');
+ assert.equal(tile('Net income').value, '—');
+});
+
+test('splits that failed to load stop the report instead of counting split spending whole', () => {
+ open();
+ workspace.transactionTools = { data: { splits: [] }, loading: false, error: 'Could not load transaction tools.', retry() { workspace.transactionTools.retried = true; } };
+ r.update();
+ r.fire(r.find(byType('InlineError')), 'onRetry');
+ assert.equal(workspace.transactionTools.retried, true);
+ workspace.transactionTools = { data: { splits: [] }, loading: true, error: '', retry() {} };
+ r.update();
+ assert.ok(r.find(byType('ReportsSkeleton')));
+ workspace.transactionTools = { data: { splits: [] }, retry() {} };
 });
 
 test('in a shared household reports filter by owner', () => {

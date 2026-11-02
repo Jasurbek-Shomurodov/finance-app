@@ -44,11 +44,14 @@ export const accountKindGroups: ReadonlyArray<readonly [label: string, kinds: re
 export const businessAccountGroups: ReadonlyArray<readonly [label: string, matches: (record: Pick<Entry, 'kind'>) => boolean]> =
  accountKindGroups.map(([label, kinds]) => [label, record => kinds.includes(record.kind) && isBusinessAccount(record)] as const);
 
+/** A transaction whose business may change at all: planned spending aside, the rows that follow a source or a Tracker keep theirs. */
+export const businessMovable = (record: Entry) => record.frequency === 'Once' && [...income, ...expenses].includes(record.kind) && !record.history_event_id && !record.earning_source_id
+ && !(record.kind === 'Salary' && record.income_source_id);
+
 /** Whether a business can be set on a transaction by hand, mirroring `public.assign_transaction_business`. */
-export function canAssignBusiness(record: Entry, business: string | null) {
- return record.frequency === 'Once' && [...income, ...expenses].includes(record.kind) && !record.history_event_id && !record.earning_source_id
-  && !(record.kind === 'Salary' && record.income_source_id) && (business !== null || record.kind !== 'Business income')
-  && (record.business_id ?? null) !== business;
+export function canAssignBusiness(record: Entry & { expense_plan_id?: string | null }, business: string | null) {
+ return businessMovable(record) && (business !== null || record.kind !== 'Business income')
+  && (business === null || !record.expense_plan_id) && (record.business_id ?? null) !== business;
 }
 
 /** The selected businesses of a filter. Empty means everything. */

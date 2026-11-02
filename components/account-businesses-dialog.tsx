@@ -1,5 +1,6 @@
 "use client";
 import { useState } from 'react';
+import { useDisplayMoney } from '@/components/display-money';
 import { useLanguage } from '@/components/language-provider';
 import { CategoryIcon } from '@/components/presentation-foundation/category-icon';
 import type { BusinessOption } from '@/components/presentation-foundation/business-filter';
@@ -9,11 +10,13 @@ import { Button } from '@/components/ui/button';
 import { businessAccountGroups, isBusinessAccount } from '@/lib/business';
 import { value, type Entry } from '@/lib/finance';
 import { showError, showNotice } from '@/lib/feedback';
-import { formatMoney, formatNumber } from '@/lib/format';
+import { formatNumber } from '@/lib/format';
+import { marketEntry, type MarketData } from '@/lib/market';
 
 /** "Edit businesses": which business each account, asset and debt belongs to. Transactions in an account follow it. */
-export function AccountBusinessesDialog({ records, businesses, onChange, onClose }: { records: readonly Entry[]; businesses: readonly BusinessOption[]; onChange: (accountId: string, business: string | null) => Promise<number>; onClose: () => void }) {
+export function AccountBusinessesDialog({ records, market, businesses, onChange, onClose }: { records: readonly Entry[]; market: MarketData | null; businesses: readonly BusinessOption[]; onChange: (accountId: string, business: string | null) => Promise<number>; onClose: () => void }) {
  const { t, locale } = useLanguage();
+ const { show } = useDisplayMoney();
  const [busy, setBusy] = useState<string | null>(null);
  const accounts = records.filter(isBusinessAccount);
  async function change(record: Entry, business: string | null) {
@@ -32,7 +35,7 @@ export function AccountBusinessesDialog({ records, businesses, onChange, onClose
    {businessAccountGroups.map(([label, matches]) => {
     const items = accounts.filter(matches);
     return items.length > 0 && <section key={label}><h3>{t(label)}</h3><ul>{items.map(record => <li key={record.id}>
-     <CategoryIcon kind={record.kind} size="sm"/><span>{record.name}<small>{formatMoney(value(record), record.currency, locale)}</small></span>
+     <CategoryIcon kind={record.kind} size="sm"/><span>{record.name}<small>{show(value(marketEntry(record, record.currency, market) ?? record), record.currency)}</small></span>
      <NativeSelect aria-label={t('Business for {name}', { name: record.name })} disabled={busy !== null} value={record.business_id ?? ''} onChange={event => void change(record, event.currentTarget.value || null)}>
       <option value="">{t('Household')}</option>
       {businesses.map(business => <option key={business.id} value={business.id}>{business.name}</option>)}

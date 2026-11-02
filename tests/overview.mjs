@@ -126,6 +126,8 @@ test('Due in 7 days counts what falls due this week, overdue included, in the di
  assert.deepEqual(dueSoon(data,today,7,'USD',{USD:1}),{count:2,overdue:0,total:null,next:{name:'gym',date:'2026-10-22'}},'no rate for EUR: the total is missing, never $60 under USD');
  assert.deepEqual(dueSoon({...data,occurrences:[]},today,7,'USD',{USD:1,EUR:0.5}),{count:2,overdue:1,total:1080,next:{name:'rent',date:'2026-10-01'}},'an unpaid earlier date is overdue: in the total and next, counted apart from the two due soon');
  assert.equal(dueSoon({records:[],occurrences:[],debtPayments:[]},today,7,'USD').next,null,'nothing due, nothing next');
+ const incoming=[{...bill('term','2026-10-24',100000),kind:'Deposit',frequency:'Once'},{...bill('old','2026-10-01',5000),kind:'Treasury bill',frequency:'Once'},{...bill('sam','2026-10-22',700),kind:'Money lent',frequency:'Once'},bill('gym','2026-10-22',60)];
+ assert.deepEqual(dueSoon({records:incoming,occurrences:[],debtPayments:[]},today,7,'USD',{USD:1}),{count:1,overdue:0,total:60,next:{name:'gym',date:'2026-10-22'}},'a maturity, overdue or not, and money lent coming back are not payments due');
 });
 
 test('the Overview pill and the Due tile count the same set: payments only, the overdue ones apart (review S2)',()=>{
@@ -135,4 +137,6 @@ test('the Overview pill and the Due tile count the same set: payments only, the 
  assert.deepEqual([counts.overdue,counts.dueSoon],[1,2],'the salary and the late bonus are income on its way, not payments due');
  assert.deepEqual(counts.payments.map(entry=>entry.key),['rent','gym','card']);
  assert.deepEqual(dueCounts([]),{payments:[],overdue:0,dueSoon:0});
+ const repaid={...item('car','Loan',false),type:'installment'},lent={...item('sam','Money lent',true),type:'repayment'},matured={...item('term','Deposit',true),type:'maturity'};
+ assert.deepEqual(dueCounts([repaid,lent,matured]).payments.map(entry=>entry.key),['car'],'a loan is paid; what comes in by itself is not');
 });

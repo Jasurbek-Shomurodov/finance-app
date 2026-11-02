@@ -12,10 +12,11 @@ import { attributeTrend, businessKey, sharesBy, type Attribute, type Direction, 
 import { rankColor } from '@/lib/category-colors';
 import { formatMoney, formatNumber } from '@/lib/format';
 import { attributeLabels, rangeText, type TabProps } from './report-labels';
+import { TrendRateNote } from './report-filters';
 
 /** Spending or income: the total, a breakdown by category, group, merchant or business (bars or a donut), and trends. */
 /** `missing` counts the period's amounts no rate converts: the total reads — rather than leaving them out (MONEY-008). */
-export function AttributeTab({ direction, lines, trendLines, trendRange, interval, names, groupOf, hasBusinesses, currency, onDrill, missing = 0 }: TabProps & { direction: Direction; hasBusinesses: boolean; missing?: number }) {
+export function AttributeTab({ direction, lines, trendLines, trendRange, interval, names, groupOf, hasBusinesses, currency, onDrill, missing = 0, trendMissing = 0 }: TabProps & { direction: Direction; hasBusinesses: boolean }) {
  const { t, locale } = useLanguage();
  const categoryHue = useCategoryHue();
  const [mode, setMode] = useState<'breakdown' | 'trends'>('breakdown');
@@ -50,6 +51,7 @@ export function AttributeTab({ direction, lines, trendLines, trendRange, interva
    {mode === 'trends' ? <TrendChart key={attribute + interval} rows={trend.rows} interval={interval} currency={currency} stacked={stacked} series={trend.keys.map(key => ({ key, label: key === 'other' ? t('Other') : label(key), color: color(key) }))}/>
     : visual === 'donut' ? <BreakdownDonut items={items} label={label} colorOf={color} currency={currency} onSelect={key => onDrill(drillOf(key))}/>
     : <ShareBars items={items} label={label} colorKey={color} currency={currency} onSelect={key => onDrill(drillOf(key))}/>}
+   {mode === 'trends' && <TrendRateNote count={trendMissing}/>}
   </section>
  </>;
 }

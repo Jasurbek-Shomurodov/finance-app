@@ -464,7 +464,6 @@
   "Could not import the file. Retry the same file safely.": "ফাইলটি ইমপোর্ট করা যায়নি। একই ফাইল নিরাপদে আবার চেষ্টা করুন।",
   "Keep the currency and start date of an existing budget.": "বিদ্যমান পরিকল্পনার মুদ্রা বা শুরুর তারিখ পরিবর্তন করা যায় না। সংরক্ষণ করতে মূল মানগুলো ফিরিয়ে আনুন।",
   "Include": "অন্তর্ভুক্ত করুন",
-  "Select at least one transaction.": "কমপক্ষে একটি লেনদেন নির্বাচন করুন।",
   "Import limit exceeded. Split this file into smaller files.": "ইমপোর্টের সীমা অতিক্রম করেছে। এই ফাইলটি ছোট ফাইলে ভাগ করুন।",
   "{name} has used {percent}% of its budget.": "{name} তার বাজেটের {percent}% ব্যবহার করেছে।",
   "Choose a different destination.": "একটি ভিন্ন গন্তব্য বেছে নিন।",
@@ -2763,5 +2762,9 @@
   "3-month average": "৩ মাসের গড়",
   "Compared with average": "গড়ের তুলনায়",
   "Item": "খাত",
-  "Amounts are compared as entered, in each transaction’s own currency.": "পরিমাণগুলো যেমন লেখা হয়েছে তেমনই তুলনা করা হয়, প্রতিটি লেনদেনের নিজস্ব মুদ্রায়।"
+  "Amounts are compared as entered, in each transaction’s own currency.": "পরিমাণগুলো যেমন লেখা হয়েছে তেমনই তুলনা করা হয়, প্রতিটি লেনদেনের নিজস্ব মুদ্রায়।",
+  "It changes at most the newest {count} matching transactions.": "এটি সর্বাধিক সাম্প্রতিক {count}টি মিল থাকা লেনদেন বদলায়।",
+  "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed}টি আপডেট হয়েছে; এখানে {category}টির বিভাগ এবং {business}টির ব্যবসা বদলানো যায়নি।",
+  "Could not delete this transaction. Please try again.": "এই লেনদেন মুছে ফেলা যায়নি। আবার চেষ্টা করুন।",
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "আপনি Google দিয়ে সাইন ইন করেছেন, তাই এই অ্যাকাউন্টে হয়তো এখনও পাসওয়ার্ড নেই। পাসওয়ার্ড ভুলে গেছেন দিয়ে একটি সেট করুন, তারপর এখানে লিখুন।"
 }

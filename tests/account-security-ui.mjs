@@ -4,10 +4,10 @@ import fs from 'node:fs';
 import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {loadTS} from './helpers/load-ts.mjs';
-function render(settings,deletion=false,mode){
+function render(settings,deletion=false,mode,googleOnly=false){
  const {AccountAccessPanel}=loadTS('components/account-access-panel.tsx',{
   react:{...React,useEffect(){},useState(initial){return [initial==='change_password'&&mode?mode:initial,()=>{}];}},
-  '@/hooks/use-owner-resource':{useSessionResource:()=>({data:{deletion}})},
+  '@/hooks/use-owner-resource':{useSessionResource:()=>({data:{deletion,googleOnly}})},
   'next/navigation':{useRouter:()=>({})},
   'next/link':{__esModule:true,default:({children})=>React.createElement('a',null,children)},
   '@/components/language-provider':{useLanguage:()=>({t:(key,values={})=>key.replace(/\{(\w+)\}/g,(_,name)=>values[name]??name)})},
@@ -25,6 +25,10 @@ test('security settings always exposes permanent deletion and retains all passwo
  assert.ok(html.includes('Change password</button>'));
  assert.ok(!html.includes('Continue'));
  assert.equal((html.match(/type="password"/g)||[]).length,3);
+});
+test('an account with only Google to sign in with is told how to get the password these forms ask for',()=>{
+ for(const mode of [undefined,'delete_account']){const html=render(true,true,mode,true);assert.ok(html.includes('You signed in with Google'),mode);assert.ok(html.includes('Forgot password?'),mode);assert.ok(html.includes('type="password"'),'the password stays required');}
+ assert.ok(!render(true,true,undefined,false).includes('You signed in with Google'));
 });
 test('multiple account actions remain selectable when deletion is enabled',()=>{
  const html=render(true,true);

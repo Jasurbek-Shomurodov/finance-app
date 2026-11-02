@@ -143,8 +143,8 @@ test('history series sorts events and accumulates balances, contributions and pa
   {date:'2026-03-02',timestamp:Date.UTC(2026,2,2),balance:900,contributions:800,receipts:15},
   {date:'2026-03-03',timestamp:Date.UTC(2026,2,3),balance:0,contributions:800,receipts:15},
  ]);
- assert.deepEqual({...result,points:undefined},{points:undefined,balance:0,contributions:800,additions:1000,repayments:200,receipts:15,expenses:5,principal:70,interest:30});
- assert.deepEqual(history.historySeries([]),{points:[],balance:null,contributions:0,additions:0,repayments:0,receipts:0,expenses:0,principal:0,interest:0});
+ assert.deepEqual({...result,points:undefined},{points:undefined,balance:0,contributions:800,additions:1000,repayments:200,receipts:15,expenses:5,principal:70,interest:30,missing:false});
+ assert.deepEqual(history.historySeries([]),{points:[],balance:null,contributions:0,additions:0,repayments:0,receipts:0,expenses:0,principal:0,interest:0,missing:false});
  // Same day and same creation time fall back to the id.
  const tie=history.historySeries([event('z','2026-01-01','valuation',{balance:2}),event('y','2026-01-01','valuation',{balance:1})]);
  assert.equal(tie.balance,2);

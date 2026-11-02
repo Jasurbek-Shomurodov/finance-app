@@ -24,7 +24,7 @@ export function reportLink(search: string): { tab?: ReportTab; businesses?: stri
 export const reportTabsFor = (hasBusinesses: boolean) => reportTabs.filter(tab => tab !== 'tax' || hasBusinesses);
 
 /** The lines a tab reads: cash flow takes both directions, Spending and Income one each. */
-export const tabLines = (tab: ReportTab, lines: LedgerLine[]) => tab === 'spending' ? lines.filter(line => line.direction === 'expense') : tab === 'income' ? lines.filter(line => line.direction === 'income') : lines;
+export const tabLines = <L extends Pick<LedgerLine, 'direction'>>(tab: ReportTab, lines: L[]) => tab === 'spending' ? lines.filter(line => line.direction === 'expense') : tab === 'income' ? lines.filter(line => line.direction === 'income') : lines;
 
 /** A category's budget group; categories without one fall back to Income or Everyday spending by their direction. */
 export function groupFinder(groups: ReadonlyMap<string, string>, categories: readonly Category[]) {

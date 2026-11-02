@@ -5,7 +5,7 @@ import { depositForecasts } from '@/lib/deposit-forecasts';
 import { interestKinds, type Entry } from '@/lib/finance';
 import { fiatCurrency, isoDate } from '@/lib/api-validation';
 import { planningSchemas } from '@/lib/planning-schemas';
-import { debtPaymentsFrom, debtPaymentsInLoanCurrency, withExtraPayments } from '@/lib/planning';
+import { debtPaymentsFrom, debtPaymentsInLoanCurrency, trackerRepaymentColumns, withExtraPayments, withTrackerRepayments, type TrackerRepayment } from '@/lib/planning';
 import { inScheduleCurrency } from '@/lib/schedule-currency';
 import { crossSite,parseAction,postgrestFailure,readJson,signInAgain } from '@/lib/api-route';
 import { session,supa,sameOrigin } from '@/lib/supabase';
@@ -17,21 +17,30 @@ import { queueMilestoneCheck } from '@/lib/notify-action';
 import type { ActionEvent } from '@/lib/action-messages';
 import { keptDayRate } from '@/lib/day-rate-tables';
 import { depositToday } from '@/lib/deposit-interest';
+type RepaymentRow={id:string;action:string;target_id:string|null;occurred_on:string;amount:number;fee:number;account_id:string};
+/** Loan repayments and mortgage payments: from the operations this read holds when it holds every one, else read on their own. */
+const debtRows=(read:boolean,filter:{and?:string},activity:RepaymentRow[],token:string)=>read&&!filter.and?activity.filter(row=>row.action==='repayment'||row.action==='mortgage'):readOwnerRows<RepaymentRow>('account_activity',token,{select:'id,action,target_id,occurred_on,amount,fee,account_id',action:'in.(repayment,mortgage)'});
 /** Later payments for recorded occurrences add to them; limited scopes leave those transactions out of `records`.
  * A failed read answers 503 like the other reads: counting none would show scheduled payments as less paid than they are. */
 const readExtraPayments=(historyOnly:boolean,token:string)=>historyOnly?Promise.resolve([] as ExtraPayment[]):readOwnerRows<ExtraPayment>('finance_records',token,{select:'id,occurrence_record_id,occurrence_due_on,amount,currency,date',occurrence_record_id:'not.is.null'});
+const monthNumber=(month:string)=>Number(month.slice(0,4))*12+Number(month.slice(5));
+/** A budget read names its first month, no later than `month` and at most two years before it. */
+const budgetRange=(first:string|undefined,month:string)=>!!first&&/^\d{4}-(0[1-9]|1[0-2])$/.test(first)&&first<=month&&monthNumber(month)-monthNumber(first)<=23;
 export async function GET(req?:Request){
  try{const auth=await session();if(!auth)return signInAgain();
- const scope=(req?new URL(req.url).searchParams.get('scope')??'full':'full') as PlanningScope;
+ const params=new URL(req?.url??'https://local').searchParams;
+ const scope=(params.get('scope')??'full') as PlanningScope;
  if(!planningScopes.includes(scope))return Response.json({error:'Invalid planning scope.'},{status:400});
- const month=req?new URL(req.url).searchParams.get('month')??currentReviewMonth():currentReviewMonth();
+ const month=params.get('month')??currentReviewMonth();
  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)||!isoDate.safeParse(month+'-01').success)return Response.json({error:'Invalid review month.'},{status:400});
- const first=req?new URL(req.url).searchParams.get('from')??undefined:undefined;
+ const first=params.get('from')??undefined;
  // A budget read covers at most two years, ending with `month`.
- if(scope==='budget'&&(!first||!/^\d{4}-(0[1-9]|1[0-2])$/.test(first)||first>month||(Number(month.slice(0,4))*12+Number(month.slice(5)))-(Number(first.slice(0,4))*12+Number(first.slice(5)))>23))return Response.json({error:'Invalid review month.'},{status:400});
+ if(scope==='budget'&&!budgetRange(first,month))return Response.json({error:'Invalid review month.'},{status:400});
  const filters=planningReadFilters(scope,month,first);
  const tables={movements:'asset_movements',holdingAccounts:'holding_accounts',records:'finance_records',categories:'transaction_categories',goals:'savings_goals',occurrences:'payment_occurrences',activity:'account_activity',investmentLinks:'investment_account_links'};
  const plan=planningReadPlan(scope);
+ // The assistant's budget read asks for the loan payments too (`debts`).
+ const debts=plan.debtPayments||params.has('debts');
  const reads=Promise.all(Object.entries(tables).filter(([key])=>plan.tables.has(key as keyof typeof tables)).map(async([key,table])=>[key,await readOwnerRows(table,auth.token,filters[key as keyof typeof filters]??{})]));
  const extraPayments=readExtraPayments(plan.historyOnly,auth.token);
  // Awaited below; marked handled now so a failure while the other reads run is not an unhandled rejection.
@@ -44,17 +53,18 @@ export async function GET(req?:Request){
  // Each transaction carries its own day's rates, read while the rest of the answer is put together.
  const dated=withViewerDayRates(data as Parameters<typeof withViewerDayRates>[0],auth);dated.catch(()=>null);
  // Loan repayments and mortgage payments settle a loan's monthly payment on Recurring and Upcoming payments.
- if(plan.debtPayments){const [repayments,mortgagePayments]=await Promise.all([readOwnerRows<{id:string;action:string;target_id:string|null;occurred_on:string;amount:number;fee:number;account_id:string}>('account_activity',auth.token,{select:'id,action,target_id,occurred_on,amount,fee,account_id',action:'in.(repayment,mortgage)'}),readOwnerRows<{id:string;mortgage_id:string;paid_on:string;principal:number;interest:number}>('mortgage_payments',auth.token,{select:'id,mortgage_id,paid_on,principal,interest'})]);
+ if(debts){const loans=(data.records as Entry[]).filter(record=>record.kind==='Loan'||record.kind==='Debt').map(record=>record.id);
+  const [repayments,mortgagePayments,tracked]=await Promise.all([debtRows(plan.tables.has('activity'),filters.activity,data.activity as RepaymentRow[],auth.token),readOwnerRows<{id:string;mortgage_id:string;paid_on:string;principal:number;interest:number}>('mortgage_payments',auth.token,{select:'id,mortgage_id,paid_on,principal,interest'}),loans.length?readOwnerRows<TrackerRepayment>('investment_history',auth.token,{select:trackerRepaymentColumns,event_type:'eq.withdrawal',record_id:`in.(${loans.join(',')})`}):[]]);
   // Each payment says how much it paid, in its loan's currency, so a partial payment never shows the installment paid in full.
   const loanCurrency=new Map((data.records as Entry[]).map(record=>[record.id,record.currency]));
-  data.debtPayments=await debtPaymentsInLoanCurrency(debtPaymentsFrom(repayments,mortgagePayments,loanCurrency),loanCurrency,dayRate);}
+  data.debtPayments=await debtPaymentsInLoanCurrency(debtPaymentsFrom(withTrackerRepayments(repayments,tracked),mortgagePayments,loanCurrency),loanCurrency,dayRate);}
  // Payments in another currency than their schedule count in its currency at the rate of the payment's day.
  const currencyOf=new Map((data.records as Entry[]).map(record=>[record.id,record.currency]));
- const counted=await inScheduleCurrency(data.occurrences as Occurrence[],await extraPayments,currencyOf,dayRate);
- data.occurrences=withExtraPayments(counted.occurrences,counted.payments,currencyOf);
  // Every scope but the history reads reads every holding (only income and expense history is period-limited), so
  // the deposits are already here and are not read again.
- const estimates=new Map((plan.historyOnly?[]:await depositForecasts(auth.token,data.records as Entry[])).map(record=>[record.id,record.estimated_monthly_income]));
+ const [counted,deposits]=await Promise.all([extraPayments.then(payments=>inScheduleCurrency(data.occurrences as Occurrence[],payments,currencyOf,dayRate)),plan.historyOnly?[]:depositForecasts(auth.token,data.records as Entry[])]);
+ data.occurrences=withExtraPayments(counted.occurrences,counted.payments,currencyOf);
+ const estimates=new Map(deposits.map(record=>[record.id,record.estimated_monthly_income]));
  // Only the dated lists come back; everything else was finished after the copy was taken.
  const {records,activity,movements,investmentLinks}=await dated;Object.assign(data,{records,activity,movements,investmentLinks});
  data.records=(data.records as Entry[]).map(record=>interestKinds.includes(record.kind)?{...record,estimated_monthly_income:estimates.get(record.id)??0}:record);

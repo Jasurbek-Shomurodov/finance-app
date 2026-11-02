@@ -18,13 +18,15 @@ export function useAccountSettings(user: string | null, demo: boolean) {
     const [settingsRevision,setSettingsRevision]=useState(0);
     // The saved defaults of the signed-in account; the sample workspace never reads them.
     const remote = useSessionResource('/api/settings', !!user && !demo, settingsRevision, noPreferences);
-    const settingsLoading = remote.loading, settingsError = remote.error;
+    // Still loading until the reply is applied: a screen that mounts before then would take the defaults for the saved settings.
+    const [received, setReceived] = useState<Preferences | null>(null);
+    const settingsLoading = remote.loading || (!!remote.data && remote.data !== received), settingsError = remote.error;
     const retrySettings=()=>setSettingsRevision(n=>n+1);
     function applyPreferences(next: Preferences) { setPreferencesData(next); if (demo) setLanguage(next.language); else setDefaultLanguage(next.language); applyFont(resolveFont(next.font), !demo);
      // The first load applies the saved primary. After that the top bar's display currency stays while it is still preferred; only a currency that was removed falls back to the primary.
      setCurrency(current => applied.current && next.currencies.includes(current) ? current : next.currencies[0]); applied.current = true; }
     // An account that has not finished the welcome setup has chosen no language yet, so the one already showing (saved earlier or matched to the browser) stays until it does.
-    const receivePreferences = useEffectEvent((loaded: Preferences) => applyPreferences(loaded.onboarded === false ? { ...loaded, language } : loaded));
+    const receivePreferences = useEffectEvent((loaded: Preferences) => { applyPreferences(loaded.onboarded === false ? { ...loaded, language } : loaded); setReceived(loaded); });
     /** Stores preferences without applying them, so the welcome setup can show its closing screen first. */
     async function savePreferences(next: Preferences) {
         return requestJson<Preferences>('/api/settings', { method: 'PUT', body: next, fallback: 'Could not save changes.' });
@@ -35,6 +37,6 @@ export function useAccountSettings(user: string | null, demo: boolean) {
     const loaded = remote.data;
     useEffect(() => { if (!loaded) return; let current = true; queueMicrotask(() => { if (current) receivePreferences(loaded); }); return () => { current = false; }; }, [loaded]);
     /** Signing out forgets the account's defaults. */
-    const resetSettings = () => { setPreferencesData(defaultPreferences); setCurrency('USD'); };
+    const resetSettings = () => { applied.current = false; setPreferencesData(defaultPreferences); setCurrency('USD'); };
     return { preferencesData, currency, setCurrency, applyPreferences, savePreferences, settingsLoading, settingsError, retrySettings, onboardingNeeded, restartOnboarding, resetSettings };
 }

@@ -6,8 +6,8 @@ import { BudgetYear } from '@/components/budget/budget-year';
 import { LeftToBudgetCard, type BudgetFocus } from '@/components/budget/left-to-budget-card';
 import { PlannedInput } from '@/components/budget/planned-input';
 import { AgeOfMoneyTile } from '@/components/budget/age-of-money-tile';
-import { CategoryDetailsDialog } from '@/components/budget/category-details';
-import { BudgetSettingsDialog, CategorySettingsDialog, type BudgetFigures } from '@/components/budget/settings-dialogs';
+import { BudgetSettingsDialog, CategoryDetailsDialog, CategorySettingsDialog } from '@/components/budget/budget-lazy';
+import type { BudgetFigures } from '@/components/budget/settings-dialogs';
 import { useLanguage } from '@/components/language-provider';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
 import { TodayButton } from '@/components/presentation-foundation/today-button';
@@ -19,7 +19,8 @@ import { Segmented } from '@/components/presentation-foundation/segmented';
 import { Button } from '@/components/ui/button';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
 import { useOwnerResource } from '@/hooks/use-owner-resource';
-import { appliesToFutureMonths, budgetCategories, budgetHistory, budgetReadRange, budgetRows, budgetRowsForMode, flexBucketCategory, flexBucketKey, flexBucketRollover, goalContribution, isFlexibleCategory, knownPlan, leftToBudget, monthActuals, monthsBetween, sectionGroups, suggestedBudget, type BudgetCategory, type BudgetRow } from '@/lib/budget';
+import { useInsightHistory } from '@/hooks/use-subscriptions';
+import { appliesToFutureMonths, budgetCategories, budgetHistory, budgetReadRange, budgetRows, budgetRowsForMode, flexBucketCategory, flexBucketKey, flexBucketRollover, goalContribution, isFlexibleCategory, knownPlan, leftToBudget, monthActuals, monthsBetween, recalculationTargets, sectionGroups, type BudgetCategory, type BudgetRow } from '@/lib/budget';
 import { categoryBills, firstRecentPayment, flexPlan, plannedIn, type PlanSource } from '@/lib/budget-schedules';
 import { shiftMonth } from '@/lib/calendar-days';
 import { depositMonth, depositToday } from '@/lib/deposit-interest';
@@ -34,7 +35,7 @@ export function BudgetScreen() {
  const { t, locale } = useLanguage();
  const name = useCategoryName();
  // The workspace's one Budget: a change here reaches the forecasts on Overview, Cash flow and Goals at once.
- const { user, demo, reload, currency, market, planning, transactionTools, workspaceLoading, budget, addCashFlow, editRecord, archiveSchedule, readOnly, setSankey } = useWorkspace();
+ const { user, demo, reload, refreshRecords, currency, market, planning, transactionTools, workspaceLoading, budget, addCashFlow, editRecord, archiveSchedule, readOnly, setSankey } = useWorkspace();
  const today = depositToday(), thisMonth = depositMonth();
  const [month, setMonth] = useState(thisMonth);
  const [view, setView] = useState<'month' | 'year'>('month');
@@ -50,7 +51,10 @@ export function BudgetScreen() {
 
  const settingsOnly = budgetCategories(planning.data.categories, budget.state.categories, removed);
  const range = budgetReadRange(month, view, [...settingsOnly, flexBucketCategory(budget.state.categories)]);
- const remote = useOwnerResource(`/api/planning?scope=budget&month=${range.to}&from=${range.from}`, user, live, reload, emptyPlanning);
+ // The range follows the rollover funds, so the read waits for the saved budget rather than starting twice.
+ const remote = useOwnerResource(`/api/planning?scope=budget&month=${range.to}&from=${range.from}`, user, live && !budget.loading, reload, emptyPlanning);
+ // Age of Money is today's figure: it reads its own history, whichever month the page shows.
+ const ageHistory = useInsightHistory(user, demo, reload, planning.data.records, view === 'month');
  const data = useMemo(() => live ? { ...remote.data, records: remote.data.records.map(normalizeEntry) } : planning.data, [live, remote.data, planning.data]);
  const splits = transactionTools.data.splits;
  const history = useMemo(() => new Map(monthsBetween(range.from, range.to).map(item => [item, monthActuals(data, splits, item, currency, today, rates)])), [range.from, range.to, data, splits, currency, today, rates]);
@@ -103,8 +107,7 @@ export function BudgetScreen() {
   ]}/>;
  };
  async function recalculate() {
-  const targets = rows.filter(row => !row.excluded).map(row => ({ key: row.key, amount: suggestedBudget(budgetHistory(row.key, month, history).average) })).filter(item => item.amount > 0);
-  if (flex) targets.push({ key: flexBucketKey, amount: suggestedBudget(historyOf(flexBucketKey).average) });
+  const targets = ready ? recalculationTargets(rows, month, history, flex) : [];
   if (targets.length) await budget.saveAmounts(month, currency, targets.map(target => ({ category_key: target.key, amount: target.amount, applies_forward: true })));
  }
  const toggle = (set: Set<string>, update: (next: Set<string>) => void, id: string) => { const next = new Set(set); if (next.has(id)) next.delete(id); else next.add(id); update(next); };
@@ -127,8 +130,10 @@ export function BudgetScreen() {
  // Like each group's Planned figure and the Expenses tab, the total adds the money rolled over: one figure (`leftToBudget`).
  const spendingPlanned = left.expenses === null || left.rollover === null || spending.some(group => group.missing) ? null : left.expenses + left.rollover;
  const incomePlanned = planOf(income);
- const loading = workspaceLoading || budget.loading || (live ? remote.initialLoading : planning.loading);
- const error = budget.error || (live ? remote.error : planning.error);
+ // The plans read the schedules and the actuals the splits, so the page waits for both and says when one failed.
+ const loading = workspaceLoading || budget.loading || planning.loading || transactionTools.loading || (live && remote.initialLoading);
+ const error = budget.error || planning.error || transactionTools.error || (live ? remote.error : '');
+ const ready = !loading && !error;
 
  return <div data-page="Budget" className="content budget-content">
   <PageHeader title={t('Budget')} tabs={<Segmented className="page-tabs" as="nav" label={t('Budget view')} options={[{ value: 'month', label: t('Month') }, { value: 'year', label: t('Year') }] as const} value={view} onChange={setView}/>} hint={t(view === 'year' ? 'Past months show actual amounts with the plan below; later months show the plan.' : 'Plan what you expect to earn and spend each month. Actual amounts come from your transactions; remaining is the difference.')}>
@@ -143,8 +148,8 @@ export function BudgetScreen() {
    <Button variant="outline" onClick={() => setSankey({ target: { side: 'cashflow' }, title: t('Money flow'), month, months: view === 'year' ? periodMonths(month, 'year') : undefined, period: view === 'year' ? formatYear(Number(month.slice(0, 4)), locale) : undefined })}><Workflow size={16} aria-hidden="true"/>{t('Money flow')}</Button>
    <Button variant="outline" onClick={() => setSettingsOpen(true)}><Settings size={16} aria-hidden="true"/>{t('Settings')}</Button>
   </PageHeader>
-  <BudgetRateNotice planned={left.missing} actual={history.get(month)?.missing ?? 0}/>
-  {error ? <InlineError message={t(error)} onRetry={() => { budget.retry(); remote.retry(); }}/> : loading ? (view === 'year' ? <PanelSkeleton label={t('Loading records…')} rows={6}/> : <BudgetSkeleton label={t('Loading records…')}/>) : view === 'year' ? <BudgetYear rows={categories} mode={budget.state.mode} month={month} history={history} amounts={budget.state.amounts} schedules={planning.data.records} currency={currency} rates={rates} today={today}/> : <div className="budget-layout">
+  {view === 'month' && <BudgetRateNotice planned={left.missing} actual={history.get(month)?.missing ?? 0}/>}
+  {error ? <InlineError message={t(error)} onRetry={refreshRecords}/> : loading ? (view === 'year' ? <PanelSkeleton label={t('Loading records…')} rows={6}/> : <BudgetSkeleton label={t('Loading records…')}/>) : view === 'year' ? <BudgetYear rows={categories} mode={budget.state.mode} month={month} history={history} amounts={budget.state.amounts} schedules={planning.data.records} currency={currency} rates={rates} today={today}/> : <div className="budget-layout">
    {/* Summary shows every section; Income or Expenses in the Left to budget card narrows the list to that side. */}
    <div className="budget-table" data-focus={focus}>
     <div className="budget-section" data-section="income">
@@ -165,15 +170,11 @@ export function BudgetScreen() {
    </div>
    <div className="budget-side">
     <LeftToBudgetCard left={left} rows={rows} mode={budget.state.mode} currency={currency} tab={focus} onTab={setFocus}/>
-    <AgeOfMoneyTile records={data.records} currency={currency} today={today} rates={rates}/>
+    <AgeOfMoneyTile records={ageHistory.records} accounts={planning.data.records} currency={currency} today={today} rates={rates}/>
    </div>
   </div>}
   {editing && <CategorySettingsDialog category={editing.category} figures={editing.figures} month={month} currency={currency} onSave={budget.saveCategory} onClose={() => setEditing(null)}/>}
   {viewing && <CategoryDetailsDialog row={rows.find(row => row.key === viewing.key) ?? viewing} history={historyOf(viewing.key)} data={data} splits={splits} bills={viewing.direction === 'expense' ? billsOf(viewing) : []} month={month} today={today} currency={currency} rates={rates} onEditBill={readOnly ? undefined : bill => { setViewing(null); editRecord(bill); }} onClose={() => setViewing(null)}/>}
-  {settingsOpen && <BudgetSettingsDialog mode={budget.state.mode} applyForward={budget.state.applyForward} onSave={budget.saveSettings} onRecalculate={recalculate} onClose={() => setSettingsOpen(false)}/>}
+  {settingsOpen && <BudgetSettingsDialog mode={budget.state.mode} applyForward={budget.state.applyForward} onSave={budget.saveSettings} onRecalculate={recalculate} canRecalculate={ready} onClose={() => setSettingsOpen(false)}/>}
  </div>;
 }
-
-/** The Year view: every month of the year side by side. Past and current months show what happened; later months show the plan.
- * In flex mode the Flexible bucket is one line, planned as the Month view plans it (`flexPlan`), and its categories show only
- * what they spent (`budgetRowsForMode`), so the year's totals agree with each month's (MONEY-010). */

@@ -19,6 +19,16 @@ test('sorts total worth before pagination, including quantity, ownership and con
  assert.deepEqual(rows,original);
  assert.deepEqual(sort([{id:'b',amount:0},{id:'a',amount:0}]).map(r=>r.id),['a','b']);
 });
+test('asset API reads holdings beside the summary and hands them to the deposit forecasts, and a failed read answers 503', async () => {
+ let fail=false;const handed=[];
+ const supa=async path=>path.includes('/rpc/')?Response.json({records:[],total:1,page:1,summary:[]}):fail?new Response('{}',{status:500}):Response.json(path.includes('offset=0')?[{id:'d',kind:'Deposit',currency:'USD',amount:5}]:[]);
+ const api=apiFunction('z','isCurrency','kinds','income','expenses','assetRecordKinds','session','supa','sameOrigin','depositForecasts',compile('app/api/records/route.ts')+';return GET;')(z,isCurrency,kinds,income,expenses,assetRecordKinds,async()=>({token:'owner',user:{id:'owner'}}),supa,()=>true,async(...args)=>{handed.push(args);return [];});
+ const request=()=>api(new Request('https://local/api/records?section=assets&summary=1'));
+ assert.equal((await request()).status,200);
+ assert.deepEqual(handed,[['owner',[{id:'d',kind:'Deposit',currency:'USD',amount:5}]]],'deposits are not read again');
+ fail=true;
+ assert.equal((await request()).status,503);
+});
 test('asset API supplies all holdings across database batches with owner authentication', async () => {
  const calls=[];
  const batch=Array.from({length:500},(_,i)=>({id:String(i)}));
@@ -35,7 +45,7 @@ test('asset API supplies all holdings across database batches with owner authent
  assert.equal(data.total,502);
  assert.equal(calls.length,3);
  assert.deepEqual(data.records.slice(-2).map(row=>[row.kind,row.currency,row.holding_account_id]),[['Crypto','EUR','exchange'],['Stock','UZS','broker']]);
- for(const call of calls.slice(1)){
+ for(const call of calls.filter(call=>!call.path.includes('/rpc/'))){
   const params=new URL('https://db'+call.path).searchParams;
   assert.equal(call.token,'owner');
   assert.equal(params.get('currency'),null);

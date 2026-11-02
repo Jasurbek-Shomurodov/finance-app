@@ -54,9 +54,11 @@ export function flexBucketRollover(bucket: BudgetCategory, categories: readonly 
  return rolloverCarry(bucket, month, startingBalanceIn(bucket, read.currency, read.rates), past => flexPlan(read.plan, categories, past, read.currency, read.rates), past => flexible.reduce((sum, category) => sum + (read.history.get(past)?.byCategory.get(category.key) ?? 0), 0));
 }
 
-/** Months of actuals a view needs: the year, or the History window, extended back to the earliest rollover start. */
+/** Months of actuals a view needs: the year and the History window, or the History window, extended back to the earliest rollover start. */
 export function budgetReadRange(month: string, view: 'month' | 'year', categories: readonly Pick<BudgetCategory, 'rollover' | 'rolloverStart'>[]) {
- let from = view === 'year' ? month.slice(0, 4) + '-01' : shiftMonth(month, -historyMonths);
+ // The year also reads the six months before `month`: Budget settings' Recalculate averages them from either view.
+ const window = shiftMonth(month, -historyMonths), january = month.slice(0, 4) + '-01';
+ let from = view === 'year' && january < window ? january : window;
  const to = view === 'year' ? month.slice(0, 4) + '-12' : month;
  for (const category of categories) if (category.rollover && category.rolloverStart && category.rolloverStart < from) from = category.rolloverStart;
  // Reads stay bounded: two years at most. A fund that started earlier then shows its rollover as unknown (`rolloverBalance`).

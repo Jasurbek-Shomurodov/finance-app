@@ -4,7 +4,6 @@ import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BusinessSettings, TagSettings } from '@/components/business-settings';
 import { useLanguage } from '@/components/language-provider';
-import { RuleDialog } from '@/components/transactions/rule-dialog';
 import { RulesPanel } from '@/components/transactions/rules-list';
 import { useTransactionRules } from '@/hooks/use-transaction-rules';
 import { nextPaletteColor } from '@/lib/business';
@@ -23,6 +22,7 @@ import { SettingsPanel } from '@/components/settings-panel';
 import { TelegramPanel } from '@/components/telegram-panel';
 import { TransactionToolsPanel } from '@/components/transaction-tools-panel';
 import { PlanningError } from '@/components/workspace/screen-notices';
+import { RuleDialog } from '@/components/workspace/workspace-lazy';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
 
 export function SettingsScreen() {
@@ -46,7 +46,7 @@ export function SettingsScreen() {
    categories={<TransactionToolsPanel preferences={workspacePreferences} owner={demo?null:user} demo={demo} onDeleted={refreshRecords} categories={planning.data.categories} loading={planning.loading} error={planning.error} onRetry={refreshRecords} icons={categoryIcons} removed={removedCategories} saveCategory={async (name,direction,existing)=>{const id=existing??crypto.randomUUID();await planning.save('category',{id,name,direction});return id;}}/>}
    businesses={<BusinessSettings businesses={businessList} records={planning.data.records} preferences={workspacePreferences} owner={demo?null:user} demo={demo} onEdit={editRecord} onDelete={requestDelete} onSetup={() => setSettingUpBusinesses(true)} onGuide={() => setSettingUpBusinesses('guide')}/>}
    tags={<TagSettings tags={tags} preferences={workspacePreferences} owner={demo?null:user} demo={demo}/>}
-   rules={<><RulesPanel rules={rules.rules} categories={planning.data.categories} businesses={businessList} tags={tags.data.tags} onEdit={setRule} onAdd={() => setRule(newRule())} onRemove={item => rules.remove(item.id)}/>
+   rules={<><RulesPanel rules={rules.rules} loading={rules.loading} error={rules.error} onRetry={rules.retry} categories={planning.data.categories} businesses={businessList} tags={tags.data.tags} onEdit={setRule} onAdd={() => setRule(newRule())} onRemove={item => rules.remove(item.id)}/>
     {rule && <RuleDialog key={rule.id} rule={rule} records={demo ? planning.data.records : undefined} categories={planning.data.categories} businesses={businessList} accounts={planning.data.records.filter(record => record.kind === 'Cash').map(record => ({ id: record.id, name: record.name }))} tags={tags.data.tags} tagsOf={tagsOf} onCreateTag={createTag} splits={transactionTools.data.splits} onSave={async (next, apply) => { const changed = await rules.save(next, apply); if (apply) showNotice(t('{changed} updated', { changed })); return changed; }} onClose={() => setRule(null)}/>}</>}
    data-tools={<><DataTools owner={user} currency={currency} market={market} preferences={workspacePreferences} records={planning.data.records} onSaved={refreshRecords} demo={demo} sample={demo?()=>sampleBackup(planning.data,transactionTools.data.splits,categoryIcons):undefined}/><ImportHistory owner={user} demo={demo} revision={reload} onSaved={refreshRecords}/><DatabaseHealth demo={demo}/></>}
   />

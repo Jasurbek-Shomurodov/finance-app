@@ -128,6 +128,16 @@ test('upcoming payments put overdue ones first, show formatted dates and colour 
  assert.match(plain(none.upcoming),/Nothing is due in the next 31 days\./);
  assert.doesNotMatch(plain(none.upcoming),/due soon/);
  assert.match(plain(cards({}).upcoming),/Loading records…/,'planning still loading');
+ const failed=cards({planningError:'Could not load planning data.',onPlanningRetry(){}}).upcoming;
+ assert.match(plain(failed),/Could not load planning data\./);assert.doesNotMatch(failed,/Loading records/,'a failed read says so instead of loading forever');
+});
+
+test('money coming in reads as coming in: no plus-less payment, no pill and no Record payment that leads nowhere',()=>{
+ const records=[entry('Term deposit','Deposit',100000,{date:shiftDay(today,3)}),entry('Sam','Money lent',700,{date:shiftDay(today,-2)})];
+ const {upcoming}=cards({planning:{records,occurrences:[],categories:[],goals:[],activity:[],debtPayments:[]}});
+ assert.match(upcoming,/<strong class="positive">\+\$100,000<\/strong>/);assert.match(upcoming,/<strong class="positive">\+\$700<\/strong>/);
+ assert.doesNotMatch(plain(upcoming),/due soon|overdue|Record payment/);
+ assert.doesNotMatch(upcoming,/overview-due-pay/,'Recurring has no payment form for these');
 });
 
 test('the heading greets first visits and returning visitors, with or without a name',()=>{

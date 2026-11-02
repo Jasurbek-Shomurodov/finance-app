@@ -464,7 +464,6 @@
   "Could not import the file. Retry the same file safely.": "Dosya içe aktarılamadı. Aynı dosyayı güvenle yeniden deneyin.",
   "Keep the currency and start date of an existing budget.": "Mevcut bir planın para birimini veya başlangıç tarihini değiştiremezsiniz. Kaydetmek için özgün değerleri geri yükleyin.",
   "Include": "Dahil et",
-  "Select at least one transaction.": "En az bir işlem seçin.",
   "Import limit exceeded. Split this file into smaller files.": "İçe aktarma sınırı aşıldı. Bu dosyayı daha küçük dosyalara bölün.",
   "{name} has used {percent}% of its budget.": "{name} bütçesinin %{percent} kısmını kullandı.",
   "Choose a different destination.": "Farklı bir hedef seçin.",
@@ -2763,5 +2762,9 @@
   "3-month average": "3 aylık ortalama",
   "Compared with average": "Ortalamaya göre",
   "Item": "Kalem",
-  "Amounts are compared as entered, in each transaction’s own currency.": "Tutarlar girildiği gibi, her işlemin kendi para biriminde karşılaştırılır."
+  "Amounts are compared as entered, in each transaction’s own currency.": "Tutarlar girildiği gibi, her işlemin kendi para biriminde karşılaştırılır.",
+  "It changes at most the newest {count} matching transactions.": "En fazla {count} en yeni eşleşen işlemi değiştirir.",
+  "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} güncellendi; burada {category} işlemin kategorisi ve {business} işlemin işletmesi değiştirilemedi.",
+  "Could not delete this transaction. Please try again.": "Bu işlem silinemedi. Lütfen tekrar deneyin.",
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Google ile giriş yaptınız, bu nedenle bu hesabın henüz parolası olmayabilir. “Parolamı unuttum” ile bir parola belirleyin, ardından buraya girin."
 }

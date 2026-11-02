@@ -2,25 +2,37 @@
 import { useMemo } from 'react';
 import type { WorkspaceBudget } from '@/hooks/use-budget';
 import { monthActuals } from '@/lib/budget';
+import { useOwnerResource } from '@/hooks/use-owner-resource';
 import { forecastBudget, type ForecastBudget } from '@/lib/budget-forecast';
 import type { CashForecastBudget } from '@/lib/cash-forecast';
 import { depositToday } from '@/lib/deposit-interest';
+import { normalizeEntry } from '@/lib/finance';
 import { marketRates, type MarketData } from '@/lib/market';
-import type { PlanningData } from '@/lib/planning';
+import { emptyPlanning, type PlanningData } from '@/lib/planning';
 import type { TransactionSplit } from '@/lib/transaction-tools';
 
-type Input = { budget: Pick<WorkspaceBudget, 'state' | 'loading' | 'error'>; data: PlanningData; splits: TransactionSplit[]; currency: string; market: MarketData | null };
+type Input = {
+ budget: Pick<WorkspaceBudget, 'state' | 'loading' | 'error' | 'retry'>; data: PlanningData; splits: TransactionSplit[]; currency: string; market: MarketData | null;
+ /** The owner whose month is read; null for the sample workspace, whose `data` holds every record. */
+ owner: string | null; revision: number;
+ /** The open screen shows a projected cash balance, so it needs this month's spending. */
+ projecting: boolean;
+};
 
 /** The workspace's Budget as the forecasts read it: the monthly estimate (Overview, Cash flow, Goals) counts each
  * budget, and the projected cash spends what is left of it. `budget` is the provider's one copy, so a Budget edit
  * reaches every forecast at once. `ready` waits for the saved budget, so a forecast never shows without it;
- * `missing` counts budgets of `month` that no rate converts. */
-export function useForecastBudget({ budget, data, splits, currency, market }: Input) {
+ * `missing` counts budgets of `month` that no rate converts. The spending so far is always this month's own read, whatever
+ * the open screen's planning scope or picked month holds (the workspace scope has no one-time transactions), and it
+ * shares its request with the Dashboard's and Cash flow's read of the same month; `loading` and `error` cover it. */
+export function useForecastBudget({ budget, data, splits, currency, market, owner, revision, projecting }: Input) {
  const removed = data.removedKinds;
  const view: ForecastBudget = useMemo(() => forecastBudget({ state: budget.state, categories: data.categories, removed: removed ?? [] }), [budget.state, data.categories, removed]);
  const rates = marketRates(market);
- const today = depositToday();
- const spent = useMemo(() => monthActuals(data, splits, today.slice(0, 7), currency, today, rates).byCategory, [data, splits, today, currency, rates]);
+ const today = depositToday(), month = today.slice(0, 7);
+ const read = useOwnerResource('/api/planning?scope=review&month=' + month, owner, !!owner && projecting, revision, emptyPlanning);
+ const own = useMemo(() => owner ? { ...read.data, records: read.data.records.map(normalizeEntry) } : data, [owner, read.data, data]);
+ const spent = useMemo(() => monthActuals(own, splits, month, currency, today, rates).byCategory, [own, splits, month, currency, today, rates]);
  const cash: CashForecastBudget = useMemo(() => ({ linesFor: month => view.linesIn(month, currency, rates), spent }), [view, currency, rates, spent]);
- return { ready: !budget.loading && !budget.error, loading: budget.loading, error: budget.error, linesIn: (month: string) => view.linesIn(month, currency, rates), view, cash };
+ return { ready: !budget.loading && !budget.error, loading: budget.loading || read.initialLoading, error: budget.error || read.error, retry: () => { budget.retry(); read.retry(); }, linesIn: (month: string) => view.linesIn(month, currency, rates), view, cash };
 }

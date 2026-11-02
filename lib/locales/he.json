@@ -464,7 +464,6 @@
   "Could not import the file. Retry the same file safely.": "לא ניתן לייבא את הקובץ. אפשר לנסות שוב את אותו קובץ בבטחה.",
   "Keep the currency and start date of an existing budget.": "לא ניתן לשנות את המטבע או את תאריך ההתחלה של תוכנית קיימת. שחזרו את הערכים המקוריים כדי לשמור.",
   "Include": "כלול",
-  "Select at least one transaction.": "בחרו לפחות עסקה אחת.",
   "Import limit exceeded. Split this file into smaller files.": "חריגה ממגבלת הייבוא. פצלו את הקובץ לקבצים קטנים יותר.",
   "{name} has used {percent}% of its budget.": "{name} ניצל {percent}% מהתקציב שלו.",
   "Choose a different destination.": "בחרו יעד אחר.",
@@ -2763,5 +2762,9 @@
   "3-month average": "ממוצע 3 חודשים",
   "Compared with average": "ביחס לממוצע",
   "Item": "פריט",
-  "Amounts are compared as entered, in each transaction’s own currency.": "הסכומים מושווים כפי שהוזנו, במטבע של כל עסקה עצמה."
+  "Amounts are compared as entered, in each transaction’s own currency.": "הסכומים מושווים כפי שהוזנו, במטבע של כל עסקה עצמה.",
+  "It changes at most the newest {count} matching transactions.": "זה משנה לכל היותר את {count} התנועות התואמות החדשות ביותר.",
+  "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} עודכנו; כאן לא ניתן היה לשנות קטגוריה של {category} ועסק של {business}.",
+  "Could not delete this transaction. Please try again.": "לא ניתן למחוק את התנועה הזו. נסו שוב.",
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "נכנסת עם Google, ולכן ייתכן שלחשבון הזה עדיין אין סיסמה. הגדר סיסמה דרך שכחתי סיסמה ואז הזן אותה כאן."
 }

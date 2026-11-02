@@ -1,21 +1,30 @@
 import { z } from 'zod';
 import { isoDate, nonnegativeAmount, uuid } from '@/lib/api-validation';
 import { crossSite, postgrestFailure, readJson, signInAgain } from '@/lib/api-route';
-import { assetPaymentEvents, assetPaymentsQuery } from '@/lib/asset-payments';
+import { assetPaymentEvents, assetPaymentsQuery, assetSchedulesQuery, schedulePaymentsQuery, type AssetRow } from '@/lib/asset-payments';
 import { byHistoryDate, type HistoryEvent } from '@/lib/investment-history';
 import { readAllPages } from '@/lib/owner-rows';
 import { session, supa, sameOrigin } from '@/lib/supabase';
+import { withViewerDayRates } from '@/lib/viewer-day-rates';
 const schema = z.object({ account_id:uuid.optional(),id:uuid,record_id:uuid,type:z.enum(['valuation','contribution','withdrawal','income','expense']),date:isoDate,amount:nonnegativeAmount,balance:nonnegativeAmount.nullable(),notes:z.string().max(2000) }).refine(p => (p.type==='valuation' ? p.amount===0 : p.amount>0) && (p.type==='valuation' ? p.balance!==null : ['income','expense'].includes(p.type) ? p.balance===null : true));
 // A refusal the database explains (P0001) is shown in its words; a database without the function answers 503 (lib/api-route.ts).
 const databaseUpdate='The app database needs an update. Ask the administrator to apply the latest migrations.';
+/** The asset and its linked payments, each with its own day's rates. A payment may name a rent schedule and not the
+ * property, so the schedules' payments are read too; a row that was never saved with its day's rates looks them up. */
+async function assetPayments(id:string,auth:{token:string;user:{id:string}}){
+ const read=<T,>(query:string)=>readAllPages<T>(range=>supa(`/rest/v1/finance_records?${query}&${range}`,{},auth.token),'missing');
+ const [linked,schedules]=await Promise.all([read<AssetRow>(assetPaymentsQuery(id)),read<{id:string}>(assetSchedulesQuery(id))]);
+ const named=schedules.length?await read<AssetRow>(schedulePaymentsQuery(schedules.map(schedule=>schedule.id))):[];
+ const rows=[...new Map([...linked,...named].map(row=>[row.id,row])).values()];
+ return rows.length>1?(await withViewerDayRates({records:rows},auth)).records:rows;
+}
 export async function GET(req:Request) {
  try {
   const auth=await session(); if(!auth) return signInAgain();
   const id=new URL(req.url).searchParams.get('record');
   if(!uuid.safeParse(id).success)return Response.json({error:'Investment not found.'},{status:400});
   // Explicit pagination avoids PostgREST's default row cap silently truncating history.
-  const collected=await readAllPages<HistoryEvent>(range=>supa(`/rest/v1/investment_history?select=*,account_link:investment_account_links(account_id,amount,account_currency,record_currency,exchange_rate,rate_date)&record_id=eq.${id}&order=occurred_on.asc,created_at.asc,id.asc&${range}`,{},auth.token),'missing');
-  const payments=await readAllPages<Parameters<typeof assetPaymentEvents>[0][number]>(range=>supa(`/rest/v1/finance_records?${assetPaymentsQuery(id!)}&${range}`,{},auth.token),'missing');
+  const [collected,payments]=await Promise.all([readAllPages<HistoryEvent>(range=>supa(`/rest/v1/investment_history?select=*,account_link:investment_account_links(account_id,amount,account_currency,record_currency,exchange_rate,rate_date)&record_id=eq.${id}&order=occurred_on.asc,created_at.asc,id.asc&${range}`,{},auth.token),'missing'),assetPayments(id!,auth)]);
   return Response.json([...collected,...assetPaymentEvents(payments,id!)].sort(byHistoryDate));
  }catch(error){return Response.json({error:(error as Error).message==='missing'?'Could not load history. Apply the tracker migration and try again.':'Could not load history. Please try again.'},{status:503});}
 }

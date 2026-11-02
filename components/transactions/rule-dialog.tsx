@@ -19,6 +19,9 @@ import type { Tag } from '@/lib/tags';
 import { BusinessChoiceButton, CategoryChoiceButton } from './pickers';
 import { TagSelector } from './tags';
 
+/** How many transactions `public.apply_transaction_rule` reaches at once. */
+const ruleApplyLimit = 500;
+
 type RuleChange = (fields: Partial<TransactionRule> | ((rule: TransactionRule) => Partial<TransactionRule>)) => void;
 
 /** What a transaction must match: its name and, behind "More conditions", an account, a category, a business and an
@@ -67,7 +70,7 @@ export function RuleDialog({ rule, records, categories, removed, businesses, acc
  const [apply, setApply] = useState(true), [busy, setBusy] = useState(false), [error, setError] = useState('');
  const change: RuleChange = fields => setDraft(current => ({ ...current, ...(typeof fields === 'function' ? fields(current) : fields) }));
  const next = finishedRule(draft), valid = canSaveRule(next);
- // Without the transactions at hand (Settings), the count is left to the database.
+ // Signed in, the page holds only a period's transactions while a rule reaches all of them, so the count is left to the database.
  const matches = records && valid ? ruleTargets(next, records, splits, tagsOf).length : null;
  async function save() {
   if (!valid) return;
@@ -83,7 +86,7 @@ export function RuleDialog({ rule, records, categories, removed, businesses, acc
       <RuleCriteria draft={draft} next={next} open={extraCriteria(rule) > 0} categories={categories} removed={removed} businesses={businesses} accounts={accounts} change={change}/>
       <RuleActions next={next} categories={categories} removed={removed} businesses={businesses} tags={tags} onCreateTag={onCreateTag} change={change}/>
      </div>
-     <label className="budget-check"><input type="checkbox" checked={apply} onChange={event => setApply(event.currentTarget.checked)}/><span><strong>{matches === null ? t('Apply to matching past transactions') : t('Apply to {count} matching transactions', { count: formatNumber(matches, locale, 0) })}</strong><small>{t('New bank statement imports follow the rule too. Categories you choose by hand are kept.')}</small></span></label>
+     <label className="budget-check"><input type="checkbox" checked={apply} onChange={event => setApply(event.currentTarget.checked)}/><span><strong>{matches === null ? t('Apply to matching past transactions') : t('Apply to {count} matching transactions', { count: formatNumber(matches, locale, 0) })}</strong><small>{t('New bank statement imports follow the rule too. Categories you choose by hand are kept.')}{matches === null && <> {t('It changes at most the newest {count} matching transactions.', { count: formatNumber(ruleApplyLimit, locale, 0) })}</>}</small></span></label>
      {error && <p className="form-error" role="alert">{error}</p>}
     </fieldset>
     <FormFooter busy={busy} onCancel={onClose}><Button disabled={busy || !valid}>{t(busy ? 'Saving…' : 'Save rule')}</Button></FormFooter>

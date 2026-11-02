@@ -22,7 +22,8 @@ export type RecordTableInput = {
 
 /** The record table of the open section: its filters and page, the reads behind it, and the rows it shows. Filtered
  * views and Cash flow search the full record list; signed in, Cash flow pages through the transaction history read.
- * In another currency without a rate, the server sends only the workspace currency's records. */
+ * In another currency without a rate, the server's record page holds only the workspace currency's records; the
+ * transaction history stays whole, as each row reads as entered. */
 export function useRecordTable({ user, demo, section, locale, currency, market, marketFailed, reload, rows, setRows, setSummary, setError, current, planning }: RecordTableInput) {
     const [pageState, setPageState] = useState({ key: '', page: 1 });
     const sectionKey = sectionKeyOf(section);
@@ -40,7 +41,8 @@ export function useRecordTable({ user, demo, section, locale, currency, market, 
     const requestKey = recordsRequestKey(user,sectionKey,currencyFilter,serverPage);
     const reads = useRecordReads({ user, demo, section, sectionKey, currencyFilter, serverPage, reload, serverPaginationKey: recordsRequestKey(user,sectionKey,currencyFilter,0), requestKey },
         { setRows, setSummary, setError, onPage: next => { if(!useFilteredRecords&&next!==page)setPageState({key:paginationKey,page:next}); } });
-    const historyParams=new URLSearchParams({...filters,page:String(page),currency:currencyFilter});
+    // The history lists each transaction as entered, so it needs no rate and never loses a currency.
+    const historyParams=new URLSearchParams({...filters,page:String(page)});
     const historyPage=useOwnerResource('/api/transaction-history?'+historyParams,user,remoteHistory,reload,emptyHistoryPage);
     const view = recordTableView({ demo, section, sectionKey, locale, currency, market, rows, current, planningRecords: planning.data.records, planningLoading: planning.loading, filters, currencyFilter, page, historyOnly, remoteHistory, useFilteredRecords, historyPage: historyPage.data, historyLoading: historyPage.loading, recordTotal: reads.recordTotal, loadedKey: reads.loadedKey, requestKey });
     const showFirstPage = () => setPageState({ key: paginationKey, page: 1 });

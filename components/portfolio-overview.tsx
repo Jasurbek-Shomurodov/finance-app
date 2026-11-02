@@ -19,7 +19,7 @@ import { NetWorthBodySkeleton } from '@/components/presentation-foundation/loadi
 import { financialTotals, type Entry } from '@/lib/finance';
 import { formatMoney, formatNumber, formatPercent, formatSignedMoney } from '@/lib/format';
 import { depositToday } from '@/lib/deposit-interest';
-import { mergePortfolioPoints, type PortfolioSnapshot } from '@/lib/portfolio-snapshots';
+import { mergePortfolioPoints } from '@/lib/portfolio-snapshots';
 import { portfolioHistory, portfolioWindow, trackingWindowStart } from '@/lib/portfolio-history';
 import { useComparisonProfile } from '@/hooks/use-comparison-profile';
 import { type MarketData, marketRates } from '@/lib/market';
@@ -28,7 +28,7 @@ import type { PortfolioHistory } from '@/hooks/use-portfolio-history';
 /** One empty history for every render, so the comparison's memos keyed on it hold until the real one loads. */
 const noHistory: PortfolioHistory = { records: [], events: [] };
 /** `savedHistory` is the screen's read (`usePortfolioHistory`), started before this card mounts; the sample workspace builds its own. */
-export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecords, currency, market, demo, savedHistory, historyError: error, onHistoryRetry, onAddIncome, board }: { savedHistory: PortfolioHistory | null; historyError: boolean; onHistoryRetry: () => void; board: (cards: { netWorth: ReactNode; income: ReactNode }) => ReactNode; onAddIncome?: () => void; demoRecords?: Entry[]; excludedCurrencies?:string[]; snapshots: PortfolioSnapshot[]; snapshotError: string; onSnapshotRetry: () => void; entries: Entry[]; currency: string; market: MarketData | null; demo: boolean }) {
+export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecords, currency, market, demo, savedHistory, historyError: error, onHistoryRetry, onAddIncome, board }: { savedHistory: PortfolioHistory | null; historyError: boolean; onHistoryRetry: () => void; board: (cards: { netWorth: ReactNode; income: ReactNode }) => ReactNode; onAddIncome?: () => void; demoRecords?: Entry[]; excludedCurrencies?:string[]; entries: Entry[]; currency: string; market: MarketData | null; demo: boolean }) {
  const { t, locale } = useLanguage();
  const [range, setRange] = useState<number | null>(null);
  const [growth, setGrowth] = useState<PeriodGrowth | null>(null);

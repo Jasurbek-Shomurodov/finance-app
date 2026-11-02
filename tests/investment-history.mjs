@@ -6,7 +6,7 @@ import ts from 'typescript';
 import {z} from 'zod';
 import {byHistoryDate,historySeries} from '../lib/investment-history.ts';
 import {loadTS} from './helpers/load-ts.mjs';
-const {assetPaymentEvents,assetPaymentsQuery}=loadTS('lib/asset-payments.ts');
+const {assetPaymentEvents,assetPaymentsQuery,assetSchedulesQuery,schedulePaymentsQuery}=loadTS('lib/asset-payments.ts');
 const event=(id,date,type,amount,balance=null,ownership=100)=>({id,occurred_on:date,event_type:type,amount,balance,ownership_percentage:ownership,created_at:date+'T12:00:00Z',principal:0,interest:0});
 test('birth valuations increase personal value without creating invested cash or income',()=>{
  const result=historySeries([event('a','2024-01-01','baseline',0,8000,50),event('b','2025-01-01','valuation',0,10000,50)]);
@@ -25,8 +25,10 @@ test('mortgage payments show principal and interest without inventing a historic
 });
 const source=fs.readFileSync('app/api/investment-history/route.ts','utf8').replace(/^import .*;\n/gm,'').replace(/export async function/g,'async function');
 const js=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
-let signedIn=true,calls=[],rpcError=null,rpcCode='P0001';
-const api=apiFunction('z','assetPaymentEvents','assetPaymentsQuery','byHistoryDate','session','supa','sameOrigin',js+';return {GET,POST};')(z,assetPaymentEvents,assetPaymentsQuery,byHistoryDate,async()=>signedIn?{token:'owner-token'}:null,async(path,init,token)=>{calls.push({path,init,token});return rpcError&&path.includes('/rpc/')?Response.json({code:rpcCode,message:rpcError},{status:400}):Response.json(path.includes('/rpc/')?{ok:true}:[]);},req=>req.headers.get('origin')==='https://local');
+let signedIn=true,calls=[],rpcError=null,rpcCode='P0001',tableRows=()=>[];
+const readAllPages=async(page,error)=>{const reply=await page('limit=500&offset=0');if(!reply.ok)throw Error(error);return reply.json();};
+const dayRates={rows:[],withViewerDayRates:async(data,auth)=>{dayRates.rows.push([data.records.length,auth]);return {records:data.records.map(row=>row.day_rates===null?{...row,day_rates:{USD:1,UZS:12000}}:row)};}};
+const api=apiFunction('z','assetPaymentEvents','assetPaymentsQuery','assetSchedulesQuery','schedulePaymentsQuery','byHistoryDate','session','supa','sameOrigin','readAllPages','withViewerDayRates',js+';return {GET,POST};')(z,assetPaymentEvents,assetPaymentsQuery,assetSchedulesQuery,schedulePaymentsQuery,byHistoryDate,async()=>signedIn?{token:'owner-token'}:null,async(path,init,token)=>{calls.push({path,init,token});return rpcError&&path.includes('/rpc/')?Response.json({code:rpcCode,message:rpcError},{status:400}):Response.json(path.includes('/rpc/')?{ok:true}:tableRows(path));},req=>req.headers.get('origin')==='https://local',readAllPages,dayRates.withViewerDayRates);
 const body={id:'10000000-0000-4000-8000-000000000001',record_id:'10000000-0000-4000-8000-000000000002',type:'income',date:'2026-01-01',amount:400,balance:null,notes:'Rent'};
 const request=patch=>new Request('https://local/api/investment-history',{method:'POST',headers:{origin:'https://local','Content-Type':'application/json'},body:JSON.stringify({...body,...patch})});
 test('saves a cash receipt through the owner-scoped atomic RPC with a stable request id',async()=>{
@@ -75,8 +77,8 @@ test('a bill paid for an asset counts as money invested once, in the asset curre
  const rows=[assetRow('sheep','Business',{amount:160000000}),assetRow('feed','Other expense',{name:'Sheep feed',amount:1000000,account_id:'cash',account_currency:'USD',account_exchange_rate:12012.3,day_rates:{USD:1,UZS:12012.3}}),assetRow('sold','Business income',{amount:400000,currency:'USD',day_rates:{USD:1,UZS:12000}})];
  const events=assetPaymentEvents(rows,'sheep');
  assert.deepEqual(events.map(e=>[e.id,e.event_type,e.amount,e.notes,e.balance]),[['feed','contribution',1000000,'Sheep feed',null],['sold','income',4800000000,'sold',null]]);
- assert.deepEqual(events[0].entered,{amount:1000000,currency:'UZS'});
- assert.deepEqual(events[1].entered,{amount:400000,currency:'USD'});
+ assert.deepEqual(events[0].entered,{amount:1000000,currency:'UZS',name:'Sheep feed'});
+ assert.deepEqual(events[1].entered,{amount:400000,currency:'USD',name:'sold'});
  assert.equal(events[0].account_link.amount,-1000000);
  assert.equal(events[1].account_link,null);
  const series=historySeries([{...events[0],created_at:'2026-10-21T00:00:00Z'}]);
@@ -84,15 +86,39 @@ test('a bill paid for an asset counts as money invested once, in the asset curre
  assert.equal(series.expenses,0);
  assert.equal(series.balance,null);
 });
-test('a linked payment no rate converts adds nothing but keeps what was paid',()=>{
- const [paid]=assetPaymentEvents([assetRow('sheep','Business'),assetRow('feed','Other expense',{amount:50,currency:'EUR',day_rates:null})],'sheep');
- assert.equal(paid.amount,0);
- assert.deepEqual(paid.entered,{amount:50,currency:'EUR'});
+test('a linked payment no rate converts has no amount: the tiles it adds to are unknown, never short',()=>{
+ const events=assetPaymentEvents([assetRow('sheep','Business'),assetRow('feed','Other expense',{amount:50,currency:'EUR',day_rates:null}),assetRow('sold','Business income',{amount:50,currency:'EUR',day_rates:null})],'sheep');
+ assert.deepEqual(events.map(e=>e.amount),[null,null]);
+ assert.deepEqual(events[0].entered,{amount:50,currency:'EUR',name:'feed'});
+ const series=historySeries([event('a','2026-01-01','income',100),event('b','2026-01-02','contribution',200),...events]);
+ assert.equal(series.receipts,null);assert.equal(series.contributions,null);assert.equal(series.missing,true);
+ assert.deepEqual(series.points.map(p=>[p.contributions,p.receipts]),[[0,100],[200,100],[null,null]]);
+ const costOnly=historySeries([event('a','2026-01-01','income',100),events[0]]);
+ assert.equal(costOnly.receipts,100,'income stays known when only a contribution is missing');assert.equal(costOnly.contributions,null);
+ const known=historySeries([event('a','2026-01-01','income',100)]);
+ assert.equal(known.missing,false);
+});
+test('the history read gives a payment saved without its day rates those rates, and follows rent that names only its schedule',async()=>{
+ const flat='10000000-0000-4000-8000-000000000009';
+ const asset=assetRow(flat,'Property',{currency:'USD'}),direct=assetRow('tax','Other expense',{amount:1200000,currency:'UZS',day_rates:null}),rent=assetRow('rent','Rent income',{amount:2400000,currency:'UZS',day_rates:null});
+ tableRows=path=>path.includes('/investment_history')?[]:path.includes('occurrence_record_id=in.(plan)')?[rent,direct]:path.includes('select=id&kind=eq.Rent%20income')?[{id:'plan'}]:[asset,direct];
+ dayRates.rows=[];
+ try{
+  const result=await (await api.GET(new Request('https://local/api/investment-history?record='+flat))).json();
+  assert.deepEqual(result.map(e=>[e.id,e.event_type,e.amount]).sort(),[['rent','income',200],['tax','contribution',100]],'each payment once, at its day rate');
+  assert.deepEqual(dayRates.rows,[[3,{token:'owner-token'}]]);
+  // A stock has no payments, so no rates are read for it.
+  dayRates.rows=[];tableRows=path=>path.includes('/investment_history')?[]:path.includes('select=id&')?[]:[assetRow(flat,'Stock')];
+  assert.deepEqual(await (await api.GET(new Request('https://local/api/investment-history?record='+flat))).json(),[]);
+  assert.deepEqual(dayRates.rows,[]);
+ }finally{tableRows=()=>[];}
 });
 test('only a business or property shows linked payments, and the read skips tracker copies and transfers',()=>{
  assert.deepEqual(assetPaymentEvents([assetRow('debt','Debt'),assetRow('feed','Other expense')],'debt'),[]);
  assert.deepEqual(assetPaymentEvents([assetRow('feed','Other expense')],'sheep'),[]);
  assert.deepEqual(assetPaymentEvents([assetRow('shop','Business'),assetRow('till','Cash'),assetRow('undated','Other expense',{date:null})],'shop'),[]);
  const query=assetPaymentsQuery('shop');
- for(const part of ['frequency.eq.Once','history_event_id.is.null','movement_id.is.null','operation_id.is.null','mortgage_payment_id.is.null','business_id.eq.shop','property_id.eq.shop','income_source_id.eq.shop'])assert.ok(query.includes(part),part);
+ for(const part of ['frequency.eq.Once','history_event_id.is.null','movement_id.is.null','operation_id.is.null','mortgage_payment_id.is.null','business_id.eq.shop','property_id.eq.shop','income_source_id.eq.shop','frequency'])assert.ok(query.includes(part),part);
+ const named=schedulePaymentsQuery(['a','b']);
+ for(const part of ['occurrence_record_id=in.(a,b)','frequency=eq.Once','history_event_id=is.null','movement_id=is.null','operation_id=is.null','mortgage_payment_id=is.null'])assert.ok(named.includes(part),part);
 });

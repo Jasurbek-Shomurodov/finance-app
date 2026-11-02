@@ -10,6 +10,26 @@ test('statement source identifiers survive CSV mapping and deduplicate overlappi
  const request=rows=>new Request('https://local',{method:'POST',body:JSON.stringify({batch_id:id(1),account_id:id(2),rows})});
  assert.equal((await api.POST(request(mapped))).status,200);assert.equal((await api.POST(request([{...mapped[0],sourceId:'another'},mapped[0]]))).status,200);assert.equal(calls[0].body.p_rows[0].key,calls[1].body.p_rows[1].key);assert.equal(calls[0].body.p_batch,id(1));assert.ok(calls.every(c=>c.path.endsWith('/import_statement')&&c.token==='owner'));
 });
+test('a statement longer than one call imports in batches, with the keys one call would give and only the rows ticked',async()=>{
+ const {importBatches,importBatchSize}=loadTS('lib/statement-files.ts');
+ const rows=Array.from({length:1203},()=>({name:'Coffee',date:'2026-01-02',amount:-3,notes:''})).concat([{name:'Rent',date:'2026-01-03',amount:-100,notes:''}]);
+ const batches=importBatches(rows,[0,5]);
+ assert.deepEqual(batches.map(batch=>batch.length),[importBatchSize,importBatchSize,202]);
+ assert.equal(batches[0][0].occurrence,1,'a row keeps its place in the file when an earlier one is left out');
+ assert.equal(batches[2].at(-2).occurrence,1202);assert.equal(batches[2].at(-1).occurrence,0);
+ assert.deepEqual(importBatches(rows,rows.map((_,index)=>index)),[]);
+ assert.throws(()=>importBatches([{name:'A',date:'2026-01-02',amount:1,sourceId:'x'},{name:'B',date:'2026-01-02',amount:2,sourceId:'x'}],[]),/Duplicate source identifiers/,'told before anything is posted, not skipped across two batches');
+ const calls=[];const api=loadTS('app/api/import/route.ts',{'@/lib/supabase':{session:async()=>({token:'owner',user:{id:'owner-id'}}),sameOrigin:()=>true,supa:async(path,init)=>{calls.push(JSON.parse(init.body));return Response.json({added:1,skipped:0});}},'@/lib/server-records':{readOwnerRows:async()=>[]}});
+ const post=list=>api.POST(new Request('https://local',{method:'POST',body:JSON.stringify({batch_id:id(1),account_id:id(2),rows:list})}));
+ const row={name:'Coffee',date:'2026-01-02',amount:-3,notes:''};
+ assert.equal((await post([row,row,row])).status,200);
+ const whole=calls[0].p_rows.map(item=>item.key);
+ assert.equal((await post([{...row,occurrence:2}])).status,200);
+ assert.equal(calls[1].p_rows[0].key,whole[2],'the third coffee has one key whichever batch carries it');
+ assert.ok(!('occurrence' in calls[1].p_rows[0]),'the place in the file stays out of what the database receives');
+ assert.equal((await post(Array.from({length:501},()=>row))).status,400,'one call still takes what the database takes');
+});
+
 test('import batches, owner preferences, undo and account deletion work across an incremental upgrade',{skip:!process.env.PGLITE_MODULE},async()=>{
  const {PGlite}=await import(process.env.PGLITE_MODULE);const db=new PGlite();const owner=id(1),other=id(2);
  try{

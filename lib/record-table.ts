@@ -12,7 +12,7 @@ const recordsPerPage = 10;
 export const sectionKeyOf = (section: string): SectionKey => section === 'Assets & investments' ? 'assets' : section === 'Income & expenses' ? 'cashflow' : section === 'Loans & debts' ? 'debts' : 'all';
 
 /** The currency the server filters the record page to: only in a display currency without a rate, and never for
- * holdings. Until the market answers, the rate is unknown and the page is read unfiltered, the usual outcome, so the
+ * holdings or for the transaction history, which reads as entered. Until the market answers, the rate is unknown and the page is read unfiltered, the usual outcome, so the
  * first read is not repeated once the rates arrive; a failed market read filters, as a missing rate does. */
 export const recordsCurrencyFilter = ({ sectionKey, currency, market, marketFailed }: { sectionKey: SectionKey; currency: string; market: MarketData | null; marketFailed: boolean }) =>
  sectionKey === 'assets' || market?.rates?.[currency] || (!market && !marketFailed) ? '' : currency;
@@ -44,7 +44,7 @@ export function recordTableView(input: RecordTableInput) {
  const display = (record: Entry) => isTransactionHistory(record) ? record : marketEntry(record, currency, market) ?? record;
  const kinds = sectionKinds(section);
  const demoVisible = (sectionKey === 'assets' ? sortAssetsByWorth : sortRecords)(current.filter(record => !kinds || kinds.includes(record.kind)));
- const filtered = filterRecords((demo ? rows : input.planningRecords).filter(record => (!historyOnly || isTransactionHistory(record)) && (sectionKey === 'all' || (sectionKey === 'debts' ? lendingRecordKinds : [...income, ...expenses]).includes(record.kind)) && (!currencyFilter || record.currency === currencyFilter)), filters, locale);
+ const filtered = filterRecords((demo ? rows : input.planningRecords).filter(record => (!historyOnly || isTransactionHistory(record)) && (sectionKey === 'all' || (sectionKey === 'debts' ? lendingRecordKinds : [...income, ...expenses]).includes(record.kind)) && (historyOnly || !currencyFilter || record.currency === currencyFilter)), filters, locale);
  const totalRecords = remoteHistory ? historyPage.total : useFilteredRecords ? filtered.length : demo ? demoVisible.length : input.recordTotal;
  const pageCount = Math.max(1, Math.ceil(totalRecords / recordsPerPage));
  const tablePage = remoteHistory ? historyPage.page : Math.min(page, pageCount);

@@ -464,7 +464,6 @@
   "Could not import the file. Retry the same file safely.": "ファイルをインポートできませんでした。同じファイルで安全にやり直せます。",
   "Keep the currency and start date of an existing budget.": "既存の予算の通貨と開始日は変更しないでください。",
   "Include": "含める",
-  "Select at least one transaction.": "取引を1件以上選択してください。",
   "Import limit exceeded. Split this file into smaller files.": "インポートの上限を超えました。ファイルを小さく分割してください。",
   "{name} has used {percent}% of its budget.": "{name}は予算の{percent}%を使用しました。",
   "Choose a different destination.": "別の送金先を選択してください。",
@@ -2763,5 +2762,9 @@
   "3-month average": "3か月平均",
   "Compared with average": "平均との差",
   "Item": "項目",
-  "Amounts are compared as entered, in each transaction’s own currency.": "金額は入力されたまま、各取引自身の通貨で比較されます。"
+  "Amounts are compared as entered, in each transaction’s own currency.": "金額は入力されたまま、各取引自身の通貨で比較されます。",
+  "It changes at most the newest {count} matching transactions.": "変更されるのは、一致する取引のうち最新の{count}件までです。",
+  "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed}件を更新しました。ここでは{category}件のカテゴリと{business}件の事業を変更できませんでした。",
+  "Could not delete this transaction. Please try again.": "この取引を削除できませんでした。もう一度お試しください。",
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Google でサインインしたため、このアカウントにはまだパスワードがない場合があります。「パスワードをお忘れの方」から設定してから、ここに入力してください。"
 }

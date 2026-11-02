@@ -14,7 +14,7 @@ const cards=loadTS('components/dashboard-cards.tsx',{
  '@/components/language-provider':{useLanguage:()=>({locale:'en-US',t})},
  '@/lib/deposit-interest':{...realDeposit,depositToday:()=>today,depositMonth:()=>month},
  '@/lib/expense-plans':{expensePlanMonth:()=>month},
- '@/hooks/use-owner-resource':{useOwnerResource:(url,owner,enabled,revision,empty)=>{resources.push({url,owner,enabled,revision});return {data:remote.data??empty,loading:remote.loading};}},
+ '@/hooks/use-owner-resource':{useOwnerResource:(url,owner,enabled,revision,empty)=>{resources.push({url,owner,enabled,revision});return {data:remote.data??empty,loading:remote.loading,error:remote.error??'',retry(){}};}},
  '@/components/budget/budget-rows':{BudgetProgress:({row})=>React.createElement('meter',{'data-progress':row.progress.toFixed?String(Math.round(row.progress*100)):'','data-remaining':String(row.remaining)})},
  '@/lib/investment-goals':{investmentGoalCompletion:goal=>completion.get(goal.id)??null},
  'next/link':{__esModule:true,default:({children,href,...props})=>React.createElement('a',{href,...props},children)},
@@ -129,4 +129,47 @@ test('Budget waits for loading, falls back to the market rate and invites a plan
  budget={state:{mode:'category',applyForward:false,categories:[],amounts:[]},loading:false};
  const empty=plain(render(cards.BudgetCard,{budget,data:planning(),currency:'USD',market:null,splits:[]}));
  assert.match(empty,/Plan this month’s spending to track it here\. Set up a budget/);
+});
+
+test('a failed read says so: never an empty list, no spending or an invitation to start',()=>{
+ remote={data:null,loading:false,error:'Could not load data.'};
+ const recent=plain(render(cards.RecentTransactionsCard,{owner:'me',data:planning()}));
+ assert.match(recent,/Could not load data\./);assert.doesNotMatch(recent,/No transactions recorded/);
+ budget={state:{mode:'category',applyForward:false,categories:[],amounts:[amount('Living expense',100)]},loading:false};
+ const card=plain(render(cards.BudgetCard,{budget,owner:'me',data:planning(),currency:'USD',market:null,splits:[]}));
+ assert.match(card,/Could not load data\./);assert.doesNotMatch(card,/\$0 of \$100|remaining/,'not the whole plan left');
+ remote={data:null,loading:false};
+ budget={state:{mode:'category',applyForward:false,categories:[],amounts:[]},loading:false,error:'Could not load the budget.'};
+ const saved=plain(render(cards.BudgetCard,{budget,data:planning(),currency:'USD',market:null,splits:[]}));
+ assert.match(saved,/Could not load the budget\./);assert.doesNotMatch(saved,/Set up a budget/,'a person who has a budget is not asked to start one');
+});
+
+test('spending no rate converts leaves the Budget card unknown, with the note',()=>{
+ remote={data:null,loading:false};
+ budget={state:{mode:'category',applyForward:false,categories:[],amounts:[amount('Living expense',100)]},loading:false};
+ const data=planning([entry('Food','Living expense',30,'2026-10-02'),entry('Gift','Living expense',9,'2026-10-03',{currency:'EUR'})]);
+ const text=plain(render(cards.BudgetCard,{budget,data,currency:'USD',market:{rates:{USD:1}},splits:[]}));
+ assert.match(text,/— of \$100 Exchange rate unavailable\./);assert.doesNotMatch(text,/\$30|remaining/);
+});
+
+test('the month’s budget stands on its own read: schedules and range never wait on planning, and it starts once',()=>{
+ let figures;
+ const probe=props=>{const Probe=()=>{figures=cards.useMonthBudget({currency:'USD',market:null,splits:[],...props});return null;};renderToStaticMarkup(React.createElement(Probe));};
+ budget={state:{mode:'category',applyForward:false,categories:[],amounts:[amount('Rent expense',100)]},loading:false};
+ remote={data:planning([entry('Flat','Rent expense',900,'2026-01-05',{frequency:'Monthly'})]),loading:false};
+ probe({owner:'me',budget,data:planning()});
+ assert.equal(figures.plan,900,'the bill the read carries raises the plan though planning has not arrived');
+ resources.length=0;
+ const rollover={category_key:'pets',budget_type:'flexible',rollover:true,rollover_start:'2025-12-01',excluded:false};
+ probe({owner:'me',budget:{...budget,loading:true},data:planning()});
+ assert.equal(resources.at(-1).enabled,false,'it waits for the saved settings that fix its range');
+ probe({owner:'me',budget:{...budget,state:{...budget.state,categories:[rollover]}},data:planning()});
+ assert.deepEqual([resources.at(-1).url,resources.at(-1).enabled],['/api/planning?scope=budget&month=2026-10&from=2025-12',true],'a custom fund reaches the range without its category being known');
+ remote={data:null,loading:false};
+});
+
+test('figures worked out by the caller are shown without a read of their own',()=>{
+ resources.length=0;
+ const html=render(cards.BudgetCard,{currency:'USD',figures:{month,plan:100,spent:30,missing:0,watched:[],loading:false,error:''}});
+ assert.match(plain(html),/\$30 of \$100/);assert.equal(resources.length,0);
 });

@@ -464,7 +464,6 @@
   "Could not import the file. Retry the same file safely.": "Could not import the file. Retry the same file safely.",
   "Keep the currency and start date of an existing budget.": "You cannot change the currency or start date of an existing plan. Restore the original values to save.",
   "Include": "Include",
-  "Select at least one transaction.": "Select at least one transaction.",
   "Import limit exceeded. Split this file into smaller files.": "Import limit exceeded. Split this file into smaller files.",
   "{name} has used {percent}% of its budget.": "{name} has used {percent}% of its budget.",
   "Choose a different destination.": "Choose a different destination.",
@@ -2763,5 +2762,9 @@
   "3-month average": "3-month average",
   "Compared with average": "Compared with average",
   "Item": "Item",
-  "Amounts are compared as entered, in each transaction’s own currency.": "Amounts are compared as entered, in each transaction’s own currency."
+  "Amounts are compared as entered, in each transaction’s own currency.": "Amounts are compared as entered, in each transaction’s own currency.",
+  "It changes at most the newest {count} matching transactions.": "It changes at most the newest {count} matching transactions.",
+  "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} updated; {category} could not change category and {business} could not change business here.",
+  "Could not delete this transaction. Please try again.": "Could not delete this transaction. Please try again.",
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here."
 }

@@ -1,11 +1,12 @@
 import { monthsBetween } from './budget';
 import { monthEnd, shiftMonth } from './calendar-days';
 import { HOUSEHOLD, inBusinessFilter, type BusinessFilter } from './business';
-import { expenses, income, liabilities, value, type Entry } from './finance';
+import { budgetKey, expenses, income, liabilities, value, type Entry } from './finance';
 import { convertAmount } from './market';
+import type { Money } from './money';
 import type { Share } from './cash-flow-report';
 import type { PlanningData } from './planning';
-import { isMortgagePayment, spendingAmount, trackerDated } from './spending';
+import { cashFlowItems, isMortgagePayment } from './spending';
 import type { TransactionSplit } from './transaction-tools';
 import { ratesOf } from './transaction-rates';
 
@@ -36,44 +37,46 @@ export const readableRange = (range: ReportRange): ReportRange => {
  return months.length <= 24 ? range : { from: months[months.length - 24] + '-01', to: range.to };
 };
 
-/** One amount on a report: a transaction, or one split part of it, in the display currency. */
-export type LedgerLine = { id: string; record: Entry | null; name: string; date: string; direction: Direction; amount: number; category: string; business: string | null };
+/** One amount on a report: a transaction, or one split part of it, in the display currency. `entered` is the same amount
+ * as it was recorded: one transaction reads this way, and only sums read `amount` (AGENTS.md, entered or converted). */
+export type LedgerLine = { id: string; record: Entry | null; name: string; date: string; direction: Direction; amount: number; entered: Money; category: string; business: string | null };
+/** A line no rate converts: known by its date, side, owner and category, so a screen counts it only where it is in view. */
+export type UnconvertedLine = Omit<LedgerLine, 'amount' | 'entered'>;
 
-/** Recorded income and spending in the range: splits become their parts, mortgage payments count their interest
- * (`lib/spending.ts`), and tracker expenses on investments count where they have no transaction of their own. */
+/** The business a Tracker expense belongs to: its asset, or the business that asset is held under. */
+const assetBusiness = (asset: Entry | undefined) => asset ? asset.kind === 'Business' ? asset.id : asset.business_id ?? null : null;
+
+/** Recorded income and spending in the range, by the one walk of `cashFlowItems`: splits become their parts, mortgage
+ * payments count their interest (`lib/spending.ts`), and tracker expenses on investments count where they have no
+ * transaction of their own. `unconverted` lists what no rate converts; `missing` counts those transactions. */
 export function reportLedger(data: Pick<PlanningData, 'records' | 'investmentLinks'>, splits: readonly TransactionSplit[], range: ReportRange, currency: string, today: string, rates: Rates) {
- const lines: LedgerLine[] = [];
+ const lines: LedgerLine[] = [], unconverted: UnconvertedLine[] = [];
  let missing = 0;
- const last = range.to < today ? range.to : today;
- const records = data.records as Entry[];
- for (const record of records) {
-  if (record.frequency !== 'Once' || !record.date || record.date < range.from || record.date > last) continue;
-  const direction: Direction | null = income.includes(record.kind) ? 'income' : expenses.includes(record.kind) ? 'expense' : null;
-  if (!direction) continue;
-  const total = direction === 'income' ? Number(record.amount) : spendingAmount(record);
-  const parts = isMortgagePayment(record) ? [] : splits.filter(part => part.record_id === record.id);
-  for (const [index, part] of (parts.length ? parts.map(part => ({ category: part.category_id, amount: Number(part.amount) })) : [{ category: record.custom_category_id ?? record.kind, amount: total }]).entries()) {
-   const amount = convertAmount(part.amount, record.currency, currency, ratesOf(record, rates));
-   if (amount === null || !Number.isFinite(amount)) { missing++; break; }
-   lines.push({ id: parts.length ? `${record.id}:${index}` : record.id, record, name: record.name.trim() || record.kind, date: record.date, direction, amount, category: part.category, business: record.business_id ?? null });
+ const records = data.records as Entry[], byId = new Map(records.map(record => [record.id, record]));
+ const splitsOf = new Map<string, TransactionSplit[]>();
+ for (const part of splits) splitsOf.set(part.record_id, [...splitsOf.get(part.record_id) ?? [], part]);
+ for (const item of cashFlowItems(records, range.from, range.to < today ? range.to : today, { splits, investmentLinks: data.investmentLinks ?? [] })) {
+  const { record } = item, asset = item.link ? byId.get(item.link.investment_history?.record_id ?? '') : undefined;
+  const split = record && !isMortgagePayment(record) ? splitsOf.get(record.id) ?? [] : [];
+  // Spending carries its parts; a split income is read the same way, and otherwise stands in its own category.
+  const parts = !item.income ? item.parts : split.length ? split.map(part => ({ category: part.category_id, amount: Number(part.amount) })) : [{ category: budgetKey(record!), amount: item.amount }];
+  const base = { name: record ? record.name.trim() || record.kind : asset?.name ?? 'Other expense', date: item.date, direction: (item.income ? 'income' : 'expense') as Direction, record, business: record ? record.business_id ?? null : assetBusiness(asset) };
+  const converted = parts.map((part, index) => ({ ...base, id: split.length ? `${item.id}:${index}` : item.id, category: part.category, part, value: item.currency === null ? null : convertAmount(part.amount, item.currency, currency, ratesOf(item.dated, rates)) }));
+  if (converted.some(line => line.value === null || !Number.isFinite(line.value))) {
+   missing++;
+   for (const { id, category } of converted) unconverted.push({ ...base, id, category });
+   continue;
   }
+  for (const { part, value, ...line } of converted) lines.push({ ...line, amount: value!, entered: { amount: part.amount, currency: item.currency! } });
  }
- const byId = new Map(records.map(record => [record.id, record]));
- for (const link of data.investmentLinks ?? []) {
-  const event = link.investment_history;
-  if (!event || event.event_type !== 'expense' || event.occurred_on < range.from || event.occurred_on > last || Number(link.amount) >= 0) continue;
-  if (records.some(record => record.history_event_id === link.id)) continue;
-  const asset = byId.get(event.record_id), unit = link.account_currency ?? byId.get(link.account_id)?.currency;
-  // A Tracker expense converts at the rates of its own day, as a transaction does.
-  const amount = unit ? convertAmount(-Number(link.amount), unit, currency, ratesOf(trackerDated(link, unit), rates)) : null;
-  if (amount === null) { missing++; continue; }
-  lines.push({ id: link.id, record: null, name: asset?.name ?? 'Other expense', date: event.occurred_on, direction: 'expense', amount, category: 'Other expense', business: asset ? (asset.kind === 'Business' ? asset.id : asset.business_id ?? null) : null });
- }
- return { lines: lines.sort((a, b) => b.date.localeCompare(a.date) || a.name.localeCompare(b.name) || a.id.localeCompare(b.id)), missing };
+ return { lines: lines.sort((a, b) => b.date.localeCompare(a.date) || a.name.localeCompare(b.name) || a.id.localeCompare(b.id)), unconverted, missing };
 }
 
+/** How many transactions these unconverted lines come from: a split one is several lines. */
+export const unconvertedCount = (lines: readonly UnconvertedLine[]) => new Set(lines.map(line => line.record?.id ?? line.id)).size;
+
 /** Lines of the selected businesses (and the household when it is selected, or nothing is). */
-export const filterLines = (lines: readonly LedgerLine[], filter: BusinessFilter) => lines.filter(line => inBusinessFilter(filter, line.business));
+export const filterLines = <L extends Pick<LedgerLine, 'business'>>(lines: readonly L[], filter: BusinessFilter) => lines.filter(line => inBusinessFilter(filter, line.business));
 
 export type Attribute = 'category' | 'group' | 'merchant' | 'business';
 /** Totals by a key, largest first, with each one's share of the whole. */
@@ -112,7 +115,7 @@ export function profitAndLoss(lines: readonly LedgerLine[], businessIds: readonl
 /** What a click on a chart narrows the transactions to. */
 /** `savings` is the period's net income: it narrows nothing and opens where that money went. */
 export type Drill = { direction?: Direction; category?: string; categories?: readonly string[]; business?: string | null; merchant?: string; savings?: number };
-export const drillMatches = (drill: Drill | null, line: LedgerLine, keyOf: (line: LedgerLine) => string = line => line.category) => !drill || (
+export const drillMatches = <L extends UnconvertedLine>(drill: Drill | null, line: L, keyOf: (line: L) => string = line => line.category) => !drill || (
  (drill.direction === undefined || line.direction === drill.direction) && (drill.category === undefined || keyOf(line) === drill.category) && (drill.categories === undefined || drill.categories.includes(line.category))
  && (drill.business === undefined || line.business === drill.business) && (drill.merchant === undefined || line.name === drill.merchant));
 

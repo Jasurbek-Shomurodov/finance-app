@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState, type KeyboardEvent, type MouseEvent } from 'react';
+import { useCallback, useMemo, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { ListChecks, Paperclip, ReceiptText, Search, Wand2 } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { useDisplayMoney } from '@/components/display-money';
@@ -12,11 +12,10 @@ import { PageHeader } from '@/components/presentation-foundation/page-header';
 import { Pagination } from '@/components/presentation-foundation/pagination';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { AddTransactionMenu } from '@/components/transactions/add-transaction-menu';
-import { BulkEditBar, BulkEditSheet } from '@/components/transactions/bulk-edit';
+import { BulkEditBar } from '@/components/transactions/bulk-edit';
+import { BulkEditSheet, RuleDialog, RulesDialog } from '@/components/transactions/lazy';
 import { TransactionsSummary } from '@/components/transactions/transactions-summary';
-import { BusinessPicker, CategoryPicker, OwnerPicker, useChoiceName } from '@/components/transactions/pickers';
-import { RuleDialog } from '@/components/transactions/rule-dialog';
-import { RulesDialog } from '@/components/transactions/rules-list';
+import { BusinessPicker, CategoryPicker, OwnerPicker, choiceNamer } from '@/components/transactions/pickers';
 import { TagFilter } from '@/components/transactions/tags';
 import { DayGroup, MortgageSplit, TransactionAmount, transactionRowLabel } from '@/components/transactions/transaction-row';
 import { BusinessFilter } from '@/components/presentation-foundation/business-filter';
@@ -24,7 +23,7 @@ import { OwnerFilter } from '@/components/presentation-foundation/owner-filter';
 import { TagChip } from '@/components/presentation-foundation/tag-chip';
 import { inOwnerFilter, ownerChoices, ownerOf, sharedWorkspace } from '@/lib/household';
 import { queryList, useLocationSearch } from '@/hooks/use-location-search';
-import { canAssignBusiness, nextPaletteColor } from '@/lib/business';
+import { businessMovable, nextPaletteColor } from '@/lib/business';
 import { tagsByRecord } from '@/lib/tags';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,8 +38,8 @@ import { formatNumber } from '@/lib/format';
 import { convertAmount, marketRates } from '@/lib/market';
 import { emptyPlanning } from '@/lib/planning';
 import { ratesOf } from '@/lib/transaction-rates';
-import { chunks, emptyTransactionFilter, filtersTransactions, groupPageByDay, earliestTransactionDay, periodDays, signedAmount, summarizeTransactions, transactionPeriodLabels, transactionPeriods, transactionsIn, transactionsQuery, type TransactionPeriod } from '@/lib/transaction-list';
-import { canRecategorize, canTakeCategory, categoryChoices, choiceKey, newRule, ruleFromBusiness, ruleFromChange, type CategoryChoice, type TransactionRule } from '@/lib/transaction-rules';
+import { bulkEditPlan, chunks, emptyTransactionFilter, filtersTransactions, groupPageByDay, earliestTransactionDay, periodDays, signedAmount, summarizeTransactions, transactionPeriodLabels, transactionPeriods, transactionsIn, transactionsQuery, type TransactionPeriod } from '@/lib/transaction-list';
+import { canRecategorize, categoryChoices, choiceKey, newRule, ruleFromBusiness, ruleFromChange, type CategoryChoice, type TransactionRule } from '@/lib/transaction-rules';
 import { TransactionInsights } from '@/components/transaction-insights';
 import { shownName } from '@/lib/record-names';
 
@@ -52,7 +51,7 @@ export function TransactionsScreen() {
  const { user, demo, reload, currency, market, planning, transactionTools, workspaceLoading, addCashFlow, setViewing, storedRecord, categorize, assignTransactionsBusiness, businessList, tags, attachments, refreshRecords, household, readOnly, assignRecordOwner, removedCategories, reviewRecurring } = useWorkspace();
  // In a shared household: whose transactions to show, and who each one belongs to.
  const homes = household.state;
- const owners = homes && sharedWorkspace(homes) ? ownerChoices(homes, { shared: t('Shared'), unnamed: t('Partner') }) : [];
+ const owners = useMemo(() => homes && sharedWorkspace(homes) ? ownerChoices(homes, { shared: t('Shared'), unnamed: t('Partner') }) : [], [homes, t]);
  const [ownerFilter, setOwnerFilter] = useState<string[]>([]);
  const ownerOption = (record: Entry) => { const id = ownerOf(record, homes!); return owners.find(item => item.id === id) ?? owners[0]; };
  const today = depositToday();
@@ -77,15 +76,16 @@ export function TransactionsScreen() {
  const data = useMemo(() => live ? { ...remote.data, records: remote.data.records.map(normalizeEntry) } : planning.data, [live, remote.data, planning.data]);
  const splits = transactionTools.data.splits;
  const tagMap = useMemo(() => tagsByRecord(tags.data.links), [tags.data.links]);
- const tagsOf = (id: string) => tagMap.get(id) ?? [];
+ const tagsOf = useCallback((id: string) => tagMap.get(id) ?? [], [tagMap]);
  const rules = useTransactionRules(user, demo, reload, data.records, splits, { categorize, assignBusiness: assignTransactionsBusiness, changeTags: tags.change, tagsOf }, refreshRecords);
- const choiceName = useChoiceName(data.categories);
- const nameOf = (record: Entry) => choiceName({ kind: record.kind, category_id: record.custom_category_id ?? null });
- const records = transactionsIn(data.records, range, today, filter, nameOf, tagsOf).filter(record => !owners.length || inOwnerFilter(ownerFilter, ownerOf(record, homes!)));
+ const choiceName = useMemo(() => choiceNamer(data.categories, t), [data.categories, t]);
+ const nameOf = useCallback((record: Entry) => choiceName({ kind: record.kind, category_id: record.custom_category_id ?? null }), [choiceName]);
+ const { from, to } = range;
+ const records = useMemo(() => transactionsIn(data.records, { from, to }, today, filter, nameOf, tagsOf).filter(record => !owners.length || inOwnerFilter(ownerFilter, ownerOf(record, homes!))), [data.records, from, to, today, filter, nameOf, tagsOf, owners, ownerFilter, homes]);
  const tagById = new Map(tags.data.tags.map(tag => [tag.id, tag]));
  const createTag = async (name: string) => { const id = crypto.randomUUID(); await tags.save({ id, name, color: nextPaletteColor(tags.data.tags.map(tag => tag.color)) }); return id; };
  const rates = marketRates(market);
- const convert = (amount: number, unit: string, record?: Entry) => convertAmount(amount, unit, currency, ratesOf(record, rates));
+ const convert = useCallback((amount: number, unit: string, record?: Entry) => convertAmount(amount, unit, currency, ratesOf(record, rates)), [currency, rates]);
  // Twenty transactions a page; changing the period or a filter starts again at the first page.
  const listKey = JSON.stringify([range, filter, ownerFilter]);
  const [paging, setPaging] = useState({ key: listKey, page: 1 });
@@ -93,8 +93,8 @@ export function TransactionsScreen() {
  if (paging.key !== listKey) setPaging({ key: listKey, page: 1 });
  const pageCount = Math.max(1, Math.ceil(records.length / transactionsPerPage));
  const page = paging.key === listKey ? Math.min(paging.page, pageCount) : 1;
- const days = groupPageByDay(records, (page - 1) * transactionsPerPage, page * transactionsPerPage, convert);
- const summary = summarizeTransactions(records, convert);
+ const days = useMemo(() => groupPageByDay(records, (page - 1) * transactionsPerPage, page * transactionsPerPage, convert), [records, page, convert]);
+ const summary = useMemo(() => summarizeTransactions(records, convert), [records, convert]);
  const accounts = new Map(data.records.filter(record => record.kind === 'Cash').map(record => [record.id, record.name]));
  const chosen = records.filter(record => selected.has(record.id));
  const categoryOptions = [...categoryChoices(data.categories, 'income', removedCategories.kinds), ...categoryChoices(data.categories, 'expense', removedCategories.kinds)];
@@ -104,7 +104,7 @@ export function TransactionsScreen() {
    const changed = await categorize(targets.map(record => record.id), choice);
    const skipped = targets.length - changed;
    if (targets.length === 1 && changed === 1) showAction('Updated to {category}', { params: { category: choiceName(choice) }, detail: 'Create a rule to do this automatically in the future.', action: 'Create rule', onAction: () => setRule(ruleFromChange(targets[0], choice)) });
-   else showNotice(skipped ? t('{changed} updated; {skipped} could not change category here.', { changed, skipped }) : t('{changed} updated', { changed }));
+   else showNotice(skipped ? t('{changed} updated; {skipped} could not change category here.', { changed: formatNumber(changed, locale, 0), skipped: formatNumber(skipped, locale, 0) }) : t('{changed} updated', { changed: formatNumber(changed, locale, 0) }));
   } catch (error) { showError((error as Error).message || 'Could not save changes.'); }
  }
  async function moveToBusiness(record: Entry, business: string | null) {
@@ -118,27 +118,27 @@ export function TransactionsScreen() {
  async function giveTo(record: Entry, owner: string) {
   try { await assignRecordOwner([record.id], owner); showNotice(t('Owner of {name} changed to {owner}', { name: record.name, owner: owners.find(item => item.id === owner)?.name ?? '' })); } catch (error) { showError((error as Error).message || 'Could not save changes.'); }
  }
- /** The Edit multiple drawer: every field that changed, applied to the transactions it can apply to. */
+ /** The Edit multiple drawer: every field that changed, applied to the transactions it can apply to. A failure part way
+  * says what was already applied; the drawer stays open with the reason, and trying again is harmless. */
  async function editMany(change: { choice: CategoryChoice | null; business: string | null | undefined; owner: string | undefined; add: string[]; remove: string[] }) {
+  const ids = chosen.map(record => record.id), plan = bulkEditPlan(chosen, change, splits), count = (value: number) => formatNumber(value, locale, 0);
+  // Each change reports only its own count, so the notice gives the largest.
+  let changed = 0;
   // The database takes up to 500 transactions at a time.
-  const each = async (ids: string[], run: (part: string[]) => Promise<number>) => { let sum = 0; for (const part of chunks(ids, 500)) sum += await run(part); return sum; };
-  const ids = chosen.map(record => record.id);
-  let changed = 0, kept = 0, fixedCategory = 0;
-  if (change.choice) {
-   // Transfer fees, split and linked payments keep their category; say how many, rather than a bare count.
-   const choice = change.choice, movable = chosen.filter(record => canTakeCategory(record, choice, splits));
-   fixedCategory = chosen.length - movable.length;
-   changed = Math.max(changed, await each(movable.map(record => record.id), part => categorize(part, choice)));
+  const each = async (list: string[], run: (part: string[]) => Promise<number>) => { let sum = 0; for (const part of chunks(list, 500)) { sum += await run(part); changed = Math.max(changed, sum); } };
+  try {
+   const { choice, business, owner } = change;
+   if (business !== undefined) await each(ids, part => assignTransactionsBusiness(part, business));
+   if (choice) await each(plan.movable.map(record => record.id), part => categorize(part, choice));
+   if (owner !== undefined) await each(ids, part => assignRecordOwner(part, owner));
+   if (change.add.length || change.remove.length) await each(ids, part => tags.change(part, change.add, change.remove));
+  } catch (reason) {
+   if (changed) showNotice(t('{changed} updated', { changed: count(changed) }));
+   throw reason;
   }
-  if (change.business !== undefined) {
-   // Planned spending, business income and salary from a source keep their business; say how many stayed.
-   const business = change.business;
-   kept = chosen.filter(record => (record.business_id ?? null) !== business && !canAssignBusiness(record, business)).length;
-   changed = Math.max(changed, await each(ids, part => assignTransactionsBusiness(part, business)));
-  }
-  if (change.owner !== undefined) { const owner = change.owner; changed = Math.max(changed, await each(ids, part => assignRecordOwner(part, owner))); }
-  if (change.add.length || change.remove.length) changed = Math.max(changed, await each(ids, part => tags.change(part, change.add, change.remove)));
-  showNotice(fixedCategory ? t('{changed} updated; {skipped} could not change category here.', { changed, skipped: fixedCategory }) : kept ? t('{changed} updated; {skipped} could not change business here.', { changed, skipped: kept }) : t('{changed} updated', { changed }));
+  const { fixedCategory, kept } = plan, done = count(changed);
+  // Transfer fees, split and linked payments keep their category, and planned spending, business income and salary from a source their business: say how many.
+  showNotice(fixedCategory && kept ? t('{changed} updated; {category} could not change category and {business} could not change business here.', { changed: done, category: count(fixedCategory), business: count(kept) }) : fixedCategory ? t('{changed} updated; {skipped} could not change category here.', { changed: done, skipped: count(fixedCategory) }) : kept ? t('{changed} updated; {skipped} could not change business here.', { changed: done, skipped: count(kept) }) : t('{changed} updated', { changed: done }));
   setSelected(new Set());
  }
  const toggle = (id: string) => setSelected(previous => { const next = new Set(previous); if (next.has(id)) next.delete(id); else next.add(id); return next; });
@@ -181,7 +181,7 @@ export function TransactionsScreen() {
        {selecting && <input type="checkbox" aria-label={t('Select {name}', { name: record.name })} checked={selected.has(record.id)} onChange={() => toggle(record.id)}/>}
        <span className="transaction-merchant"><CategoryIcon kind={record.custom_category_id ? nameOf(record) : record.kind}/><span>{attachments.counts.get(record.id) ? <span className="transaction-name"><strong>{shownName(record, t, nameOf(record))}</strong><Paperclip className="transaction-attachment-mark" size={13} role="img" aria-label={t('Attachments: {count}', { count: attachments.counts.get(record.id)! })}/></span> : <strong>{shownName(record, t, nameOf(record))}</strong>}{record.account_id && accounts.get(record.account_id) && <small>{accounts.get(record.account_id)}</small>}<MortgageSplit record={record}/>{recordTags.length > 0 && <span className="transaction-tags">{recordTags.map(tag => <TagChip key={tag.id} name={tag.name} color={tag.color}/>)}</span>}</span></span>
        <span className="transaction-labels">{owners.length > 0 && <OwnerPicker record={record} owner={ownerOption(record)} owners={owners} disabled={readOnly || selecting} onChange={owner => void giveTo(record, owner)}/>}<CategoryPicker record={record} categories={data.categories} removed={removedCategories.kinds} disabled={!editable || selecting || readOnly} onChange={choice => change([record], choice)}/>
-       {businessList.length > 0 && <BusinessPicker record={record} businesses={businessList} disabled={selecting || readOnly || record.frequency !== 'Once' || !!record.history_event_id || !!record.earning_source_id || (record.kind === 'Salary' && !!record.income_source_id)} onChange={business => moveToBusiness(record, business)}/>}</span>
+       {businessList.length > 0 && <BusinessPicker record={record} businesses={businessList} disabled={selecting || readOnly || !businessMovable(record)} onChange={business => moveToBusiness(record, business)}/>}</span>
        <TransactionAmount record={record}/>
       </li>;
      })}
@@ -192,7 +192,7 @@ export function TransactionsScreen() {
   </div>}
   {!loading && !error && <TransactionInsights owner={user} demo={demo} revision={reload} records={planning.data.records} today={today} onReview={reviewRecurring}/>}
   {editingMany && <BulkEditSheet records={chosen} categories={data.categories} removed={removedCategories.kinds} businesses={businessList} owners={owners} tags={tags.data.tags} tagsOf={tagsOf} onCreateTag={createTag} onSave={editMany} onClose={() => setEditingMany(false)}/>}
-  {rule && <RuleDialog key={rule.id} rule={rule} records={data.records} categories={data.categories} removed={removedCategories.kinds} businesses={businessList} accounts={[...accounts].map(([id, name]) => ({ id, name }))} tags={tags.data.tags} tagsOf={tagsOf} onCreateTag={createTag} splits={splits} onSave={async (next, apply) => { const changed = await rules.save(next, apply); if (apply) showNotice(t('{changed} updated', { changed })); return changed; }} onClose={() => setRule(null)}/>}
-  {rulesOpen && !rule && <RulesDialog rules={rules.rules} categories={data.categories} businesses={businessList} tags={tags.data.tags} onEdit={setRule} onAdd={() => setRule(newRule())} onRemove={item => rules.remove(item.id)} onClose={() => setRulesOpen(false)}/>}
+  {rule && <RuleDialog key={rule.id} rule={rule} records={demo ? data.records : undefined} categories={data.categories} removed={removedCategories.kinds} businesses={businessList} accounts={[...accounts].map(([id, name]) => ({ id, name }))} tags={tags.data.tags} tagsOf={tagsOf} onCreateTag={createTag} splits={splits} onSave={async (next, apply) => { const changed = await rules.save(next, apply); if (apply) showNotice(t('{changed} updated', { changed: formatNumber(changed, locale, 0) })); return changed; }} onClose={() => setRule(null)}/>}
+  {rulesOpen && !rule && <RulesDialog rules={rules.rules} loading={rules.loading} error={rules.error} onRetry={rules.retry} categories={data.categories} businesses={businessList} tags={tags.data.tags} onEdit={setRule} onAdd={() => setRule(newRule())} onRemove={item => rules.remove(item.id)} onClose={() => setRulesOpen(false)}/>}
  </div>;
 }

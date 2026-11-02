@@ -16,9 +16,9 @@ export function monthOccurrences(records: Entry[], occurrences: Occurrence[], mo
  return occurrencesBetween(records, occurrences, month + '-01', monthEnd(month), today, debtPayments);
 }
 
-/** Scheduled incomes and bills still open from the months before `month`: overdue, neither recorded (a recorded 0 counts) nor skipped, oldest first. They stay in sight in the current month until settled. Loan payments are left out: their reminders list them. */
-export function carriedOverdue(records: Entry[], occurrences: Occurrence[], month: string, today: string): RecurringItem[] {
- return occurrencesBetween(records, occurrences, '', shiftDay(month + '-01', -1), today).filter(item => item.status === 'overdue');
+/** Scheduled incomes and bills still open from the months before `month`: overdue, neither recorded (a recorded 0 counts) nor skipped, oldest first. They stay in sight in the current month until settled. With `debtPayments`, so do unpaid loan payments, as the drawer's overdue count has them. */
+export function carriedOverdue(records: Entry[], occurrences: Occurrence[], month: string, today: string, debtPayments?: DebtPayment[]): RecurringItem[] {
+ return occurrencesBetween(records, occurrences, '', shiftDay(month + '-01', -1), today, debtPayments).filter(item => item.status === 'overdue');
 }
 
 /** The due dates of one schedule a payment can still settle: every one up to `today` neither recorded nor skipped, oldest first. Record payment offers them. */
@@ -141,15 +141,16 @@ export function groupRecurring(items: RecurringItem[], by: RecurringGrouping, ca
  return [...groups].map(([key, rows]) => ({ key, items: rows })).sort((a, b) => rank(a.key) - rank(b.key) || (by === 'date' || by === 'category' ? a.key.localeCompare(b.key) : 0));
 }
 
-/** Summary bars: how much came in or went out, and how much is still to come. Skipped items count as neither. */
+/** Summary bars: how much came in or went out, and how much is still to come. Skipped items count as neither. Each side
+ * counts what no rate converts (`missing`): its figures are then unknown, shown as —, never a smaller total. */
 export function recurringSummary(items: RecurringItem[], convert: (amount: number, currency: string) => number | null) {
- const totals = { income: { done: 0, remaining: 0 }, expense: { done: 0, remaining: 0 }, missing: 0 };
+ const totals = { income: { done: 0, remaining: 0, missing: 0 }, expense: { done: 0, remaining: 0, missing: 0 }, missing: 0 };
  for (const item of items) {
   if (item.status === 'skipped') continue;
   // A settled payment counts what actually came in or went out.
-  if (item.recorded === null) { totals.missing++; continue; }
+  if (item.recorded === null) { totals.missing++; totals[item.direction].missing++; continue; }
   const value = convert(item.status === 'paid' ? item.recorded ?? item.amount : item.amount, item.record.currency);
-  if (value === null) { totals.missing++; continue; }
+  if (value === null) { totals.missing++; totals[item.direction].missing++; continue; }
   totals[item.direction][item.status === 'paid' ? 'done' : 'remaining'] += value;
  }
  return totals;

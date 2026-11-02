@@ -47,7 +47,7 @@ function ConnectTelegram() {
         <div><dt>{t('Account')}</dt><dd>{view.account || '—'}</dd></div>
       </dl>
       <p role="note">{t('Connecting lets this Telegram chat see and change everything in this account. Only connect if you pressed Sign in in your own Telegram just now: the Telegram name above is chosen by whoever owns that chat, so it proves nothing.')}</p>
-      <div className="entry-actions"><Button disabled={busy} onClick={() => void run('confirm')}>{t('Connect')}</Button></div>
+      <div className="entry-actions"><Button disabled={busy} onClick={() => void run('confirm')}>{t('Connect')}</Button><Button variant="outline" disabled={busy} onClick={() => void run('cancel')}>{t('Cancel')}</Button></div>
     </>}
     {view.state === 'connected' && <>
       <p role="status">{t('Telegram is connected. Go back to the chat to continue.')}</p>

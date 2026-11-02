@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {loadTS} from './helpers/load-ts.mjs';
@@ -8,14 +9,15 @@ const {depositToday}=loadTS('lib/deposit-interest.ts');
 const {shiftDay}=loadTS('lib/calendar-days.ts');
 const today=depositToday();
 const tile=({label,value,tone,href,aside,children})=>React.createElement('a',{href,'data-tone':tone},label,'=',value,aside&&React.createElement('small',null,aside),children);
-const {DashboardHeadline}=loadTS('components/dashboard-headline.tsx',{
+const {DashboardHeadline,useHeadlineFigures}=loadTS('components/dashboard-headline.tsx',{
  '@/components/language-provider':{useLanguage:()=>({locale:'en-US',t:(text,values={})=>text.replace(/\{(\w+)\}/g,(_,key)=>values[key]??key)})},
  '@/components/presentation-foundation/stat-tile':{StatTiles:({children,columns})=>React.createElement('div',{'data-columns':columns},children),StatTile:tile},
  '@/components/spending-pace-card':{paceDifference:state=>state.difference},
 });
 const bill=(id,amount,extra={})=>({id,name:id,kind:'Living expense',amount,currency:'USD',frequency:'Monthly',date:today,notes:'',quantity:1,cost:0,rate:0,...extra});
 const data={records:[bill('gym',60),bill('pay',5000,{kind:'Salary'})],occurrences:[],debtPayments:[],categories:[],goals:[],activity:[]};
-const render=props=>renderToStaticMarkup(React.createElement(DashboardHeadline,{netWorth:1484820,budget:{month:today.slice(0,7),rows:[],plan:6200,spent:3824,watched:[],loading:false},data,currency:'USD',market:null,...props}));
+const Headline=props=>React.createElement(DashboardHeadline,{...props,figures:useHeadlineFigures(props)});
+const render=props=>renderToStaticMarkup(React.createElement(Headline,{netWorth:1484820,budget:{month:today.slice(0,7),rows:[],plan:6200,spent:3824,watched:[],loading:false},data,currency:'USD',market:null,...props}));
 
 test('the key figures link this month, the budget, what is due within a week and the lowest cash ahead to their pages',()=>{
  const html=render({});
@@ -30,7 +32,6 @@ test('the key figures link this month, the budget, what is due within a week and
 test('with the net worth card hidden, net worth joins the figures as a tile of its own',()=>{
  const html=render({netWorthTile:true});
  assert.match(html,/^<div data-columns="auto"><a href="\/assets">Net worth=\$1,484,820<\/a>/);
- assert.match(render({netWorthTile:true,netWorth:null}),/Net worth=—/);
 });
 
 test('the headline says over, or nothing, rather than a wrong budget figure',()=>{
@@ -51,6 +52,24 @@ test('spending says how far ahead of or behind last month it is by this day',()=
  assert.doesNotMatch(render({spending:{difference:null}}),/stat-tile-trend/,'nothing to compare');
 });
 
+test('spending with an amount no rate converts, or a read that failed, is unknown rather than a partial figure',()=>{
+ const missing=render({spending:{difference:null,loading:false,error:'',pace:{spent:400,missing:true}}});
+ assert.match(missing,/Spent this month=—<p>Exchange rate unavailable\.<\/p>/,'never the $400 that could be converted');
+ assert.match(render({spending:{difference:null,loading:false,error:'Could not load data.',pace:{spent:0,missing:false}}}),/Spent this month=—<\/a>/,'a failed read is not $0');
+ assert.match(render({spending:undefined,budget:{plan:6200,spent:3824,loading:false,missing:2}}),/Spent this month=—<p>Exchange rate unavailable\.<\/p>/);
+ assert.match(render({spending:undefined,budget:{plan:6200,spent:0,loading:false,error:'Could not load data.'}}),/Spent this month=—<\/a>/);
+});
+
+test('the budget tile has no remainder while the month is unknown',()=>{
+ assert.match(render({budget:{plan:6200,spent:3824,loading:false,missing:1}}),/Budget left=—<p>Exchange rate unavailable\.<\/p><\/a>/,'one amount left out would overstate what is left');
+ assert.match(render({budget:{plan:6200,spent:0,loading:false,error:'Could not load data.'}}),/Budget left=—<\/a>/,'a failed read never reads as the whole plan left');
+});
+
+test('the Due tile says overdue when that is what is left',()=>{
+ const html=render({data:{...data,records:[bill('rent',900,{date:shiftDay(today,-3),frequency:'Once',kind:'Debt'})]}});
+ assert.match(html,/<span class="status-badge is-overdue">1 overdue<\/span>/);assert.doesNotMatch(html,/0 due soon/);
+});
+
 test('the next payment due is named, overdue in red when its date has passed',()=>{
  const late={...data,records:[bill('rent',900,{date:shiftDay(today,-3)}),bill('gym',60,{date:shiftDay(today,2)})]};
  const html=render({data:late});
@@ -64,6 +83,11 @@ test('the lowest balance ahead is dated, and waits for the budget lines the fore
  const withCash={...data,records:[...data.records,cash]};
  assert.match(render({data:withCash}),/Lowest balance ahead=\$[\d,]+<p>\d+ \w+ \d{4} · Total cash<\/p><\/a>/);
  assert.match(render({data:withCash,forecastLoading:true}),/Lowest balance ahead=—/);
+});
+
+test('the headline works out its figures once, for both spots it stands in',()=>{
+ assert.match(fs.readFileSync('components/workspace/screens/overview-screen.tsx','utf8'),/const figures = useHeadlineFigures\(/);
+ assert.equal([...fs.readFileSync('components/workspace/screens/overview-screen.tsx','utf8').matchAll(/useHeadlineFigures\(/g)].length,1);
 });
 
 test('the lowest balance waits for a saved Budget that failed, warns below zero, and has no figure while a rate is missing',()=>{

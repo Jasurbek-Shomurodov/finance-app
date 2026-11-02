@@ -254,3 +254,32 @@ test('a page of transactions shows each day\'s whole total, also when the day ru
  assert.deepEqual(groupPageByDay(rows, 2, 4, convert).map(day => [day.date, day.records.length, day.total]), [['2026-10-03', 1, 2600], ['2026-10-02', 1, -12]]);
  assert.equal(groupPageByDay([{ ...rows[0], currency: 'UZS' }, rows[1]], 0, 1, (amount, unit) => unit === 'USD' ? amount : null)[0].total, null, 'a day with an unconvertible row stays unknown');
 });
+
+test('a day whose unconvertible row sits on another page stays unknown, never the page\'s part of it (MONEY-008)', () => {
+ const rows = [record('a', 'Pay', 'Salary', 500, '2026-10-03'), record('b', 'Lunch', 'Living expense', 90000, '2026-10-03', { currency: 'UZS' })];
+ const usdOnly = (amount, unit) => unit === 'USD' ? amount : null;
+ assert.equal(groupPageByDay(rows, 0, 1, usdOnly)[0].total, null);
+ assert.equal(groupPageByDay(rows, 0, 1, amount => amount)[0].total, 500 - 90000, 'a converted day still totals the whole day');
+});
+
+test('Edit multiple: a transaction taking a business may take Business income in the same edit, and both skip counts are known', () => {
+ const { bulkEditPlan } = loadTS('lib/transaction-list.ts');
+ const plain = record('a', 'Sale', 'Other income', 10, '2026-10-03'), linked = record('b', 'Fee', 'Other income', 2, '2026-10-03', { movement_id: 'm' }), source = record('c', 'Pay', 'Other income', 3, '2026-10-03', { earning_source_id: 's' });
+ const choice = { kind: 'Business income', category_id: null };
+ const alone = bulkEditPlan([plain], { choice, business: undefined });
+ assert.deepEqual([alone.movable.length, alone.fixedCategory, alone.kept], [0, 1, 0], 'without a business it cannot be business income');
+ const both = bulkEditPlan([plain, linked, source], { choice, business: 'shop' });
+ assert.deepEqual(both.movable.map(row => row.id), ['a', 'b'].filter(id => id === 'a'));
+ assert.deepEqual([both.fixedCategory, both.kept], [2, 1], 'the linked and the source row keep their category, the source row its business');
+ assert.deepEqual([bulkEditPlan([plain], { choice: null, business: undefined }).fixedCategory, bulkEditPlan([plain], { choice: null, business: undefined }).kept], [0, 0]);
+});
+
+test('a business stays off planned spending, as the database refuses it; a row that follows its source cannot move at all', () => {
+ const { businessMovable, canAssignBusiness } = loadTS('lib/business.ts');
+ const planned = record('a', 'Food', 'Living expense', 10, '2026-10-03', { expense_plan_id: 'plan' });
+ assert.equal(canAssignBusiness(planned, 'shop'), false);
+ assert.equal(canAssignBusiness({ ...planned, business_id: 'shop' }, null), true, 'it may go back to the household');
+ assert.equal(businessMovable(planned), true);
+ assert.equal(businessMovable(record('b', 'Pay', 'Salary', 10, '2026-10-03', { income_source_id: 'plan' })), false);
+ assert.equal(businessMovable(record('c', 'Rent', 'Rent expense', 10, '2026-10-03', { frequency: 'Monthly' })), false);
+});

@@ -19,12 +19,12 @@ import { monthEnd, shiftMonth } from '@/lib/calendar-days';
 import { convertAmount } from '@/lib/market';
 import { upcomingPayments, type PlanningData } from '@/lib/planning';
 import { archivedSchedules, calendarWeeks, carriedOverdue, monthOccurrences, onlyDirection, openDueDates, payRequest, recurringSummary, type ArchiveTarget, type RecurringItem } from '@/lib/recurring';
-import { AccountOperation, type Operation } from './account-operation';
+import type { Operation } from './account-operation';
 import { RecurringList } from './recurring-list';
 import { ArchivedFold, OccurrenceRow, useDueLabel } from './recurring-rows';
 import { useScheduleDeletion } from './delete-schedule-dialog';
 import { useColumnsFit } from '@/hooks/use-columns-fit';
-import { useRecurringDetails } from './recurring-details';
+import { AccountOperation, useRecurringDetails } from './recurring-lazy';
 import { paymentsFrom } from '@/lib/payment-account';
 import { AddRecurringMenu, type RecurringKind } from './add-recurring-menu';
 import { RecurringFlowButton } from './recurring-flow-button';
@@ -38,14 +38,15 @@ type Props = { data: PlanningData; save: (action: string, data: unknown) => Prom
  onDelete?: (target: ArchiveTarget, removeHistory: boolean) => Promise<void> };
 type Direction = RecurringItem['direction'];
 
-/** One summary bar: what already came in (or went out) against the month's total. Tapping it shows only that side in the list; tapping again shows everything. */
-function SummaryBar({ label, done, remaining, doneLabel, currency, tone, pressed, onPress }: { label: string; done: number; remaining: number; doneLabel: string; currency: string; tone: Direction; pressed: boolean; onPress: () => void }) {
+/** One summary bar: what already came in (or went out) against the month's total. Tapping it shows only that side in the list; tapping again shows everything.
+ * `missing` counts amounts of this side no rate converts: its figures then read —, never a smaller total, with the note under the bars. */
+function SummaryBar({ label, done, remaining, missing, doneLabel, currency, tone, pressed, onPress }: { label: string; done: number; remaining: number; missing: number; doneLabel: string; currency: string; tone: Direction; pressed: boolean; onPress: () => void }) {
  const { t, locale } = useLanguage();
- const total = done + remaining;
+ const total = done + remaining, money = (amount: number) => missing ? '—' : formatMoney(amount, currency, locale);
  return <button type="button" className="recurring-bar" data-tone={tone} aria-pressed={pressed} onClick={onPress}>
-  <span className="recurring-bar-line"><strong>{label}</strong><span>{t('{amount} total', { amount: formatMoney(total, currency, locale) })}</span></span>
-  <span className="progress-track"><span style={{ width: `${total > 0 ? done / total * 100 : 0}%` }}/></span>
-  <span className="recurring-bar-line"><small>{t(doneLabel, { amount: formatMoney(done, currency, locale) })}</small><small>{t('{amount} remaining', { amount: formatMoney(remaining, currency, locale) })}</small></span>
+  <span className="recurring-bar-line"><strong>{label}</strong><span>{t('{amount} total', { amount: money(total) })}</span></span>
+  <span className="progress-track"><span style={{ width: `${total > 0 && !missing ? done / total * 100 : 0}%` }}/></span>
+  <span className="recurring-bar-line"><small>{t(doneLabel, { amount: money(done) })}</small><small>{t('{amount} remaining', { amount: money(remaining) })}</small></span>
  </button>;
 }
 
@@ -69,7 +70,7 @@ export function UpcomingPage({ data, save, currency, currencies = [], rates, vie
  const scheduled = view === 'list' || view === 'calendar';
  const items = monthOccurrences(data.records, data.occurrences, month, today, data.debtPayments);
  // Payments left open in earlier months stay at the top of every month shown until they are recorded (0 counts) or skipped, so none is forgotten. They are not that month's totals.
- const carried = carriedOverdue(data.records, data.occurrences, month, today);
+ const carried = carriedOverdue(data.records, data.occurrences, month, today, data.debtPayments);
  const summary = recurringSummary(items, (amount, unit) => convertAmount(amount, unit, currency, rates));
  // Tapping Income or Expenses narrows the list and calendar to that side.
  const [only, setOnly] = useState<Direction | null>(null);
@@ -78,9 +79,10 @@ export function UpcomingPage({ data, save, currency, currencies = [], rates, vie
  const reminders = monthReminders(data, month, today);
  const skipped = data.occurrences.filter(o => o.status === 'dismissed' && data.records.some(r => r.id === o.record_id && r.frequency !== 'Once'));
  async function run(action: () => Promise<void>) { setBusy(true); setError(''); try { await action(); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } }
- const payDebt = (record: RecurringItem['record']) => setOperation({ action: record.kind === 'Mortgage' ? 'mortgage' : 'repayment', target_id: record.id, date: today, amount: 0 });
+ const payDebt = (record: RecurringItem['record'], date = today) => setOperation({ action: record.kind === 'Mortgage' ? 'mortgage' : 'repayment', target_id: record.id, date, amount: 0 });
  // A recorded occurrence takes another payment, starting at what is still to come.
- const pay = (item: RecurringItem) => item.installment ? payDebt(item.record) : setOperation({ action: 'occurrence', target_id: item.record.id, date: item.date, ...(item.status === 'paid' ? { extra: true, amount: Math.max(Math.ceil(item.amount - (item.recorded ?? item.amount)), 0) } : { amount: item.amount, dues: [...new Set([...openDueDates(data.records, data.occurrences, item.record.id, today), item.date])].sort() }) });
+ // A loan month is settled by a payment dated in it, so one carried from an earlier month starts on its own due date.
+ const pay = (item: RecurringItem) => item.installment ? payDebt(item.record, item.date.slice(0, 7) < today.slice(0, 7) ? item.date : today) : setOperation({ action: 'occurrence', target_id: item.record.id, date: item.date, ...(item.status === 'paid' ? { extra: true, amount: Math.max(Math.ceil(item.amount - (item.recorded ?? item.amount)), 0) } : { amount: item.amount, dues: [...new Set([...openDueDates(data.records, data.occurrences, item.record.id, today), item.date])].sort() }) });
  // Tapping a row shows its history and totals; Edit is in its ⋯ menu and Record payment on the row.
  const details = useRecurringDetails(data, today);
  const archive = onArchive && ((target: ArchiveTarget, archived = true) => run(() => onArchive(target, archived)));
@@ -117,8 +119,9 @@ export function UpcomingPage({ data, save, currency, currencies = [], rates, vie
   {scheduled && <>
   <section className="panel recurring-summary" aria-label={formatMonthYear(month, locale)}>
    <div className="recurring-summary-head"><h2>{formatMonthYear(month, locale)}</h2><RecurringFlowButton items={items} month={month} currency={currency} convert={(amount, unit) => convertAmount(amount, unit, currency, rates)}/></div>
-   <SummaryBar label={t('Income')} done={summary.income.done} remaining={summary.income.remaining} doneLabel="{amount} received" currency={currency} tone="income" pressed={only === 'income'} onPress={() => toggle('income')}/>
-   <SummaryBar label={t('Expenses')} done={summary.expense.done} remaining={summary.expense.remaining} doneLabel="{amount} paid" currency={currency} tone="expense" pressed={only === 'expense'} onPress={() => toggle('expense')}/>
+   <SummaryBar label={t('Income')} done={summary.income.done} remaining={summary.income.remaining} missing={summary.income.missing} doneLabel="{amount} received" currency={currency} tone="income" pressed={only === 'income'} onPress={() => toggle('income')}/>
+   <SummaryBar label={t('Expenses')} done={summary.expense.done} remaining={summary.expense.remaining} missing={summary.expense.missing} doneLabel="{amount} paid" currency={currency} tone="expense" pressed={only === 'expense'} onPress={() => toggle('expense')}/>
+   {summary.missing > 0 && <p role="status" className="muted">{t('Exchange rate unavailable.')}</p>}
   </section>
   {view === 'list' ? <RecurringList items={shown} carried={shownCarried} categories={data.categories} listRef={rows} row={row}/>
    : <RecurringCalendar month={month} items={shown} reminders={reminders} today={today}/>}

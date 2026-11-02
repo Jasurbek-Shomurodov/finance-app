@@ -50,7 +50,16 @@ export type DueItem = {key:string;record:Entry;date:string;overdue:boolean;type:
 /** A repayment or mortgage payment made against a loan, debt or mortgage on a day. `amount` is what it paid (principal
  * and interest) in `currency`, when the read knows it; null when it could not be counted in the loan's currency. */
 export type DebtPayment = {record_id:string;date:string;amount?:number|null;currency?:string;/** The cash account it was paid from, when known. */account_id?:string};
-type RepaymentRow={id?:string;action:string;target_id:string|null;occurred_on:string;amount?:number;fee?:number;account_id?:string};
+type RepaymentRow={id?:string;action:string;target_id:string|null;occurred_on:string;amount?:number;fee?:number;account_id?:string;/** `amount` is in the loan's currency, not the account's. */inLoanCurrency?:boolean};
+/** A loan's or debt's withdrawal in its Tracker history, with the cash account that paid it. */
+export type TrackerRepayment={id:string;record_id:string;occurred_on:string;amount?:number;account_link?:{account_id:string}|null};
+export const trackerRepaymentColumns='id,record_id,occurred_on,amount,account_link:investment_account_links(account_id)';
+/** Loans › Record payment saves through the Tracker: a history row and no activity row. A repayment from Accounts in
+ * another currency writes both under one id, so it is counted once. */
+export function withTrackerRepayments(activity:RepaymentRow[],tracked:TrackerRepayment[]):RepaymentRow[]{
+ const saved=new Set(activity.flatMap(row=>row.id?[row.id]:[]));
+ return [...activity,...tracked.filter(row=>!saved.has(row.id)).map(row=>({id:row.id,action:'repayment',target_id:row.record_id,occurred_on:row.occurred_on,amount:row.amount,account_id:row.account_link?.account_id,inLoanCurrency:true}))];
+}
 type MortgagePaymentRow={id?:string;mortgage_id:string;paid_on:string;principal?:number;interest?:number};
 /** Repayments from account activity and mortgage payments, as one list. A mortgage payment from an account is in both
  * under one id; it is counted once. Given the records' currencies, each payment carries what it paid: a repayment in
@@ -60,7 +69,7 @@ export function debtPaymentsFrom(activity:RepaymentRow[],mortgagePayments:Mortga
  const accountOf=new Map(activity.flatMap(row=>row.id&&row.account_id?[[row.id,row.account_id] as const]:[]));
  const paid=(amount:number|undefined,extra:number|undefined,currency:string|undefined)=>amount===undefined||!currency?{}:{amount:Number(amount)+Number(extra??0),currency};
  const from=(account:string|undefined)=>account?{account_id:account}:{};
- return [...activity.filter(row=>(row.action==='repayment'||row.action==='mortgage')&&row.target_id&&!(row.id&&mortgageIds.has(row.id))).map(row=>({record_id:row.target_id!,date:row.occurred_on,...paid(row.amount,row.fee,currencyOf?.get(row.account_id??'')),...from(row.account_id)})),
+ return [...activity.filter(row=>(row.action==='repayment'||row.action==='mortgage')&&row.target_id&&!(row.id&&mortgageIds.has(row.id))).map(row=>({record_id:row.target_id!,date:row.occurred_on,...paid(row.amount,row.fee,currencyOf?.get((row.inLoanCurrency?row.target_id:row.account_id)??'')),...from(row.account_id)})),
   ...mortgagePayments.map(row=>({record_id:row.mortgage_id,date:row.paid_on,...paid(row.principal,row.interest,currencyOf?.get(row.mortgage_id)),...from(row.id?accountOf.get(row.id):undefined)}))];
 }
 /** Each payment's amount in its loan's currency, at the official rate of the payment's day; null when no rate is found.

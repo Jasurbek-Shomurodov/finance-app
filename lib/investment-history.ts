@@ -13,8 +13,10 @@ export type HistoryEvent = {
  occurred_on:string; amount:number; balance:number|null; ownership_percentage:number; principal:number; interest:number; notes:string; created_at:string;
  account_link?:{account_id:string;amount:number;account_currency?:string|null;record_currency?:string|null;exchange_rate?:number|null;rate_date?:string|null}|null;
  /** A payment linked to the asset (`assetPaymentEvents`), as it was entered; its row is the transaction itself. */
- entered?:{amount:number;currency:string};
+ entered?:{amount:number;currency:string;name:string};
 };
+/** A row of the Tracker's list. A linked payment no rate converts has no amount in the asset's currency: null, never 0. */
+export type TrackerEvent = Omit<HistoryEvent,'amount'> & { amount:number|null };
 const historyLabels: Record<HistoryEvent['event_type'],string> = {
  baseline:'Starting snapshot',valuation:'Value update',contribution:'Money invested',withdrawal:'Sale / withdrawal',income:'Income received',expense:'Expense paid',mortgage_payment:'Mortgage payment',
 };
@@ -48,23 +50,25 @@ export function historyEventLabel(kind:string,type:HistoryEvent['event_type']):s
  return historyLabels[type];
 }
 /** A row headed by the money that moved; a baseline or valuation is headed by the value it set. */
-export const historyEventMovesCash = (event:Pick<HistoryEvent,'event_type'|'amount'|'entered'>) => !!event.entered||!['baseline','valuation'].includes(event.event_type)&&Number(event.amount)>0;
+export const historyEventMovesCash = (event:Pick<TrackerEvent,'event_type'|'amount'|'entered'>) => !!event.entered||!['baseline','valuation'].includes(event.event_type)&&Number(event.amount)>0;
 /** Tracker updates and linked payments in one dated list, oldest first. */
-export const byHistoryDate = (a:HistoryEvent,b:HistoryEvent) => a.occurred_on.localeCompare(b.occurred_on)||a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id);
-export function historySeries(events:HistoryEvent[]) {
+export const byHistoryDate = (a:TrackerEvent,b:TrackerEvent) => a.occurred_on.localeCompare(b.occurred_on)||a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id);
+/** Contributions and receipts are null once a linked payment no rate converts is among them: unknown, never short. */
+export function historySeries(events:TrackerEvent[]) {
  const sorted=[...events].sort(byHistoryDate);
- let balance:number|null=null, contributions=0, additions=0, repayments=0, receipts=0, expenses=0, principal=0, interest=0;
- const days=new Map<string,{date:string;timestamp:number;balance:number|null;contributions:number;receipts:number}>();
+ let balance:number|null=null, contributions:number|null=0, additions=0, repayments=0, receipts:number|null=0, expenses=0, principal=0, interest=0;
+ const days=new Map<string,{date:string;timestamp:number;balance:number|null;contributions:number|null;receipts:number|null}>();
+ const plus=(sum:number|null,amount:number|null)=>sum===null||amount===null?null:sum+Number(amount);
  for(const e of sorted){
   if(e.balance!==null)balance=Number(e.balance)*Number(e.ownership_percentage)/100;
-  if(e.event_type==='contribution'){contributions+=Number(e.amount);additions+=Number(e.amount);}
-  if(e.event_type==='withdrawal'){contributions-=Number(e.amount);repayments+=Number(e.amount);}
-  if(e.event_type==='income')receipts+=Number(e.amount);
+  if(e.event_type==='contribution'){contributions=plus(contributions,e.amount);additions+=Number(e.amount);}
+  if(e.event_type==='withdrawal'){contributions=plus(contributions,e.amount===null?null:-e.amount);repayments+=Number(e.amount);}
+  if(e.event_type==='income')receipts=plus(receipts,e.amount);
   if(e.event_type==='expense')expenses+=Number(e.amount);
   if(e.event_type==='mortgage_payment'){principal+=Number(e.principal);interest+=Number(e.interest);}
   days.set(e.occurred_on,{date:e.occurred_on,timestamp:Date.parse(e.occurred_on+'T00:00:00Z'),balance,contributions,receipts});
  }
- return {points:[...days.values()],balance,contributions,additions,repayments,receipts,expenses,principal,interest};
+ return {points:[...days.values()],balance,contributions,additions,repayments,receipts,expenses,principal,interest,missing:contributions===null||receipts===null};
 }
 
 // Convert chart coordinates back to stored date-only values before shared display formatting.

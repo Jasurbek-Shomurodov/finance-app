@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {loadTS} from './helpers/load-ts.mjs';
-const {allocationDrift,currentAllocationWeights}=loadTS('lib/portfolio-performance.ts');
+const {allocationDrift,currentAllocationWeights,portfolioHoldings}=loadTS('lib/portfolio-performance.ts');
 const {debtPayoff}=loadTS('lib/debt-payoff.ts');
 const {watchlistSpending}=loadTS('lib/spending-watchlists.ts');
 const near=(actual,expected,tolerance=1e-8)=>assert.ok(Math.abs(actual-expected)<tolerance,`${actual} != ${expected}`);
@@ -49,4 +49,9 @@ test('saved scenarios preserve purchasing power and model a missed month without
  const result=projectGoalScenario(1000,2000,'2026-01-01',scenario);near(result.projected,2200);near(result.inflatedTarget,2000*1.1**(365/365.25));near(result.realValue,result.projected/1.1**(365/365.25));
  const missed=projectGoalScenario(1000,2000,'2026-01-01',{...scenario,inflation:0,missed_date:'2026-02-15'});assert.equal(missed.contributed,1100);assert.equal(missed.projected,2100);near(missed.required,1000/11);assert.equal(missed.points.find(p=>p.date==='2026-02-01').projected,1000);
  assert.equal(projectGoalScenario(1000,2000,'2026-01-01',{...scenario,inflation:-1}),null);
+});
+
+test('Target allocation counts what Investments holds: no money lent, and only cash set aside for investing',()=>{
+ const records=[{id:'s',kind:'Stock'},{id:'l',kind:'Money lent'},{id:'c',kind:'Cash'},{id:'i',kind:'Cash',is_investment:true},{id:'b',kind:'Loan'},{id:'p',kind:'Other expense'}];
+ assert.deepEqual(portfolioHoldings(records).map(record=>record.id),['s','i']);
 });

@@ -49,7 +49,7 @@ export function DeleteCategoryDialog({category,categories,removed=[],onClose,onD
   <AlertDialogTitle>{t('Delete {name}?',{name:category.name})}</AlertDialogTitle>
   <AlertDialogDescription>{t(inUse?'This category has linked records. Choose where to move them before deleting the category. Amounts, dates and account balances stay unchanged.':'Delete this category from your available categories?')}</AlertDialogDescription>
   {!usage&&!loadError&&<p role="status">{t('Checking linked records…')}</p>}
-  {usage&&inUse&&<><ul className="list-disc pl-5">
+  {usage&&inUse&&<><ul className="list-disc ps-5">
    {usage.records>0&&<li>{t('Transactions and schedules: {count}',{count:formatNumber(usage.records,locale,0)})}</li>}
    {usage.deleted>0&&<li>{t('Recently deleted records: {count}',{count:formatNumber(usage.deleted,locale,0)})}</li>}
    {usage.watchlists>0&&<li>{t('Spending watchlists: {count}',{count:formatNumber(usage.watchlists,locale,0)})}</li>}

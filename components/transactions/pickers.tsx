@@ -17,9 +17,10 @@ import { categoryChoices, choiceKey, directionOf, type CategoryChoice } from '@/
 type Choice = ReturnType<typeof categoryChoices>[number];
 
 /** The name shown for a transaction's category: a custom category's own name, or the translated kind. */
+export const choiceNamer = (categories: readonly Category[], t: (key: string) => string) => (choice: CategoryChoice) => choice.category_id ? categories.find(category => category.id === choice.category_id)?.name ?? t('Custom category') : t(choice.kind);
 export function useChoiceName(categories: readonly Category[]) {
  const { t } = useLanguage();
- return (choice: CategoryChoice) => choice.category_id ? categories.find(category => category.id === choice.category_id)?.name ?? t('Custom category') : t(choice.kind);
+ return choiceNamer(categories, t);
 }
 
 /** A searchable list of one direction's categories. */

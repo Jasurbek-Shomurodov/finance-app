@@ -4,7 +4,7 @@ import { fontIds, resolveFont } from '@/lib/fonts';
 import { isLanguage, languageCodes } from '@/lib/i18n';
 import { queueLanguageMenu } from '@/lib/notify-action';
 import { fiatCurrency } from '@/lib/api-validation';
-import { crossSite, postgrestFailure, readJson, signInAgain } from '@/lib/api-route';
+import { crossSite, postgrestFailure, readJson, reply, signInAgain } from '@/lib/api-route';
 import { session, supa, sameOrigin } from '@/lib/supabase';
 import { defaultPreferences, maxPreferredCurrencies } from '@/lib/currencies';
 import { onboardedOn } from '@/lib/onboarding';
@@ -46,6 +46,6 @@ export async function PUT(req: Request) {
     // A linked Telegram chat gets a new keyboard in the new language, so nobody has to press Start again.
     if (parsed.data.language !== previousLanguage) queueLanguageMenu(s, parsed.data.language);
     const finishedAt = onboarded === undefined ? earlierRows[0]?.onboarded_at : onboarded ? new Date().toISOString() : null;
-    return Response.json({ ...parsed.data, onboarded_on: onboardedOn(finishedAt) });
+    return reply({ ...parsed.data, onboarded_on: onboardedOn(finishedAt) });
   } catch { return Response.json({ error: notSaved }, { status: 503 }); }
 }

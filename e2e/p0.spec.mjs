@@ -90,6 +90,7 @@ test('ACC-005 XAPP-010 a transfer with a fee moves the money once and counts onl
   await page.goto('/accounts');
   await page.getByRole('button', { name: 'Transfer money' }).click();
   const dialog = page.getByRole('dialog');
+  await expect(dialog.locator('select').first()).toBeVisible();
   const [from, to] = await dialog.locator('select').all();
   await chooseOption(from, 'E2E Checking');
   await chooseOption(to, 'E2E Savings');

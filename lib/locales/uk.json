@@ -464,7 +464,6 @@
   "Could not import the file. Retry the same file safely.": "Не вдалося імпортувати файл. Безпечно повторіть той самий файл.",
   "Keep the currency and start date of an existing budget.": "Не можна змінити валюту чи дату початку наявного плану. Поверніть початкові значення, щоб зберегти.",
   "Include": "Включити",
-  "Select at least one transaction.": "Виберіть принаймні одну транзакцію.",
   "Import limit exceeded. Split this file into smaller files.": "Перевищено ліміт імпорту. Розділіть цей файл на менші.",
   "{name} has used {percent}% of its budget.": "{name}: використано {percent}% бюджету.",
   "Choose a different destination.": "Виберіть інше призначення.",
@@ -2763,5 +2762,9 @@
   "3-month average": "Середнє за 3 місяці",
   "Compared with average": "До середнього",
   "Item": "Стаття",
-  "Amounts are compared as entered, in each transaction’s own currency.": "Суми порівнюються як введені, у власній валюті кожної операції."
+  "Amounts are compared as entered, in each transaction’s own currency.": "Суми порівнюються як введені, у власній валюті кожної операції.",
+  "It changes at most the newest {count} matching transactions.": "Змінюється не більше {count} найновіших відповідних транзакцій.",
+  "{changed} updated; {category} could not change category and {business} could not change business here.": "Оновлено: {changed}; тут не вдалося змінити категорію для {category} і бізнес для {business}.",
+  "Could not delete this transaction. Please try again.": "Не вдалося видалити цю транзакцію. Спробуйте ще раз.",
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Ви ввійшли через Google, тому цей обліковий запис може ще не мати пароля. Задайте його через «Забули пароль», а потім введіть тут."
 }

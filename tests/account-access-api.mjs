@@ -137,3 +137,20 @@ test('a refused sign-up explains the reason the provider gives, logging only its
   assert.ok(!JSON.stringify(logged).includes('new@example.com'),'the address is never logged');
  }finally{if(previous===undefined)delete process.env.PUBLIC_SIGNUP_ENABLED;else process.env.PUBLIC_SIGNUP_ENABLED=previous;}
 });
+
+test('Settings learns that an account has only Google to sign in with, and the password checks stay',async()=>{
+ const previous=process.env.SUPABASE_SERVICE_ROLE_KEY;process.env.SUPABASE_SERVICE_ROLE_KEY='service';
+ try{
+  const google=api({provider:path=>path==='/auth/v1/user'?Response.json({identities:[{provider:'google'}]}):Response.json({error:'invalid'},{status:400})});
+  assert.equal((await (await google.GET()).json()).googleOnly,true);
+  // Proof of the person stays required: without the password the account is not deleted and nothing is sent to the admin API.
+  const refused=await google.POST(request({action:'delete_account',current_password:'guess',confirmation:'DELETE'}));
+  assert.equal(refused.status,403);assert.ok(!google.calls.some(call=>call.path.includes('/admin/')));
+  assert.equal((await (await api({provider:()=>Response.json({identities:[{provider:'email'},{provider:'google'}]})}).GET()).json()).googleOnly,false,'a linked account has its password');
+  assert.equal((await (await api({provider:()=>Response.json({error:'down'},{status:503})}).GET()).json()).googleOnly,false,'a failed read says nothing');
+  assert.equal((await (await api({provider:()=>{throw Error('timeout');}}).GET()).json()).googleOnly,false);
+  assert.equal((await (await api({auth:false}).GET()).json()).googleOnly,false);
+  const phone=api({email:''});assert.equal((await (await phone.GET()).json()).phoneOnly,true);assert.equal(phone.calls.length,0,'a phone account has no identity to look up');
+ }finally{if(previous===undefined)delete process.env.SUPABASE_SERVICE_ROLE_KEY;else process.env.SUPABASE_SERVICE_ROLE_KEY=previous;}
+});
+

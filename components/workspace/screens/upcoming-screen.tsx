@@ -18,7 +18,7 @@ export function UpcomingScreen() {
  const [view, setView] = useState<RecurringView>('list');
  // Add recurring sets up schedules only; payments are recorded on their rows.
  const addRecurring = (kind: RecurringKind) => kind === 'income' ? addRecurringIncome() : addCashFlow('Other expense', 'Monthly');
- const subscriptions = useSubscriptions(user, demo, reload, planning.data.records);
+ const subscriptions = useSubscriptions(user, demo, reload, planning.data.records, view === 'subscriptions');
  return <>
   <div data-page="Upcoming payments" className="content">
    <PlanningError/>

@@ -42,9 +42,9 @@ export function SettingsPanel({ initial, demo, onSaved, loading, loadError, onRe
     setBusy(true);
     try {
       let next = { ...snapshot, display_name: (snapshot.display_name ?? '').trim() };
-      if (!demo) next = await requestJson<typeof next>('/api/settings', { method: 'PUT', body: { ...snapshot, onboarded: undefined } });
+      if (!demo) next = await requestJson<typeof next>('/api/settings', { method: 'PUT', body: { ...snapshot, onboarded: undefined }, fallback: 'Could not save settings. Try again.' });
       onSaved(next); setSaved(next); setDraft(current => JSON.stringify(current) === JSON.stringify(snapshot) ? next : current); showSaved(next.language);
-    } catch (error) { setFailed(JSON.stringify(snapshot)); showError((error as Error).message || 'Could not save settings. Try again.'); }
+    } catch (error) { setFailed(JSON.stringify(snapshot)); showError((error as Error).message); }
     finally { setBusy(false); }
   }
   useEffect(() => {

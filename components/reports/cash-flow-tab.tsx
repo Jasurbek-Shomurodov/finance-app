@@ -10,6 +10,7 @@ import { HOUSEHOLD } from '@/lib/business';
 import { businessKey, businessSankey, cashFlowTrend, netTrendBy, profitAndLoss } from '@/lib/business-report';
 import { formatMoney, formatPercent } from '@/lib/format';
 import { rangeText, type TabProps } from './report-labels';
+import { TrendRateNote } from './report-filters';
 
 /** Cash flow: the period's totals, its breakdown as a Sankey or a profit and loss table, and its trend over time. */
 /** The period's income, expenses, net income and savings rate. `missing` counts the amounts no rate converts: a total that
@@ -27,7 +28,7 @@ function CashFlowTotals({ totals, missing, currency }: { totals: { income: numbe
 }
 
 /** `missing` counts the period's amounts no rate converts; the totals above the breakdown then read — (MONEY-008). */
-export function CashFlowTab({ lines, trendLines, trendRange, interval, includeHousehold, businessIds, names, groupOf, currency, view, onView, mode, onMode: setMode, onDrill, missing = 0 }: TabProps & { missing?: number; includeHousehold: boolean; businessIds: string[]; view: 'sankey' | 'pnl'; onView: (view: 'sankey' | 'pnl') => void; mode: 'breakdown' | 'trends'; onMode: (mode: 'breakdown' | 'trends') => void }) {
+export function CashFlowTab({ lines, trendLines, trendRange, interval, includeHousehold, businessIds, names, groupOf, currency, view, onView, mode, onMode: setMode, onDrill, missing = 0, trendMissing = 0 }: TabProps & { includeHousehold: boolean; businessIds: string[]; view: 'sankey' | 'pnl'; onView: (view: 'sankey' | 'pnl') => void; mode: 'breakdown' | 'trends'; onMode: (mode: 'breakdown' | 'trends') => void }) {
  const { t, locale } = useLanguage();
  const [breakdown, setBreakdown] = useState<'category' | 'group' | 'both'>('category');
  const [stacked, setStacked] = useState(false);
@@ -54,7 +55,8 @@ export function CashFlowTab({ lines, trendLines, trendRange, interval, includeHo
    {mode === 'trends' && byBusiness ? <TrendChart key="business" rows={netTrendBy(trendLines, trendRange, interval, businessKey, netKeys)} interval={interval} currency={currency} stacked={stacked} series={netKeys.map(key => ({ key, label: names.business(key), color: attributeColor('business', key, names) }))}/>
     : mode === 'trends' ? <TrendChart key="totals" rows={stacked ? trend.map(row => ({ period: row.period, income: row.income, expenses: -row.expenses })) : trend} interval={interval} currency={currency} stacked={stacked} series={[{ key: 'income', label: t('Income'), color: 'var(--positive)' }, { key: 'expenses', label: t('Expenses'), color: 'color-mix(in srgb, var(--foreground) 55%, transparent)' }]}/>
     : view === 'sankey' ? <BusinessSankeyChart data={sankey} currency={currency} onDrill={onDrill}/>
-    : <ProfitLossTable pnl={pnl} breakdown={breakdown} names={names} groupOf={groupOf} currency={currency} onDrill={onDrill}/>}
+    : <ProfitLossTable pnl={pnl} breakdown={breakdown} names={names} groupOf={groupOf} currency={currency} missing={missing > 0} onDrill={onDrill}/>}
+   {mode === 'trends' && <TrendRateNote count={trendMissing}/>}
   </section>
  </>;
 }

@@ -13,7 +13,9 @@ const reply=(body:unknown,status=200)=>answer(body,status,{noReferrer:true});
 export async function GET(){
  // An account created with a phone number has no email, so Settings offers to add one instead of asking for a password it never had.
  const auth=await session().catch(()=>null);
- return reply({signup:process.env.PUBLIC_SIGNUP_ENABLED==='true',deletion:!!process.env.SUPABASE_SERVICE_ROLE_KEY,phoneOnly:!!auth&&!auth.user.email});
+ // An account made with Google may have no password yet; the password checks stay, and Settings says how to set one.
+ const identities=auth?.user.email?await supa('/auth/v1/user',personalRequest(),auth.token).then(response=>response.ok?response.json() as Promise<{identities?:{provider?:string}[]|null}>:null).then(user=>user?.identities??[],()=>[]):[];
+ return reply({signup:process.env.PUBLIC_SIGNUP_ENABLED==='true',deletion:!!process.env.SUPABASE_SERVICE_ROLE_KEY,phoneOnly:!!auth&&!auth.user.email,googleOnly:identities.length>0&&identities.every(item=>item.provider==='google')});
 }
 export async function POST(req:Request){
  if(!sameOrigin(req))return reply({error:'Request rejected.'},403);

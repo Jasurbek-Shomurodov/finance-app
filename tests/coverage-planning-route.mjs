@@ -46,13 +46,28 @@ test('GET full scope reads every table, adds debt payments and deposit estimates
  assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'no-store');
  const body=await response.json();
  assert.deepEqual(tables(state).slice(0,8),['asset_movements','holding_accounts','finance_records','transaction_categories','savings_goals','payment_occurrences','account_activity','investment_account_links']);
- assert.deepEqual(state.reads.slice(8).map(read=>[read.table,read.extra]),[['finance_records',{select:'id,occurrence_record_id,occurrence_due_on,amount,currency,date',occurrence_record_id:'not.is.null'}],['account_activity',{select:'id,action,target_id,occurred_on,amount,fee,account_id',action:'in.(repayment,mortgage)'}],['mortgage_payments',{select:'id,mortgage_id,paid_on,principal,interest'}]]);
+ assert.deepEqual(state.reads.slice(8).map(read=>[read.table,read.extra]),[['finance_records',{select:'id,occurrence_record_id,occurrence_due_on,amount,currency,date',occurrence_record_id:'not.is.null'}],['mortgage_payments',{select:'id,mortgage_id,paid_on,principal,interest'}]]);
  assert.ok(state.reads.every(read=>read.token==='owner-token'));
  assert.deepEqual(state.reads[2].extra,{},'a full read keeps every record');
  assert.deepEqual(body.debtPayments,[{record_id:'loan',date:'2026-09-05'},{record_id:'home',date:'2026-09-10'}]);
  // Interest-bearing holdings carry the forecast, or zero when none is known; other kinds stay untouched.
  assert.deepEqual(body.records,[{id:'d1',kind:'Deposit',amount:1000,estimated_monthly_income:42},{id:'d2',kind:'Treasury bill',amount:500,estimated_monthly_income:0},{id:'s1',kind:'Salary',amount:10}]);
  assert.equal(state.forecastCalls,1);
+});
+
+test('GET counts a loan\'s Tracker repayment once, and reads no history without a loan',async()=>{
+ const {api,state}=harness();
+ state.rows={finance_records:[{id:'loan',kind:'Loan',currency:'USD',amount:900},{id:'lent',kind:'Money lent',currency:'USD',amount:50},{id:'eur',kind:'Cash',currency:'EUR',amount:5}],
+  account_activity:[{id:'both',action:'repayment',target_id:'loan',occurred_on:'2026-08-05',amount:90,fee:0,account_id:'eur'}],
+  investment_history:[{id:'both',record_id:'loan',occurred_on:'2026-08-05',amount:100,account_link:{account_id:'eur'}},{id:'paid',record_id:'loan',occurred_on:'2026-09-05',amount:450,account_link:{account_id:'eur'}}]};
+ const body=await (await api.GET()).json();
+ const read=state.reads.find(item=>item.table==='investment_history');
+ assert.equal(read.extra.record_id,'in.(loan)');assert.equal(read.extra.event_type,'eq.withdrawal');
+ assert.deepEqual(body.debtPayments.filter(item=>item.date==='2026-09-05'),[{record_id:'loan',date:'2026-09-05',amount:450,currency:'USD',account_id:'eur'}]);
+ assert.equal(body.debtPayments.length,2);
+ const none=harness();
+ await none.api.GET();
+ assert.ok(!none.state.reads.some(item=>item.table==='investment_history'));
 });
 
 test('GET narrower scopes read only what they need',async()=>{
@@ -63,8 +78,8 @@ test('GET narrower scopes read only what they need',async()=>{
 
  ({api,state}=harness());
  body=await (await api.GET(get('?scope=review&month=2026-09'))).json();
- assert.deepEqual(tables(state),['holding_accounts','finance_records','transaction_categories','savings_goals','payment_occurrences','account_activity','investment_account_links','finance_records']);
- assert.equal(body.debtPayments,undefined);
+ assert.deepEqual(tables(state),['holding_accounts','finance_records','transaction_categories','savings_goals','payment_occurrences','account_activity','investment_account_links','finance_records','account_activity','mortgage_payments']);
+ assert.ok(Array.isArray(body.debtPayments),'a paid installment is not forecast again on Cash flow');
  assert.match(state.reads[1].extra.or,/date\.gte\.2026-08-01,date\.lt\.2026-10-01/);
  assert.equal(state.reads[5].extra.and,'(occurred_on.gte.2026-08-01,occurred_on.lt.2026-10-01)');
 
@@ -87,11 +102,12 @@ test('GET accounts reads holdings and every operation without the transaction hi
  assert.deepEqual(tables(state).slice(0,8),['asset_movements','holding_accounts','finance_records','transaction_categories','savings_goals','payment_occurrences','account_activity','investment_account_links']);
  assert.match(state.reads[2].extra.or,/^\(frequency\.neq\.Once,kind\.not\.in\.\(/);assert.doesNotMatch(state.reads[2].extra.or,/date\.gte/);
  assert.deepEqual(body.debtPayments,[]);assert.equal(state.forecastCalls,1);
+ assert.equal(tables(state).filter(table=>table==='account_activity').length,1,'the loan payments come from the operations already read, not a second read');
  ({api,state}=harness());
- state.rows.finance_records=[{id:'lunch',name:'Lunch',kind:'Living expense',amount:25,currency:'USD',date:'2026-10-02',account_id:'wallet'}];
+ state.rows.finance_records=[{id:'lunch',name:'Lunch',kind:'Living expense',amount:25,currency:'USD',date:'2026-10-02',account_id:'wallet',frequency:'Once',revision:4,notes:'Team'}];
  body=await (await api.GET(get('?scope=account-activity'))).json();
- assert.deepEqual(state.reads.map(read=>[read.table,read.extra]),[['finance_records',{select:'id,name,kind,amount,currency,date,account_id',account_id:'not.is.null'}]]);
- assert.equal(state.forecastCalls,0);assert.equal(body.debtPayments,undefined);assert.deepEqual(body.records,state.rows.finance_records);
+ assert.deepEqual(state.reads.map(read=>[read.table,read.extra]),[['finance_records',{account_id:'not.is.null',frequency:'eq.Once'}]],'whole rows of one-time transactions: a row opens its details and its form (ERR-006)');
+ assert.equal(state.forecastCalls,0);assert.equal(body.debtPayments,undefined);assert.deepEqual(body.records.map(({id,frequency,revision,notes})=>[id,frequency,revision,notes]),[['lunch','Once',4,'Team']]);
 });
 
 test('GET asks for each foreign payment day once, shared by loan and scheduled payments, a few at a time',async()=>{
@@ -379,4 +395,18 @@ test('delete_schedule sends the choice about history to the database and names i
  assert.deepEqual(await json(await api.POST(post({action:'delete_schedule',data:{source:'record',id:ACCOUNT,remove_history:false}}))),{status:409,body:{error:'Only repeating income and expenses are deleted here.'}});
  state.handler=()=>Response.json({code:'PGRST202'},{status:404});
  assert.equal((await api.POST(post({action:'delete_schedule',data:{source:'record',id:TARGET,remove_history:false}}))).status,503);
+});
+
+test('GET reads the deposits beside the schedule payments, not after them (PERF-015)',async()=>{
+ const {api,state}=harness();
+ let release;const held=new Promise(resolve=>{release=resolve;});
+ const rows=state.rows;rows.finance_records=[{id:'schedule',currency:'USD',kind:'Salary',frequency:'Monthly'},{id:'paid',currency:'UZS',kind:'Salary',amount:1,occurrence_record_id:'schedule',occurrence_due_on:'2026-09-01',date:'2026-09-01'}];
+ rows.payment_occurrences=[{id:'o',record_id:'schedule',due_on:'2026-09-01',status:'paid',transaction_id:'paid',transaction:{amount:1,date:'2026-09-01',currency:'UZS'}}];
+ state.rateHook=()=>held;
+ const reply=api.GET(get('?scope=budget&month=2026-09&from=2026-09'));
+ for(let turn=0;turn<50&&!state.forecastCalls;turn++)await new Promise(resolve=>setImmediate(resolve));
+ const started=state.forecastCalls;release();await reply;
+ assert.equal(started,1,'the deposit read does not wait for the rate lookups');
+ const failing=harness();failing.state.readError=Error('down');
+ assert.equal((await failing.api.GET(get('?scope=review&month=2026-09'))).status,503);
 });

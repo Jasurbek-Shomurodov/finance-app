@@ -464,7 +464,6 @@
   "Could not import the file. Retry the same file safely.": "فایل وارد نشد. همان فایل را با خیال راحت دوباره امتحان کنید.",
   "Keep the currency and start date of an existing budget.": "ارز یا تاریخ شروع برنامهٔ موجود قابل تغییر نیست. برای ذخیره، مقادیر اصلی را بازگردانید.",
   "Include": "شامل شود",
-  "Select at least one transaction.": "دست‌کم یک تراکنش را انتخاب کنید.",
   "Import limit exceeded. Split this file into smaller files.": "از حد مجاز واردسازی فراتر رفته است. این فایل را به فایل‌های کوچک‌تر تقسیم کنید.",
   "{name} has used {percent}% of its budget.": "{name} {percent}٪ از بودجهٔ خود را مصرف کرده است.",
   "Choose a different destination.": "مقصد دیگری انتخاب کنید.",
@@ -2763,5 +2762,9 @@
   "3-month average": "میانگین ۳ ماهه",
   "Compared with average": "نسبت به میانگین",
   "Item": "قلم",
-  "Amounts are compared as entered, in each transaction’s own currency.": "مبالغ همان‌طور که وارد شده‌اند مقایسه می‌شوند، به واحد پول خودِ هر تراکنش."
+  "Amounts are compared as entered, in each transaction’s own currency.": "مبالغ همان‌طور که وارد شده‌اند مقایسه می‌شوند، به واحد پول خودِ هر تراکنش.",
+  "It changes at most the newest {count} matching transactions.": "حداکثر {count} تراکنش مطابق جدید را تغییر می‌دهد.",
+  "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} به‌روزرسانی شد؛ اینجا دسته‌بندی {category} و کسب‌وکار {business} قابل تغییر نبود.",
+  "Could not delete this transaction. Please try again.": "این تراکنش حذف نشد. لطفاً دوباره تلاش کنید.",
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "با Google وارد شده‌اید، بنابراین شاید این حساب هنوز گذرواژه نداشته باشد. با فراموشی گذرواژه یکی تنظیم کنید و سپس اینجا وارد کنید."
 }

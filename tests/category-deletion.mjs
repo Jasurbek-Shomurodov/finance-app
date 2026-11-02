@@ -28,6 +28,8 @@ function harness(file,name){
   react:{...React,useState(initial){const i=cursor++;if(!(i in values))values[i]=typeof initial==='function'?initial():initial;return [values[i],value=>{values[i]=typeof value==='function'?value(values[i]):value;}];},useEffect(effect){effects.push(effect);},useRef(initial){const i=refCursor++;return refs[i]??(refs[i]={current:initial});}},
   '@/components/language-provider':{useLanguage:()=>({t:(key,params={})=>key.replace(/\{(\w+)\}/g,(_,name)=>params[name]??name),locale:'en-US'})},
   '@/components/discard-changes':{useUnsavedNavigation:()=>null,useDiscardChanges:(dirty,onClose)=>({close:onClose,request:action=>action(),confirmation:null})},
+  // The dialogs load on demand; here they are found by name and their props called.
+  '@/components/workspace/workspace-lazy':{DeleteCategoryDialog:function DeleteCategoryDialog(){return null;},EditCategoryDialog:function EditCategoryDialog(){return null;}},
  });
  return {render:props=>{cursor=0;refCursor=0;return loaded[name](props);},effects};
 }

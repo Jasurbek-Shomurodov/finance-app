@@ -13,7 +13,7 @@ import type { EarningSource } from '@/lib/earning-sources';
 import type { RateTable } from '@/lib/money';
 import type { CSSProperties } from 'react';
 
-export function EstimatedIncomeSources({ entries, month, earningSources = [], rates }: { entries: Entry[]; currency: string; month: string; earningSources?: EarningSource[]; rates?: RateTable | null }) {
+export function EstimatedIncomeSources({ entries, month, earningSources = [], rates }: { entries: Entry[]; month: string; earningSources?: EarningSource[]; rates?: RateTable | null }) {
  const { t, locale } = useLanguage();
  const sources = monthlyIncomeCards(entries, month, earningSources, undefined, rates);
  return <section className="panel income-estimates">

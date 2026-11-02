@@ -1,3 +1,10 @@
+import {isInvestmentRecord} from './comparison-profile';
+import {assetRecordKinds,type Entry} from './finance';
+
+/** What Investments counts as holdings: everything held but money lent, and only the cash set aside for investing.
+ * The allocation donut and Target allocation read this one list, so their shares agree. */
+export const portfolioHoldings=(records:readonly Entry[])=>records.filter(record=>assetRecordKinds.includes(record.kind)&&(record.kind!=='Cash'||isInvestmentRecord(record)));
+
 export function allocationDrift(values:Record<string,number|null>,weights:Record<string,number>,newCash=0){
  if(!Number.isFinite(newCash)||newCash<0||Math.abs(Object.values(weights).reduce((sum,n)=>sum+n,0)-100)>1e-8||Object.values(weights).some(n=>!Number.isFinite(n)||n<0)||Object.values(values).some(n=>n===null||!Number.isFinite(n)||n<0))return null;
  const total=Object.values(values).reduce<number>((sum,n)=>sum+n!,0);if(total<=0&&newCash===0)return null;

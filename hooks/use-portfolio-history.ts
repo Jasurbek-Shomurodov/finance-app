@@ -20,7 +20,7 @@ export function usePortfolioHistory(owner: string | null, demo: boolean, revisio
  useEffect(() => {
   if (demo || !owner) return;
   const controller = new AbortController();
-  // Shared with the dashboard's early read (useDashboardWarmup), which asks for the same key.
+  // Shared with the dashboard's early read (useSectionWarmup), which asks for the same key.
   sharedRead(ownerReadKey(owner, '/api/portfolio-history', revision, attempt), '/api/portfolio-history', controller.signal).then(reply => {
    if (!reply.ok) throw Error();
    const data = JSON.parse(reply.text) as PortfolioHistory & { recurringIncome?: Entry[] };

@@ -464,7 +464,6 @@
   "Could not import the file. Retry the same file safely.": "Die Datei konnte nicht importiert werden. Sie können dieselbe Datei gefahrlos erneut importieren.",
   "Keep the currency and start date of an existing budget.": "Sie können Währung oder Startdatum eines bestehenden Plans nicht ändern. Stellen Sie die ursprünglichen Werte zum Speichern wieder her.",
   "Include": "Einbeziehen",
-  "Select at least one transaction.": "Wählen Sie mindestens eine Transaktion aus.",
   "Import limit exceeded. Split this file into smaller files.": "Importlimit überschritten. Teilen Sie diese Datei in kleinere Dateien auf.",
   "{name} has used {percent}% of its budget.": "{name} hat {percent} % seines Budgets verbraucht.",
   "Choose a different destination.": "Wählen Sie ein anderes Ziel.",
@@ -2763,5 +2762,9 @@
   "3-month average": "3-Monats-Durchschnitt",
   "Compared with average": "Abweichung vom Durchschnitt",
   "Item": "Posten",
-  "Amounts are compared as entered, in each transaction’s own currency.": "Beträge werden wie eingegeben verglichen, in der eigenen Währung jeder Transaktion."
+  "Amounts are compared as entered, in each transaction’s own currency.": "Beträge werden wie eingegeben verglichen, in der eigenen Währung jeder Transaktion.",
+  "It changes at most the newest {count} matching transactions.": "Es ändert höchstens die {count} neuesten passenden Transaktionen.",
+  "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} aktualisiert; bei {category} konnte die Kategorie und bei {business} das Unternehmen hier nicht geändert werden.",
+  "Could not delete this transaction. Please try again.": "Diese Transaktion konnte nicht gelöscht werden. Bitte versuche es erneut.",
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Du hast dich mit Google angemeldet, daher hat dieses Konto vielleicht noch kein Passwort. Lege über „Passwort vergessen“ eines fest und gib es dann hier ein."
 }

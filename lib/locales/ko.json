@@ -464,7 +464,6 @@
   "Could not import the file. Retry the same file safely.": "파일을 가져오지 못했어요. 같은 파일로 안전하게 다시 시도할 수 있어요.",
   "Keep the currency and start date of an existing budget.": "기존 계획의 통화와 시작일은 변경할 수 없어요. 저장하려면 원래 값으로 되돌리세요.",
   "Include": "포함",
-  "Select at least one transaction.": "거래를 하나 이상 선택하세요.",
   "Import limit exceeded. Split this file into smaller files.": "가져오기 한도를 초과했어요. 파일을 더 작게 나누세요.",
   "{name} has used {percent}% of its budget.": "{name}이(가) 예산의 {percent}%를 사용했어요.",
   "Choose a different destination.": "다른 받는 곳을 선택하세요.",
@@ -2763,5 +2762,9 @@
   "3-month average": "3개월 평균",
   "Compared with average": "평균 대비",
   "Item": "항목",
-  "Amounts are compared as entered, in each transaction’s own currency.": "금액은 입력된 그대로, 각 거래 자체의 통화로 비교돼요."
+  "Amounts are compared as entered, in each transaction’s own currency.": "금액은 입력된 그대로, 각 거래 자체의 통화로 비교돼요.",
+  "It changes at most the newest {count} matching transactions.": "일치하는 최신 거래를 최대 {count}건까지 변경합니다.",
+  "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed}건을 업데이트했습니다. 여기서는 {category}건의 카테고리와 {business}건의 사업을 변경할 수 없었습니다.",
+  "Could not delete this transaction. Please try again.": "이 거래를 삭제할 수 없습니다. 다시 시도해 주세요.",
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Google로 로그인했으므로 이 계정에는 아직 비밀번호가 없을 수 있습니다. 비밀번호 찾기에서 비밀번호를 설정한 다음 여기에 입력하세요."
 }

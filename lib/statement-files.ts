@@ -15,6 +15,26 @@ export type StatementFile = { format: 'csv'; text: string } | { format: Exclude<
 
 export const maxStatementFileSize = 2_000_000;
 
+/** The most rows `import_statement` takes in one call. */
+export const importBatchSize = 500;
+type ImportableRow = { date: string; name: string; amount: number; sourceId?: string };
+/** The rows left selected, in batches the import takes one call each, so a long statement goes through. A row without a
+ * source id names its place among identical rows of the whole file (`occurrence`): the file's order decides that, never
+ * which batch the row landed in or what else was ticked, so importing the same file again skips the same rows. */
+export function importBatches<T extends ImportableRow>(rows: readonly T[], excluded: readonly number[], size = importBatchSize) {
+ const left = new Set(excluded), seen = new Map<string, number>(), sources = new Set<string>();
+ const selected: Array<T & { occurrence: number }> = [];
+ rows.forEach((row, index) => {
+  const signature = JSON.stringify([row.date, row.name, row.amount]), occurrence = seen.get(signature) ?? 0;
+  seen.set(signature, occurrence + 1);
+  if (left.has(index)) return;
+  if (row.sourceId && sources.has(row.sourceId)) throw Error('Duplicate source identifiers in this statement.');
+  if (row.sourceId) sources.add(row.sourceId);
+  selected.push({ ...row, occurrence });
+ });
+ return Array.from({ length: Math.ceil(selected.length / size) }, (_, batch) => selected.slice(batch * size, (batch + 1) * size));
+}
+
 const extension = (name: string) => /\.([a-z0-9]+)$/i.exec(name)?.[1].toLowerCase() ?? '';
 
 /** Many banks name an HTML table `.xls`; its first table reads like a sheet. */

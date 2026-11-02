@@ -464,7 +464,6 @@
   "Could not import the file. Retry the same file safely.": "Não foi possível importar o arquivo. Você pode tentar o mesmo arquivo novamente com segurança.",
   "Keep the currency and start date of an existing budget.": "Não é possível alterar a moeda nem a data de início de um plano existente. Restaure os valores originais para salvar.",
   "Include": "Incluir",
-  "Select at least one transaction.": "Selecione pelo menos uma transação.",
   "Import limit exceeded. Split this file into smaller files.": "Limite de importação excedido. Divida este arquivo em arquivos menores.",
   "{name} has used {percent}% of its budget.": "{name} já usou {percent}% do orçamento.",
   "Choose a different destination.": "Escolha um destino diferente.",
@@ -2763,5 +2762,9 @@
   "3-month average": "Média de 3 meses",
   "Compared with average": "Comparado com a média",
   "Item": "Item",
-  "Amounts are compared as entered, in each transaction’s own currency.": "Os valores são comparados como foram registrados, na moeda própria de cada transação."
+  "Amounts are compared as entered, in each transaction’s own currency.": "Os valores são comparados como foram registrados, na moeda própria de cada transação.",
+  "It changes at most the newest {count} matching transactions.": "Altera no máximo as {count} transações correspondentes mais recentes.",
+  "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} atualizadas; aqui não foi possível alterar a categoria de {category} nem o negócio de {business}.",
+  "Could not delete this transaction. Please try again.": "Não foi possível excluir esta transação. Tente novamente.",
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Você entrou com o Google, então esta conta talvez ainda não tenha senha. Crie uma em “Esqueci a senha” e depois digite-a aqui."
 }

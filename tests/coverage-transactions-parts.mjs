@@ -52,11 +52,12 @@ const overrides={
  '@/components/presentation-foundation/formatted-number-input':{FormattedNumberInput:host('FormattedNumberInput')},
  '@/components/ui/input':{Input:host('input')},
  '@/components/ui/native-select':{NativeSelect:host('select')},
+ '@/components/presentation-foundation/inline-error':{InlineError:host('InlineError')},
  '@/components/ui/popover':{Popover:host('Popover'),PopoverContent:host('PopoverContent'),PopoverTrigger:host('PopoverTrigger')},
 };
 // The transactions screen's parts, loaded together as one module would be.
 const cache=new Map();
-const page=Object.assign({},...['pickers','tags','bulk-edit','transaction-row','rule-dialog','rules-list'].map(name=>loadTS(`components/transactions/${name}.tsx`,overrides,cache)),loadTS('lib/transaction-rules.ts',overrides,cache));
+const page=Object.assign({},...['pickers','tags','bulk-edit','bulk-edit-sheet','transaction-row','rule-dialog','rules-list'].map(name=>loadTS(`components/transactions/${name}.tsx`,overrides,cache)),loadTS('lib/transaction-rules.ts',overrides,cache));
 const h=React.createElement;
 const entry=(over={})=>({id:'r1',name:'Coffee Shop 123',kind:'Living expense',currency:'USD',amount:13,quantity:0,cost:0,rate:0,date:'2026-09-30',frequency:'Once',notes:'',...over});
 const categories=[{id:'c-food',name:'Food',direction:'expense'},{id:'c-side',name:'Side gig',direction:'income'}];
@@ -597,4 +598,27 @@ test('Rule suggestions start from the transaction name without its reference num
  assert.equal(page.ruleFromChange(entry(),{kind:'Cash',category_id:null}).direction,'expense');
  const fromBusiness=page.ruleFromBusiness(entry({name:'Uber #4411'}),'b1');
  assert.deepEqual({pattern:fromBusiness.pattern,direction:fromBusiness.direction,business:fromBusiness.business_id,kind:fromBusiness.kind},{pattern:'Uber',direction:'any',business:'b1',kind:null});
+});
+
+test('A failed or unfinished rules read is never "no rules yet", and the failure can be retried',()=>{
+ let retried=0;
+ const base={rules:[],categories,onEdit(){},onAdd(){},onRemove:async()=>{}};
+ const failed=mount(h(page.RulesPanel,{...base,error:'Offline',onRetry:()=>retried++}))();
+ assert.doesNotMatch(text(failed),/No rules yet/);
+ const alert=findAll(failed,n=>n.type==='InlineError')[0];assert.equal(alert.props.message,'Offline');alert.props.onRetry();assert.equal(retried,1);
+ assert.doesNotMatch(text(mount(h(page.RulesPanel,{...base,loading:true}))()),/No rules yet/);
+});
+
+test('RuleDialog without the transactions says the database counts, and how far a rule reaches',()=>{
+ const tree=mount(h(page.RuleDialog,{rule:rule({pattern:'Uber',kind:'Charity'}),categories,businesses:[],tags,splits:[],tagsOf:()=>[],onSave:async()=>0,onClose(){}}))();
+ assert.match(text(tree),/Apply to matching past transactions/);
+ assert.match(text(tree),/at most the newest 500 matching transactions/);
+ const counted=mount(h(page.RuleDialog,{rule:rule({pattern:'Uber',kind:'Charity'}),records:[entry({name:'Uber'})],categories,businesses:[],tags,splits:[],tagsOf:()=>[],onSave:async()=>0,onClose(){}}))();
+ assert.match(text(counted),/Apply to 1 matching transactions/);assert.doesNotMatch(text(counted),/at most the newest/);
+});
+
+test('Closed Transactions dialogs load on demand, each from its own module',async()=>{
+ const lazy=loadTS('components/transactions/lazy.tsx',{'next/dynamic':{__esModule:true,default:load=>({load})},
+  '@/components/transactions/bulk-edit-sheet':{BulkEditSheet:'sheet'},'@/components/transactions/rule-dialog':{RuleDialog:'rule'},'@/components/transactions/rules-list':{RulesDialog:'rules'}});
+ assert.deepEqual(await Promise.all([lazy.BulkEditSheet.load(),lazy.RuleDialog.load(),lazy.RulesDialog.load()]),['sheet','rule','rules']);
 });

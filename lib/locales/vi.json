@@ -464,7 +464,6 @@
   "Could not import the file. Retry the same file safely.": "Không thể nhập tệp. Bạn có thể thử lại đúng tệp này một cách an toàn.",
   "Keep the currency and start date of an existing budget.": "Bạn không thể đổi tiền tệ hoặc ngày bắt đầu của kế hoạch hiện có. Hãy khôi phục giá trị ban đầu để lưu.",
   "Include": "Bao gồm",
-  "Select at least one transaction.": "Hãy chọn ít nhất một giao dịch.",
   "Import limit exceeded. Split this file into smaller files.": "Vượt quá giới hạn nhập. Hãy chia tệp này thành các tệp nhỏ hơn.",
   "{name} has used {percent}% of its budget.": "{name} đã dùng {percent}% ngân sách.",
   "Choose a different destination.": "Hãy chọn điểm đến khác.",
@@ -2763,5 +2762,9 @@
   "3-month average": "Trung bình 3 tháng",
   "Compared with average": "So với trung bình",
   "Item": "Khoản mục",
-  "Amounts are compared as entered, in each transaction’s own currency.": "Số tiền được so sánh như đã nhập, theo đơn vị tiền tệ riêng của từng giao dịch."
+  "Amounts are compared as entered, in each transaction’s own currency.": "Số tiền được so sánh như đã nhập, theo đơn vị tiền tệ riêng của từng giao dịch.",
+  "It changes at most the newest {count} matching transactions.": "Thao tác này thay đổi tối đa {count} giao dịch khớp mới nhất.",
+  "{changed} updated; {category} could not change category and {business} could not change business here.": "Đã cập nhật {changed}; tại đây không thể đổi danh mục của {category} và doanh nghiệp của {business}.",
+  "Could not delete this transaction. Please try again.": "Không thể xóa giao dịch này. Vui lòng thử lại.",
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Bạn đã đăng nhập bằng Google nên tài khoản này có thể chưa có mật khẩu. Hãy đặt mật khẩu qua “Quên mật khẩu”, rồi nhập vào đây."
 }

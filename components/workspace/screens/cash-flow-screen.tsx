@@ -38,10 +38,10 @@ export function CashFlowScreen() {
  // The spending estimate follows the one definition of spending (lib/spending.ts): bills plus mortgage interest; mortgage
  // principal and loan repayments are transfers, so they leave the net estimate but never the spending one.
  const incomeSources = earningSources.sources;
- const mortgages = <MonthlyMortgagePayments records={demo?rows:planning.data.records} currency={currency} market={market} loading={planning.loading} error={planning.error} onPay={setPayingMortgage} onEdit={editRecord}/>;
+ const mortgages = <MonthlyMortgagePayments records={demo?rows:planning.data.records} loading={planning.loading} error={planning.error} onPay={setPayingMortgage} onEdit={editRecord}/>;
  // This month's budget, as on Overview and Budget: spending categories against their limits.
  const budgetCard = !transactionTools.loading && !transactionTools.error ? <BudgetCard owner={user} demo={demo} revision={reload} budget={budget} data={planning.data} currency={currency} market={market} splits={transactionTools.data.splits}/> : null;
- const watchlists = !transactionTools.loading&&!transactionTools.error ? <SpendingWatchlists data={planning.data} splits={transactionTools.data.splits} today={depositToday()} currency={currency} currencies={preferencesData.currencies} market={market} preferences={workspacePreferences}/> : null;
+ const watchlists = !transactionTools.loading&&!transactionTools.error ? <SpendingWatchlists data={planning.data} owner={user} demo={demo} revision={reload} month={forecastMonth} splits={transactionTools.data.splits} today={depositToday()} currency={currency} currencies={preferencesData.currencies} market={market} preferences={workspacePreferences}/> : null;
  return <>
   <div data-page="Income & expenses" className="content">
    <PageHeader title={t('Cash flow')} tabs={<Segmented as="nav" className="page-tabs" label={t('Cash flow')} options={tabs.map(name=>({value:name,label:t(name)}))} value={tab} onChange={name=>{setTab(name);if(name==='Overview')showFirstPage();}}/>}>
@@ -56,7 +56,7 @@ export function CashFlowScreen() {
     {tab==='Overview'&&<CashFlowReport onOpenRecord={record => setViewing(storedRecord(record))} owner={user} demo={demo} revision={reload} data={planning.data} splits={transactionTools.data.splits} month={forecastMonth} currency={currency} market={market} monthReviewAbove={!planning.error}/>}
     {tab==='Overview'&&<CashflowPreview entries={planning.data.records} sources={incomeSources} month={forecastMonth} currency={currency} rates={marketRates(market)} loading={planning.loading||earningSources.loading} error={planning.error||earningSources.error} onRetry={refreshRecords} onIncome={()=>setTab('Income')} budget={budgetCard} mortgages={mortgages} watchlists={watchlists}/>}
     {tab==='Income'&&<IncomeSourcesPanel controller={earningSources} currencies={preferencesData.currencies} records={planning.data.records} onRecord={recordFromSource}/>}
-    {tab==='Income'&&(planning.loading || earningSources.loading ? <LoadingPlaceholder label={t('Loading records…')}/> : planning.error || earningSources.error ? <InlineError as="div" message={t(planning.error || earningSources.error)} onRetry={refreshRecords}/> : <EstimatedIncomeSources earningSources={incomeSources} entries={planning.data.records} currency={currency} month={forecastMonth} rates={marketRates(market)}/>)}
+    {tab==='Income'&&(planning.loading || earningSources.loading ? <LoadingPlaceholder label={t('Loading records…')}/> : planning.error || earningSources.error ? <InlineError as="div" message={t(planning.error || earningSources.error)} onRetry={refreshRecords}/> : <EstimatedIncomeSources earningSources={incomeSources} entries={planning.data.records} month={forecastMonth} rates={marketRates(market)}/>)}
     {tab==='Spending'&&mortgages}
     {tab==='Spending'&&budgetCard}
     {tab==='Forecast'&&<CashForecastView owner={user} data={planning.data} budget={forecastBudget} currency={currency} rates={marketRates(market)} loading={planning.loading||forecastBudgetState.loading} error={planning.error||forecastBudgetState.error} onRetry={()=>{refreshRecords();forecastBudgetState.retry();}}/>}

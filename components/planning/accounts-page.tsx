@@ -1,7 +1,5 @@
 "use client";
-import { StatementReconciliation } from './statement-reconciliation';
 import { ErrorPopup } from '@/components/presentation-foundation/error-popup';
-import { CorporateEventDialog } from './corporate-event-dialog';
 import { PageHeader } from '@/components/presentation-foundation/page-header';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { useState } from 'react';
@@ -11,13 +9,10 @@ import { Button } from '@/components/ui/button';
 import type { HoldingAccount } from '@/lib/holding-accounts';
 import type { Entry } from '@/lib/finance';
 import type { BusinessOption } from '@/components/presentation-foundation/business-filter';
-import { AccountBusinessesDialog } from '@/components/account-businesses-dialog';
-import { AccountOwnersDialog } from '@/components/account-owners-dialog';
 import type { HouseholdState } from '@/lib/household';
 import type { MarketData } from '@/lib/market';
-import { AssetMovementDialog, type MovementDraft } from './asset-movement-dialog';
-import { AccountOperation, type Operation } from './account-operation';
-import { HoldingAccountDialog } from './holding-account-dialog';
+import type { MovementDraft } from './asset-movement-dialog';
+import type { Operation } from './account-operation';
 import type { PlanningData } from '@/lib/planning';
 import { useDisplayOrder } from '@/hooks/use-display-order';
 import type { PreferenceResource } from '@/hooks/use-workspace-preferences';
@@ -28,11 +23,14 @@ import { useAccountFilters } from './accounts/use-account-filters';
 import type { HoldingActions } from './accounts/holding-rows';
 import { AccountActivity } from './accounts/account-activity';
 import { AddAccountDialog, type AccountType } from './accounts/add-account-dialog';
+import { AccountBusinessesDialog, AccountOperation, AccountOwnersDialog, AssetMovementDialog, CorporateEventDialog, HoldingAccountDialog, StatementReconciliation } from './accounts/accounts-lazy';
 import { AccountsOverview, selectedItem } from './accounts/accounts-overview';
 import { lastTransferTarget, movementSources } from '@/lib/asset-movements';
 
 type Props = {
  owner:string|null; onSaved:()=>void;
+ /** The planning read failed: the page has no accounts to speak of, and the notice above it says why. */
+ loadFailed?:boolean;
  /** Bumped after every confirmed change, so views that read on their own read again. */
  revision?:number;
  data: PlanningData; save: (action: string, data: unknown) => Promise<void>;
@@ -51,7 +49,7 @@ type Props = {
  onView?: (record: Entry) => void;
 };
 
-export function AccountsPage({ owner,onSaved,revision=0,data, save, onAdd, onEdit, onTrack, onDelete, demo, preferences, market, currencies, currency, saveAccount, assignHolding, businesses, onAccountBusiness, household, readOnly, onAccountOwner, onView }: Props) {
+export function AccountsPage({ owner,loadFailed,onSaved,revision=0,data, save, onAdd, onEdit, onTrack, onDelete, demo, preferences, market, currencies, currency, saveAccount, assignHolding, businesses, onAccountBusiness, household, readOnly, onAccountOwner, onView }: Props) {
  const { t } = useLanguage();
  const [statement,setStatement]=useState<Entry|null>(null),[corporate,setCorporate]=useState<Entry|null>(null);
  // The page's two views, switched from the top bar: the accounts themselves and their recent operations.
@@ -76,14 +74,14 @@ export function AccountsPage({ owner,onSaved,revision=0,data, save, onAdd, onEdi
  const transferFrom=movementSources('transfer',data.records).find(record=>shown===`record:${record.id}`)?.id;
  return <>
   <PageHeader title={t('Accounts')} tabs={<Segmented className="page-tabs" as="nav" label={t('Accounts')} options={[{value:'accounts',label:t('Overview')},{value:'activity',label:t('Recent activity')}]} value={view} onChange={setView}/>}>{owners.length>0&&<Button variant="outline" disabled={readOnly} onClick={()=>setEditingOwners(true)}><Users size={17} aria-hidden="true"/>{t('Edit owners')}</Button>}{businesses.length>0&&<Button variant="outline" onClick={()=>setEditingBusinesses(true)}><Briefcase size={17} aria-hidden="true"/>{t('Edit businesses')}</Button>}<Button variant="outline" onClick={()=>setMovement({kind:'transfer',source_id:transferFrom,target_id:lastTransferTarget(data.movements??[],transferFrom,data.records)})}><ArrowRightLeft size={17} aria-hidden="true"/>{t('Transfer money')}</Button><Button onClick={()=>setChoosing(true)}><Plus size={17} aria-hidden="true" />{t('Add account')}</Button></PageHeader>
-  {view==='accounts'&&<AccountsOverview items={accountItems} data={data} filters={filters} order={order} businesses={businesses} holdingActions={holdingActions} onEditAccount={setDraft} onAdd={onAdd} onAddAccount={()=>setChoosing(true)} selected={selected} onSelect={setSelected}
+  {view==='accounts'&&<AccountsOverview loadFailed={loadFailed} items={accountItems} data={data} filters={filters} order={order} businesses={businesses} holdingActions={holdingActions} onEditAccount={setDraft} onAdd={onAdd} onAddAccount={()=>setChoosing(true)} selected={selected} onSelect={setSelected}
    cardActions={{onEdit,onTrack,onDelete:remove,onMove:setMovement,onOperation:setOperation,onStatement:owner?setStatement:undefined}}/>}
   {/* Account operations are their own view, opened from the top bar. */}
   {view==='activity'&&<AccountActivity data={data} owner={owner} live={!!owner&&!demo} revision={revision} currency={currencies[0]} onOpen={onView}/>}
   <AddAccountDialog open={choosing} onOpenChange={setChoosing} onChoose={choose}/>
   <ErrorPopup message={order.error}/>
   {editingOwners&&household&&<AccountOwnersDialog records={data.records} accounts={investmentAccounts} market={market} household={household} owners={owners} onChange={onAccountOwner} onClose={()=>setEditingOwners(false)}/>}
-  {editingBusinesses&&<AccountBusinessesDialog records={data.records} businesses={businesses} onChange={onAccountBusiness} onClose={()=>setEditingBusinesses(false)}/>}
+  {editingBusinesses&&<AccountBusinessesDialog records={data.records} market={market} businesses={businesses} onChange={onAccountBusiness} onClose={()=>setEditingBusinesses(false)}/>}
   {statement&&<StatementReconciliation account={statement} owner={owner} onClose={()=>setStatement(null)} onSaved={onSaved}/>}
   {corporate&&<CorporateEventDialog record={corporate} records={data.records} accounts={investmentAccounts} owner={owner} onClose={()=>setCorporate(null)} onSaved={onSaved}/>}
   {draft&&<HoldingAccountDialog currencies={currencies} account={draft} existing={investmentAccounts.some(account=>account.id===draft.id)} save={saveAccount} onClose={()=>setDraft(null)}/>}

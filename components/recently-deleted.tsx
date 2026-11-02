@@ -23,7 +23,7 @@ import { shownName } from '@/lib/record-names';
 const emptyPage:{items:DeletedItem[];hasMore:boolean}={items:[],hasMore:false};
 export function RecentlyDeleted({demo,demoItems,onRestore,onDelete,onSaved}:{demo:boolean;demoItems:DeletedItem[];onRestore:(item:DeletedItem)=>void;onDelete:(item:DeletedItem)=>void;onSaved:()=>void}) {
  const {t,locale}=useLanguage();
- // Deleted items keep their own currency; the list shows them in the display currency like every other list.
+ // Each deleted item reads as it was entered, in its own currency.
  const {entered}=useDisplayMoney();
  const [page,setPage]=useState(1),[reload,setReload]=useState(0);
  const [permanent,setPermanent]=useState(false);

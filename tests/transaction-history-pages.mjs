@@ -37,5 +37,5 @@ test('workspace excludes transaction history; review includes both selected mont
  assert.deepEqual(planningReadFilters('full','2026-01').records,{});
  // Accounts reads holdings and schedules only; its Recent activity view reads what was booked to an account itself.
  assert.deepEqual(planningReadFilters('accounts','2026-01').records,workspace.records);
- assert.deepEqual(planningReadFilters('account-activity','2026-01').records,{select:'id,name,kind,amount,currency,date,account_id',account_id:'not.is.null'});
+ assert.deepEqual(planningReadFilters('account-activity','2026-01').records,{account_id:'not.is.null',frequency:'eq.Once'});
 });

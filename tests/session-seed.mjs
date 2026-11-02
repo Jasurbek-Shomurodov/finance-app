@@ -24,7 +24,7 @@ test('the page names the person its access cookie verifies, and nobody for a mis
 });
 
 test('a person the page already names starts signed in, and the session check still has the last word', async () => {
- const replies = [], answer = body => new Promise(resolve => replies.push(() => resolve({ json: async () => body })));
+ const replies = [], answer = body => new Promise(resolve => replies.push(() => resolve({ ok: true, status: 200, json: async () => body })));
  let session = { configured: true, user: { email: 'me@example.com' } };
  globalThis.fetch = async url => { assert.equal(String(url), '/api/auth'); return answer(session); };
  const run = async known => {
@@ -54,4 +54,32 @@ test('a person the page already names starts signed in, and the session check st
   await unknown.settle();
   assert.deepEqual({ user: unknown.auth().user, ready: unknown.auth().ready }, { user: 'me@example.com', ready: true });
  } finally { delete globalThis.window; }
+});
+
+test('a session check that cannot answer signs nobody out and does not read as an unconfigured app', async () => {
+ const failed = { ok: false, status: 503, json: async () => ({ error: 'Sign-in is unavailable. Check the Supabase connection.' }) };
+ const errors = [];
+ const r = createRenderer();
+ const { useAuth } = r.load('components/workspace/state/use-auth.ts', { '@/components/visitor-context': { useVisitor: () => ({ signedOut: false, user: 'me@example.com', language: 'en' }) }, '@/lib/refresh-read': { refreshRead: async url => { assert.equal(url, '/api/auth'); return failed; } } });
+ let auth;
+ const Probe = () => { auth = useAuth({ setError: value => errors.push(value), setBusy: () => {} }); return null; };
+ globalThis.window = { location: { href: 'https://app.test/' }, history: { replaceState() {} } };
+ try {
+  r.mount(React.createElement(Probe));
+  for (let i = 0; i < 3; i++) { await new Promise(resolve => setTimeout(resolve, 0)); r.update(); }
+  assert.deepEqual({ user: auth.user, ready: auth.ready, configured: auth.configured }, { user: 'me@example.com', ready: true, configured: true });
+  assert.deepEqual(errors, ['Sign-in is unavailable. Check the Supabase connection.']);
+ } finally { delete globalThis.window; }
+});
+
+test('the session route answers 503 for a failed check, and not configured only when the connection is missing, never cached', async () => {
+ const route = fail => loadTS('app/api/auth/route.ts', { '@/lib/supabase': { config: () => { if (fail === 'config') throw Error('missing'); return {}; }, session: async () => { if (fail === 'session') throw Error('timeout'); return null; }, supa: async () => new Response('{}'), saveSession: async () => {}, sameOrigin: () => true }, 'next/headers': { cookies: async () => jar({}) } });
+ const down = await route('session').GET();
+ assert.equal(down.status, 503);
+ assert.equal((await down.json()).configured, undefined);
+ const missing = await route('config').GET();
+ assert.deepEqual(await missing.json(), { configured: false, user: null });
+ const fine = await route().GET();
+ assert.deepEqual(await fine.json(), { configured: true, user: null });
+ assert.equal(fine.headers.get('Cache-Control'), 'no-store');
 });

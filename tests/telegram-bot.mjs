@@ -12,7 +12,7 @@ const id=n=>`77000000-0000-4000-8000-0000000000${String(n).padStart(2,'0')}`;
 const entry=(n,name,kind,amount,currency='UZS')=>({id:id(n),user_id:owner,name,kind,amount,currency,quantity:0,cost:0,rate:0,date:'2026-01-01',frequency:'Once',notes:''});
 /** `rpcRejects` is how many RPC writes break off (a timeout, a lost connection) before one answers; `removed` is the
  * workspace's deleted built-in categories, and `failPreferences` makes that read fail like an unreachable database. */
-function fakeDb({subscriptions=[],languages={},records=[],categories=[],occurrences=[],activity=[],mortgagePayments=[],drafts=[],failWrites=false,rpcFailure=null,rpcRejects=0,rules=null,currencies,removed=[],failPreferences=false,snapshots=[{occurred_on:'2026-09-29',assets:0,debt:0,rates:{UZS:12000},updated_at:''}]}={}){
+function fakeDb({subscriptions=[],languages={},records=[],categories=[],occurrences=[],activity=[],mortgagePayments=[],history=[],drafts=[],failWrites=false,rpcFailure=null,rpcRejects=0,rules=null,currencies,removed=[],failPreferences=false,snapshots=[{occurred_on:'2026-09-29',assets:0,debt:0,rates:{UZS:12000},updated_at:''}]}={}){
  const writes=[],reads=[];
  return {writes,drafts,reads,
   async read(path){
@@ -35,6 +35,7 @@ function fakeDb({subscriptions=[],languages={},records=[],categories=[],occurren
    if(path.startsWith('/rest/v1/payment_occurrences'))return occurrences;
    if(path.startsWith('/rest/v1/account_activity'))return activity;
    if(path.startsWith('/rest/v1/mortgage_payments'))return mortgagePayments;
+   if(path.startsWith('/rest/v1/investment_history'))return history;
    if(path.startsWith('/rest/v1/portfolio_snapshots'))return snapshots;
    if(path.startsWith('/rest/v1/telegram_drafts'))return drafts.filter(d=>d.user_id===owner);
    if(path.startsWith('/rest/v1/workspace_preferences')){if(failPreferences)throw Error('Database request failed.');return removed.length?[{data:{kinds:removed}}]:[];}

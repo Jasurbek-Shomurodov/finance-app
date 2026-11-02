@@ -1,5 +1,6 @@
 "use client";
 import { useState } from 'react';
+import { useDisplayMoney } from '@/components/display-money';
 import { useLanguage } from '@/components/language-provider';
 import { CategoryIcon } from '@/components/presentation-foundation/category-icon';
 import type { OwnerOption } from '@/components/presentation-foundation/owner-filter';
@@ -9,19 +10,21 @@ import { Button } from '@/components/ui/button';
 import { accountKindGroups } from '@/lib/business';
 import { value, type Entry } from '@/lib/finance';
 import { showError, showNotice } from '@/lib/feedback';
-import { formatMoney, formatNumber } from '@/lib/format';
+import { formatNumber } from '@/lib/format';
 import { holdingAccountValue, type HoldingAccount } from '@/lib/holding-accounts';
 import { holdingOwner, ownerOf, type HouseholdState } from '@/lib/household';
-import type { MarketData } from '@/lib/market';
+import { marketEntry, type MarketData } from '@/lib/market';
 
 /** "Edit owners": who in the household each account, asset and debt belongs to, or that it is shared.
  * Transactions follow their account and holdings their investment account, so those are listed once, by account. */
 export function AccountOwnersDialog({ records, accounts, market, household, owners, onChange, onClose }: { records: Entry[]; accounts: readonly HoldingAccount[]; market: MarketData | null; household: Pick<HouseholdState, 'active' | 'people'>; owners: readonly OwnerOption[]; onChange: (accountId: string, owner: string) => Promise<number>; onClose: () => void }) {
  const { t, locale } = useLanguage();
+ const { show } = useDisplayMoney();
  const [busy, setBusy] = useState<string | null>(null);
  type Row = { id: string; name: string; kind: Entry['kind']; amount: string; owner: string };
- const recordRow = (record: Entry): Row => ({ id: record.id, name: record.name, kind: record.kind, amount: formatMoney(value(record), record.currency, locale), owner: ownerOf(record, household) });
- const accountRow = (account: HoldingAccount): Row => { const total = holdingAccountValue(account, records, market).total; return { id: account.id, name: account.name, kind: account.kind, amount: total === null ? '—' : formatMoney(total, account.currency, locale), owner: holdingOwner(account, household) }; };
+ // Balances read as on the Accounts page: at the live quote, in the display currency.
+ const recordRow = (record: Entry): Row => ({ id: record.id, name: record.name, kind: record.kind, amount: show(value(marketEntry(record, record.currency, market) ?? record), record.currency), owner: ownerOf(record, household) });
+ const accountRow = (account: HoldingAccount): Row => { const total = holdingAccountValue(account, records, market).total; return { id: account.id, name: account.name, kind: account.kind, amount: total === null ? '—' : show(total, account.currency), owner: holdingOwner(account, household) }; };
  // Holdings and cash inside an investment account follow it.
  const of = (kinds: readonly string[]) => records.filter(record => !record.holding_account_id && kinds.includes(record.kind)).map(recordRow);
  // The shared account groups; investment accounts lead their holdings.

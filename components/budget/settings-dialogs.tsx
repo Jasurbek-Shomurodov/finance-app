@@ -84,7 +84,7 @@ export function CategorySettingsDialog({ category, month, currency, figures, onS
 }
 
 /** Budget settings: Flex or Category style, the default edit scope, and recalculating defaults from history. */
-export function BudgetSettingsDialog({ mode, applyForward, onSave, onRecalculate, onClose }: { mode: BudgetMode; applyForward: boolean; onSave: (mode: BudgetMode, applyForward: boolean) => Promise<void>; onRecalculate: () => Promise<void>; onClose: () => void }) {
+export function BudgetSettingsDialog({ mode, applyForward, onSave, onRecalculate, canRecalculate = true, onClose }: { mode: BudgetMode; applyForward: boolean; onSave: (mode: BudgetMode, applyForward: boolean) => Promise<void>; onRecalculate: () => Promise<void>; /** False until the months it averages have loaded: an unread month is not a month without spending. */ canRecalculate?: boolean; onClose: () => void }) {
  const { t } = useLanguage();
  const [style, setStyle] = useState(mode);
  const [forward, setForward] = useState(applyForward);
@@ -111,7 +111,7 @@ export function BudgetSettingsDialog({ mode, applyForward, onSave, onRecalculate
      {/* Rarely needed, and it replaces typed amounts: folded away under its own name. */}
      <details className="record-optional-details"><summary>{t('Recalculate default budgets')}</summary><div className="budget-recalculate">
       <span><small>{t('Sets each category to its six-month average, rounded up to a whole amount, from this month on. Amounts you typed are replaced.')}</small></span>
-      <Button type="button" variant="outline" onClick={() => run(onRecalculate)}>{t('Recalculate')}</Button>
+      <Button type="button" variant="outline" disabled={!canRecalculate} onClick={() => run(onRecalculate)}>{t('Recalculate')}</Button>
      </div></details>
     </fieldset>
     <FormFooter busy={busy} onCancel={onClose}><Button disabled={busy}>{t(busy ? 'Saving…' : 'Save')}</Button></FormFooter>

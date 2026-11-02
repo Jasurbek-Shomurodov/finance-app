@@ -464,7 +464,6 @@
   "Could not import the file. Retry the same file safely.": "Kan het bestand niet importeren. U kunt hetzelfde bestand veilig opnieuw proberen.",
   "Keep the currency and start date of an existing budget.": "U kunt de valuta of startdatum van een bestaand plan niet wijzigen. Herstel de oorspronkelijke waarden om op te slaan.",
   "Include": "Opnemen",
-  "Select at least one transaction.": "Selecteer ten minste één transactie.",
   "Import limit exceeded. Split this file into smaller files.": "Importlimiet overschreden. Splits dit bestand in kleinere bestanden.",
   "{name} has used {percent}% of its budget.": "{name} heeft {percent}% van het budget gebruikt.",
   "Choose a different destination.": "Kies een andere bestemming.",
@@ -2763,5 +2762,9 @@
   "3-month average": "Gemiddelde over 3 maanden",
   "Compared with average": "Ten opzichte van gemiddelde",
   "Item": "Post",
-  "Amounts are compared as entered, in each transaction’s own currency.": "Bedragen worden vergeleken zoals ingevoerd, in de eigen valuta van elke transactie."
+  "Amounts are compared as entered, in each transaction’s own currency.": "Bedragen worden vergeleken zoals ingevoerd, in de eigen valuta van elke transactie.",
+  "It changes at most the newest {count} matching transactions.": "Dit wijzigt hoogstens de {count} nieuwste overeenkomende transacties.",
+  "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} bijgewerkt; hier kon de categorie van {category} en het bedrijf van {business} niet worden gewijzigd.",
+  "Could not delete this transaction. Please try again.": "Deze transactie kon niet worden verwijderd. Probeer het opnieuw.",
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Je bent ingelogd met Google, dus dit account heeft misschien nog geen wachtwoord. Stel er een in via ‘Wachtwoord vergeten’ en vul het hier in."
 }

@@ -2,7 +2,7 @@
 import { normalizeEntry } from '@/lib/finance';
 import { useOwnerResource } from '@/hooks/use-owner-resource';
 import { marketRates, type MarketData } from '@/lib/market';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StatTile, StatTiles } from '@/components/presentation-foundation/stat-tile';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
 import { LoadingPlaceholder, StatTilesSkeleton } from '@/components/presentation-foundation/loading-placeholder';
@@ -28,16 +28,17 @@ export function MonthlyReview({data:providedData,owner,demo=false,revision=0,too
  const today=depositToday();
  const [localMonth,setMonth]=useState(()=>today.slice(0,7));
  const month=selectedMonth??localMonth;
- const remote=useOwnerResource('/api/planning?scope=review&month='+month,owner??null,!!owner&&!demo,revision,emptyPlanning);
- const data=owner&&!demo?{...remote.data,records:remote.data.records.map(normalizeEntry)}:providedData;
- const result=monthlyReview(data.records,tools.data.splits,snapshots,month,currency,today,data.activity,marketRates(market),data.investmentLinks);
- const previous=monthlyReview(data.records,tools.data.splits,snapshots,shiftMonth(month,-1),currency,today,data.activity,marketRates(market),data.investmentLinks);
+ // A month chosen by the page is the month its planning read already holds, so that one read stands in for a second.
+ const live=!!owner&&!demo&&!selectedMonth;
+ const remote=useOwnerResource('/api/planning?scope=review&month='+month,owner??null,live,revision,emptyPlanning);
+ const data=useMemo(()=>live?{...remote.data,records:remote.data.records.map(normalizeEntry)}:providedData,[live,remote.data,providedData]);
+ const rates=marketRates(market),splits=tools.data.splits;
+ const result=useMemo(()=>monthlyReview(data.records,splits,snapshots,month,currency,today,data.activity,rates,data.investmentLinks),[data,splits,snapshots,month,currency,today,rates]);
  const money=(amount:number)=>formatMoney(amount,currency,locale);
- if(compact&&owner&&!demo&&remote.loading)return <CashflowSummarySkeleton/>;
- if(owner&&!demo&&(remote.loading||remote.error))return <section className="panel tools-panel monthly-review"><h2>{t('Monthly review')} · {formatMonthYear(month,locale)}</h2>{remote.error?<InlineError message={t(remote.error)} onRetry={remote.retry}/>:<LoadingPlaceholder label={t('Loading records…')} rows={3}/>}</section>;
+ if(compact&&live&&remote.loading)return <CashflowSummarySkeleton/>;
+ if(live&&(remote.loading||remote.error))return <section className="panel tools-panel monthly-review"><h2>{t('Monthly review')} · {formatMonthYear(month,locale)}</h2>{remote.error?<InlineError message={t(remote.error)} onRetry={remote.retry}/>:<LoadingPlaceholder label={t('Loading records…')} rows={3}/>}</section>;
  // A month with an amount no rate converts shows no total: — with the note, never a partial figure (MONEY-008).
  if(compact)return <section className="cashflow-summary" aria-label={t('Monthly review')}>
-  {tools.error&&<InlineError message={t(tools.error)} onRetry={tools.retry}/>}
   <StatTiles columns={4}>{[
    {label:'Income received',value:result.received,estimate:estimates?.income},
    {label:'Actual spending',value:result.spent,estimate:estimates?.spending},
@@ -47,6 +48,7 @@ export function MonthlyReview({data:providedData,owner,demo=false,revision=0,too
    <StatTile label={t('Savings rate')} value={tools.loading?<Skeleton aria-hidden="true" className="h-7 w-3/4"/>:tools.error||result.missing||!(result.received>0)?'—':formatPercent(result.saved/result.received*100,locale)} tone={tools.loading||tools.error||result.missing||!(result.received>0)?undefined:signTone(result.saved)}/></StatTiles>
   {!!result.missing&&<p className="partial-total" role="status">{t('Some transactions could not be converted. Current or previous month totals are incomplete.')}</p>}
  </section>;
+ const previous=monthlyReview(data.records,splits,snapshots,shiftMonth(month,-1),currency,today,data.activity,rates,data.investmentLinks);
  return <section className="panel tools-panel monthly-review">
   <header className="monthly-review-heading">
    <div><div className="monthly-review-title"><h2>{t('Monthly review')} · {formatMonthYear(month,locale)}</h2></div></div>

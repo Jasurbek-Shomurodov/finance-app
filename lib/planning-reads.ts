@@ -16,10 +16,8 @@ type Table='movements'|'holdingAccounts'|'records'|'categories'|'goals'|'occurre
 /** How much transaction history the pattern finders read: two years and a month, enough for two yearly charges and
  * the 24 newest monthly ones they look at. */
 const insightMonths=25;
-/** The columns the pattern finders, the review drafts made from them and the goal income links read. */
-export const insightColumns='id,name,kind,amount,currency,quantity,cost,rate,date,frequency,recurrence_days,end_date,notes,custom_category_id,account_id,business_id,property_id,income_source_id,source_paused,archived,earning_source_id,operation_id,history_event_id,mortgage_payment_id,movement_id,ownership_percentage';
-/** The columns the Recent activity view of Accounts lists for income and spending booked to an account. */
-const accountActivityColumns='id,name,kind,amount,currency,date,account_id';
+/** The columns the pattern finders, the review drafts made from them, the goal income links, Budget's Age of Money and an opened charge read: its revision and account details let it be edited and saved. */
+export const insightColumns='id,revision,name,kind,amount,currency,quantity,cost,rate,date,frequency,recurrence_days,end_date,notes,custom_category_id,account_id,account_currency,account_exchange_rate,account_rate_date,business_id,property_id,income_source_id,source_paused,archived,earning_source_id,operation_id,history_event_id,mortgage_payment_id,payment_principal,payment_interest,payment_type,movement_id,occurrence_record_id,occurrence_due_on,ownership_percentage,member_id,shared';
 
 /** The tables a scope reads, and whether it carries loan payments (`debtPayments`) or only transaction history
  * (no later scheduled payments and no deposit estimates). */
@@ -27,7 +25,7 @@ export function planningReadPlan(scope:PlanningScope):{tables:Set<Table>;debtPay
  const historyOnly=scope==='insights'||scope==='account-activity';
  const all:Table[]=['movements','holdingAccounts','records','categories','goals','occurrences','activity','investmentLinks'];
  const skipped:Table[]=historyOnly?all.filter(table=>table!=='records'):scope==='review'?['movements']:scope==='workspace'?['movements','activity','investmentLinks']:[];
- return {tables:new Set(all.filter(table=>!skipped.includes(table))),debtPayments:scope==='full'||scope==='workspace'||scope==='accounts',historyOnly};
+ return {tables:new Set(all.filter(table=>!skipped.includes(table))),debtPayments:scope==='full'||scope==='workspace'||scope==='accounts'||scope==='review',historyOnly};
 }
 
 /** `review` reads the month and the one before it; `budget` reads from `first` (a month) through `month`. */
@@ -41,7 +39,8 @@ export function planningReadFilters(scope:string,month:string,first?:string):Rec
  const records:Record<string,string>=scope==='full'?{}
   // Schedules (to leave out what is already planned) and the last two years of income and spending.
   :scope==='insights'?{select:insightColumns,kind:`in.(${cashflowKinds})`,or:`(frequency.neq.Once,date.gte.${shiftMonth(depositToday().slice(0,7),-insightMonths)}-01)`}
-  :scope==='account-activity'?{select:accountActivityColumns,account_id:'not.is.null'}
+  // Whole rows: a row of Accounts' Recent activity opens its details and its form, which keep its revision.
+  :scope==='account-activity'?{account_id:'not.is.null',frequency:'eq.Once'}
   :{or:`(${essential}${periods?`,and(date.gte.${from},date.lt.${to})`:''})`};
  return {
   records,

@@ -79,7 +79,15 @@ export function TopBar({ pendingSection }: { pendingSection?: string | null }) {
  const section = pendingSection ?? current;
  const currentLabel = t(sectionLabel(current));
  // Each screen names its browser tab, so history and tab switchers tell the pages apart.
- useEffect(() => { document.title = `${currentLabel} · Hoggish Finance`; }, [currentLabel]);
+ // The router writes the site's title once a route settles, which can be after this effect, so the screen's name is kept.
+ useEffect(() => {
+  const title = `${currentLabel} · Hoggish Finance`;
+  const keep = () => { if (document.title !== title) document.title = title; };
+  keep();
+  const changed = new MutationObserver(keep);
+  changed.observe(document.head, { childList: true, subtree: true, characterData: true });
+  return () => changed.disconnect();
+ }, [currentLabel]);
  return <header ref={bar} className="topbar">
   <div className="topbar-location">{drawerHidden && <SidebarTrigger variant="outline" className="drawer-toggle" aria-label={t('Toggle Sidebar')}><DrawerIcon/></SidebarTrigger>}<div className="topbar-page-title" ref={slot?.titleRef}/><span className="topbar-title">{t(sectionLabel(section))}</span></div>
   <div className="topbar-actions">

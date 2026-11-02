@@ -17,13 +17,6 @@ import { BarChart3 } from 'lucide-react';
 
 type Props = { item: RecurringItem; data: PlanningData; today: string; onClose: () => void };
 
-/** The details dialog the Recurring list opens on a tap: `open` shows an occurrence's schedule, `dialog` renders it. Edit and
- * Record payment stay on the row, so the dialog only reads; its × closes it. */
-export function useRecurringDetails(data: PlanningData, today: string) {
- const [item, setItem] = useState<RecurringItem | null>(null);
- return { open: setItem, dialog: item && <RecurringDetails item={item} data={data} today={today} onClose={() => setItem(null)}/> };
-}
-
 /** Each occurrence in the period, newest first: its date, whether it was settled, and what came against what was scheduled. */
 function PaymentList({ items, money, today, done, income }: { items: RecurringItem[]; money: (value: number) => string; today: string; done: string; income: boolean }) {
  const { t, locale } = useLanguage();

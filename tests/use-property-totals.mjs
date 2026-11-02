@@ -5,7 +5,7 @@ import {createRenderer} from './helpers/component-tree.mjs';
 import {loadTS} from './helpers/load-ts.mjs';
 
 const {depositToday}=loadTS('lib/deposit-interest.ts');
-const today=depositToday(),year=today.slice(0,4),month=today.slice(0,7);
+const today=depositToday(),year=today.slice(0,4);
 const entry=(id,kind,amount,extra={})=>({id,name:id,kind,amount,currency:'USD',frequency:'Once',date:`${year}-01-15`,notes:'',quantity:1,cost:0,rate:0,...extra});
 const home=entry('home','Property',300000);
 const records=[home,entry('rent','Rent income',1200,{income_source_id:'home'}),entry('roof','Other expense',400,{property_id:'home'}),entry('old','Other expense',999,{property_id:'home',date:`${Number(year)-1}-12-31`}),entry('lunch','Living expense',20)];
@@ -26,7 +26,7 @@ test('the sample workspace totals each property from the records it already hold
  assert.deepEqual(view.totals().get('home'),{income:1200,costs:400,missing:0},'last year\'s 999 and unlinked spending are left out');
  const [url,,live]=view.reads[0];
  assert.equal(live,false,'nothing is read from the server');
- assert.equal(url,`/api/planning?scope=budget&month=${month}&from=${year}-01`);
+ assert.equal(url,`/api/property-payments?from=${year}-01-01`);
 });
 
 test('a signed-in workspace with a property reads this year\'s payments, and shows nothing while they load or fail',()=>{
@@ -38,6 +38,8 @@ test('a signed-in workspace with a property reads this year\'s payments, and sho
  assert.equal(view.render({revision:1}),null,'a failed read is never shown as zero');
  state={data:{records},initialLoading:false,error:''};
  assert.deepEqual(view.render({revision:2}).get('home'),{income:1200,costs:400,missing:0},'the read\'s payments, not the sample');
+ state={data:{records:records.filter(record=>record.kind!=='Property')},initialLoading:false,error:''};
+ assert.deepEqual(view.render({revision:3}).get('home'),{income:1200,costs:400,missing:0},'the holdings come from the screen, the payments from the read');
 });
 
 test('a signed-in workspace without a property reads nothing and has no totals to show',()=>{

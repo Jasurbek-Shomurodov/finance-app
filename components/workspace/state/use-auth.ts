@@ -1,14 +1,16 @@
 "use client";
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { requestJson } from '@/lib/api-client';
+import { refreshRead } from '@/lib/refresh-read';
 import { useVisitor } from '@/components/visitor-context';
 
 const authErrors: Record<string, string> = { google_setup: 'Google sign-in is awaiting setup. You can still sign in with email.', google_unavailable: 'Google sign-in is temporarily unavailable. Please try again.', google_cancelled: 'Google sign-in was not completed. Please try again.', google_expired: 'Your sign-in attempt expired. Please start again.', google_failed: 'Google sign-in failed. Please try again or use email.' };
 type Session = { configured: boolean; user: null | { email: string }; next?: string };
+const sessionUnavailable = 'Sign-in is unavailable. Check the Supabase connection.';
 
 /** Who is signed in, read once on load, and email sign-in. The page already names a person the server verified from
  * the access cookie (`useVisitor().user`), so the workspace starts at once; the session check still runs, and its answer
- * wins. A failed Google attempt returns with `auth_error`, shown once and taken out of the address bar. A Telegram chat
+ * wins, unless it could not be given: a failed check keeps whoever the page named and says so. A failed Google attempt returns with `auth_error`, shown once and taken out of the address bar. A Telegram chat
  * waiting to be connected (`next`) takes over right after. */
 export function useAuth({ setError, setBusy }: { setError: Dispatch<SetStateAction<string>>; setBusy: Dispatch<SetStateAction<boolean>> }) {
     const known = useVisitor().user ?? null;
@@ -20,7 +22,8 @@ export function useAuth({ setError, setBusy }: { setError: Dispatch<SetStateActi
             url.searchParams.delete('auth_error');
             window.history.replaceState(null, '', url.pathname + url.search + url.hash);
         }
-        fetch('/api/auth').then(r => r.json() as Promise<Session>).then(async (d) => {
+        // Reads retry (a blip at the token refresh is not a sign-out); a reply without JSON reads as the same failure.
+        refreshRead('/api/auth').then(async r => { const d = await r.json().catch(() => null) as Session | null; if (!r.ok || !d) throw Error(sessionUnavailable); return d; }).then(d => {
             setConfigured(d.configured);
             if (d.next) { window.location.replace(d.next); return; }
             // The check's answer wins: a session ended elsewhere signs this page out too.

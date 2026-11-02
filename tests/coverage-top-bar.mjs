@@ -23,7 +23,8 @@ function setup({roomy=true,workspace={},sidebar={state:'expanded',isMobile:false
  const listeners=[],observers=[];
  const documentRoot=el('html',{children:page?[el('.workspace',{children:[page]})]:[]});
  globalThis.window={matchMedia:query=>({matches:roomy,media:query,addEventListener:(type,callback)=>listeners.push({type,callback}),removeEventListener:(type,callback)=>{const index=listeners.findIndex(item=>item.callback===callback);if(index>=0)listeners.splice(index,1);}})};
- globalThis.document={title:'',querySelector:query=>documentRoot.querySelector(query)};
+ const head={};
+ globalThis.document={title:'',head,querySelector:query=>documentRoot.querySelector(query)};
  globalThis.getComputedStyle=node=>({paddingInlineStart:String(node.padding??0)+'px',paddingInlineEnd:String(node.padding??0)+'px'});
  const observer=kind=>class{constructor(callback){this.callback=callback;this.kind=kind;this.observed=[];this.connected=true;observers.push(this);}observe(node,options){this.observed.push({node,options});}disconnect(){this.connected=false;}};
  globalThis.ResizeObserver=observer('resize');globalThis.MutationObserver=observer('mutation');
@@ -40,7 +41,10 @@ function setup({roomy=true,workspace={},sidebar={state:'expanded',isMobile:false
   '@/components/workspace/workspace-provider':{useWorkspace:()=>state},
  });
  let props={};
- const view={loaded,listeners,observers,changes,quick,renderer,find:renderer.find,all:renderer.all,
+ const view={loaded,listeners,changes,quick,renderer,find:renderer.find,all:renderer.all,
+  // What measures the bar; the observer of the page's head keeps the tab title.
+  get observers(){return observers.filter(item=>item.observed[0]?.node!==head);},
+  titleObserver:()=>observers.find(item=>item.observed[0]?.node===head&&item.connected),
   render:(next=props)=>(props=next,view.tree=renderer.render(renderer.react.createElement(loaded.TopBar,props))),
   pageActions:()=>view.all(node=>node.props.className==='topbar-page-actions'),
   fire:kind=>{for(const item of observers.filter(entry=>entry.kind===kind&&entry.connected))item.callback();return view.render();},
@@ -96,6 +100,13 @@ test('the drawer button, currency switch and quick expense follow the workspace 
  assert.equal(document.title,'Cash flow · Hoggish Finance');
  const viewer=setup({roomy:false,workspace:{section:'Income & expenses',readOnly:true}});
  assert.equal(viewer.all(node=>node.type==='button').length,0,'viewers cannot add');
+});
+
+test('the router rewriting the title after a route settles does not take the screen name away',()=>{
+ const view=setup({roomy:false});
+ document.title='Hoggish Finance';
+ view.titleObserver().callback();
+ assert.equal(document.title,'Dashboard · Hoggish Finance');
 });
 
 test('without a slot the bar still renders, and a wide window without a measured node does not observe',()=>{

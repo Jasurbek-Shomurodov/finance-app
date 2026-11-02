@@ -48,8 +48,17 @@ export function LanguageProvider({ children, initial: given }: { children: React
   return <LanguageContext.Provider value={{ language, setLanguage, setDefaultLanguage }}>{children}</LanguageContext.Provider>;
 }
 
+type Translator = (key: string, params?: Record<string, string | number>) => string;
+const translators = new Map<Language, Translator>();
+/** One translator per language, so `t` keeps its identity between renders and can sit in a memo's dependencies. */
+function translatorFor(language: Language) {
+  let translator = translators.get(language);
+  if (!translator) { translator = (key, params) => translate(language, key, params); translators.set(language, translator); }
+  return translator;
+}
+
 export function useLanguage() {
   const context = useContext(LanguageContext);
   if (!context) throw new Error('useLanguage must be used within LanguageProvider');
-  return { ...context, locale: locales[context.language], t: (key: string, params?: Record<string, string | number>) => translate(context.language, key, params) };
+  return { ...context, locale: locales[context.language], t: translatorFor(context.language) };
 }

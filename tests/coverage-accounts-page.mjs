@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import React from 'react';
 import { loadTS } from './helpers/load-ts.mjs';
 import { byLabel, byType, createRenderer, hostModule, stubs, text } from './helpers/component-tree.mjs';
@@ -23,8 +24,7 @@ const { AccountsPage } = r.load('components/planning/accounts-page.tsx', {
  'next/navigation': { useRouter: () => ({ push() {} }) },
  ...Object.fromEntries(['page-header', 'segmented', 'empty-state', 'panel-title', 'stat-tile', 'animated-money', 'business-filter', 'business-mark', 'owner-filter', 'person-avatar', 'category-icon', 'count', 'sortable', 'pagination', 'rolling-text']
   .map(name => ['@/components/presentation-foundation/' + name, hostModule()])),
- ...Object.fromEntries(['./statement-reconciliation', './corporate-event-dialog', './asset-movement-dialog', './account-operation', './holding-account-dialog', '@/components/account-businesses-dialog', '@/components/account-owners-dialog']
-  .map(name => [name, hostModule()])),
+ './accounts/accounts-lazy': hostModule(),
  '@/hooks/use-location-search': { useLocationSearch: () => search, queryList: (query, key) => new URLSearchParams(query).getAll(key) },
  '@/hooks/use-display-order': { useDisplayOrder: (key, items) => ({ items, reorder: (...move) => reorders.push(move), disabled: false, error: '' }) },
  '@/lib/feedback': { showError: message => errors.push(message) },
@@ -108,6 +108,54 @@ test('Accounts shows one total in the display currency, the grouped directory an
  // Dragging an account reorders it within its group.
  r.fire(r.find(node => node.type === 'SortableList' && node.props.id === 'accounts-cash'), 'onMove', 'euro', 'wallet');
  assert.deepEqual(reorders.at(-1), ['euro', 'wallet', ['wallet', 'euro']]);
+});
+
+test('Total follows the search and the filters, as the groups below it do', () => {
+ search = 'business=b1';
+ open();
+ const narrowed = r.find(node => node.type === 'StatTile').props.value.props.value;
+ search = '';
+ assert.equal(Math.round(narrowed), Math.round(500 / 0.9), 'the Bakery’s one account, not the whole workspace');
+});
+
+test('a read that failed leaves no invitation to add a first account', () => {
+ const empty = { ...data, records: [], holdingAccounts: [] };
+ open({ data: empty });
+ assert.equal(r.all(byType('EmptyState')).length, 1);
+ open({ data: empty, loadFailed: true });
+ assert.equal(r.all(byType('EmptyState')).length, 0);
+});
+
+test('an investment account’s balance is a display-currency figure, like the directory beside it', () => {
+ open({ data: { ...data, holdingAccounts: [{ ...broker, currency: 'EUR' }] }, market: { rates: { USD: 1, EUR: 0.9 }, quotes: {}, errors: {} } });
+ select('Broker');
+ const figure = r.find(node => node.type === 'article').children ? r.find(node => node.type === 'AnimatedMoney' && node.props.currency === 'USD' && node.props.value === 2000) : null;
+ assert.ok(figure, '€1,800 of holdings reads $2,000, never € beside the directory’s $');
+ open({ data: { ...data, holdingAccounts: [{ ...broker, currency: 'EUR' }] }, market: null });
+ select('Broker');
+ const card = text(r.find(node => node.type === 'article'));
+ assert.ok(card.includes('Exchange rates are missing.'), 'no rate, no figure');
+});
+
+test('the closed dialogs are not in the page’s first code (PERF-018)', () => {
+ const source = fs.readFileSync('components/planning/accounts-page.tsx', 'utf8');
+ assert.doesNotMatch(source, /^import \{[^}]*\} from '\.\/(statement-reconciliation|corporate-event-dialog|holding-account-dialog)'|^import \{ (AssetMovementDialog|AccountOperation)\b/m);
+ for (const file of ['account-businesses-dialog', 'account-owners-dialog', 'account-operation', 'asset-movement-dialog', 'corporate-event-dialog', 'holding-account-dialog', 'statement-reconciliation'])
+  assert.match(fs.readFileSync('components/planning/accounts/accounts-lazy.tsx', 'utf8'), new RegExp(`import\\('[^']*${file}'\\)`));
+});
+
+test('the owner and business lists read a holding as the page does: at its quote, in the display currency', () => {
+ const money = (amount, from) => usd(amount * (from === 'EUR' ? 2 : 1));
+ const modules = { ...ui.modules, '@/components/presentation-foundation/category-icon': hostModule(), '@/components/display-money': { useDisplayMoney: () => ({ show: money }) }, '@/lib/feedback': { showError() {}, showNotice() {} } };
+ const market = { rates: { USD: 1, EUR: 1 }, quotes: { 'Stock:AAPL': { usd: 300 } }, errors: {} };
+ const held = { id: 'aapl', name: 'AAPL', kind: 'Stock', currency: 'USD', amount: 200, quantity: 10 };
+ const { AccountOwnersDialog } = r.load('components/account-owners-dialog.tsx', modules);
+ r.mount(React.createElement(AccountOwnersDialog, { records: [held], accounts: [{ ...broker, currency: 'EUR' }], market, household: demoHousehold, owners: [], onChange: async () => 0, onClose() {} }));
+ assert.ok(html().includes(usd(3000)), 'the live $300, not the saved $200');
+ const { AccountBusinessesDialog } = r.load('components/account-businesses-dialog.tsx', modules);
+ const van = { id: 'cash', name: 'Till', kind: 'Cash', currency: 'EUR', amount: 50 };
+ r.mount(React.createElement(AccountBusinessesDialog, { records: [van], market, businesses: [], onChange: async () => 0, onClose() {} }));
+ assert.ok(html().includes(usd(100)), 'in the display currency');
 });
 
 test('reconciling a statement waits for a signed-in owner', () => {
@@ -234,4 +282,14 @@ test('signed in, Recent activity reads the income and spending booked to account
  open({ demo: true, data: lunchless });
  showActivity();
  assert.equal(resources.at(-1).enabled, false, 'the sample workspace has its records already');
+});
+
+test('a row of Recent activity opens as the whole stored record, and its form keeps the revision (ERR-006)', () => {
+ const { storedEntry, savedRecord } = loadTS('lib/record-table.ts');
+ const row = { id: 'old', name: 'Lunch', kind: 'Living expense', amount: 25, currency: 'USD', date: '2026-01-02', account_id: 'wallet', frequency: 'Once', notes: 'Team', custom_category_id: 'food', revision: 7 };
+ const opened = storedEntry(row, { history: [], planning: [], rows: [], summary: [] }, false);
+ assert.deepEqual([opened.frequency, opened.notes, opened.custom_category_id, opened.revision], ['Once', 'Team', 'food', 7]);
+ assert.equal(savedRecord(opened.id, [], [], opened)?.revision, 7, 'Edit saves against the revision it read');
+ const { planningReadFilters } = loadTS('lib/planning-reads.ts');
+ assert.deepEqual(planningReadFilters('account-activity', '2026-10').records, { account_id: 'not.is.null', frequency: 'eq.Once' }, 'no narrowed select: a missing frequency stopped the details dialog');
 });

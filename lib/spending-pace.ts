@@ -2,14 +2,13 @@ import { monthDays, shiftMonth } from './calendar-days';
 import type { Entry } from './finance';
 import { convertAmount } from './market';
 import type { PlanningData } from './planning';
-import type { PortfolioSnapshot } from './portfolio-snapshots';
 import { cashFlowItems } from './spending';
 import { monthlyReview, type TransactionSplit } from './transaction-tools';
 import { ratesOf } from './transaction-rates';
 
 export type SpendingPacePoint = { day: number; current: number | null; previous: number | null };
 export type SpendingPace = { month: string; previousMonth: string; points: SpendingPacePoint[]; spent: number; previousToDate: number; missing: boolean; empty: boolean };
-type Input = { records: Entry[]; splits: TransactionSplit[]; snapshots: PortfolioSnapshot[]; activity?: PlanningData['activity']; investmentLinks?: PlanningData['investmentLinks'] };
+type Input = { records: Entry[]; splits: TransactionSplit[]; activity?: PlanningData['activity']; investmentLinks?: PlanningData['investmentLinks'] };
 
 const dayOf = (month: string, day: number) => `${month}-${String(day).padStart(2, '0')}`;
 
@@ -17,7 +16,7 @@ const dayOf = (month: string, day: number) => `${month}-${String(day).padStart(2
  * Each point is the Monthly review's own spending total with the day as its cut-off, so the two always agree. */
 export function spendingPace(input: Input, today: string, currency: string, rates?: number | Record<string, number>): SpendingPace {
  const month = today.slice(0, 7), previousMonth = shiftMonth(month, -1);
- const spentBy = (target: string, cutoff: string) => monthlyReview(input.records, input.splits, input.snapshots, target, currency, cutoff, input.activity ?? [], rates, input.investmentLinks ?? []);
+ const spentBy = (target: string, cutoff: string) => monthlyReview(input.records, input.splits, [], target, currency, cutoff, input.activity ?? [], rates, input.investmentLinks ?? []);
  const length = Math.max(monthDays(month), monthDays(previousMonth)), todayDay = Number(today.slice(8, 10));
  let missing = false;
  const points: SpendingPacePoint[] = [];

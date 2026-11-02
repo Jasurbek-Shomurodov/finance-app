@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { usePathname, useRouter } from 'next/navigation';
 import { showError } from '@/lib/feedback';
 import { requestJson } from '@/lib/api-client';
+import { forgetSharedReads } from '@/hooks/use-owner-resource';
 import { demoMarket, type DemoWorkspace } from '@/lib/demo-finance';
 import { useWorkspacePreferences } from '@/hooks/use-workspace-preferences';
 import { useTransactionTools } from '@/hooks/use-transaction-tools';
@@ -13,7 +14,7 @@ import { formatMoney } from '@/lib/format';
 import { useRemovedCategories } from '@/hooks/use-removed-categories';
 import { useCategoryIcons } from '@/hooks/use-category-icons';
 import { CategoryHueContext, CategoryIconsContext } from '@/components/category-icons-context';
-import { depositMonth } from '@/lib/deposit-interest';
+import { depositMonth, depositToday } from '@/lib/deposit-interest';
 import { useEarningSources } from '@/hooks/use-earning-sources';
 import { withAssetIncomePlans, legacyEarningSources, sourceSchedule } from '@/lib/earning-sources';
 import { approximateIncome } from '@/lib/monthly-income-cards';
@@ -44,12 +45,12 @@ import { useArchive, useDeleteSchedule } from './state/use-archive';
 import { useDemoBin } from './state/use-demo-bin';
 import { useRecordFormTool } from './state/use-record-form-tool';
 import { useRecordSave } from './state/use-record-save';
-import { useDashboardWarmup } from './state/use-dashboard-warmup';
+import { useSectionWarmup } from './state/use-section-warmup';
 import { useOpenDialogs } from './state/use-open-dialogs';
 import { useSampleWorkspace } from './state/use-sample-workspace';
 import { useForecastBudget } from './state/use-forecast-budget';
 import { useBudget } from '@/hooks/use-budget';
-import { workspaceLoading, workspaceTotals } from '@/lib/workspace-totals';
+import { quotedRecords, workspaceLoading, workspaceTotals } from '@/lib/workspace-totals';
 import { useRecordTable } from './state/use-record-table';
 import { recordForms } from './state/record-forms';
 import { DisplayCurrencyProvider } from '@/components/display-money';
@@ -84,35 +85,37 @@ function useWorkspaceState() {
     const [recordKinds, setRecordKinds] = useState<readonly string[]>(kinds);
     const refreshRecords = () => { setError(''); setReload(n => n + 1); };
     const [summary, setSummary] = useState<Entry[]>([]);
-    const { market: liveMarket, loading: marketLoading, error: marketError, refresh } = useMarket(summary, !!user && !demo);
-    const market = demo ? demoMarket : liveMarket;
     const price = usePriceFetch(editing, setEditing);
-    const quoteLabel = (entry: Entry) => describeQuote(entry, market, currency, t, locale);
     const money = (n: number, c = currency) => formatMoney(n, c, locale);
     const [forecastMonth,setForecastMonth] = useState(() => depositMonth());
     const basePlanning = usePlanning(user, demo, rows, reload, refreshRecords, demoHoldingAccounts, section==='Accounts'?'accounts':section==='Income & expenses'?'review':'workspace',section==='Income & expenses'?forecastMonth:undefined,sample.demoPlanning);
+    const { market: liveMarket, loading: marketLoading, error: marketError, refresh } = useMarket(quotedRecords(section, summary, basePlanning.data.records), !!user && !demo);
+    const market = demo ? demoMarket : liveMarket;
+    const quoteLabel = (entry: Entry) => describeQuote(entry, market, currency, t, locale);
     const earningSources=useEarningSources(user,demo,reload,refreshRecords,(source,original)=>{
         if(original&&rows.some(row=>row.earning_source_id===source.id||row.income_source_id===source.schedule_id)&&['kind','currency','mode','frequency','recurrence_days','start_date','end_date','linked_record_id'].some(key=>original[key as keyof typeof original]!==source[key as keyof typeof source]))throw Error('Keep the type, currency and schedule compatible with recorded payments.');
         const schedule=sourceSchedule(source);
         setRows(previous=>schedule?[...previous.filter(row=>row.id!==schedule.id),schedule]:previous.map(row=>row.id===source.schedule_id?{...row,source_paused:true}:row));
     },legacyEarningSources(rows));
     const workspacePreferences=useWorkspacePreferences(user,demo,reload);
-    useDashboardWarmup(user,demo,section==='Overview',reload);
+    useSectionWarmup(user,demo,section,reload);
     const removedCategories=useRemovedCategories(workspacePreferences,user,demo);
     // Accounts in the person's own order (Accounts page), wherever an account is picked.
     // The planning data every screen reads, built once per change of its parts rather than on every render.
-    const removedKey=removedCategories.kinds.join('\u0000'),accountOrder=workspacePreferences.data.preferences;
-    const planningData=useMemo(()=>({...basePlanning.data,removedKinds:removedCategories.kinds,records:inAccountOrder(basePlanning.data.records,savedOrder(workspacePreferences.data.preferences,'account_order')),occurrences:demo?onScheduleDays([...basePlanning.data.occurrences,...rows.filter(row=>row.occurrence_record_id&&row.occurrence_due_on&&!basePlanning.data.occurrences.some(item=>item.record_id===row.occurrence_record_id&&item.due_on===row.occurrence_due_on)).map(row=>({id:row.id,record_id:row.occurrence_record_id!,due_on:row.occurrence_due_on!,status:'paid' as const,transaction_id:row.id}))],basePlanning.data.records):basePlanning.data.occurrences}),[basePlanning.data,removedKey,accountOrder,demo,rows]); // eslint-disable-line react-hooks/exhaustive-deps
+    const removedKey=removedCategories.kinds.join('\u0000'),savedPreferences=workspacePreferences.data.preferences;
+    const planningData=useMemo(()=>({...basePlanning.data,removedKinds:removedCategories.kinds,records:inAccountOrder(basePlanning.data.records,savedOrder(savedPreferences,'account_order')),occurrences:demo?onScheduleDays([...basePlanning.data.occurrences,...rows.filter(row=>row.occurrence_record_id&&row.occurrence_due_on&&!basePlanning.data.occurrences.some(item=>item.record_id===row.occurrence_record_id&&item.due_on===row.occurrence_due_on)).map(row=>({id:row.id,record_id:row.occurrence_record_id!,due_on:row.occurrence_due_on!,status:'paid' as const,transaction_id:row.id}))],basePlanning.data.records):basePlanning.data.occurrences}),[basePlanning.data,removedKey,savedPreferences,demo,rows]); // eslint-disable-line react-hooks/exhaustive-deps
     const planning={...basePlanning,data:planningData};
     const transactionTools=useTransactionTools(user,demo,reload,refreshRecords);
     const categoryIcons=useCategoryIcons(workspacePreferences,user,demo,planning.data.categories);
     const tagResource=useTags(user,demo,reload,planning.data.records,sample.demoTags);
     const attachments=useRecordAttachments(user,demo,reload);
     // Tags in the person's own order (Settings), wherever they are listed.
-    const tags={...tagResource,data:{...tagResource.data,tags:orderById(tagResource.data.tags,savedOrder(workspacePreferences.data.preferences,'tag_order'))}};
+    const orderedTags=useMemo(()=>({...tagResource.data,tags:orderById(tagResource.data.tags,savedOrder(savedPreferences,'tag_order'))}),[tagResource.data,savedPreferences]);
+    const tags={...tagResource,data:orderedTags};
     // Businesses in the person's own order (Settings), shared by filters, reports and the dashboard.
-    const businessList=orderById(businessesIn(planning.data.records),savedOrder(workspacePreferences.data.preferences,'business_order'));
-    const overdueCount = upcomingPayments(planning.data.records, planning.data.occurrences, undefined, undefined, planning.data.debtPayments).filter(item => item.overdue).length;
+    const businessList=useMemo(()=>orderById(businessesIn(planningData.records),savedOrder(savedPreferences,'business_order')),[planningData.records,savedPreferences]);
+    const today=depositToday();
+    const overdueCount = useMemo(() => upcomingPayments(planningData.records, planningData.occurrences, today, undefined, planningData.debtPayments).filter(item => item.overdue).length, [planningData.records, planningData.occurrences, planningData.debtPayments, today]);
     // The month picker belongs to Cash flow. Every other screen plans for the current month.
     const planningMonth = section === 'Income & expenses' ? forecastMonth : depositMonth();
     const bin = useDemoBin({ rows, setRows });
@@ -125,7 +128,7 @@ function useWorkspaceState() {
     /** Opens a form only where the person may change the workspace. */
     const editable = () => { if (readOnly) showError('This shared workspace is view-only.'); return !readOnly; };
     const { save, remove } = useRecordSave({ demo, rows, setRows, editing, setEditing, deleting, setDeleting, setBusy, setError, fail, planning, sources: earningSources.sources, refreshRecords, setAccountBusiness: actions.setAccountBusiness, binRecord: bin.binRecord });
-    function clearLocalSession() { setEditing(null); setDeleting(null); closeRecordDialogs(); setRecordKinds(kinds); price.resetPrice(); settings.resetSettings(); table.resetTable(); setSummary([]); setUser(null); setDemo(false); sample.clearSample(); bin.emptyBin(); setRows([]); setError(''); }
+    function clearLocalSession() { forgetSharedReads(); setEditing(null); setDeleting(null); closeRecordDialogs(); setRecordKinds(kinds); price.resetPrice(); settings.resetSettings(); table.resetTable(); setSummary([]); setUser(null); setDemo(false); sample.clearSample(); bin.emptyBin(); setRows([]); setError(''); }
     async function logout() {
         if (!demo) {
             try { await requestJson('/api/auth', { method: 'DELETE' }); }
@@ -133,11 +136,12 @@ function useWorkspaceState() {
         }
         clearLocalSession();
     }
-    const { current, monthlyIncomeEntries, unconvertedPlanning, excludedCurrencies, totalDebt, netWorth } = workspaceTotals({ records: demo ? rows : summary, planningRecords: planning.data.records, currency, market });
+    const totalRecords = demo ? rows : summary;
+    const { current, monthlyIncomeEntries, unconvertedPlanning, excludedCurrencies, totalDebt, netWorth } = useMemo(() => workspaceTotals({ records: totalRecords, planningRecords: planningData.records, currency, market }), [totalRecords, planningData.records, currency, market]);
     // Budget amounts count in the monthly estimate and the projected cash; a budget no rate converts leaves the estimate unknown.
     // One Budget for the whole workspace: the Budget screen, Reports, the Overview card and every forecast read this copy.
     const budget = useBudget(user, demo, reload);
-    const budgetForecast = useForecastBudget({ budget, data: planning.data, splits: transactionTools.data.splits, currency, market });
+    const budgetForecast = useForecastBudget({ budget, data: planning.data, splits: transactionTools.data.splits, currency, market, owner: demo ? null : user, revision: reload, projecting: section === 'Overview' || section === 'Income & expenses' });
     const monthBudget = budgetForecast.linesIn(planningMonth);
     // Variable income sources count their approximate amount, as the Cash flow income cards do (CF-048).
     const variableIncome = approximateIncome(earningSources.sources, currency, marketRates(market));
@@ -165,9 +169,7 @@ function useWorkspaceState() {
         setBusy(true); setError('');
         try {
             // The sample workspace comes from the backend, like a signed-in account's records.
-            const response = await fetch('/api/demo', { cache: 'no-store' });
-            if (!response.ok) throw Error();
-            const sample = seedSample(await response.json() as DemoWorkspace);
+            const sample = seedSample(await requestJson<DemoWorkspace>('/api/demo', { method: 'GET' }));
             setRows(withAssetIncomePlans(sample.records.map(normalizeEntry))); setDemo(true);
         } catch { setError('Connection unavailable. Please try again.'); }
         finally { setBusy(false); }
@@ -181,7 +183,7 @@ function useWorkspaceState() {
         currency, setCurrency: settings.setCurrency, preferencesData, applyPreferences: settings.applyPreferences, savePreferences: settings.savePreferences, settingsLoading, settingsError: settings.settingsError, retrySettings: settings.retrySettings, workspacePreferences, onboardingNeeded: settings.onboardingNeeded, restartOnboarding: settings.restartOnboarding, saveTrackingStart: saveTrackingStartRequest,
         // Records and market data
         rows, summary, current, categoryIcons, removedCategories, market, marketError, refresh, quoteLabel, money, planning, earningSources, transactionTools, snapshots,
-        reload, refreshRecords, forecast, forecastReady, budget, forecastBudget: budgetForecast.cash, forecastBudgetState: { loading: budgetForecast.loading, error: budgetForecast.error, retry: budget.retry }, goalBudget: budgetForecast.view, forecastMonth, setForecastMonth, excludedCurrencies, netWorth, totalDebt, monthlyIncomeEntries,
+        reload, refreshRecords, forecast, forecastReady, budget, forecastBudget: budgetForecast.cash, forecastBudgetState: { loading: budgetForecast.loading, error: budgetForecast.error, retry: budgetForecast.retry }, goalBudget: budgetForecast.view, forecastMonth, setForecastMonth, excludedCurrencies, netWorth, totalDebt, monthlyIncomeEntries,
         availableBusinesses, businessList, tags, attachments, overdueCount, workspaceLoading: loading, deletedItems: bin.deletedItems, restoreDemoItem: bin.restoreDemoItem, discardDeletedItem: bin.discardDeletedItem,
         // Record table
         filters: table.filters, setFilters: table.setFilters, filtersActive: table.filtersActive, historyOnly: table.historyOnly, useFilteredRecords: table.useFilteredRecords, remoteHistory: table.remoteHistory, historyPage, visible: table.visible, totalRecords: table.totalRecords, pageCount: table.pageCount, tablePage: table.tablePage, tableLoading,

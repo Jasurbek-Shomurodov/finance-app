@@ -69,5 +69,21 @@ test('remote monthly review normalizes undated lending and never presents failed
 test('compact cash-flow cards keep actuals separate from estimates and honor the selected month',()=>{
  const html=render({compact:true,selectedMonth:'2026-08',estimates:{income:1000,spending:400,net:600},data:{...props.data,records:[record('august',800,{kind:'Salary',date:'2026-08-10'}),record('september',9999,{kind:'Salary'})]}});
  assert.match(html,/\$800/);assert.match(html,/\$1,000/);assert.match(html,/Net cash flow/);assert.doesNotMatch(html,/\$9,999/);
- assert.match(render({compact:true,tools:{...props.tools,error:'Offline'}}),/Offline/);
+ // The screen reports a failed tools read once, above the tiles; the tiles show no figure.
+ const offline=render({compact:true,tools:{...props.tools,error:'Offline'}});
+ assert.doesNotMatch(offline,/Offline/);assert.doesNotMatch(offline,/\$0/);
+});
+
+test('the review of a month the page chose reads nothing: it is the page\'s own planning read (PERF-016)',()=>{
+ const asked=[];
+ const {MonthlyReview:Review}=loadTS('components/financial-review.tsx',{
+  '@/components/language-provider':language,
+  '@/lib/deposit-interest':{depositToday:()=> '2026-09-18'},
+  '@/hooks/use-owner-resource':{useOwnerResource:(url,owner,enabled)=>{asked.push(enabled);return {data:props.data,error:'',loading:enabled,retry(){}};}},
+ });
+ const data={...props.data,records:[record('pay',800,{kind:'Salary'})]};
+ const html=renderToStaticMarkup(React.createElement(Review,{...props,compact:true,selectedMonth:'2026-09',owner:'owner',data}));
+ assert.deepEqual(asked,[false]);assert.match(html,/\$800/);
+ renderToStaticMarkup(React.createElement(Review,{...props,owner:'owner',data}));
+ assert.deepEqual(asked,[false,true],'on its own it still reads its month');
 });

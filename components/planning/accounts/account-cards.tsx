@@ -56,11 +56,14 @@ export function BalanceAccountCard({ account, goals, onEdit, onTrack, onDelete, 
 /** The selected investment account: its value, holdings count and a dialog listing the holdings. */
 export function InvestmentAccountCard({ account, records, onEditAccount, onAdd, holdingActions }: { account: HoldingAccount; records: Entry[]; onEditAccount: (account: HoldingAccount) => void; onAdd: (kind: HoldingAccount['kind'], accountId: string) => void; holdingActions: HoldingActions }) {
  const { t, locale } = useLanguage();
+ const display=useDisplayMoney();
  const {holdings,total}=holdingAccountValue(account,records,holdingActions.market);
+ // A balance is a display-currency figure, like the directory beside it.
+ const shown=total===null?null:display.convert(total,account.currency);
  return <article className="panel account-card">
   <header><CategoryIcon kind={account.kind}/><div className="account-card-heading"><h2>{account.name}</h2><small>{t(holdingAccountLabel(account.kind))}</small></div><AccountMenu name={account.name}><DropdownMenuItem onSelect={()=>onEditAccount(account)}>{t('Edit account')}</DropdownMenuItem><DropdownMenuItem onSelect={()=>onAdd('Cash',account.id)}>{t('Add cash balance')}</DropdownMenuItem></AccountMenu></header>
-  <strong className="account-card-value">{total===null?'—':<AnimatedMoney value={total} currency={account.currency}/>}</strong><p className="muted">{t('{count} holdings',{count:formatNumber(holdings.filter(isHolding).length,locale,0)})} · {account.currency}</p>
-  {total===null&&<p className="muted">{t('Exchange rates are missing. The account total is unavailable.')}</p>}
+  <strong className="account-card-value">{shown===null?'—':<AnimatedMoney value={shown} currency={display.currency??account.currency}/>}</strong><p className="muted">{t('{count} holdings',{count:formatNumber(holdings.filter(isHolding).length,locale,0)})} · {account.currency}</p>
+  {shown===null&&<p className="muted">{t('Exchange rates are missing. The account total is unavailable.')}</p>}
   <div className="account-card-actions"><Button onClick={()=>onAdd(account.kind,account.id)}><Plus size={16} aria-hidden="true" />{t(account.kind==='Cash'?'Add cash balance':'Add holding')}</Button></div>
   {holdings.length>0&&<Dialog><DialogTrigger asChild><Button variant="ghost" className="account-details-trigger">{t('Holdings')}</Button></DialogTrigger><DialogContent className="record-dialog" aria-describedby={undefined}><DialogTitle>{account.name} · {t('Holdings')}</DialogTitle><HoldingRows records={holdings} {...holdingActions}/></DialogContent></Dialog>}
  </article>;
