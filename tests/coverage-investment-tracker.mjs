@@ -430,7 +430,7 @@ test('a history row is headed by the money that moved, and the value it set come
  assert.ok(row('1 January 2026').includes(`<strong>${money(33000)}</strong>`));
 });
 
-test('a payment linked to the asset reads as entered, and only the tracker\'s own updates can be deleted', async () => {
+test('a payment linked to the asset reads as entered, and its bin deletes the transaction, not a tracker update', async () => {
  const events = [event('b', 'baseline', '2026-01-01', { balance: 5000 }), event('p', 'contribution', '2026-02-01', { amount: 12, notes: 'Sheep feed', entered: { amount: 1000000, currency: 'UZS' }, account_link: { account_id: 'cash', amount: -1000000 } }), event('u', 'contribution', '2026-03-01', { amount: 0, entered: { amount: 500000, currency: 'UZS' } })];
  const { showTab, view } = await open(record('Business'), events);
  showTab('history');
@@ -438,7 +438,17 @@ test('a payment linked to the asset reads as entered, and only the tracker\'s ow
  assert.ok(html.includes(`<strong>Money invested</strong><small><time>${formatDate('2026-02-01', 'en-US')}</time> · from Wallet</small><p>Sheep feed</p>`));
  assert.ok(html.includes(`<strong>${money(1000000, 'UZS')}</strong>`));
  assert.ok(html.includes(`<strong>${money(500000, 'UZS')}</strong>`), 'a payment no rate converts still shows what was paid');
- assert.equal(view.all(element => element.props?.label === 'Delete update').length, 0);
+ const bins = view.all(element => element.props?.label === 'Delete record');
+ assert.equal(bins.length, 2);
+ bins[1].props.onClick();
+ view.update();
+ assert.match(view.html(), /<h3>Delete this record\?<\/h3>/);
+ assert.match(view.html(), /Move Sheep feed to Recently deleted\?/);
+ api.calls.length = 0;
+ api.handler = async () => ({});
+ await view.find(byType(ConfirmDialog)).props.onConfirm();
+ assert.deepEqual(api.calls[0], { url: '/api/records', method: 'DELETE', body: { id: 'p' } });
+ api.calls.length = 0;
 });
 
 test('business updates can be deleted after confirmation, and a failed delete reports its error', async () => {

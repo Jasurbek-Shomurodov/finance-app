@@ -12,7 +12,7 @@ export type HistoryEvent = {
  id:string; record_id:string; event_type:'baseline'|'valuation'|'contribution'|'withdrawal'|'income'|'expense'|'mortgage_payment';
  occurred_on:string; amount:number; balance:number|null; ownership_percentage:number; principal:number; interest:number; notes:string; created_at:string;
  account_link?:{account_id:string;amount:number;account_currency?:string|null;record_currency?:string|null;exchange_rate?:number|null;rate_date?:string|null}|null;
- /** A payment linked to the asset (`assetPaymentEvents`), as it was entered; it is managed from Transactions, not here. */
+ /** A payment linked to the asset (`assetPaymentEvents`), as it was entered; its row is the transaction itself. */
  entered?:{amount:number;currency:string};
 };
 const historyLabels: Record<HistoryEvent['event_type'],string> = {

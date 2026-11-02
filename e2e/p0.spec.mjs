@@ -2,7 +2,7 @@
 // Each test names its catalog cases. Expected figures are worked out from the fixture, never read off the screen.
 import { test, expect } from '@playwright/test';
 import { accountBalance, chooseOption, closeDialog, dollars, figureAfter, open, pageText, resetDatabase } from './helpers.mjs';
-import { expected, today } from './fixture.mjs';
+import { expected, ids, today } from './fixture.mjs';
 import { testAccount } from './settings.mjs';
 
 test.beforeEach(async () => { await resetDatabase(); });
@@ -201,6 +201,27 @@ test('LOAN-004 LOAN-012 a loan repayment moves loan and cash together, and delet
   await dialog.getByRole('button', { name: 'Close', exact: true }).first().click();
   await expect(dialog).toBeHidden();
   await expect.poll(async () => (await pageText(page)).includes('$5,000')).toBe(true);
+  await open(page, 'Accounts');
+  await expect.poll(() => accountBalance(page, 'E2E Checking')).toBe(dollars(expected.checking));
+});
+
+test('INV-054 a bill linked to a property shows as money invested, and its bin moves it to Recently deleted', async ({ page, baseURL }) => {
+  const flat = { id: 'e2e00000-0000-4000-8000-000000000051', name: 'E2E Linked flat', kind: 'Property', currency: 'USD', amount: 60000, quantity: 1, cost: 0, rate: 0, frequency: 'Once', notes: '', date: '2026-01-01' };
+  const bill = { id: 'e2e00000-0000-4000-8000-000000000052', name: 'E2E Roof repair', kind: 'Other expense', currency: 'USD', amount: 75, quantity: 1, cost: 0, rate: 0, frequency: 'Once', notes: '', date: today, account_id: ids.checking, property_id: flat.id };
+  for (const data of [flat, bill]) expect((await page.request.post('/api/records', { data, headers: { origin: baseURL } })).ok()).toBe(true);
+  await page.goto('/assets');
+  await page.locator('.asset-card', { hasText: 'E2E Linked flat' }).locator('.asset-card-worth').click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'History', exact: true }).click();
+  const row = dialog.getByRole('listitem').filter({ hasText: 'E2E Roof repair' });
+  await expect(row).toContainText('Money invested');
+  await expect(row).toContainText('$75');
+  await row.getByRole('button', { name: 'Delete record' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Delete record' }).click();
+  await expect(row).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Close', exact: true }).first().click();
+  await open(page, 'Recently deleted');
+  await expect(page.locator('main').getByText('E2E Roof repair')).toBeVisible();
   await open(page, 'Accounts');
   await expect.poll(() => accountBalance(page, 'E2E Checking')).toBe(dollars(expected.checking));
 });

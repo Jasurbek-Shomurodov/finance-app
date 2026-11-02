@@ -21,7 +21,7 @@ function HistoryRow({ event, record, accounts, valueLabel, deletable, deleteDisa
     : <>{event.balance !== null && <strong>{money(value)}</strong>}{event.amount > 0 && <span>{t('Cash amount (your share)')}: {money(Number(event.amount))}</span>}</>}
    {event.event_type === 'mortgage_payment' && <small>{t('Principal repayment')}: {money(Number(event.principal))} · {t('Interest paid')}: {money(Number(event.interest))}</small>}
   </div>
-  {deletable(event) && <DeleteButton disabled={deleteDisabled} label={t('Delete update')} onClick={() => onDelete(event)}/>}
+  {deletable(event) && <DeleteButton disabled={deleteDisabled} label={t(event.entered ? 'Delete record' : 'Delete update')} onClick={() => onDelete(event)}/>}
  </li>;
 }
 

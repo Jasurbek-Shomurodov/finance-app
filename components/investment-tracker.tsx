@@ -41,7 +41,8 @@ export function InvestmentTracker({inline=false,onDraftState,initialType,record,
  async function deleteUpdate(){
   if(!deleting||busy)return;setBusy(true);setError('');
   try{
-   await requestJson('/api/investment-history',{method:'DELETE',body:{id:deleting.id,record_id:record.id}});
+   // A linked payment is a transaction: it goes to Recently deleted like any other, and its schedule date opens again.
+   await requestJson(deleting.entered?'/api/records':'/api/investment-history',{method:'DELETE',body:deleting.entered?{id:deleting.id}:{id:deleting.id,record_id:record.id}});
    setDeleting(null);setLoading(true);setReload(n=>n+1);onSaved();showDeleted();
   }catch(reason){setError((reason as Error).message);setDeleting(null);}finally{setBusy(false);}
  }
@@ -134,7 +135,7 @@ export function InvestmentTracker({inline=false,onDraftState,initialType,record,
   <DialogDescription className="sr-only">{t(lending?'Track additions and repayments against the outstanding balance.':cash?'Track your cash balance and transfers between accounts.':'Dated values and actual cash movements. Estimates stay separate.')}</DialogDescription>
   <Segmented className="tracker-tabs" label={t('Tracker')} options={[{value:'overview',label:t('Overview')},{value:'history',label:t('History')}]} value={tab} onChange={setTab}/>
   {tab==='history'&&<ErrorPopup message={error}/>}
-  {tab==='history'?(loading?<LoadingPlaceholder label={t('Loading history…')}/>:<TrackerHistory events={events} record={record} accounts={accounts} valueLabel={valueLabel} help={historyHelp} deletable={e=>!e.entered&&deletableUpdate(e.event_type)} deleteDisabled={busy||loading||submitted||dirty} onDelete={setDeleting}/>):<>
+  {tab==='history'?(loading?<LoadingPlaceholder label={t('Loading history…')}/>:<TrackerHistory events={events} record={record} accounts={accounts} valueLabel={valueLabel} help={historyHelp} deletable={e=>!!e.entered||deletableUpdate(e.event_type)} deleteDisabled={busy||loading||submitted||dirty} onDelete={setDeleting}/>):<>
   {loading?<LoadingPlaceholder label={t('Loading history…')}/>:<>
    {deposit&&<div className="ownership-summary"><p>{t('Estimated interest for {month}: {amount}', {month:formatMonthYear(depositToday().slice(0,7),locale),amount:money(depositInterest(events,record.rate,undefined,interestCompounding(record)))})}</p><p>{t('Estimated balance including interest')}: {money(projection.total)}</p><p className="muted">{t(({monthly:'Monthly compounding',daily:'Daily compounding',none:'No compounding'})[record.deposit_compounding??'monthly'])}. {t('Top-ups and withdrawals affect interest from their recorded date. Estimates use the current annual rate. A confirmed balance or interest credit replaces the projection.')}</p><p className="muted">{t('Estimates start at the first dated balance. Record confirmed capitalized interest to update the available balance. Projections are not spendable cash.')}</p></div>}
    <div className="tracker-metrics">
@@ -160,5 +161,5 @@ export function InvestmentTracker({inline=false,onDraftState,initialType,record,
   {mortgage&&<Button type="button" variant="outline" disabled={busy} onClick={onPayment}>{t('Record payment')}</Button>}
   {paymentFields}
   </>}
- </DialogContent></Dialog>{guard.confirmation}<ConfirmDialog deletes open={!!deleting} onClose={()=>setDeleting(null)} busy={busy} title={t('Delete this tracker update?')} description={<>{t('This removes the update. If it changed the asset value, the previous value and ownership are restored. Any linked cash movement is reversed using its original amount. This cannot be undone from the app.')}{deleting&&<> {t(eventLabel(deleting.event_type))} · {formatDate(deleting.occurred_on,locale)}{deleting.amount>0&&<> · {money(Number(deleting.amount))}</>}</>}</>} confirmLabel={t(busy?'Deleting…':'Delete update')} onConfirm={()=>void deleteUpdate()}/></>;
+ </DialogContent></Dialog>{guard.confirmation}<ConfirmDialog deletes open={!!deleting} onClose={()=>setDeleting(null)} busy={busy} title={t(deleting?.entered?'Delete this record?':'Delete this tracker update?')} description={deleting?.entered?t('Move {name} to Recently deleted? It will be removed from your records, totals and all planning months. Separate transactions stay unchanged. You can restore it from Recently deleted.',{name:deleting.notes}):<>{t('This removes the update. If it changed the asset value, the previous value and ownership are restored. Any linked cash movement is reversed using its original amount. This cannot be undone from the app.')}{deleting&&<> {t(eventLabel(deleting.event_type))} · {formatDate(deleting.occurred_on,locale)}{deleting.amount>0&&<> · {money(Number(deleting.amount))}</>}</>}</>} confirmLabel={t(busy?'Deleting…':deleting?.entered?'Delete record':'Delete update')} onConfirm={()=>void deleteUpdate()}/></>;
 }
