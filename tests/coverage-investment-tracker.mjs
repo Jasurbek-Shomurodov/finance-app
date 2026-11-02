@@ -67,7 +67,8 @@ async function open(entry, events = [], props = {}) {
  const saveButton = () => view.find(byType(ui.FormFooter)).props.children;
  const save = async () => { await saveButton().props.onClick(); view.update(); };
  const button = name => view.find(byType(ui.Button, name));
- return { view, calls, selects, accountSelect, typeSelect, setType, setAccount, inputs, label, setNumber, saveButton, save, button };
+ const showTab = tab => { view.find(element => element.props?.className === 'tracker-tabs').props.onChange(tab); view.update(); };
+ return { showTab, view, calls, selects, accountSelect, typeSelect, setType, setAccount, inputs, label, setNumber, saveButton, save, button };
 }
 
 test('the tracker loads the record history and shows a loading placeholder until it arrives', async () => {
@@ -81,9 +82,11 @@ test('the tracker loads the record history and shows a loading placeholder until
  await view.flush();
  const html = view.html();
  assert.doesNotMatch(html, /Loading history/);
- assert.match(html, /<p>No history yet.<\/p>/);
  assert.match(html, /<small>Account balance<\/small><strong>—<\/strong>/);
  assert.match(html, /Account balance after update/);
+ view.find(element => element.props?.className === 'tracker-tabs').props.onChange('history');
+ view.update();
+ assert.match(view.html(), /<p>No history yet.<\/p>/);
 });
 
 test('a failed history request shows its error, and responses after closing are ignored', async () => {
@@ -107,7 +110,7 @@ test('a failed history request shows its error, and responses after closing are 
 });
 
 test('a cash balance update needs an entered value, saves it, reloads history and offers transfers', async () => {
- const { view, calls, saveButton, save, setNumber, button } = await open(record('Cash', { amount: 800 }), [event('b', 'baseline', '2026-09-01', { balance: 800 })]);
+ const { showTab, view, calls, saveButton, save, setNumber, button } = await open(record('Cash', { amount: 800 }), [event('b', 'baseline', '2026-09-01', { balance: 800 })]);
  let html = view.html();
  assert.match(html, /<h2>Cash asset · Tracker<i data-hint="Track your cash balance and transfers between accounts."><\/i><\/h2>/);
  assert.match(html, /Track your cash balance and transfers between accounts./);
@@ -115,9 +118,11 @@ test('a cash balance update needs an entered value, saves it, reloads history an
  assert.doesNotMatch(html, /Income received|Expense paid|data-line="contributions"/);
  assert.match(html, /Account balance after update/);
  assert.match(html, /Use Balance update to confirm a cash balance/);
- assert.match(html, /History shows confirmed balances and account movements./);
- assert.doesNotMatch(html, /Delete newer balance updates first/);
  assert.equal(view.all(element => element.type === ui.NativeSelect && element.props.required).length, 0);
+ showTab('history');
+ assert.match(view.html(), /History shows confirmed balances and account movements./);
+ assert.doesNotMatch(view.html(), /Delete newer balance updates first/);
+ showTab('overview');
  assert.equal(saveButton().props.disabled, true);
  await save();
  assert.equal(api.calls.length, 0);
@@ -240,7 +245,7 @@ test('money lent tracks additions and repayments against the outstanding balance
   event('c', 'contribution', '2026-04-01', { amount: 200, balance: 1200, account_link: { account_id: 'cash', amount: -200 } }),
   event('w', 'withdrawal', '2026-05-01', { amount: 100, balance: 1100, account_link: { account_id: 'gone', amount: 90, account_currency: 'EUR' } }),
  ];
- const { view, setType, setAccount, setNumber, saveButton, label, inputs } = await open(record('Money lent', { amount: 1100 }), events);
+ const { showTab, view, setType, setAccount, setNumber, saveButton, label, inputs } = await open(record('Money lent', { amount: 1100 }), events);
  let html = view.html();
  assert.match(html, /Track additions and repayments against the outstanding balance./);
  assert.ok(html.includes(`<small>Amount owed to you</small><strong>${money(1100)}</strong>`));
@@ -248,15 +253,18 @@ test('money lent tracks additions and repayments against the outstanding balance
  assert.ok(html.includes(`<small>Additions recorded</small><strong>${money(200)}</strong>`));
  assert.match(html, /data-line="balance">Amount owed to you</);
  assert.doesNotMatch(html, /data-line="contributions"/);
- assert.match(html, /Delete newer balance updates first/);
- assert.match(html, /History starts with a balance snapshot/);
  assert.match(html, /Enter updates on or after the latest balance date/);
- assert.ok(html.includes('<small>from Wallet</small>'));
- assert.ok(html.includes('<small>to Cash account</small>'));
- assert.ok(!html.includes(money(90, 'EUR')), 'a history row never shows the converted cash figure');
- assert.ok(html.includes(`<strong>${money(200)}</strong><span>Amount owed to you: ${money(1200)}</span>`));
- assert.ok(html.includes(`<time>${formatDate('2026-03-01', 'en-US')}</time><p>Opening</p>`));
+ showTab('history');
+ const history = view.html();
+ assert.match(history, /Delete newer balance updates first/);
+ assert.match(history, /History starts with a balance snapshot/);
+ assert.ok(history.includes(' · from Wallet</small>'));
+ assert.ok(history.includes(' · to Cash account</small>'));
+ assert.ok(!history.includes(money(90, 'EUR')), 'a history row never shows the converted cash figure');
+ assert.ok(history.includes(`<strong>${money(200)}</strong><span>Amount owed to you: ${money(1200)}</span>`));
+ assert.ok(history.includes(`<small><time>${formatDate('2026-03-01', 'en-US')}</time></small><p>Opening</p>`));
  assert.equal(view.all(element => element.props?.label === 'Delete update').length, 2);
+ showTab('overview');
  assert.equal(view.find(byType(ui.DatePicker)).props.min, '2026-05-01');
  assert.match(text(label('Pay from cash account')), /Pay from cash account/);
  assert.ok(html.includes(`Outstanding balance after update: ${money(1100)}`));
@@ -347,16 +355,18 @@ test('stocks plot value, contributions and income, and format chart axes through
   event('i', 'income', '2026-03-10', { amount: 40 }),
   event('e', 'expense', '2026-03-12', { amount: 15 }),
  ];
- const { view, button } = await open(record('Stock'), events);
+ const { showTab, view, button } = await open(record('Stock'), events);
  const html = view.html();
  assert.ok(html.includes(`<small>Latest tracked value (your share)</small><strong>${money(1000)}</strong>`));
  assert.ok(html.includes(`<small>Income received</small><strong>${money(40)}</strong>`));
  assert.ok(html.includes(`<small>Expense paid</small><strong>${money(15)}</strong>`));
  assert.match(html, /data-line="balance">Value \(your share\)<\/span><span data-line="contributions">Net contributions recorded<\/span><span data-line="receipts">Income received</);
  assert.match(html, /Dated values and actual cash movements. Estimates stay separate./);
- assert.match(html, /History starts with a current snapshot/);
- assert.ok(html.includes(`<strong>${money(1000)}</strong><span>`) || html.includes(`<strong>${money(1000)}</strong></div>`));
+ showTab('history');
+ assert.match(view.html(), /History starts with a current snapshot/);
+ assert.ok(view.html().includes(`<strong>${money(1000)}</strong></div>`));
  assert.equal(view.all(element => element.props?.label === 'Delete update').length, 0);
+ showTab('overview');
  const timestamp = Date.parse('2026-03-10T00:00:00Z');
  assert.equal(view.find(byType(chart.XAxis)).props.tickFormatter(timestamp), formatDate('2026-03-10', 'en-US'));
  assert.equal(view.find(byType(chart.YAxis)).props.tickFormatter(1234.4), money(1234));
@@ -374,24 +384,44 @@ test('stocks plot value, contributions and income, and format chart axes through
 
 test('mortgages show principal and interest paid and hand payments to the payment form', async () => {
  const events = [event('b', 'baseline', '2026-01-01', { balance: 100000 }), event('p', 'mortgage_payment', '2026-02-01', { amount: 1500, principal: 1000, interest: 500 })];
- const { view, calls, button, typeSelect } = await open(record('Mortgage'), events);
+ const { showTab, view, calls, button, typeSelect } = await open(record('Mortgage'), events);
  const html = view.html();
  assert.ok(html.includes(`<small>Principal repaid</small><strong>${money(1000)}</strong>`));
  assert.ok(html.includes(`<small>Interest paid</small><strong>${money(500)}</strong>`));
- assert.ok(html.includes(`Principal repayment: ${money(1000)} · Interest paid: ${money(500)}`));
- assert.ok(html.includes(`<strong>${money(1500)}</strong>`));
- assert.ok(!html.includes('Cash amount (your share): '));
  assert.ok(html.includes(`<small>Outstanding balance</small><strong>${money(100000)}</strong>`));
  assert.deepEqual(typeSelect().props.children.map(text), ['Additional borrowing']);
  assert.match(html, /Receive into cash account/);
  button('Record payment').props.onClick();
  assert.equal(calls.payments, 1);
+ showTab('history');
+ const history = view.html();
+ assert.ok(history.includes(`Principal repayment: ${money(1000)} · Interest paid: ${money(500)}`));
+ assert.ok(history.includes(`<strong>${money(1500)}</strong>`));
+ assert.ok(!history.includes('Cash amount (your share): '));
  assert.equal(view.all(element => element.props?.label === 'Delete update').length, 0);
+});
+
+test('Overview shows the figures and the form, History shows every entry, and an unsaved draft survives the switch', async () => {
+ const events = [event('b', 'baseline', '2026-01-01', { balance: 5000 }), event('c', 'contribution', '2026-02-01', { amount: 300 })];
+ const { showTab, view } = await open(record('Business'), events);
+ const tabs = () => view.find(element => element.props?.className === 'tracker-tabs');
+ assert.deepEqual(tabs().props.options.map(option => option.label), ['Overview', 'History']);
+ assert.equal(tabs().props.value, 'overview');
+ assert.match(view.html(), /Add a dated update/);
+ assert.doesNotMatch(view.html(), /Starting snapshot|tracker-history/);
+ view.find(byType('textarea')).props.onChange({ target: { value: 'Kept' } });
+ showTab('history');
+ assert.equal(tabs().props.value, 'history');
+ assert.doesNotMatch(view.html(), /Add a dated update|tracker-metrics/);
+ assert.match(view.html(), /Money invested[\s\S]*Starting snapshot/, 'newest first');
+ showTab('overview');
+ assert.equal(view.find(byType('textarea')).props.value, 'Kept');
 });
 
 test('a history row is headed by the money that moved, and the value it set comes second', async () => {
  const events = [event('b', 'baseline', '2026-01-01', { balance: 33000 }), event('c', 'contribution', '2026-02-01', { amount: 6336, balance: 36000 }), event('k', 'contribution', '2026-03-01', { amount: 500 }), event('v', 'valuation', '2026-04-01', { balance: 40000, amount: 250 })];
- const { view } = await open(record('Property'), events);
+ const { showTab, view } = await open(record('Property'), events);
+ showTab('history');
  const row = id => view.html().split('<li>').find(item => item.includes(id));
  assert.match(row('1 February 2026'), new RegExp(`<strong>\\${money(6336)}</strong><span>Value \\(your share\\): \\${money(36000)}</span>`));
  assert.ok(row('1 March 2026').includes(`<strong>${money(500)}</strong>`), 'a cash move that kept the value still has a headline');
@@ -402,9 +432,10 @@ test('a history row is headed by the money that moved, and the value it set come
 
 test('a payment linked to the asset reads as entered, and only the tracker\'s own updates can be deleted', async () => {
  const events = [event('b', 'baseline', '2026-01-01', { balance: 5000 }), event('p', 'contribution', '2026-02-01', { amount: 12, notes: 'Sheep feed', entered: { amount: 1000000, currency: 'UZS' }, account_link: { account_id: 'cash', amount: -1000000 } }), event('u', 'contribution', '2026-03-01', { amount: 0, entered: { amount: 500000, currency: 'UZS' } })];
- const { view } = await open(record('Business'), events);
+ const { showTab, view } = await open(record('Business'), events);
+ showTab('history');
  const html = view.html();
- assert.ok(html.includes(`<strong>Money invested</strong><time>${formatDate('2026-02-01', 'en-US')}</time><p>Sheep feed</p><small>from Wallet</small>`));
+ assert.ok(html.includes(`<strong>Money invested</strong><small><time>${formatDate('2026-02-01', 'en-US')}</time> · from Wallet</small><p>Sheep feed</p>`));
  assert.ok(html.includes(`<strong>${money(1000000, 'UZS')}</strong>`));
  assert.ok(html.includes(`<strong>${money(500000, 'UZS')}</strong>`), 'a payment no rate converts still shows what was paid');
  assert.equal(view.all(element => element.props?.label === 'Delete update').length, 0);
@@ -412,11 +443,12 @@ test('a payment linked to the asset reads as entered, and only the tracker\'s ow
 
 test('business updates can be deleted after confirmation, and a failed delete reports its error', async () => {
  const events = [event('b', 'baseline', '2026-01-01', { balance: 5000 }), event('v', 'valuation', '2026-02-01', { balance: 6000, amount: 250 })];
- const { view, calls } = await open(record('Business'), events);
+ const { showTab, view, calls } = await open(record('Business'), events);
  assert.match(view.html(), /Business valuations use the current ownership share./);
  const confirm = () => view.find(byType(ConfirmDialog));
  await confirm().props.onConfirm();
  assert.equal(api.calls.filter(call => call.method === 'DELETE').length, 0);
+ showTab('history');
  const remove = () => view.find((element => element.props?.label === 'Delete update'));
  assert.equal(remove().props.disabled, false);
  remove().props.onClick();
@@ -450,6 +482,7 @@ test('business updates can be deleted after confirmation, and a failed delete re
  assert.equal(view.all(element => element.props?.label === 'Delete update').length, 0);
 
  const second = await open(record('Valuables'), [event('v', 'valuation', '2026-02-01', { balance: 10 })]);
+ second.showTab('history');
  second.view.find((element => element.props?.label === 'Delete update')).props.onClick();
  second.view.update();
  assert.ok(second.view.html().includes(`Value update · ${formatDate('2026-02-01', 'en-US')}</p>`));
@@ -462,12 +495,14 @@ test('business updates can be deleted after confirmation, and a failed delete re
 });
 
 test('an edited draft locks deletes, and the dialog closes through the guard unless saving', async () => {
- const { view, calls, setType, save, setAccount, setNumber } = await open(record('Property', { amount: 100 }), [event('v', 'valuation', '2026-02-01', { balance: 100 })], { initialType: 'withdrawal' });
+ const { showTab, view, calls, setType, save, setAccount, setNumber } = await open(record('Property', { amount: 100 }), [event('v', 'valuation', '2026-02-01', { balance: 100 })], { initialType: 'withdrawal' });
  assert.equal(view.find(byType(ToggleGroup)).props.value, 'keep');
  view.find(byType('textarea')).props.onChange({ target: { value: 'Sold a room' } });
  view.update();
  assert.equal(view.find(byType('textarea')).props.value, 'Sold a room');
+ showTab('history');
  assert.equal(view.find((element => element.props?.label === 'Delete update')).props.disabled, true);
+ showTab('overview');
  setType('valuation');
  assert.equal(view.all(element => element.type === ToggleGroup).length, 0);
  setType('withdrawal');

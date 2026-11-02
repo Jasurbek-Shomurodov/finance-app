@@ -140,12 +140,19 @@ label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 .tracker-help{font-size:var(--type-small);line-height:1.6}
 .tracker-fields{display:grid;gap:16px;border:0;padding:0;margin:0;min-width:0}
 .investment-tracker h3{font-size:var(--type-body);font-weight:600;margin-top:12px}
-.tracker-history ul{list-style:none;margin:12px 0 0;padding:0}
-.tracker-history li{display:flex;justify-content:space-between;gap:20px;padding:14px 0;border-top:1px solid var(--border);font-size:var(--type-compact)}
-.tracker-history li>div{min-width:0}.tracker-history li>div:last-child{text-align:end}
-.tracker-history time,.tracker-history span,.tracker-history small{display:block;color:var(--muted-foreground);font-size:var(--type-small);margin-top:4px}
+.tracker-tabs{justify-self:start;width:fit-content;margin-block-end:4px}
+/* One set of columns for the whole list: each row is a subgrid, so amounts and bins line up on every row. */
+.tracker-history ul{display:grid;grid-template-columns:minmax(0,1fr) auto auto;column-gap:16px;list-style:none;margin:16px 0 0;padding:0}
+.tracker-history li{display:grid;grid-column:1/-1;grid-template-columns:subgrid;align-items:start;padding:14px 0;border-top:1px solid var(--border);font-size:var(--type-compact)}
+.tracker-event-main{min-width:0}
+.tracker-event-amount{text-align:end;min-width:0}
+.tracker-event-amount strong{font-variant-numeric:tabular-nums}
+.tracker-history li .delete-button{margin-block:-6px}
+.tracker-history span,.tracker-history small{display:block;color:var(--muted-foreground);font-size:var(--type-small);margin-top:4px}
 .tracker-history p{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:6px;color:var(--muted-foreground)}
-@media(max-width:600px){.tracker-metrics{grid-template-columns:1fr}.tracker-metrics>div{display:flex;align-items:center;justify-content:space-between;gap:12px}.tracker-metrics small{margin:0}.tracker-history li{flex-direction:column;gap:4px}.tracker-history li>div:last-child{text-align:start}}
+.tracker-history>.tracker-help{margin-top:0}
+.tracker-history>.tracker-help+.tracker-help{margin-top:6px}
+@media(max-width:600px){.tracker-metrics{grid-template-columns:1fr}.tracker-metrics>div{display:flex;align-items:center;justify-content:space-between;gap:12px}.tracker-metrics small{margin:0}.tracker-history ul{grid-template-columns:minmax(0,1fr) auto}.tracker-event-main,.tracker-event-amount{grid-column:1}.tracker-event-amount{text-align:start;margin-top:6px}.tracker-history li .delete-button{grid-column:2;grid-row:1/span 2}}
 
 /* Shared loading placeholders use theme colors and respect reduced motion. */
 .skeleton-sheen{position:relative;overflow:hidden;isolation:isolate}

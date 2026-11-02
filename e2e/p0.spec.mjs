@@ -191,9 +191,10 @@ test('LOAN-004 LOAN-012 a loan repayment moves loan and cash together, and delet
   await dialog.getByPlaceholder('0').first().fill('50');
   await expect(dialog.getByText('Outstanding balance after update: $4,950')).toBeVisible();
   await dialog.getByRole('button', { name: 'Save update' }).click();
-  // The history entry, not the form's preview of the same line, which shows until the form resets.
+  await dialog.getByRole('button', { name: 'History', exact: true }).click();
   const repayment = dialog.getByRole('listitem').filter({ hasText: 'Repayment made' });
-  await expect(repayment.getByText('Cash deducted from E2E Checking: $50')).toBeVisible();
+  await expect(repayment).toContainText('from E2E Checking');
+  await expect(repayment).toContainText('$50');
   await repayment.getByRole('button', { name: 'Delete update' }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Delete update' }).click();
   await expect(repayment).toHaveCount(0);
@@ -242,9 +243,10 @@ test('INV-053 tapping a property card records money invested from cash, and the 
   await chooseOption(dialog.locator('select').nth(1), 'E2E Checking');
   await dialog.getByLabel(/Cash amount/).fill('1200');
   await dialog.getByRole('button', { name: 'Save update' }).click();
+  await dialog.getByRole('button', { name: 'History', exact: true }).click();
   await expect(dialog.locator('.tracker-history')).toContainText('Money invested');
   await expect(dialog.locator('.tracker-history')).toContainText('from E2E Checking');
-  await expect(dialog.locator('.tracker-history li').first().locator('strong').last()).toHaveText('$1,200');
+  await expect(dialog.locator('.tracker-history li').first().locator('.tracker-event-amount strong')).toHaveText('$1,200');
   await closeDialog(page);
   await expect(card.locator('.asset-card-worth')).toContainText('$60,000');
   await open(page, 'Accounts');

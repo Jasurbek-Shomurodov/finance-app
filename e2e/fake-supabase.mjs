@@ -123,7 +123,8 @@ function condition(target, expression, params) {
 }
 /** A logic tree `(a.eq.1,and(b.gt.2,not.c.is.null))` joined by `joiner`. */
 function logic(joiner, list, alias, params) {
-  const items = splitTop(list.replace(/^\(|\)$/g, '')).map(item => {
+  // Only a whole list is wrapped: a nested list comes unwrapped and may end in its own `or(…)`.
+  const items = splitTop(list.startsWith('(') ? list.slice(1, -1) : list).map(item => {
     const nested = item.match(/^(not\.)?(and|or)\((.*)\)$/);
     if (nested) { const inner = logic(nested[2] === 'and' ? 'AND' : 'OR', nested[3], alias, params); return nested[1] ? `NOT ${inner}` : inner; }
     const dot = item.indexOf('.');
