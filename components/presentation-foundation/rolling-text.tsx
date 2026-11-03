@@ -18,6 +18,8 @@ declare module 'react' {
 
 /** How long one roll takes; the stylesheet's roll-strip transition uses the same duration. */
 const rollMs = 900;
+/** How long a roll waits for the change that caused it to land: the stylesheet's `--motion-lead`. */
+const leadMs = 120;
 const digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 /** The characters of a formatted figure, keyed from the right so a digit keeps its column when the figure grows or shrinks. */
@@ -49,7 +51,7 @@ function RollingDigit({ digit, column }: { digit: number; column: number }) {
    setShown(digit);
    // Nothing to roll (or no motion wanted): no transition will end, so rest now. Otherwise rest when the
    // slide ends, or once its time is up: a slide cut short before it began never reports an end.
-   if (still) setSettled(true); else timer = setTimeout(() => setSettled(true), rollMs + delay + 100);
+   if (still) setSettled(true); else timer = setTimeout(() => setSettled(true), leadMs + rollMs + delay + 100);
   }); });
   return () => { cancelAnimationFrame(frame); clearTimeout(timer); };
  }, [digit, delay]);

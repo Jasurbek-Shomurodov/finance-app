@@ -194,13 +194,13 @@
 .asset-card-icon{background:linear-gradient(145deg,color-mix(in srgb,var(--asset-color) 22%,transparent),color-mix(in srgb,var(--asset-color) 8%,transparent));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--asset-color) 18%,transparent)}
 .asset-card-share i{background:linear-gradient(90deg,color-mix(in srgb,var(--asset-color) 70%,var(--card)),var(--asset-color))}
 @keyframes donut-in{from{opacity:0;transform:rotate(-24deg) scale(.94)}}
-.asset-card-grid:not(.asset-layout-list)>.asset-card{--rise:0ms;animation:rise-in .28s cubic-bezier(.2,.7,.3,1) var(--rise) backwards}
+.asset-card-grid:not(.asset-layout-list)>.asset-card{--rise:0ms;animation:rise-in var(--motion-settle) var(--ease-out) var(--rise) backwards}
 .asset-card-grid>.asset-card:nth-child(2){--rise:40ms}.asset-card-grid>.asset-card:nth-child(3){--rise:80ms}.asset-card-grid>.asset-card:nth-child(4){--rise:120ms}.asset-card-grid>.asset-card:nth-child(5){--rise:160ms}.asset-card-grid>.asset-card:nth-child(n+6){--rise:200ms}
-.allocation-donut .recharts-wrapper{animation:donut-in .3s cubic-bezier(.2,.7,.3,1) backwards}
+.allocation-donut .recharts-wrapper{animation:donut-in .3s var(--ease-out) backwards}
 @media(hover:hover){
- .asset-card{transition:border-color .15s,transform .2s cubic-bezier(.2,.7,.3,1),box-shadow .2s}
+ .asset-card{transition:border-color var(--motion-quick),transform .2s var(--ease-out),box-shadow .2s}
  .asset-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px -12px color-mix(in srgb,var(--asset-color) 45%,transparent),var(--shadow-card)}
  .asset-card:hover .asset-card-icon{transform:scale(1.06)}
- .asset-card-icon{transition:transform .2s cubic-bezier(.2,.7,.3,1)}
+ .asset-card-icon{transition:transform .2s var(--ease-out)}
 }
-@media(prefers-reduced-motion:reduce){.asset-card,.asset-card-grid:not(.asset-layout-list)>.asset-card,.allocation-donut .recharts-wrapper,.asset-card-icon{animation:none;transition:none}.asset-card:hover,.asset-card:hover .asset-card-icon{transform:none}}
+@media(prefers-reduced-motion:reduce){.asset-card,.asset-card-icon{animation:none;transition:none}.asset-card-grid:not(.asset-layout-list)>.asset-card,.allocation-donut .recharts-wrapper{animation:fade-only .15s linear backwards;transition:none}.asset-card:hover,.asset-card:hover .asset-card-icon{transform:none}}

@@ -2,6 +2,7 @@
 import type { ReactNode } from 'react';
 import { useLanguage } from '@/components/language-provider';
 import { useDisplayMoney } from '@/components/display-money';
+import { RollingText } from '@/components/presentation-foundation/rolling-text';
 import { shiftDay } from '@/lib/calendar-days';
 import { income, type Entry } from '@/lib/finance';
 import { formatDate, formatSignedMoney } from '@/lib/format';
@@ -17,7 +18,7 @@ export function DayGroup({ date, total, currency, today, children }: { date: str
  const yesterday = shiftDay(today, -1);
  const label = date === today ? t('Today') : date === yesterday ? t('Yesterday') : formatDate(date, locale);
  return <section className="transaction-day" aria-label={label}>
-  <div className="transaction-day-heading"><h3>{label}</h3><span className={total !== null && total > 0 ? 'positive' : undefined}>{total === null ? '—' : formatSignedMoney(total, currency, locale)}</span></div>
+  <div className="transaction-day-heading"><h3>{label}</h3><span className={total !== null && total > 0 ? 'positive' : undefined}>{total === null ? '—' : <RollingText text={formatSignedMoney(total, currency, locale)}/>}</span></div>
   <ul>{children}</ul>
  </section>;
 }

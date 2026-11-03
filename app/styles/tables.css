@@ -37,7 +37,8 @@ roll-text{font-variant-numeric:tabular-nums;unicode-bidi:isolate}
 roll-chars{display:inline-flex;flex-wrap:wrap;align-items:flex-start;white-space:pre;direction:ltr;max-width:100%}
 roll-chars>*{display:inline-block;height:1lh}
 roll-digit{overflow:hidden}
-roll-strip{display:flex;flex-direction:column;transition:transform .9s cubic-bezier(.16,1,.3,1) var(--roll-delay,0ms)}
+/* A figure rolls once the change that caused it has landed (--motion-lead), then column by column. */
+roll-strip{display:flex;flex-direction:column;transition:transform .9s cubic-bezier(.16,1,.3,1) calc(var(--motion-lead) + var(--roll-delay,0ms))}
 roll-strip>roll-char{display:block;height:1lh}
 @media (prefers-reduced-motion:reduce){roll-strip{transition:none}}
 .tools-panel :is(th,td).amount{text-align:end}

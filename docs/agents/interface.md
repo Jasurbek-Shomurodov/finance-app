@@ -98,6 +98,14 @@ it instead of styling a page on its own.
   Prefer `flex-wrap` / `auto-fit` grids that wrap by themselves; keep fixed
   `@container` widths for page-level layout (columns of panels), not for rows.
   `/dr` Audit L finds rows that wrapped while their first line had room.
+- Motion lives in `app/styles/motion.css` and is timed by the tokens in
+  `foundation.css` (`--ease-out`, `--ease-in`, `--motion-quick`, `--motion-settle`,
+  `--motion-exit`, `--motion-lead`), never a literal curve. Every motion has a cause:
+  a saved row arrives (`useArrivals` sets `data-arrived`), then the figures it changed
+  roll after it by the lead. Overlays leave as well as arrive, sooner than they came;
+  the shared `DialogContent` plays its exit even when the parent removes it while open.
+  Transform and opacity only. Under reduced motion nothing travels, but arrivals and
+  overlays still fade (≤150ms), so a change is never silent.
 - Define each shared selector once. Change the existing rule instead of adding a
   later override, and delete rules when their class is no longer rendered.
 - Cover shared UI pieces and label translations in `tests/design-system.mjs`.

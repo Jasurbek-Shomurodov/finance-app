@@ -409,10 +409,10 @@ test('Investments cards: colour wash, short entrance, hover lift only with a poi
  const css=stylesheet();
  assert.match(css,/\.asset-card\{background:linear-gradient\(180deg,color-mix\(in srgb,var\(--asset-color\) 6%,var\(--card\)\),var\(--card\) 112px\)\}/);
  assert.match(css,/@keyframes rise-in\{from\{opacity:0;transform:translateY\(8px\)\}\}/,'entrance moves by transform and opacity only');
- assert.match(css,/animation:rise-in \.28s [^;}]* var\(--rise\) backwards\}/,'backwards fill, so the finished entrance never holds transform over the hover lift');
+ assert.match(css,/animation:rise-in var\(--motion-settle\) var\(--ease-out\) var\(--rise\) backwards\}/,'backwards fill, so the finished entrance never holds transform over the hover lift');
  assert.match(css,/\[dir=rtl\] \.asset-card-share i,\[dir=rtl\] \.allocation-share>span\{transform-origin:right\}/,'bars grow from the start in RTL too');
  assert.match(css,/@media\(hover:hover\)\{\s*\.asset-card\{transition:[^}]*\}\s*\.asset-card:hover\{transform:translateY\(-2px\)/,'hover lift only where a pointer hovers');
- assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\.asset-card,\.asset-card-grid:not\(\.asset-layout-list\)>\.asset-card,[^{]*\{animation:none;transition:none\}/,'reduced motion beats the more specific entrance rule');
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\.asset-card,\.asset-card-icon\{animation:none;transition:none\}\.asset-card-grid:not\(\.asset-layout-list\)>\.asset-card,\.allocation-donut \.recharts-wrapper\{animation:fade-only \.15s linear backwards;transition:none\}/,'reduced motion beats the more specific entrance rule: the cards only fade');
 });
 
 // Warmth and motion on every screen, 3 November 2026 (MOT-016).
@@ -420,10 +420,28 @@ test('every screen: warm panels and tiles, one short arrival, bars grow, still u
  const css=stylesheet();
  assert.match(css,/\.panel\{[^}]*background:radial-gradient\(560px 240px at 0 0,color-mix\(in srgb,var\(--mark-bg\) 4%,transparent\),transparent\),var\(--card\);/,'panels keep var(--card) under the glow, so a later `background:none` still flattens one');
  assert.match(css,/\.stat-tile\{[^}]*color-mix\(in srgb,var\(--caution\) 7%,transparent\)[^}]*var\(--card\);/);
- assert.match(css,/\.workspace \.content>\*,\.stat-tiles>\.stat-tile,\.dashboard-grid>\*\{--rise:0ms;animation:rise-in \.28s [^}]*backwards\}/);
+ assert.match(css,/\.workspace \.content>\*,\.stat-tiles>\.stat-tile,\.dashboard-grid>\*\{--rise:0ms;animation:rise-in var\(--motion-settle\) [^}]*backwards\}/);
  assert.match(css,/:nth-child\(n\+6\)\{--rise:200ms\}/,'no block arrives more than 200ms late');
  for(const fill of ['.stat-tile-bar>i','.progress-track>*','.budget-progress>div'])assert.ok(css.includes(`[dir=rtl] ${fill}`),`${fill} grows from the right in RTL`);
  assert.match(css,/@media\(hover:hover\)\{\s*\.stat-tile-link\{transition:/,'tile links lift only where a pointer hovers');
  const order=fs.readFileSync('app/globals.css','utf8').match(/styles\/[\w-]+\.css/g);
  assert.equal(order.indexOf('styles/motion.css'),order.indexOf('styles/shell.css')+1,'motion follows the shell it animates');
+});
+
+// Motion borrowed from Stageshow, 3 November 2026 (MOT-017–MOT-020): shared timing tokens, overlays that leave as well
+// as arrive, an effect that follows its cause, and reduced motion that fades rather than going silent.
+test('motion tokens, overlay exits, cause before effect, reduced motion fades (MOT-017–MOT-020)',()=>{
+ const css=stylesheet();
+ for(const token of ['--ease-out:','--ease-in:','--motion-quick:','--motion-settle:','--motion-exit:','--motion-lead:'])assert.ok(css.includes(token),`${token} is a token`);
+ const motion=fs.readFileSync('app/styles/motion.css','utf8');
+ assert.doesNotMatch(motion,/cubic-bezier/,'motion.css times everything with the tokens');
+ assert.match(motion,/\[data-state=closed\]\{--tw-animation-duration:var\(--motion-exit\);--tw-ease:var\(--ease-in\)\}/,'overlays leave sooner than they arrive, accelerating away');
+ assert.match(motion,/:not\(\[data-state=closed\]\)\{--tw-animation-duration:var\(--motion-settle\);--tw-ease:var\(--ease-out\)\}/);
+ assert.doesNotMatch(motion,/transition:[^;}]*width/,'fills never transition width (MOT-010)');
+ assert.match(css,/roll-strip\{[^}]*calc\(var\(--motion-lead\) \+ var\(--roll-delay,0ms\)\)/,'a figure rolls once its cause has landed');
+ assert.match(motion,/\.transaction-row\[data-arrived\],\.overview-list>li\[data-arrived\]\{animation:row-arrive /);
+ const reduce=motion.slice(motion.indexOf('@media(prefers-reduced-motion:reduce)'));
+ assert.match(reduce,/\.transaction-row\[data-arrived\],\.overview-list>li\[data-arrived\]\{animation:fade-only \.15s linear backwards;transition:none\}/,'reduced motion still shows an arrival, as a fade');
+ assert.match(reduce,/--tw-enter-scale:1;--tw-exit-scale:1;[^}]*--tw-animation-duration:\.12s;--tw-ease:linear/,'overlays only fade under reduced motion');
+ assert.match(css,/@keyframes fade-only\{from\{opacity:0\}\}/,'the reduced-motion fade moves nothing');
 });

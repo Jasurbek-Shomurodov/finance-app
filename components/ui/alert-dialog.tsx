@@ -5,6 +5,7 @@ import { AlertDialog as AlertDialogPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { useExitGhost } from "@/components/ui/exit-ghost"
 import { useReturnFocus } from "@/components/ui/return-focus"
 
 function AlertDialog({
@@ -47,10 +48,12 @@ function AlertDialogContent({
   size?: "default" | "sm"
 }) {
   const returnFocus = useReturnFocus(onCloseAutoFocus, onOpenAutoFocus)
+  const exit = useExitGhost<HTMLDivElement>()
   return (
     <AlertDialogPortal>
       <AlertDialogOverlay />
       <AlertDialogPrimitive.Content
+        ref={exit}
         data-slot="alert-dialog-content"
         data-size={size}
         className={cn(

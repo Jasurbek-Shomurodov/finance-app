@@ -38,6 +38,8 @@ const overrides={
  react:fakeReact,'lucide-react':icons,
  '@/components/language-provider':{useLanguage:()=>({t,locale:'en'})},
  '@/components/presentation-foundation/category-icon':{CategoryIcon:host('CategoryIcon')},
+ // The day total rolls in the app; here it is its final text.
+ '@/components/presentation-foundation/rolling-text':{RollingText:({text})=>text},
  '@/components/presentation-foundation/business-mark':{BusinessMark:host('BusinessMark')},
  '@/components/presentation-foundation/segmented':{Segmented:host('Segmented')},
  '@/components/presentation-foundation/tag-chip':{TagChip:props=>React.createElement('TagChip',props,props.name,props.children)},

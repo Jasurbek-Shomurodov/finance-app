@@ -67,6 +67,14 @@
   --type-display: clamp(24px, 2.2vw, 30px);
   --radius-control: 10px;
   --space-page: 20px;
+  /* Motion (motion.css): arrivals start quick and land softly, exits are shorter and accelerate away. Direct
+     feedback (a press, a colour) is quick, things that arrive settle, and an effect follows its cause by a lead. */
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --ease-in: cubic-bezier(.4, 0, 1, 1);
+  --motion-quick: .16s;
+  --motion-settle: .28s;
+  --motion-exit: .14s;
+  --motion-lead: 120ms;
   --positive: #4cc38a;
   --negative: #f0a096;
   --caution: #dfb883;
