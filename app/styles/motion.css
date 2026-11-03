@@ -1,0 +1,19 @@
+/* One short arrival on every workspace screen (3 November 2026). Page blocks, stat tiles and dashboard cards rise 8px
+   in turn, 40ms apart and at most 200ms late; progress fills grow from their start 120ms after their block. Transform
+   and opacity only, 280–300ms, `backwards` fill so nothing holds a transform afterwards, no money figure counts up,
+   and links lift only where a pointer hovers. Under reduced motion nothing moves. */
+@keyframes rise-in{from{opacity:0;transform:translateY(8px)}}
+@keyframes bar-grow{from{transform:scaleX(0)}}
+.workspace .content>*,.stat-tiles>.stat-tile,.dashboard-grid>*{--rise:0ms;animation:rise-in .28s cubic-bezier(.2,.7,.3,1) var(--rise) backwards}
+.workspace .content>:nth-child(2),.stat-tiles>.stat-tile:nth-child(2),.dashboard-grid>:nth-child(2){--rise:40ms}
+.workspace .content>:nth-child(3),.stat-tiles>.stat-tile:nth-child(3),.dashboard-grid>:nth-child(3){--rise:80ms}
+.workspace .content>:nth-child(4),.stat-tiles>.stat-tile:nth-child(4),.dashboard-grid>:nth-child(4){--rise:120ms}
+.workspace .content>:nth-child(5),.stat-tiles>.stat-tile:nth-child(5),.dashboard-grid>:nth-child(5){--rise:160ms}
+.workspace .content>:nth-child(n+6),.stat-tiles>.stat-tile:nth-child(n+6),.dashboard-grid>:nth-child(n+6){--rise:200ms}
+.stat-tile-bar>i,.progress-track>*,.budget-progress>div,.asset-card-share i,.allocation-share>span{transform-origin:left;animation:bar-grow .3s cubic-bezier(.2,.7,.3,1) calc(var(--rise,0ms) + 120ms) backwards}
+[dir=rtl] .stat-tile-bar>i,[dir=rtl] .progress-track>*,[dir=rtl] .budget-progress>div,[dir=rtl] .asset-card-share i,[dir=rtl] .allocation-share>span{transform-origin:right}
+@media(hover:hover){
+ .stat-tile-link{transition:border-color .15s,background .15s,transform .2s cubic-bezier(.2,.7,.3,1),box-shadow .2s}
+ .stat-tile-link:hover{transform:translateY(-2px);box-shadow:0 10px 24px -14px color-mix(in srgb,var(--mark-bg) 50%,transparent),var(--shadow-card)}
+}
+@media(prefers-reduced-motion:reduce){.workspace .content>*,.stat-tiles>.stat-tile,.dashboard-grid>*,.stat-tile-bar>i,.progress-track>*,.budget-progress>div,.asset-card-share i,.allocation-share>span,.stat-tile-link{animation:none;transition:none}.stat-tile-link:hover{transform:none}}

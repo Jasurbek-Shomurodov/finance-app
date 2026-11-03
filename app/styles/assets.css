@@ -187,20 +187,15 @@
   [data-slot="button"], .comparison-legend button, .segmented > button { min-height: 44px; }
 }
 
-/* Warmth and motion (3 November 2026). Each card carries a faint wash of its own colour, the total sits on a soft
-   brand and amber glow, and the page arrives in one short pass: cards rise in turn, bars grow from their start and the
-   donut turns in. Transform and opacity only, about 300ms, hover only where a pointer hovers, nothing under reduced motion. */
+/* Warmth and motion (3 November 2026, shared parts in motion.css). Each card carries a faint wash of its own colour,
+   the total sits on a soft brand and amber glow, cards rise in turn and the donut turns in. */
 .portfolio-summary-main{background:radial-gradient(90% 120% at 0 0,color-mix(in srgb,var(--mark-bg) 9%,transparent),transparent 70%),radial-gradient(70% 90% at 100% 100%,color-mix(in srgb,var(--caution) 8%,transparent),transparent 70%)}
 .asset-card{background:linear-gradient(180deg,color-mix(in srgb,var(--asset-color) 6%,var(--card)),var(--card) 112px)}
 .asset-card-icon{background:linear-gradient(145deg,color-mix(in srgb,var(--asset-color) 22%,transparent),color-mix(in srgb,var(--asset-color) 8%,transparent));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--asset-color) 18%,transparent)}
 .asset-card-share i{background:linear-gradient(90deg,color-mix(in srgb,var(--asset-color) 70%,var(--card)),var(--asset-color))}
-@keyframes asset-rise{from{opacity:0;transform:translateY(8px)}}
-@keyframes bar-grow{from{transform:scaleX(0)}}
 @keyframes donut-in{from{opacity:0;transform:rotate(-24deg) scale(.94)}}
-.asset-card-grid:not(.asset-layout-list)>.asset-card{--rise:0ms;animation:asset-rise .28s cubic-bezier(.2,.7,.3,1) var(--rise) backwards}
+.asset-card-grid:not(.asset-layout-list)>.asset-card{--rise:0ms;animation:rise-in .28s cubic-bezier(.2,.7,.3,1) var(--rise) backwards}
 .asset-card-grid>.asset-card:nth-child(2){--rise:40ms}.asset-card-grid>.asset-card:nth-child(3){--rise:80ms}.asset-card-grid>.asset-card:nth-child(4){--rise:120ms}.asset-card-grid>.asset-card:nth-child(5){--rise:160ms}.asset-card-grid>.asset-card:nth-child(n+6){--rise:200ms}
-.asset-card-share i,.allocation-share>span{transform-origin:left;animation:bar-grow .3s cubic-bezier(.2,.7,.3,1) calc(var(--rise,0ms) + 120ms) backwards}
-[dir=rtl] .asset-card-share i,[dir=rtl] .allocation-share>span{transform-origin:right}
 .allocation-donut .recharts-wrapper{animation:donut-in .3s cubic-bezier(.2,.7,.3,1) backwards}
 @media(hover:hover){
  .asset-card{transition:border-color .15s,transform .2s cubic-bezier(.2,.7,.3,1),box-shadow .2s}
@@ -208,4 +203,4 @@
  .asset-card:hover .asset-card-icon{transform:scale(1.06)}
  .asset-card-icon{transition:transform .2s cubic-bezier(.2,.7,.3,1)}
 }
-@media(prefers-reduced-motion:reduce){.asset-card,.asset-card-grid:not(.asset-layout-list)>.asset-card,.asset-card-share i,.allocation-share>span,.allocation-donut .recharts-wrapper,.asset-card-icon{animation:none;transition:none}.asset-card:hover,.asset-card:hover .asset-card-icon{transform:none}}
+@media(prefers-reduced-motion:reduce){.asset-card,.asset-card-grid:not(.asset-layout-list)>.asset-card,.allocation-donut .recharts-wrapper,.asset-card-icon{animation:none;transition:none}.asset-card:hover,.asset-card:hover .asset-card-icon{transform:none}}
