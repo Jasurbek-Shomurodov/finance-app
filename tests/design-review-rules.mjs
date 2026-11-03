@@ -403,3 +403,14 @@ test('phone goal rows, transaction labels, square icon buttons, dialog Close and
  // No literal colours where a token exists.
  assert.doesNotMatch(css,/#c58b32|#79ac43/);
 });
+
+// Investments warmth and motion, 3 November 2026 (SCR-135).
+test('Investments cards: colour wash, short entrance, hover lift only with a pointer, still under reduced motion (SCR-135)',()=>{
+ const css=stylesheet();
+ assert.match(css,/\.asset-card\{background:linear-gradient\(180deg,color-mix\(in srgb,var\(--asset-color\) 6%,var\(--card\)\),var\(--card\) 112px\)\}/);
+ assert.match(css,/@keyframes asset-rise\{from\{opacity:0;transform:translateY\(8px\)\}\}/,'entrance moves by transform and opacity only');
+ assert.match(css,/animation:asset-rise \.28s [^;}]* var\(--rise\) backwards\}/,'backwards fill, so the finished entrance never holds transform over the hover lift');
+ assert.match(css,/\[dir=rtl\] \.asset-card-share i,\[dir=rtl\] \.allocation-share>span\{transform-origin:right\}/,'bars grow from the start in RTL too');
+ assert.match(css,/@media\(hover:hover\)\{\s*\.asset-card\{transition:[^}]*\}\s*\.asset-card:hover\{transform:translateY\(-2px\)/,'hover lift only where a pointer hovers');
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\.asset-card,\.asset-card-grid:not\(\.asset-layout-list\)>\.asset-card,[^{]*\{animation:none;transition:none\}/,'reduced motion beats the more specific entrance rule');
+});
