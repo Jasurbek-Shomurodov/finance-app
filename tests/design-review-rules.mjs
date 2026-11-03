@@ -373,3 +373,14 @@ test('narrow rows keep names whole and never stack controls on them (RESP-030, R
  assert.match(css,/:where\(\[data-slot=popover-content\]\)\{max-height:var\(--radix-popover-content-available-height\);overflow-y:auto/);
  assert.match(css,/:is\(button,\[role=button\],\[role=tab\],\[role\^=menuitem\],/);
 });
+
+// Investments padding review, 3 November 2026 (SCR-127–SCR-130).
+test('Investments spacing: allocation rows inset evenly, filters clear the cards, cards sized by content, holding actions inline (SCR-127–SCR-130)',()=>{
+ const css=stylesheet();
+ assert.match(css,/\.portfolio-summary-allocation \.allocation-option\{[^}]*width:calc\(100% \+ 16px\);padding:8px;margin:0 -8px/,'the hover row bleeds 8px both sides, so the share ends at the list edge');
+ assert.match(css,/\.portfolio-summary-allocation \.overview-list li\{display:block;padding:2px 0;/,'no list padding stacked on the row padding');
+ assert.match(css,/\.portfolio-allocation-body:has\(\.overview-list>li:nth-child\(7\)\)\{align-items:start\}/);
+ assert.match(css,/\.asset-category-filters\{margin-bottom:16px\}/);
+ assert.match(css,/\.asset-card-grid\{[^}]*align-items:start\}/);
+ assert.doesNotMatch(css,/\.asset-card-holdings dd:last-child\{[^}]*flex-basis:100%/,'Edit shares the holding line while it fits');
+});
