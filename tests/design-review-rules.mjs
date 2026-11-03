@@ -375,17 +375,19 @@ test('narrow rows keep names whole and never stack controls on them (RESP-030, R
 });
 
 // Investments padding review, 3 November 2026 (SCR-127–SCR-130).
-test('Investments spacing: allocation rows inset evenly, filters clear the cards, cards sized by content, holding actions inline (SCR-127–SCR-130)',()=>{
+test('Investments spacing: allocation rows inset evenly, filters clear the cards, cards in a row share their lines, holding actions inline (SCR-127–SCR-130, SCR-134)',()=>{
  const css=stylesheet();
  assert.match(css,/\.portfolio-summary-allocation \.allocation-option\{[^}]*width:calc\(100% \+ 16px\);padding:8px;margin:0 -8px/,'the hover row bleeds 8px both sides, so the share ends at the list edge');
  assert.match(css,/\.portfolio-summary-allocation \.overview-list li\{display:block;padding:2px 0;/,'no list padding stacked on the row padding');
  assert.match(css,/\.portfolio-allocation-body:has\(\.overview-list>li:nth-child\(7\)\)\{align-items:start\}/);
  assert.match(css,/\.asset-category-filters\{margin-bottom:16px\}/);
- assert.match(css,/\.asset-card-grid\{[^}]*align-items:start\}/);
+ assert.match(css,/\.asset-card-grid:not\(\.asset-layout-list\)>\.asset-card\{display:grid;grid-row:span 6;grid-template-rows:subgrid;row-gap:0;margin-bottom:16px\}/,'cards in a row share their lines (SCR-134)');
+ assert.match(css,/\.asset-card-grid:not\(\.asset-layout-list\):has\(>\.asset-card\)\{row-gap:0;align-items:stretch;margin-bottom:-16px\}/);
+ for(const [part,row] of [['facts',3],['share',4],['details',5],['actions',6]])assert.match(css,new RegExp(`>\\.asset-card>\\.asset-card-${part}\\{grid-row:${row}\\}`),`${part} keeps its row when a line above is missing`);
  assert.doesNotMatch(css,/\.asset-card-holdings dd:last-child\{[^}]*flex-basis:100%/,'Edit shares the holding line while it fits');
 });
 
-// Full review, 3 November 2026 (SCR-131–SCR-134, COMP-049, DLG-033, DLG-034, TOK-018).
+// Full review, 3 November 2026 (SCR-131–SCR-133, COMP-049, DLG-033, DLG-034, TOK-018).
 test('phone goal rows, transaction labels, square icon buttons, dialog Close and hint fit, filter options, colour tokens (3 November 2026)',()=>{
  const css=stylesheet();
  // Budget contribution rows at 320 px and below: the name takes its own line (it ran under $2,000 in an 82px track).

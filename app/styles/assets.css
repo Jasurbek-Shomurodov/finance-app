@@ -59,6 +59,14 @@
 .asset-result-count button{padding:4px;text-decoration:underline;text-underline-offset:3px}
 
 .asset-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:16px;align-items:start}
+/* Cards in one row share their lines: the bar, Asset details and the buttons sit at one height whether or not a card
+   has an income line. A subgrid takes the parent's row gap inside the card, so the rows are spaced by a margin instead. */
+.asset-card-grid:not(.asset-layout-list):has(>.asset-card){row-gap:0;align-items:stretch;margin-bottom:-16px}
+.asset-card-grid:not(.asset-layout-list)>.asset-card{display:grid;grid-row:span 6;grid-template-rows:subgrid;row-gap:0;margin-bottom:16px}
+.asset-card-grid:not(.asset-layout-list)>.asset-card>.asset-card-facts{grid-row:3}
+.asset-card-grid:not(.asset-layout-list)>.asset-card>.asset-card-share{grid-row:4}
+.asset-card-grid:not(.asset-layout-list)>.asset-card>.asset-card-details{grid-row:5}
+.asset-card-grid:not(.asset-layout-list)>.asset-card>.asset-card-actions{grid-row:6}
 /* The narrowest phones keep a whole word of the name beside the icon and ⋯ ("Neighborhoo/d café" broke at 280 px). */
 @container content (max-width:360px){.asset-card{padding:16px}}
 .asset-card{display:flex;flex-direction:column;min-width:0;padding:20px;border:1px solid var(--border);border-radius:var(--radius-card);background:var(--card);box-shadow:var(--shadow-card);transition:border-color .15s}
