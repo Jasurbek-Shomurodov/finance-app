@@ -238,6 +238,7 @@
   "Expense paid": "Оплаченный расход",
   "Investment history chart": "График истории инвестиции",
   "Value (your share)": "Стоимость (ваша доля)",
+  "Full value {amount} · you own {percent}": "Полная стоимость {amount} · ваша доля {percent}",
   "Net contributions recorded": "Внесено за вычетом изъятий",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "История начинается с текущей стоимости. Добавьте прежние оценки и вложения, если они известны. Сумма вложений будет полной только после ввода всех взносов.",
   "Add a dated update": "Добавить запись с датой",

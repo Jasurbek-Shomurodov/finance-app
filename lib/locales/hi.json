@@ -238,6 +238,7 @@
   "Expense paid": "चुकाया गया खर्च",
   "Investment history chart": "निवेश इतिहास चार्ट",
   "Value (your share)": "मूल्य (आपका हिस्सा)",
+  "Full value {amount} · you own {percent}": "पूरा मूल्य {amount} · आपका स्वामित्व {percent}",
   "Net contributions recorded": "दर्ज किया गया शुद्ध योगदान",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "इतिहास मौजूदा स्नैपशॉट से शुरू होता है। पुराने मूल्य और योगदान पता हों तो जोड़ें। दर्ज योगदान तब तक पूरी खरीद लागत नहीं होते जब तक आप सभी दर्ज न करें।",
   "Add a dated update": "तारीख के साथ अपडेट जोड़ें",

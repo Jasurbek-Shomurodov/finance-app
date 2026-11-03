@@ -238,6 +238,7 @@
   "Expense paid": "Cheltuieli plătite",
   "Investment history chart": "Graficul istoricului investiției",
   "Value (your share)": "Valoare (partea ta)",
+  "Full value {amount} · you own {percent}": "Valoare totală {amount} · dețineți {percent}",
   "Net contributions recorded": "Contribuții nete înregistrate",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "Istoricul începe cu un instantaneu curent. Adaugă valori și contribuții mai vechi dacă le cunoști. Contribuțiile înregistrate nu reprezintă costul complet de achiziție decât dacă le introduci pe toate.",
   "Add a dated update": "Adaugă o actualizare datată",

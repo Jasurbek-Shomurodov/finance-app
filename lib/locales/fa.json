@@ -238,6 +238,7 @@
   "Expense paid": "هزینهٔ پرداخت‌شده",
   "Investment history chart": "نمودار تاریخچهٔ سرمایه‌گذاری",
   "Value (your share)": "ارزش (سهم شما)",
+  "Full value {amount} · you own {percent}": "ارزش کامل {amount} · سهم شما {percent}",
   "Net contributions recorded": "خالص مشارکت‌های ثبت‌شده",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "تاریخچه با یک تصویر لحظه‌ای فعلی آغاز می‌شود. در صورت اطلاع، مقادیر و مشارکت‌های قدیمی‌تر را اضافه کنید. مشارکت‌های ثبت‌شده، بهای تمام‌شدهٔ خرید کامل نیستند، مگر اینکه همه را وارد کنید.",
   "Add a dated update": "افزودن به‌روزرسانی تاریخ‌دار",

@@ -21,7 +21,7 @@ import { AmountCurrencyFields } from '@/components/presentation-foundation/amoun
 import { useLanguage } from '@/components/language-provider';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { TrackerHistory } from '@/components/investment-tracker-history';
-import { formatAccountOption, formatMoney, formatDate, formatMonthYear } from '@/lib/format';
+import { formatAccountOption, formatMoney, formatDate, formatMonthYear, formatPercent } from '@/lib/format';
 import { chartAxis, chartDot, chartGrid, chartHeight, chartLegend, chartLine, chartMargin, chartTooltip, chartValueAxis, leadLine } from '@/components/presentation-foundation/chart';
 import { historyCashDelta, historySeries, historyChartDate, historyEventLabel, historyUpdateTypes, isLendingKind, type HistoryEvent, type HistoryUpdateType, type TrackerEvent } from '@/lib/investment-history';
 import { depositInterest, depositProjection, depositToday } from '@/lib/deposit-interest';
@@ -80,6 +80,7 @@ export function InvestmentTracker({inline=false,onDraftState,initialType,record,
  const eventLabel=(type:TrackerEvent['event_type'])=>historyEventLabel(record.kind,type);
  const money=(n:number)=>formatMoney(n,record.currency,locale);
  const total=(n:number|null)=>n===null?'—':money(n);
+ const fullValueNote=(full:number,ownership:number)=>t('Full value {amount} · you own {percent}',{amount:money(full),percent:formatPercent(ownership,locale)});
  const valueLabel=lending?(record.kind==='Money lent'?'Amount owed to you':'Outstanding balance'):cash||deposit?'Account balance':'Value (your share)';
  useEffect(()=>{
   const controller=new AbortController();
@@ -149,7 +150,7 @@ export function InvestmentTracker({inline=false,onDraftState,initialType,record,
   {loading?<LoadingPlaceholder label={t('Loading history…')}/>:<>
    {deposit&&<div className="ownership-summary"><p>{t('Estimated interest for {month}: {amount}', {month:formatMonthYear(depositToday().slice(0,7),locale),amount:money(depositInterest(ledger,record.rate,undefined,interestCompounding(record)))})}</p><p>{t('Estimated balance including interest')}: {money(projection.total)}</p><p className="muted">{t(({monthly:'Monthly compounding',daily:'Daily compounding',none:'No compounding'})[record.deposit_compounding??'monthly'])}. {t('Top-ups and withdrawals affect interest from their recorded date. Estimates use the current annual rate. A confirmed balance or interest credit replaces the projection.')}</p><p className="muted">{t('Estimates start at the first dated balance. Record confirmed capitalized interest to update the available balance. Projections are not spendable cash.')}</p></div>}
    <div className="tracker-metrics">
-    <div><small>{t(lending?(record.kind==='Money lent'?'Amount owed to you':'Outstanding balance'):cash||deposit?'Account balance':'Latest tracked value (your share)')}</small><strong>{stats.balance===null?'—':money(stats.balance)}</strong></div>
+    <div><small>{t(lending?(record.kind==='Money lent'?'Amount owed to you':'Outstanding balance'):cash||deposit?'Account balance':'Latest tracked value (your share)')}</small><strong>{stats.balance===null?'—':money(stats.balance)}</strong>{!lending&&stats.fullBalance!==null&&stats.ownership<100&&<span className="tracker-full-value">{fullValueNote(stats.fullBalance,stats.ownership)}</span>}</div>
     {!cash&&<div><small>{t(mortgage?'Principal repaid':lending?'Repayments recorded':'Income received')}</small><strong>{total(mortgage?stats.principal:lending?stats.repayments:stats.receipts)}</strong></div>}
     {!cash&&<div><small>{t(mortgage?'Interest paid':lending?'Additions recorded':'Expense paid')}</small><strong>{money(mortgage?stats.interest:lending?stats.additions:stats.expenses)}</strong></div>}
    </div>

@@ -10,7 +10,7 @@ const {assetPaymentEvents,assetPaymentsQuery,assetSchedulesQuery,schedulePayment
 const event=(id,date,type,amount,balance=null,ownership=100)=>({id,occurred_on:date,event_type:type,amount,balance,ownership_percentage:ownership,created_at:date+'T12:00:00Z',principal:0,interest:0});
 test('birth valuations increase personal value without creating invested cash or income',()=>{
  const result=historySeries([event('a','2024-01-01','baseline',0,8000,50),event('b','2025-01-01','valuation',0,10000,50)]);
- assert.equal(result.balance,5000);assert.equal(result.contributions,0);assert.equal(result.receipts,0);
+ assert.equal(result.balance,5000);assert.equal(result.fullBalance,10000);assert.equal(result.ownership,50);assert.equal(result.contributions,0);assert.equal(result.receipts,0);
  assert.deepEqual(result.points.map(p=>p.balance),[4000,5000]);
 });
 test('sorts historical entries, sums actual rent and costs, and separates cash invested from value',()=>{

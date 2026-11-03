@@ -383,14 +383,14 @@ test('stocks plot value, contributions and income, and format chart axes through
  ];
  const { showTab, view, button } = await open(record('Stock'), events);
  const html = view.html();
- assert.ok(html.includes(`<small>Latest tracked value (your share)</small><strong>${money(1000)}</strong>`));
+ assert.ok(html.includes(`<small>Latest tracked value (your share)</small><strong>${money(1000)}</strong><span class="tracker-full-value">Full value ${money(2000)} · you own 50%</span>`));
  assert.ok(html.includes(`<small>Income received</small><strong>${money(40)}</strong>`));
  assert.ok(html.includes(`<small>Expense paid</small><strong>${money(15)}</strong>`));
  assert.match(html, /data-line="balance">Value \(your share\)<\/span><span data-line="contributions">Net contributions recorded<\/span><span data-line="receipts">Income received</);
  assert.match(html, /Dated values and actual cash movements. Estimates stay separate./);
  showTab('history');
  assert.match(view.html(), /History starts with a current snapshot/);
- assert.ok(view.html().includes(`<strong>${money(1000)}</strong></div>`));
+ assert.ok(view.html().includes(`<strong>${money(1000)}</strong><span>Full value ${money(2000)} · you own 50%</span></div>`));
  assert.equal(view.all(element => element.props?.label === 'Delete update').length, 0);
  showTab('overview');
  const timestamp = Date.parse('2026-03-10T00:00:00Z');
@@ -442,6 +442,16 @@ test('Overview shows the figures and the form, History shows every entry, and an
  assert.match(view.html(), /Money invested[\s\S]*Starting snapshot/, 'newest first');
  showTab('overview');
  assert.equal(view.find(byType('textarea')).props.value, 'Kept');
+});
+
+test('a wholly owned asset shows no full-value note; a shared one shows it on its value rows', async () => {
+ const own = await open(record('Business'), [event('b', 'baseline', '2026-01-01', { balance: 5000 })]);
+ assert.doesNotMatch(own.view.html(), /Full value/);
+ const shared = await open(record('Business'), [event('b', 'baseline', '2026-01-01', { balance: 72000, ownership_percentage: 50 }), event('c', 'contribution', '2026-02-01', { amount: 300 })]);
+ shared.showTab('history');
+ const row = id => shared.view.html().split('<li>').find(item => item.includes(id));
+ assert.ok(row('1 January 2026').includes(`<strong>${money(36000)}</strong><span>Full value ${money(72000)} · you own 50%</span>`));
+ assert.doesNotMatch(row('1 February 2026'), /Full value/);
 });
 
 test('a history row is headed by the money that moved, and the value it set comes second', async () => {

@@ -238,6 +238,7 @@
   "Expense paid": "הוצאה ששולמה",
   "Investment history chart": "תרשים היסטוריית השקעה",
   "Value (your share)": "שווי (החלק שלכם)",
+  "Full value {amount} · you own {percent}": "שווי מלא {amount} · בבעלותך {percent}",
   "Net contributions recorded": "הפקדות נטו שנרשמו",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "ההיסטוריה מתחילה בתמונת מצב נוכחית. הוסיפו ערכים והפקדות ישנים יותר אם ידועים. הפקדות מתועדות אינן עלות רכישה מלאה אלא אם תזינו את כולן.",
   "Add a dated update": "הוספת עדכון מתוארך",

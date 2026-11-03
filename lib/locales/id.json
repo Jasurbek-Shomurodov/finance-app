@@ -238,6 +238,7 @@
   "Expense paid": "Pengeluaran dibayar",
   "Investment history chart": "Grafik riwayat investasi",
   "Value (your share)": "Nilai (bagian Anda)",
+  "Full value {amount} · you own {percent}": "Nilai penuh {amount} · Anda memiliki {percent}",
   "Net contributions recorded": "Kontribusi bersih tercatat",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "Riwayat dimulai dengan snapshot saat ini. Tambahkan nilai dan kontribusi lama jika diketahui. Kontribusi tercatat bukan biaya pembelian lengkap kecuali Anda memasukkan semuanya.",
   "Add a dated update": "Tambah pembaruan bertanggal",

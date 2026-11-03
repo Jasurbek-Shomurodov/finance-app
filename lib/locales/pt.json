@@ -238,6 +238,7 @@
   "Expense paid": "Despesa paga",
   "Investment history chart": "Gráfico do histórico do investimento",
   "Value (your share)": "Valor (sua parte)",
+  "Full value {amount} · you own {percent}": "Valor total {amount} · sua participação {percent}",
   "Net contributions recorded": "Aportes líquidos registrados",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "O histórico começa com um retrato atual. Adicione valores e aportes anteriores, se souber. Os aportes registrados não formam o custo de compra completo, a menos que você os informe todos.",
   "Add a dated update": "Adicionar uma atualização datada",

@@ -238,6 +238,7 @@
   "Expense paid": "Zaplacený výdaj",
   "Investment history chart": "Graf historie investice",
   "Value (your share)": "Hodnota (váš podíl)",
+  "Full value {amount} · you own {percent}": "Celková hodnota {amount} · vlastníte {percent}",
   "Net contributions recorded": "Zaznamenané čisté vklady",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "Historie začíná aktuálním snímkem. Přidejte starší hodnoty a vklady, pokud je znáte. Zaznamenané vklady nejsou úplnou nákupní cenou, pokud nezadáte všechny.",
   "Add a dated update": "Přidat aktualizaci s datem",

@@ -238,6 +238,7 @@
   "Expense paid": "Expense paid",
   "Investment history chart": "Investment history chart",
   "Value (your share)": "Value (your share)",
+  "Full value {amount} · you own {percent}": "Full value {amount} · you own {percent}",
   "Net contributions recorded": "Net contributions recorded",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.",
   "Add a dated update": "Add a dated update",

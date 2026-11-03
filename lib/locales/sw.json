@@ -238,6 +238,7 @@
   "Expense paid": "Matumizi yaliyolipwa",
   "Investment history chart": "Chati ya historia ya uwekezaji",
   "Value (your share)": "Thamani (sehemu yako)",
+  "Full value {amount} · you own {percent}": "Thamani kamili {amount} · unamiliki {percent}",
   "Net contributions recorded": "Michango halisi iliyorekodiwa",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "Historia huanza na picha ya sasa. Ongeza thamani na michango ya zamani kama unazijua. Michango iliyorekodiwa si gharama kamili ya ununuzi isipokuwa uiweke yote.",
   "Add a dated update": "Ongeza sasisho lenye tarehe",

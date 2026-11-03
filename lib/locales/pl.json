@@ -238,6 +238,7 @@
   "Expense paid": "Poniesiony wydatek",
   "Investment history chart": "Wykres historii inwestycji",
   "Value (your share)": "Wartość (Twój udział)",
+  "Full value {amount} · you own {percent}": "Pełna wartość {amount} · Twój udział {percent}",
   "Net contributions recorded": "Zapisane wpłaty netto",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "Historia zaczyna się od bieżącego stanu. Dodaj starsze wartości i wpłaty, jeśli je znasz. Zapisane wpłaty nie stanowią pełnego kosztu zakupu, dopóki nie wprowadzisz ich wszystkich.",
   "Add a dated update": "Dodaj aktualizację z datą",

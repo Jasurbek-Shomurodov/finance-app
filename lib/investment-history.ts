@@ -53,14 +53,16 @@ export function historyEventLabel(kind:string,type:HistoryEvent['event_type']):s
 export const historyEventMovesCash = (event:Pick<TrackerEvent,'event_type'|'amount'|'entered'>) => !!event.entered||!['baseline','valuation'].includes(event.event_type)&&Number(event.amount)>0;
 /** Tracker updates and linked payments in one dated list, oldest first. */
 export const byHistoryDate = (a:TrackerEvent,b:TrackerEvent) => a.occurred_on.localeCompare(b.occurred_on)||a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id);
-/** Contributions and receipts are null once a linked payment no rate converts is among them: unknown, never short. */
+/** Contributions and receipts are null once a linked payment no rate converts is among them: unknown, never short.
+ * `balance` is your share; `fullBalance` and `ownership` are the whole asset's value and the share it was valued at. */
 export function historySeries(events:TrackerEvent[]) {
  const sorted=[...events].sort(byHistoryDate);
+ let fullBalance:number|null=null, ownership=100;
  let balance:number|null=null, contributions:number|null=0, additions=0, repayments=0, receipts:number|null=0, expenses=0, principal=0, interest=0;
  const days=new Map<string,{date:string;timestamp:number;balance:number|null;contributions:number|null;receipts:number|null}>();
  const plus=(sum:number|null,amount:number|null)=>sum===null||amount===null?null:sum+Number(amount);
  for(const e of sorted){
-  if(e.balance!==null)balance=Number(e.balance)*Number(e.ownership_percentage)/100;
+  if(e.balance!==null){fullBalance=Number(e.balance);ownership=Number(e.ownership_percentage);balance=fullBalance*ownership/100;}
   if(e.event_type==='contribution'){contributions=plus(contributions,e.amount);additions+=Number(e.amount);}
   if(e.event_type==='withdrawal'){contributions=plus(contributions,e.amount===null?null:-e.amount);repayments+=Number(e.amount);}
   if(e.event_type==='income')receipts=plus(receipts,e.amount);
@@ -68,7 +70,7 @@ export function historySeries(events:TrackerEvent[]) {
   if(e.event_type==='mortgage_payment'){principal+=Number(e.principal);interest+=Number(e.interest);}
   days.set(e.occurred_on,{date:e.occurred_on,timestamp:Date.parse(e.occurred_on+'T00:00:00Z'),balance,contributions,receipts});
  }
- return {points:[...days.values()],balance,contributions,additions,repayments,receipts,expenses,principal,interest,missing:contributions===null||receipts===null};
+ return {points:[...days.values()],balance,fullBalance,ownership,contributions,additions,repayments,receipts,expenses,principal,interest,missing:contributions===null||receipts===null};
 }
 
 // Convert chart coordinates back to stored date-only values before shared display formatting.

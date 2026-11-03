@@ -238,6 +238,7 @@
   "Expense paid": "ادا کیا گیا خرچ",
   "Investment history chart": "سرمایہ کاری کی تاریخ کا چارٹ",
   "Value (your share)": "مالیت (آپ کا حصہ)",
+  "Full value {amount} · you own {percent}": "مکمل قیمت {amount} · آپ کی ملکیت {percent}",
   "Net contributions recorded": "درج شدہ خالص شراکتیں",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "تاریخ موجودہ اسنیپ شاٹ سے شروع ہوتی ہے۔ اگر معلوم ہوں تو پرانی مالیتیں اور شراکتیں شامل کریں۔ درج شدہ شراکتیں مکمل خرید لاگت نہیں ہیں جب تک آپ سب درج نہ کریں۔",
   "Add a dated update": "تاریخ والی اپ ڈیٹ شامل کریں",

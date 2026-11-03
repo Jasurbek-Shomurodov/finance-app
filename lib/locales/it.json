@@ -238,6 +238,7 @@
   "Expense paid": "Uscite pagate",
   "Investment history chart": "Grafico della cronologia degli investimenti",
   "Value (your share)": "Valore (la tua quota)",
+  "Full value {amount} · you own {percent}": "Valore totale {amount} · la tua quota {percent}",
   "Net contributions recorded": "Contributi netti registrati",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "La cronologia parte da un’istantanea attuale. Aggiungi valori e contributi precedenti, se li conosci. I contributi registrati non rappresentano il costo di acquisto completo, a meno che tu non li inserisca tutti.",
   "Add a dated update": "Aggiungi un aggiornamento datato",

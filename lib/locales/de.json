@@ -238,6 +238,7 @@
   "Expense paid": "Gezahlte Ausgaben",
   "Investment history chart": "Diagramm des Investitionsverlaufs",
   "Value (your share)": "Wert (Ihr Anteil)",
+  "Full value {amount} · you own {percent}": "Gesamtwert {amount} · Ihr Anteil {percent}",
   "Net contributions recorded": "Erfasste Nettoeinzahlungen",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "Der Verlauf beginnt mit einer aktuellen Momentaufnahme. Fügen Sie ältere Werte und Einzahlungen hinzu, falls bekannt. Erfasste Einzahlungen sind kein vollständiger Kaufpreis, sofern Sie nicht alle eingeben.",
   "Add a dated update": "Datierte Aktualisierung hinzufügen",
