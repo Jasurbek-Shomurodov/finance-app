@@ -2766,5 +2766,6 @@
   "It changes at most the newest {count} matching transactions.": "এটি সর্বাধিক সাম্প্রতিক {count}টি মিল থাকা লেনদেন বদলায়।",
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed}টি আপডেট হয়েছে; এখানে {category}টির বিভাগ এবং {business}টির ব্যবসা বদলানো যায়নি।",
   "Could not delete this transaction. Please try again.": "এই লেনদেন মুছে ফেলা যায়নি। আবার চেষ্টা করুন।",
-  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "আপনি Google দিয়ে সাইন ইন করেছেন, তাই এই অ্যাকাউন্টে হয়তো এখনও পাসওয়ার্ড নেই। পাসওয়ার্ড ভুলে গেছেন দিয়ে একটি সেট করুন, তারপর এখানে লিখুন।"
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "আপনি Google দিয়ে সাইন ইন করেছেন, তাই এই অ্যাকাউন্টে হয়তো এখনও পাসওয়ার্ড নেই। পাসওয়ার্ড ভুলে গেছেন দিয়ে একটি সেট করুন, তারপর এখানে লিখুন।",
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "একটি ছোট ডেমো: একটি {category} খরচ যোগ করলে দিনের মোট এবং {category} বাজেট আপডেট হয়।"
 }

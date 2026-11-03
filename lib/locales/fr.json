@@ -2766,5 +2766,6 @@
   "It changes at most the newest {count} matching transactions.": "Cela modifie au plus les {count} transactions correspondantes les plus récentes.",
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} mises à jour ; ici, la catégorie de {category} et l’entreprise de {business} n’ont pas pu être modifiées.",
   "Could not delete this transaction. Please try again.": "Impossible de supprimer cette transaction. Veuillez réessayer.",
-  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Vous vous êtes connecté avec Google, ce compte n’a donc peut-être pas encore de mot de passe. Créez-en un avec « Mot de passe oublié », puis saisissez-le ici."
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Vous vous êtes connecté avec Google, ce compte n’a donc peut-être pas encore de mot de passe. Créez-en un avec « Mot de passe oublié », puis saisissez-le ici.",
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "Une courte démo : ajouter une dépense {category} met à jour le total du jour et le budget {category}."
 }

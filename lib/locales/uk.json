@@ -2766,5 +2766,6 @@
   "It changes at most the newest {count} matching transactions.": "Змінюється не більше {count} найновіших відповідних транзакцій.",
   "{changed} updated; {category} could not change category and {business} could not change business here.": "Оновлено: {changed}; тут не вдалося змінити категорію для {category} і бізнес для {business}.",
   "Could not delete this transaction. Please try again.": "Не вдалося видалити цю транзакцію. Спробуйте ще раз.",
-  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Ви ввійшли через Google, тому цей обліковий запис може ще не мати пароля. Задайте його через «Забули пароль», а потім введіть тут."
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Ви ввійшли через Google, тому цей обліковий запис може ще не мати пароля. Задайте його через «Забули пароль», а потім введіть тут.",
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "Коротка демонстрація: нова витрата «{category}» оновлює підсумок дня та бюджет «{category}»."
 }

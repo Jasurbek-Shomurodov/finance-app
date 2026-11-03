@@ -2766,5 +2766,6 @@
   "It changes at most the newest {count} matching transactions.": "Hubadilisha miamala mipya inayolingana isiyozidi {count}.",
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} zimesasishwa; hapa aina ya {category} na biashara ya {business} hazikuweza kubadilishwa.",
   "Could not delete this transaction. Please try again.": "Muamala huu haukuweza kufutwa. Tafadhali jaribu tena.",
-  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Uliingia kwa Google, kwa hivyo akaunti hii huenda bado haina nenosiri. Weka moja kupitia Umesahau nenosiri, kisha uliweke hapa."
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Uliingia kwa Google, kwa hivyo akaunti hii huenda bado haina nenosiri. Weka moja kupitia Umesahau nenosiri, kisha uliweke hapa.",
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "Onyesho fupi: kuongeza matumizi ya {category} husasisha jumla ya siku na bajeti ya {category}."
 }

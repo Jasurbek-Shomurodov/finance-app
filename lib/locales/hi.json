@@ -2766,5 +2766,6 @@
   "It changes at most the newest {count} matching transactions.": "यह अधिकतम {count} नवीनतम मेल खाते लेन-देन बदलता है।",
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} अपडेट हुए; यहाँ {category} की श्रेणी और {business} का व्यवसाय नहीं बदला जा सका।",
   "Could not delete this transaction. Please try again.": "यह लेन-देन हटाया नहीं जा सका। कृपया फिर से कोशिश करें।",
-  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "आपने Google से साइन इन किया है, इसलिए हो सकता है इस खाते का अभी कोई पासवर्ड न हो। पासवर्ड भूल गए से एक सेट करें, फिर उसे यहाँ दर्ज करें।"
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "आपने Google से साइन इन किया है, इसलिए हो सकता है इस खाते का अभी कोई पासवर्ड न हो। पासवर्ड भूल गए से एक सेट करें, फिर उसे यहाँ दर्ज करें।",
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "एक छोटा डेमो: {category} खर्च जोड़ने से दिन का कुल और {category} बजट अपडेट होता है।"
 }

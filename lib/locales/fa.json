@@ -2766,5 +2766,6 @@
   "It changes at most the newest {count} matching transactions.": "حداکثر {count} تراکنش مطابق جدید را تغییر می‌دهد.",
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} به‌روزرسانی شد؛ اینجا دسته‌بندی {category} و کسب‌وکار {business} قابل تغییر نبود.",
   "Could not delete this transaction. Please try again.": "این تراکنش حذف نشد. لطفاً دوباره تلاش کنید.",
-  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "با Google وارد شده‌اید، بنابراین شاید این حساب هنوز گذرواژه نداشته باشد. با فراموشی گذرواژه یکی تنظیم کنید و سپس اینجا وارد کنید."
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "با Google وارد شده‌اید، بنابراین شاید این حساب هنوز گذرواژه نداشته باشد. با فراموشی گذرواژه یکی تنظیم کنید و سپس اینجا وارد کنید.",
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "یک نمایش کوتاه: افزودن هزینه {category} جمع روز و بودجه {category} را به‌روز می‌کند."
 }

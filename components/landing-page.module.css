@@ -33,7 +33,7 @@
 .note{color:var(--muted-foreground)}
 .error{color:var(--negative)}
 
-/* The product window under the hero */
+/* The product demo under the hero (landing-hero-demo) */
 
 /* Sample cards */
 .sampleCard{display:flex;flex-direction:column;gap:14px;min-width:0;padding:18px;border:1px solid var(--hairline);border-radius:var(--radius-card);background:var(--card);box-shadow:var(--shadow-card);text-align:start}
@@ -41,7 +41,7 @@
 .sampleHeader>span:first-child{display:flex;align-items:center;gap:8px;min-width:0}
 .samplePill{flex-shrink:0;padding:2px 8px;border:1px solid var(--border);border-radius:999px;font-size:var(--type-micro);font-weight:500;color:var(--muted-foreground);white-space:nowrap}
 .up{color:var(--positive)}
-/* The hero shows the dashboard replay; feature samples show the app's own cards at their natural width. */
+/* Feature samples show the app's own cards at their natural width. */
 .heroReplay{width:100%;margin-top:clamp(40px,6vw,72px);animation:rise .8s cubic-bezier(.2,.7,.2,1) both}
 .rows{display:flex;flex-direction:column}
 .rows li{padding:10px 0;font-size:var(--type-small)}

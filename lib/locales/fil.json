@@ -2766,5 +2766,6 @@
   "It changes at most the newest {count} matching transactions.": "Binabago nito ang hanggang {count} pinakabagong tumutugmang transaksyon.",
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} ang na-update; hindi nabago rito ang kategorya ng {category} at ang negosyo ng {business}.",
   "Could not delete this transaction. Please try again.": "Hindi na-delete ang transaksyong ito. Pakisubukan ulit.",
-  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Nag-sign in ka gamit ang Google, kaya maaaring wala pang password ang account na ito. Gumawa ng isa sa Nakalimutan ang password, saka ito ilagay rito."
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Nag-sign in ka gamit ang Google, kaya maaaring wala pang password ang account na ito. Gumawa ng isa sa Nakalimutan ang password, saka ito ilagay rito.",
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "Maikling demo: ang pagdagdag ng gastos sa {category} ay nag-a-update sa kabuuan ng araw at sa budget ng {category}."
 }

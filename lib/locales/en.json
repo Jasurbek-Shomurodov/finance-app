@@ -2766,5 +2766,6 @@
   "It changes at most the newest {count} matching transactions.": "It changes at most the newest {count} matching transactions.",
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} updated; {category} could not change category and {business} could not change business here.",
   "Could not delete this transaction. Please try again.": "Could not delete this transaction. Please try again.",
-  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here."
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.",
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "A short demo: adding a {category} expense updates the day’s total and the {category} budget."
 }

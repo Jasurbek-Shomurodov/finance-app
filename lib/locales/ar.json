@@ -2766,5 +2766,6 @@
   "It changes at most the newest {count} matching transactions.": "يغيّر هذا {count} من أحدث المعاملات المطابقة على الأكثر.",
   "{changed} updated; {category} could not change category and {business} could not change business here.": "تم تحديث {changed}؛ وتعذّر تغيير الفئة في {category} وتغيير النشاط التجاري في {business} هنا.",
   "Could not delete this transaction. Please try again.": "تعذّر حذف هذه المعاملة. يُرجى المحاولة مرة أخرى.",
-  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "لقد سجّلت الدخول عبر Google، لذا قد لا تكون لهذا الحساب كلمة مرور بعد. عيّن واحدة عبر نسيت كلمة المرور، ثم أدخلها هنا."
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "لقد سجّلت الدخول عبر Google، لذا قد لا تكون لهذا الحساب كلمة مرور بعد. عيّن واحدة عبر نسيت كلمة المرور، ثم أدخلها هنا.",
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "عرض قصير: إضافة مصروف {category} تحدّث إجمالي اليوم وميزانية {category}."
 }

@@ -2766,5 +2766,6 @@
   "It changes at most the newest {count} matching transactions.": "変更されるのは、一致する取引のうち最新の{count}件までです。",
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed}件を更新しました。ここでは{category}件のカテゴリと{business}件の事業を変更できませんでした。",
   "Could not delete this transaction. Please try again.": "この取引を削除できませんでした。もう一度お試しください。",
-  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Google でサインインしたため、このアカウントにはまだパスワードがない場合があります。「パスワードをお忘れの方」から設定してから、ここに入力してください。"
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Google でサインインしたため、このアカウントにはまだパスワードがない場合があります。「パスワードをお忘れの方」から設定してから、ここに入力してください。",
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "短いデモ：{category}の支出を追加すると、その日の合計と{category}の予算が更新されます。"
 }

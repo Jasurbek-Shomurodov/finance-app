@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/components/language-provider';
 import { CategoryIcon } from '@/components/presentation-foundation/category-icon';
 import { AppPreview } from '@/components/app-preview';
+import { LandingHeroDemo } from '@/components/landing-hero-demo';
 import { usePhoneSignIn } from '@/hooks/use-phone-sign-in';
 import { formatMoney } from '@/lib/format';
 import { directionOf, languageCatalogue } from '@/lib/languages';
@@ -118,8 +119,6 @@ function TelegramSample() {
 
 // Each pillar opens its own screen of the real app, in the sample workspace.
 const pillarPaths: Record<Pillar, string> = { track: '/', budget: '/budget', plan: '/goals', invest: '/assets' };
-// The hero steps through the main screens, like a short video of the app.
-const heroTour = ['/', '/accounts', '/transactions', '/income-expenses', '/budget', '/goals', '/assets'] as const;
 
 function Feature({ eyebrow, title, text, sample, flip }: { eyebrow: string; title: string; text: string; sample: ReactNode; flip?: boolean }) {
   return <Reveal className={styles.feature}>
@@ -150,7 +149,7 @@ export function LandingPage({ brand, preferences, busy, error, onDemo }: Props) 
         <p className={styles.lead}>{t('From your next payday to your long-term investments.')} {t('Keep your financial life in one place.')}</p>
         <div className={styles.actions}>{getStarted}{demo}</div>
         {error ? <p className={styles.error} role="alert">{t(error)}</p> : <p className={styles.note}>{t('No account needed. Just sample data.')}</p>}
-        <div className={styles.heroReplay}><AppPreview eager tour={heroTour}/></div>
+        <div className={styles.heroReplay}><LandingHeroDemo/></div>
       </section>
 
       <Reveal className={styles.statement}>

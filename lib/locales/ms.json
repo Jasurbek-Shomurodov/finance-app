@@ -2766,5 +2766,6 @@
   "It changes at most the newest {count} matching transactions.": "Ini mengubah paling banyak {count} transaksi sepadan terbaharu.",
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} dikemas kini; di sini kategori {category} dan perniagaan {business} tidak dapat diubah.",
   "Could not delete this transaction. Please try again.": "Transaksi ini tidak dapat dipadamkan. Sila cuba lagi.",
-  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Anda log masuk dengan Google, jadi akaun ini mungkin belum mempunyai kata laluan. Tetapkan melalui Lupa kata laluan, kemudian masukkannya di sini."
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Anda log masuk dengan Google, jadi akaun ini mungkin belum mempunyai kata laluan. Tetapkan melalui Lupa kata laluan, kemudian masukkannya di sini.",
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "Demo ringkas: menambah perbelanjaan {category} mengemas kini jumlah hari itu dan bajet {category}."
 }

@@ -1,0 +1,85 @@
+/* The landing hero's product demo: a tinted frame with a cropped Transactions window pinned to its inline-start corner,
+   running off the inline-end and bottom edges. Real words only where the story is; grey lines everywhere else.
+   Motion is transform and opacity only: arrivals take 280ms on one ease-out curve, exits are quicker. */
+.stage{--ease:cubic-bezier(.22,1,.36,1);--inset:clamp(24px,5vw,56px);--bleed:160px;--row:52px;--ghost:color-mix(in srgb,var(--foreground) 9%,transparent);container-type:inline-size;position:relative;width:100%;height:clamp(360px,44vw,500px);overflow:hidden;border-radius:24px;background:var(--secondary);text-align:start;user-select:none;-webkit-user-select:none}
+/* The window runs off the inline-end edge by its last column, a stand-in panel of which only a sliver shows. */
+.window{position:absolute;inset-block-start:clamp(28px,4vw,48px);inset-inline-start:var(--inset);display:grid;grid-template-columns:184px minmax(0,1fr);width:calc(100% - var(--inset) + var(--bleed) - 40px);height:640px;border:1px solid var(--border);border-radius:14px;background:var(--background);box-shadow:0 24px 60px -28px rgb(0 0 0 / 35%),var(--shadow-card);overflow:hidden;font-size:var(--type-small);line-height:1.4}
+.line{display:block;flex-shrink:0;width:var(--w);height:8px;border-radius:4px;background:var(--ghost)}
+.tile{display:block;flex-shrink:0;width:28px;height:28px;border-radius:8px;background:var(--ghost)}
+
+/* The drawer: a mark and a column of stand-in destinations, the current one tinted. */
+.rail{display:flex;flex-direction:column;gap:6px;padding:16px 12px;border-inline-end:1px solid var(--hairline);background:var(--sidebar)}
+.rail span{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px}
+.rail span[data-current]{background:color-mix(in srgb,var(--primary) 12%,transparent)}
+.rail span[data-current] .line{background:color-mix(in srgb,var(--primary) 45%,transparent)}
+.mark{display:block;width:30px;height:30px;margin-block-end:12px;margin-inline-start:8px;border-radius:9px;background:var(--mark-bg)}
+.dot{display:block;flex-shrink:0;width:14px;height:14px;border-radius:4px;background:var(--ghost)}
+
+.main{display:flex;flex-direction:column;gap:16px;min-width:0;padding-block:16px;padding-inline:22px 0}
+.bar{display:flex;align-items:center;gap:16px;min-height:36px}
+.bar strong{font-size:var(--type-compact);font-weight:600}
+.add{display:inline-flex;align-items:center;gap:6px;height:34px;padding-inline:12px 14px;border-radius:var(--radius-control);background:var(--primary);color:var(--primary-foreground);font-weight:500;white-space:nowrap;transition:transform .12s var(--ease)}
+.add[data-pressed]{transform:scale(.95)}
+.columns{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) var(--bleed);gap:16px;align-items:start}
+.aside{height:420px}
+.panel{position:relative;min-width:0;border:1px solid var(--hairline);border-radius:var(--radius-card);background:var(--card);box-shadow:var(--shadow-card);overflow:hidden}
+
+/* The day's list. The new row always holds its slot; until it is added the rows below cover it from one row up. */
+.dayHead{display:flex;align-items:center;justify-content:space-between;gap:12px;height:38px;padding-inline:16px;background:color-mix(in srgb,var(--foreground) 3%,var(--card));font-size:var(--type-caption);font-weight:600}
+.figure{font-variant-numeric:tabular-nums;font-weight:600}
+.row{display:flex;align-items:center;gap:12px;height:var(--row);padding-inline:16px;border-block-start:1px solid var(--hairline);box-sizing:border-box}
+.name{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0}
+.name b{font-weight:500;line-height:1.1}
+.amount{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.newRow{opacity:0;transform:translateY(10px);transition:opacity .16s ease-in,transform .16s ease-in}
+.below{position:relative;z-index:1;background:var(--card);transform:translateY(calc(-1 * var(--row)));transition:transform .22s cubic-bezier(.4,0,.2,1) .04s}
+.below .dayHead{border-block-start:1px solid var(--hairline)}
+.stage[data-added] .newRow{opacity:1;transform:none;transition:opacity .28s var(--ease) .06s,transform .28s var(--ease) .06s}
+.stage[data-added] .below{transform:none;transition:transform .28s var(--ease)}
+.bin{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;color:var(--muted-foreground);opacity:0;transition:opacity .16s,transform .12s var(--ease)}
+.stage[data-hover] .bin{opacity:1;background:var(--muted);color:var(--foreground)}
+.bin[data-pressed]{transform:scale(.88)}
+
+/* The budget card: the Groceries line follows the new expense; the others are stand-ins. */
+.panelTitle{display:block;padding:14px 16px 4px;font-size:var(--type-compact);font-weight:600}
+.budgetRow{display:flex;flex-direction:column;gap:6px;padding:12px 16px}
+.budgetRow+.budgetRow{border-block-start:1px solid var(--hairline)}
+.budgetLine{display:flex;align-items:center;gap:10px}
+.budgetLine b{flex:1;min-width:0;font-weight:500}
+.budgetLine .line:first-of-type{flex:0 1 auto;margin-inline-end:auto}
+.budgetRow small{font-size:var(--type-micro);color:var(--muted-foreground);text-align:end}
+.track{display:block;height:6px;border-radius:3px;background:var(--muted);overflow:hidden}
+.fill{display:block;height:100%;border-radius:inherit;background:var(--primary);transform-origin:0 50%;transition:transform .6s var(--ease)}
+[dir=rtl] .fill{transform-origin:100% 50%}
+.fill[data-quiet]{background:color-mix(in srgb,var(--foreground) 18%,transparent)}
+
+/* One cursor: a zero-size point that travels in a shallow arc (across fast, down eased in and out), pressing with a small scale-down.
+   The arrow keeps its shape in right-to-left pages, as a real pointer does. */
+.cursor{position:absolute;inset-block-start:0;inset-inline-start:0;z-index:3;width:0;height:0;opacity:0;pointer-events:none;transform:translateX(var(--x));transition:transform var(--ms) var(--ease),opacity .28s var(--ease)}
+.cursor[data-shown]{opacity:1}
+.cursorY{display:block;transform:translateY(var(--y));transition:transform var(--ms) cubic-bezier(.45,0,.25,1)}
+.arrow{display:block;fill:var(--foreground);stroke:var(--card);stroke-width:1.4;stroke-linejoin:round;transform:translate(-5px,-3px);transform-origin:5px 3px;transition:transform .12s var(--ease);filter:drop-shadow(0 2px 3px rgb(0 0 0 / 25%))}
+.arrow[data-pressed]{transform:translate(-5px,-3px) scale(.82)}
+
+/* Narrower frames drop the drawer; on phones the budget card sits above the list so both stay in the frame. */
+@container (max-width:900px){
+ .window{grid-template-columns:minmax(0,1fr)}
+ .rail{display:none}
+}
+/* Phones: one column, and only the window's padding runs off the edge, so every amount stays in the frame. */
+@container (max-width:640px){
+ .window{inset-block-start:24px;width:calc(100% - var(--inset) + 14px)}
+ .main{padding:14px}
+ .columns{grid-template-columns:minmax(0,1fr)}
+ .aside{display:none}
+ .budget{order:-1}
+ .budget .budgetRow~.budgetRow{display:none}
+}
+
+/* Less motion: the payoff, still, with no cursor and no loop. */
+@media(prefers-reduced-motion:reduce){
+ .stage *{transition:none!important}
+ .cursor{display:none}
+ .newRow{opacity:1;transform:none}
+ .below{transform:none}
+}

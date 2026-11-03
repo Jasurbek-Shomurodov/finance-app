@@ -2766,5 +2766,6 @@
   "It changes at most the newest {count} matching transactions.": "เปลี่ยนรายการที่ตรงกันล่าสุดได้สูงสุด {count} รายการ",
   "{changed} updated; {category} could not change category and {business} could not change business here.": "อัปเดตแล้ว {changed} รายการ; ที่นี่เปลี่ยนหมวดหมู่ของ {category} รายการและธุรกิจของ {business} รายการไม่ได้",
   "Could not delete this transaction. Please try again.": "ไม่สามารถลบธุรกรรมนี้ได้ โปรดลองอีกครั้ง",
-  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "คุณลงชื่อเข้าใช้ด้วย Google บัญชีนี้จึงอาจยังไม่มีรหัสผ่าน ตั้งรหัสผ่านผ่าน ลืมรหัสผ่าน แล้วป้อนที่นี่"
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "คุณลงชื่อเข้าใช้ด้วย Google บัญชีนี้จึงอาจยังไม่มีรหัสผ่าน ตั้งรหัสผ่านผ่าน ลืมรหัสผ่าน แล้วป้อนที่นี่",
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "เดโมสั้น ๆ: การเพิ่มรายจ่าย {category} จะอัปเดตยอดรวมของวันและงบประมาณ {category}"
 }

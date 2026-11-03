@@ -10,7 +10,7 @@ const en=JSON.parse(fs.readFileSync('lib/locales/en.json','utf8'));
 const seen=new Set();
 function render({bot=null,error='',busy=false}={}){
  const {LandingPage}=loadTS('components/landing-page.tsx',{
-  './landing-page.module.css':{},'./app-preview.module.css':{},
+  './landing-page.module.css':{},'./app-preview.module.css':{},'./landing-hero-demo.module.css':{},
   'next/link':{__esModule:true,default:props=>React.createElement('a',props)},
   '@/components/language-provider':{useLanguage:()=>({language:'en',locale:'en-US',t:(key,values={})=>{seen.add(key);return key.replace(/\{(\w+)\}/g,(_,name)=>values[name]??name);}})},
   '@/components/ui/button':{Button:props=>props.asChild?props.children:React.createElement('button',{type:props.type,disabled:props.disabled},props.children)},
@@ -87,10 +87,11 @@ test('the server renders the public pages for visitors without session cookies, 
  assert.match(html,/^<div lang="en" dir="ltr">/);
 });
 
-test('the hero and the pillars show the real app in its sample workspace, not a drawing of it',()=>{
+test('the pillars show the real app in its sample workspace, not a drawing of it',()=>{
  assert.match(render(),/Compare your returns with other investments/);
  const source=fs.readFileSync('components/landing-page.tsx','utf8');
- assert.match(source,/<AppPreview eager tour=\{heroTour\}\/>/,'the hero steps through the app like a video');
+ assert.match(source,/<div className=\{styles\.heroReplay\}><LandingHeroDemo\/><\/div>/,'the hero plays its own short demo');
+ assert.equal((source.match(/<AppPreview /g)||[]).length,1,'only the pillars shrink the whole app into a window');
  assert.match(source,/<AppPreview path=\{pillarPaths\[active\.key\]\}\/>/,'each pillar opens its own screen');
  assert.match(source,/const pillarPaths: Record<Pillar, string> = \{ track: '\/', budget: '\/budget', plan: '\/goals', invest: '\/assets' \};/);
  const {sections}=loadTS('components/workspace/navigation.ts');
@@ -99,6 +100,46 @@ test('the hero and the pillars show the real app in its sample workspace, not a 
  assert.ok(!fs.existsSync('components/landing-replay.tsx')&&!fs.existsSync('components/landing-dashboard.tsx'),'no hand-drawn copy of the dashboard');
  // The server sends no frame: the preview loads in the browser, and never inside another preview.
  assert.ok(!render().includes('<iframe'));
+});
+
+test('the hero demo is one looping story told with sample data through the shared formatters',()=>{
+ const demo=loadTS('components/landing-hero-demo.tsx',{'./landing-hero-demo.module.css':{}});
+ const {heroBeats,heroStart,heroPayoff,heroFigures,heroSample,travelMs}=demo;
+ // Play the script on paper: every beat says how long to wait, and the loop ends exactly where it began.
+ let scene={...heroStart},cursor='rest',total=0;const scenes=[];
+ const play={scene:change=>{scene={...scene,...change};scenes.push(scene);},move:to=>{cursor=to;return 500;}};
+ for(const beat of heroBeats){const ms=beat(play);assert.ok(Number.isFinite(ms)&&ms>0);total+=ms;}
+ assert.deepEqual(scene,heroStart,'no seam: the last beat leaves the scene as the first found it');
+ assert.equal(cursor,'rest','the cursor returns to where it started');
+ assert.ok(heroBeats.length>=5&&total<15000,`a short loop (${total}ms)`);
+ const added=scenes.findIndex(item=>item.added),counted=scenes.findIndex(item=>item.counted);
+ assert.ok(added>=0&&scenes[added-1].pressed==='add','the row arrives because Add was pressed');
+ assert.ok(counted>added,'the totals change after the row arrives, because of it');
+ const removed=scenes.findIndex((item,index)=>index>counted&&!item.added);
+ assert.equal(scenes[removed-1].pressed,'bin','the cursor visibly deletes the row; nothing vanishes on its own');
+ const holdBeat=heroBeats[5](play);assert.ok(holdBeat>=2000,'it holds on the payoff');
+ assert.deepEqual(heroFigures(heroStart),{day:heroSample.dayBefore,spent:heroSample.spentBefore,share:heroSample.spentBefore/heroSample.budget});
+ assert.equal(heroFigures(heroPayoff).spent,heroSample.spentBefore+heroSample.amount);
+ assert.ok(heroFigures(heroPayoff).share<1,'the budget is not overspent: no red in the story');
+ assert.ok(travelMs(40)<travelMs(400)&&travelMs(0)>=380&&travelMs(5000)<=900,'the cursor takes longer for a longer way');
+ // The server renders the opening frame: real words where the story is, sample amounts through formatMoney and the date through formatDate.
+ const html=render();
+ assert.match(html,/role="img" aria-label="A short demo: adding a Groceries expense updates the day’s total and the Groceries budget\."/);
+ assert.match(html,/aria-hidden="true"/);
+ for(const text of ['Add transaction','Groceries','Budget','$86','of $400','$70','$214'])assert.ok(html.includes(text),text);
+ const {formatDate}=loadTS('lib/format.ts');const {depositToday}=loadTS('lib/deposit-interest.ts');
+ assert.ok(html.includes(formatDate(depositToday(),'en-US')),'the day is written by the date formatter');
+ assert.ok(!html.includes('<iframe'),'a demo, not the whole app shrunk into a box');
+ const source=fs.readFileSync('components/landing-hero-demo.tsx','utf8');
+ assert.ok(!/toLocaleString|toFixed|new Intl\./.test(source));
+ // Browser-only work starts in an effect; the loop pauses offscreen and in a hidden tab; reduced motion gets the payoff, still.
+ assert.match(source,/useEffect\(\(\) => \{\n  const node = stage\.current;/);
+ assert.match(source,/new IntersectionObserver/);assert.match(source,/visibilitychange/);
+ assert.match(source,/prefers-reduced-motion: reduce\)'\)\.matches\) \{ queueMicrotask\(\(\) => setScene\(heroPayoff\)\); return; \}/);
+ const css=fs.readFileSync('components/landing-hero-demo.module.css','utf8');
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{[^@]*\.cursor\{display:none\}[^@]*\.newRow\{opacity:1;transform:none\}/);
+ assert.ok(!/transition:[^;}]*\b(width|height|top|left|margin)\b/.test(css),'motion is transform and opacity only');
+ assert.ok(!/(?<![-\w])(margin|padding)-(left|right)|(?<![-\w])(left|right):/.test(css),'logical properties, so right-to-left mirrors');
 });
 
 test('an app preview shows itself only once its charts have loaded',async()=>{

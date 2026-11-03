@@ -2766,5 +2766,6 @@
   "It changes at most the newest {count} matching transactions.": "En fazla {count} en yeni eşleşen işlemi değiştirir.",
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} güncellendi; burada {category} işlemin kategorisi ve {business} işlemin işletmesi değiştirilemedi.",
   "Could not delete this transaction. Please try again.": "Bu işlem silinemedi. Lütfen tekrar deneyin.",
-  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Google ile giriş yaptınız, bu nedenle bu hesabın henüz parolası olmayabilir. “Parolamı unuttum” ile bir parola belirleyin, ardından buraya girin."
+  "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Google ile giriş yaptınız, bu nedenle bu hesabın henüz parolası olmayabilir. “Parolamı unuttum” ile bir parola belirleyin, ardından buraya girin.",
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "Kısa bir tanıtım: bir {category} gideri eklemek günün toplamını ve {category} bütçesini günceller."
 }
