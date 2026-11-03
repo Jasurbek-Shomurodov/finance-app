@@ -239,6 +239,7 @@
   "Investment history chart": "投资历史图表",
   "Value (your share)": "价值（您的份额）",
   "Full value {amount} · you own {percent}": "全部价值 {amount} · 您持有 {percent}",
+  "{amount} at that day's rate": "按当日汇率 {amount}",
   "Net contributions recorded": "已记录的净投入",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "历史记录从当前快照开始。如已知，请补充更早的价值和投入。除非您录入全部投入，否则已记录的投入并不等于完整的买入成本。",
   "Add a dated update": "添加带日期的更新",

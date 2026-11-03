@@ -239,6 +239,7 @@
   "Investment history chart": "แผนภูมิประวัติการลงทุน",
   "Value (your share)": "มูลค่า (ส่วนของคุณ)",
   "Full value {amount} · you own {percent}": "มูลค่าทั้งหมด {amount} · คุณถือ {percent}",
+  "{amount} at that day's rate": "{amount} ตามอัตราของวันนั้น",
   "Net contributions recorded": "เงินสมทบสุทธิที่บันทึกไว้",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "ประวัติเริ่มจากภาพรวมปัจจุบัน เพิ่มมูลค่าและเงินสมทบย้อนหลังได้หากทราบ เงินสมทบที่บันทึกไว้จะไม่ใช่ต้นทุนการซื้อที่สมบูรณ์ เว้นแต่คุณป้อนครบทั้งหมด",
   "Add a dated update": "เพิ่มการอัปเดตตามวันที่",

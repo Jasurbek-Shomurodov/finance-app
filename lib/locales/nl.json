@@ -239,6 +239,7 @@
   "Investment history chart": "Grafiek beleggingsgeschiedenis",
   "Value (your share)": "Waarde (uw aandeel)",
   "Full value {amount} · you own {percent}": "Volledige waarde {amount} · uw aandeel {percent}",
+  "{amount} at that day's rate": "{amount} tegen de koers van die dag",
   "Net contributions recorded": "Geregistreerde netto stortingen",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "De geschiedenis begint met een huidige momentopname. Voeg oudere waarden en stortingen toe als u die kent. Geregistreerde stortingen zijn geen volledige aankoopprijs, tenzij u ze allemaal invoert.",
   "Add a dated update": "Een update met datum toevoegen",

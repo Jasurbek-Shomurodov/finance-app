@@ -239,6 +239,7 @@
   "Investment history chart": "Yatırım geçmişi grafiği",
   "Value (your share)": "Değer (payınız)",
   "Full value {amount} · you own {percent}": "Toplam değer {amount} · payınız {percent}",
+  "{amount} at that day's rate": "O günün kuruyla {amount}",
   "Net contributions recorded": "Kaydedilen net katkılar",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "Geçmiş, güncel bir anlık görüntüyle başlar. Biliyorsanız daha eski değerleri ve katkıları ekleyin. Hepsini girmediğiniz sürece kaydedilen katkılar tam alış maliyeti değildir.",
   "Add a dated update": "Tarihli güncelleme ekle",

@@ -239,6 +239,7 @@
   "Investment history chart": "Investitsiya tarixi grafigi",
   "Value (your share)": "Qiymat (sizning ulushingiz)",
   "Full value {amount} · you own {percent}": "To'liq qiymat {amount} · sizning ulushingiz {percent}",
+  "{amount} at that day's rate": "{amount} o‘sha kungi kurs bo‘yicha",
   "Net contributions recorded": "Kiritilgan mablag‘, yechimlar ayrilgan",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "Tarix joriy qiymatdan boshlanadi. Ma’lum bo‘lsa, oldingi qiymatlar va sarmoyalarni qo‘shing. Barcha mablag‘lar kiritilmaguncha jami sarmoya to‘liq bo‘lmaydi.",
   "Add a dated update": "Sana bilan yangilanish qo‘shish",

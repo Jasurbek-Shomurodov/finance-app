@@ -239,6 +239,7 @@
   "Investment history chart": "বিনিয়োগের ইতিহাস চার্ট",
   "Value (your share)": "মূল্য (আপনার অংশ)",
   "Full value {amount} · you own {percent}": "পূর্ণ মূল্য {amount} · আপনার মালিকানা {percent}",
+  "{amount} at that day's rate": "সেদিনের হারে {amount}",
   "Net contributions recorded": "রেকর্ড করা নিট অবদান",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "ইতিহাস শুরু হয় বর্তমান স্ন্যাপশট দিয়ে। জানা থাকলে পুরোনো মূল্য ও অবদান যোগ করুন। সব অবদান না লিখলে রেকর্ড করা অবদান সম্পূর্ণ ক্রয়মূল্য নয়।",
   "Add a dated update": "তারিখসহ একটি হালনাগাদ যোগ করুন",

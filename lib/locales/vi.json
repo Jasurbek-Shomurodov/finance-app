@@ -239,6 +239,7 @@
   "Investment history chart": "Biểu đồ lịch sử đầu tư",
   "Value (your share)": "Giá trị (phần của bạn)",
   "Full value {amount} · you own {percent}": "Giá trị toàn bộ {amount} · bạn sở hữu {percent}",
+  "{amount} at that day's rate": "{amount} theo tỷ giá ngày đó",
   "Net contributions recorded": "Đóng góp ròng đã ghi nhận",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "Lịch sử bắt đầu từ ảnh chụp hiện tại. Hãy thêm các giá trị và khoản đóng góp cũ hơn nếu bạn biết. Các khoản đóng góp đã ghi nhận không phải là toàn bộ giá vốn trừ khi bạn nhập đầy đủ.",
   "Add a dated update": "Thêm cập nhật theo ngày",

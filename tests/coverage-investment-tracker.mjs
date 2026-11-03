@@ -449,16 +449,19 @@ test('a wholly owned asset shows no full-value note; a shared one shows it on it
  assert.doesNotMatch(own.view.html(), /Full value/);
  const shared = await open(record('Business'), [event('b', 'baseline', '2026-01-01', { balance: 72000, ownership_percentage: 50 }), event('c', 'contribution', '2026-02-01', { amount: 300 })]);
  shared.showTab('history');
- const row = id => shared.view.html().split('<li>').find(item => item.includes(id));
+ const row = id => shared.view.html().split('<li ').find(item => item.includes(id));
  assert.ok(row('1 January 2026').includes(`<strong>${money(36000)}</strong><span>Full value ${money(72000)} · you own 50%</span>`));
  assert.doesNotMatch(row('1 February 2026'), /Full value/);
+ const icons = shared.view.all(element => element.props?.className === 'record-icon category-record-icon');
+ assert.equal(icons.length, 2, 'every row has a symbol');
+ assert.notEqual(icons[0].props.style['--category-hue'], icons[1].props.style['--category-hue'], 'each kind of entry has its own colour');
 });
 
 test('a history row is headed by the money that moved, and the value it set comes second', async () => {
  const events = [event('b', 'baseline', '2026-01-01', { balance: 33000 }), event('c', 'contribution', '2026-02-01', { amount: 6336, balance: 36000 }), event('k', 'contribution', '2026-03-01', { amount: 500 }), event('v', 'valuation', '2026-04-01', { balance: 40000, amount: 250 })];
  const { showTab, view } = await open(record('Property'), events);
  showTab('history');
- const row = id => view.html().split('<li>').find(item => item.includes(id));
+ const row = id => view.html().split('<li ').find(item => item.includes(id));
  assert.match(row('1 February 2026'), new RegExp(`<strong>\\${money(6336)}</strong><span>Value \\(your share\\): \\${money(36000)}</span>`));
  assert.ok(row('1 March 2026').includes(`<strong>${money(500)}</strong>`), 'a cash move that kept the value still has a headline');
  assert.ok(!row('1 March 2026').includes('Value (your share): '));
@@ -472,7 +475,7 @@ test('a payment linked to the asset reads as entered, and its bin deletes the tr
  showTab('history');
  const html = view.html();
  assert.ok(html.includes(`<strong>Money invested</strong><small><time>${formatDate('2026-02-01', 'en-US')}</time> · from Wallet</small><p>Sheep feed</p>`));
- assert.ok(html.includes(`<strong>${money(1000000, 'UZS')}</strong>`));
+ assert.ok(html.includes(`<strong>${money(1000000, 'UZS')}</strong><span>${money(12)} at that day&#x27;s rate</span>`), 'a payment in another currency shows what it counts for in the totals');
  assert.ok(html.includes(`<strong>${money(500000, 'UZS')}</strong>`), 'a payment no rate converts still shows what was paid');
  const bins = view.all(element => element.props?.label === 'Delete record');
  assert.equal(bins.length, 2);

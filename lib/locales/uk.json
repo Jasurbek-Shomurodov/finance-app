@@ -239,6 +239,7 @@
   "Investment history chart": "Графік історії інвестицій",
   "Value (your share)": "Вартість (ваша частка)",
   "Full value {amount} · you own {percent}": "Повна вартість {amount} · ваша частка {percent}",
+  "{amount} at that day's rate": "{amount} за курсом того дня",
   "Net contributions recorded": "Записані чисті внески",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "Історія починається з поточного зрізу. Додайте старіші значення та внески, якщо вони відомі. Записані внески не є повною вартістю придбання, доки ви не внесете їх усі.",
   "Add a dated update": "Додати оновлення з датою",

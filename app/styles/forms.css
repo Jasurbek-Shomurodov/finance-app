@@ -148,9 +148,11 @@ label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 .investment-tracker h3{font-size:var(--type-body);font-weight:600;margin-top:12px}
 .tracker-tabs{justify-self:start;width:fit-content;margin-block-end:4px}
 /* One set of columns for the whole list: each row is a subgrid, so amounts and bins line up on every row. */
-.tracker-history ul{display:grid;grid-template-columns:minmax(0,1fr) auto auto;column-gap:16px;list-style:none;margin:16px 0 0;padding:0}
+.tracker-history ul{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;column-gap:16px;list-style:none;margin:16px 0 0;padding:0}
 .tracker-history li{display:grid;grid-column:1/-1;grid-template-columns:subgrid;align-items:start;padding:14px 0;border-top:1px solid var(--border);font-size:var(--type-compact)}
 .tracker-event-main{min-width:0}
+.record-dialog .tracker-history .record-icon.category-record-icon{width:36px;height:36px;padding:7px;border-radius:11px;margin:0}
+.record-dialog .tracker-history .record-icon.category-record-icon svg{width:18px;height:18px}
 .tracker-event-amount{text-align:end;min-width:0}
 .tracker-event-amount strong{font-variant-numeric:tabular-nums}
 .tracker-history li .delete-button{margin-block:-6px}
@@ -158,7 +160,7 @@ label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 .tracker-history p{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:6px;color:var(--muted-foreground)}
 .tracker-history>.tracker-help{margin-top:0}
 .tracker-history>.tracker-help+.tracker-help{margin-top:6px}
-@media(max-width:600px){.tracker-metrics{grid-template-columns:1fr}.tracker-metrics>div{display:flex;align-items:center;justify-content:space-between;gap:12px}.tracker-metrics small{margin:0}.tracker-metrics>div:has(.tracker-full-value){flex-wrap:wrap}.tracker-full-value{flex-basis:100%;margin-top:0}.tracker-history ul{grid-template-columns:minmax(0,1fr) auto}.tracker-event-main,.tracker-event-amount{grid-column:1}.tracker-event-amount{text-align:start;margin-top:6px}.tracker-history li .delete-button{grid-column:2;grid-row:1/span 2}}
+@media(max-width:600px){.tracker-metrics{grid-template-columns:1fr}.tracker-metrics>div{display:flex;align-items:center;justify-content:space-between;gap:12px}.tracker-metrics small{margin:0}.tracker-metrics>div:has(.tracker-full-value){flex-wrap:wrap}.tracker-full-value{flex-basis:100%;margin-top:0}.tracker-history ul{grid-template-columns:auto minmax(0,1fr) auto}.tracker-history li>.record-icon{grid-column:1;grid-row:1/span 2}.tracker-event-main,.tracker-event-amount{grid-column:2}.tracker-event-amount{text-align:start;margin-top:6px}.tracker-history li .delete-button{grid-column:3;grid-row:1/span 2}}
 
 /* Shared loading placeholders use theme colors and respect reduced motion. */
 .skeleton-sheen{position:relative;overflow:hidden;isolation:isolate}

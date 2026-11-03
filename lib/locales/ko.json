@@ -239,6 +239,7 @@
   "Investment history chart": "투자 내역 차트",
   "Value (your share)": "가치 (내 지분)",
   "Full value {amount} · you own {percent}": "전체 가치 {amount} · 내 지분 {percent}",
+  "{amount} at that day's rate": "당일 환율 기준 {amount}",
   "Net contributions recorded": "기록된 순납입액",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "내역은 현재 시점 기록에서 시작해요. 이전 가치와 납입액을 알고 있다면 추가하세요. 기록된 납입액은 모두 입력하지 않는 한 전체 매수 비용이 아니에요.",
   "Add a dated update": "날짜별 업데이트 추가",

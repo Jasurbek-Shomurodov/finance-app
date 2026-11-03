@@ -239,6 +239,7 @@
   "Investment history chart": "投資履歴チャート",
   "Value (your share)": "価値（あなたの持分）",
   "Full value {amount} · you own {percent}": "全体の価値 {amount} · あなたの持分 {percent}",
+  "{amount} at that day's rate": "当日のレートで {amount}",
   "Net contributions recorded": "記録された純拠出額",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "履歴は現在のスナップショットから始まります。わかる場合は、過去の評価額や拠出額を追加してください。記録された拠出額は、すべて入力しない限り、購入コストの全体にはなりません。",
   "Add a dated update": "日付付きの更新を追加",

@@ -239,6 +239,7 @@
   "Investment history chart": "مخطط سجل الاستثمار",
   "Value (your share)": "القيمة (حصتك)",
   "Full value {amount} · you own {percent}": "القيمة الكاملة {amount} · تملك {percent}",
+  "{amount} at that day's rate": "{amount} بسعر ذلك اليوم",
   "Net contributions recorded": "صافي المساهمات المسجلة",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "يبدأ السجل بلقطة حالية. أضف قيمًا ومساهمات أقدم إن عرفتها. لا تُعدّ المساهمات المسجلة تكلفة شراء كاملة ما لم تُدخلها جميعًا.",
   "Add a dated update": "أضف تحديثًا مؤرَّخًا",

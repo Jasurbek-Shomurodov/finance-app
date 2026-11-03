@@ -239,6 +239,7 @@
   "Investment history chart": "Gráfico del historial de inversión",
   "Value (your share)": "Valor (tu parte)",
   "Full value {amount} · you own {percent}": "Valor total {amount} · tu participación {percent}",
+  "{amount} at that day's rate": "{amount} al tipo de ese día",
   "Net contributions recorded": "Aportaciones netas registradas",
   "History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.": "El historial empieza con una instantánea actual. Añade valores y aportaciones anteriores si los tienes. Las aportaciones registradas no son el coste de compra completo a menos que las introduzcas todas.",
   "Add a dated update": "Añadir una actualización con fecha",
