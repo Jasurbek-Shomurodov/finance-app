@@ -29,7 +29,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
-import { useArrivals } from '@/hooks/use-arrivals';
 import { useOwnerResource } from '@/hooks/use-owner-resource';
 import { useTransactionRules } from '@/hooks/use-transaction-rules';
 import { depositToday } from '@/lib/deposit-interest';
@@ -95,7 +94,6 @@ export function TransactionsScreen() {
  const pageCount = Math.max(1, Math.ceil(records.length / transactionsPerPage));
  const page = paging.key === listKey ? Math.min(paging.page, pageCount) : 1;
  const days = useMemo(() => groupPageByDay(records, (page - 1) * transactionsPerPage, page * transactionsPerPage, convert), [records, page, convert]);
- const arrived = useArrivals(useMemo(() => days.flatMap(day => day.records.map(record => record.id)), [days]));
  const summary = useMemo(() => summarizeTransactions(records, convert), [records, convert]);
  const accounts = new Map(data.records.filter(record => record.kind === 'Cash').map(record => [record.id, record.name]));
  const chosen = records.filter(record => selected.has(record.id));
@@ -179,7 +177,7 @@ export function TransactionsScreen() {
      {day.records.map(record => {
       const editable = canRecategorize(record, splits);
       const recordTags = tagsOf(record.id).map(id => tagById.get(id)).filter(tag => !!tag);
-      return <li key={record.id} className="transaction-row" data-selected={selected.has(record.id) || undefined} data-arrived={arrived.has(record.id) || undefined} tabIndex={0} aria-label={transactionRowLabel(t('View details for {name}', { name: shownName(record, t, nameOf(record)) }), record, nameOf(record), locale, enteredSigned(signedAmount(record), record.currency))} onClick={open(record)} onKeyDown={open(record)}>
+      return <li key={record.id} className="transaction-row" data-selected={selected.has(record.id) || undefined} tabIndex={0} aria-label={transactionRowLabel(t('View details for {name}', { name: shownName(record, t, nameOf(record)) }), record, nameOf(record), locale, enteredSigned(signedAmount(record), record.currency))} onClick={open(record)} onKeyDown={open(record)}>
        {selecting && <input type="checkbox" aria-label={t('Select {name}', { name: record.name })} checked={selected.has(record.id)} onChange={() => toggle(record.id)}/>}
        <span className="transaction-merchant"><CategoryIcon kind={record.custom_category_id ? nameOf(record) : record.kind}/><span>{attachments.counts.get(record.id) ? <span className="transaction-name"><strong>{shownName(record, t, nameOf(record))}</strong><Paperclip className="transaction-attachment-mark" size={13} role="img" aria-label={t('Attachments: {count}', { count: attachments.counts.get(record.id)! })}/></span> : <strong>{shownName(record, t, nameOf(record))}</strong>}{record.account_id && accounts.get(record.account_id) && <small>{accounts.get(record.account_id)}</small>}<MortgageSplit record={record}/>{recordTags.length > 0 && <span className="transaction-tags">{recordTags.map(tag => <TagChip key={tag.id} name={tag.name} color={tag.color}/>)}</span>}</span></span>
        <span className="transaction-labels">{owners.length > 0 && <OwnerPicker record={record} owner={ownerOption(record)} owners={owners} disabled={readOnly || selecting} onChange={owner => void giveTo(record, owner)}/>}<CategoryPicker record={record} categories={data.categories} removed={removedCategories.kinds} disabled={!editable || selecting || readOnly} onChange={choice => change([record], choice)}/>

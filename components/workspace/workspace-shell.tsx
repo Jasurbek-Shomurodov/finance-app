@@ -17,10 +17,12 @@ import { useWorkspace, WorkspaceProvider } from '@/components/workspace/workspac
 import { awaitingSettings } from '@/lib/onboarding';
 import { signInPath } from '@/lib/sign-in-path';
 import { showError } from '@/lib/feedback';
+import { useArrivalMarks } from '@/hooks/use-arrivals';
 
 /** Frames the current screen with the drawer and top bar once the session is known. */
 function WorkspaceShell({ children }: { children: ReactNode }) {
  const { t } = useLanguage();
+ const arrivals = useArrivalMarks<HTMLElement>();
  const { ready, user, demo, preview, pathname, busy, configured, error, login, startDemo, overdueCount, onboardingNeeded, settingsLoading, preferencesData, savePreferences, applyPreferences, planning, saveTrackingStart, household } = useWorkspace();
  // A drawer tap shows its destination immediately; the routed screen replaces it once it arrives.
  const [pending, setPending] = useState<PendingNavigation | null>(null);
@@ -56,7 +58,7 @@ function WorkspaceShell({ children }: { children: ReactNode }) {
  const workspaces = homes ? [{ id: homes.me, label: t('My finances') }, ...homes.memberships.map(item => ({ id: item.owner_id, label: t('Household of {name}', { name: item.name ?? t('Partner') }) }))] : [];
  return <SidebarProvider>
   <AppDrawer account={account} overdueCount={overdueCount} pendingPath={destination} onNavigate={navigate} badge={demo ? t("Demo") : undefined} workspaces={workspaces} workspace={homes?.active} onWorkspace={id => household.open(id === homes?.me ? null : id).catch(reason => showError((reason as Error).message))}/>
-  <TopBarSlotProvider><main className="workspace">
+  <TopBarSlotProvider><main className="workspace" ref={arrivals}>
    <DatabaseStatus owner={user} demo={demo}/>
    <TopBar pendingSection={destination && sectionFor(destination)}/>
    {destination ? <NavigationShimmer label={t("Loading records…")} path={destination}/> : children}

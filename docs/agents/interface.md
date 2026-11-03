@@ -101,8 +101,9 @@ it instead of styling a page on its own.
 - Motion lives in `app/styles/motion.css` and is timed by the tokens in
   `foundation.css` (`--ease-out`, `--ease-in`, `--motion-quick`, `--motion-settle`,
   `--motion-exit`, `--motion-lead`), never a literal curve. Every motion has a cause:
-  a saved row arrives (`useArrivals` sets `data-arrived`), then the figures it changed
-  roll after it by the lead. Overlays leave as well as arrive, sooner than they came;
+  a row that joins a list after a press or submit arrives (one watcher on the workspace,
+  `useArrivalMarks`, sets `data-arrived` on every screen), then the totals it changed roll
+  after it by the lead: group and section totals use `RollingText`, not plain text. Overlays leave as well as arrive, sooner than they came;
   the shared `DialogContent` plays its exit even when the parent removes it while open.
   Transform and opacity only. Under reduced motion nothing travels, but arrivals and
   overlays still fade (≤150ms), so a change is never silent.

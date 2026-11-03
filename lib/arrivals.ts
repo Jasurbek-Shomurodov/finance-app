@@ -1,11 +1,18 @@
 /** How many new rows at once still read as "someone just added this". More than that is a new page, a filter or a
- * first load, where every row is new and nothing has arrived. */
+ * reload, where nothing in particular arrived. */
 export const arrivalLimit = 3;
 
-/** The ids in `ids` that were not in the list before, when that is a handful added to a list that was already
- * showing; otherwise none. A first render (`before` null) and an empty list before it never count as arrivals. */
-export function freshIds(before: ReadonlySet<string> | null, ids: readonly string[], limit = arrivalLimit): string[] {
- if (!before?.size) return [];
- const fresh = ids.filter(id => !before.has(id));
- return fresh.length <= limit ? fresh : [];
+/** What can arrive: a list item, a table row, a budget category row, a holding card, a day of transactions. */
+export const arrivalRows = 'li,tr,.budget-category-row,.asset-card,.transaction-day';
+/** Never an arrival: loading placeholders, table headings, and anything that opts out. */
+const arrivalSkip = '[aria-busy=true],thead,[data-arrivals=off]';
+
+/** Of the elements one DOM update inserted (`added`, moved elements already left out), the rows that joined a list
+ * already on screen: each has a sibling that was there before. A whole new list, a page, or more than `limit` rows
+ * at once is not an arrival. */
+export function arrivedRows<T extends Element>(added: readonly T[], limit = arrivalLimit): T[] {
+ const fresh = new Set<Element>(added);
+ const rows = added.filter(element => element.matches(arrivalRows) && !element.closest(arrivalSkip)
+  && [...(element.parentElement?.children ?? [])].some(sibling => !fresh.has(sibling)));
+ return rows.length <= limit ? rows : [];
 }

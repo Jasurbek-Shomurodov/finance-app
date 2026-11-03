@@ -2,6 +2,7 @@
 import type { ReactNode } from 'react';
 import { ChevronDown, Search } from 'lucide-react';
 import { CategoryIcon } from '@/components/presentation-foundation/category-icon';
+import { RollingText } from '@/components/presentation-foundation/rolling-text';
 import { Count } from '@/components/presentation-foundation/count';
 import { SortableItem, SortableList } from '@/components/presentation-foundation/sortable';
 import { useLanguage } from '@/components/language-provider';
@@ -38,7 +39,7 @@ export function AccountDirectory({ count, visible, activeKey, query, onQuery, on
    const totals=currencyTotals(items);
    const total=totals.every(item=>item.total!==null)?showSum(totals.map(item=>({amount:item.total!,currency:item.currency}))):null;
    return <details className="panel account-group" key={group} open>
-    <summary><ChevronDown size={18} aria-hidden="true"/><h2>{t(label)}</h2><Count value={items.length}/><strong>{total??'—'}</strong></summary>
+    <summary><ChevronDown size={18} aria-hidden="true"/><h2>{t(label)}</h2><Count value={items.length}/><strong>{total===null||total==='—'?'—':<RollingText text={total}/>}</strong></summary>
     {(total===null||total==='—')&&<p role="status" className="muted">{t('Exchange rate unavailable.')}</p>}
     <SortableList id={`accounts-${group}`} items={ids} nameOf={id=>items.find(item=>item.id===id)?.account.name??''} onMove={(moved,over)=>void order.reorder(moved,over,ids)} disabled={order.disabled} layout="grid">
      <div className="account-card-grid">{items.map(item=><SortableItem key={item.key} id={item.id} label={item.account.name} className="account-sortable-row"><DirectoryRow item={item} active={activeKey===item.key} details={details} onSelect={()=>onSelect(item.key)}/></SortableItem>)}</div>

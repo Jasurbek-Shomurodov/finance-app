@@ -1,5 +1,6 @@
 "use client";
 import { Count } from '@/components/presentation-foundation/count';
+import { RollingText } from '@/components/presentation-foundation/rolling-text';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
 import { PanelTitle } from '@/components/presentation-foundation/panel-title';
@@ -80,12 +81,12 @@ export function RecordsTable({ title, transactions = false, limit, pagination = 
    </tr>;
  // Loans of the same borrower group under one heading with what they owe together, in the display currency.
  const lendingRows = (items: LendingItem<(typeof shown)[number]>[]) => items.map(item => 'row' in item ? row(item.row) : <Fragment key={'borrower:' + item.borrower}>
-  <tr className="table-group-row lending-group-row lending-borrower-row"><th colSpan={5}><div className="table-group-label"><span>{item.borrower}<Count value={item.rows.length}/></span><span>{showSum(item.rows.map(r => ({ amount: value(r), currency: r.currency })))}</span></div></th></tr>
+  <tr className="table-group-row lending-group-row lending-borrower-row"><th colSpan={5}><div className="table-group-label"><span>{item.borrower}<Count value={item.rows.length}/></span><span><RollingText text={showSum(item.rows.map(r => ({ amount: value(r), currency: r.currency })))}/></span></div></th></tr>
   {item.rows.map(row)}
  </Fragment>);
  // One section per month, its total what is lent less what is owed, as Net lending position counts them. Sorted by name, months would break the order.
  const lendingList = () => filters.order === 'name' ? lendingRows(lendingSequence(shown, r => r)) : lendingMonths(shown, r => r).map(section => <Fragment key={'month:' + section.month}>
-  <tr className="table-group-row lending-group-row"><th colSpan={5}><div className="table-group-label"><span>{formatMonthYear(section.month, locale)}<Count value={section.rows.length}/></span><span>{showSum(section.rows.map(r => ({ amount: r.kind === 'Money lent' ? value(r) : -value(r), currency: r.currency })))}</span></div></th></tr>
+  <tr className="table-group-row lending-group-row"><th colSpan={5}><div className="table-group-label"><span>{formatMonthYear(section.month, locale)}<Count value={section.rows.length}/></span><span><RollingText text={showSum(section.rows.map(r => ({ amount: r.kind === 'Money lent' ? value(r) : -value(r), currency: r.currency })))}/></span></div></th></tr>
   {lendingRows(section.items)}
  </Fragment>);
  return <section id="workspace-records" className={`panel records${historyOnly ? ' transaction-history' : ''}`}>

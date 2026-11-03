@@ -86,7 +86,8 @@ test('Accounts shows one total in the display currency, the grouped directory an
  // One total in the display currency, never a figure per currency (XAPP-019): wallet 1,000 + €500 / 0.9 + deposit 2,000 + broker 10 × 200.
  assert.deepEqual(r.all(node => node.type === 'StatTile').map(node => node.props.label), ['Total']);
  assert.equal(Math.round(r.find(node => node.type === 'StatTile').props.value.props.value), 5556);
- const groups = r.all(node => node.type === 'details').map(node => text(node.children[0]));
+ // A group's total rolls: read it from its RollingText.
+ const groups = r.all(node => node.type === 'details').map(node => text(node.children[0]) + r.all(child => child.type === 'RollingText', node.children[0]).map(child => child.props.text).join(''));
  assert.equal(groups.length, 3);
  assert.ok(groups[0].startsWith('Cash') && groups[0].includes(usd(1000 + 500 / 0.9)) && !groups[0].includes('€'), groups[0]);
  assert.ok(html().includes('Bakery'), 'the business of an account is named under it');

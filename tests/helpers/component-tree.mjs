@@ -173,6 +173,8 @@ export function stubs() {
  const ExchangeRatePreview = named('ExchangeRatePreview', ({ fx }) => h('p', { className: 'fx' }, 'rate ' + fx.rate));
  // The ⓘ keeps its explanation in an attribute, so a title's text stays the title.
  const InfoHint = named('InfoHint', ({ children }) => h('i', { 'data-hint': text(children) }));
+ // A rolling figure reads as its final text, as a screen reader hears it.
+ const RollingText = named('RollingText', ({ text: figure }) => figure);
  return {
   Button, NativeSelect, DatePicker, FormattedNumberInput, Dialog, DialogContent, DialogTitle, DialogDescription, FormFooter, ErrorPopup, ExchangeRatePreview, InfoHint,
   modules: {
@@ -185,6 +187,7 @@ export function stubs() {
    '@/components/presentation-foundation/error-popup': { ErrorPopup },
    '@/components/presentation-foundation/exchange-rate-preview': { ExchangeRatePreview },
    '@/components/presentation-foundation/info-hint': { InfoHint },
+   '@/components/presentation-foundation/rolling-text': { RollingText },
    '@/components/language-provider': language('en-US'),
   },
  };

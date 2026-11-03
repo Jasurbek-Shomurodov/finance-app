@@ -439,9 +439,9 @@ test('motion tokens, overlay exits, cause before effect, reduced motion fades (M
  assert.match(motion,/:not\(\[data-state=closed\]\)\{--tw-animation-duration:var\(--motion-settle\);--tw-ease:var\(--ease-out\)\}/);
  assert.doesNotMatch(motion,/transition:[^;}]*width/,'fills never transition width (MOT-010)');
  assert.match(css,/roll-strip\{[^}]*calc\(var\(--motion-lead\) \+ var\(--roll-delay,0ms\)\)/,'a figure rolls once its cause has landed');
- assert.match(motion,/\.transaction-row\[data-arrived\],\.overview-list>li\[data-arrived\]\{animation:row-arrive /);
+ assert.match(motion,/\n\[data-arrived\]\{animation:row-arrive /,'any row that arrives, on every screen');
  const reduce=motion.slice(motion.indexOf('@media(prefers-reduced-motion:reduce)'));
- assert.match(reduce,/\.transaction-row\[data-arrived\],\.overview-list>li\[data-arrived\]\{animation:fade-only \.15s linear backwards;transition:none\}/,'reduced motion still shows an arrival, as a fade');
+ assert.match(reduce,/,\[data-arrived\]\{animation:fade-only \.15s linear backwards;transition:none\}/,'reduced motion still shows an arrival, as a fade');
  assert.match(reduce,/--tw-enter-scale:1;--tw-exit-scale:1;[^}]*--tw-animation-duration:\.12s;--tw-ease:linear/,'overlays only fade under reduced motion');
  assert.match(css,/@keyframes fade-only\{from\{opacity:0\}\}/,'the reduced-motion fade moves nothing');
 });

@@ -2,6 +2,7 @@
 import { Fragment, useState, type ReactNode, type Ref } from 'react';
 import { Repeat } from 'lucide-react';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
+import { RollingText } from '@/components/presentation-foundation/rolling-text';
 import { Count } from '@/components/presentation-foundation/count';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { useLanguage } from '@/components/language-provider';
@@ -26,7 +27,7 @@ function GroupHeading({ label, items }: { label: string; items: RecurringItem[] 
  const counted = items.filter(item => item.status !== 'skipped');
  const total = sum(counted.map(item => ({ amount: item.direction === 'income' ? item.amount : -item.amount, currency: item.record.currency })));
  const shown = counted.length === 0 ? null : total === null ? '—' : formatSignedMoney(total, currency ?? counted[0].record.currency, locale);
- return <li className="transaction-day-heading"><h3>{label}<Count value={items.length}/></h3>{shown && <span className={total !== null && total > 0 ? 'positive' : undefined}>{shown}</span>}</li>;
+ return <li className="transaction-day-heading"><h3>{label}<Count value={items.length}/></h3>{shown && <span className={total !== null && total > 0 ? 'positive' : undefined}><RollingText text={shown}/></span>}</li>;
 }
 
 /** The month's incomes and bills in groups the person picks: by day (the default), income or expense, category or status.

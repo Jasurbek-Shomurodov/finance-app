@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { ChevronDown, ChevronRight, Eye, EyeOff, RefreshCw, Settings2 } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { CategoryIcon } from '@/components/presentation-foundation/category-icon';
+import { RollingText } from '@/components/presentation-foundation/rolling-text';
 import { DrawerLink } from '@/components/presentation-foundation/drawer-link';
 import { Button } from '@/components/ui/button';
 import { isUnbudgeted, remainingTone, type BudgetCategory, type BudgetGroup, type BudgetRow } from '@/lib/budget';
@@ -48,8 +49,8 @@ export function BudgetGroupCard({ group, currency, open, onToggle, showUnbudgete
     <button type="button" className="budget-group-toggle" aria-expanded={open} onClick={onToggle}>{open ? <ChevronDown size={16}/> : <ChevronRight size={16}/>}<span>{t(group.name)}{rolloverIn !== 0 && <RolledOver amount={rolloverIn} currency={currency}/>}</span></button>
     {onGroupSettings && <Button type="button" variant="ghost" size="icon-xs" aria-label={t('Category settings: {name}', { name: t(group.name) })} onClick={onGroupSettings}><Settings2/></Button>}
    </span>
-   <span className="budget-cell">{header ?? (group.missing ? '—' : formatMoney(group.budget, currency, locale))}</span>
-   <span className="budget-cell budget-actual" data-label={t('Actual')}>{formatMoney(group.actual, currency, locale)}</span>
+   <span className="budget-cell">{header ?? (group.missing ? '—' : <RollingText text={formatMoney(group.budget, currency, locale)}/>)}</span>
+   <span className="budget-cell budget-actual" data-label={t('Actual')}><RollingText text={formatMoney(group.actual, currency, locale)}/></span>
    <span className="budget-cell"><RemainingPill value={group.missing ? null : group.remaining} direction={group.direction} currency={currency}/></span>
    <RowEnd/>
   </div>}
@@ -90,7 +91,7 @@ export function BudgetSectionHeader({ title }: { title: string }) {
 /** A section's totals. A null plan could not be converted: it and the remaining read —. */
 export function BudgetTotalRow({ label, planned, actual, remaining, direction, currency }: { label: string; planned: number | null; actual: number; remaining: number | null; direction: BudgetRow['direction']; currency: string }) {
  const { t, locale } = useLanguage();
- return <div className="budget-row budget-total-row"><span>{label}</span><span className="budget-cell">{planned === null ? '—' : formatMoney(planned, currency, locale)}</span><span className="budget-cell budget-actual" data-label={t('Actual')}>{formatMoney(actual, currency, locale)}</span><span className="budget-cell"><RemainingPill value={remaining} direction={direction} currency={currency}/></span><RowEnd/></div>;
+ return <div className="budget-row budget-total-row"><span>{label}</span><span className="budget-cell">{planned === null ? '—' : <RollingText text={formatMoney(planned, currency, locale)}/>}</span><span className="budget-cell budget-actual" data-label={t('Actual')}><RollingText text={formatMoney(actual, currency, locale)}/></span><span className="budget-cell"><RemainingPill value={remaining} direction={direction} currency={currency}/></span><RowEnd/></div>;
 }
 
 /** Goals with a planned monthly saving. Contributions are edited on the goal itself. */

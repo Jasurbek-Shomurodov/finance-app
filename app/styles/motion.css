@@ -19,11 +19,11 @@
  .stat-tile-link:hover{transform:translateY(-2px);box-shadow:0 10px 24px -14px color-mix(in srgb,var(--mark-bg) 50%,transparent),var(--shadow-card)}
 }
 
-/* A row someone just saved (`useArrivals`) drops into its place, tinted for a moment, while the totals it changed
+/* A row someone just saved (`useArrivalMarks`, on every screen) drops into its place, tinted for a moment, while the totals it changed
    roll in after it by the lead: the cause lands first, then its effect. */
 @keyframes row-arrive{from{opacity:0;transform:translateY(-6px)}}
 @keyframes row-glow{from{background-color:color-mix(in srgb,var(--primary) 14%,transparent)}}
-.transaction-row[data-arrived],.overview-list>li[data-arrived]{animation:row-arrive var(--motion-settle) var(--ease-out) backwards,row-glow 1.4s var(--ease-out) var(--motion-settle) backwards}
+[data-arrived]{animation:row-arrive var(--motion-settle) var(--ease-out) backwards,row-glow 1.4s var(--ease-out) var(--motion-settle) backwards}
 
 /* Dialogs, menus, popovers and tooltips stay on screen while they leave: they arrive with the soft landing and
    leave sooner, accelerating away. Radix keeps them mounted until the exit ends; tw-animate draws both. */
@@ -38,7 +38,7 @@
 /* Under reduced motion nothing travels, grows or lifts, but a change is not silent either: arrivals become a short
    fade, so it still shows that something appeared, and overlays only fade in and out. */
 @media(prefers-reduced-motion:reduce){
- .workspace .content>*,.stat-tiles>.stat-tile,.dashboard-grid>*,.transaction-row[data-arrived],.overview-list>li[data-arrived]{animation:fade-only .15s linear backwards;transition:none}
+ .workspace .content>*,.stat-tiles>.stat-tile,.dashboard-grid>*,[data-arrived]{animation:fade-only .15s linear backwards;transition:none}
  .stat-tile-bar>i,.progress-track>*,.budget-progress>div,.asset-card-share i,.allocation-share>span,.stat-tile-link{animation:none;transition:none}
  .stat-tile-link:hover{transform:none}
  :is([data-slot=dialog-content],[data-slot=alert-dialog-content],[data-slot=popover-content],[data-slot=dropdown-menu-content],[data-slot=dropdown-menu-sub-content],[data-slot=tooltip-content],[data-slot=sheet-content],[data-slot=dialog-overlay],[data-slot=alert-dialog-overlay],[data-slot=sheet-overlay])[data-state]{--tw-enter-scale:1;--tw-exit-scale:1;--tw-enter-translate-x:0;--tw-enter-translate-y:0;--tw-exit-translate-x:0;--tw-exit-translate-y:0;--tw-animation-duration:.12s;--tw-ease:linear}

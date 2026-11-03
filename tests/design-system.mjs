@@ -144,7 +144,7 @@ test('row lists keep their columns lined up from row to row',()=>{
 
 test('page titles and actions sit in the top bar, as in a desktop app',()=>{
  const bar=fs.readFileSync('components/workspace/top-bar.tsx','utf8'),shell=fs.readFileSync('components/workspace/workspace-shell.tsx','utf8'),header=fs.readFileSync('components/presentation-foundation/page-header.tsx','utf8'),css=stylesheet();
- assert.match(shell,/<TopBarSlotProvider><main className="workspace">[\s\S]*<\/main><\/TopBarSlotProvider>/,'the bar and the routed screen share one slot');
+ assert.match(shell,/<TopBarSlotProvider><main className="workspace" ref=\{arrivals\}>[\s\S]*<\/main><\/TopBarSlotProvider>/,'the bar and the routed screen share one slot');
  assert.match(bar,/<div className="topbar-page-title" ref=\{slot\?\.titleRef\}\/><span className="topbar-title">/,'the section name stands in until the page puts its title there');
  assert.match(bar,/\{roomy && !crowded && <div className="topbar-page-actions" ref=\{slot\?\.actionsRef\}\/>\}/,'actions join the bar only where it has room');
  assert.match(header,/createPortal\(<>\{heading\}/);
