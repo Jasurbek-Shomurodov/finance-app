@@ -17,6 +17,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { NativeSelect } from '@/components/ui/native-select';
 import { DatePicker } from '@/components/presentation-foundation/date-picker';
 import { FormattedNumberInput } from '@/components/presentation-foundation/formatted-number-input';
+import { AmountCurrencyFields } from '@/components/presentation-foundation/amount-currency-fields';
 import { useLanguage } from '@/components/language-provider';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { TrackerHistory } from '@/components/investment-tracker-history';
@@ -53,6 +54,8 @@ export function InvestmentTracker({inline=false,onDraftState,initialType,record,
  const [draft,setDraft]=useState<Draft>(makeDraft);
  // A blank value field reads as zero; saving it would silently wipe the asset's value.
  const [balanceBlank,setBalanceBlank]=useState(true);
+ // The currency the cash amount is typed in, when it is the cash account's rather than the record's.
+ const [typedCurrency,setTypedCurrency]=useState<string>();
  const guard=useDraftDialog(draft,onClose,busy);
  // Each reset draws a new idempotency id; it is not a user edit.
  const draftContent=(value:Draft)=>JSON.stringify({...value,id:undefined});
@@ -88,22 +91,26 @@ export function InvestmentTracker({inline=false,onDraftState,initialType,record,
  const hasBalance=!lending&&(draft.type==='valuation'||optionalValuation&&draft.balance!==null);
  const latestBalanceDate=events.filter(event=>event.balance!==null).reduce((latest,event)=>event.occurred_on>latest?event.occurred_on:latest,'');
  const currentBalance=stats.balance??Number(record.amount);
- const remainingBalance=currentBalance+(draft.type==='withdrawal'?-draft.amount:draft.amount);
  const cashAccounts=accounts.filter(account=>account.kind==='Cash');
  const selectedAccount=cashAccounts.find(account=>account.id===draft.account_id);
  const fx=useDatedExchangeRate(selectedAccount?.currency,record.currency,draft.date);
  const crossCurrency=!!selectedAccount&&selectedAccount.currency!==record.currency;
- const cashAmount=fx.rate?accountAmount(draft.amount,fx.rate):null;
+ const amountCurrency=selectedAccount&&crossCurrency&&typedCurrency===selectedAccount.currency?selectedAccount.currency:record.currency;
+ const inAccount=amountCurrency!==record.currency;
+ const recordAmount=inAccount?(fx.rate?draft.amount*fx.rate:null):draft.amount;
+ const cashAmount=inAccount?draft.amount:fx.rate?accountAmount(draft.amount,fx.rate):null;
+ const remainingBalance=currentBalance+(draft.type==='withdrawal'?-1:1)*(recordAmount??0);
  const cashDelta=cashAmount===null?null:historyCashDelta(record.kind,draft.type,cashAmount);
  const accountMoney=(amount:number)=>formatMoney(amount,selectedAccount?.currency??record.currency,locale);
  const cashOutgoing=historyCashDelta(record.kind,draft.type,1)<0;
  const cashAfter=selectedAccount&&cashDelta!==null?Number(selectedAccount.amount)+cashDelta:null;
- const canSave=!busy&&(submitted||(!loading&&!!draft.date&&draft.date<=depositToday()&&updateTypes.includes(draft.type)&&(draft.type==='valuation'||draft.amount>0)&&(!hasBalance||!balanceBlank)&&(draft.type==='valuation'||(accountsReady&&!!selectedAccount&&cashAfter!==null&&cashAfter>=0&&cashAfter<=1e15))&&(!lending||(accountsReady&&!!selectedAccount&&draft.date>=latestBalanceDate&&remainingBalance>=0&&remainingBalance<=1e15))));
+ const canSave=!busy&&(submitted||(!loading&&!!draft.date&&draft.date<=depositToday()&&updateTypes.includes(draft.type)&&(draft.type==='valuation'||draft.amount>0&&recordAmount!==null)&&(!hasBalance||!balanceBlank)&&(draft.type==='valuation'||(accountsReady&&!!selectedAccount&&cashAfter!==null&&cashAfter>=0&&cashAfter<=1e15))&&(!lending||(accountsReady&&!!selectedAccount&&draft.date>=latestBalanceDate&&remainingBalance>=0&&remainingBalance<=1e15))));
  async function save(event?:React.FormEvent){
   event?.preventDefault();if(!canSave)return;setBusy(true);setSubmitted(true);setError('');
   try{
-   const payload=submitted?draft:{...draft,...(crossCurrency?{exchange_rate:fx.rate!}:{})};
-   setDraft(payload);
+   // The update is saved in the record's currency, whichever currency the amount was typed in.
+   const payload=submitted?draft:{...draft,amount:recordAmount!,...(crossCurrency?{exchange_rate:fx.rate!}:{})};
+   setDraft(payload);setTypedCurrency(undefined);
    await requestJson(payload.exchange_rate!==undefined?'/api/investment-history/exchange':'/api/investment-history',{body:payload});
    showSaved();setDraft(makeDraft());setBalanceBlank(true);setSubmitted(false);setLoading(true);setReload(n=>n+1);onSaved();if(inline)onClose();
   }catch(e){if((e as RequestError).confirmedFailure){setSubmitted(false);if(crossCurrency)fx.retry();}setError((e as Error).message);}finally{setBusy(false);}
@@ -116,9 +123,9 @@ export function InvestmentTracker({inline=false,onDraftState,initialType,record,
     </NativeSelect></label>}<label>{t(inline?'Payment date':'Date')}<DatePicker value={draft.date} min={lending?latestBalanceDate:undefined} max={depositToday()} onChange={date=>setDraft({...draft,date,exchange_rate:undefined})}/></label></div>
     {optionalValuation&&<div className="tracker-value-choice"><span className="tracker-value-label">{t('Asset value')}</span><ToggleGroup type="single" aria-label={t('Asset value')} value={draft.balance===null?'keep':'change'} disabled={busy||submitted||loading} onValueChange={choice=>{if(choice&&choice!==(draft.balance===null?'keep':'change')){setBalanceBlank(true);setDraft({...draft,balance:choice==='change'?0:null});}}}><ToggleGroupItem value="keep">{t('Keep current value')}</ToggleGroupItem><ToggleGroupItem value="change">{t('Enter new value')}</ToggleGroupItem></ToggleGroup>{draft.balance===null&&<small className="muted">{t('The asset value stays unchanged. Only the cash movement is recorded.')}</small>}</div>}
     {hasBalance&&<label>{t(deposit||cash?'Account balance after update':'Full asset value after update')}<FormattedNumberInput value={draft.balance??0} requireEntry onValueChange={(balance,blank)=>{setBalanceBlank(blank);setDraft({...draft,balance});}}/><small className="muted">{t('Enter 0 only when the asset is worth nothing.')}</small></label>}
-    {draft.type!=='valuation'&&<label>{t(lending?(cashOutgoing?'Pay from cash account':'Receive into cash account'):'Cash account')}<NativeSelect required disabled={!accountsReady} value={draft.account_id??''} onChange={e=>setDraft({...draft,account_id:e.target.value||undefined,exchange_rate:undefined})}><option value="" disabled>{t('Choose a cash account')}</option>{cashAccounts.map(a=><option key={a.id} value={a.id}>{formatAccountOption(a,locale)}</option>)}</NativeSelect>{accountsReady&&!cashAccounts.length&&<small>{t('Add a cash account to record this transaction.')}</small>}{!accountsReady&&<small>{t('Waiting for current cash account balances.')}</small>}</label>}{draft.type!=='valuation'&&<label>{t(lending?'Principal amount':'Cash amount (your share)')} · {record.currency}<FormattedNumberInput value={draft.amount} max={lending&&draft.type==='withdrawal'?currentBalance:1e15} onValueChange={amount=>setDraft({...draft,amount})}/></label>}
+    {draft.type!=='valuation'&&<label>{t(lending?(cashOutgoing?'Pay from cash account':'Receive into cash account'):'Cash account')}<NativeSelect required disabled={!accountsReady} value={draft.account_id??''} onChange={e=>setDraft({...draft,account_id:e.target.value||undefined,exchange_rate:undefined})}><option value="" disabled>{t('Choose a cash account')}</option>{cashAccounts.map(a=><option key={a.id} value={a.id}>{formatAccountOption(a,locale)}</option>)}</NativeSelect>{accountsReady&&!cashAccounts.length&&<small>{t('Add a cash account to record this transaction.')}</small>}{!accountsReady&&<small>{t('Waiting for current cash account balances.')}</small>}</label>}{draft.type!=='valuation'&&<AmountCurrencyFields amount={draft.amount} currency={amountCurrency} currencies={selectedAccount?[record.currency,selectedAccount.currency]:[record.currency]} currencyLocked={!crossCurrency} max={lending&&draft.type==='withdrawal'?(inAccount?accountAmount(currentBalance,fx.rate):currentBalance):undefined} label={t(lending?'Principal amount':'Cash amount (your share)')} onAmountChange={amount=>setDraft({...draft,amount})} onCurrencyChange={setTypedCurrency}/>}
     {crossCurrency&&<ExchangeRatePreview fx={fx}/>}
-    {selectedAccount&&cashOutgoing&&fx.rate&&<p className="muted">{t('Available for this payment')}: {money(Number(selectedAccount.amount)*fx.rate)}</p>}
+    {selectedAccount&&cashOutgoing&&fx.rate&&<p className="muted">{t('Available for this payment')}: {inAccount?accountMoney(Number(selectedAccount.amount)):money(Number(selectedAccount.amount)*fx.rate)}</p>}
     {lending&&<p aria-live="polite">{t('Outstanding balance after update')}: {money(remainingBalance)}</p>}
     {selectedAccount&&cashAfter!==null&&cashDelta!==null&&draft.type!=='valuation'&&<div className="ownership-summary" aria-live="polite"><p>{t(cashOutgoing?'Cash deducted from {account}: {amount}':'Cash added to {account}: {amount}',{account:selectedAccount.name,amount:accountMoney(Math.abs(cashDelta))})}</p><p>{t('Cash balance after update')}: {accountMoney(cashAfter!)}</p>{cashAfter!<0&&<InlineError message={t('Not enough money in the selected cash account.')}/>}</div>}
     <label>{t('Notes (optional)')}<Textarea rows={2} maxLength={2000} value={draft.notes} onChange={e=>setDraft({...draft,notes:e.target.value})}/></label>

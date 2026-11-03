@@ -43,7 +43,7 @@ test('debt selection embeds repayment fields with a user-entered partial amount'
  assert.match(ui,/<InvestmentTracker inline key=\{selectedDebt.id\} initialType="withdrawal"/);
  const tracker=fs.readFileSync('components/investment-tracker.tsx','utf8');
  assert.match(tracker,/if\(inline\)return <>{paymentFields}{guard.confirmation}<\/>/);
- assert.match(tracker,/max=\{lending&&draft.type==='withdrawal'\?currentBalance:1e15\}/);
+ assert.match(tracker,/max=\{lending&&draft.type==='withdrawal'\?\(inAccount\?accountAmount\(currentBalance,fx.rate\):currentBalance\):undefined\}/);
  assert.match(tracker,/remainingBalance>=0/);
  assert.match(tracker,/if\(inline\)onClose\(\)/);
 });

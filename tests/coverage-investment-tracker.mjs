@@ -220,6 +220,32 @@ test('a property contribution from a foreign-currency account converts the cash 
  assert.doesNotMatch(view.html(), /Retry with the same details/);
 });
 
+test('the cash amount can be typed in the cash account currency and is saved converted to the record currency', async () => {
+ fx.rates = { EURUSD: 1.25 };
+ const { view, setType, setAccount, setNumber, saveButton, save } = await open(record('Property', { amount: 90000 }), [event('b', 'baseline', '2026-01-01', { balance: 90000 })]);
+ setType('contribution');
+ const amount = () => view.find(element => element.props?.onCurrencyChange);
+ assert.equal(amount().props.currencyLocked, true, 'one currency needs no picker');
+ setAccount('eur');
+ assert.equal(amount().props.currencyLocked, false);
+ assert.deepEqual(amount().props.currencies, ['USD', 'EUR']);
+ assert.equal(amount().props.currency, 'USD');
+ amount().props.onCurrencyChange('EUR');
+ view.update();
+ setNumber('Cash amount', 400);
+ const html = view.html();
+ assert.ok(html.includes(`Available for this payment: ${money(1000, 'EUR')}`));
+ assert.ok(html.includes(`Cash deducted from Euro cash: ${money(400, 'EUR')}`));
+ assert.ok(html.includes(`Cash balance after update: ${money(600, 'EUR')}`));
+ assert.equal(saveButton().props.disabled, false);
+ api.calls = []; api.handler = async () => ({}); serve([]);
+ await save();
+ assert.equal(api.calls[0].url, '/api/investment-history/exchange');
+ assert.equal(api.calls[0].body.amount, 500);
+ assert.equal(api.calls[0].body.exchange_rate, 1.25);
+ assert.equal('amount_currency' in api.calls[0].body, false);
+});
+
 test('an outgoing payment larger than the cash balance is refused, and changing the type resets the cash leg', async () => {
  const { view, setType, setAccount, setNumber, saveButton } = await open(record('Stock', { amount: 1000 }), [], { initialType: 'expense' });
  assert.match(view.html(), /Use Value update for a valuation, Buy or Sell \/ convert for trades/);
