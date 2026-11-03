@@ -242,3 +242,15 @@ test('the Recurring list groups the month by date, type, category or status, kee
  assert.deepEqual(shape('category').map(([key]) => key), ['Living expense', 'Rent expense', 'Salary']);
  assert.deepEqual(groupRecurring([], 'status', () => ''), []);
 });
+
+test('a paid occurrence keeps the day its payment was made, early or late, beside its due date', () => {
+ const records = [record('food', 'Groceries', 'Living expense', 9000000, '2026-01-05', { currency: 'UZS' })];
+ const occurrences = [
+  { id: 'early', record_id: 'food', due_on: '2026-11-05', status: 'paid', transaction_id: 't1', transaction: { amount: 8000000, date: '2026-11-02', currency: 'UZS' } },
+  { id: 'late', record_id: 'food', due_on: '2026-10-05', status: 'paid', transaction_id: 't2', transaction: { amount: 9000000, date: '2026-10-09', currency: 'UZS' } },
+ ];
+ const [november] = monthOccurrences(records, occurrences, '2026-11', '2026-11-03');
+ assert.deepEqual([november.date, november.paidOn], ['2026-11-05', '2026-11-02'], 'paid early: due on the 5th, paid on the 2nd');
+ assert.equal(monthOccurrences(records, occurrences, '2026-10', '2026-11-03')[0].paidOn, '2026-10-09', 'paid late');
+ assert.equal(monthOccurrences(records, [], '2026-12', '2026-11-03')[0].paidOn, undefined, 'an open occurrence has no payment day');
+});

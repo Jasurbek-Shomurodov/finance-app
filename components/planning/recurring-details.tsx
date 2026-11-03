@@ -17,7 +17,7 @@ import { BarChart3 } from 'lucide-react';
 
 type Props = { item: RecurringItem; data: PlanningData; today: string; onClose: () => void };
 
-/** Each occurrence in the period, newest first: its date, whether it was settled, and what came against what was scheduled. */
+/** Each occurrence in the period, newest first: the day it was paid (its due date beside it when they differ) or its due date, whether it was settled, and what came against what was scheduled. */
 function PaymentList({ items, money, today, done, income }: { items: RecurringItem[]; money: (value: number) => string; today: string; done: string; income: boolean }) {
  const { t, locale } = useLanguage();
  const dueLabel = useDueLabel();
@@ -26,7 +26,7 @@ function PaymentList({ items, money, today, done, income }: { items: RecurringIt
  return <section className="recurring-details-history" aria-label={t('Payments')}>
   <h3>{t('Payments')}</h3>
   <ul>{items.slice(0, 12).map(entry => <li key={entry.key} data-status={entry.status}>
-   <span>{formatDate(entry.date, locale)}<span className={entry.status === 'overdue' ? 'status-badge is-overdue' : 'status-badge'}>{label(entry)}</span></span>
+   <span>{formatDate(entry.paidOn ?? entry.date, locale)}<span className={entry.status === 'overdue' ? 'status-badge is-overdue' : 'status-badge'}>{label(entry)}</span>{entry.paidOn && entry.paidOn !== entry.date && <small>{t('Due: {date}', { date: formatDate(entry.date, locale) })}</small>}</span>
    <strong className={entry.status === 'paid' && income ? 'positive' : undefined}>{entry.status === 'paid' && (entry.entered || entry.recorded !== null) ? entry.entered ? formatMoney(entry.entered.amount, entry.entered.currency, locale) : money(entry.recorded ?? entry.amount) : '—'}<small>{t('of {amount}', { amount: money(entry.amount) })}</small></strong>
   </li>)}</ul>
  </section>;
