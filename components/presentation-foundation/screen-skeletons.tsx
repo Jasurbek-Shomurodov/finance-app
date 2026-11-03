@@ -141,11 +141,32 @@ export function InvestmentsSkeleton({ label }: { label: string }) {
   </Loading>;
 }
 
-/** Loans & debts: the three lending figures, then the records with their search. */
+/** A lending row in the records table's own cells: icon and name, category pill, due date, value and the actions. */
+function LoanRow({ row }: { row: number }) {
+  return <tr>
+    <td><div className="record-name"><Skeleton className="size-9 shrink-0 rounded-[10px]"/><div><Skeleton className="h-4 max-w-full" style={{ width: 110 + (row % 3) * 30 }}/><Skeleton className="mt-1.5 h-3 w-32"/></div></div></td>
+    <td><Skeleton className="h-6 w-24 rounded-full"/></td>
+    <td><Skeleton className="h-4 w-32"/></td>
+    <td className="amount"><Skeleton className="ms-auto h-4 w-20"/></td>
+    <td><div className="row-actions"><Skeleton className="h-8 w-28 rounded-lg"/><Skeleton className="size-8 rounded-lg"/></div></td>
+  </tr>;
+}
+
+/** Loans & debts: the three lending figures, then the records table with its search, columns and month groups. */
 export function LoansSkeleton({ label }: { label: string }) {
   return <Loading label={label}>
     <StatTilesSkeleton/>
-    <section className="panel records"><Heading width={150}/><Skeleton className="h-11 w-full rounded-xl"/><SkeletonRows rows={4}/></section>
+    <section className="panel records">
+      <div className="panel-title"><Skeleton className="h-8 w-48 max-w-full"/></div>
+      <div className="record-filters"><div className="grid gap-2"><Skeleton className="h-4 w-24"/><Skeleton className="h-11 w-full rounded-xl"/></div><Skeleton className="h-11 w-28 rounded-xl"/></div>
+      <div className="table-scroll"><table>
+        <thead><tr>{[56, 72, 96, 48, 56].map((width, cell) => <th key={cell}><Skeleton className={cell > 2 ? 'ms-auto h-3' : 'h-3'} style={{ width }}/></th>)}</tr></thead>
+        <tbody>{[3, 1].flatMap((rows, month) => [
+          <tr className="table-group-row lending-group-row" key={'m' + month}><th colSpan={5}><div className="table-group-label"><Skeleton className="h-4 w-32"/><Skeleton className="h-4 w-20"/></div></th></tr>,
+          ...times(rows).map(row => <LoanRow key={month + '-' + row} row={row}/>),
+        ])}</tbody>
+      </table></div>
+    </section>
   </Loading>;
 }
 
