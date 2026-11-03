@@ -93,7 +93,7 @@
 .goal-insight>svg{flex-shrink:0;margin-top:2px;color:var(--primary)}
 .goal-insight strong{font-weight:500}
 .goal-insight p{color:var(--muted-foreground)}
-.goal-insight-attention{background:color-mix(in srgb,#c58b32 8%,var(--card));border-color:color-mix(in srgb,#c58b32 35%,var(--border))}
+.goal-insight-attention{background:color-mix(in srgb,var(--caution) 8%,var(--card));border-color:color-mix(in srgb,var(--caution) 35%,var(--border))}
 .goal-insight-attention>svg{color:var(--foreground)}
 .goal-chart-section{min-width:0;margin-top:32px;padding-top:28px;border-top:1px solid var(--border)}
 .goal-chart-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}

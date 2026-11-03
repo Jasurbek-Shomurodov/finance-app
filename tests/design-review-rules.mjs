@@ -384,3 +384,20 @@ test('Investments spacing: allocation rows inset evenly, filters clear the cards
  assert.match(css,/\.asset-card-grid\{[^}]*align-items:start\}/);
  assert.doesNotMatch(css,/\.asset-card-holdings dd:last-child\{[^}]*flex-basis:100%/,'Edit shares the holding line while it fits');
 });
+
+// Full review, 3 November 2026 (SCR-131–SCR-134, COMP-049, DLG-033, DLG-034, TOK-018).
+test('phone goal rows, transaction labels, square icon buttons, dialog Close and hint fit, filter options, colour tokens (3 November 2026)',()=>{
+ const css=stylesheet();
+ // Budget contribution rows at 320 px and below: the name takes its own line (it ran under $2,000 in an 82px track).
+ assert.match(css,/@container content \(max-width:340px\)\{\.budget-category-row:not\(:has\(>\.budget-actual\[data-label\]\)\):has\(>\.budget-row-end:empty\)>\.budget-category-name\{grid-column:1\/-1\}/);
+ // An icon button stays square when a min-height raises it (month arrows 36×42, Send 36×40).
+ assert.match(css,/\[data-slot="button"\]\[data-size\^="icon"\] \{ width: auto; aspect-ratio: 1; \}/);
+ // Dialog Close: logical end edge, 44px square on touch, and the title keeps clear of it.
+ assert.match(css,/\[data-slot=dialog-content\]>\[data-slot=dialog-close\]\{right:auto;inset-inline-end:16px\}/);
+ assert.match(css,/@media\(pointer:coarse\)\{\[data-slot=dialog-content\]>\[data-slot=dialog-close\]\{display:grid;place-items:center;min-width:44px;min-height:44px;/);
+ // A label's ⓘ keeps its own track (it sat past the dialog edge at 320 px: Add loan or debt scrolled sideways).
+ assert.match(css,/label\.hinted-label\{grid-template-columns:minmax\(0,max-content\) auto;/);
+ assert.match(css,/\.business-filter-popover\{width:max-content;min-width:280px;max-width:min\(360px,calc\(100vw - 32px\)\);/);
+ // No literal colours where a token exists.
+ assert.doesNotMatch(css,/#c58b32|#79ac43/);
+});

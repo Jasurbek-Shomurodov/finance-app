@@ -12,8 +12,8 @@
 .transaction-day-heading{display:flex;justify-content:space-between;gap:12px;padding:10px 16px;background:var(--muted);font-size:var(--type-caption);font-weight:500;color:var(--muted-foreground);font-variant-numeric:tabular-nums}
 .transaction-day-heading h3{margin:0;font-size:var(--type-caption);font-weight:500}
 .transaction-day ul{margin:0;padding:0;list-style:none}
-.transaction-row{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(min-content,1.2fr) minmax(8.5rem,.45fr);align-items:center;gap:12px;padding:10px 16px;cursor:pointer;font-size:var(--type-small)}
-.transaction-row:has(>input){grid-template-columns:auto minmax(0,1.2fr) minmax(min-content,1.2fr) minmax(8.5rem,.45fr)}
+.transaction-row{display:grid;grid-template-columns:minmax(0,.9fr) minmax(min-content,1.6fr) minmax(8.5rem,.4fr);align-items:center;gap:12px;padding:10px 16px;cursor:pointer;font-size:var(--type-small)}
+.transaction-row:has(>input){grid-template-columns:auto minmax(0,.9fr) minmax(min-content,1.6fr) minmax(8.5rem,.4fr)}
 .transaction-row+.transaction-row{border-top:1px solid var(--hairline)}
 .transaction-row:hover{background:color-mix(in srgb,var(--muted) 60%,transparent)}
 .transaction-row:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}

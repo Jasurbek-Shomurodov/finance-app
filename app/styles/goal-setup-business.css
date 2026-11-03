@@ -93,7 +93,7 @@
 .business-filter-trigger>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .business-filter-trigger[data-active]{border-color:var(--mark-bg);color:var(--foreground)}
 .business-filter-trigger:focus-visible{outline:2px solid var(--ring);outline-offset:1px}
-.business-filter-popover{width:280px;padding:8px;border-radius:var(--radius-card)}
+.business-filter-popover{width:max-content;min-width:280px;max-width:min(360px,calc(100vw - 32px));padding:8px;border-radius:var(--radius-card)}
 .business-filter-popover ul{max-height:320px;margin:0;padding:0;overflow-y:auto;list-style:none}
 .business-filter-popover li>button{display:flex;align-items:center;gap:10px;width:100%;padding:6px;border-radius:8px;font-size:var(--type-small);text-align:start}
 .business-filter-popover li>button:hover,.business-filter-popover li>button:focus-visible{background:var(--muted);outline:none}

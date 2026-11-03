@@ -280,7 +280,8 @@ test('goal pickers, recurring categories and deposit benchmarks follow the perso
 test('transaction labels never narrow below a word',()=>{
  const css=stylesheet();
  assert.match(css,/\.transaction-labels\{[^}]*grid-auto-columns:minmax\(min-content,1fr\)/);
- assert.match(css,/\.transaction-row:has\(>input\)\{grid-template-columns:auto minmax\(0,1\.2fr\) minmax\(min-content,1\.2fr\)/);
+ // The labels column takes the larger share (1.6fr), so a category pill stays on one line at 1024 (was 112px, "Product sales" on two lines).
+ assert.match(css,/\.transaction-row:has\(>input\)\{grid-template-columns:auto minmax\(0,\.9fr\) minmax\(min-content,1\.6fr\)/);
 });
 
 // 7 October 2026: a transaction opened from the list can be deleted, not only edited.

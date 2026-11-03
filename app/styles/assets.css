@@ -159,6 +159,8 @@
 
 /* Larger type needs room to wrap, without shrinking on smaller screens. */
 [data-slot="button"] { font-size: var(--type-small); font-weight: 500; min-height: 40px; border-radius: var(--radius-control); }
+/* An icon button stays square when a min-height raises it (month arrows were 36×42, Send 36×40): its width follows its height. */
+[data-slot="button"][data-size^="icon"] { width: auto; aspect-ratio: 1; }
 [data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"] { font-size: var(--type-body); }
 .comparison-legend button { min-height: 40px; }
 .recharts-cartesian-axis-tick text { font-size: var(--type-small); fill: var(--muted-foreground); }
