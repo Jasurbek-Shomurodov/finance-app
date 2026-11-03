@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { arrivalLimit, arrivedRows } from '../lib/arrivals.ts';
+import { arrivalLimit, arrivedRows, settledBlocks } from '../lib/arrivals.ts';
 
 // Just enough of an element: the tag or class it matches, its parent's children, and whether it sits in a skipped area.
 function list(count, kind = 'li') {
@@ -31,23 +31,31 @@ test('a whole new list, a page of rows, a non-row, a loading placeholder and tab
  assert.deepEqual(arrivedRows([add(list(3), 'li', true)]), [], 'inside a skeleton, a thead or an opted-out area');
 });
 
+test('a page rises in once: what replaces its first blocks before the next navigation arrives settled', () => {
+ assert.deepEqual(settledBlocks(['shimmer'], false), { settled: [], entered: true }, 'the first thing shown plays the entrance');
+ assert.deepEqual(settledBlocks(['content', 'tiles'], true), { settled: ['content', 'tiles'], entered: true }, 'the skeleton swapped for content does not replay it');
+ assert.deepEqual(settledBlocks([], false), { settled: [], entered: false }, 'an update that adds no block leaves the entrance to come');
+});
+
 test('the workspace watcher marks rows only after a press or a submit, leaves moves alone, and clears the mark', async () => {
  const { loadTS } = await import('./helpers/load-ts.mjs');
  class FakeElement { constructor(kind, parent) { Object.assign(this, element(kind, parent)); this.attributes = new Map(); }
-  setAttribute(name, value) { this.attributes.set(name, value); } removeAttribute(name) { this.attributes.delete(name); } }
+  setAttribute(name, value) { this.attributes.set(name, value); } removeAttribute(name) { this.attributes.delete(name); } querySelectorAll() { return []; } }
  const listeners = new Map();
  let observed = null, disconnected = false;
- const saved = { Element: globalThis.Element, MutationObserver: globalThis.MutationObserver, document: globalThis.document };
+ const saved = { Element: globalThis.Element, MutationObserver: globalThis.MutationObserver, document: globalThis.document, window: globalThis.window };
+ const windowListeners = new Map();
  Object.assign(globalThis, {
   Element: FakeElement,
   MutationObserver: class { constructor(callback) { observed = callback; } observe() {} disconnect() { disconnected = true; } },
   document: { addEventListener: (type, handler) => listeners.set(type, handler), removeEventListener: type => listeners.delete(type) },
+  window: { addEventListener: (type, handler) => windowListeners.set(type, handler), removeEventListener: type => windowListeners.delete(type) },
  });
  try {
   const { useArrivalMarks } = loadTS('hooks/use-arrivals.ts', { react: { useCallback: callback => callback } });
   const attach = useArrivalMarks();
   assert.equal(attach(null), undefined, 'nothing to watch before the workspace renders');
-  const detach = attach({});
+  const detach = attach({ querySelector: () => null });
   const parent = { children: [] };
   parent.children.push(new FakeElement('li', parent));
   const insert = () => { const row = new FakeElement('li', parent); parent.children.push(row); return row; };
@@ -65,7 +73,8 @@ test('the workspace watcher marks rows only after a press or a submit, leaves mo
   assert.equal(moved.attributes.has('data-arrived'), false, 'a row that moved did not arrive');
   await new Promise(resolve => setTimeout(resolve, 1850));
   assert.equal(row.attributes.has('data-arrived'), false, 'the mark goes once the motion has played');
+  windowListeners.get('popstate')();
   detach();
-  assert.ok(disconnected && !listeners.size);
+  assert.ok(disconnected && !listeners.size && !windowListeners.size);
  } finally { Object.assign(globalThis, saved); }
 });

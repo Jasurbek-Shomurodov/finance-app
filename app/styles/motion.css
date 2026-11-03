@@ -14,6 +14,9 @@
 /* A fill grows in after its block. */
 .stat-tile-bar>i,.progress-track>*,.budget-progress>div,.asset-card-share i,.allocation-share>span{transform-origin:left;animation:bar-grow .3s var(--ease-out) calc(var(--rise,0ms) + var(--motion-lead)) backwards}
 [dir=rtl] .stat-tile-bar>i,[dir=rtl] .progress-track>*,[dir=rtl] .budget-progress>div,[dir=rtl] .asset-card-share i,[dir=rtl] .allocation-share>span{transform-origin:right}
+/* Only the first thing a page shows rises in: what replaces it on the same page (a skeleton swapped for content) is
+   marked settled by `useArrivalMarks` and appears in place. It must beat every entrance rule, reduced motion's too. */
+.workspace [data-settled]{animation:none!important}
 @media(hover:hover){
  .stat-tile-link{transition:border-color var(--motion-quick),background var(--motion-quick),transform .2s var(--ease-out),box-shadow .2s}
  .stat-tile-link:hover{transform:translateY(-2px);box-shadow:0 10px 24px -14px color-mix(in srgb,var(--mark-bg) 50%,transparent),var(--shadow-card)}

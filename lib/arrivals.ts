@@ -16,3 +16,13 @@ export function arrivedRows<T extends Element>(added: readonly T[], limit = arri
   && [...(element.parentElement?.children ?? [])].some(sibling => !fresh.has(sibling)));
  return rows.length <= limit ? rows : [];
 }
+
+/** The blocks that play a page's one entrance (motion.css `rise-in`). */
+export const entranceBlocks = '.workspace .content>*,.stat-tiles>.stat-tile,.dashboard-grid>*,.asset-card-grid>.asset-card';
+
+/** A page plays its entrance once, on whatever it shows first after a navigation: the navigation shimmer, the screen's
+ * own skeleton or its content. Blocks that replace those before the next navigation (`entered`) arrive settled, so
+ * loading never replays the rise; they are returned to be marked. */
+export function settledBlocks<T extends Element>(blocks: readonly T[], entered: boolean): { settled: T[]; entered: boolean } {
+ return { settled: entered ? [...blocks] : [], entered: entered || blocks.length > 0 };
+}

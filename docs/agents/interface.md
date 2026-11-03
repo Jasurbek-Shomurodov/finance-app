@@ -105,7 +105,8 @@ it instead of styling a page on its own.
   `useArrivalMarks`, sets `data-arrived` on every screen), then the totals it changed roll
   after it by the lead: group and section totals use `RollingText`, not plain text. Overlays leave as well as arrive, sooner than they came;
   the shared `DialogContent` plays its exit even when the parent removes it while open.
-  Transform and opacity only. Under reduced motion nothing travels, but arrivals and
+  A page's entrance plays once, on the first thing it shows after a link or Back; a
+  skeleton swapped for content on the same page appears in place (`data-settled`). Transform and opacity only. Under reduced motion nothing travels, but arrivals and
   overlays still fade (≤150ms), so a change is never silent.
 - Define each shared selector once. Change the existing rule instead of adding a
   later override, and delete rules when their class is no longer rendered.

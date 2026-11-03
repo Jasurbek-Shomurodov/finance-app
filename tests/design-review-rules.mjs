@@ -444,4 +444,5 @@ test('motion tokens, overlay exits, cause before effect, reduced motion fades (M
  assert.match(reduce,/,\[data-arrived\]\{animation:fade-only \.15s linear backwards;transition:none\}/,'reduced motion still shows an arrival, as a fade');
  assert.match(reduce,/--tw-enter-scale:1;--tw-exit-scale:1;[^}]*--tw-animation-duration:\.12s;--tw-ease:linear/,'overlays only fade under reduced motion');
  assert.match(css,/@keyframes fade-only\{from\{opacity:0\}\}/,'the reduced-motion fade moves nothing');
+ assert.match(motion,/\.workspace \[data-settled\]\{animation:none!important\}/,'a skeleton swapped for content never replays the entrance (MOT-021)');
 });
