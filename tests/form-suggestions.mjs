@@ -35,6 +35,7 @@ test('choosing a schedule fills a blank amount in its currency only when that is
  assert.deepEqual(scheduleChoice(entry('p','Rent expense',{name:''}),bill,['USD','EUR']),{currency:'EUR',account_exchange_rate:null,account_rate_date:null,account_currency:null,occurrence_record_id:'bill',name:'Rent',amount:1200});
  assert.deepEqual(scheduleChoice(entry('p','Rent expense',{name:''}),bill,['USD']),{occurrence_record_id:'bill',name:'Rent'},'a currency the person does not use is never picked for them');
  assert.deepEqual(scheduleChoice(entry('p','Rent expense',{name:'',amount:50}),bill,['USD','EUR']),{occurrence_record_id:'bill',name:'Rent'},'a typed amount keeps its currency');
+ assert.deepEqual(scheduleChoice(entry('p','Rent expense',{name:''}),bill,['USD','EUR'],true),{occurrence_record_id:'bill',name:'Rent'},'a currency the person picked is never switched, even before an amount is typed');
  assert.deepEqual(scheduleChoice(entry('p','Rent expense'),null,['USD']),{occurrence_record_id:null});
 });
 

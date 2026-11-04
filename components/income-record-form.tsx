@@ -74,6 +74,8 @@ export function IncomeRecordForm({onSuggest,editing,setEditing,busy,save,currenc
  const chooseDue=(date:string)=>dueSchedule&&setPicked({schedule:dueSchedule,date});
  // Notes fold away unless the income already has some.
  const [detailsOpen]=useState(()=>!!editing?.notes);
+ // A currency the person picked stays when they then link a schedule in another one.
+ const [currencyChosen,setCurrencyChosen]=useState(false);
  if(!editing)return null;
  const update=(patch:Partial<Entry>)=>setEditing({...editing,...patch});
  const sources=incomeSources(editing.kind,planning.data.records,editing.id);
@@ -99,7 +101,7 @@ export function IncomeRecordForm({onSuggest,editing,setEditing,busy,save,currenc
  const categoriesLink=<Link className="panel-link" href="/settings#categories" onNavigate={leaveTo('/settings#categories')}>{t('Manage categories in Settings')}</Link>;
  const cashAccount=<CashAccountField entry={editing} records={planning.data.records} loading={planning.loading} error={planning.error} busy={busy} onSuggest={onSuggest&&!original?account_id=>onSuggest(changedFields(editing,withAccount(editing,account_id,planning.data.records))):undefined} onChange={account_id=>setEditing(withAccount(editing,account_id,planning.data.records))}/>;
  return <form className="record-form income-form" onSubmit={save}>
-  <AmountCurrencyFields prominent amountPlaceholder={reusable?.mode==='fixed'&&editing.payment_type!=='bonus'&&reusable.currency===editing.currency&&reusable.amount!==null?formatNumber(reusable.amount,locale,0):undefined} amount={editing.amount} currency={editing.currency} currencies={currencies} savedCurrency={original?.currency} disabled={busy} label={t(salaryPlan?'Amount per occurrence':'Amount')} onAmountChange={amount=>update({amount})} onCurrencyChange={currency=>update({currency,account_exchange_rate:null,account_rate_date:null,account_currency:null})}/>
+  <AmountCurrencyFields prominent amountPlaceholder={reusable?.mode==='fixed'&&editing.payment_type!=='bonus'&&reusable.currency===editing.currency&&reusable.amount!==null?formatNumber(reusable.amount,locale,0):undefined} amount={editing.amount} currency={editing.currency} currencies={currencies} savedCurrency={original?.currency} disabled={busy} label={t(salaryPlan?'Amount per occurrence':'Amount')} onAmountChange={amount=>update({amount})} onCurrencyChange={currency=>{setCurrencyChosen(true);update({currency,account_exchange_rate:null,account_rate_date:null,account_currency:null});}}/>
   {simple&&earningSources&&<div className="field-with-links"><IncomeSourcePicker value={editing.custom_category_id??editing.earning_source_id??(retained?'saved':editing.kind==='Other income'?'':'choose')} disabled={busy||earningSources.loading||!!earningSources.error||planning.loading||!!planning.error} options={[
    ...(offeredKinds('income',removed,editing.custom_category_id?undefined:editing.kind).includes('Other income')?[{id:'',name:t('Other income'),kind:'Other income'}]:[]),
    ...planning.data.categories.filter(category=>category.direction==='income').map(category=>({id:category.id,name:category.name,kind:category.id,categoryLabel:category.name})),
@@ -134,7 +136,7 @@ export function IncomeRecordForm({onSuggest,editing,setEditing,busy,save,currenc
   {schedule&&!reusable&&editing.frequency==='Monthly'&&<MonthDayField date={editing.date} disabled={busy} onChange={date=>update({date})}/>}</div>
   {editing.frequency!=='Once'&&<><label>{t('End date (optional)')}<DatePicker value={editing.end_date??''} required={false} min={editing.date} onChange={date=>update({end_date:date||null})}/></label><p className="muted">{t('{amount} {frequency} from {date}. This is a recurring plan; it does not automatically create transactions or change account balances.',{amount:formatMoney(editing.amount,editing.currency,locale),frequency:t(frequencyLabels[editing.frequency]),date:formatDate(editing.date,locale)})}</p></>}
   {schedule&&!salaryPlan&&cashAccount}
-  <ScheduledPaymentField schedules={schedules} value={editing.occurrence_record_id} saved={!!original?.occurrence_record_id} disabled={busy||planning.loading} onChange={schedule=>update(scheduleChoice(editing,schedule,currencies))}/>
+  <ScheduledPaymentField schedules={schedules} value={editing.occurrence_record_id} saved={!!original?.occurrence_record_id} disabled={busy||planning.loading} onChange={schedule=>update(scheduleChoice(editing,schedule,currencies,currencyChosen))}/>
   {planning.error&&<InlineError message={t(planning.error)}/>}
   <details className="record-optional-details" open={detailsOpen}><summary>{t('Optional details')}</summary><div className="record-optional-fields">
    <label>{t('Notes (optional)')}<Textarea value={editing.notes} maxLength={2000} rows={2} onChange={event=>update({notes:event.target.value})}/></label>

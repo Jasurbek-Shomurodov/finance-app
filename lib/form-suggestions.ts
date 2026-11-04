@@ -36,9 +36,10 @@ export function recentCategories(records: readonly Entry[], direction: Direction
 }
 
 /** Choosing the schedule a blank payment settles fills its amount in the schedule's own currency when that is one of
- * the person's currencies; an amount already typed keeps its currency (it counts at the day's rate). */
-export function scheduleChoice(payment: Entry, schedule: Entry | null, currencies: readonly string[]): Partial<Entry> {
- const switchCurrency = !!schedule && !(payment.amount > 0) && payment.currency !== schedule.currency && currencies.includes(schedule.currency);
+ * the person's currencies; an amount already typed, or a currency the person picked (`keepCurrency`), keeps its
+ * currency (it counts at the day's rate). */
+export function scheduleChoice(payment: Entry, schedule: Entry | null, currencies: readonly string[], keepCurrency = false): Partial<Entry> {
+ const switchCurrency = !!schedule && !keepCurrency && !(payment.amount > 0) && payment.currency !== schedule.currency && currencies.includes(schedule.currency);
  const base = switchCurrency ? { ...payment, currency: schedule.currency } : payment;
  return { ...(switchCurrency ? { currency: schedule.currency, account_exchange_rate: null, account_rate_date: null, account_currency: null } : {}), ...chooseSchedule(base, schedule) };
 }
