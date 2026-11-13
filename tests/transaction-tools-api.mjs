@@ -2,10 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {loadTS} from './helpers/load-ts.mjs';
 const id=n=>`b0000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
-function api({auth=true,origin=true,failure=false}={}){
- const calls=[];
- const route=loadTS('app/api/transaction-tools/route.ts',{'@/lib/supabase':{session:async()=>auth?{user:{id:id(1)},token:'owner-token'}:null,sameOrigin:()=>origin,supa:async(path,init,token)=>{calls.push({path,init,token});return failure?Response.json(typeof failure==='object'?failure:{code:'P0001',message:'Split amounts must equal the transaction amount.'},{status:400}):Response.json({ok:true});}},'@/lib/server-records':{readOwnerRows:async(table,token,options)=>{calls.push({table,token,options});return [];}}});
- return {...route,calls};
+function api({auth=true,origin=true,failure=false,currencies={[id(4)]:'UZS',[id(5)]:'USD'},rate=async()=>({rate:0.00008451})}={}){
+ const calls=[],asked=[];
+ const route=loadTS('app/api/transaction-tools/route.ts',{'@/lib/official-rate':{loadOfficialRate:async(from,to,date)=>{asked.push([from,to,date]);return rate();}},'@/lib/supabase':{session:async()=>auth?{user:{id:id(1)},token:'owner-token'}:null,sameOrigin:()=>origin,supa:async(path,init,token)=>{if(path.includes('finance_records?select=id,currency')){assert.equal(token,'owner-token');return Response.json(Object.entries(currencies).filter(([key])=>path.includes(key)).map(([key,currency])=>({id:key,currency})));}calls.push({path,init,token});return failure?Response.json(typeof failure==='object'?failure:{code:'P0001',message:'Split amounts must equal the transaction amount.'},{status:400}):Response.json({ok:true});}},'@/lib/server-records':{readOwnerRows:async(table,token,options)=>{calls.push({table,token,options});return [];}}});
+ return {...route,calls,asked};
 }
 const request=body=>new Request('https://local/api/transaction-tools',{method:'POST',body:JSON.stringify(body)});
 test('transaction tools reject anonymous, cross-origin, malformed and non-finite writes before accessing data',async()=>{
@@ -20,11 +20,22 @@ test('reads use owner token and stable unique pagination orders; writes pass onl
  const failed=api({failure:true});assert.equal((await failed.POST(request({action:'split',data:{record_id:id(4),splits:[{category_id:id(3),amount:1},{category_id:id(3),amount:1}]}}))).status,409);
 });
 
-test('forecast saves retain directional precision and report missing database updates without blaming categories',async()=>{
- const data={record_id:id(4),account_id:id(5),exchange_rate:0.00008451,from_currency:'UZS',to_currency:'USD'};
- const app=api();assert.equal((await app.POST(request({action:'forecast',data}))).status,200);
+test('a forecast assignment takes the server\'s rate through the dollar, never one the client sends',async()=>{
+ const data={record_id:id(4),account_id:id(5)};
+ // A rate, or a pair, sent by the client is not read.
+ const app=api();assert.equal((await app.POST(request({action:'forecast',data:{...data,exchange_rate:99,from_currency:'EUR',to_currency:'GBP'}}))).status,200);
  assert.equal(app.calls[0].path,'/rest/v1/rpc/save_forecast_assignment');
  assert.deepEqual(JSON.parse(app.calls[0].init.body),{p_record:id(4),p_account:id(5),p_rate:0.00008451,p_from:'UZS',p_to:'USD'});
+ assert.equal(app.asked.length,1);assert.deepEqual(app.asked[0].slice(0,2),['UZS','USD']);assert.match(app.asked[0][2],/^\d{4}-\d{2}-\d{2}$/);
+ // One currency, or no account: no rate is asked for.
+ const same=api({currencies:{[id(4)]:'USD',[id(5)]:'USD'}});assert.equal((await same.POST(request({action:'forecast',data}))).status,200);
+ assert.deepEqual(JSON.parse(same.calls[0].init.body),{p_record:id(4),p_account:id(5),p_rate:null,p_from:null,p_to:null});assert.equal(same.asked.length,0);
+ const cleared=api();assert.equal((await cleared.POST(request({action:'forecast',data:{record_id:id(4),account_id:null}}))).status,200);
+ assert.equal(JSON.parse(cleared.calls[0].init.body).p_account,null);assert.equal(cleared.asked.length,0);
+ // Without a kept rate nothing is saved.
+ const missing=api({rate:async()=>{throw Error('Historical exchange rates are unavailable.');}});
+ const refused=await missing.POST(request({action:'forecast',data}));
+ assert.equal(refused.status,422);assert.equal((await refused.json()).error,'Exchange rate unavailable.');assert.equal(missing.calls.length,0);
  for(const code of ['PGRST202','PGRST203','42883','42703']){
   const failed=api({failure:{code,message:'Internal schema detail'}});
   const response=await failed.POST(request({action:'forecast',data}));

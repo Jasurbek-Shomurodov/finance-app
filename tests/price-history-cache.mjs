@@ -55,6 +55,22 @@ test('a period starting before the kept row, or a stock row a week old, reads th
  assert.equal(old.writes[0].row.full_at,new Date(NOW).toISOString());
 });
 
+test('a stock whose last days come back on another basis (a split, a dividend) is read whole, with no false step',async()=>{
+ // Kept at 1000 a share, full read a day ago; after a 10:1 split the feed answers 100 for every day.
+ const kept=row('stock:NFLX',days('2026-01-01','2026-10-28',1000),{fetched:historyFreshForMs+1,full:86400000,checked_to:'2026-10-28'});
+ const {db,writes}=database([kept]),{asked,live}=feed((from,to)=>days(from,to,100)),later=[];
+ await keptHistory('stock:NFLX','2026-10-01','2026-10-28',live,{db,now:()=>NOW,later:work=>later.push(work)});
+ for(const work of later)await work();
+ assert.deepEqual(asked,[['2026-10-25','2026-10-28'],['2026-01-01','2026-10-28']],'the tail, then the whole kept span');
+ assert.ok(writes[0].row.points.every(point=>point.close===100),'every close shares one basis');
+ assert.equal(writes[0].row.full_at,new Date(NOW).toISOString());
+ // Only the latest kept day moved (its candle was not final): the tail alone is laid over, as before.
+ const moving=database([{...kept,points:[...days('2026-01-01','2026-10-27',1000),{date:'2026-10-28',close:990}]}]),second=feed((from,to)=>days(from,to,1000)),after=[];
+ await keptHistory('stock:NFLX','2026-10-01','2026-10-28',second.live,{db:moving.db,now:()=>NOW,later:work=>after.push(work)});
+ for(const work of after)await work();
+ assert.equal(second.asked.length,1);assert.equal(moving.writes[0].row.points.at(-1).close,1000);
+});
+
 test('a failing feed leaves kept closes standing within a week of the end, and fails beyond it',async()=>{
  const down=async()=>{throw Error('Unavailable');};
  const {db}=database([row('stock:BIL',days('2025-01-01','2026-10-24'))]);

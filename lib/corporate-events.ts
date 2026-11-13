@@ -5,3 +5,5 @@ export const corporateEventSchema=z.object({id:uuid,record_id:uuid,target_id:uui
  if(!valid)ctx.addIssue({code:'custom',message:'Check the investment event fields.'});
 });
 export type CorporateEvent=z.infer<typeof corporateEventSchema>;
+/** The holdings `record_corporate_event` takes: a share or a coin. Metals and vested employer shares are refused there. */
+export const corporateKinds:readonly string[]=['Stock','Crypto'];

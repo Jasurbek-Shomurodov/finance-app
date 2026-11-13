@@ -67,11 +67,13 @@ export function InvestmentTracker({inline=false,onDraftState,initialType,record,
  const deletableUpdate=(type:string)=>valuedKinds.includes(record.kind)?['valuation','contribution','withdrawal'].includes(type):['Money lent','Loan','Debt'].includes(record.kind)&&['contribution','withdrawal'].includes(type);
  const mortgage=record.kind==='Mortgage';
  const deposit=interestKinds.includes(record.kind);
+ // Money moves in and out of a bank deposit alone: a bill or bond is bought once (`record_asset_movement` refuses them).
+ const movable=record.kind==='Deposit';
  // Units at a quoted price: stocks, crypto, metals and vested equity are bought and sold by quantity.
  const security=isHolding(record);
  // A deposit has no linked payments, so every amount of its history is known.
  const ledger=events.filter((event):event is HistoryEvent=>event.amount!==null);
- const projection=depositProjection(ledger,record.rate,undefined,interestCompounding(record));
+ const projection=depositProjection(ledger,record.rate,undefined,interestCompounding(record),record.date);
  const movementRecords=accounts.some(account=>account.id===record.id)?accounts:[...accounts,record];
  async function saveMovement(payload:AssetMovement){
   await requestJson('/api/asset-movements',{body:payload});
@@ -148,7 +150,7 @@ export function InvestmentTracker({inline=false,onDraftState,initialType,record,
   {tab==='history'&&<ErrorPopup message={error}/>}
   {tab==='history'?(loading?<LoadingPlaceholder label={t('Loading history…')}/>:<TrackerHistory events={events} record={record} accounts={accounts} valueLabel={valueLabel} help={historyHelp} deletable={e=>!!e.entered||deletableUpdate(e.event_type)} deleteDisabled={busy||loading||submitted||dirty} onDelete={setDeleting}/>):<>
   {loading?<LoadingPlaceholder label={t('Loading history…')}/>:<>
-   {deposit&&<div className="ownership-summary"><p>{t('Estimated interest for {month}: {amount}', {month:formatMonthYear(depositToday().slice(0,7),locale),amount:money(depositInterest(ledger,record.rate,undefined,interestCompounding(record)))})}</p><p>{t('Estimated balance including interest')}: {money(projection.total)}</p><p className="muted">{t(({monthly:'Monthly compounding',daily:'Daily compounding',none:'No compounding'})[record.deposit_compounding??'monthly'])}. {t('Top-ups and withdrawals affect interest from their recorded date. Estimates use the current annual rate. A confirmed balance or interest credit replaces the projection.')}</p><p className="muted">{t('Estimates start at the first dated balance. Record confirmed capitalized interest to update the available balance. Projections are not spendable cash.')}</p></div>}
+   {deposit&&<div className="ownership-summary"><p>{t('Estimated interest for {month}: {amount}', {month:formatMonthYear(depositToday().slice(0,7),locale),amount:money(depositInterest(ledger,record.rate,undefined,interestCompounding(record),record.date))})}</p><p>{t('Estimated balance including interest')}: {money(projection.total)}</p><p className="muted">{t(({monthly:'Monthly compounding',daily:'Daily compounding',none:'No compounding'})[interestCompounding(record)??'monthly'])}. {t('Top-ups and withdrawals affect interest from their recorded date. Estimates use the current annual rate. A confirmed balance or interest credit replaces the projection.')}</p><p className="muted">{t('Estimates start at the first dated balance. Record confirmed capitalized interest to update the available balance. Projections are not spendable cash.')}</p></div>}
    <div className="tracker-metrics">
     <div><small>{t(lending?(record.kind==='Money lent'?'Amount owed to you':'Outstanding balance'):cash||deposit?'Account balance':'Latest tracked value (your share)')}</small><strong>{stats.balance===null?'—':money(stats.balance)}</strong>{!lending&&stats.fullBalance!==null&&stats.ownership<100&&<span className="tracker-full-value">{fullValueNote(stats.fullBalance,stats.ownership)}</span>}</div>
     {!cash&&<div><small>{t(mortgage?'Principal repaid':lending?'Repayments recorded':'Income received')}</small><strong>{total(mortgage?stats.principal:lending?stats.repayments:stats.receipts)}</strong></div>}
@@ -169,7 +171,7 @@ export function InvestmentTracker({inline=false,onDraftState,initialType,record,
    </div>}
   </>}
   {cash&&<Button type="button" variant="outline" disabled={busy} onClick={()=>setMovement({kind:'transfer',source_id:record.id})}>{t('Transfer money')}</Button>}
-  {(deposit||security)&&<div className="entry-actions"><Button variant="outline" onClick={()=>setMovement({kind:deposit?'transfer':'buy',target_id:record.id})}>{t(deposit?'Top-up':'Buy')}</Button><Button variant="outline" onClick={()=>setMovement({kind:deposit?'transfer':'sell',source_id:record.id})}>{t(deposit?'Withdraw':'Sell / convert')}</Button>{deposit&&<Button variant="outline" onClick={()=>setMovement({kind:'interest',source_id:record.id})}>{t('Record capitalized interest')}</Button>}</div>}
+  {(movable||security)&&<div className="entry-actions"><Button variant="outline" onClick={()=>setMovement({kind:movable?'transfer':'buy',target_id:record.id})}>{t(movable?'Top-up':'Buy')}</Button><Button variant="outline" onClick={()=>setMovement({kind:movable?'transfer':'sell',source_id:record.id})}>{t(movable?'Withdraw':'Sell / convert')}</Button>{movable&&<Button variant="outline" onClick={()=>setMovement({kind:'interest',source_id:record.id})}>{t('Record capitalized interest')}</Button>}</div>}
   {mortgage&&<Button type="button" variant="outline" disabled={busy} onClick={onPayment}>{t('Record payment')}</Button>}
   {paymentFields}
   </>}

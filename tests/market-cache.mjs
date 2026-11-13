@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {loadTS} from './helpers/load-ts.mjs';
 
-const {cachedMarket,keepMarket,freshForMs,usableForMs}=loadTS('lib/market-cache.ts');
+const {cachedMarket,keepMarket,freshForMs,usableForMs,failedForMs}=loadTS('lib/market-cache.ts');
 const NOW=Date.parse('2026-10-29T10:00:00Z');
 const at=ago=>new Date(NOW-ago).toISOString();
 const quote=(usd,ago=0)=>({usd,source:'Coinbase',fetchedAt:at(ago)});
@@ -69,6 +69,25 @@ test('a failing feed keeps its last good answer instead of reading as unavailabl
  const data=await cachedMarket(ask({crypto:['BTC','SOL']}),{db,load,now:()=>NOW,later:()=>{}});
  assert.equal(data.quotes['Crypto:SOL'],undefined,'a price kept longer than three days is never shown');
  assert.equal(data.errors['Crypto:SOL'],'Price unavailable. Saved price is shown.');
+});
+
+test('an instrument no feed prices is remembered for a while, so every read does not ask the paid feed again',async()=>{
+ const rows=[],{db,writes}=database(rows),{asked,load}=feeds({NOPE:null});
+ const first=await cachedMarket(ask({crypto:['NOPE','BTC']}),{db,now:()=>NOW,load});
+ assert.equal(asked.length,1);assert.equal(first.errors['Crypto:NOPE'],'Price unavailable. Saved price is shown.');assert.equal(first.quotes['Crypto:BTC'].usd,100);
+ const failed=writes[0].rows.find(row=>row.key==='Crypto:NOPE');assert.deepEqual(failed.data,{failed:true});
+ rows.push({...failed,fetched_at:at(0)},{key:'Crypto:BTC',data:quote(100),fetched_at:at(0)});
+ // The next reads, from anyone, answer from the kept note.
+ for(let read=0;read<5;read++){const again=await cachedMarket(ask({crypto:['NOPE','BTC']}),{db,now:()=>NOW+60_000,load});assert.equal(again.errors['Crypto:NOPE'],'Price unavailable. Saved price is shown.');assert.equal(again.quotes['Crypto:NOPE'],undefined);}
+ assert.equal(asked.length,1,'nothing is asked while the note stands');
+ // After that it is asked once more.
+ await cachedMarket(ask({crypto:['NOPE']}),{db,now:()=>NOW+failedForMs+1,load});
+ assert.equal(asked.length,2);assert.deepEqual(asked[1].crypto,['NOPE']);
+ // A price somebody holds is never replaced by the note, and an access note is never kept.
+ const held=database([{key:'Crypto:ETH',data:quote(50,freshForMs.quote+1),fetched_at:at(freshForMs.quote+1)}]),down=feeds({ETH:null});
+ const answer=await cachedMarket(ask({crypto:['ETH'],stocks:['AAPL']}),{db:held.db,now:()=>NOW,load:down.load,later:work=>work()});
+ assert.equal(answer.quotes['Crypto:ETH'].usd,50);
+ assert.ok(held.writes.flatMap(write=>write.rows).every(row=>!row.data.failed));
 });
 
 test('exchange rates are read from the kept rows alone: no reader asks for one, however old',async()=>{

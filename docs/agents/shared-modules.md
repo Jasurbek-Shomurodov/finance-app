@@ -10,7 +10,11 @@
   Everything else reads the database: `loadOfficialRate` (`lib/official-rate.ts`) for
   a day's pair, `dayTables` / `ratesOf` for transactions, `cachedMarket` for today's.
   Each table is units per US dollar; any other pair goes through the dollar. Never
-  fetch a rate from a request, and never ask a provider for a pair such as EUR/UZS.
+  fetch a rate from a request, never ask a provider for a pair such as EUR/UZS, and
+  never save a rate the client sent: a route works the pair out itself and at most
+  checks the client's against it. A day that is not kept yet (today before the
+  download, a day the provider skipped) reads the rates in force on it: the latest
+  kept day of the week before (`inForceDayTables`, `loadOfficialRate`).
 - Abuse limits: `rateLimited` from `lib/rate-limit.ts` (Postgres-backed, migration
   106). Every new sign-in, code-sending or paid-API route needs one.
 - Day and month arithmetic: `lib/calendar-days.ts` (`shiftDay`, `daysBetween`,

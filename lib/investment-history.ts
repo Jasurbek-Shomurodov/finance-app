@@ -6,7 +6,7 @@ export const trackedKinds: readonly string[] = ['Cash','Stock','Crypto','Preciou
 /** The columns of a transaction or income schedule the Overview charts read (/api/portfolio-history): the expense and
  * income funding of the benchmarks, the period summary, the income chart's receipts and monthly estimates, and the
  * rates each one converts at. A full row is about 60 columns, which made the read megabytes for a long history. */
-export const historyCashflowColumns = 'id,name,kind,amount,currency,date,frequency,recurrence_days,end_date,source_paused,archived,archive_pauses,business_id,income_source_id,property_id,history_event_id,mortgage_payment_id,payment_principal,payment_interest,account_currency,account_exchange_rate,day_rates';
+export const historyCashflowColumns = 'id,name,kind,amount,currency,date,frequency,recurrence_days,end_date,source_paused,archived,archive_pauses,business_id,income_source_id,property_id,history_event_id,movement_id,mortgage_payment_id,payment_principal,payment_interest,account_currency,account_exchange_rate,day_rates';
 export const historyKindGroups = { interestKinds, simpleInterestKinds, unitPricedKinds, valuedKinds };
 export type HistoryEvent = {
  id:string; record_id:string; event_type:'baseline'|'valuation'|'contribution'|'withdrawal'|'income'|'expense'|'mortgage_payment';
@@ -75,3 +75,9 @@ export function historySeries(events:TrackerEvent[]) {
 
 // Convert chart coordinates back to stored date-only values before shared display formatting.
 export const historyChartDate = (timestamp: number) => new Date(timestamp).toISOString().slice(0,10);
+
+/** Capitalized interest is saved twice by `record_asset_movement`: as the deposit's `income` event and as an Other income
+ * transaction that carries the movement (`movement_id`) but no event id. These are the events' days and amounts, to tell
+ * the copy by: a figure that adds both the Tracker and transactions counts the event alone. */
+export const capitalizedInterest=(events:readonly Pick<HistoryEvent,'event_type'|'occurred_on'|'amount'>[])=>new Set(events.filter(event=>event.event_type==='income').map(event=>event.occurred_on+':'+Number(event.amount)));
+export const copiesCapitalizedInterest=(row:{movement_id?:string|null;date?:string|null;amount:number|string},capitalized:ReadonlySet<string>)=>!!row.movement_id&&capitalized.has(row.date+':'+Number(row.amount));

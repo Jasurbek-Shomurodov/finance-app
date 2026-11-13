@@ -198,12 +198,7 @@ test('a password sign-in saves only a well-formed session from the provider (API
  assert.deepEqual(saved,[good]);
 });
 
-test('forecast assignments accept only known currencies, and month and date schemas are shared',async()=>{
- const calls=[];
- const route=loadTS('app/api/transaction-tools/route.ts',{'@/lib/supabase':{session:async()=>({user:{id:owner},token:'owner'}),sameOrigin:()=>true,supa:async path=>{calls.push(path);return Response.json({});}},'@/lib/server-records':{readOwnerRows:async()=>[]}});
- const forecast=currency=>route.POST(post('/api/transaction-tools',{action:'forecast',data:{record_id:owner,account_id:other,exchange_rate:2,from_currency:currency,to_currency:'USD'}}));
- assert.equal((await forecast('XXX-not-a-currency')).status,400);assert.equal(calls.length,0);
- assert.equal((await forecast('EUR')).status,200);assert.equal(calls.length,1);
+test('month and date schemas are shared',async()=>{
  const {month}=loadTS('lib/api-validation.ts');
  assert.ok(month.safeParse('2026-10').success);assert.ok(!month.safeParse('2026-13').success);assert.ok(!month.safeParse('2026-10-01').success);
  const {earningSourceSchema}=loadTS('lib/earning-sources.ts');

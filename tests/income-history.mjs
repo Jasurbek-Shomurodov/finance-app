@@ -5,11 +5,12 @@ import ts from 'typescript';
 import {monthly,income,interestKinds,interestCompounding,duplicatesAssetEstimate} from '../lib/finance.ts';
 import {convertAmount} from '../lib/market.ts';
 import {depositInterest} from '../lib/deposit-interest.ts';
+import {capitalizedInterest,copiesCapitalizedInterest} from '../lib/investment-history.ts';
 import * as days from '../lib/calendar-days.ts';
 import {loadTS} from './helpers/load-ts.mjs';
 const {ratesOf}=loadTS('lib/transaction-rates.ts');
 const source=ts.transpileModule(fs.readFileSync('lib/income-history.ts','utf8').replace(/^import .*;\n/gm,'').replace(/export /g,''),{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
-const history=new Function('monthly','income','interestKinds','interestCompounding','duplicatesAssetEstimate','convertAmount','depositInterest','shiftMonth','ratesOf',source+';return incomeHistory;')(monthly,income,interestKinds,interestCompounding,duplicatesAssetEstimate,convertAmount,depositInterest,days.shiftMonth,ratesOf);
+const history=new Function('monthly','income','interestKinds','interestCompounding','duplicatesAssetEstimate','convertAmount','depositInterest','shiftMonth','ratesOf','capitalizedInterest','copiesCapitalizedInterest',source+';return incomeHistory;')(monthly,income,interestKinds,interestCompounding,duplicatesAssetEstimate,convertAmount,depositInterest,days.shiftMonth,ratesOf,capitalizedInterest,copiesCapitalizedInterest);
 const event=(id,record_id,amount,type='income')=>({id,record_id,event_type:type,amount,occurred_on:'2026-09-10',balance:null});
 const payment=(id,kind,amount,extra={})=>({id,kind,amount,currency:'USD',frequency:'Once',date:'2026-09-10',...extra});
 test('income includes dividends, salaries, rent, business and interest without counting Tracker copies twice',()=>{
@@ -68,4 +69,12 @@ test('income forecasts honor every deposit compounding mode in current and futur
   assert.equal(result.expected.interest,depositInterest(events,24,'2026-09',mode));
   assert.equal(result.totalReceived,0);
  }
+});
+
+test('capitalized interest counts once: its deposit event, not also the Other income transaction saved with it',()=>{
+ const deposit={id:'d',name:'Savings',kind:'Deposit',currency:'USD',amount:1212,rate:0,date:'2030-01-01'};
+ const copy=payment('p','Other income',12,{movement_id:'m'});
+ const result=history([deposit],[event('e','d',12)],[copy,payment('q','Other income',12)],'USD',undefined,'2026-09-30',1);
+ assert.equal(result.points[0].interest,12);
+ assert.equal(result.points[0].other,12,'an unrelated income of the same day and amount still counts');
 });
