@@ -24,6 +24,7 @@ import { RecordsTable } from '@/components/workspace/records-table';
 import { ScreenNotices, ToolsUnavailable } from '@/components/workspace/screen-notices';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
 import { marketRates } from '@/lib/market';
+import { useExpectedPayouts } from '@/hooks/use-expected-payouts';
 
 const tabs = ['Overview', 'Income', 'Spending', 'Forecast'] as const;
 
@@ -38,6 +39,7 @@ export function CashFlowScreen() {
  // The spending estimate follows the one definition of spending (lib/spending.ts): bills plus mortgage interest; mortgage
  // principal and loan repayments are transfers, so they leave the net estimate but never the spending one.
  const incomeSources = earningSources.sources;
+ const payouts = useExpectedPayouts(user, demo, reload, rows);
  const mortgages = <MonthlyMortgagePayments records={demo?rows:planning.data.records} loading={planning.loading} error={planning.error} onPay={setPayingMortgage} onEdit={editRecord}/>;
  // This month's budget, as on Overview and Budget: spending categories against their limits.
  const budgetCard = !transactionTools.loading && !transactionTools.error ? <BudgetCard owner={user} demo={demo} revision={reload} budget={budget} data={planning.data} currency={currency} market={market} splits={transactionTools.data.splits}/> : null;
@@ -59,7 +61,7 @@ export function CashFlowScreen() {
     {tab==='Income'&&(planning.loading || earningSources.loading ? <LoadingPlaceholder label={t('Loading records…')}/> : planning.error || earningSources.error ? <InlineError as="div" message={t(planning.error || earningSources.error)} onRetry={refreshRecords}/> : <EstimatedIncomeSources earningSources={incomeSources} entries={planning.data.records} month={forecastMonth} rates={marketRates(market)}/>)}
     {tab==='Spending'&&mortgages}
     {tab==='Spending'&&budgetCard}
-    {tab==='Forecast'&&<CashForecastView owner={user} data={planning.data} budget={forecastBudget} currency={currency} rates={marketRates(market)} loading={planning.loading||forecastBudgetState.loading} error={planning.error||forecastBudgetState.error} onRetry={()=>{refreshRecords();forecastBudgetState.retry();}}/>}
+    {tab==='Forecast'&&<CashForecastView owner={user} data={planning.data} budget={forecastBudget} payouts={payouts} currency={currency} rates={marketRates(market)} loading={planning.loading||forecastBudgetState.loading} error={planning.error||forecastBudgetState.error} onRetry={()=>{refreshRecords();forecastBudgetState.retry();}}/>}
     {tab==='Overview'&&<RecordsTable transactions title={t('Recent transactions')} limit={4} pagination={false}><Button variant="link" className="cashflow-view-history" asChild><DrawerLink href="/transactions">{t('View full transactions')}</DrawerLink></Button></RecordsTable>}
    </>}
   </div>

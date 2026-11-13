@@ -29,6 +29,8 @@ export type DigestExtras={
   /** Income by source, largest first, named like the categories; and the cash moved this month into investments, a
    * mortgage's principal, other debts and money lent (lib/digest-flow.ts). Both left out when a rate was missing. */
   sources?:{key:string;label:string;amount:number}[];moved?:Partial<Record<MoneyDestination,number>>};
+ /** What the investments earned this month so far, in `currency` (lib/digest-investments.ts); left out when unknown. */
+ investments?:{monthPnl:number};
  /** The month ahead (lib/digest-plan.ts): the budget against what was spent in its categories, the savings goal funded
   * first, and the cash projected for the month's last day; each left out when it is not known. */
  plan?:{budget?:{total:number;spent:number};goal?:{name:string;saved:number;target:number;currency:string};forecast?:{balance:number;belowZero:string|null}};
@@ -105,6 +107,7 @@ export function digestMessage(items:DueItem[],language:Language,today:string,ext
   const change=grown(extras.netWorth);
   facts.push(`📈 ${t('Net worth')}: ${money(extras.netWorth.amount)}${change!==null&&Math.round(change)!==0?' · '+t('{change} this month',{change:signed(change)}):''}`);
  }
+ if(extras.investments&&Math.round(extras.investments.monthPnl)!==0)facts.push(`💼 ${t('Investments')}: ${t('{change} this month',{change:signed(extras.investments.monthPnl)})}`);
  return [greeting,facts.join('\n'),payments].filter(Boolean).join('\n\n');
 }
 /** This month so far: what was spent, large, against the same days of last month in plain words; then income, the net
@@ -135,6 +138,9 @@ function digestFigures(kit:Kit,extras:DigestExtras):{hero?:CardHero;figures:Card
   const change=grown(extras.netWorth),moved=change!==null&&Math.round(change)!==0;
   figures.push({label:t('Net worth'),value:money(extras.netWorth.amount),icon:'chart',...(moved?{detail:t('{change} this month',{change:signed(change)}),tone:change<0?'bad' as const:'good' as const}:{})});
  }
+ // The investments' own result this month, apart from the money put into them.
+ const earned=extras.investments?.monthPnl;
+ if(earned!==undefined&&Math.round(earned)!==0)figures.push({label:t('Investments'),value:signed(earned),icon:'trendingUp',detail:t('Profit and loss this month'),tone:earned<0?'bad' as const:'good' as const});
  return {...(hero?{hero}:{}),figures};
 }
 /** The month's budget as a bar: its total, and what is left of it or how far spending went over. */

@@ -5,7 +5,7 @@ const id=n=>`e1000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 const migration=fs.readFileSync('migrations/161_asset_payment_links.sql','utf8');
 test('migration 161 is in setup.sql and the app requires it',()=>{
  assert.ok(fs.readFileSync('database/setup.sql','utf8').includes(migration));
- assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 161/);
+ assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 162/);
  assert.match(migration,/'schema_version',161/);
 });
 test('rent and costs name their property however they were recorded, and old rows are linked (migration 161)',{skip:!process.env.PGLITE_MODULE},async()=>{

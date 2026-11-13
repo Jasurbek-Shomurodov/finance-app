@@ -17,6 +17,9 @@ import { digestBudget, digestForecast, digestGoal } from '@/lib/digest-plan';
 import type { Entry } from '@/lib/finance';
 import type { ServiceDatabase } from '@/lib/service-role';
 import { withDayRates } from '@/lib/day-rate-tables';
+import { keptMarket, markReached, monthInvestmentPnl, ownerHistory, ownerPriceAlerts, ownerQuotes, priceAlertMessage, reachedAlerts, savePriceAlerts } from '@/lib/digest-investments';
+import { deliverTelegramMessage, type TelegramConfig } from '@/lib/telegram';
+import type { Language } from '@/lib/i18n';
 export const maxDuration=60;
 const defaultReminders:ReminderSettings={enabled:true,days_ahead:7,snoozed:[]};
 type PlanInput={records:Entry[];occurrences:Occurrence[];debtPayments:DebtPayment[];categories:Category[];spending:Record<string,number>;today:string;currency:string;rates:Record<string,number>};
@@ -27,6 +30,19 @@ async function planOf(db:ServiceDatabase,owner:string,input:PlanInput){
   const [source,goals]=await Promise.all([ownerBudget(db,owner,input.categories),ownerGoals(db,owner)]);
   return {budget:digestBudget(source,input.today.slice(0,7),input.currency,input.rates,input.spending),goal:digestGoal(goals,input.records,input.currency),forecast:digestForecast({...input,source})};
  }catch(error){await reportError('cron:telegram-digest',error,{route:'/api/cron/telegram-digest',status:200});return {};}
+}
+type InvestmentInput={records:Entry[];today:string;currency:string;rates:Record<string,number>;language:Language;chat_id:number};
+/** This month's investment profit and loss for the digest, and the price alerts reached since the last one, sent as
+ * their own message and marked so each is announced once. Like the plan, it only adds: a failed read is reported. */
+async function investmentsOf(db:ServiceDatabase,owner:string,config:TelegramConfig,input:InvestmentInput){
+ try{
+  const [events,quotes,alerts]=await Promise.all([ownerHistory(db,owner),ownerQuotes(db,input.records),ownerPriceAlerts(db,owner)]);
+  const market=keptMarket(quotes,input.rates);
+  const reached=reachedAlerts(alerts,input.records,market);
+  if(reached.length&&await deliverTelegramMessage({chat_id:input.chat_id,text:priceAlertMessage(reached,input.language,input.today)},config)==='sent')await savePriceAlerts(db,owner,markReached(alerts,reached,input.today));
+  const monthPnl=monthInvestmentPnl({records:input.records,events,market,currency:input.currency,today:input.today});
+  return monthPnl===null?undefined:{monthPnl};
+ }catch(error){await reportError('cron:telegram-digest',error,{route:'/api/cron/telegram-digest',status:200});return undefined;}
 }
 /** Sends each linked owner their digest as a picture: a greeting, this month's income and expenses against the same days of last month, net worth, where the money went, and what is due. One owner's failure never blocks the others; the response says how many were reached. */
 export async function GET(req:Request){
@@ -74,7 +90,8 @@ export async function GET(req:Request){
     const cashflow={income:current.income,spending:current.spending,missing:current.missing>0,categories:namedCategories(current.byCategory,categories,profile.language),...(previous.missing?{}:{previous:{income:previous.income,spending:previous.spending,categories:namedCategories(previous.byCategory,categories,profile.language)}}),...moved};
     const debtPayments=debtPaymentsFrom(activity,mortgagePayments),due=dueReminders({records,occurrences,categories:[],goals:[],activity:[],debtPayments},settings,today);
     const plan=await planOf(db,user_id,{records,occurrences,debtPayments,categories,spending:current.byCategory,today,currency:profile.currency,rates});
-    const digest={name:profile.name,currency:profile.currency,rates,netWorth,cashflow,plan};
+    const investments=await investmentsOf(db,user_id,config,{records,today,currency:profile.currency,rates,language:profile.language,chat_id});
+    const digest={name:profile.name,currency:profile.currency,rates,netWorth,cashflow,plan,...(investments?{investments}:{})};
     // A picture, or the text where the picture's font cannot draw the language.
     return deliverReport({chat_id,language:profile.language,text:digestMessage(due,profile.language,today,digest),picture:{...digestCard(due,profile.language,today,digest),filename:`hoggish-${today}.png`}},config);
   });

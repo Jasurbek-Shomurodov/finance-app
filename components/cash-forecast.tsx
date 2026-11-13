@@ -22,12 +22,13 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { cashForecast, forecastHorizons, type CashForecastBudget, readAdjustments, seriesIn, type CashForecast, type ForecastAdjustment, type ForecastEvent, type ForecastHorizon, type ForecastSeries } from '@/lib/cash-forecast';
 import { depositToday } from '@/lib/deposit-interest';
 import { formatDate, formatMoney, formatMonthYear, formatNumber, formatSignedMoney } from '@/lib/format';
+import type { ExpectedPayout } from '@/lib/investment-insights';
 import type { PlanningData } from '@/lib/planning';
 import { useDisplayMoney } from '@/components/display-money';
 
 type Rates = number | Record<string, number> | undefined;
 /** `budget`: Budget's spending lines and this month's spending, which the projection spends what is left of. */
-type Props = { owner?: string | null; data: PlanningData; budget?: CashForecastBudget; currency: string; rates: Rates; loading: boolean; error: string; onRetry: () => void };
+type Props = { owner?: string | null; data: PlanningData; budget?: CashForecastBudget; /** Dividends, coupons and interest expected from holdings. */ payouts?: readonly ExpectedPayout[]; currency: string; rates: Rates; loading: boolean; error: string; onRetry: () => void };
 
 const storageKey = (owner?: string | null) => 'hoggish-forecast-adjustments:' + (owner ?? 'demo');
 function storedAdjustments(owner: string | null | undefined, currency: string) {
@@ -62,7 +63,7 @@ function BelowZeroWarning({ forecast }: { forecast: CashForecast }) {
 }
 
 /** The Forecast view of Cash flow: projected cash day by day, the lowest point, what drives it, and temporary what-ifs. */
-export function CashForecastView({ owner, data, budget, currency, rates, loading, error, onRetry }: Props) {
+export function CashForecastView({ owner, data, budget, payouts, currency, rates, loading, error, onRetry }: Props) {
  const { t, locale } = useLanguage();
  const name = useSeriesName();
  const today = depositToday();
@@ -73,7 +74,7 @@ export function CashForecastView({ owner, data, budget, currency, rates, loading
   setAdjustments(next);
   try { localStorage.setItem(storageKey(owner), JSON.stringify(next)); } catch { /* What-ifs still work for this visit when storage is blocked. */ }
  };
- const forecast = useMemo(() => cashForecast({ records: data.records, occurrences: data.occurrences, debtPayments: data.debtPayments, budget, adjustments, today, days, currency, rates }), [data, budget, adjustments, today, days, currency, rates]);
+ const forecast = useMemo(() => cashForecast({ records: data.records, occurrences: data.occurrences, debtPayments: data.debtPayments, budget, payouts, adjustments, today, days, currency, rates }), [data, budget, payouts, adjustments, today, days, currency, rates]);
  const options = [...forecast.totals, ...forecast.accounts];
  const shown = options.find(series => series.id === selected) ?? forecast.totals[0];
  const accountNames = new Map(forecast.accounts.map(account => [account.id, account.name]));
@@ -85,7 +86,7 @@ export function CashForecastView({ owner, data, budget, currency, rates, loading
  const horizon = <Segmented label={t('Forecast horizon')} options={forecastHorizons.map(value => ({ value, label: t('{count} days', { count: formatNumber(value, locale, 0) }) }))} value={days} onChange={setDays}/>;
  return <>
   <section className="panel forecast-panel" aria-labelledby="forecast-title">
-   <PanelTitle title={<span id="forecast-title">{t('Projected cash')}</span>} hint={t('Starts from today’s cash balances and adds scheduled income and bills, monthly loan payments, money owed to you, maturing deposits and what is left of your budgets. Items without a cash account change total cash only. Overdue items are left out.')}>{horizon}</PanelTitle>
+   <PanelTitle title={<span id="forecast-title">{t('Projected cash')}</span>} hint={<><p>{t('Starts from today’s cash balances and adds scheduled income and bills, monthly loan payments, money owed to you, maturing deposits and what is left of your budgets. Items without a cash account change total cash only. Overdue items are left out.')}</p><p>{t('Dividends, coupons and interest expected from your holdings are counted too, as estimates.')}</p></>}>{horizon}</PanelTitle>
    {!shown ? <EmptyState icon={<Wallet aria-hidden="true"/>} description={t('Add a cash account to forecast its balance.')}/> : <>
     {options.length > 1 && <NativeSelect className="forecast-series" aria-label={t('Balance to show')} value={shown.id} onChange={event => setSelected(event.target.value)}>
      {options.map(series => <option key={series.id} value={series.id}>{name(series)}{series.accountId ? ' · ' + series.currency : ''}</option>)}
@@ -117,7 +118,7 @@ export function CashForecastView({ owner, data, budget, currency, rates, loading
 function EventRow({ event, account }: { event: ForecastEvent; account?: string }) {
  const { t, locale } = useLanguage();
  const { enteredSigned } = useDisplayMoney();
- const source = event.source === 'installment' ? t('Monthly payment') : event.source === 'repayment' ? t('Repayment') : event.source === 'adjustment' ? t('What-if change') : event.source === 'budget' ? t('Budget') : t(event.kind);
+ const source = event.source === 'installment' ? t('Monthly payment') : event.source === 'repayment' ? t('Repayment') : event.source === 'adjustment' ? t('What-if change') : event.source === 'budget' ? t('Budget') : event.source === 'payout' ? t('Expected payout') : t(event.kind);
  return <tr>
   <td><div className="record-name"><CategoryIcon kind={event.source === 'budget' ? event.name : event.kind}/><div><strong>{event.source === 'budget' ? t(event.name) : event.name || t('What-if change')}</strong><small>{account ? source + ' · ' + account : source}</small></div></div></td>
   <td className="muted">{formatDate(event.date, locale)}</td>

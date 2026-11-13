@@ -10,6 +10,7 @@ import { DashboardHeadline, useHeadlineFigures } from '@/components/dashboard-he
 import { Button } from '@/components/ui/button';
 import { useDashboardLayout } from '@/hooks/use-dashboard-layout';
 import { usePortfolioHistory } from '@/hooks/use-portfolio-history';
+import { useExpectedPayouts } from '@/hooks/use-expected-payouts';
 import { columnOf, dashboardColumns, type DashboardCard } from '@/lib/dashboard-layout';
 import { depositToday } from '@/lib/deposit-interest';
 import { savedGoalOrder } from '@/lib/goal-order';
@@ -47,7 +48,8 @@ export function OverviewScreen() {
   income,
  });
  const showNetWorth = !layout.hidden.includes('net_worth');
- const figures = useHeadlineFigures({ data: planningReady ? planning.data : null, forecastBudget, forecastLoading: forecastBudgetState?.loading, forecastError: !!forecastBudgetState?.error, currency, market });
+ const payouts = useExpectedPayouts(user, demo, reload, rows);
+ const figures = useHeadlineFigures({ data: planningReady ? planning.data : null, forecastBudget, payouts, forecastLoading: forecastBudgetState?.loading, forecastError: !!forecastBudgetState?.error, currency, market });
  const headline = <DashboardHeadline netWorth={netWorth} netWorthTile={!showNetWorth} budget={monthBudget} spending={planningReady ? spending : undefined} figures={figures} currency={currency}/>;
  return <>
   <div data-page="Overview" className="content overview-content">

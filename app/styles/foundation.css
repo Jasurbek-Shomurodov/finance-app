@@ -90,15 +90,15 @@
   --radius-card: 12px;
   --mark-bg: #0f766e;
   --mark-fg: #ffffff;
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 24%);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 24%), 0 12px 32px -20px rgb(0 0 0 / 60%);
   /* Text on a pill tinted with its own tone: pulled toward the ink so it keeps 4.5:1 on the tint. */
   --pill-positive: color-mix(in srgb, var(--positive) 80%, var(--foreground));
   --pill-negative: color-mix(in srgb, var(--negative) 80%, var(--foreground));
   --pill-caution: color-mix(in srgb, var(--caution) 80%, var(--foreground));
 }
 :root[data-theme="light"] {
-  /* Warm, airy cards: a hairline edge and a barely-there lift. */
-  --shadow-card: 0 1px 2px rgb(34 32 29 / 5%);
+  /* Warm, airy cards: a hairline edge and a soft, wide lift, so a card sits on the page rather than in it. */
+  --shadow-card: 0 1px 2px rgb(34 32 29 / 4%), 0 10px 28px -18px rgb(34 32 29 / 18%);
   --positive: #1d7a52;
   --negative: #c4262c;
   --caution: #9a5a00;

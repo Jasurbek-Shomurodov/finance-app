@@ -68,7 +68,7 @@ export function EndLabelTick({ x, y, payload, labels }: { x?: number; y?: number
 }
 
 /** Money in and money out, wherever both are drawn. */
-export const chartColors = { income: 'var(--positive)', expense: 'color-mix(in srgb, var(--foreground) 55%, transparent)', other: 'var(--muted-foreground)', /** An investment beside cash accounts: a lighter shade of the account colour. */holding: 'color-mix(in srgb, var(--mark-bg) 45%, var(--card))' } as const;
+export const chartColors = { income: 'var(--positive)', /** A loss or a fall: a month below zero, a drawdown. */loss: 'var(--negative)', expense: 'color-mix(in srgb, var(--foreground) 55%, transparent)', other: 'var(--muted-foreground)', /** An investment beside cash accounts: a lighter shade of the account colour. */holding: 'color-mix(in srgb, var(--mark-bg) 45%, var(--card))' } as const;
 
 /** A donut of shares. */
 export const chartDonut = { innerRadius: '58%', outerRadius: '92%', paddingAngle: 1, stroke: 'var(--card)' } as const;

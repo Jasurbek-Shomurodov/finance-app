@@ -6,6 +6,7 @@ import { StatTile, StatTiles } from '@/components/presentation-foundation/stat-t
 import { signTone } from '@/components/presentation-foundation/tone';
 import type { useMonthBudget } from '@/components/dashboard-cards';
 import { paceDifference, type SpendingPaceState } from '@/components/spending-pace-card';
+import type { ExpectedPayout } from '@/lib/investment-insights';
 import { cashForecast, type CashForecast, type CashForecastBudget } from '@/lib/cash-forecast';
 import { depositToday } from '@/lib/deposit-interest';
 import { formatDate, formatMoney, formatNumber } from '@/lib/format';
@@ -20,6 +21,8 @@ type Input = {
  data: PlanningData | null;
  /** The budget lines the cash forecast spends, as on the Lowest balance ahead card; undefined while they load. */
  forecastBudget?: CashForecastBudget;
+ /** Payouts expected from holdings, which the projection counts as the Forecast view does. */
+ payouts?: readonly ExpectedPayout[];
  forecastLoading?: boolean;
  /** The saved Budget or this month's spending could not be read: the projection would count it wrongly. */
  forecastError?: boolean;
@@ -41,10 +44,10 @@ type Props = {
 
 /** What falls due within a week and the projected cash, worked out once: the screen places the headline in two spots and
  * shows one, by the room it has. The projection waits for the saved Budget, since it spends what is left of it. */
-export function useHeadlineFigures({ data, forecastBudget, forecastLoading = false, forecastError = false, currency, market }: Input): Figures {
+export function useHeadlineFigures({ data, forecastBudget, payouts, forecastLoading = false, forecastError = false, currency, market }: Input): Figures {
  const rates = marketRates(market), today = depositToday();
  const due = useMemo(() => data ? dueSoon(data, today, 7, currency, rates) : null, [data, today, currency, rates]);
- const forecast = useMemo(() => !data || forecastLoading || forecastError ? null : cashForecast({ records: data.records, occurrences: data.occurrences, debtPayments: data.debtPayments, budget: forecastBudget, today, days: 90, currency, rates }), [data, forecastBudget, forecastLoading, forecastError, today, currency, rates]);
+ const forecast = useMemo(() => !data || forecastLoading || forecastError ? null : cashForecast({ records: data.records, occurrences: data.occurrences, debtPayments: data.debtPayments, budget: forecastBudget, payouts, today, days: 90, currency, rates }), [data, forecastBudget, payouts, forecastLoading, forecastError, today, currency, rates]);
  return useMemo(() => ({ due, forecast }), [due, forecast]);
 }
 

@@ -1,6 +1,7 @@
 import { validDay } from './benchmark-data';
 import { shiftDay, shiftMonth } from './calendar-days';
 import { budgetKey, expenses, income, liabilities, scheduleDates, type BudgetLine, type Entry } from './finance';
+import type { ExpectedPayout } from './investment-insights';
 import { convertAmount } from './market';
 import { hasMonthlyInstallment, installmentAnchor, installmentsFrom, paidInstallmentMonths, upcomingPayments, type DebtPayment, type Occurrence } from './planning';
 
@@ -12,7 +13,8 @@ export type ForecastHorizon = typeof forecastHorizons[number];
  * every month from its date. Kept on the screen, never saved. It reads as entered and converts into the display currency like
  * any other event (AGENTS.md, entered or converted), so switching the top bar never re-reads 500 USD as 500 UZS. */
 export type ForecastAdjustment = { id: string; name: string; amount: number; currency: string; frequency: 'Once' | 'Monthly'; date: string };
-export type ForecastSource = 'scheduled' | 'installment' | 'repayment' | 'maturity' | 'budget' | 'adjustment';
+/** `payout` is a dividend, coupon or interest a holding is expected to pay (`expectedPayouts`): an estimate from what it paid before. */
+export type ForecastSource = 'scheduled' | 'installment' | 'repayment' | 'maturity' | 'budget' | 'adjustment' | 'payout';
 /** One dated movement of cash. `amount` is signed (income positive) in `currency`; `accountId` is the cash account it moves, when known.
  * A scheduled income or bill carries the Budget `category` it falls under. */
 export type ForecastEvent = { key: string; date: string; name: string; kind: Entry['kind']; source: ForecastSource; amount: number; currency: string; accountId: string | null; category?: string };
@@ -32,6 +34,8 @@ export type CashForecastBudget = { linesFor: (month: string) => { lines: BudgetL
 type Input = {
  records: Entry[]; occurrences: Occurrence[]; debtPayments?: DebtPayment[];
  adjustments?: readonly ForecastAdjustment[];
+ /** Payouts expected from holdings, each in its holding's currency. They name no cash account, so they move total cash only. */
+ payouts?: readonly ExpectedPayout[];
  budget?: CashForecastBudget;
  today: string; days: number; currency: string; rates?: number | Record<string, number>;
 };
@@ -90,6 +94,10 @@ function budgetEvents(scheduled: readonly ForecastEvent[], input: Input, end: st
  return result;
 }
 
+/** Payouts expected from holdings inside the horizon. They name no cash account, so they move total cash only. */
+const payoutEvents = (payouts: readonly ExpectedPayout[] = [], today: string, end: string): ForecastEvent[] => payouts.filter(payout => payout.date >= today && payout.date <= end)
+ .map(payout => ({ key: payout.key, date: payout.date, name: payout.name, kind: payout.kind, source: 'payout', amount: payout.amount, currency: payout.currency, accountId: null }));
+
 /** Every cash movement from today through the horizon, by date. Overdue items are left out: the forecast starts from today's balances. */
 export function forecastEvents(input: Input): ForecastEvent[] {
  const { records, occurrences, today } = input;
@@ -114,6 +122,7 @@ export function forecastEvents(input: Input): ForecastEvent[] {
   for (const date of scheduleDates({ date: adjustment.date, frequency: adjustment.frequency }, today, end))
    events.push({ key: adjustment.id + ':' + date, date, name: adjustment.name, kind: adjustment.amount > 0 ? 'Other income' : 'Other expense', source: 'adjustment', amount: adjustment.amount, currency: adjustment.currency, accountId: null });
  }
+ events.push(...payoutEvents(input.payouts, today, end));
  return events.filter(event => Number.isFinite(event.amount) && event.amount !== 0).sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name) || a.key.localeCompare(b.key));
 }
 
