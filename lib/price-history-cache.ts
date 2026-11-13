@@ -1,7 +1,7 @@
 // Kept daily price history (migration 157). One row keeps one series' daily closes (`stock:SPY`, `crypto:BTC`) for every
 // workspace. A comparison is answered from the row when it already reaches the period; only the last few days are asked
-// again, after the reply once the row is an hour old. A stock series is read in full once a week, because adjusted
-// closes change with every dividend or split. A feed that fails leaves the kept closes standing when they still reach
+// again, after the reply once the row is an hour old. A stock series is read in full once a week, and at once when its
+// last days come back on another basis, because adjusted closes change with every dividend or split. A feed that fails leaves the kept closes standing when they still reach
 // within a week of the period's end.
 import { shiftDay } from './calendar-days';
 import { serviceDatabase, type ServiceDatabase } from './service-role';
@@ -43,6 +43,14 @@ const reaches = (kept: Kept | null, start: string, end: string) => !!kept && kep
 /** Kept closes still worth showing when a feed fails: they start in time and end within a week of `end`. */
 const standsIn = (kept: Kept | null, start: string, end: string) => !!kept && kept.first_day <= start && kept.checked_to >= shiftDay(end, -7);
 
+/** A settled close that reads differently now: a stock's adjusted closes were moved to a new basis by a split or
+ * dividend. The latest kept day is left out, since its candle may not have been final. */
+const rebaseTolerance = 0.0005;
+function rebased(kept: PricePoint[], tail: PricePoint[]) {
+ const settled = new Map(kept.slice(0, -1).map(point => [point.date, point.close]));
+ return tail.some(point => { const before = settled.get(point.date); return before !== undefined && before > 0 && Math.abs(point.close / before - 1) > rebaseTolerance; });
+}
+
 /** Reads `series` again: the whole kept span once a stock row is a week old (or the row starts too late), otherwise only
  * the days since it was last asked, from a few days before, laid over the kept closes. */
 type Ask = { series: string; start: string; end: string; live: LiveHistory; now: number };
@@ -55,6 +63,11 @@ async function refreshed(kept: Kept | null, { series, start, end, live, now }: A
   return { series, points, first_day: points[0]?.date ?? from, checked_to: end, fetched_at: stamp, full_at: stamp };
  }
  const tail = await live(shiftDay(kept.checked_to < end ? kept.checked_to : end, -tailDays), end);
+ if (stock && rebased(kept.points, tail)) {
+  // A split or dividend since the last full read: the tail is on a new basis, so the whole span is read on it too.
+  const points = byDate(await live(kept.first_day, end));
+  return { series, points, first_day: points[0]?.date ?? kept.first_day, checked_to: end, fetched_at: stamp, full_at: stamp };
+ }
  return { ...kept, points: merged(kept.points, tail), checked_to: end > kept.checked_to ? end : kept.checked_to, fetched_at: stamp };
 }
 

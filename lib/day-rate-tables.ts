@@ -1,6 +1,7 @@
 // A transaction counts in another currency at the official rates of its own day (migration 149). Every day's rates are
 // kept in `exchange_rate_days` for every workspace and read from there alone; only the daily Vercel job downloads them
 // (lib/exchange-rate-service.ts).
+import { shiftDay } from './calendar-days';
 import { readAllPages } from './owner-rows';
 import { serviceDatabase, type ServiceDatabase } from './service-role';
 import { happened, type DayTable } from './transaction-rates';
@@ -41,6 +42,31 @@ export async function dayTables(days: Iterable<string>, deps: DayTableDeps): Pro
  return kept;
 }
 
+/** A published rate stays in force until the next one: a day that is not kept is answered by the latest kept day at most
+ * this many days before it. Today is such a day until the daily download has run, and so is a day the provider skipped. */
+export const inForceDays = 7;
+
+/** `dayTables`, with each day that is not kept answered by the rates in force on it (`inForceDays`). Once the day itself
+ * is kept, the next read answers with its own table. A day with nothing kept that close before it stays missing. */
+export async function inForceDayTables(days: Iterable<string>, deps: DayTableDeps): Promise<Map<string, DayTable>> {
+ const wanted = [...new Set(days)].filter(day => validDay(day) && day <= deps.today);
+ const tables = await dayTables(wanted, deps);
+ const missing = wanted.filter(day => !tables.has(day)).sort();
+ const db = deps.db === undefined ? serviceDatabase() : deps.db;
+ if (!missing.length || !db) return tables;
+ // One list of kept days per run of missing days whose weeks touch: usually today alone.
+ const spans: Array<{ from: string; to: string }> = [];
+ for (const day of missing) {
+  const from = shiftDay(day, -inForceDays), last = spans.at(-1);
+  if (last && from <= last.to) last.to = day; else spans.push({ from, to: day });
+ }
+ const kept = (await Promise.all(spans.map(span => keptDaysBetween(span.from, span.to, db)))).flat();
+ const standIn = new Map(missing.map(day => [day, kept.findLast(other => other < day && other >= shiftDay(day, -inForceDays))]));
+ const earlier = await dayTables([...standIn.values()].filter((day): day is string => !!day), deps);
+ for (const [day, other] of standIn) { const table = other && earlier.get(other); if (table) tables.set(day, table); }
+ return tables;
+}
+
 /** A day's official rate (units of `to` for one `from`) from the kept day tables, the same ones each transaction converts
  * at. A pair or day the tables cannot answer goes to `fallback`. */
 export function keptDayRate(deps: DayTableDeps, fallback?: DayRate): DayRate {
@@ -61,14 +87,14 @@ const rowDay = (row: DayRow) => row.occurred_on ?? row.investment_history?.occur
 type Dateable = { records: readonly Dated[]; activity?: readonly DayRow[]; movements?: readonly DayRow[]; investmentLinks?: readonly DayRow[] };
 
 /** `data` with each transaction, transfer, repayment and purchase dated today or earlier carrying its day's rates
- * (`day_rates`), cut to the currencies it can be shown in: `currencies` (the viewer's preferred ones) and every currency of
- * its records. A day whose rates could not be loaded is attached as null, so its amounts count as missing. */
+ * (`day_rates`; the rates in force on a day not kept yet, `inForceDayTables`), cut to the currencies it can be shown in: `currencies` (the viewer's preferred ones) and every currency of
+ * its records. A day with no rates in force is attached as null, so its amounts count as missing. */
 export async function withPlanningDayRates<D extends Dateable>(data: D, currencies: Iterable<string>, deps: DayTableDeps): Promise<D> {
  const rows = (['activity', 'movements', 'investmentLinks'] as const).flatMap(key => data[key] ?? []);
  // A transaction saved with its day's rates (migration 150) keeps them; only the others look their day up.
  const unsaved = (record: Dated) => happened(record, deps.today) && !record.day_rates;
  const days = [...data.records.filter(unsaved).map(record => record.date!), ...rows.map(rowDay).filter((day): day is string => !!day && day <= deps.today)];
- const tables = days.length ? await dayTables(days, deps) : new Map<string, DayTable>();
+ const tables = days.length ? await inForceDayTables(days, deps) : new Map<string, DayTable>();
  const shown = new Set(['USD', ...currencies, ...data.records.flatMap(record => [record.currency, record.account_currency ?? record.currency])]);
  const cutTable = (table: DayTable) => Object.fromEntries(Object.entries(table).filter(([currency]) => shown.has(currency)));
  const cut = new Map([...tables].map(([day, table]) => [day, cutTable(table)]));

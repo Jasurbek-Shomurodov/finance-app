@@ -6,7 +6,7 @@ import ts from 'typescript';
 import {z} from 'zod';
 import {kinds,income,expenses} from '../lib/finance.ts';
 import {isCurrency} from '../lib/currencies.ts';
-import {depositInterest,depositToday} from '../lib/deposit-interest.ts';
+import {depositInterest,depositTerm,depositToday} from '../lib/deposit-interest.ts';
 const compile=path=>ts.transpileModule(fs.readFileSync(path,'utf8').replace(/^import .*;\n/gm,'').replace(/export /g,''),{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
 const month=depositToday().slice(0,7);
 const deposit={id:'d',name:'Savings',kind:'Deposit',currency:'UZS',amount:8000000,cost:0,rate:21,quantity:1,frequency:'Once',date:'2030-01-01',user_id:'private',notes:'private'};
@@ -14,14 +14,14 @@ const event={id:'e',record_id:'d',balance:8000000,occurred_on:month+'-01',create
 test('forecast reader uses owner token, paginates history, and excludes private metadata',async()=>{
  const calls=[];
  const supa=async(path,init,token)=>{calls.push({path,token});if(path.includes('finance_records'))return Response.json([deposit]);return Response.json(path.includes('offset=0')?Array.from({length:500},(_,i)=>({...event,id:String(i).padStart(3,'0')})):[]);};
- const read=apiFunction('supa','depositInterest',compile('lib/deposit-forecasts.ts')+';return depositForecasts;')(supa,depositInterest);
+ const read=apiFunction('depositTerm','supa','depositInterest',compile('lib/deposit-forecasts.ts')+';return depositForecasts;')(depositTerm,supa,depositInterest);
  const records=await read('owner-token');
  assert.ok(Math.abs(records[0].estimated_monthly_income-140000)<1e-6);assert.equal(records[0].user_id,undefined);assert.equal(records[0].notes,'');
  assert.equal(calls.length,3);assert.ok(calls.every(c=>c.token==='owner-token'));assert.ok(calls[2].path.includes('offset=500'));
  assert.ok(calls[1].path.includes('record_id=in.(d)'));
 });
 test('failed history reads reject rather than reporting incomplete interest',async()=>{
- const read=apiFunction('supa','depositInterest',compile('lib/deposit-forecasts.ts')+';return depositForecasts;')(async path=>path.includes('finance_records')?Response.json([deposit]):new Response(null,{status:503}),depositInterest);
+ const read=apiFunction('depositTerm','supa','depositInterest',compile('lib/deposit-forecasts.ts')+';return depositForecasts;')(depositTerm,async path=>path.includes('finance_records')?Response.json([deposit]):new Response(null,{status:503}),depositInterest);
  await assert.rejects(read('owner'),/Could not load deposit/);
 });
 test('records summary replaces grouped deposits once and preserves other assets and pagination',async()=>{
@@ -34,7 +34,7 @@ test('records the caller already read give the same estimates without reading de
  const reads=[];
  const supa=async path=>{reads.push(path);if(path.includes('finance_records'))return Response.json([deposit]);return Response.json(path.includes('offset=0')?[event]:[]);};
  const {interestKinds}=await import('../lib/finance.ts');
- const read=apiFunction('supa','depositInterest','interestKinds',compile('lib/deposit-forecasts.ts')+';return depositForecasts;')(supa,depositInterest,interestKinds);
+ const read=apiFunction('depositTerm','supa','depositInterest','interestKinds',compile('lib/deposit-forecasts.ts')+';return depositForecasts;')(depositTerm,supa,depositInterest,interestKinds);
  const fresh=await read('owner');const freshReads=reads.splice(0);
  const holdings=[{...deposit},{id:'c',kind:'Cash',amount:5,currency:'UZS'}];const before=structuredClone(holdings);
  assert.deepEqual(await read('owner',holdings),fresh);

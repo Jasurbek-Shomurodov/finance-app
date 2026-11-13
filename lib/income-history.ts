@@ -1,6 +1,6 @@
 import { shiftMonth } from './calendar-days';
 import { monthly, income, interestKinds, interestCompounding, duplicatesAssetEstimate, type Entry } from './finance';
-import type { HistoryEvent } from './investment-history';
+import { capitalizedInterest, copiesCapitalizedInterest, type HistoryEvent } from './investment-history';
 import { convertAmount } from './market';
 import { depositInterest } from './deposit-interest';
 import { ratesOf } from './transaction-rates';
@@ -29,10 +29,12 @@ export function receivedIncome(records:Entry[],events:HistoryEvent[],incomeRecor
   eventIds.add(event.id);
   receipts.push({id:event.id,date:event.occurred_on,amount:Number(event.amount),currency:record.currency,group:group(record,true),name:record.name});
  }
+ const capitalized=capitalizedInterest(events);
  for(const entry of incomeRecords){
   if(seen.has(entry.id)||!income.includes(entry.kind)||entry.frequency!=='Once'||entry.date>today)continue;
   seen.add(entry.id);
   if(entry.history_event_id&&eventIds.has(entry.history_event_id))continue;
+  if(copiesCapitalizedInterest(entry,capitalized))continue;
   receipts.push({id:entry.id,date:entry.date,amount:Number(entry.amount),currency:entry.currency,group:group(entry),name:entry.name,record:entry});
  }
  return receipts.sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));
@@ -54,7 +56,7 @@ export function incomeHistory(records:Entry[],events:HistoryEvent[],incomeRecord
  const estimateForMonth=(month:string)=>{
   let estimateMissing=0;
   const expected=blank();
-  const estimates=records.filter(record=>['Business','Property',...interestKinds].includes(record.kind)).map(record=>({record,amount:interestKinds.includes(record.kind)?depositInterest(events.filter(event=>event.record_id===record.id),Number(record.rate),month,interestCompounding(record)):Number(record.estimated_monthly_income??0)}));
+  const estimates=records.filter(record=>['Business','Property',...interestKinds].includes(record.kind)).map(record=>({record,amount:interestKinds.includes(record.kind)?depositInterest(events.filter(event=>event.record_id===record.id),Number(record.rate),month,interestCompounding(record),record.date):Number(record.estimated_monthly_income??0)}));
   const businessIds=new Set(estimates.filter(({record,amount})=>record.kind==='Business'&&amount>0).map(({record})=>record.id));
   const propertyIds=new Set(estimates.filter(({record,amount})=>record.kind==='Property'&&amount>0).map(({record})=>record.id));
   const addEstimate=(entry:Entry,amount:number)=>{

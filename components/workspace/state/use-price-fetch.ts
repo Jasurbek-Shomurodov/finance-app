@@ -23,7 +23,9 @@ export function usePriceFetch(editing: Entry | null, setEditing: Dispatch<SetSta
             if (price === null) throw Error(data.errors[instrumentKey(instrument)] || 'Price unavailable. Saved price is shown.');
             const amount = convertAmount(price, 'USD', target.currency, marketRates(data));
             if (amount === null) throw Error('Exchange rate unavailable.');
-            setEditing(current => current?.id === target.id && current.name === target.name && current.currency === target.currency && current.kind === target.kind && current.metal === target.metal && current.metal_unit === target.metal_unit && current.metal_purity === target.metal_purity ? { ...current, amount } : current);
+            // A converted quote keeps a unit quote's eight decimals, never the tail of the division.
+            const price8 = Math.round(amount * 1e8) / 1e8;
+            setEditing(current => current?.id === target.id && current.name === target.name && current.currency === target.currency && current.kind === target.kind && current.metal === target.metal && current.metal_unit === target.metal_unit && current.metal_purity === target.metal_purity ? { ...current, amount: price8 } : current);
         } catch (error) { setPriceMessage((error as Error).message); }
         finally { setFetchingPrice(false); }
     }

@@ -64,10 +64,10 @@ export async function GET(req?:Request){
  // the deposits are already here and are not read again.
  const [counted,deposits]=await Promise.all([extraPayments.then(payments=>inScheduleCurrency(data.occurrences as Occurrence[],payments,currencyOf,dayRate)),plan.historyOnly?[]:depositForecasts(auth.token,data.records as Entry[])]);
  data.occurrences=withExtraPayments(counted.occurrences,counted.payments,currencyOf);
- const estimates=new Map(deposits.map(record=>[record.id,record.estimated_monthly_income]));
+ const estimates=new Map(deposits.map(record=>[record.id,record]));
  // Only the dated lists come back; everything else was finished after the copy was taken.
  const {records,activity,movements,investmentLinks}=await dated;Object.assign(data,{records,activity,movements,investmentLinks});
- data.records=(data.records as Entry[]).map(record=>interestKinds.includes(record.kind)?{...record,estimated_monthly_income:estimates.get(record.id)??0}:record);
+ data.records=(data.records as Entry[]).map(record=>interestKinds.includes(record.kind)?{...record,estimated_monthly_income:estimates.get(record.id)?.estimated_monthly_income??0,interest_ends:estimates.get(record.id)?.interest_ends??null}:record);
  return Response.json(data,{headers:{'Cache-Control':'no-store'}});
  }catch{return Response.json({error:'Could not load planning data. Check that the latest migrations are installed.'},{status:503});}
 }

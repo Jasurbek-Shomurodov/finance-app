@@ -1,7 +1,9 @@
 import test from 'node:test';
+import {loadTS} from './helpers/load-ts.mjs';
 import assert from 'node:assert/strict';
-import {depositInterest,depositProjection,depositToday} from '../lib/deposit-interest.ts';
+import {depositInterest,depositProjection,depositTerm,depositToday} from '../lib/deposit-interest.ts';
 import {estimatedCashFlow} from '../lib/finance.ts';
+import {capitalizedInterest,copiesCapitalizedInterest} from '../lib/investment-history.ts';
 import {marketEntry} from '../lib/market.ts';
 const close=(actual,expected)=>assert.ok(Math.abs(actual-expected)<Math.max(1,Math.abs(expected))*1e-12, `${actual} != ${expected}`);
 const e=(date,balance,id='a',type='valuation')=>({id,record_id:'d',occurred_on:date,balance,created_at:date+'T12:00:00Z',event_type:type,amount:0,ownership_percentage:100});
@@ -56,4 +58,40 @@ test('withdrawing the entire confirmed deposit stops projected compounding',()=>
  const history=[e('2026-01-01',1200,'a','baseline'),{...e('2026-03-01',0,'b','withdrawal'),amount:1200}];
  close(depositProjection(history,12,'2026-03-31').total,0);
  close(depositInterest(history,12,'2026-03'),0);
+});
+
+test('a matured deposit, bill or bond earns nothing from its maturity date, and keeps what it earned',()=>{
+ const history=[e('2025-01-01',1000000,'a','baseline')];
+ // A bill at 12% maturing on 16 December: fifteen days of December, nothing after.
+ close(depositInterest(history,12,'2025-11','none','2025-12-16'),10000);
+ close(depositInterest(history,12,'2025-12','none','2025-12-16'),10000*15/31);
+ assert.equal(depositInterest(history,12,'2026-01','none','2025-12-16'),0);
+ assert.equal(depositInterest(history,12,'2031-01','none','2025-12-16'),0);
+ // A compounding deposit stops growing at maturity: years later it is worth what it was that day.
+ const atMaturity=depositProjection(history,12,'2025-12-31','monthly','2026-01-01').total;
+ close(depositProjection(history,12,'2030-06-15','monthly','2026-01-01').total,atMaturity);
+ close(depositProjection(history,12,'2030-06-15','daily','2026-01-01').total,depositProjection(history,12,'2025-12-31','daily').total);
+ assert.ok(depositProjection(history,12,'2030-06-15','monthly').total>atMaturity*1.5,'without a term it keeps earning');
+ // A date on or before the first balance is no term: a savings account saved with the day it was added keeps earning.
+ close(depositInterest(history,12,'2026-03','none','2025-01-01'),10000);
+ close(depositInterest(history,12,'2026-03','none','2024-06-01'),10000);
+ close(depositInterest(history,12,'2026-03','none',''),10000);
+ assert.equal(depositTerm(history,'2025-12-16'),'2025-12-16');assert.equal(depositTerm(history,'2025-01-01'),null);assert.equal(depositTerm([],'2025-12-16'),null);
+});
+test('the months after maturity expect no interest, in the estimate and on the income cards',()=>{
+ const bill={id:'b',name:'Bill',kind:'Treasury bill',currency:'USD',amount:25000,quantity:1,cost:0,rate:4.3,date:'2026-12-01',frequency:'Once',notes:'',estimated_monthly_income:89.58,interest_ends:'2026-12-01'};
+ assert.equal(estimatedCashFlow([bill],'2026-12').plannedIncome,89.58);
+ assert.equal(estimatedCashFlow([bill],'2027-01').plannedIncome,0);
+ assert.equal(estimatedCashFlow([{...bill,interest_ends:null}],'2028-06').plannedIncome,89.58,'no term: it keeps earning');
+ const {monthlyIncomeCards}=loadTS('lib/monthly-income-cards.ts');
+ assert.equal(monthlyIncomeCards([bill],'2026-11',[], '2026-11-14').length,1);
+ assert.equal(monthlyIncomeCards([bill],'2028-06',[], '2026-11-14').length,0);
+});
+test('capitalized interest is told from its transaction copy by the movement, the day and the amount',()=>{
+ const events=[{event_type:'income',occurred_on:'2026-10-01',amount:12},{event_type:'contribution',occurred_on:'2026-10-02',amount:50}];
+ const capitalized=capitalizedInterest(events);
+ assert.ok(copiesCapitalizedInterest({movement_id:'m',date:'2026-10-01',amount:'12'},capitalized));
+ assert.ok(!copiesCapitalizedInterest({movement_id:null,date:'2026-10-01',amount:12},capitalized),'an ordinary income of the same day and amount still counts');
+ assert.ok(!copiesCapitalizedInterest({movement_id:'m',date:'2026-10-02',amount:50},capitalized),'a transfer is not income');
+ assert.ok(!copiesCapitalizedInterest({movement_id:'m',date:'2026-10-01',amount:12},capitalizedInterest([])),'without the event the transaction is all there is, so it counts');
 });

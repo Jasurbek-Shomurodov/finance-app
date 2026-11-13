@@ -41,7 +41,7 @@ test('GET full scope reads every table, adds debt payments and deposit estimates
  state.rows={finance_records:[{id:'d1',kind:'Deposit',amount:1000},{id:'d2',kind:'Treasury bill',amount:500},{id:'s1',kind:'Salary',amount:10}],
   account_activity:[{action:'repayment',target_id:'loan',occurred_on:'2026-09-05'},{action:'repayment',target_id:null,occurred_on:'2026-09-06'},{action:'transfer',target_id:'x',occurred_on:'2026-09-07'}],
   mortgage_payments:[{mortgage_id:'home',paid_on:'2026-09-10'}]};
- state.forecasts=[{id:'d1',estimated_monthly_income:42}];
+ state.forecasts=[{id:'d1',estimated_monthly_income:42,interest_ends:'2027-01-01'}];
  const response=await api.GET();
  assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'no-store');
  const body=await response.json();
@@ -50,8 +50,8 @@ test('GET full scope reads every table, adds debt payments and deposit estimates
  assert.ok(state.reads.every(read=>read.token==='owner-token'));
  assert.deepEqual(state.reads[2].extra,{},'a full read keeps every record');
  assert.deepEqual(body.debtPayments,[{record_id:'loan',date:'2026-09-05'},{record_id:'home',date:'2026-09-10'}]);
- // Interest-bearing holdings carry the forecast, or zero when none is known; other kinds stay untouched.
- assert.deepEqual(body.records,[{id:'d1',kind:'Deposit',amount:1000,estimated_monthly_income:42},{id:'d2',kind:'Treasury bill',amount:500,estimated_monthly_income:0},{id:'s1',kind:'Salary',amount:10}]);
+ // Interest-bearing holdings carry the forecast and the day it ends, or zero when none is known; other kinds stay untouched.
+ assert.deepEqual(body.records,[{id:'d1',kind:'Deposit',amount:1000,estimated_monthly_income:42,interest_ends:'2027-01-01'},{id:'d2',kind:'Treasury bill',amount:500,estimated_monthly_income:0,interest_ends:null},{id:'s1',kind:'Salary',amount:10}]);
  assert.equal(state.forecastCalls,1);
 });
 
