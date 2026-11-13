@@ -4,6 +4,7 @@ import { convertAmount, marketRates } from './market';
 import { convertHistorical } from './investment-comparison';
 import type { FxPoint } from './benchmark-data';
 import type { InvestmentPortfolioInput } from './investment-portfolio';
+import { capitalizedInterest, copiesCapitalizedInterest } from './investment-history';
 
 export type PeriodRow={name:string;date:string;category:string;amount:number|null};
 // The three figures follow the chart's funding rules: money invested is what funds benchmarks
@@ -55,6 +56,7 @@ export function investmentPeriodTotals(input:InvestmentPortfolioInput&{movements
  }
  // Actual cashflow rows include salary and other income. Linked Tracker
  // rows are counted once through their source event, not a second time here.
+ const capitalized=capitalizedInterest(activity.events);
  for(const row of input.cashflows??[]){
   if(row.frequency!=='Once'||!row.date||!inPeriod(row.date))continue;
   context={name:row.name,date:row.date,category:row.kind};
@@ -62,7 +64,7 @@ export function investmentPeriodTotals(input:InvestmentPortfolioInput&{movements
    // The payment itself could not be read: its saved copy still carries the principal.
    context.category='Mortgage';
    add('invested',Number(row.payment_principal??Number(row.amount)-Number(row.payment_interest??0)),row.currency);
-  }else if(income.includes(row.kind)&&!(row.history_event_id&&eventIds.has(row.history_event_id)))add('income',Number(row.amount),row.currency);
+  }else if(income.includes(row.kind)&&!(row.history_event_id&&eventIds.has(row.history_event_id))&&!copiesCapitalizedInterest(row,capitalized))add('income',Number(row.amount),row.currency);
  }
  return {...totals,missing:[...missing]};
 }

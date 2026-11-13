@@ -5,16 +5,17 @@ import { session } from '@/lib/supabase';
 import { isCurrency } from '@/lib/currencies';
 import { depositToday } from '@/lib/deposit-interest';
 import { loadOfficialRate } from '@/lib/official-rate';
-import { dayTables } from '@/lib/day-rate-tables';
+import { inForceDayTables } from '@/lib/day-rate-tables';
 
 /** At most this many days in one read of `days`. */
 const maxDays=400;
-/** Several days' official rates in `currencies` (`?days=…&currencies=…`): what a report adding past transactions converts with. */
+/** Several days' official rates in `currencies` (`?days=…&currencies=…`): what a report adding past transactions converts
+ * with. A day not kept yet answers with the rates in force on it, as the app's own reads do. */
 async function daysAnswer(params:URLSearchParams){
  const days=(params.get('days')??'').split(',').filter(Boolean),currencies=(params.get('currencies')??'').split(',').filter(Boolean);
  if(!days.length||days.length>maxDays||!days.every(day=>isoDate.safeParse(day).success&&day<=depositToday())||!currencies.length||currencies.length>20||!currencies.every(isCurrency))return Response.json({error:'Choose valid dates ending today or earlier.'},{status:400});
  const shown=new Set(['USD',...currencies]);
- const tables=await dayTables(days,{today:depositToday()});
+ const tables=await inForceDayTables(days,{today:depositToday()});
  const answer=Object.fromEntries([...tables].map(([day,table])=>[day,Object.fromEntries(Object.entries(table).filter(([currency])=>shown.has(currency)))]));
  return Response.json({days:answer},{headers:{'Cache-Control':'private, no-store'}});
 }

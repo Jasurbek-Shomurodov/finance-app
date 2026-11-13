@@ -1,7 +1,8 @@
 // Kept market prices (migration 156). Each answer (the CBU dollar rate, the global rate table, one instrument's quote) is
 // kept in `market_quotes` for every workspace. A reader is answered from the kept rows at once. An instrument nobody holds
 // yet is fetched before replying and one past its freshness is refreshed after the reply (`later`); a feed that fails
-// keeps its last good answer for up to `usableForMs`. The two exchange rates are read only: the daily jobs keep them
+// keeps its last good answer for up to `usableForMs`, and an instrument no feed prices is remembered as such for
+// `failedForMs`. The two exchange rates are read only: the daily jobs keep them
 // (lib/exchange-rate-service.ts).
 import { loadFeeds, type FeedRequest } from './server-market';
 import { serviceDatabase, type ServiceDatabase } from './service-role';
@@ -15,9 +16,17 @@ export const usableForMs = 3 * 24 * 60 * 60_000;
 /** The global table is what remains when the daily jobs stop, so it stays in use longer. */
 const ratesUsableForMs = 14 * 24 * 60 * 60_000;
 
+/** An instrument no feed answered, and nobody holds a price of, is not asked again for this long: a ticker the feed does
+ * not quote would otherwise cost one paid request on every read of every tab. */
+export const failedForMs = 10 * 60_000;
+const unavailable = 'Price unavailable. Saved price is shown.';
+
 type Fx = NonNullable<MarketData['fx']>;
+/** Kept in place of a quote for `failedForMs`: the feeds were asked and had no price. */
+type Failed = { failed: true };
+const failedRow = (row: Kept) => (row.data as Failed | null)?.failed === true;
 type RatesRow = { rates: Record<string, number>; ratesDate?: string };
-type Kept = { key: string; data: Quote | Fx | RatesRow; fetched_at: string };
+type Kept = { key: string; data: Quote | Fx | RatesRow | Failed; fetched_at: string };
 /** What a reader asks for: the instruments, and which exchange rates to read from the kept rows. */
 export type MarketRequest = FeedRequest & { fx: boolean; rates: boolean };
 export type MarketCacheDeps = { db?: ServiceDatabase | null; now?: () => number; later?: (work: () => Promise<void>) => void; load?: typeof loadFeeds };
@@ -42,12 +51,14 @@ function keepable(data: MarketData) {
  for (const [key, quote] of Object.entries(data.quotes)) rows.push({ key, data: quote, fetched_at: quote.fetchedAt });
  return rows;
 }
-/** Keeps a live answer of the feeds for every reader; a failed write is retried by the next reader's refresh. */
-export async function keepMarket(db: ServiceDatabase | null, data: MarketData) {
+/** Keeps a live answer of the feeds for every reader; a failed write is retried by the next reader's refresh. `failed`
+ * are the instruments nobody holds a price of that the feeds did not answer, remembered for `failedForMs`. */
+export async function keepMarket(db: ServiceDatabase | null, data: MarketData, failed: string[] = []) {
  if (!db) return;
  // Keeping never fails the caller (the nightly snapshot run, a reply already sent): the next refresh keeps them.
  try {
-  const rows = keepable(data);
+  const at = new Date().toISOString();
+  const rows = [...keepable(data), ...failed.map(key => ({ key, data: { failed: true }, fetched_at: at }))];
   if (rows.length) await db.write('/rest/v1/market_quotes?on_conflict=key', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(rows) });
  } catch { /* Kept next time. */ }
 }
@@ -65,6 +76,7 @@ function merged(kept: Kept[], live: MarketData | null, stocksConfigured: boolean
  for (const row of kept) {
   if (row.key === 'fx') { if (!data.fx) { data.fx = row.data as Fx; delete data.errors.fx; } continue; }
   if (row.key === 'rates') { const table = row.data as RatesRow; data.rates = table.rates; data.ratesDate = table.ratesDate; continue; }
+  if (failedRow(row)) { if (!data.quotes[row.key]) data.errors[row.key] = unavailable; continue; }
   if (!data.quotes[row.key]) { data.quotes[row.key] = row.data as Quote; delete data.errors[row.key]; }
  }
  if (data.fx) data.rates = { ...data.rates, USD: 1, UZS: data.fx.rate };
@@ -81,15 +93,17 @@ const allowedKeys = (request: MarketRequest) => [...(request.fx ? ['fx'] : []), 
 export async function cachedMarket(request: MarketRequest, deps: MarketCacheDeps = {}): Promise<MarketData> {
  const db = deps.db === undefined ? serviceDatabase() : deps.db, load = deps.load ?? loadFeeds, now = (deps.now ?? Date.now)();
  const allowed = allowedKeys(request);
- const kept = db ? (await readKept(db, allowed)).filter(row => now - Date.parse(row.fetched_at) < (row.key === 'rates' ? ratesUsableForMs : usableForMs)) : [];
+ const kept = db ? (await readKept(db, allowed)).filter(row => now - Date.parse(row.fetched_at) < (failedRow(row) ? failedForMs : row.key === 'rates' ? ratesUsableForMs : usableForMs)) : [];
  const keptKeys = new Set(kept.map(row => row.key));
- const stale = new Set(kept.filter(row => !rateKeys.has(row.key) && now - Date.parse(row.fetched_at) >= freshForMs.quote).map(row => row.key));
+ const stale = new Set(kept.filter(row => !rateKeys.has(row.key) && !failedRow(row) && now - Date.parse(row.fetched_at) >= freshForMs.quote).map(row => row.key));
  // Everything not kept goes to the feeds now, including the stocks and metals this reader may not fetch, which the
  // feeds answer at once with their note and no request.
  const all = new Set([...allowed.filter(key => !rateKeys.has(key)), ...request.stocks.map(s => `Stock:${s}`), ...request.metals.map(s => `Metal:${s}`)]);
  const missing = narrowed(request, new Set([...all].filter(key => !keptKeys.has(key))));
  const live = asks(missing) ? await load(missing) : null;
- if (live && deps.later) deps.later(() => keepMarket(db, live)); else if (live) await keepMarket(db, live);
+ // Only what this reader was allowed to ask and the feeds could not price: an access note is never remembered.
+ const failed = live ? allowed.filter(key => !rateKeys.has(key) && !keptKeys.has(key) && !live.quotes[key] && live.errors[key] === unavailable) : [];
+ if (live && deps.later) deps.later(() => keepMarket(db, live, failed)); else if (live) await keepMarket(db, live, failed);
  const refresh = narrowed(request, stale);
  if (stale.size && asks(refresh)) {
   const work = async () => { await keepMarket(db, await load(refresh)); };

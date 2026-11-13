@@ -5,9 +5,16 @@ import { PGlite } from '@electric-sql/pglite';
 import { loadTS } from './helpers/load-ts.mjs';
 
 const { ratesOf, ratesOrPair, happened } = loadTS('lib/transaction-rates.ts');
-const { dayTables, keptDayRate, withPlanningDayRates, withDayRates } = loadTS('lib/day-rate-tables.ts', { './service-role': { serviceDatabase: () => null } });
-/** A stand-in for exchange_rate_days: `table(day)` gives a kept day's rates, or nothing for a day not kept. */
-const keptDb = table => ({ read: async path => decodeURIComponent(path).match(/day=in\.\((.*?)\)/)[1].split(',').flatMap(day => { const rates = table(day); return rates ? [{ day, rates }] : []; }) });
+const { dayTables, inForceDayTables, keptDayRate, withPlanningDayRates, withDayRates } = loadTS('lib/day-rate-tables.ts', { './service-role': { serviceDatabase: () => null } });
+/** A stand-in for exchange_rate_days: `table(day)` gives a kept day's rates, or nothing for a day not kept. It answers the
+ * two reads the app makes: the tables of named days, and the list of kept days in a span. */
+const keptDb = table => ({ read: async path => {
+ const text = decodeURIComponent(path), named = text.match(/day=in\.\((.*?)\)/);
+ if (named) return named[1].split(',').flatMap(day => { const rates = table(day); return rates ? [{ day, rates }] : []; });
+ const [, from, to] = text.match(/day=gte\.([\d-]+)&day=lte\.([\d-]+)/), days = [];
+ for (let at = Date.parse(from); at <= Date.parse(to); at += 86400000) { const day = new Date(at).toISOString().slice(0, 10); if (table(day)) days.push({ day }); }
+ return days;
+} });
 const { drillFlows } = loadTS('lib/cash-flow-drill.ts');
 const { cashFlowReport } = loadTS('lib/cash-flow-report.ts');
 const { reportLedger } = loadTS('lib/business-report.ts');
@@ -78,16 +85,17 @@ test('a payment day\'s rate comes from the kept tables; a pair or day they lack 
 });
 
 test('a read attaches each transaction\'s and each transfer\'s day, cut to the currencies it can be shown in', async () => {
- const deps = { db: keptDb(date => date === '2026-10-02' ? null : { USD: 1, UZS: 12000, EUR: 0.9, JPY: 150 }), today: '2026-10-20' };
+ // Nothing is kept before October.
+ const deps = { db: keptDb(date => date < '2026-10-01' ? null : { USD: 1, UZS: 12000, EUR: 0.9, JPY: 150 }), today: '2026-10-20' };
  const data = {
-  records: [record('a', 'Lunch', 'Living expense', 100, '2026-10-01'), record('b', 'Taxi', 'Living expense', 100, '2026-10-02'), record('w', 'Wallet', 'Cash', 1, '2026-10-01'), record('s', 'Rent', 'Rent expense', 1, '2026-10-01', { frequency: 'Monthly' })],
+  records: [record('a', 'Lunch', 'Living expense', 100, '2026-10-01'), record('b', 'Taxi', 'Living expense', 100, '2026-09-20'), record('w', 'Wallet', 'Cash', 1, '2026-10-01'), record('s', 'Rent', 'Rent expense', 1, '2026-10-01', { frequency: 'Monthly' })],
   activity: [{ id: 't', occurred_on: '2026-10-01' }],
   movements: [{ id: 'm', occurred_on: '2026-10-30' }],
   investmentLinks: [{ id: 'l', investment_history: { occurred_on: '2026-10-01' } }],
  };
  const out = await withPlanningDayRates(data, ['EUR'], deps);
  assert.deepEqual(out.records[0].day_rates, { USD: 1, UZS: 12000, EUR: 0.9 }, 'the viewer\'s currencies and the records\' own; JPY is left out');
- assert.equal(out.records[1].day_rates, null, 'a day that could not be loaded is attached as null');
+ assert.equal(out.records[1].day_rates, null, 'a day with no rates in force is attached as null');
  assert.equal('day_rates' in out.records[2], false, 'a holding keeps today\'s value');
  assert.equal('day_rates' in out.records[3], false, 'a schedule converts at today\'s rates');
  assert.deepEqual(out.activity[0].day_rates, { USD: 1, UZS: 12000, EUR: 0.9 });
@@ -95,6 +103,31 @@ test('a read attaches each transaction\'s and each transfer\'s day, cut to the c
  assert.deepEqual(out.investmentLinks[0].day_rates, { USD: 1, UZS: 12000, EUR: 0.9 });
  assert.equal((await withDayRates([record('a', 'Lunch', 'Living expense', 100, '2026-10-01')], [], deps))[0].day_rates.UZS, 12000);
  assert.deepEqual(await withPlanningDayRates({ records: [] }, [], deps), { records: [] });
+});
+
+test('a day not kept yet reads the rates in force: the latest kept day of the week before it (today before the daily download)', async () => {
+ const kept = { '2026-10-10': { USD: 1, UZS: 12000 }, '2026-10-18': { USD: 1, UZS: 12100, EUR: 0.9 }, '2026-10-19': { USD: 1, UZS: 12200, EUR: 0.91 } };
+ const reads = [];
+ const stub = keptDb(day => kept[day]), db = { read: path => { reads.push(path); return stub.read(path); }, write: async () => assert.fail('a reader writes nothing') };
+ const deps = { db, today: '2026-10-20' };
+ const tables = await inForceDayTables(['2026-10-20', '2026-10-19', '2026-10-17', '2026-10-09', '2026-10-21'], deps);
+ assert.deepEqual(tables.get('2026-10-19'), kept['2026-10-19'], 'a kept day answers for itself');
+ assert.deepEqual(tables.get('2026-10-20'), kept['2026-10-19'], 'today, before the download, reads yesterday\'s rates');
+ assert.deepEqual(tables.get('2026-10-17'), kept['2026-10-10'], 'a skipped day reads the last one before it, never a later one');
+ assert.equal(tables.has('2026-10-09'), false, 'nothing kept in the week before: the day stays missing');
+ assert.equal(tables.has('2026-10-21'), false, 'a future day is never answered');
+ assert.equal(reads.length, 4, 'the named days, the kept days of the two spans, and the days standing in');
+ // Every day kept: one read, as before.
+ reads.length = 0;
+ await inForceDayTables(['2026-10-18', '2026-10-19'], deps);
+ assert.equal(reads.length, 1);
+ // A transaction dated today counts at those rates instead of reading as "Exchange rate unavailable".
+ const [lunch] = await withDayRates([record('a', 'Lunch', 'Living expense', 122_000, '2026-10-20')], [], deps);
+ assert.deepEqual(lunch.day_rates, { USD: 1, UZS: 12200 });
+ assert.equal(convertAmount(lunch.amount, 'UZS', 'USD', ratesOf(lunch, today)), 10);
+ // Once the day itself is kept, it answers.
+ kept['2026-10-20'] = { USD: 1, UZS: 12300 };
+ assert.equal((await withDayRates([record('a', 'Lunch', 'Living expense', 1, '2026-10-20')], [], deps))[0].day_rates.UZS, 12300);
 });
 
 // Two payments to the same person in October, made on different days, and today's rate is different from both.
@@ -186,7 +219,7 @@ test('the rate route answers several days\' official rates in the asked currenci
   '@/lib/supabase': { session: async () => ({ token: 't', user: { id: 'me' } }) },
   '@/lib/rate-limit': { limits: { market: [] }, rateLimited: async () => false },
   'next/server': { after: () => {} },
-  '@/lib/day-rate-tables': { dayTables: async days => { asked.push(days); return new Map(days.map(day => [day, { USD: 1, UZS: 12000, EUR: 0.9, JPY: 150 }])); } },
+  '@/lib/day-rate-tables': { inForceDayTables: async days => { asked.push(days); return new Map(days.map(day => [day, { USD: 1, UZS: 12000, EUR: 0.9, JPY: 150 }])); } },
  });
  const read = query => GET(new Request('https://local/api/exchange-rate?' + query));
  const ok = await read('days=2026-10-01,2026-10-15&currencies=UZS');
