@@ -13,14 +13,15 @@ import type {ServiceDatabase} from './service-role';
 import {escapeHtml} from './telegram';
 import {messageKit} from './telegram-kit';
 
-type Holdings={records:Entry[];events:HistoryEvent[];market:MarketData;currency:string;today:string};
+type InterestMovement={kind:'interest';target_id:string;occurred_on:string;target_value:number};
+type Holdings={records:Entry[];events:HistoryEvent[];movements?:InterestMovement[];market:MarketData;currency:string;today:string};
 /** The kept prices and rates as the market feed's shape, so holdings are valued as the app values them. */
 export const keptMarket=(quotes:Record<string,Quote>,rates:Record<string,number>):MarketData=>({rates,quotes,errors:{},fx:null,stocksConfigured:false});
 
 /** What the investments earned from the 1st of `today`'s month to `today`, in `currency`: the change in value without
  * the money put in or taken out, plus income, minus costs. Null without holdings, or when one of them has no rate. */
-export function monthInvestmentPnl({records,events,market,currency,today}:Holdings):number|null{
- const pnl=investmentPnl({records,events,cashflows:records,market,currency,today});
+export function monthInvestmentPnl({records,events,movements,market,currency,today}:Holdings):number|null{
+ const pnl=investmentPnl({records,events,movements,cashflows:records,market,currency,today});
  if(pnl.missing||!pnl.holdings.length)return null;
  const rates=marketRates(market);
  const {days}=investmentReturns(pnl,today,from=>convertAmount(1,from,currency,rates));
@@ -50,6 +51,8 @@ export const markReached=(alerts:readonly PriceAlert[],reached:readonly ReachedA
 
 const historyColumns='id,record_id,event_type,occurred_on,amount,balance,ownership_percentage,principal,interest,notes,created_at';
 export const ownerHistory=(db:ServiceDatabase,owner:string)=>ownerRows<HistoryEvent>(db,'investment_history',owner,historyColumns);
+/** Interest added to a balance, so the digest counts it once, as the app does. */
+export const ownerInterest=(db:ServiceDatabase,owner:string)=>ownerRows<InterestMovement>(db,'asset_movements',owner,'kind,target_id,occurred_on,target_value&kind=eq.interest');
 /** The kept price of each instrument the records hold (migration 156); an instrument nobody kept is simply absent. */
 export async function ownerQuotes(db:ServiceDatabase,records:readonly Entry[]):Promise<Record<string,Quote>>{
  const keys=[...new Set(records.flatMap(record=>{const instrument=instrumentFor(record);return instrument?[instrumentKey(instrument)]:[];}))];

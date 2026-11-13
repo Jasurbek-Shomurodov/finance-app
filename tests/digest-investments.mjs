@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {loadTS} from './helpers/load-ts.mjs';
-const {keptMarket,monthInvestmentPnl,reachedAlerts,priceAlertMessage,markReached,ownerHistory,ownerQuotes,ownerPriceAlerts,savePriceAlerts}=loadTS('lib/digest-investments.ts');
+const {ownerInterest,keptMarket,monthInvestmentPnl,reachedAlerts,priceAlertMessage,markReached,ownerHistory,ownerQuotes,ownerPriceAlerts,savePriceAlerts}=loadTS('lib/digest-investments.ts');
 const {digestMessage,digestCard}=loadTS('lib/digest-message.ts');
 const {cashForecast}=loadTS('lib/cash-forecast.ts');
 
@@ -19,6 +19,8 @@ test('the month\'s investment result leaves out money added and counts income, a
  assert.equal(Math.round(monthInvestmentPnl({records,events,market,currency:'EUR',today})),180);
  assert.equal(monthInvestmentPnl({records:[],events:[],market,currency:'USD',today}),null);
  assert.equal(monthInvestmentPnl({records,events,market,currency:'UZS',today}),null,'no rate: unknown, never a partial figure');
+ // Interest added to the balance this month is that month's income, once.
+ assert.equal(monthInvestmentPnl({records:[record('cd','Deposit',1050)],events:[event('open','cd','contribution',1000,'2026-09-01',1000),event('paid','cd','income',50,'2026-11-05'),event('seen','cd','valuation',0,'2026-11-06',1050)],movements:[{kind:'interest',target_id:'cd',occurred_on:'2026-11-05',target_value:50}],market,currency:'USD',today}),50);
  // A kept quote values the holding: 2 BTC at 50,000 against a 60,000 cost.
  assert.equal(monthInvestmentPnl({records:[btc],events:[event('seen','btc','baseline',0,'2026-03-01',120000)],market,currency:'USD',today}),-20000);
 });
@@ -47,6 +49,7 @@ test('the owner reads use the server key for one owner, and a refused save is an
  const asked=[];
  const db={read:async path=>{asked.push(path);return path.includes('market_quotes')?[{key:'Crypto:BTC',data:{usd:1}}]:path.includes('workspace_preferences')?[{data:{items:[{id:'a'}]}}]:[];},write:async(path,init)=>{asked.push(init.method+' '+path+' '+init.body);return {ok:path.includes('owner-1')};}};
  assert.deepEqual(await ownerHistory(db,'owner-1'),[]);
+ assert.deepEqual(await ownerInterest(db,'owner-1'),[]);assert.ok(asked.at(-1).includes('asset_movements')&&asked.at(-1).includes('kind=eq.interest')&&asked.at(-1).includes('user_id=eq.owner-1'));
  assert.deepEqual(await ownerQuotes(db,[btc,record('home','Property',1)]),{'Crypto:BTC':{usd:1}});
  assert.deepEqual(await ownerQuotes(db,[record('home','Property',1)]),{});
  assert.deepEqual(await ownerPriceAlerts(db,'owner-1'),[{id:'a'}]);

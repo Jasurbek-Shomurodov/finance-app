@@ -2855,5 +2855,6 @@
   "Expected payout": "Oczekiwana wypłata",
   "Profit and loss this month": "Zysk i strata w tym miesiącu",
   "rose to {price}": "wzrosła do {price}",
-  "fell to {price}": "spadła do {price}"
+  "fell to {price}": "spadła do {price}",
+  "A shorter period counts each holding from what it was worth on its first day.": "Krótszy okres liczy każdą pozycję od jej wartości w pierwszym dniu."
 }

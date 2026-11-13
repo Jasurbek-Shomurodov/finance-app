@@ -17,7 +17,7 @@ import { digestBudget, digestForecast, digestGoal } from '@/lib/digest-plan';
 import type { Entry } from '@/lib/finance';
 import type { ServiceDatabase } from '@/lib/service-role';
 import { withDayRates } from '@/lib/day-rate-tables';
-import { keptMarket, markReached, monthInvestmentPnl, ownerHistory, ownerPriceAlerts, ownerQuotes, priceAlertMessage, reachedAlerts, savePriceAlerts } from '@/lib/digest-investments';
+import { keptMarket, markReached, monthInvestmentPnl, ownerHistory, ownerInterest, ownerPriceAlerts, ownerQuotes, priceAlertMessage, reachedAlerts, savePriceAlerts } from '@/lib/digest-investments';
 import { deliverTelegramMessage, type TelegramConfig } from '@/lib/telegram';
 import type { Language } from '@/lib/i18n';
 export const maxDuration=60;
@@ -36,11 +36,11 @@ type InvestmentInput={records:Entry[];today:string;currency:string;rates:Record<
  * their own message and marked so each is announced once. Like the plan, it only adds: a failed read is reported. */
 async function investmentsOf(db:ServiceDatabase,owner:string,config:TelegramConfig,input:InvestmentInput){
  try{
-  const [events,quotes,alerts]=await Promise.all([ownerHistory(db,owner),ownerQuotes(db,input.records),ownerPriceAlerts(db,owner)]);
+  const [events,quotes,alerts,movements]=await Promise.all([ownerHistory(db,owner),ownerQuotes(db,input.records),ownerPriceAlerts(db,owner),ownerInterest(db,owner)]);
   const market=keptMarket(quotes,input.rates);
   const reached=reachedAlerts(alerts,input.records,market);
   if(reached.length&&await deliverTelegramMessage({chat_id:input.chat_id,text:priceAlertMessage(reached,input.language,input.today)},config)==='sent')await savePriceAlerts(db,owner,markReached(alerts,reached,input.today));
-  const monthPnl=monthInvestmentPnl({records:input.records,events,market,currency:input.currency,today:input.today});
+  const monthPnl=monthInvestmentPnl({records:input.records,events,movements,market,currency:input.currency,today:input.today});
   return monthPnl===null?undefined:{monthPnl};
  }catch(error){await reportError('cron:telegram-digest',error,{route:'/api/cron/telegram-digest',status:200});return undefined;}
 }

@@ -2855,5 +2855,6 @@
   "Expected payout": "预期派息",
   "Profit and loss this month": "本月盈亏",
   "rose to {price}": "升至 {price}",
-  "fell to {price}": "跌至 {price}"
+  "fell to {price}": "跌至 {price}",
+  "A shorter period counts each holding from what it was worth on its first day.": "较短的期间从每项持仓在首日的价值开始计算。"
 }

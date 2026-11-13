@@ -2855,5 +2855,6 @@
   "Expected payout": "متوقع ادائیگی",
   "Profit and loss this month": "اس مہینے کا نفع و نقصان",
   "rose to {price}": "بڑھ کر {price} ہوئی",
-  "fell to {price}": "گھٹ کر {price} ہوئی"
+  "fell to {price}": "گھٹ کر {price} ہوئی",
+  "A shorter period counts each holding from what it was worth on its first day.": "مختصر مدت ہر اثاثے کو اس کے پہلے دن کی قیمت سے شمار کرتی ہے۔"
 }

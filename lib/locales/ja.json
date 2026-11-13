@@ -2855,5 +2855,6 @@
   "Expected payout": "受取予定",
   "Profit and loss this month": "今月の損益",
   "rose to {price}": "{price}まで上昇",
-  "fell to {price}": "{price}まで下落"
+  "fell to {price}": "{price}まで下落",
+  "A shorter period counts each holding from what it was worth on its first day.": "短い期間では、各保有資産を期間初日の評価額から計算します。"
 }

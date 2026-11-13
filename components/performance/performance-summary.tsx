@@ -1,4 +1,5 @@
 "use client";
+import type { ReactNode } from 'react';
 import { TrendingDown, TrendingUp } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { InfoHint } from '@/components/presentation-foundation/info-hint';
@@ -16,7 +17,7 @@ export function signedPercent(value: number | null, locale: string) {
 }
 
 /** The headline: total profit or loss, the five lines it is made of, and the three ways to read the return. */
-export function PerformanceSummary({ totals, returns, missing, dated, currency }: { totals: PnlTotals; returns: InvestmentReturns; missing: number; /** Past days convert at their own rate, so the currency line means something. */ dated: boolean; currency: string }) {
+export function PerformanceSummary({ totals, returns, missing, dated, currency, children }: { /** The period switch, beside today's value. */ children?: ReactNode; totals: PnlTotals; returns: InvestmentReturns; missing: number; /** Past days convert at their own rate, so the currency line means something. */ dated: boolean; currency: string }) {
  const { t, locale } = useLanguage();
  const signed = (amount: number) => formatSignedMoney(amount, currency, locale);
  const Trend = totals.total < 0 ? TrendingDown : TrendingUp;
@@ -30,11 +31,11 @@ export function PerformanceSummary({ totals, returns, missing, dated, currency }
  return <section className="panel performance-hero" aria-labelledby="performance-total">
   <header className="performance-hero-head">
    <div>
-    <h2 id="performance-total">{t('Profit & loss')}<InfoHint>{t('Everything your investments earned since you started tracking them: the change in their value, sales, income and costs.')}</InfoHint></h2>
+    <h2 id="performance-total">{t('Profit & loss')}<InfoHint><p>{t('Everything your investments earned since you started tracking them: the change in their value, sales, income and costs.')}</p><p>{t('A shorter period counts each holding from what it was worth on its first day.')}</p></InfoHint></h2>
     <strong className={'performance-hero-figure ' + (signTone(totals.total) ?? '')}><RollingText text={signed(totals.total)}/></strong>
     <p><span className={'overview-delta ' + (signTone(totals.total) ?? '')}><Trend size={15} aria-hidden="true"/>{signedPercent(totals.returnPercent, locale)}</span><span>{t('on {amount} invested', { amount: formatMoney(totals.invested, currency, locale) })}</span></p>
    </div>
-   <dl className="performance-hero-value"><div><dt>{t('Value today')}</dt><dd>{formatMoney(totals.value, currency, locale)}</dd></div></dl>
+   <div className="performance-hero-aside">{children}<dl className="performance-hero-value"><div><dt>{t('Value today')}</dt><dd>{formatMoney(totals.value, currency, locale)}</dd></div></dl></div>
   </header>
   <ul className="performance-lines" aria-label={t('Profit & loss')}>
    {lines.map(line => <li key={line.label}><span>{t(line.label)}<InfoHint>{t(line.hint)}</InfoHint></span><strong className={signTone(line.amount)}>{signed(line.amount)}</strong></li>)}

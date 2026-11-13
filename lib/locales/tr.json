@@ -2855,5 +2855,6 @@
   "Expected payout": "Beklenen ödeme",
   "Profit and loss this month": "Bu ayın kâr ve zararı",
   "rose to {price}": "{price} fiyatına yükseldi",
-  "fell to {price}": "{price} fiyatına düştü"
+  "fell to {price}": "{price} fiyatına düştü",
+  "A shorter period counts each holding from what it was worth on its first day.": "Daha kısa bir dönem, her varlığı ilk gündeki değerinden itibaren sayar."
 }

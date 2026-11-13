@@ -224,3 +224,13 @@ test('the running total and the holdings reach the two charts kept from the firs
  assert.deepEqual([cells[0].props.fill, cells.at(-1).props.fill], ['var(--positive)', 'var(--negative)']);
  assert.deepEqual(r.find(byType(recharts.Tooltip)).props.formatter(600), ['+$600', 'Gain/loss']);
 });
+
+test('the period switch recounts the headline from the period\'s first day; sales and yields keep the whole history', () => {
+ open();
+ const all = text(r.find(node => node.props?.className === 'panel performance-hero'));
+ const period = r.find(node => node.type === 'Segmented' && node.props.label === 'Period');
+ assert.deepEqual(period.props.options.map(option => option.label), ['This year', 'Last 12 months', 'All history']);assert.equal(period.props.value, 'all');
+ r.fire(period, 'onChange', 'months');
+ assert.notEqual(text(r.find(node => node.props?.className === 'panel performance-hero')), all);
+ assert.match(text(panel('Realized gains')), /Sold for \$300/);assert.match(text(panel('Rental yield')), /Gross yield5%/);
+});

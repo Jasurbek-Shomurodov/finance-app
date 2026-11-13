@@ -5,8 +5,9 @@
 // its own day. The first, at today's rate, is what prices earned; the difference between the two is what the exchange
 // rate did, shown as its own line. Sales use the average-cost method: a sale removes the share of the cost that the
 // proceeds were of the value just before it.
+import { shiftDay } from './calendar-days';
 import { expenses, income, unitPricedKinds, value, type Entry } from './finance';
-import { benchmarkInvestment, openingFunding } from './investment-benchmarks';
+import { benchmarkInvestment, openingFunding, type BenchmarkMovement } from './investment-benchmarks';
 import type { HistoryEvent } from './investment-history';
 import { convertAmount, marketEntry, marketRates, type MarketData } from './market';
 import { amountIn } from './money';
@@ -14,11 +15,21 @@ import { ratesOf } from './transaction-rates';
 
 /** Units of `to` for one unit of `from` on a past day; null when that day's rate is unknown. */
 export type DatedRate = (from: string, to: string, date: string) => number | null;
-export type PnlInput = { records: Entry[]; events: HistoryEvent[]; cashflows?: Entry[]; market: MarketData | null; currency: string; today: string; rate?: DatedRate };
+export type PnlInput = {
+ records: Entry[]; events: HistoryEvent[]; cashflows?: Entry[]; market: MarketData | null; currency: string; today: string; rate?: DatedRate;
+ /** Interest added to a balance is read from these: it is income that stayed invested, not a rise in price. */
+ movements?: readonly Pick<BenchmarkMovement, 'kind' | 'target_id' | 'occurred_on' | 'target_value'>[];
+ /** Count from this day: each holding opens at what it was worth then. Without it, everything recorded counts. */
+ start?: string | null;
+};
+export type PnlPeriod = 'year' | 'months' | 'all';
+export const pnlPeriods: readonly PnlPeriod[] = ['year', 'months', 'all'];
+/** The first day a period counts; null counts every recorded day. */
+export const pnlPeriodStart = (period: PnlPeriod, today: string): string | null => period === 'year' ? today.slice(0, 4) + '-01-01' : period === 'months' ? shiftDay(today, -365) : null;
 
 export type PnlFlowType = 'buy' | 'sell' | 'income' | 'cost';
 /** Money that moved for a holding. `local` is in the holding's currency, `shown` in the display currency at the day's rate. */
-export type PnlFlow = { id: string; date: string; recordId: string; type: PnlFlowType; local: number; shown: number; name: string; /** A transaction linked to the asset, not a Tracker entry. */ linked: boolean };
+export type PnlFlow = { id: string; date: string; recordId: string; type: PnlFlowType; local: number; shown: number; name: string; /** A transaction linked to the asset, not a Tracker entry. */ linked: boolean; /** Earnings that stayed in the holding: they raise its cost, but are not new money put in. */ reinvested?: boolean };
 /** A sale and the gain it realized, in the holding's currency; `shownGain` is the gain in the display currency. */
 export type RealizedSale = { id: string; date: string; recordId: string; name: string; kind: string; currency: string; proceeds: number; cost: number; gain: number; shownGain: number };
 /** Every figure is in the display currency. `realized`, `unrealized`, `income` and `costs` are at today's rate;
@@ -38,9 +49,9 @@ export type InvestmentPnl = { holdings: HoldingPnl[]; totals: PnlTotals; flows: 
 type State = {
  record: Entry; basisL: number; basisD: number; last: number | null; realizedL: number; realizedD: number;
  incomeL: number; incomeD: number; costsL: number; costsD: number; linkedL: number; investedD: number;
- opening: PnlFlow | null; trades: number;
+ opening: PnlFlow | null; trades: number; rebased: boolean;
 };
-type Ledger = { input: PnlInput; states: Map<string, State>; flows: PnlFlow[]; sales: RealizedSale[]; marks: ValueMark[]; carried: Map<string, { local: number; shown: number }>; missing: number };
+type Ledger = { input: PnlInput; states: Map<string, State>; flows: PnlFlow[]; sales: RealizedSale[]; marks: ValueMark[]; carried: Map<string, { local: number; shown: number }>; capitalized: Map<string, number>; missing: number };
 
 const transferNote = 'Security transfer. ';
 const isTransfer = (event: HistoryEvent) => !event.account_link && event.notes.startsWith(transferNote);
@@ -56,11 +67,13 @@ function rateOn(input: PnlInput, currency: string, date: string) {
  return dated && Number.isFinite(dated) && dated > 0 ? dated : rateNow(input, currency);
 }
 
+const interestKey = (recordId: string, date: string, amount: number) => [recordId, date, Number(amount)].join('|');
+
 function addFlow(ledger: Ledger, state: State, flow: Omit<PnlFlow, 'recordId' | 'shown' | 'linked'> & { shown?: number; linked?: boolean }) {
  const shown = flow.shown ?? flow.local * (rateOn(ledger.input, state.record.currency, flow.date) ?? 0);
  const entry: PnlFlow = { ...flow, recordId: state.record.id, shown, linked: flow.linked ?? false };
  ledger.flows.push(entry);
- if (entry.type === 'buy') { state.basisL += entry.local; state.basisD += shown; state.investedD += shown; }
+ if (entry.type === 'buy') { state.basisL += entry.local; state.basisD += shown; if (!entry.reinvested) state.investedD += shown; }
  if (entry.type === 'income') { state.incomeL += entry.local; state.incomeD += shown; }
  if (entry.type === 'cost') { state.costsL += entry.local; state.costsD += shown; }
  if (entry.linked) state.linkedL += entry.type === 'income' ? entry.local : -entry.local;
@@ -93,6 +106,31 @@ function contribute(ledger: Ledger, state: State, event: HistoryEvent) {
  state.trades++;
 }
 
+/** Income from a holding. Interest added to its balance stays invested: it raises the cost by the same amount, so the
+ * higher balance is not counted a second time as a gain. */
+function earn(ledger: Ledger, state: State, event: HistoryEvent, after: number | null) {
+ const entry = { date: event.occurred_on, name: state.record.name, local: Number(event.amount) };
+ addFlow(ledger, state, { ...entry, id: event.id, type: 'income' });
+ const key = interestKey(state.record.id, event.occurred_on, Number(event.amount)), left = ledger.capitalized.get(key) ?? 0;
+ // An interest movement says so; so does an income entry whose own balance rose by exactly what it paid.
+ const amount = Number(event.amount), added = after !== null && state.last !== null && Math.abs(after - state.last - amount) <= 1e-6 * Math.max(1, amount);
+ if (!left && !added) return;
+ if (left) ledger.capitalized.set(key, left - 1);
+ addFlow(ledger, state, { ...entry, id: 'reinvested:' + event.id, type: 'buy', reinvested: true });
+}
+
+/** From the period's first day a holding starts over: what it was worth then is the money in it, and nothing earlier counts. */
+function rebase(ledger: Ledger, state: State) {
+ const start = ledger.input.start;
+ if (!start || state.rebased) return;
+ const worth = state.last ?? state.basisL, own = (item: { recordId: string }) => item.recordId !== state.record.id;
+ ledger.flows = ledger.flows.filter(own); ledger.sales = ledger.sales.filter(own); ledger.marks = ledger.marks.filter(own);
+ Object.assign(state, newState(state.record), { rebased: true, last: state.last });
+ if (!(worth > 0)) return;
+ addFlow(ledger, state, { id: 'start:' + state.record.id, date: start, type: 'buy', local: worth, name: state.record.name });
+ ledger.marks.push({ date: start, recordId: state.record.id, currency: state.record.currency, value: worth });
+}
+
 function applyEvent(ledger: Ledger, state: State, event: HistoryEvent, opening: { amount: number } | undefined) {
  const after = event.balance === null ? null : Number(event.balance) * Number(event.ownership_percentage) / 100;
  const entry = { id: event.id, date: event.occurred_on, name: state.record.name };
@@ -100,7 +138,7 @@ function applyEvent(ledger: Ledger, state: State, event: HistoryEvent, opening: 
  if (opening) state.opening = addFlow(ledger, state, { ...entry, id: 'opening:' + event.id, type: 'buy', local: opening.amount });
  if (event.event_type === 'contribution') contribute(ledger, state, event);
  if (event.event_type === 'withdrawal') withdraw(ledger, state, event, after);
- if (event.event_type === 'income') addFlow(ledger, state, { ...entry, type: 'income', local: Number(event.amount) });
+ if (event.event_type === 'income') earn(ledger, state, event, after);
  if (event.event_type === 'expense') addFlow(ledger, state, { ...entry, type: 'cost', local: Number(event.amount) });
  if (after !== null) state.last = after;
  // Bought but not valued yet: the money put in stands for the value until the first one is recorded.
@@ -118,7 +156,7 @@ function linkedHolding(row: Entry, states: Map<string, State>) {
 
 function applyLinked(ledger: Ledger, row: Entry) {
  const state = linkedHolding(row, ledger.states);
- if (!state || row.date > ledger.input.today) return;
+ if (!state || row.date > ledger.input.today || row.date < (ledger.input.start ?? '')) return;
  const entered = { amount: Number(row.amount), currency: row.currency }, rates = ratesOf(row, marketRates(ledger.input.market));
  const local = amountIn(entered, state.record.currency, rates), shown = amountIn(entered, ledger.input.currency, rates);
  if (local === null || shown === null) { ledger.missing++; return; }
@@ -164,14 +202,15 @@ export function sumPnl(holdings: readonly HoldingPnl[]): PnlTotals {
  return { ...totals, returnPercent: totals.invested > 0 ? totals.total / totals.invested * 100 : null };
 }
 
-const newState = (record: Entry): State => ({ record, basisL: 0, basisD: 0, last: null, realizedL: 0, realizedD: 0, incomeL: 0, incomeD: 0, costsL: 0, costsD: 0, linkedL: 0, investedD: 0, opening: null, trades: 0 });
+const newState = (record: Entry): State => ({ record, basisL: 0, basisD: 0, last: null, realizedL: 0, realizedD: 0, incomeL: 0, incomeD: 0, costsL: 0, costsD: 0, linkedL: 0, investedD: 0, opening: null, trades: 0, rebased: false });
 // A transfer leaves one holding before it arrives in the other, whichever was saved first.
 const eventOrder = (a: HistoryEvent, b: HistoryEvent) => a.occurred_on.localeCompare(b.occurred_on) || Number(b.event_type === 'withdrawal' && isTransfer(b)) - Number(a.event_type === 'withdrawal' && isTransfer(a)) || a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id);
 
 export function investmentPnl(input: PnlInput): InvestmentPnl {
  // Money lent is a loan, followed in Loans & debts: it is not a holding here, as on the Holdings tab.
  const held = input.records.filter(record => benchmarkInvestment(record) && record.kind !== 'Money lent');
- const ledger: Ledger = { input, states: new Map(), flows: [], sales: [], marks: [], carried: new Map(), missing: 0 };
+ const ledger: Ledger = { input, states: new Map(), flows: [], sales: [], marks: [], carried: new Map(), capitalized: new Map(), missing: 0 };
+ for (const row of input.movements ?? []) if (row.kind === 'interest') { const key = interestKey(row.target_id, row.occurred_on, Number(row.target_value)); ledger.capitalized.set(key, (ledger.capitalized.get(key) ?? 0) + 1); }
  for (const record of held) {
   if (rateNow(input, record.currency) === null) ledger.missing++;
   else ledger.states.set(record.id, newState(record));
@@ -179,8 +218,12 @@ export function investmentPnl(input: PnlInput): InvestmentPnl {
  const openings = openingFunding(held, input.events, input.today);
  for (const event of input.events.filter(event => event.occurred_on <= input.today).sort(eventOrder)) {
   const state = ledger.states.get(event.record_id);
-  if (state) applyEvent(ledger, state, event, openings.get(event.id));
+  if (!state) continue;
+  if (input.start && event.occurred_on >= input.start) rebase(ledger, state);
+  applyEvent(ledger, state, event, openings.get(event.id));
  }
+ // A holding with nothing recorded in the period starts over too, before its linked payments are added.
+ for (const state of ledger.states.values()) rebase(ledger, state);
  for (const row of input.cashflows ?? []) applyLinked(ledger, row);
  const holdings = [...ledger.states.values()].flatMap(state => finish(ledger, state) ?? []);
  const day = (a: { date: string }, b: { date: string }) => a.date.localeCompare(b.date);

@@ -2855,5 +2855,6 @@
   "Expected payout": "अपेक्षित भुगतान",
   "Profit and loss this month": "इस महीने का लाभ और हानि",
   "rose to {price}": "बढ़कर {price} हुआ",
-  "fell to {price}": "गिरकर {price} हुआ"
+  "fell to {price}": "गिरकर {price} हुआ",
+  "A shorter period counts each holding from what it was worth on its first day.": "छोटी अवधि में हर होल्डिंग उसकी पहले दिन की कीमत से गिनी जाती है।"
 }

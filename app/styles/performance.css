@@ -9,6 +9,7 @@
 .performance-hero-head h2{display:flex;align-items:center;gap:6px;font-size:var(--type-caption);font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-foreground)}
 .performance-hero-figure{display:block;margin:6px 0 8px;font-size:var(--type-hero);font-weight:650;letter-spacing:-.04em;line-height:1.05;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .performance-hero-head p{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:var(--type-small);color:var(--muted-foreground)}
+.performance-hero-aside{display:grid;justify-items:end;gap:14px}
 .performance-hero-value div{display:grid;gap:4px;text-align:end}
 .performance-hero-value dt{font-size:var(--type-caption);color:var(--muted-foreground)}
 .performance-hero-value dd{font-size:var(--type-heading);font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}

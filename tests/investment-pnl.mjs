@@ -161,3 +161,37 @@ test('a price alert is reached at its price or beyond, and announced once',()=>{
  const alerts=[{id:'1',record_id:'a',direction:'above',price:100},{id:'2',record_id:'a',direction:'above',price:100,reached_on:'2026-11-01'},{id:'3',record_id:'b',direction:'below',price:5}];
  assert.deepEqual(newlyReached(alerts,id=>id==='a'?120:9).map(alert=>alert.id),['1']);
 });
+
+test('interest added to the balance is income once: it raises the cost, not the gain',()=>{
+ const {pnlPeriodStart}=loadTS('lib/investment-pnl.ts');
+ const events=[event('open','cd','contribution',1000,'2026-01-10',1000),event('paid','cd','income',50,'2026-06-10'),event('seen','cd','valuation',0,'2026-06-11',1050)];
+ const movements=[{kind:'interest',target_id:'cd',occurred_on:'2026-06-10',target_value:50},{kind:'buy',target_id:'cd',occurred_on:'2026-06-10',target_value:50}];
+ const pnl=run([record('cd','Deposit',1050)],events,{movements});
+ near(pnl.totals.income,50);near(pnl.totals.unrealized,0);near(pnl.totals.total,50);near(pnl.totals.invested,1000,'reinvested earnings are not new money');
+ near(investmentReturns(pnl,today,()=>1).days.reduce((sum,day)=>sum+day.pnl,0),50);
+ // The same without the movement, when the income entry itself carries the higher balance.
+ near(run([record('cd','Deposit',1050)],[events[0],event('paid','cd','income',50,'2026-06-10',1050)]).totals.total,50);
+ // Interest paid out to cash leaves the balance alone and is still income once.
+ near(run([record('cd','Deposit',1000)],[events[0],event('paid','cd','income',50,'2026-06-10')]).totals.total,50);
+ assert.deepEqual([pnlPeriodStart('year',today),pnlPeriodStart('months',today),pnlPeriodStart('all',today)],['2026-01-01','2025-11-14',null]);
+});
+
+test('a period counts each holding from what it was worth on its first day, and nothing earlier',()=>{
+ const records=[record('fund','Retirement account',1500),record('new','Valuables',300),record('home','Property',900)];
+ const events=[
+  event('buy','fund','contribution',1000,'2025-03-01',1000),event('old-pay','fund','income',70,'2025-06-01'),event('old-sale','fund','withdrawal',100,'2025-07-01',1200),
+  event('pay','fund','income',40,'2026-02-01'),event('up','fund','valuation',0,'2026-03-01',1400),
+  event('new-buy','new','contribution',250,'2026-05-01',250),event('home-open','home','baseline',0,'2025-01-01',900),
+ ];
+ const cashflows=[{...record('old-rent','Rent income',500,{income_source_id:'home'}),date:'2025-12-31'},{...record('rent','Rent income',600,{income_source_id:'home'}),date:'2026-01-01'}];
+ const pnl=run(records,events,{cashflows,start:'2026-01-01'});
+ const fund=pnl.holdings.find(item=>item.id==='fund');
+ // Worth 1,200 on 1 January, 1,500 today, 40 paid since.
+ near(fund.invested,1200);near(fund.unrealized,300);near(fund.income,40);near(fund.realized,0);near(fund.total,340);
+ near(pnl.holdings.find(item=>item.id==='new').total,50);near(pnl.holdings.find(item=>item.id==='home').income,600);
+ assert.deepEqual(pnl.sales,[]);assert.ok(pnl.flows.every(flow=>flow.date>='2026-01-01'));
+ const returns=investmentReturns(pnl,today,()=>1);
+ assert.equal(returns.days[0].date,'2026-01-01');near(returns.days[0].pnl,600);near(returns.days.reduce((sum,day)=>sum+day.pnl,0),pnl.totals.total);
+ // Without a start everything counts.
+ near(run(records,events,{cashflows}).holdings.find(item=>item.id==='fund').realized,100-1000*100/1300);
+});

@@ -2855,5 +2855,6 @@
   "Expected payout": "Очікувана виплата",
   "Profit and loss this month": "Прибуток і збиток цього місяця",
   "rose to {price}": "зросла до {price}",
-  "fell to {price}": "впала до {price}"
+  "fell to {price}": "впала до {price}",
+  "A shorter period counts each holding from what it was worth on its first day.": "Коротший період рахує кожен актив від його вартості в перший день."
 }

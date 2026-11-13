@@ -1,5 +1,5 @@
 "use client";
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { LineChart } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
@@ -20,11 +20,14 @@ import { addMonths } from '@/lib/calendar-days';
 import { depositToday } from '@/lib/deposit-interest';
 import type { HoldingAccount } from '@/lib/holding-accounts';
 import { expectedPayouts, isBitcoin, propertyYields } from '@/lib/investment-insights';
-import { investmentPnl } from '@/lib/investment-pnl';
+import { investmentPnl, pnlPeriodStart, pnlPeriods, type PnlPeriod } from '@/lib/investment-pnl';
+import { Segmented } from '@/components/presentation-foundation/segmented';
 import { investmentReturns, monthlyResults, runningTotal } from '@/lib/investment-returns';
 import { PnlHoldingBars, PnlTrendChart } from '@/components/charts-lazy';
 import { PanelTitle } from '@/components/presentation-foundation/panel-title';
 import { convertAmount, marketRates, type MarketData } from '@/lib/market';
+
+const periodLabels: Record<PnlPeriod, string> = { year: 'This year', months: 'Last 12 months', all: 'All history' };
 
 type Props = {
  history: PortfolioHistory | null; error: boolean; onRetry: () => void;
@@ -37,7 +40,10 @@ export function PerformanceView({ history, error, onRetry, currency, market, acc
  const today = depositToday();
  const first = history?.events.reduce<string | null>((earliest, event) => !earliest || event.occurred_on < earliest ? event.occurred_on : earliest, null) ?? null;
  const rate = useRateHistory(first, today, demo);
- const pnl = useMemo(() => history ? investmentPnl({ records: history.records, events: history.events, cashflows: history.cashflows, market, currency, today, rate }) : null, [history, market, currency, today, rate]);
+ const [period, setPeriod] = useState<PnlPeriod>('all');
+ // Everything recorded, for what does not follow the period: the sales of each year, a property's last twelve months.
+ const whole = useMemo(() => history ? investmentPnl({ records: history.records, events: history.events, cashflows: history.cashflows, movements: history.movements, market, currency, today, rate }) : null, [history, market, currency, today, rate]);
+ const pnl = useMemo(() => !history || period === 'all' ? whole : investmentPnl({ records: history.records, events: history.events, cashflows: history.cashflows, movements: history.movements, market, currency, today, rate, start: pnlPeriodStart(period, today) }), [history, whole, period, market, currency, today, rate]);
  const returns = useMemo(() => {
   if (!pnl) return null;
   const rates = marketRates(market);
@@ -45,12 +51,12 @@ export function PerformanceView({ history, error, onRetry, currency, market, acc
  }, [pnl, market, currency, today, rate]);
  const payouts = useMemo(() => history ? expectedPayouts(history.records, history.events, today, addMonths(today, 12)) : [], [history, today]);
  if (error) return <section className="panel"><InlineError message={t('Could not load portfolio history.')} onRetry={onRetry}/></section>;
- if (!history || !pnl || !returns) return <PanelSkeleton label={t('Loading history…')}/>;
+ if (!history || !pnl || !whole || !returns) return <PanelSkeleton label={t('Loading history…')}/>;
  if (!pnl.holdings.length) return <section className="panel"><EmptyState icon={<LineChart size={26}/>} title={t('No performance yet')} description={t('Add an investment to see what it earns.')}/></section>;
- const yields = propertyYields(pnl.holdings, pnl.flows, today);
+ const yields = propertyYields(whole.holdings, whole.flows, today);
  const bitcoin = history.records.filter(isBitcoin);
  return <div className="performance">
-  <PerformanceSummary totals={pnl.totals} returns={returns} missing={pnl.missing} dated={!!rate} currency={currency}/>
+  <PerformanceSummary totals={pnl.totals} returns={returns} missing={pnl.missing} dated={!!rate} currency={currency}><Segmented label={t('Period')} options={pnlPeriods.map(value => ({ value, label: t(periodLabels[value]) }))} value={period} onChange={setPeriod}/></PerformanceSummary>
   <div className="performance-columns">
    <section className="panel"><PanelTitle title={t('Profit & loss over time')}/><PnlTrendChart points={runningTotal(returns.days)} currency={currency}/></section>
    <section className="panel"><PanelTitle title={t('Profit & loss by holding')}/><PnlHoldingBars rows={pnl.holdings} currency={currency}/></section>
@@ -58,7 +64,7 @@ export function PerformanceView({ history, error, onRetry, currency, market, acc
   <PerformanceCharts months={monthlyResults(returns.days, today)} days={returns.days} currency={currency}/>
   <PerformanceBreakdown holdings={pnl.holdings} records={history.records} accounts={accounts} currency={currency}/>
   <div className="performance-columns">
-   <RealizedGains sales={pnl.sales} currency={currency}/>
+   <RealizedGains sales={whole.sales} currency={currency}/>
    <PayoutCalendar payouts={payouts} currency={currency} market={market}/>
   </div>
   {yields.length > 0 && <PropertyYields yields={yields} currency={currency}/>}
