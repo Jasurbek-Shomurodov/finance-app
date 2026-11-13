@@ -2856,5 +2856,6 @@
   "Profit and loss this month": "Zisk a ztráta tento měsíc",
   "rose to {price}": "vzrostla na {price}",
   "fell to {price}": "klesla na {price}",
-  "A shorter period counts each holding from what it was worth on its first day.": "Kratší období počítá každou pozici od hodnoty, kterou měla první den."
+  "A shorter period counts each holding from what it was worth on its first day.": "Kratší období počítá každou pozici od hodnoty, kterou měla první den.",
+  "Other kinds": "Ostatní druhy"
 }

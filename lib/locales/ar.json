@@ -2856,5 +2856,6 @@
   "Profit and loss this month": "الربح والخسارة هذا الشهر",
   "rose to {price}": "ارتفع إلى {price}",
   "fell to {price}": "انخفض إلى {price}",
-  "A shorter period counts each holding from what it was worth on its first day.": "الفترة الأقصر تحتسب كل أصل بدءًا من قيمته في يومها الأول."
+  "A shorter period counts each holding from what it was worth on its first day.": "الفترة الأقصر تحتسب كل أصل بدءًا من قيمته في يومها الأول.",
+  "Other kinds": "أنواع أخرى"
 }

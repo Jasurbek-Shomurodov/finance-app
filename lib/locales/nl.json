@@ -2856,5 +2856,6 @@
   "Profit and loss this month": "Winst en verlies deze maand",
   "rose to {price}": "steeg naar {price}",
   "fell to {price}": "daalde naar {price}",
-  "A shorter period counts each holding from what it was worth on its first day.": "Een kortere periode telt elke positie vanaf de waarde op de eerste dag."
+  "A shorter period counts each holding from what it was worth on its first day.": "Een kortere periode telt elke positie vanaf de waarde op de eerste dag.",
+  "Other kinds": "Overige soorten"
 }

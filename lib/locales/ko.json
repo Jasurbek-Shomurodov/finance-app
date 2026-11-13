@@ -2856,5 +2856,6 @@
   "Profit and loss this month": "이번 달 손익",
   "rose to {price}": "{price}까지 상승",
   "fell to {price}": "{price}까지 하락",
-  "A shorter period counts each holding from what it was worth on its first day.": "더 짧은 기간은 각 보유 자산을 기간 첫날의 가치부터 계산합니다."
+  "A shorter period counts each holding from what it was worth on its first day.": "더 짧은 기간은 각 보유 자산을 기간 첫날의 가치부터 계산합니다.",
+  "Other kinds": "기타 유형"
 }

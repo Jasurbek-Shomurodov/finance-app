@@ -2856,5 +2856,6 @@
   "Profit and loss this month": "Gewinn und Verlust diesen Monat",
   "rose to {price}": "stieg auf {price}",
   "fell to {price}": "fiel auf {price}",
-  "A shorter period counts each holding from what it was worth on its first day.": "Ein kürzerer Zeitraum zählt jede Position ab dem Wert, den sie an seinem ersten Tag hatte."
+  "A shorter period counts each holding from what it was worth on its first day.": "Ein kürzerer Zeitraum zählt jede Position ab dem Wert, den sie an seinem ersten Tag hatte.",
+  "Other kinds": "Weitere Arten"
 }

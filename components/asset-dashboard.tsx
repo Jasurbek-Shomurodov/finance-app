@@ -11,6 +11,7 @@ import { AnimatedMoney } from '@/components/presentation-foundation/animated-mon
 import { Ellipsis, LayoutGrid, List, Search, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AssetAccounts } from '@/components/asset-accounts';
+import { AssetAllocationList } from '@/components/asset-allocation-list';
 import type { HoldingAccount } from '@/lib/holding-accounts';
 import { LoadingPlaceholder } from '@/components/presentation-foundation/loading-placeholder';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -115,7 +116,7 @@ export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoadin
     <h3>{t('Asset allocation')}</h3>
     {/* A donut beside the list, so the split reads at a glance; a slice opens its kind like a row does. */}
     <div className="portfolio-allocation-body">{total > 0 && <AllocationDonut slices={categories} total={total} currency={currency} onSelect={showCategory}/>}
-    <ul className="overview-list">{categories.map(group=><li key={group.kind}><button type="button" className="allocation-option" aria-pressed={category===group.kind} onClick={() => showCategory(group.kind)}><i style={{background:categoryColor(group.kind)}} aria-hidden="true"/><span>{t(group.kind)}</span><strong>{loading ? '—' : <AnimatedMoney value={group.amount} currency={currency}/>}</strong><small>{loading || total<=0 ? '—' : formatPercent(group.amount/total*100,locale,1,1)}</small><span className="allocation-share" aria-hidden="true"><span style={{inlineSize:`${total>0?Math.max(group.amount,0)/total*100:0}%`,background:categoryColor(group.kind)}}/></span></button></li>)}</ul></div>
+    <AssetAllocationList groups={categories} total={total} currency={currency} loading={loading} selected={category} onSelect={showCategory}/></div>
    </div>
   </section>
 

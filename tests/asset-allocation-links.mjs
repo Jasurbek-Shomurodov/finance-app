@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
-import { byType, createRenderer, hostModule, stubs } from './helpers/component-tree.mjs';
+import { byType, createRenderer, hostModule, stubs, text } from './helpers/component-tree.mjs';
 
 // Assets & investments: a tap on the allocation list lands where that kind is (CR 2026-10-23, items 23 and 51).
 const scrolled = [];
@@ -39,4 +39,24 @@ test('an account card’s Holdings count is the list and total under it, cash ro
  r.mount(React.createElement(AssetDashboard, props));
  const card = r.find(node => node.type === 'article' && node.props['data-id'] === 'broker');
  assert.equal(card.children[0], '2', 'the stock and the cash balance held in the account');
+});
+
+test('kinds under 2% fold into one Other kinds row once there are three, and open when one of them is chosen', () => {
+ const { AssetAllocationList, foldAllocation } = r.load('components/asset-allocation-list.tsx', { ...ui.modules, ...foundation });
+ const groups = [['Property', 900], ['Stock', 70], ['Bond', 15], ['Vehicle', 10], ['Valuables', 5]].map(([kind, amount]) => ({ kind, amount }));
+ assert.deepEqual(foldAllocation(groups, 1000).folded.map(group => group.kind), ['Bond', 'Vehicle', 'Valuables']);
+ assert.deepEqual(foldAllocation(groups.slice(0, 4), 995).folded, [], 'two small kinds stay in the list');
+ assert.deepEqual(foldAllocation(groups, 0), { lead: groups, folded: [] });
+ const picked = [];
+ const mount = (selected, extra = {}) => r.mount(React.createElement(AssetAllocationList, { groups, total: 1000, currency: 'USD', loading: false, selected, onSelect: kind => picked.push(kind), ...extra }));
+ mount('all');
+ const other = () => r.find(node => node.type === 'details');
+ assert.equal(other().props.open, undefined);
+ assert.match(text(r.find(node => node.type === 'summary')), /Other kinds/);
+ assert.equal(r.all(node => node.props?.className === 'allocation-option').length, 5, 'every kind keeps its own row, inside the fold or out');
+ r.find(node => node.props?.className === 'allocation-option' && text(node).includes('Vehicle')).props.onClick();
+ assert.deepEqual(picked, ['Vehicle']);
+ mount('Vehicle');assert.equal(other().props.open, true);
+ mount('all', { loading: true });assert.match(text(r.find(node => node.type === 'summary')), /—/);
+ mount('all', { groups: groups.slice(0, 2), total: 0 });assert.equal(r.all(node => node.type === 'details').length, 0);
 });

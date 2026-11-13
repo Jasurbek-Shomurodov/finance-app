@@ -2856,5 +2856,6 @@
   "Profit and loss this month": "กำไรและขาดทุนเดือนนี้",
   "rose to {price}": "ขึ้นถึง {price}",
   "fell to {price}": "ลงถึง {price}",
-  "A shorter period counts each holding from what it was worth on its first day.": "ช่วงเวลาที่สั้นกว่าจะนับแต่ละรายการถือครองจากมูลค่า ณ วันแรกของช่วง"
+  "A shorter period counts each holding from what it was worth on its first day.": "ช่วงเวลาที่สั้นกว่าจะนับแต่ละรายการถือครองจากมูลค่า ณ วันแรกของช่วง",
+  "Other kinds": "ประเภทอื่น"
 }

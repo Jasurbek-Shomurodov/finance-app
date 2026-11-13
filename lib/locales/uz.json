@@ -2856,5 +2856,6 @@
   "Profit and loss this month": "Shu oydagi foyda va zarar",
   "rose to {price}": "{price} gacha ko‘tarildi",
   "fell to {price}": "{price} gacha tushdi",
-  "A shorter period counts each holding from what it was worth on its first day.": "Qisqaroq davr har bir aktivni birinchi kundagi qiymatidan boshlab hisoblaydi."
+  "A shorter period counts each holding from what it was worth on its first day.": "Qisqaroq davr har bir aktivni birinchi kundagi qiymatidan boshlab hisoblaydi.",
+  "Other kinds": "Boshqa turlar"
 }

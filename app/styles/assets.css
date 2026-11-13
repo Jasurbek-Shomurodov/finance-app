@@ -5,7 +5,7 @@
 .portfolio-summary{display:grid;grid-template-columns:minmax(0,1fr);border:1px solid var(--border);border-radius:var(--radius-card);overflow:hidden;background:var(--card);box-shadow:var(--shadow-card)}
 .portfolio-summary-main{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:24px 40px;padding:28px}
 .portfolio-summary-total{min-width:0}
-.portfolio-summary-total h2{font-size:var(--type-caption);font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-foreground)}
+.portfolio-summary-total h2{font-size:var(--type-small);font-weight:500;color:var(--muted-foreground)}
 .portfolio-summary-value{display:block;margin:6px 0 8px;font-size:var(--type-hero);font-weight:650;letter-spacing:-.04em;line-height:1.05;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .portfolio-summary-metrics{display:flex;gap:16px 20px;min-width:0}
 .portfolio-summary-metrics>div{display:grid;flex:0 0 auto;gap:4px;min-width:max-content;padding-inline-start:20px;border-inline-start:1px solid var(--border)}
@@ -36,6 +36,12 @@
 .portfolio-summary-allocation .allocation-option strong{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
 .portfolio-summary-allocation .allocation-option small{color:var(--muted-foreground)}
 .portfolio-summary-allocation .allocation-option i{width:8px;height:8px;border-radius:50%}
+/* The long tail of small kinds: one row that opens them. */
+.allocation-other>summary{gap:12px;padding:0 8px;margin:0 -8px;border-radius:var(--radius-control);font-weight:400}
+.allocation-other>summary:hover{background:var(--muted)}
+.allocation-other>summary>span:first-of-type{flex:0 1 auto}
+.allocation-other>summary strong{margin-inline-start:auto;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.allocation-other>summary small{color:var(--muted-foreground)}
 .allocation-share{grid-column:1/-1;display:block;height:4px;border-radius:999px;background:var(--muted);overflow:hidden}
 .allocation-share>span{display:block;height:100%;border-radius:inherit}
 @container content (max-width:520px){.portfolio-summary-main,.portfolio-summary-allocation{padding:20px 16px}.portfolio-summary-metrics{flex-wrap:wrap}}
