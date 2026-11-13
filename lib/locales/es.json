@@ -2769,5 +2769,10 @@
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} actualizadas; aquí no se pudo cambiar la categoría de {category} ni el negocio de {business}.",
   "Could not delete this transaction. Please try again.": "No se pudo eliminar esta transacción. Inténtalo de nuevo.",
   "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Iniciaste sesión con Google, así que esta cuenta quizá aún no tenga contraseña. Crea una con «Olvidé mi contraseña» y luego escríbela aquí.",
-  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "Una breve demostración: al añadir un gasto de {category} se actualizan el total del día y el presupuesto de {category}."
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "Una breve demostración: al añadir un gasto de {category} se actualizan el total del día y el presupuesto de {category}.",
+  "Price change": "Variación de precio",
+  "Realized on sales": "Realizado en ventas",
+  "Profit & loss over time": "Pérdidas y ganancias a lo largo del tiempo",
+  "Profit & loss by holding": "Pérdidas y ganancias por activo",
+  "Price change is what your holdings gained or lost in value beyond the money you put in and took out. Income and expenses come from each holding’s Tracker. Amounts in other currencies use today’s exchange rate.": "La variación de precio es lo que tus activos ganaron o perdieron de valor más allá del dinero que aportaste y retiraste. Los ingresos y gastos vienen del Seguimiento de cada activo. Los importes en otras monedas usan el tipo de cambio de hoy."
 }

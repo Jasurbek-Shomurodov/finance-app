@@ -2769,5 +2769,10 @@
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} zimesasishwa; hapa aina ya {category} na biashara ya {business} hazikuweza kubadilishwa.",
   "Could not delete this transaction. Please try again.": "Muamala huu haukuweza kufutwa. Tafadhali jaribu tena.",
   "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Uliingia kwa Google, kwa hivyo akaunti hii huenda bado haina nenosiri. Weka moja kupitia Umesahau nenosiri, kisha uliweke hapa.",
-  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "Onyesho fupi: kuongeza matumizi ya {category} husasisha jumla ya siku na bajeti ya {category}."
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "Onyesho fupi: kuongeza matumizi ya {category} husasisha jumla ya siku na bajeti ya {category}.",
+  "Price change": "Mabadiliko ya bei",
+  "Realized on sales": "Imepatikana kwa mauzo",
+  "Profit & loss over time": "Faida na hasara kadri muda unavyopita",
+  "Profit & loss by holding": "Faida na hasara kwa kila mali",
+  "Price change is what your holdings gained or lost in value beyond the money you put in and took out. Income and expenses come from each holding’s Tracker. Amounts in other currencies use today’s exchange rate.": "Mabadiliko ya bei ni kiasi ambacho thamani ya mali zako imeongezeka au kupungua zaidi ya pesa ulizoweka na kutoa. Mapato na matumizi yanatoka kwenye Kifuatiliaji cha kila mali. Kiasi katika sarafu nyingine hutumia kiwango cha ubadilishaji cha leo."
 }

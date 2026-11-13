@@ -2769,5 +2769,10 @@
   "{changed} updated; {category} could not change category and {business} could not change business here.": "อัปเดตแล้ว {changed} รายการ; ที่นี่เปลี่ยนหมวดหมู่ของ {category} รายการและธุรกิจของ {business} รายการไม่ได้",
   "Could not delete this transaction. Please try again.": "ไม่สามารถลบธุรกรรมนี้ได้ โปรดลองอีกครั้ง",
   "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "คุณลงชื่อเข้าใช้ด้วย Google บัญชีนี้จึงอาจยังไม่มีรหัสผ่าน ตั้งรหัสผ่านผ่าน ลืมรหัสผ่าน แล้วป้อนที่นี่",
-  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "เดโมสั้น ๆ: การเพิ่มรายจ่าย {category} จะอัปเดตยอดรวมของวันและงบประมาณ {category}"
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "เดโมสั้น ๆ: การเพิ่มรายจ่าย {category} จะอัปเดตยอดรวมของวันและงบประมาณ {category}",
+  "Price change": "การเปลี่ยนแปลงราคา",
+  "Realized on sales": "รับรู้จากการขาย",
+  "Profit & loss over time": "กำไรขาดทุนตามช่วงเวลา",
+  "Profit & loss by holding": "กำไรขาดทุนตามสินทรัพย์",
+  "Price change is what your holdings gained or lost in value beyond the money you put in and took out. Income and expenses come from each holding’s Tracker. Amounts in other currencies use today’s exchange rate.": "การเปลี่ยนแปลงราคาคือมูลค่าที่สินทรัพย์ของคุณเพิ่มขึ้นหรือลดลงนอกเหนือจากเงินที่คุณใส่เข้าและถอนออก รายได้และค่าใช้จ่ายมาจากตัวติดตามของแต่ละสินทรัพย์ จำนวนเงินในสกุลอื่นใช้อัตราแลกเปลี่ยนของวันนี้"
 }

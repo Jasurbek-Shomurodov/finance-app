@@ -2769,5 +2769,10 @@
   "{changed} updated; {category} could not change category and {business} could not change business here.": "已更新 {changed} 笔；此处无法更改 {category} 笔的类别和 {business} 笔的业务。",
   "Could not delete this transaction. Please try again.": "无法删除此交易。请重试。",
   "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "您是通过 Google 登录的，因此此账户可能还没有密码。请通过“忘记密码”设置密码，然后在此输入。",
-  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "简短演示：添加一笔{category}支出，会更新当天的合计和{category}预算。"
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "简短演示：添加一笔{category}支出，会更新当天的合计和{category}预算。",
+  "Price change": "价格变动",
+  "Realized on sales": "卖出已实现",
+  "Profit & loss over time": "损益走势",
+  "Profit & loss by holding": "各资产损益",
+  "Price change is what your holdings gained or lost in value beyond the money you put in and took out. Income and expenses come from each holding’s Tracker. Amounts in other currencies use today’s exchange rate.": "价格变动是指扣除你投入和取出的资金后，持仓价值的涨跌。收入和支出来自每项资产的追踪。其他货币的金额按今天的汇率换算。"
 }

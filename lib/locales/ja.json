@@ -2769,5 +2769,10 @@
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed}件を更新しました。ここでは{category}件のカテゴリと{business}件の事業を変更できませんでした。",
   "Could not delete this transaction. Please try again.": "この取引を削除できませんでした。もう一度お試しください。",
   "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Google でサインインしたため、このアカウントにはまだパスワードがない場合があります。「パスワードをお忘れの方」から設定してから、ここに入力してください。",
-  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "短いデモ：{category}の支出を追加すると、その日の合計と{category}の予算が更新されます。"
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "短いデモ：{category}の支出を追加すると、その日の合計と{category}の予算が更新されます。",
+  "Price change": "価格変動",
+  "Realized on sales": "売却による実現損益",
+  "Profit & loss over time": "損益の推移",
+  "Profit & loss by holding": "資産別の損益",
+  "Price change is what your holdings gained or lost in value beyond the money you put in and took out. Income and expenses come from each holding’s Tracker. Amounts in other currencies use today’s exchange rate.": "価格変動は、入金・出金した金額を除いて、保有資産の価値が増減した分です。収入と支出は各資産のトラッカーから集計します。他の通貨の金額は本日の為替レートで換算します。"
 }

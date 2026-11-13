@@ -2769,5 +2769,10 @@
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} עודכנו; כאן לא ניתן היה לשנות קטגוריה של {category} ועסק של {business}.",
   "Could not delete this transaction. Please try again.": "לא ניתן למחוק את התנועה הזו. נסו שוב.",
   "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "נכנסת עם Google, ולכן ייתכן שלחשבון הזה עדיין אין סיסמה. הגדר סיסמה דרך שכחתי סיסמה ואז הזן אותה כאן.",
-  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "הדגמה קצרה: הוספת הוצאה ב{category} מעדכנת את סך היום ואת התקציב של {category}."
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "הדגמה קצרה: הוספת הוצאה ב{category} מעדכנת את סך היום ואת התקציב של {category}.",
+  "Price change": "שינוי במחיר",
+  "Realized on sales": "מומש במכירות",
+  "Profit & loss over time": "רווח והפסד לאורך זמן",
+  "Profit & loss by holding": "רווח והפסד לפי נכס",
+  "Price change is what your holdings gained or lost in value beyond the money you put in and took out. Income and expenses come from each holding’s Tracker. Amounts in other currencies use today’s exchange rate.": "שינוי במחיר הוא מה שהנכסים שלך הרוויחו או הפסידו בערכם מעבר לכסף שהכנסת ומשכת. הכנסות והוצאות מגיעות מהמעקב של כל נכס. סכומים במטבעות אחרים מומרים לפי שער החליפין של היום."
 }

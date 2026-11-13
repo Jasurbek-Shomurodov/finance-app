@@ -2769,5 +2769,10 @@
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} bijgewerkt; hier kon de categorie van {category} en het bedrijf van {business} niet worden gewijzigd.",
   "Could not delete this transaction. Please try again.": "Deze transactie kon niet worden verwijderd. Probeer het opnieuw.",
   "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Je bent ingelogd met Google, dus dit account heeft misschien nog geen wachtwoord. Stel er een in via ‘Wachtwoord vergeten’ en vul het hier in.",
-  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "Een korte demo: een uitgave voor {category} toevoegen werkt het dagtotaal en het budget voor {category} bij."
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "Een korte demo: een uitgave voor {category} toevoegen werkt het dagtotaal en het budget voor {category} bij.",
+  "Price change": "Koersverandering",
+  "Realized on sales": "Gerealiseerd bij verkoop",
+  "Profit & loss over time": "Winst en verlies in de tijd",
+  "Profit & loss by holding": "Winst en verlies per bezitting",
+  "Price change is what your holdings gained or lost in value beyond the money you put in and took out. Income and expenses come from each holding’s Tracker. Amounts in other currencies use today’s exchange rate.": "De koersverandering is wat je bezittingen in waarde zijn gestegen of gedaald, los van het geld dat je hebt ingelegd en opgenomen. Inkomsten en uitgaven komen uit de Tracker van elke bezitting. Bedragen in andere valuta gebruiken de wisselkoers van vandaag."
 }

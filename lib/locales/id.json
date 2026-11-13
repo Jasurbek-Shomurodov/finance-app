@@ -2769,5 +2769,10 @@
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} diperbarui; di sini kategori {category} dan bisnis {business} tidak dapat diubah.",
   "Could not delete this transaction. Please try again.": "Transaksi ini tidak dapat dihapus. Silakan coba lagi.",
   "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Anda masuk dengan Google, jadi akun ini mungkin belum punya kata sandi. Buat dengan Lupa kata sandi, lalu masukkan di sini.",
-  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "Demo singkat: menambahkan pengeluaran {category} memperbarui total hari itu dan anggaran {category}."
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "Demo singkat: menambahkan pengeluaran {category} memperbarui total hari itu dan anggaran {category}.",
+  "Price change": "Perubahan harga",
+  "Realized on sales": "Terealisasi dari penjualan",
+  "Profit & loss over time": "Laba & rugi dari waktu ke waktu",
+  "Profit & loss by holding": "Laba & rugi per aset",
+  "Price change is what your holdings gained or lost in value beyond the money you put in and took out. Income and expenses come from each holding’s Tracker. Amounts in other currencies use today’s exchange rate.": "Perubahan harga adalah kenaikan atau penurunan nilai aset Anda di luar uang yang Anda masukkan dan tarik. Pemasukan dan pengeluaran berasal dari Pelacak setiap aset. Jumlah dalam mata uang lain memakai kurs hari ini."
 }

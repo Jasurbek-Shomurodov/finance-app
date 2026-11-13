@@ -2769,5 +2769,10 @@
   "{changed} updated; {category} could not change category and {business} could not change business here.": "تم تحديث {changed}؛ وتعذّر تغيير الفئة في {category} وتغيير النشاط التجاري في {business} هنا.",
   "Could not delete this transaction. Please try again.": "تعذّر حذف هذه المعاملة. يُرجى المحاولة مرة أخرى.",
   "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "لقد سجّلت الدخول عبر Google، لذا قد لا تكون لهذا الحساب كلمة مرور بعد. عيّن واحدة عبر نسيت كلمة المرور، ثم أدخلها هنا.",
-  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "عرض قصير: إضافة مصروف {category} تحدّث إجمالي اليوم وميزانية {category}."
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "عرض قصير: إضافة مصروف {category} تحدّث إجمالي اليوم وميزانية {category}.",
+  "Price change": "تغيّر السعر",
+  "Realized on sales": "المحقَّق من المبيعات",
+  "Profit & loss over time": "الأرباح والخسائر عبر الزمن",
+  "Profit & loss by holding": "الأرباح والخسائر حسب الأصل",
+  "Price change is what your holdings gained or lost in value beyond the money you put in and took out. Income and expenses come from each holding’s Tracker. Amounts in other currencies use today’s exchange rate.": "تغيّر السعر هو ما ربحته أو خسرته أصولك من قيمتها بما يتجاوز الأموال التي أضفتها وسحبتها. الدخل والمصروفات تأتي من المتتبّع الخاص بكل أصل. المبالغ بعملات أخرى تُحوَّل بسعر الصرف اليوم."
 }

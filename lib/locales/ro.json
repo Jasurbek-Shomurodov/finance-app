@@ -2769,5 +2769,10 @@
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} actualizate; aici nu s-a putut schimba categoria pentru {category} și afacerea pentru {business}.",
   "Could not delete this transaction. Please try again.": "Această tranzacție nu a putut fi ștearsă. Încercați din nou.",
   "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "V-ați conectat cu Google, așa că este posibil ca acest cont să nu aibă încă o parolă. Setați una prin „Ai uitat parola”, apoi introduceți-o aici.",
-  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "O scurtă demonstrație: adăugarea unei cheltuieli {category} actualizează totalul zilei și bugetul {category}."
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "O scurtă demonstrație: adăugarea unei cheltuieli {category} actualizează totalul zilei și bugetul {category}.",
+  "Price change": "Variație de preț",
+  "Realized on sales": "Realizat din vânzări",
+  "Profit & loss over time": "Profit și pierdere în timp",
+  "Profit & loss by holding": "Profit și pierdere pe activ",
+  "Price change is what your holdings gained or lost in value beyond the money you put in and took out. Income and expenses come from each holding’s Tracker. Amounts in other currencies use today’s exchange rate.": "Variația de preț este cât au câștigat sau au pierdut activele tale în valoare, dincolo de banii pe care i-ai depus și retras. Veniturile și cheltuielile provin din Monitorizarea fiecărui activ. Sumele în alte valute folosesc cursul de schimb de azi."
 }

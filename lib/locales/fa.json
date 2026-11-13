@@ -2769,5 +2769,10 @@
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} به‌روزرسانی شد؛ اینجا دسته‌بندی {category} و کسب‌وکار {business} قابل تغییر نبود.",
   "Could not delete this transaction. Please try again.": "این تراکنش حذف نشد. لطفاً دوباره تلاش کنید.",
   "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "با Google وارد شده‌اید، بنابراین شاید این حساب هنوز گذرواژه نداشته باشد. با فراموشی گذرواژه یکی تنظیم کنید و سپس اینجا وارد کنید.",
-  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "یک نمایش کوتاه: افزودن هزینه {category} جمع روز و بودجه {category} را به‌روز می‌کند."
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "یک نمایش کوتاه: افزودن هزینه {category} جمع روز و بودجه {category} را به‌روز می‌کند.",
+  "Price change": "تغییر قیمت",
+  "Realized on sales": "تحقق‌یافته از فروش",
+  "Profit & loss over time": "سود و زیان در گذر زمان",
+  "Profit & loss by holding": "سود و زیان به تفکیک دارایی",
+  "Price change is what your holdings gained or lost in value beyond the money you put in and took out. Income and expenses come from each holding’s Tracker. Amounts in other currencies use today’s exchange rate.": "تغییر قیمت مقداری است که ارزش دارایی‌های شما فراتر از پولی که وارد و خارج کرده‌اید بالا یا پایین رفته است. درآمد و هزینه‌ها از ردیاب هر دارایی می‌آید. مبالغ ارزهای دیگر با نرخ امروز تبدیل می‌شوند."
 }

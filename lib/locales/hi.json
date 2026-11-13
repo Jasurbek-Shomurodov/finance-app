@@ -2769,5 +2769,10 @@
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} अपडेट हुए; यहाँ {category} की श्रेणी और {business} का व्यवसाय नहीं बदला जा सका।",
   "Could not delete this transaction. Please try again.": "यह लेन-देन हटाया नहीं जा सका। कृपया फिर से कोशिश करें।",
   "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "आपने Google से साइन इन किया है, इसलिए हो सकता है इस खाते का अभी कोई पासवर्ड न हो। पासवर्ड भूल गए से एक सेट करें, फिर उसे यहाँ दर्ज करें।",
-  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "एक छोटा डेमो: {category} खर्च जोड़ने से दिन का कुल और {category} बजट अपडेट होता है।"
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "एक छोटा डेमो: {category} खर्च जोड़ने से दिन का कुल और {category} बजट अपडेट होता है।",
+  "Price change": "कीमत में बदलाव",
+  "Realized on sales": "बिक्री से प्राप्त",
+  "Profit & loss over time": "समय के साथ लाभ और हानि",
+  "Profit & loss by holding": "संपत्ति के अनुसार लाभ और हानि",
+  "Price change is what your holdings gained or lost in value beyond the money you put in and took out. Income and expenses come from each holding’s Tracker. Amounts in other currencies use today’s exchange rate.": "कीमत में बदलाव वह है जो आपकी संपत्तियों के मूल्य में आपके लगाए और निकाले गए पैसे के अलावा बढ़ा या घटा। आय और खर्च हर संपत्ति के ट्रैकर से आते हैं। अन्य मुद्राओं की राशियाँ आज की विनिमय दर से बदली जाती हैं।"
 }

@@ -110,9 +110,8 @@ test('texts shown through label tables and server messages of business tracking 
  const {setupGuide,businessAccountGroups,businessStructureLabels,paletteLabels}=loadTS('lib/business.ts');
  const {transactionPeriodLabels}=loadTS('lib/transaction-list.ts');
  const {taxLines,taxTemplateLabels}=loadTS('lib/business-tax.ts');
- const {reportRangeLabels}=loadTS('lib/business-report.ts');
  const texts=[...[true,false,null].flatMap(tracked=>setupGuide(tracked,true).flatMap(card=>[card.title,card.detail,card.action])),...businessAccountGroups.map(([label])=>label),...Object.values(businessStructureLabels),...Object.values(paletteLabels),
-  ...Object.values(transactionPeriodLabels),...Object.values(reportRangeLabels),...taxLines.map(line=>line.label),...Object.values(taxTemplateLabels),'Line','Description','Gross income','Expenses','Net profit or loss'];
+  ...Object.values(transactionPeriodLabels),...taxLines.map(line=>line.label),...Object.values(taxTemplateLabels),'Line','Description','Gross income','Expenses','Net profit or loss'];
  // Messages the database raises for business tracking, rules and tags reach the person through t().
  for(const file of ['migrations/092_business_tracking.sql','migrations/093_rule_criteria.sql'])for(const match of fs.readFileSync(file,'utf8').matchAll(/RAISE EXCEPTION '((?:[^']|'')+)'/g))texts.push(match[1].replaceAll("''","'"));
  assert.deepEqual([...new Set(texts)].filter(text=>!(text in en)),[]);

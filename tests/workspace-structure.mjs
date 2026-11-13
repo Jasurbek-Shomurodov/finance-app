@@ -191,10 +191,12 @@ test('the shell every route shares and the Overview route, which serves the land
 test('the Overview charts load in the browser when they are drawn, each from its own module',async()=>{
  const calls=[],modules={};
  for(const [file,name] of [['cash-forecast-chart','ForecastChart'],['spending-pace-chart','SpendingPaceChart'],['income-history-chart','IncomeHistoryChart'],['investment-value-chart','InvestmentValueChart'],['allocation-donut','AllocationDonut']])modules['@/components/'+file]={[name]:()=>name};
+ modules['@/components/investment-pnl/pnl-charts']={PnlTrendChart:()=>'PnlTrendChart',PnlHoldingBars:()=>'PnlHoldingBars'};
  const charts=loadTS('components/charts-lazy.tsx',{'next/dynamic':{__esModule:true,default:(load,options)=>{calls.push(options);return {load};}},...modules});
- assert.ok(calls.length===5&&calls.every(options=>options.ssr===false&&typeof options.loading==='function'));
- for(const name of ['ForecastChart','SpendingPaceChart','IncomeHistoryChart','InvestmentValueChart','AllocationDonut'])assert.equal((await charts[name].load())(),name);
- for(const file of ['components/cash-forecast.tsx','components/spending-pace-card.tsx','components/portfolio-overview.tsx','components/investment-comparison.tsx','components/asset-dashboard.tsx'])assert.doesNotMatch(read(file),/from 'recharts'|from '@\/components\/(income-history-chart|investment-value-chart|allocation-donut)'/,file);
+ // Five the Overview route reaches, and the two Profit & loss charts Investments opens from a tab.
+ assert.ok(calls.length===7&&calls.every(options=>options.ssr===false&&typeof options.loading==='function'));
+ for(const name of ['ForecastChart','SpendingPaceChart','IncomeHistoryChart','InvestmentValueChart','AllocationDonut','PnlTrendChart','PnlHoldingBars'])assert.equal((await charts[name].load())(),name);
+ for(const file of ['components/cash-forecast.tsx','components/spending-pace-card.tsx','components/portfolio-overview.tsx','components/investment-comparison.tsx','components/asset-dashboard.tsx','components/investment-pnl/investment-pnl.tsx'])assert.doesNotMatch(read(file),/from 'recharts'|from '@\/components\/(income-history-chart|investment-value-chart|allocation-donut)'/,file);
 });
 
 test('the investment tracker loads in the browser when a payment opens it',async()=>{

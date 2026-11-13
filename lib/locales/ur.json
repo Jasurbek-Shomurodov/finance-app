@@ -2769,5 +2769,10 @@
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} اپ ڈیٹ ہوئے؛ یہاں {category} کی کیٹیگری اور {business} کا کاروبار تبدیل نہیں ہو سکا۔",
   "Could not delete this transaction. Please try again.": "یہ لین دین حذف نہیں ہو سکا۔ براہ کرم دوبارہ کوشش کریں۔",
   "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "آپ نے Google سے سائن ان کیا ہے، اس لیے ممکن ہے اس اکاؤنٹ کا ابھی کوئی پاس ورڈ نہ ہو۔ پاس ورڈ بھول گئے سے ایک سیٹ کریں، پھر اسے یہاں درج کریں۔",
-  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "ایک مختصر ڈیمو: {category} کا خرچ شامل کرنے سے دن کا کل اور {category} کا بجٹ اپ ڈیٹ ہوتا ہے۔"
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "ایک مختصر ڈیمو: {category} کا خرچ شامل کرنے سے دن کا کل اور {category} کا بجٹ اپ ڈیٹ ہوتا ہے۔",
+  "Price change": "قیمت میں تبدیلی",
+  "Realized on sales": "فروخت سے حاصل شدہ",
+  "Profit & loss over time": "وقت کے ساتھ نفع و نقصان",
+  "Profit & loss by holding": "اثاثے کے لحاظ سے نفع و نقصان",
+  "Price change is what your holdings gained or lost in value beyond the money you put in and took out. Income and expenses come from each holding’s Tracker. Amounts in other currencies use today’s exchange rate.": "قیمت میں تبدیلی وہ ہے جو آپ کے اثاثوں کی مالیت میں آپ کی لگائی اور نکالی گئی رقم کے علاوہ بڑھی یا گھٹی۔ آمدنی اور اخراجات ہر اثاثے کے ٹریکر سے آتے ہیں۔ دوسری کرنسیوں کی رقوم آج کی شرحِ تبادلہ سے تبدیل ہوتی ہیں۔"
 }

@@ -2769,5 +2769,10 @@
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} ang na-update; hindi nabago rito ang kategorya ng {category} at ang negosyo ng {business}.",
   "Could not delete this transaction. Please try again.": "Hindi na-delete ang transaksyong ito. Pakisubukan ulit.",
   "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Nag-sign in ka gamit ang Google, kaya maaaring wala pang password ang account na ito. Gumawa ng isa sa Nakalimutan ang password, saka ito ilagay rito.",
-  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "Maikling demo: ang pagdagdag ng gastos sa {category} ay nag-a-update sa kabuuan ng araw at sa budget ng {category}."
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "Maikling demo: ang pagdagdag ng gastos sa {category} ay nag-a-update sa kabuuan ng araw at sa budget ng {category}.",
+  "Price change": "Pagbabago sa presyo",
+  "Realized on sales": "Na-realize sa mga benta",
+  "Profit & loss over time": "Tubo at lugi sa paglipas ng panahon",
+  "Profit & loss by holding": "Tubo at lugi ayon sa asset",
+  "Price change is what your holdings gained or lost in value beyond the money you put in and took out. Income and expenses come from each holding’s Tracker. Amounts in other currencies use today’s exchange rate.": "Ang pagbabago sa presyo ay ang itinaas o ibinaba ng halaga ng iyong mga asset bukod sa perang inilagay at kinuha mo. Ang kita at gastos ay mula sa Tracker ng bawat asset. Ang mga halaga sa ibang currency ay gumagamit ng exchange rate ngayong araw."
 }

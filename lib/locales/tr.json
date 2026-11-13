@@ -2769,5 +2769,10 @@
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} güncellendi; burada {category} işlemin kategorisi ve {business} işlemin işletmesi değiştirilemedi.",
   "Could not delete this transaction. Please try again.": "Bu işlem silinemedi. Lütfen tekrar deneyin.",
   "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Google ile giriş yaptınız, bu nedenle bu hesabın henüz parolası olmayabilir. “Parolamı unuttum” ile bir parola belirleyin, ardından buraya girin.",
-  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "Kısa bir tanıtım: bir {category} gideri eklemek günün toplamını ve {category} bütçesini günceller."
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "Kısa bir tanıtım: bir {category} gideri eklemek günün toplamını ve {category} bütçesini günceller.",
+  "Price change": "Fiyat değişimi",
+  "Realized on sales": "Satışlardan gerçekleşen",
+  "Profit & loss over time": "Zaman içinde kâr ve zarar",
+  "Profit & loss by holding": "Varlığa göre kâr ve zarar",
+  "Price change is what your holdings gained or lost in value beyond the money you put in and took out. Income and expenses come from each holding’s Tracker. Amounts in other currencies use today’s exchange rate.": "Fiyat değişimi, yatırdığınız ve çektiğiniz paranın ötesinde varlıklarınızın değerinde oluşan kazanç veya kayıptır. Gelir ve giderler her varlığın Takipçi’sinden gelir. Diğer para birimlerindeki tutarlar bugünkü kurla çevrilir."
 }

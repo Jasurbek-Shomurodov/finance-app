@@ -2769,5 +2769,10 @@
   "{changed} updated; {category} could not change category and {business} could not change business here.": "Đã cập nhật {changed}; tại đây không thể đổi danh mục của {category} và doanh nghiệp của {business}.",
   "Could not delete this transaction. Please try again.": "Không thể xóa giao dịch này. Vui lòng thử lại.",
   "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "Bạn đã đăng nhập bằng Google nên tài khoản này có thể chưa có mật khẩu. Hãy đặt mật khẩu qua “Quên mật khẩu”, rồi nhập vào đây.",
-  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "Bản demo ngắn: thêm một khoản chi {category} sẽ cập nhật tổng của ngày và ngân sách {category}."
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "Bản demo ngắn: thêm một khoản chi {category} sẽ cập nhật tổng của ngày và ngân sách {category}.",
+  "Price change": "Thay đổi giá",
+  "Realized on sales": "Đã thực hiện từ bán",
+  "Profit & loss over time": "Lãi và lỗ theo thời gian",
+  "Profit & loss by holding": "Lãi và lỗ theo tài sản",
+  "Price change is what your holdings gained or lost in value beyond the money you put in and took out. Income and expenses come from each holding’s Tracker. Amounts in other currencies use today’s exchange rate.": "Thay đổi giá là phần giá trị tài sản của bạn tăng hoặc giảm ngoài số tiền bạn đã nạp vào và rút ra. Thu nhập và chi phí lấy từ Trình theo dõi của từng tài sản. Số tiền bằng loại tiền khác dùng tỷ giá hôm nay."
 }

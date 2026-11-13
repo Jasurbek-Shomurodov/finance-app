@@ -204,3 +204,12 @@
  .asset-card-icon{transition:transform .2s var(--ease-out)}
 }
 @media(prefers-reduced-motion:reduce){.asset-card,.asset-card-icon{animation:none;transition:none}.asset-card-grid:not(.asset-layout-list)>.asset-card,.allocation-donut .recharts-wrapper{animation:fade-only .15s linear backwards;transition:none}.asset-card:hover,.asset-card:hover .asset-card-icon{transform:none}}
+/* Investments' Profit & loss: two charts side by side while there is room, then every holding's line. */
+.pnl-summary{display:grid;gap:16px}
+.pnl-summary .panel-title{flex-wrap:wrap;gap:10px 16px}
+.pnl-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:var(--space-page)}
+.pnl-charts .portfolio-chart{margin-block-end:0}
+.holding-pnl-table thead th:not(:first-child){text-align:end}
+.holding-pnl-table tbody th{position:sticky;inset-inline-start:0;min-width:13rem;background:var(--card)}
+.holding-pnl-table tr[data-kind=total]>th{background:color-mix(in srgb,var(--muted) 70%,var(--card))}
+@container content (max-width:560px){.holding-pnl-table tbody th{min-width:9rem}}

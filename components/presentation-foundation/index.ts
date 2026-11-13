@@ -23,7 +23,7 @@ export { NavigationShimmer, screenSkeletons, TransactionsSkeleton, ReportsSkelet
 export { Segmented, type SegmentedOption } from './segmented';
 export { SeriesLegend, toggleKey, type SeriesLegendItem } from './series-legend';
 export { HistoryChart, type HistoryPoint } from './history-chart';
-export { ChartGradient, chartAxis, chartBar, chartColors, chartDonut, chartDot, chartGrid, chartHeight, chartLegend, chartLine, chartMargin, chartSankey, chartTooltip, chartValueAxis, groupedBar, guideLine, intervalLabel, leadArea, leadLine, moneyTick, monthLabel, monthTick, plannedBar, recordedBar, referenceLine, sankeyNodeRadius, stackTop } from './chart';
+export { ChartGradient, chartAxis, chartBar, chartColors, chartDonut, chartDot, chartGrid, chartHeight, chartLegend, chartLine, chartMargin, chartSankey, chartTooltip, chartValueAxis, groupedBar, guideLine, intervalLabel, leadArea, leadLine, moneyTick, monthLabel, monthTick, plannedBar, recordedBar, referenceLine, sankeyNodeRadius, sideBar, sideGrid, stackTop, toneColor } from './chart';
 export { RowMenu, type RowMenuItem } from './row-menu';
 export { MonthDayField } from './month-day-field';
 export { DeleteButton } from './delete-button';

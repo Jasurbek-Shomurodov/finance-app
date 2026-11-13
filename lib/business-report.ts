@@ -1,7 +1,7 @@
 import { monthsBetween } from './budget';
 import { monthEnd, shiftMonth } from './calendar-days';
 import { HOUSEHOLD, inBusinessFilter, type BusinessFilter } from './business';
-import { budgetKey, expenses, income, liabilities, value, type Entry } from './finance';
+import { budgetKey, type Entry } from './finance';
 import { convertAmount } from './market';
 import type { Money } from './money';
 import type { Share } from './cash-flow-report';
@@ -13,22 +13,8 @@ import { ratesOf } from './transaction-rates';
 type Rates = number | Record<string, number> | undefined;
 export type Direction = 'income' | 'expense';
 
-export const reportRanges = ['this_month', 'last_month', 'last_3_months', 'last_6_months', 'last_12_months', 'this_year', 'last_year'] as const;
-export type ReportRangePreset = typeof reportRanges[number];
-export const reportRangeLabels: Record<ReportRangePreset, string> = {
- this_month: 'This month', last_month: 'Last month', last_3_months: 'Last 3 months', last_6_months: 'Last 6 months', last_12_months: 'Last 12 months', this_year: 'This year', last_year: 'Last year',
-};
 /** Inclusive ISO dates. Reports read at most 24 months of transactions. */
 export type ReportRange = { from: string; to: string };
-export function rangeFor(preset: ReportRangePreset, today: string): ReportRange {
- const month = today.slice(0, 7), year = Number(today.slice(0, 4));
- if (preset === 'this_month') return { from: month + '-01', to: today };
- if (preset === 'last_month') { const last = shiftMonth(month, -1); return { from: last + '-01', to: monthEnd(last) }; }
- if (preset === 'this_year') return { from: `${year}-01-01`, to: today };
- if (preset === 'last_year') return { from: `${year - 1}-01-01`, to: `${year - 1}-12-31` };
- const back = preset === 'last_3_months' ? 2 : preset === 'last_6_months' ? 5 : 11;
- return { from: shiftMonth(month, -back) + '-01', to: today };
-}
 /** The months a range touches, which is what the planning read needs. */
 export const rangeMonths = (range: ReportRange) => monthsBetween(range.from.slice(0, 7), range.to.slice(0, 7));
 /** A range the planning read accepts: it ends with the later month and covers at most 24 months. */
@@ -241,20 +227,3 @@ export function summarizeLines(lines: readonly LedgerLine[]) {
 /** A report's transactions as export rows, newest first as shown. Spending is negative; amounts stay unrounded numbers. */
 export const ledgerExportRows = (lines: readonly LedgerLine[], categoryName: (key: string) => string, businessName: (id: string | null) => string) =>
  lines.map(line => ({ date: line.date, name: line.name, category: categoryName(line.category), business: businessName(line.business), amount: line.direction === 'income' ? line.amount : -line.amount }));
-
-/** Each business's accounts and assets less what it owes, in the display currency. `records` are already converted;
- * a record that could not be converted is left out and counted in `missing`. The Business record's own value counts as an asset. */
-export function businessNetAssets(records: readonly (Entry | null)[], businessIds: readonly string[]) {
- const result = new Map(businessIds.map(id => [id, { assets: 0, debts: 0, net: 0, accounts: [] as Entry[] }]));
- let missing = 0;
- for (const record of records) {
-  if (!record) { missing++; continue; }
-  const id = record.kind === 'Business' ? record.id : record.business_id;
-  const entry = id ? result.get(id) : undefined;
-  if (!entry || [...income, ...expenses].includes(record.kind)) continue;
-  if (record.kind !== 'Business') entry.accounts.push(record);
-  if (liabilities.includes(record.kind)) entry.debts += value(record); else entry.assets += value(record);
-  entry.net = entry.assets - entry.debts;
- }
- return { byBusiness: result, missing };
-}

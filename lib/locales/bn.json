@@ -2769,5 +2769,10 @@
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed}টি আপডেট হয়েছে; এখানে {category}টির বিভাগ এবং {business}টির ব্যবসা বদলানো যায়নি।",
   "Could not delete this transaction. Please try again.": "এই লেনদেন মুছে ফেলা যায়নি। আবার চেষ্টা করুন।",
   "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "আপনি Google দিয়ে সাইন ইন করেছেন, তাই এই অ্যাকাউন্টে হয়তো এখনও পাসওয়ার্ড নেই। পাসওয়ার্ড ভুলে গেছেন দিয়ে একটি সেট করুন, তারপর এখানে লিখুন।",
-  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "একটি ছোট ডেমো: একটি {category} খরচ যোগ করলে দিনের মোট এবং {category} বাজেট আপডেট হয়।"
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "একটি ছোট ডেমো: একটি {category} খরচ যোগ করলে দিনের মোট এবং {category} বাজেট আপডেট হয়।",
+  "Price change": "দামের পরিবর্তন",
+  "Realized on sales": "বিক্রয়ে অর্জিত",
+  "Profit & loss over time": "সময়ের সাথে লাভ ও ক্ষতি",
+  "Profit & loss by holding": "সম্পদ অনুযায়ী লাভ ও ক্ষতি",
+  "Price change is what your holdings gained or lost in value beyond the money you put in and took out. Income and expenses come from each holding’s Tracker. Amounts in other currencies use today’s exchange rate.": "দামের পরিবর্তন হলো আপনি যে টাকা রেখেছেন ও তুলেছেন তার বাইরে আপনার সম্পদের মূল্য যতটা বেড়েছে বা কমেছে। আয় ও খরচ প্রতিটি সম্পদের ট্র্যাকার থেকে আসে। অন্য মুদ্রার অঙ্ক আজকের বিনিময় হারে রূপান্তরিত হয়।"
 }

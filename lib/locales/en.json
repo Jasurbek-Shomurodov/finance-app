@@ -2769,5 +2769,10 @@
   "{changed} updated; {category} could not change category and {business} could not change business here.": "{changed} updated; {category} could not change category and {business} could not change business here.",
   "Could not delete this transaction. Please try again.": "Could not delete this transaction. Please try again.",
   "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.": "You signed in with Google, so this account may not have a password yet. Set one with Forgot password, then enter it here.",
-  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "A short demo: adding a {category} expense updates the day’s total and the {category} budget."
+  "A short demo: adding a {category} expense updates the day’s total and the {category} budget.": "A short demo: adding a {category} expense updates the day’s total and the {category} budget.",
+  "Price change": "Price change",
+  "Realized on sales": "Realized on sales",
+  "Profit & loss over time": "Profit & loss over time",
+  "Profit & loss by holding": "Profit & loss by holding",
+  "Price change is what your holdings gained or lost in value beyond the money you put in and took out. Income and expenses come from each holding’s Tracker. Amounts in other currencies use today’s exchange rate.": "Price change is what your holdings gained or lost in value beyond the money you put in and took out. Income and expenses come from each holding’s Tracker. Amounts in other currencies use today’s exchange rate."
 }
