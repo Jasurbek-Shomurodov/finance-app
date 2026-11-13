@@ -23,7 +23,7 @@ export function PerformanceCharts({ months, days, currency }: { months: MonthRes
      <XAxis dataKey="month" tickFormatter={monthTick(locale)} {...chartAxis}/>
      <YAxis tickFormatter={moneyTick(currency, locale)} {...chartValueAxis}/>
      <ReferenceLine y={0} {...referenceLine}/>
-     <Tooltip {...chartTooltip} labelFormatter={monthLabel(locale)} formatter={value => [formatSignedMoney(Number(value), currency, locale), t('Profit and loss')]}/>
+     <Tooltip {...chartTooltip} labelFormatter={monthLabel(locale)} formatter={value => [formatSignedMoney(Number(value), currency, locale), t('Profit & loss')]}/>
      <Bar dataKey="pnl" {...chartBar}>{months.map(item => <Cell key={item.month} fill={item.pnl < 0 ? chartColors.loss : chartColors.income}/>)}</Bar>
     </BarChart></ResponsiveContainer>
    </div>

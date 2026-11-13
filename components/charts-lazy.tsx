@@ -15,3 +15,6 @@ export const InvestmentValueChart = dynamic(() => import('@/components/investmen
  * visitors see finished charts rather than their placeholders. */
 export const preloadCharts = () => Promise.all([import('@/components/cash-forecast-chart'), import('@/components/spending-pace-chart'), import('@/components/income-history-chart'), import('@/components/investment-value-chart')]);
 export const AllocationDonut = dynamic(() => import('@/components/allocation-donut').then(module => module.AllocationDonut), { ssr: false, loading: () => <ChartSkeleton height={200}/> });
+// Investments' Profit & loss charts: opened from a tab, so they are not part of the Overview preload.
+export const PnlTrendChart = dynamic(() => import('@/components/investment-pnl/pnl-charts').then(module => module.PnlTrendChart), { ssr: false, loading: () => <ChartSkeleton height={chartHeight.regular}/> });
+export const PnlHoldingBars = dynamic(() => import('@/components/investment-pnl/pnl-charts').then(module => module.PnlHoldingBars), { ssr: false, loading: () => <ChartSkeleton height={chartHeight.regular}/> });

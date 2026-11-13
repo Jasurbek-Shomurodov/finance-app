@@ -30,13 +30,13 @@ export function PerformanceSummary({ totals, returns, missing, dated, currency }
  return <section className="panel performance-hero" aria-labelledby="performance-total">
   <header className="performance-hero-head">
    <div>
-    <h2 id="performance-total">{t('Profit and loss')}<InfoHint>{t('Everything your investments earned since you started tracking them: the change in their value, sales, income and costs.')}</InfoHint></h2>
+    <h2 id="performance-total">{t('Profit & loss')}<InfoHint>{t('Everything your investments earned since you started tracking them: the change in their value, sales, income and costs.')}</InfoHint></h2>
     <strong className={'performance-hero-figure ' + (signTone(totals.total) ?? '')}><RollingText text={signed(totals.total)}/></strong>
     <p><span className={'overview-delta ' + (signTone(totals.total) ?? '')}><Trend size={15} aria-hidden="true"/>{signedPercent(totals.returnPercent, locale)}</span><span>{t('on {amount} invested', { amount: formatMoney(totals.invested, currency, locale) })}</span></p>
    </div>
    <dl className="performance-hero-value"><div><dt>{t('Value today')}</dt><dd>{formatMoney(totals.value, currency, locale)}</dd></div></dl>
   </header>
-  <ul className="performance-lines" aria-label={t('Profit and loss')}>
+  <ul className="performance-lines" aria-label={t('Profit & loss')}>
    {lines.map(line => <li key={line.label}><span>{t(line.label)}<InfoHint>{t(line.hint)}</InfoHint></span><strong className={signTone(line.amount)}>{signed(line.amount)}</strong></li>)}
   </ul>
   {missing > 0 && <p className="muted performance-note">{t('Exchange rate unavailable.')} {t('Some holdings or payments are left out of these figures.')}</p>}

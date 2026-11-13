@@ -20,6 +20,7 @@ const base = {
  '@/components/presentation-foundation/tone': { signTone: value => value > 0 ? 'positive' : value < 0 ? 'negative' : undefined },
  '@/lib/feedback': { showError: message => errors.push(message) },
  '@/lib/refresh-read': { refreshRead: async url => { reads.push(url); if (fetched.fail) throw Error('offline'); return { ok: fetched.ok, json: async () => ({ fx: fetched.fx }) }; } },
+ '@/components/charts-lazy': hostModule(),
  'next/dynamic': { __esModule: true, default: (load, options) => Object.assign(function Lazy() { void load(); return options.loading(); }, { load }) },
 };
 const lazy = r.load('components/performance/performance-charts-lazy.tsx', base);
@@ -59,7 +60,7 @@ test('the view waits for history, reports a failed read, and says when nothing i
 test('the headline adds up its lines, and the currency line shows only with dated rates', () => {
  rate = undefined;open();
  const hero = text(r.find(node => node.props?.className === 'panel performance-hero'));
- assert.match(hero, /Profit and loss/);assert.match(hero, /Value today\$196,500/);
+ assert.match(hero, /Profit & loss/);assert.match(hero, /Value today\$196,500/);
  assert.doesNotMatch(hero, /Currency effect/);
  assert.equal(tile('Simple return').tone, 'positive');assert.match(String(tile('Money-weighted return').value), /a year|—/);
  assert.equal(r.all(node => node.type === 'p' && text(node).includes('left out')).length, 0);
@@ -162,7 +163,7 @@ test('the charts draw each month and the fall from the peak, and load on demand'
  assert.deepEqual(r.all(byType('Cell')).map(cell => cell.props.fill), ['red', 'green']);
  assert.equal(r.find(byType('AreaChart')).props.data[0].drawdown, -10);
  const [bars, area] = r.all(byType('Tooltip'));
- assert.deepEqual(bars.props.formatter(-5), ['−$5', 'Profit and loss']);assert.equal(bars.props.labelFormatter('2026-10'), 'L2026-10');
+ assert.deepEqual(bars.props.formatter(-5), ['−$5', 'Profit & loss']);assert.equal(bars.props.labelFormatter('2026-10'), 'L2026-10');
  assert.deepEqual(area.props.formatter(-10), ['−10%', 'Drawdown']);assert.equal(area.props.labelFormatter(Date.parse('2026-11-01T00:00:00Z')), '1 November 2026');
  assert.equal(r.all(byType('XAxis'))[1].props.tickFormatter(Date.parse('2026-11-01T00:00:00Z')), '1 November 2026');
  r.mount(React.createElement(lazy.PerformanceCharts, {}));
@@ -198,4 +199,28 @@ test('expected payouts come from the shared history read, or the sample workspac
  shared = history;r.mount(React.createElement(Probe, { demo: false }));
  assert.ok(result.length >= 3 && result.every(item => item.recordId === 'KO' && item.date > today));
  r.mount(React.createElement(Probe, { demo: true }));assert.equal(built, 1);assert.ok(result.length);
+});
+
+test('the running total and the holdings reach the two charts kept from the first Profit & loss view', () => {
+ open();
+ const trend = r.find(byType('PnlTrendChart')).props.points, bars = r.find(byType('PnlHoldingBars')).props.rows;
+ assert.equal(trend.at(-1).date, today);assert.ok(Math.abs(trend.at(-1).total - 18134) < 1);
+ assert.deepEqual(bars.map(row => row.id).sort(), ['BTC', 'KO', 'home', 'ring']);
+ const h = React.createElement;
+ const pass = name => Object.assign(({ children }) => h('div', { 'data-part': name }, children), { displayName: name });
+ const Cell = Object.assign(({ fill }) => h('span', { 'data-fill': fill }), { displayName: 'Cell' });
+ const recharts = { ...Object.fromEntries(['ResponsiveContainer', 'AreaChart', 'BarChart', 'CartesianGrid', 'XAxis', 'YAxis', 'Tooltip', 'ReferenceLine', 'Area', 'Bar'].map(name => [name, pass(name)])), Cell };
+ const { PnlTrendChart, PnlHoldingBars, pnlBarLimit } = r.load('components/investment-pnl/pnl-charts.tsx', { ...ui.modules, recharts });
+ r.mount(h(PnlTrendChart, { points: [{ date: '2026-01-10', total: 0 }, { date: '2026-11-13', total: -50 }], currency: 'USD' }));
+ assert.equal(r.find(byType(recharts.Area)).props.stroke, 'var(--negative)');
+ const axis = r.find(byType(recharts.XAxis)), tip = r.find(byType(recharts.Tooltip));
+ assert.equal(axis.props.tickFormatter(Date.parse('2026-03-05T00:00:00Z')), 'Mar');
+ assert.equal(tip.props.labelFormatter(Date.parse('2026-03-05T00:00:00Z')), '5 March 2026');
+ assert.deepEqual(tip.props.formatter(-50), ['−$50', 'Gain/loss']);
+ const rows = Array.from({ length: 10 }, (_, index) => ({ id: 'r' + index, name: 'r' + index, kind: 'Stock', total: (index - 3) * 100 }));
+ r.mount(h(PnlHoldingBars, { rows, currency: 'USD' }));
+ const cells = r.all(byType(Cell));
+ assert.equal(cells.length, pnlBarLimit);
+ assert.deepEqual([cells[0].props.fill, cells.at(-1).props.fill], ['var(--positive)', 'var(--negative)']);
+ assert.deepEqual(r.find(byType(recharts.Tooltip)).props.formatter(600), ['+$600', 'Gain/loss']);
 });

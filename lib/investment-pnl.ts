@@ -187,6 +187,8 @@ export function investmentPnl(input: PnlInput): InvestmentPnl {
  return { holdings: holdings.sort((a, b) => b.value - a.value), totals: sumPnl(holdings), flows: ledger.flows.sort(day), sales: ledger.sales.sort(day), marks: ledger.marks.sort(day), missing: ledger.missing };
 }
 
+/** The running profit or loss on a day, for the chart of it over time. */
+export type PnlPoint = { date: string; total: number };
 export type PnlGroup = PnlTotals & { key: string; count: number };
 /** Holdings added up by a key (their kind, their account), largest value first. */
 export function groupPnl(holdings: readonly HoldingPnl[], keyOf: (holding: HoldingPnl) => string): PnlGroup[] {

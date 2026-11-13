@@ -21,7 +21,9 @@ import { depositToday } from '@/lib/deposit-interest';
 import type { HoldingAccount } from '@/lib/holding-accounts';
 import { expectedPayouts, isBitcoin, propertyYields } from '@/lib/investment-insights';
 import { investmentPnl } from '@/lib/investment-pnl';
-import { investmentReturns, monthlyResults } from '@/lib/investment-returns';
+import { investmentReturns, monthlyResults, runningTotal } from '@/lib/investment-returns';
+import { PnlHoldingBars, PnlTrendChart } from '@/components/charts-lazy';
+import { PanelTitle } from '@/components/presentation-foundation/panel-title';
 import { convertAmount, marketRates, type MarketData } from '@/lib/market';
 
 type Props = {
@@ -29,7 +31,7 @@ type Props = {
  currency: string; market: MarketData | null; accounts: readonly HoldingAccount[]; preferences: PreferenceResource; demo: boolean;
 };
 
-/** Investments › Performance: what the holdings earned and how, read from the same history as the Overview chart. */
+/** Investments › Profit & loss: what the holdings earned and how, read from the same history as the Overview chart. */
 export function PerformanceView({ history, error, onRetry, currency, market, accounts, preferences, demo }: Props) {
  const { t } = useLanguage();
  const today = depositToday();
@@ -49,6 +51,10 @@ export function PerformanceView({ history, error, onRetry, currency, market, acc
  const bitcoin = history.records.filter(isBitcoin);
  return <div className="performance">
   <PerformanceSummary totals={pnl.totals} returns={returns} missing={pnl.missing} dated={!!rate} currency={currency}/>
+  <div className="performance-columns">
+   <section className="panel"><PanelTitle title={t('Profit & loss over time')}/><PnlTrendChart points={runningTotal(returns.days)} currency={currency}/></section>
+   <section className="panel"><PanelTitle title={t('Profit & loss by holding')}/><PnlHoldingBars rows={pnl.holdings} currency={currency}/></section>
+  </div>
   <PerformanceCharts months={monthlyResults(returns.days, today)} days={returns.days} currency={currency}/>
   <PerformanceBreakdown holdings={pnl.holdings} records={history.records} accounts={accounts} currency={currency}/>
   <div className="performance-columns">

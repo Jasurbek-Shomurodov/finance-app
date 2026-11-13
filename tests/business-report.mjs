@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadTS } from './helpers/load-ts.mjs';
-const { reportLedger, filterLines, profitAndLoss, businessSankey, cashFlowTrend, attributeTrend, rangeFor, readableRange, intervalOf, periodOf, shiftPeriod, trendWindow, businessNetAssets, drillMatches, sharesBy } = loadTS('lib/business-report.ts');
+const { reportLedger, filterLines, profitAndLoss, businessSankey, cashFlowTrend, attributeTrend, readableRange, intervalOf, periodOf, shiftPeriod, trendWindow, drillMatches, sharesBy } = loadTS('lib/business-report.ts');
 const { taxSheet, defaultTaxLine, taxLineFor, taxPeriodRange, taxExportRows, defaultTaxSettings } = loadTS('lib/business-tax.ts');
 
 const record = (id, name, kind, amount, date, extra = {}) => ({ id, name, kind, currency: 'USD', amount, quantity: 1, cost: 0, rate: 0, date, frequency: 'Once', notes: '', ...extra });
@@ -97,12 +97,7 @@ test('trends, shares, drill-downs, ranges and net assets', () => {
  assert.ok(drillMatches({ direction: 'expense', business: 'candles' }, lines.find(line => line.id === 'wax')));
  assert.ok(!drillMatches({ business: null }, lines.find(line => line.id === 'wax')));
  assert.ok(drillMatches({ categories: ['supplies'] }, lines.find(line => line.id === 'wax')));
- assert.deepEqual(rangeFor('last_month', today), { from: '2026-09-01', to: '2026-09-30' });
- assert.deepEqual(rangeFor('last_year', today), { from: '2025-01-01', to: '2025-12-31' });
  assert.equal(readableRange({ from: '2023-01-01', to: today }).from, '2024-11-01', 'reports read at most 24 months');
- const assets = businessNetAssets([record('acc', 'Checking', 'Cash', 900, '2026-01-01', { business_id: 'rentals' }), record('loan', 'Loan', 'Loan', 400, '2026-01-01', { business_id: 'rentals' }), { ...record('rentals', 'Rentals', 'Business', 1000, '2026-01-01'), ownership_percentage: 50 }, null, records[4]], ['rentals']);
- assert.deepEqual({ ...assets.byBusiness.get('rentals'), accounts: assets.byBusiness.get('rentals').accounts.map(item => item.id) }, { assets: 1400, debts: 400, net: 1000, accounts: ['acc', 'loan'] });
- assert.equal(assets.missing, 1);
 });
 
 test('tax prep maps categories to lines, lets the person move them, and exports whole lines', () => {

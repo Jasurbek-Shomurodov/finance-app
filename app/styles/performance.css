@@ -18,6 +18,7 @@
 .performance-lines strong{font-size:var(--type-title);font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .performance-note{font-size:var(--type-small)}
 .performance-chart{min-width:0}
+.performance .portfolio-chart{margin-block-end:0}
 
 .perf-table{width:100%;border-collapse:collapse;font-size:var(--type-small);font-variant-numeric:tabular-nums}
 .perf-table :is(th,td){padding:12px;text-transform:none;letter-spacing:normal;border-top:1px solid var(--hairline);text-align:end;font-weight:400;white-space:nowrap}

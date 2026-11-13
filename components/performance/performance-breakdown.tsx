@@ -35,7 +35,7 @@ export function PerformanceBreakdown({ holdings, records, accounts, currency }: 
    <Segmented label={t('Group profit and loss by')} value={view} onChange={setView} options={[{ value: 'holding', label: t('Holdings') }, { value: 'class', label: t('Asset class') }, { value: 'account', label: t('Account') }] as const}/>
   </PanelTitle>
   <div className="table-scroll"><table className="perf-table">
-   <thead><tr><th scope="col">{t('Name')}</th><th scope="col">{t('Value')}</th><th scope="col">{t('Invested')}</th><th scope="col">{t('Unrealized')}</th><th scope="col">{t('Realized')}</th><th scope="col">{t('Income less costs')}</th><th scope="col">{t('Profit and loss')}</th><th scope="col">{t('Return')}</th></tr></thead>
+   <thead><tr><th scope="col">{t('Name')}</th><th scope="col">{t('Value')}</th><th scope="col">{t('Invested')}</th><th scope="col">{t('Unrealized')}</th><th scope="col">{t('Realized')}</th><th scope="col">{t('Income less costs')}</th><th scope="col">{t('Profit & loss')}</th><th scope="col">{t('Return')}</th></tr></thead>
    <tbody>{rows.map(row => <tr key={row.key}>
     <th scope="row"><span className="perf-name">{row.icon}<span>{row.name}{row.meta && <small>{row.meta}</small>}</span></span></th>
     <td>{money(row.value)}</td><td>{money(row.invested)}</td>

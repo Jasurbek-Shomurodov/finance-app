@@ -1,7 +1,7 @@
 // Returns over time from the investment profit and loss: the day-by-day value, each month's result, the fall from
 // the last peak, and the two standard return rates. Pure; every amount is in the display currency.
 import { daysBetween, shiftMonth } from './calendar-days';
-import type { InvestmentPnl, PnlFlow } from './investment-pnl';
+import type { InvestmentPnl, PnlFlow, PnlPoint } from './investment-pnl';
 
 /** One day something changed. `pnl` is what the investments earned that day: the change in value without the money
  * put in or taken out, plus income, minus costs. `index` is the growth of one unit invested at the start;
@@ -77,6 +77,12 @@ export function investmentReturns(pnl: Pick<InvestmentPnl, 'flows' | 'marks' | '
   moneyWeighted: moneyWeightedReturn([...amounts, { date: today, amount: pnl.totals.value }]),
   maxDrawdown: days.length ? Math.min(...days.map(day => day.drawdown)) * 100 : null,
  };
+}
+
+/** The profit or loss so far on each day: every day's result added to the ones before it. */
+export function runningTotal(days: readonly ReturnDay[]): PnlPoint[] {
+ let total = 0;
+ return days.map(day => ({ date: day.date, total: total += day.pnl }));
 }
 
 /** The last `count` months through `today`'s, each with what the investments earned in it; a quiet month is 0. */

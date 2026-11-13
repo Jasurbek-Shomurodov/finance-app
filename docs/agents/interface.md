@@ -70,7 +70,7 @@ it instead of styling a page on its own.
   `ConfirmDialog`; dialog forms close with `FormFooter`.
 - Every chart takes its look from the chart kit, `presentation-foundation/chart.tsx`: spread
   `chartGrid`, `chartAxis` / `chartValueAxis`, `chartTooltip`, `chartBar` (`groupedBar`, `stackTop`),
-  `plannedBar` for anything scheduled or estimated (legend swatch `.chart-planned-key`), `leadLine` /
+  `plannedBar` for anything scheduled or estimated (legend swatch `.chart-planned-key`), `sideBar` / `sideGrid` for bars drawn sideways from zero and `toneColor` for a gain or loss, `leadLine` /
   `leadArea` with `ChartGradient`, `chartLine`, `guideLine`, `referenceLine`, `chartDonut`, `chartSankey`
   and `chartHeight`; label ticks with `moneyTick`, `monthTick`, `monthLabel`. Never write grid dashes,
   axis lines, tooltip boxes, bar widths or gradients inline; change the kit and every chart follows.

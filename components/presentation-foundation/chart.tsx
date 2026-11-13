@@ -36,6 +36,12 @@ export const groupedBar = { ...chartBar, maxBarSize: 18 };
 /** A recorded column drawn inside its planned outline. */
 export const recordedBar = { ...chartBar, fillOpacity: .85 };
 
+/** Bars drawn sideways from a zero line (a gain or a loss per row): rounded at both ends, with upright guides. */
+export const sideBar = { radius: 4, maxBarSize: 22, isAnimationActive: false };
+export const sideGrid = { ...chartGrid, vertical: true, horizontal: false } as const;
+/** A gain or a loss as a series colour. */
+export const toneColor = (amount: number) => amount < 0 ? 'var(--negative)' : 'var(--positive)';
+
 /** Lines: the lead series is the primary colour and thicker; comparisons are thinner, guides dashed and grey. */
 export const chartLine = { strokeWidth: 2, dot: false, isAnimationActive: false, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 export const leadLine = { ...chartLine, stroke: 'var(--primary)', strokeWidth: 2.5 } as const;
