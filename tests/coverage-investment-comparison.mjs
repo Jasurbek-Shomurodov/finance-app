@@ -27,7 +27,7 @@ function comparison(t,props={},{store=storage(),decide,respond}={}){
   '@/lib/refresh-read':{refreshRead:async(url,{signal})=>{requests.push({url,signal});const answer=await reply(url,requests.length);return {ok:answer.ok,json:async()=>answer.body};}},
   '@/lib/investment-benchmarks':{...benchmarks,investmentDecisionComparison:(input,data,portfolio)=>{decisions.push({input,data,portfolio});return decide?decide(input,data,portfolio):{result:{points,unavailable:[]},details:{}};}},
  });
- const base={history:{records:[btc],events:[]},today:'2026-09-30',currency:'USD',market:null,demo:false,windowStart:'2026-09-01',points:[{date:'2026-09-30',net:100}],profile:profile(),profileError:'',trackingStart:null,onTrackingStartChange:async date=>{starts.push(date);},summary:r.react.createElement('p',{className:'summary'},'Summary')};
+ const base={history:{records:[btc],events:[]},today:'2026-09-30',currency:'USD',market:null,demo:false,windowStart:'2026-09-01',points:[{date:'2026-08-01',net:40},{date:'2026-09-30',net:100}],profile:profile(),profileError:'',trackingStart:null,onTrackingStartChange:async date=>{starts.push(date);},summary:r.react.createElement('p',{className:'summary'},'Summary')};
  const view=(next={})=>r.render(r.react.createElement(InvestmentComparison,Object.assign(base,next)));
  view(props);
  const legend=()=>r.find(node=>node.props.className==='comparison-legend').children;
@@ -42,12 +42,13 @@ test('the sample workspace loads sample benchmarks, draws the chart from the win
  assert.equal(s.r.find(byType('ChartSkeleton')).props.label,'Loading comparisons…');
  await s.r.flush();
  assert.deepEqual(s.requests.map(request=>request.url),['/api/benchmarks?demo=1']);
- assert.deepEqual(s.legend().map(text),['Investments','Bitcoin · BTC','S&P 500 · SPY','US Treasury bills · BIL','USD deposit · 8%']);
+ assert.deepEqual(s.legend().map(text),['Net worth','Bitcoin · BTC','S&P 500 · SPY','US Treasury bills · BIL','USD deposit · 8%']);
  assert.ok(s.legend().every(button=>button.props['aria-pressed']===true&&!button.props.disabled));
  const chart=s.r.find(byType('InvestmentValueChart'));
  assert.deepEqual(chart.props.points.map(point=>point.date),['2026-09-10','2026-09-20'],'points before the window are cut');
  assert.equal(chart.props.series.find(series=>series.key==='actual').primary,true);
- assert.equal(chart.props.label,'Investments');
+ assert.deepEqual(chart.props.points.map(point=>[point.actual,point.BTC]),[[40,60],[40,60]],'the main line is net worth, and Bitcoin keeps its distance from it');
+ assert.equal(chart.props.label,'Net worth');
  assert.ok(s.notes().includes('Sample portfolio compared with real BTC and SPY price history. SPY tracks the S&P 500; deposits use assumed annual rates.'));
  assert.equal(text(s.r.find(node=>node.props.className==='summary')),'Summary');
  // Hiding a line keeps the request and only changes what is drawn; the choice is remembered per owner.
@@ -64,7 +65,7 @@ test('a saved legend and funding scope are restored, and the scope can be change
  const store=storage({values:{'finance:overview-benchmarks:owner-1':JSON.stringify(['SPY']),'finance:benchmark-method:owner-1':JSON.stringify({scope:'expenses'})}});
  const s=comparison(t,{},{store});
  await s.r.flush();
- assert.deepEqual(s.legend().map(button=>[text(button),button.props['aria-pressed']]),[['Investments',true],['Bitcoin · BTC',false],['S&P 500 · SPY',true],['USD deposit · 8%',false]]);
+ assert.deepEqual(s.legend().map(button=>[text(button),button.props['aria-pressed']]),[['Net worth',true],['Bitcoin · BTC',false],['S&P 500 · SPY',true],['USD deposit · 8%',false]]);
  const scope=()=>s.r.find(node=>node.type==='Segmented');
  assert.equal(scope().props.value,'expenses');
  assert.ok(s.notes().some(note=>note.startsWith('Investment purchases, principal repayments and every recorded expense fund benchmarks.')));
@@ -94,7 +95,7 @@ test('custom, stock and portfolio benchmarks are requested with their parameters
  assert.equal(query.benchmarks,'STOCK:AAPL,CUSTOM,PORTFOLIO');assert.equal(query.symbol,'MSFT');
  assert.deepEqual(JSON.parse(query.portfolio),{assets});
  assert.equal(query.portfolioCrypto,undefined);
- assert.deepEqual(s.legend().map(text),['Investments','AAPL','MSFT','Diversified portfolio']);
+ assert.deepEqual(s.legend().map(text),['Net worth','AAPL','MSFT','Diversified portfolio']);
  assert.deepEqual(s.decisions.at(-1).portfolio,{assets});
  // A legacy portfolio asks for its crypto and stock symbols instead.
  const legacy=comparison(t,{profile:profile({benchmarks:['PORTFOLIO'],portfolio:{crypto:50,stock:50,deposit:0,business:0,cash:0,cryptoSymbol:'BTC',stockSymbol:'QQQ',businessRate:0}})});
@@ -186,7 +187,8 @@ test('choosing a chart point opens its details with the formatted date, and clos
  assert.equal(dialog().props.open,true);
  assert.equal(text(s.r.find(byType('DialogDescription'))),'20 September 2026');
  const tooltip=s.r.all(byType('BenchmarkTooltip')).find(node=>node.props.active);
- assert.deepEqual(tooltip.props.payload,[{payload:points[2]}]);
+ // Net worth was 40 that day and Bitcoin stood 20 above the investments, so it reads 60: debts are subtracted from both.
+ assert.deepEqual(tooltip.props.payload,[{payload:{date:'2026-09-20',actual:40,contributed:90,BTC:60,SPY:null,depositUSD:null}}]);
  s.r.fire(dialog(),'onOpenChange',true);assert.equal(dialog().props.open,true);
  s.r.fire(dialog(),'onOpenChange',false);
  assert.equal(dialog().props.open,false);assert.equal(text(s.r.find(byType('DialogDescription'))),'');
