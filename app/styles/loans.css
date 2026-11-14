@@ -1,0 +1,104 @@
+/* Loans & debts: the list of records beside what is owed and the payoff plan; the planner shares the layout. */
+.loans-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,330px);gap:16px;align-items:start;width:100%}
+.loans-layout>:only-child{grid-column:1/-1}
+.loans-main,.loans-side{display:flex;flex-direction:column;gap:16px;min-width:0}
+@container content (max-width:980px){.loans-layout{grid-template-columns:minmax(0,1fr)}}
+
+/* One row per record on a shared grid, so Paid off and Balance line up down the list and under their headings. */
+.loan-rows{display:grid;grid-template-columns:minmax(0,1fr) minmax(9rem,11rem) auto auto;column-gap:16px;margin:0;padding:0;list-style:none}
+.loan-rows>li{display:grid;grid-template-columns:subgrid;grid-column:1/-1;align-items:center}
+.loan-rows-head{padding:4px 12px 6px;color:var(--muted-foreground);font-size:var(--type-caption);font-weight:600}
+.loan-rows-head>:nth-child(3){text-align:end}
+.loan-rows>.loan-group{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 16px;margin-top:12px;padding:10px 12px;border-radius:var(--radius-control);background:var(--muted);font-size:var(--type-compact);font-weight:600}
+.loan-rows-head+.loan-group{margin-top:0}
+.loan-group>span:first-child{display:inline-flex;align-items:center;gap:8px}
+.loan-group>span:last-child{font-variant-numeric:tabular-nums}
+.loan-group .count{margin:0}
+.loan-group[data-level=borrower]{margin-top:4px;padding-block:6px;background:transparent;font-size:var(--type-small)}
+.loan-row{padding:14px 12px;border-radius:var(--radius-control);cursor:pointer}
+.loan-row+.loan-row{border-top:1px solid var(--hairline)}
+.loan-row:hover{background:color-mix(in srgb,var(--accent) 35%,transparent)}
+.loan-row:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
+.loan-row:active{background:color-mix(in srgb,var(--accent) 60%,transparent)}
+.loan-row-name{display:flex;align-items:center;gap:14px;min-width:0}
+.loan-row-name>div{display:grid;gap:3px;min-width:0}
+.loan-row-name strong{font-size:var(--type-compact);font-weight:600;overflow-wrap:anywhere}
+.loan-row-name small,.loan-row-progress small,.loan-row-amount small{color:var(--muted-foreground);font-size:var(--type-caption);line-height:1.45}
+.loan-row .caution{color:var(--pill-caution);font-weight:600}
+.loan-row .negative{font-weight:600}
+.loan-row-progress{display:grid;gap:6px;min-width:0}
+.loan-row-progress small{font-variant-numeric:tabular-nums}
+.loan-row-progress b{color:var(--foreground);font-weight:600}
+.progress-track[data-tone=debt]>*{background:var(--primary)}
+.loan-row-amount{display:grid;gap:3px;justify-items:end;text-align:end;white-space:nowrap}
+.loan-row-amount strong{font-size:var(--type-compact);font-weight:600;font-variant-numeric:tabular-nums}
+.loan-row .row-actions{flex-wrap:nowrap;justify-content:flex-end}
+/* Record payment waits for the pointer or the keyboard; a touch screen has neither, so it stays. */
+@media(hover:hover){.loan-row:not(:hover,:focus-within) .loan-row-pay{opacity:0}}
+.loan-row-pay[aria-disabled=true]{opacity:.5;cursor:not-allowed}
+.loan-rows[data-layout=stacked]{grid-template-columns:minmax(0,1fr) auto}
+.loan-rows[data-layout=stacked]>.loan-row{row-gap:10px}
+.loan-rows[data-layout=stacked] .loan-row-name{grid-area:1/1/2/-1}
+.loan-rows[data-layout=stacked] .loan-row-amount{grid-area:2/1;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;text-align:start;white-space:normal}
+.loan-rows[data-layout=stacked] .row-actions{grid-area:2/2}
+.loan-rows[data-layout=stacked] .loan-row-progress{grid-area:3/1/4/-1}
+.loan-rows[data-layout=stacked] .loan-row-progress:empty,.loan-rows[data-layout=stacked]>.loan-rows-head{display:none}
+.loans-list .panel-title .segmented{flex:none}
+
+/* What you owe: the donut beside this month's interest, then each debt with its rate. */
+.owed-breakdown-lead{display:flex;flex-wrap:wrap;align-items:center;gap:16px 20px}
+.owed-donut{flex:none;width:132px;height:132px}
+.owed-breakdown-lead>div:last-child{display:grid;gap:4px;flex:1;min-width:8rem}
+.owed-breakdown-lead span,.owed-breakdown-lead small{color:var(--muted-foreground);font-size:var(--type-caption)}
+.owed-breakdown-lead strong{font-size:var(--type-stat);font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.owed-breakdown-list{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px 14px;margin:18px 0 0;padding:0;list-style:none;font-size:var(--type-caption)}
+.owed-breakdown-list>li{display:grid;grid-template-columns:subgrid;grid-column:1/-1;align-items:baseline}
+.owed-breakdown-list>li>span:first-child{display:flex;align-items:baseline;gap:8px;min-width:0;overflow-wrap:anywhere}
+.owed-breakdown-list i{flex:none;width:8px;height:8px;border-radius:50%}
+.owed-breakdown-list>li>span:nth-child(2){color:var(--muted-foreground);font-variant-numeric:tabular-nums}
+.owed-breakdown-list>li>span.negative{color:var(--negative);font-weight:600}
+.owed-breakdown-list strong{font-weight:600;text-align:end;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* Payoff plan card and the planner. */
+.payoff-plan-card{display:flex;flex-direction:column;gap:14px}
+.payoff-plan-card>.panel-title{margin-bottom:0}
+.status-badge.payoff-method-badge{background:color-mix(in srgb,var(--primary) 12%,transparent);color:var(--primary);white-space:normal}
+.status-badge.payoff-method-badge::before{content:none}
+.payoff-plan-facts{display:grid;gap:10px;margin:0;font-size:var(--type-caption)}
+.payoff-plan-facts>div{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.payoff-plan-facts dt{color:var(--muted-foreground)}
+.payoff-plan-facts dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.payoff-chart{width:100%;min-width:0}
+.payoff-chart-ends{display:flex;justify-content:space-between;gap:12px;margin:6px 0 0;color:var(--muted-foreground);font-size:var(--type-caption)}
+.payoff-today{display:flex;align-items:baseline;gap:8px;margin:0 0 12px}
+.payoff-today strong{font-size:var(--type-stat);font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.payoff-today span{color:var(--muted-foreground);font-size:var(--type-small)}
+.payoff-legend{display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--muted-foreground);font-size:var(--type-caption)}
+.payoff-legend>span{display:inline-flex;align-items:center;gap:8px}
+.payoff-legend i{width:16px;border-top:2.5px solid var(--primary);border-radius:2px}
+.payoff-legend i[data-guide]{border-top:2px dashed var(--muted-foreground)}
+.payoff-order{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;column-gap:14px;margin:0;padding:0;list-style:none}
+.payoff-order>li{display:grid;grid-template-columns:subgrid;grid-column:1/-1;align-items:center;padding-block:14px}
+.payoff-order>li+li{border-top:1px solid var(--hairline)}
+.payoff-order-step{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--muted);color:var(--muted-foreground);font-size:var(--type-caption);font-weight:700;font-variant-numeric:tabular-nums}
+.payoff-order>li:first-child>.payoff-order-step{background:var(--primary);color:var(--primary-foreground)}
+.payoff-order>li>div{display:grid;gap:2px;min-width:0}
+.payoff-order strong{font-size:var(--type-small);font-weight:600;overflow-wrap:anywhere}
+.payoff-order small{color:var(--muted-foreground);font-size:var(--type-caption);line-height:1.45}
+.payoff-order-when{justify-items:end;text-align:end;white-space:nowrap}
+.payoff-methods{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,130px),1fr));gap:10px}
+.payoff-methods>button{display:flex;flex-direction:column;gap:6px;min-width:0;padding:14px;border:1px solid var(--border);border-radius:var(--radius-card);background:none;color:inherit;font:inherit;text-align:start;cursor:pointer;transition:border-color var(--motion-quick),box-shadow var(--motion-quick),transform var(--motion-quick)}
+.payoff-methods>button:hover{border-color:color-mix(in srgb,var(--primary) 45%,var(--border))}
+.payoff-methods>button:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+.payoff-methods>button:active{transform:scale(.985)}
+.payoff-methods>button[aria-pressed=true]{border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 14%,transparent)}
+.payoff-methods>button>span{display:flex;align-items:center;gap:6px;font-size:var(--type-caption);font-weight:600}
+.payoff-methods>button>strong{font-size:var(--type-body);font-weight:600}
+.payoff-methods>button>small{color:var(--muted-foreground);font-size:var(--type-caption)}
+.payoff-saving{margin:12px 0 0;padding:10px 14px;border-radius:var(--radius-control);background:color-mix(in srgb,var(--positive) 12%,transparent);color:var(--pill-positive);font-size:var(--type-caption);font-weight:600}
+.payoff-payments{display:grid;gap:14px;min-width:0;margin:0 0 16px;padding:0;border:0}
+.payoff-payments>label{display:grid;gap:8px;min-width:0;font-size:var(--type-small);font-weight:500}
+.payoff-payments>label:first-child{padding-bottom:16px;border-bottom:1px solid var(--hairline)}
+.payoff-payments>.payoff-payment{grid-template-columns:minmax(0,1fr) minmax(7rem,9rem);align-items:center;gap:12px}
+.payoff-payment>span{display:flex;align-items:center;gap:10px;min-width:0;overflow-wrap:anywhere}
+@media(prefers-reduced-motion:reduce){.payoff-methods>button{transition:none}.payoff-methods>button:active{transform:none}}

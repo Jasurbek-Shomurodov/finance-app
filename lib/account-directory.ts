@@ -52,3 +52,24 @@ export function inAccountOrder<T extends Entry>(records: readonly T[], ids: read
  let next = 0;
  return records.map(record => accounts.has(record) ? sorted[next++] as T : record);
 }
+
+/** One part of the Accounts mix bar: cash, deposits, or the investment accounts of one kind. `kind` names its colour and label. */
+export type MixSegment = { kind: 'Cash' | 'Deposit' | 'Stock' | 'Crypto' | 'Cash investment account'; amount: number };
+
+/** What the listed accounts hold by type, and what of the cash is free to spend (not held for a savings goal), all in
+ * one currency through `convert`. Null when a balance has no value or no rate, so no share is drawn from a partial total. */
+export function accountMix(items: readonly DirectoryItem[], goals: PlanningData['goals'], convert: (amount: number, from: string) => number | null): { segments: MixSegment[]; available: number } | null {
+ const totals = new Map<MixSegment['kind'], number>();
+ let available = 0;
+ for (const item of items) {
+  const value = item.total === null ? null : convert(item.total, item.account.currency);
+  if (value === null) return null;
+  const kind = item.group === 'cash' ? 'Cash' : item.group === 'deposits' ? 'Deposit' : item.account.kind === 'Cash' ? 'Cash investment account' : item.account.kind as 'Stock' | 'Crypto';
+  totals.set(kind, (totals.get(kind) ?? 0) + value);
+  if (item.group !== 'cash') continue;
+  const held = convert(allocatedToGoals(goals, item.id), item.account.currency);
+  if (held === null) return null;
+  available += value - held;
+ }
+ return { segments: [...totals].filter(([, amount]) => amount > 0).map(([kind, amount]) => ({ kind, amount })), available };
+}

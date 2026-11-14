@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {loadTS} from './helpers/load-ts.mjs';
-const {assetAllocation,changePercent,nextPayments,dueCounts}=loadTS('lib/overview.ts');
+const {assetAllocation,changePercent,nextPayments,dueCounts,namesCategory}=loadTS('lib/overview.ts');
 const entry=(id,kind,amount,extra={})=>({id,name:id,kind,amount,quantity:1,cost:0,rate:0,currency:'USD',frequency:'Once',date:'2026-09-01',...extra});
 
 test('allocation lists only owned asset kinds, largest first, with precise shares',()=>{
@@ -139,4 +139,9 @@ test('the Overview pill and the Due tile count the same set: payments only, the 
  assert.deepEqual(dueCounts([]),{payments:[],overdue:0,dueSoon:0});
  const repaid={...item('car','Loan',false),type:'installment'},lent={...item('sam','Money lent',true),type:'repayment'},matured={...item('term','Deposit',true),type:'maturity'};
  assert.deepEqual(dueCounts([repaid,lent,matured]).payments.map(entry=>entry.key),['car'],'a loan is paid; what comes in by itself is not');
+});
+
+test('a dated list names a category on its first row and wherever it differs from the row above',()=>{
+ assert.deepEqual(namesCategory(['Living expense','Living expense','Household','Living expense','Living expense'].map(kind=>({kind}))),[true,false,true,true,false]);
+ assert.deepEqual(namesCategory([]),[]);
 });

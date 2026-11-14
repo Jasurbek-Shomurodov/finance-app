@@ -6,14 +6,30 @@
 .transactions-search>svg{position:absolute;inset-inline-start:12px;top:50%;transform:translateY(-50%);color:var(--muted-foreground);pointer-events:none}
 .transactions-search input{padding-inline-start:36px}
 .transactions-tools [data-slot=native-select-wrapper]{width:auto}
-.transactions-layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:16px;align-items:start;width:100%}
+.transactions-layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start;width:100%}
 .transactions-list{padding:0;overflow:hidden}
 .transaction-day+.transaction-day{border-top:1px solid var(--hairline)}
 .transaction-day-heading{display:flex;justify-content:space-between;gap:12px;padding:10px 16px;background:var(--muted);font-size:var(--type-caption);font-weight:500;color:var(--muted-foreground);font-variant-numeric:tabular-nums}
 .transaction-day-heading h3{margin:0;font-size:var(--type-caption);font-weight:500}
 .transaction-day ul{margin:0;padding:0;list-style:none}
-.transaction-row{display:grid;grid-template-columns:minmax(0,.9fr) minmax(min-content,1.6fr) minmax(8.5rem,.4fr);align-items:center;gap:12px;padding:10px 16px;cursor:pointer;font-size:var(--type-small)}
-.transaction-row:has(>input){grid-template-columns:auto minmax(0,.9fr) minmax(min-content,1.6fr) minmax(8.5rem,.4fr)}
+/* The ledger: a day's heading is quiet text with no band, and the heading row and every row share one set of columns (payee, category, account, amount). */
+.transactions-list .transaction-day-heading{padding:14px 20px 6px;background:none;font-weight:600;color:var(--foreground)}
+.transactions-list .transaction-day-heading h3{font-weight:600}
+.transactions-list .transaction-day-heading>span:not(.positive){color:var(--muted-foreground)}
+.transaction-columns-heading,.transaction-row{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(min-content,1fr) minmax(min-content,1fr) minmax(8.5rem,.4fr);align-items:center;gap:12px;padding:10px 20px}
+.transaction-columns-heading[data-selecting],.transaction-row:has(>input){grid-template-columns:16px minmax(0,1.5fr) minmax(min-content,1fr) minmax(min-content,1fr) minmax(8.5rem,.4fr)}
+.transaction-columns-heading{padding-block:12px;border-bottom:1px solid var(--hairline);color:var(--muted-foreground);font-size:var(--type-caption);font-weight:600}
+.transaction-columns-heading>:first-child{padding-inline-start:50px}
+.transaction-columns-heading[data-selecting]>:first-child{grid-column:2}
+.transaction-columns-heading>:last-child{text-align:end}
+.transaction-row{min-height:58px;cursor:pointer;font-size:var(--type-small)}
+.transaction-columns{display:contents;color:var(--muted-foreground)}
+.transaction-columns>span{min-width:0}
+/* The category's text, not its pill's padding, lines up under the Category heading; the pill may be wider than its cell by what it was pulled back, or a shrink-to-fit cell (the phone's stacked row) would squeeze the name. */
+.transaction-columns .transaction-category-button{margin-inline-start:-11px;max-width:calc(100% + 11px)}
+.transaction-columns>span>.transaction-category{margin-inline-start:-6px;max-width:calc(100% + 6px)}
+.transaction-account{overflow-wrap:break-word}
+.transaction-chip{display:inline-flex;align-items:center;gap:5px;padding:1px 8px;border-radius:999px;background:var(--muted);color:var(--muted-foreground);font-size:var(--type-micro);font-weight:600;line-height:1.6;white-space:nowrap}
 .transaction-row+.transaction-row{border-top:1px solid var(--hairline)}
 .transaction-row:hover{background:color-mix(in srgb,var(--muted) 60%,transparent)}
 .transaction-row:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
@@ -22,6 +38,8 @@
 .transaction-merchant{display:flex;align-items:center;gap:12px;min-width:0}
 .transaction-merchant>span:last-child{display:flex;flex-direction:column;min-width:0}
 .transaction-merchant strong{overflow-wrap:break-word;font-weight:500}
+.transactions-list .transaction-name{flex-wrap:wrap;gap:4px 8px}
+.transactions-list .transaction-name strong{font-weight:600}
 /* The account and schedule line wraps at spaces like the name above it; names are never ellipsised (RESP-041). */
 .transaction-merchant small{color:var(--muted-foreground);font-size:var(--type-caption);overflow-wrap:break-word}
 .transaction-category{display:inline-flex;align-items:center;gap:8px;min-width:0;max-width:100%}
@@ -33,6 +51,27 @@
 .rule-category-button{height:38px;padding-inline:8px 12px;border-radius:var(--radius-control);font-weight:400}
 .transaction-amount{font-variant-numeric:tabular-nums;font-weight:500;text-align:end;white-space:nowrap}
 .transactions-summary{position:sticky;top:16px;display:flex;flex-direction:column;gap:12px;padding:16px}
+/* Beside the ledger: the period's net, income against spending on one scale, then the top categories. */
+.transactions-aside{position:sticky;top:16px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.transactions-aside>.transactions-summary{position:static;gap:16px;padding:20px}
+.transactions-net{display:flex;flex-direction:column;gap:2px;margin:0;color:var(--muted-foreground);font-size:var(--type-caption)}
+.transactions-net>strong{color:var(--foreground);font-size:var(--type-stat);font-weight:600;letter-spacing:-.025em;line-height:1.15;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.transactions-flow{display:flex;flex-direction:column;gap:8px;font-size:var(--type-small)}
+.transactions-flow>p{display:flex;justify-content:space-between;gap:12px;margin:0;color:var(--muted-foreground)}
+.transactions-flow>p:nth-of-type(2){margin-top:6px}
+.transactions-flow>p>strong{color:var(--foreground);font-weight:600;font-variant-numeric:tabular-nums}
+:is(.transactions-net,.transactions-flow>p)>strong.positive{color:var(--positive)}
+:is(.transactions-flow,.transactions-top) .progress-track[data-tone=expense]>*{background:var(--foreground)}
+.transactions-aside .budget-left-summary{padding-top:16px;border-top:1px solid var(--hairline)}
+.transactions-aside .budget-left-summary dd{font-weight:600}
+.transactions-aside .panel-title{margin-bottom:0}
+.transactions-top{display:flex;flex-direction:column;gap:16px;padding:20px}
+.transactions-top>ul{display:flex;flex-direction:column;gap:14px;margin:0;padding:0;list-style:none}
+.transactions-top li{display:flex;align-items:center;gap:12px;font-size:var(--type-small)}
+.transactions-top li>span:last-child{display:flex;flex:1;flex-direction:column;gap:6px;min-width:0}
+.transactions-top li>span:last-child>span:first-child{display:flex;justify-content:space-between;gap:12px;font-weight:600}
+.transactions-top li strong{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.transactions-top .progress-track{height:4px}
 .category-picker-popover{width:280px;padding:8px;border-radius:var(--radius-card)}
 .category-picker{display:flex;flex-direction:column;gap:6px}
 .category-picker-heading{margin:4px 6px 0;color:var(--muted-foreground);font-size:var(--type-caption);font-weight:500}
@@ -50,8 +89,8 @@
 .rule-list>li>button{display:flex;flex:1;flex-wrap:wrap;align-items:center;gap:8px;min-width:0;font-size:var(--type-small);text-align:start}
 .rule-arrow{color:var(--muted-foreground)}
 /* The summary sits beside the list only when the list keeps room for owner, category and business chips in full (about 800px); below that it moves above (LIST-018). */
-@container content (max-width:1100px){.transactions-layout{grid-template-columns:minmax(0,1fr)}.transactions-summary{position:static;order:-1}.transactions-summary .budget-left-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(8rem,1fr));gap:12px 16px}.transactions-summary .budget-left-summary>div{flex-direction:column;justify-content:flex-start;gap:2px}.transactions-summary .budget-left-summary dd{font-size:var(--type-compact);font-weight:500}.transactions-summary .budget-left-total{padding-top:0;border-top:0}}
-@container content (max-width:600px){.transaction-row{grid-template-columns:minmax(0,1fr) auto;row-gap:4px}.transaction-row:has(>input){grid-template-columns:auto minmax(0,1fr) auto}.transaction-row>.transaction-labels{display:flex;flex-wrap:wrap;grid-column:-3/-2;grid-row:2}.transaction-row:has(>input)>.transaction-labels{grid-column:2}.transaction-amount{grid-row:1/3;grid-column:-2}}
+@container content (max-width:1100px){.transactions-layout{grid-template-columns:minmax(0,1fr)}.transactions-summary{position:static;order:-1}.transactions-summary .budget-left-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(8rem,1fr));gap:12px 16px}.transactions-summary .budget-left-summary>div{flex-direction:column;justify-content:flex-start;gap:2px}.transactions-summary .budget-left-summary dd{font-size:var(--type-compact);font-weight:500}.transactions-summary .budget-left-total{padding-top:0;border-top:0}.transactions-aside{display:contents}.transactions-aside>.transactions-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));align-items:end;gap:16px 24px}.transactions-aside>.transactions-summary>:is(.panel-title,dl,[role=status]){grid-column:1/-1}}
+@container content (max-width:600px){.transaction-columns-heading{display:none}.transactions-list .transaction-day-heading{padding-inline:16px}.transaction-row{grid-template-columns:minmax(0,1fr) auto;row-gap:2px;padding-inline:16px}.transaction-row:has(>input){grid-template-columns:auto minmax(0,1fr) auto}.transaction-row>.transaction-columns{display:flex;flex-wrap:wrap;align-items:center;gap:0 8px;grid-column:-3/-2;grid-row:2;padding-inline-start:50px;font-size:var(--type-caption)}.transaction-row:has(>input)>.transaction-columns{grid-column:2}.transaction-amount{grid-row:1/3;grid-column:-2}}
 
 /* Recurring: month summary bars, a dated list with "in N days", and a calendar. */
 .recurring-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 24px;width:100%}
@@ -231,12 +270,12 @@
 .goal-row>.drag-handle{flex-shrink:0;opacity:0;transition:opacity .15s}
 .goal-row:hover>.drag-handle,.goal-row>.drag-handle:focus-visible,.goal-row[data-dragging]>.drag-handle{opacity:1}
 /* Accounts: each account is a bordered card, its drag handle in the top corner. */
-.account-sortable-row{position:relative;border:1px solid var(--hairline);border-radius:var(--radius-control);background:var(--card)}
-.account-sortable-row:has(>[aria-pressed=true]){border-color:var(--primary)}
-.account-sortable-row>.drag-handle{position:absolute;top:50%;inset-inline-end:8px;translate:0 -50%;z-index:1;opacity:0;transition:opacity .15s}
+/* An account row's handle sits at its leading edge and is always there to find: quiet at rest, full under the pointer or focus. */
+.account-sortable-row{position:relative;border-top:1px solid var(--hairline)}
+.account-sortable-row>.drag-handle{position:absolute;top:50%;inset-inline-start:10px;translate:0 -50%;z-index:1;opacity:.45;transition:opacity .15s}
 .account-sortable-row:hover>.drag-handle,.account-sortable-row>.drag-handle:focus-visible,.account-sortable-row[data-dragging]>.drag-handle{opacity:1}
 @media (hover:none){.account-sortable-row>.drag-handle{opacity:1}}
-.account-sortable-row[data-dragging]{box-shadow:var(--shadow-card)}
+.account-sortable-row[data-dragging]{background:var(--card);box-shadow:var(--shadow-card)}
 /* Categories: the handle sits before each badge. */
 @media (hover:none){.goal-row>.drag-handle{opacity:1}}
 .goal-row[data-dragging]{box-shadow:0 12px 32px rgb(0 0 0 / .14)}

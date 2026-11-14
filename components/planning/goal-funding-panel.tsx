@@ -2,7 +2,7 @@
 
 import { LoadingPlaceholder } from '@/components/presentation-foundation/loading-placeholder';
 import { InfoHint } from '@/components/presentation-foundation/info-hint';
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { ErrorPopup } from '@/components/presentation-foundation/error-popup';
 import { ResourceState } from '@/components/presentation-foundation/resource-state';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
@@ -19,7 +19,7 @@ import { FormattedNumberInput } from '@/components/presentation-foundation/forma
 import { useUnsavedNavigation } from '@/components/discard-changes';
 import { formatMoney, formatDate } from '@/lib/format';
 import { income } from '@/lib/finance';
-import { fundingPlan, type GoalEvent } from '@/lib/goal-funding';
+import { fundingPlan, planFundingRequested, type GoalEvent } from '@/lib/goal-funding';
 import { emptyPlanning,type Goal,type PlanningData } from '@/lib/planning';
 import { useOwnerResource, saveOwnerResource } from '@/hooks/use-owner-resource';
 import { RollingText } from '@/components/presentation-foundation/rolling-text';
@@ -47,6 +47,16 @@ export function GoalFundingPanel({ data, currency, surplus, surplusParts, today,
  const events = activity.data.events.filter(event => (event.event_type !== 'opening' || Number(event.delta) !== 0) && (!only || event.goal_id === only));
  const shown = only ? savingsGoals.find(item => item.id === only) : undefined;
  const activityId = useId();
+ // The dashboard's unassigned-surplus nudge arrives as #plan-funding. The router sets the address after the page first
+ // renders, so it is read after every render until it is found; opening clears it, so the window opens once.
+ useEffect(() => {
+  const open = () => {
+   if (part === 'activity' || !activeGoals.length || !planFundingRequested(window.location.hash)) return;
+   window.history.replaceState(null, '', window.location.pathname + window.location.search);
+   setPlanning(true);
+  };
+  open();
+ });
  const money = (value: number | null) => value === null ? '—' : formatMoney(value, currency, locale);
 
  async function save(action: string, payload: unknown) {

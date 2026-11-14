@@ -18,5 +18,6 @@
 @import "./styles/accounts-cash-flow.css";
 @import "./styles/overview-budget.css";
 @import "./styles/transactions-recurring-goals.css";
+@import "./styles/loans.css";
 @import "./styles/goal-setup-business.css";
 @import "./styles/dialogs-household.css";

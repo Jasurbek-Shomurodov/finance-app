@@ -9,6 +9,8 @@
 .overview-hero-value>p{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:2px;font-size:var(--type-small);color:var(--muted-foreground)}
 .overview-delta{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-weight:600;font-variant-numeric:tabular-nums;background:color-mix(in srgb,currentColor 10%,transparent)}
 .overview-hero-value>.overview-change-split{display:flex;align-items:center;gap:6px 16px;flex-wrap:wrap;font-size:var(--type-caption);color:var(--muted-foreground)}
+.overview-change-split span>i{display:inline-block;width:8px;height:8px;margin-inline-end:6px;border-radius:50%;background:var(--muted-foreground)}
+.overview-change-split span>i.returns{background:var(--primary)}
 .overview-change-split b{font-weight:600;font-variant-numeric:tabular-nums;color:var(--foreground)}
 .overview-change-split b.positive{color:var(--positive)}
 .overview-change-split b.negative{color:var(--negative)}
@@ -70,6 +72,11 @@
 .stat-tile-bar{height:6px;border-radius:3px;background:color-mix(in srgb,var(--foreground) 8%,transparent);overflow:hidden}
 .stat-tile-bar>i{display:block;height:100%;border-radius:inherit;background:var(--primary)}
 .stat-tile-bar.negative>i{background:var(--negative)}
+/* Under the figures, across both columns: the monthly surplus no goal has yet, and the way to Plan funding. */
+.surplus-nudge{grid-column:1/-1;flex-direction:row;flex-wrap:wrap;align-items:center;gap:12px 16px}
+.surplus-nudge>div{display:grid;gap:2px;flex:1 1 9rem;min-width:0}
+.surplus-nudge>div>strong{font-size:var(--type-title);font-weight:600;letter-spacing:-.02em;line-height:1.2;font-variant-numeric:tabular-nums}
+.surplus-nudge-mark{display:grid;place-items:center;flex-shrink:0;width:40px;height:40px;border-radius:var(--radius-control);background:color-mix(in srgb,var(--mark-bg) 12%,transparent);color:var(--primary)}
 
 /* Dashboard asset allocation: the donut beside its list, wrapping under it when the card is narrow. */
 .dashboard-allocation{display:flex;flex-wrap:wrap;align-items:center;gap:16px 28px}

@@ -53,16 +53,18 @@ export function WorkspaceSkeleton({ label, columns = defaultDashboardSkeleton }:
 export function AccountsSkeleton({ label, filters = false }: { label: string; filters?: boolean }) {
   return <div role="status" aria-busy="true" className="overview-content-loading">
     <span className="sr-only">{label}</span>
-    <div aria-hidden="true" className="stat-tiles" data-columns="auto"><article className="stat-tile"><Skeleton className="h-4 w-28"/><Skeleton className="h-8 w-36"/></article></div>
-    {filters && <div aria-hidden="true" className="transactions-tools"><Skeleton className="h-11 w-44 rounded-xl"/><Skeleton className="h-11 w-36 rounded-xl"/></div>}
+    <div aria-hidden="true" className="accounts-hero"><div className="accounts-hero-figure"><Skeleton className="h-5 w-44"/><Skeleton className="h-10 w-52 max-w-full"/></div>
+      {filters && <div className="accounts-hero-tools"><Skeleton className="h-11 w-44 rounded-xl"/><Skeleton className="h-11 w-36 rounded-xl"/></div>}</div>
+    <div aria-hidden="true" className="panel accounts-mix"><Skeleton className="h-2.5 w-full"/><Skeleton className="mt-3 h-5 w-64 max-w-full"/></div>
     <div aria-hidden="true" className="accounts-master-detail">
-      <section className="account-directory"><div className="panel account-group">
+      <section className="panel account-directory"><div className="account-group">
         <div className="account-group-skeleton-head"><Skeleton className="h-6 w-28"/><Skeleton className="ms-auto h-6 w-36"/></div>
-        <div className="account-card-grid">{Array.from({ length: 5 }, (_, index) => <div className="account-sortable-row" key={index}><div className="account-list-row"><Skeleton className="size-[38px] rounded-[10px]"/><span className="account-list-name"><Skeleton className="h-5 w-36 max-w-full"/><Skeleton className="mt-1.5 h-[18px] w-24"/></span><strong><Skeleton className="h-6 w-24"/></strong></div></div>)}</div>
+        <div className="account-rows">{Array.from({ length: 5 }, (_, index) => <div className="account-sortable-row" key={index}><div className="account-list-row"><Skeleton className="size-[38px] rounded-[10px]"/><span className="account-list-name"><Skeleton className="h-5 w-36 max-w-full"/><Skeleton className="mt-1.5 h-[18px] w-24"/></span><span className="account-list-amount"><Skeleton className="h-6 w-24"/></span></div></div>)}</div>
       </div></section>
       <div className="account-selected-panel"><article className="panel account-card">
-        <header><Skeleton className="size-[38px] rounded-[10px]"/><div className="account-card-heading"><Skeleton className="h-6 w-32"/><Skeleton className="h-4 w-24"/></div></header>
-        <Skeleton className="mt-2 h-12 w-48 max-w-full"/>
+        <header><Skeleton className="size-[38px] rounded-[10px]"/><Skeleton className="h-6 w-32"/></header>
+        <Skeleton className="h-9 w-40 max-w-full"/>
+        <Skeleton className="mt-1 h-[150px] w-full"/>
         <div className="account-balance-facts"><Skeleton className="h-5 w-full"/><Skeleton className="h-5 w-full"/></div>
         <div className="account-card-actions"><Skeleton className="h-[42px] w-full"/><Skeleton className="h-[42px] w-full"/></div>
       </article></div>

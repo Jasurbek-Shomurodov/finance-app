@@ -2,8 +2,9 @@
 import { ErrorPopup } from '@/components/presentation-foundation/error-popup';
 import { PageHeader } from '@/components/presentation-foundation/page-header';
 import { Segmented } from '@/components/presentation-foundation/segmented';
+import { RowMenu } from '@/components/presentation-foundation/row-menu';
 import { useState } from 'react';
-import { ArrowRightLeft, Briefcase, Plus, Users } from 'lucide-react';
+import { ArrowRightLeft, Plus } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { Button } from '@/components/ui/button';
 import type { HoldingAccount } from '@/lib/holding-accounts';
@@ -22,6 +23,7 @@ import { directoryItems } from '@/lib/account-directory';
 import { useAccountFilters } from './accounts/use-account-filters';
 import type { HoldingActions } from './accounts/holding-rows';
 import { AccountActivity } from './accounts/account-activity';
+import { useAccountStory } from './accounts/use-account-story';
 import { AddAccountDialog, type AccountType } from './accounts/add-account-dialog';
 import { AccountBusinessesDialog, AccountOperation, AccountOwnersDialog, AssetMovementDialog, CorporateEventDialog, HoldingAccountDialog, StatementReconciliation } from './accounts/accounts-lazy';
 import { AccountsOverview, selectedItem } from './accounts/accounts-overview';
@@ -59,6 +61,7 @@ export function AccountsPage({ owner,loadFailed,onSaved,revision=0,data, save, o
  const [operation, setOperation] = useState<Operation|null>(null), [choosing, setChoosing] = useState(false), [draft, setDraft] = useState<HoldingAccount|null>(null);
  const [editingBusinesses,setEditingBusinesses]=useState(false),[editingOwners,setEditingOwners]=useState(false);
  const investmentAccounts = data.holdingAccounts??[];
+ const { history, reading, story } = useAccountStory({ data, owner, demo, revision, currency, market });
  // Accounts keep the order the person drags them into within their group.
  const order=useDisplayOrder('account_order',directoryItems(data,market),preferences,owner,demo);
  const accountItems=order.items;
@@ -73,11 +76,12 @@ export function AccountsPage({ owner,loadFailed,onSaved,revision=0,data, save, o
  const shown=selectedItem(filters.visible,selected)?.key;
  const transferFrom=movementSources('transfer',data.records).find(record=>shown===`record:${record.id}`)?.id;
  return <>
-  <PageHeader title={t('Accounts')} tabs={<Segmented className="page-tabs" as="nav" label={t('Accounts')} options={[{value:'accounts',label:t('Overview')},{value:'activity',label:t('Recent activity')}]} value={view} onChange={setView}/>}>{owners.length>0&&<Button variant="outline" disabled={readOnly} onClick={()=>setEditingOwners(true)}><Users size={17} aria-hidden="true"/>{t('Edit owners')}</Button>}{businesses.length>0&&<Button variant="outline" onClick={()=>setEditingBusinesses(true)}><Briefcase size={17} aria-hidden="true"/>{t('Edit businesses')}</Button>}<Button variant="outline" onClick={()=>setMovement({kind:'transfer',source_id:transferFrom,target_id:lastTransferTarget(data.movements??[],transferFrom,data.records)})}><ArrowRightLeft size={17} aria-hidden="true"/>{t('Transfer money')}</Button><Button onClick={()=>setChoosing(true)}><Plus size={17} aria-hidden="true" />{t('Add account')}</Button></PageHeader>
+  <PageHeader title={t('Accounts')} tabs={<Segmented className="page-tabs" as="nav" label={t('Accounts')} options={[{value:'accounts',label:t('Overview')},{value:'activity',label:t('Recent activity')}]} value={view} onChange={setView}/>}>{/* Rarely used lists sit behind ⋯; moving money and adding an account stay in view. */}<RowMenu label={t('More actions')} items={[owners.length>0&&{label:t('Edit owners'),disabled:readOnly,onSelect:()=>setEditingOwners(true)},businesses.length>0&&{label:t('Edit businesses'),onSelect:()=>setEditingBusinesses(true)}]}/><Button variant="outline" onClick={()=>setMovement({kind:'transfer',source_id:transferFrom,target_id:lastTransferTarget(data.movements??[],transferFrom,data.records)})}><ArrowRightLeft size={17} aria-hidden="true"/>{t('Transfer money')}</Button><Button onClick={()=>setChoosing(true)}><Plus size={17} aria-hidden="true" />{t('Add account')}</Button></PageHeader>
   {view==='accounts'&&<AccountsOverview loadFailed={loadFailed} items={accountItems} data={data} filters={filters} order={order} businesses={businesses} holdingActions={holdingActions} onEditAccount={setDraft} onAdd={onAdd} onAddAccount={()=>setChoosing(true)} selected={selected} onSelect={setSelected}
+   story={{context:story,...reading,onViewAll:()=>setView('activity'),onView}}
    cardActions={{onEdit,onTrack,onDelete:remove,onMove:setMovement,onOperation:setOperation,onStatement:owner?setStatement:undefined}}/>}
   {/* Account operations are their own view, opened from the top bar. */}
-  {view==='activity'&&<AccountActivity data={data} owner={owner} live={!!owner&&!demo} revision={revision} currency={currencies[0]} onOpen={onView}/>}
+  {view==='activity'&&<AccountActivity data={history} owner={owner} booked={reading} currency={currencies[0]} onOpen={onView}/>}
   <AddAccountDialog open={choosing} onOpenChange={setChoosing} onChoose={choose}/>
   <ErrorPopup message={order.error}/>
   {editingOwners&&household&&<AccountOwnersDialog records={data.records} accounts={investmentAccounts} market={market} household={household} owners={owners} onChange={onAccountOwner} onClose={()=>setEditingOwners(false)}/>}

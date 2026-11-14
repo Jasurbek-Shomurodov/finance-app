@@ -1,8 +1,10 @@
 "use client";
 import { useMemo } from 'react';
-import { TrendingDown, TrendingUp } from 'lucide-react';
+import { Sparkles, TrendingDown, TrendingUp } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
+import { DrawerLink } from '@/components/presentation-foundation/drawer-link';
 import { StatTile, StatTiles } from '@/components/presentation-foundation/stat-tile';
+import { Button } from '@/components/ui/button';
 import { signTone } from '@/components/presentation-foundation/tone';
 import type { useMonthBudget } from '@/components/dashboard-cards';
 import { paceDifference, type SpendingPaceState } from '@/components/spending-pace-card';
@@ -11,6 +13,7 @@ import { cashForecast, type CashForecast, type CashForecastBudget } from '@/lib/
 import { depositToday } from '@/lib/deposit-interest';
 import { formatDate, formatMoney, formatNumber } from '@/lib/format';
 import { marketRates, type MarketData } from '@/lib/market';
+import { planFundingLink, unassignedSurplus } from '@/lib/goal-funding';
 import { dueSoon } from '@/lib/overview';
 import { transactionsHref } from '@/lib/transaction-list';
 import type { PlanningData } from '@/lib/planning';
@@ -26,10 +29,13 @@ type Input = {
  forecastLoading?: boolean;
  /** The saved Budget or this month's spending could not be read: the projection would count it wrongly. */
  forecastError?: boolean;
+ /** The estimated monthly surplus ("Left after expenses"); it counts only once `surplusReady`, as that figure does. */
+ surplus?: number;
+ surplusReady?: boolean;
  currency: string;
  market: MarketData | null;
 };
-type Figures = { due: ReturnType<typeof dueSoon> | null; forecast: CashForecast | null };
+type Figures = { due: ReturnType<typeof dueSoon> | null; forecast: CashForecast | null; /** The monthly surplus no goal has been given yet (`unassignedSurplus`). */ unassigned?: number | null };
 type Props = {
  netWorth: number;
  /** Show net worth as a tile too: only when the Net worth over time card, which leads with it, is hidden. */
@@ -44,11 +50,12 @@ type Props = {
 
 /** What falls due within a week and the projected cash, worked out once: the screen places the headline in two spots and
  * shows one, by the room it has. The projection waits for the saved Budget, since it spends what is left of it. */
-export function useHeadlineFigures({ data, forecastBudget, payouts, forecastLoading = false, forecastError = false, currency, market }: Input): Figures {
+export function useHeadlineFigures({ data, forecastBudget, payouts, forecastLoading = false, forecastError = false, surplus, surplusReady = false, currency, market }: Input): Figures {
  const rates = marketRates(market), today = depositToday();
  const due = useMemo(() => data ? dueSoon(data, today, 7, currency, rates) : null, [data, today, currency, rates]);
  const forecast = useMemo(() => !data || forecastLoading || forecastError ? null : cashForecast({ records: data.records, occurrences: data.occurrences, debtPayments: data.debtPayments, budget: forecastBudget, payouts, today, days: 90, currency, rates }), [data, forecastBudget, payouts, forecastLoading, forecastError, today, currency, rates]);
- return useMemo(() => ({ due, forecast }), [due, forecast]);
+ const unassigned = useMemo(() => data ? unassignedSurplus(data.goals, surplusReady && surplus !== undefined ? surplus : null, currency, today, rates) : null, [data, surplus, surplusReady, currency, today, rates]);
+ return useMemo(() => ({ due, forecast, unassigned }), [due, forecast, unassigned]);
 }
 
 /** This month's spending, and how far ahead of or behind last month it is by this day. The figure is the Spending card's
@@ -111,6 +118,18 @@ function LowestBalanceTile({ forecast }: { forecast: Figures['forecast'] }) {
  </StatTile>;
 }
 
+/** A nudge under the figures while part of the monthly surplus has no goal: the amount, and the way to Plan funding on
+ * Goals. It shows nothing when everything is assigned or the surplus is unknown. */
+function SurplusNudge({ unassigned, currency }: { unassigned?: number | null; currency: string }) {
+ const { t, locale } = useLanguage();
+ if (unassigned == null || Math.round(unassigned) < 1) return null;
+ return <article className="stat-tile surplus-nudge">
+  <span className="surplus-nudge-mark" aria-hidden="true"><Sparkles size={18}/></span>
+  <div><h3>{t('Unassigned monthly surplus')}</h3><strong>{formatMoney(unassigned, currency, locale)}</strong></div>
+  <Button asChild variant="outline" size="sm"><DrawerLink href={planFundingLink}>{t('Plan funding')}</DrawerLink></Button>
+ </article>;
+}
+
 /** The dashboard's key figures, beside the Net worth over time card: this month's spending and budget, what falls due
  * within a week and the lowest cash ahead, each a link to the page behind it. The budget figures are the Budget card's
  * own (useMonthBudget), worked out once. */
@@ -122,5 +141,6 @@ export function DashboardHeadline({ netWorth, netWorthTile = false, budget, spen
   <BudgetTile budget={budget} currency={currency}/>
   <DueTile due={figures.due} currency={currency}/>
   <LowestBalanceTile forecast={figures.forecast}/>
+  <SurplusNudge unassigned={figures.unassigned} currency={currency}/>
  </StatTiles>;
 }

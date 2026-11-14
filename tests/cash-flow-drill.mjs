@@ -677,8 +677,8 @@ test('a Cash flow link keeps its target, and Accounts › Recent activity opens 
   activity: [op('t', 'transfer'), op('mp', 'mortgage', { target_id: 'home' }), op('x', 'reconcile', { target_id: null })],
   movements: [{ id: 'm', kind: 'buy', source_id: 'card', target_id: 'save', sent: 5, received: 5, source_value: 5, target_value: 5, fee: 0, occurred_on: '2026-08-11', notes: '', realized_gain: null }, { id: 'i', kind: 'interest', source_id: 'save', target_id: 'save', sent: 0, received: 1, source_value: 0, target_value: 1, fee: 0, occurred_on: '2026-08-12', notes: '', realized_gain: null }],
   investmentLinks: [{ id: 'l', account_id: 'card', amount: -50, investment_history: { occurred_on: '2026-06-03', record_id: 'save', event_type: 'buy' } }] };
- const opened = [];
- r.mount(React.createElement(AccountActivity, { data: planning, owner: null, currency: 'USD', onOpen: record => opened.push(record.id) }));
+ const opened = [], booked = { loading: false, error: null, retry() {} };
+ r.mount(React.createElement(AccountActivity, { data: planning, owner: null, booked, currency: 'USD', onOpen: record => opened.push(record.id) }));
  const rows = r.all(node => node.type === 'tr' && node.props.className === 'clickable-row');
  assert.deepEqual(rows.map(row => row.props['aria-label']), ['View details for EPAM'], 'only a transaction opens; operations and movements show everything in their row');
  const amountCell = r.all(node => node.type === 'td', [rows[0]]).at(-1);
@@ -687,7 +687,7 @@ test('a Cash flow link keeps its target, and Accounts › Recent activity opens 
  rows[0].props.onKeyDown({ key: 'Enter', target: 1, currentTarget: 1, preventDefault() {} });
  rows[0].props.onKeyDown({ key: 'Tab', target: 1, currentTarget: 1, preventDefault() {} });
  assert.deepEqual([opened, pushed], [['pay', 'pay'], []], 'a click and Enter open its details; nothing goes to Cash flow');
- r.mount(React.createElement(AccountActivity, { data: planning, owner: null, currency: 'USD' }));
+ r.mount(React.createElement(AccountActivity, { data: planning, owner: null, booked, currency: 'USD' }));
  assert.equal(r.all(node => node.type === 'tr' && node.props.className === 'clickable-row').length, 0, 'without a handler the rows stay plain');
  assert.match(fs.readFileSync('components/workspace/screens/accounts-screen.tsx', 'utf8'), /<AccountsPage onView=\{record => setViewing\(storedRecord\(record\)\)\}/);
 });

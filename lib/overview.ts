@@ -19,6 +19,10 @@ export function allocationRows(items: ReturnType<typeof assetAllocation>, limit 
  return topShares(items.map(item => ({ key: item.kind as string, amount: item.total, share: item.share })), items.length === limit + 1 ? items.length : limit).map(share => ({ kind: share.key, total: share.amount, share: share.share }));
 }
 
+/** Which rows of a dated list name their category: the first, and any whose category differs from the row above it.
+ * The icon tile carries the category on every row, so a run of one category does not repeat its name. */
+export const namesCategory = (rows: readonly { kind: string }[]) => rows.map((row, index) => index === 0 || row.kind !== rows[index - 1].kind);
+
 /** Percentage change against the opening value; null when the opening value is not positive. */
 export function changePercent(current: number, change: number | null) {
  if (change === null) return null;

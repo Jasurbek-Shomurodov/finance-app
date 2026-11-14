@@ -1,6 +1,6 @@
 "use client";
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { ResourceState } from '@/components/presentation-foundation/resource-state';
 import { PanelTitle } from '@/components/presentation-foundation/panel-title';
 import { useLanguage } from '@/components/language-provider';
@@ -11,12 +11,10 @@ import type { Entry } from '@/lib/finance';
 import { signedAmount } from '@/lib/transaction-list';
 import { decimalSum } from '@/lib/decimal-amounts';
 import { holdingQuantity, isHolding } from '@/lib/asset-movements';
-import { useOwnerResource } from '@/hooks/use-owner-resource';
-import { emptyPlanning, type PlanningData } from '@/lib/planning';
+import type { PlanningData } from '@/lib/planning';
+import { movementLabels, operationLabels } from '@/lib/account-story';
 import { openProps } from '@/lib/row-open';
 
-const operationLabels: Record<string,string> = {transfer:'Transfer money',reconcile:'Reconcile balance',repayment:'Record repayment',mortgage:'Record mortgage payment'};
-const movementLabels = {transfer:'Transfer money',buy:'Buy holding',sell:'Sell / convert holding',interest:'Record capitalized interest'} as const;
 type Activity = ReturnType<typeof accountActivityPage>;
 
 /** Balance operations: transfers, reconciliations, repayments and mortgage payments, with the balance after each. */
@@ -51,16 +49,14 @@ export function withBookedRecords(records: Entry[], booked: Entry[]): Entry[] {
  return [...records, ...booked.filter(record => !loaded.has(record.id))];
 }
 
-/** The Recent activity view of Accounts, a page at a time; switching workspace starts again at page one. A signed-in
- * workspace reads the income and spending booked to its accounts when the view opens; the sample has them already. */
-export function AccountActivity({ data, owner, live = !!owner, revision = 0, currency, onOpen }: { data: PlanningData; owner: string|null; live?: boolean; revision?: number; /** For rows whose account is gone. */ currency: string; /** Opens a transaction's details. */ onOpen?: (record: Entry) => void }) {
+/** The Recent activity view of Accounts, a page at a time; switching workspace starts again at page one. `data` carries
+ * the income and spending booked to the accounts, which a signed-in workspace reads after the page (`booked`). */
+export function AccountActivity({ data, owner, booked, currency, onOpen }: { data: PlanningData; owner: string|null; /** How the read of what is booked to the accounts stands. */ booked: { loading: boolean; error: string|null; retry: () => void }; /** For rows whose account is gone. */ currency: string; /** Opens a transaction's details. */ onOpen?: (record: Entry) => void }) {
  const { t, locale } = useLanguage();
  const [activityPage,setActivityPage]=useState({owner,page:1});
- const booked=useOwnerResource('/api/planning?scope=account-activity',owner,live,revision,emptyPlanning);
- const history=useMemo(()=>live?{...data,records:withBookedRecords(data.records,booked.data.records)}:data,[live,data,booked.data.records]);
- const activity=accountActivityPage(history,activityPage.owner===owner?activityPage.page:1);
+ const activity=accountActivityPage(data,activityPage.owner===owner?activityPage.page:1);
  return <section className="panel account-activity"><PanelTitle title={t('Recent activity')} hint={t('Account totals use current quotes where available and saved prices otherwise. Holdings are counted once in your assets.')}><Link className="panel-link" href="/assets">{t('View all assets')}</Link></PanelTitle>
-  <ResourceState loading={live&&booked.initialLoading} error={live?booked.error:null} onRetry={booked.retry}>
+  <ResourceState loading={booked.loading} error={booked.error} onRetry={booked.retry}>
   <OperationsTable activity={activity} data={data} fallback={currency}/>{!activity.total&&<p className="muted">{t('No account operations yet.')}</p>}
   <MovementsTable activity={activity} data={data} fallback={currency}/>
   <CashFlowTable activity={activity} data={data} fallback={currency} onOpen={onOpen}/>

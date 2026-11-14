@@ -151,21 +151,40 @@
 
 /* Cash, deposit and grouped investment accounts. */
 .account-card{display:flex;flex-direction:column;gap:8px;align-self:stretch}
-.account-card>header{display:flex;gap:12px;align-items:flex-start;margin-bottom:8px}
-.account-card>header>div{min-width:0}
-.account-card-heading{display:grid;justify-items:start;gap:4px;flex:1}
-.account-card-heading h2{font-size:var(--type-title);font-weight:600;line-height:1.35;overflow-wrap:anywhere}
-.account-card-heading small{font-size:var(--type-caption);color:var(--muted-foreground)}
-.account-card .account-card-menu{flex-shrink:0;width:36px;height:36px;min-height:36px;padding:0;margin:-4px -6px 0 0;color:var(--muted-foreground)}
+.account-card>header{display:flex;gap:12px;align-items:center;margin-bottom:8px}
+.account-card>header>h2{flex:1;min-width:0;font-size:var(--type-title);font-weight:600;line-height:1.35;overflow-wrap:anywhere}
+.account-card .account-card-menu{flex-shrink:0;width:36px;height:36px;min-height:36px;padding:0;margin:0;color:var(--muted-foreground)}
+.account-card>header>.account-card-menu+.account-card-menu{margin-inline-start:-8px}
+.account-card>header>.account-card-menu:last-child{margin-inline-end:-6px}
 .account-menu-content{max-width:calc(100vw - 32px)}
 .account-menu-content [data-slot=dropdown-menu-item]{min-height:40px;white-space:normal}
-.account-card-value{display:block;margin-top:8px;font-size:var(--type-hero);font-weight:650;letter-spacing:-.035em;line-height:1.1;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.account-card-balance{display:grid;gap:2px}
+.account-card-balance>span{font-size:var(--type-caption);color:var(--muted-foreground)}
+.account-card-value{display:block;font-size:var(--type-display);font-weight:600;letter-spacing:-.025em;line-height:1.15;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.account-balance-chart{margin-top:4px}
 .account-card>.muted{font-size:var(--type-caption)}
-.account-card-facts,.account-balance-facts{display:grid;gap:12px;margin:12px 0 0;padding-top:16px;border-top:1px solid var(--hairline);font-size:var(--type-small)}
-.account-card-facts>div,.account-balance-facts>div{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 16px}
-.account-card-facts dt,.account-balance-facts dt{color:var(--muted-foreground)}
-.account-card-facts dd,.account-balance-facts dd{margin:0;font-weight:600;text-align:end;font-variant-numeric:tabular-nums}
-.account-card-actions{display:grid;gap:8px;margin-top:16px}
+.account-balance-facts{display:grid;gap:12px;margin:8px 0 0;padding-top:16px;border-top:1px solid var(--hairline);font-size:var(--type-small)}
+.account-balance-facts:empty{display:none}
+.account-balance-facts>div{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 16px}
+.account-balance-facts dt{color:var(--muted-foreground)}
+.account-balance-facts dd{margin:0;font-weight:600;text-align:end;font-variant-numeric:tabular-nums}
+/* The newest things recorded against the account; a transaction opens its details. */
+.account-card-activity{margin-top:8px;padding-top:12px;border-top:1px solid var(--hairline)}
+.account-card-activity>header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.account-card-activity h3{font-size:var(--type-small);font-weight:600}
+.account-card-activity>ul{margin:4px 0 0;padding:0;list-style:none}
+.account-card-activity>.muted{margin-top:8px;font-size:var(--type-small)}
+.account-activity-row{display:flex;align-items:center;gap:12px;min-height:52px;margin-inline:-8px;padding:6px 8px;border-radius:var(--radius-control);font-size:var(--type-small)}
+.account-activity-row>div{display:grid;flex:1;min-width:0}
+.account-activity-row strong{font-weight:600;overflow-wrap:anywhere}
+.account-activity-row small{font-size:var(--type-caption);color:var(--muted-foreground)}
+.account-activity-row>b{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.account-activity-row[data-clickable]{cursor:pointer;transition:background var(--motion-quick) var(--ease-out)}
+.account-activity-row[data-clickable]:hover{background:color-mix(in srgb,var(--accent) 35%,transparent)}
+.account-activity-row[data-clickable]:active{background:color-mix(in srgb,var(--accent) 70%,transparent)}
+.account-activity-row[data-clickable]:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
+@media(prefers-reduced-motion:reduce){.account-activity-row[data-clickable]{transition:none}}
+.account-card-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr));gap:8px;margin-top:16px}
 .account-card-actions>button{width:100%;height:42px;min-height:42px}
 .account-card .account-details-trigger{align-self:stretch;margin-top:auto;color:var(--muted-foreground)}
 .account-holdings{list-style:none;padding:0;margin:12px 0 0}

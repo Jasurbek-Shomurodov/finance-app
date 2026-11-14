@@ -17,11 +17,11 @@ import { BulkEditSheet, RuleDialog, RulesDialog } from '@/components/transaction
 import { TransactionsSummary } from '@/components/transactions/transactions-summary';
 import { BusinessPicker, CategoryPicker, OwnerPicker, choiceNamer } from '@/components/transactions/pickers';
 import { TagFilter } from '@/components/transactions/tags';
-import { DayGroup, MortgageSplit, TransactionAmount, transactionRowLabel } from '@/components/transactions/transaction-row';
+import { DayGroup, MortgageSplit, RecurringChip, TransactionAmount, TransactionColumns, transactionRowLabel } from '@/components/transactions/transaction-row';
 import { BusinessFilter } from '@/components/presentation-foundation/business-filter';
 import { OwnerFilter } from '@/components/presentation-foundation/owner-filter';
 import { TagChip } from '@/components/presentation-foundation/tag-chip';
-import { inOwnerFilter, ownerChoices, ownerOf, sharedWorkspace } from '@/lib/household';
+import { inOwnerFilter, ownerChoices, ownerOf, sharedWorkspace, SHARED } from '@/lib/household';
 import { queryList, useLocationSearch } from '@/hooks/use-location-search';
 import { businessMovable, nextPaletteColor } from '@/lib/business';
 import { tagsByRecord } from '@/lib/tags';
@@ -38,7 +38,7 @@ import { formatNumber } from '@/lib/format';
 import { convertAmount, marketRates } from '@/lib/market';
 import { emptyPlanning } from '@/lib/planning';
 import { ratesOf } from '@/lib/transaction-rates';
-import { bulkEditPlan, chunks, emptyTransactionFilter, filtersTransactions, groupPageByDay, earliestTransactionDay, periodDays, signedAmount, summarizeTransactions, transactionPeriodLabels, transactionPeriods, transactionsIn, transactionsQuery, type TransactionPeriod } from '@/lib/transaction-list';
+import { bulkEditPlan, chunks, dailyAverage, emptyTransactionFilter, filtersTransactions, groupPageByDay, earliestTransactionDay, periodDays, signedAmount, summarizeTransactions, topSpendingCategories, transactionPeriodLabels, transactionPeriods, transactionsIn, transactionsQuery, type TransactionPeriod } from '@/lib/transaction-list';
 import { canRecategorize, categoryChoices, choiceKey, newRule, ruleFromBusiness, ruleFromChange, type CategoryChoice, type TransactionRule } from '@/lib/transaction-rules';
 import { TransactionInsights } from '@/components/transaction-insights';
 import { shownName } from '@/lib/record-names';
@@ -95,6 +95,7 @@ export function TransactionsScreen() {
  const page = paging.key === listKey ? Math.min(paging.page, pageCount) : 1;
  const days = useMemo(() => groupPageByDay(records, (page - 1) * transactionsPerPage, page * transactionsPerPage, convert), [records, page, convert]);
  const summary = useMemo(() => summarizeTransactions(records, convert), [records, convert]);
+ const top = useMemo(() => topSpendingCategories(records, convert).map(row => ({ key: row.key, amount: row.amount, name: choiceName(row.choice), icon: row.choice.category_id ? choiceName(row.choice) : row.choice.kind })), [records, convert, choiceName]);
  const accounts = new Map(data.records.filter(record => record.kind === 'Cash').map(record => [record.id, record.name]));
  const chosen = records.filter(record => selected.has(record.id));
  const categoryOptions = [...categoryChoices(data.categories, 'income', removedCategories.kinds), ...categoryChoices(data.categories, 'expense', removedCategories.kinds)];
@@ -173,22 +174,29 @@ export function TransactionsScreen() {
   {selecting && <BulkEditBar count={chosen.length} total={records.length} onAll={select => setSelected(new Set(select ? records.map(record => record.id) : []))} onEdit={() => setEditingMany(true)} onCancel={() => { setSelecting(false); setSelected(new Set()); }}/>}
   {error ? <InlineError message={t(error)} onRetry={live ? remote.retry : refreshRecords}/> : loading ? <TransactionsSkeleton label={t('Loading records…')} tools={false}/> : <div className="transactions-layout">
    <section className="panel transactions-list" aria-label={t('Transactions')}>
-    {days.length ? days.map(day => <DayGroup key={day.date} date={day.date} total={day.total} currency={currency} today={today}>
+    {days.length > 0 && <TransactionColumns selecting={selecting}/>}
+    {days.length ? days.map(day => <DayGroup key={day.date} date={day.date} total={day.total} count={day.count} currency={currency} today={today}>
      {day.records.map(record => {
-      const editable = canRecategorize(record, splits);
       const recordTags = tagsOf(record.id).map(id => tagById.get(id)).filter(tag => !!tag);
-      return <li key={record.id} className="transaction-row" data-selected={selected.has(record.id) || undefined} tabIndex={0} aria-label={transactionRowLabel(t('View details for {name}', { name: shownName(record, t, nameOf(record)) }), record, nameOf(record), locale, enteredSigned(signedAmount(record), record.currency))} onClick={open(record)} onKeyDown={open(record)}>
+      const name = shownName(record, t, nameOf(record)), receipts = attachments.counts.get(record.id), account = record.account_id ? accounts.get(record.account_id) : undefined;
+      // Each row says only what is new: its owner when everyone is listed and it is not the household's, its business when it has one.
+      const owner = owners.length > 0 && !ownerFilter.length ? ownerOption(record) : null;
+      return <li key={record.id} className="transaction-row" data-selected={selected.has(record.id) || undefined} tabIndex={0} aria-label={transactionRowLabel(t('View details for {name}', { name }), record, nameOf(record), locale, enteredSigned(signedAmount(record), record.currency))} onClick={open(record)} onKeyDown={open(record)}>
        {selecting && <input type="checkbox" aria-label={t('Select {name}', { name: record.name })} checked={selected.has(record.id)} onChange={() => toggle(record.id)}/>}
-       <span className="transaction-merchant"><CategoryIcon kind={record.custom_category_id ? nameOf(record) : record.kind}/><span>{attachments.counts.get(record.id) ? <span className="transaction-name"><strong>{shownName(record, t, nameOf(record))}</strong><Paperclip className="transaction-attachment-mark" size={13} role="img" aria-label={t('Attachments: {count}', { count: attachments.counts.get(record.id)! })}/></span> : <strong>{shownName(record, t, nameOf(record))}</strong>}{record.account_id && accounts.get(record.account_id) && <small>{accounts.get(record.account_id)}</small>}<MortgageSplit record={record}/>{recordTags.length > 0 && <span className="transaction-tags">{recordTags.map(tag => <TagChip key={tag.id} name={tag.name} color={tag.color}/>)}</span>}</span></span>
-       <span className="transaction-labels">{owners.length > 0 && <OwnerPicker record={record} owner={ownerOption(record)} owners={owners} disabled={readOnly || selecting} onChange={owner => void giveTo(record, owner)}/>}<CategoryPicker record={record} categories={data.categories} removed={removedCategories.kinds} disabled={!editable || selecting || readOnly} onChange={choice => change([record], choice)}/>
-       {businessList.length > 0 && <BusinessPicker record={record} businesses={businessList} disabled={selecting || readOnly || !businessMovable(record)} onChange={business => moveToBusiness(record, business)}/>}</span>
+       <span className="transaction-merchant"><CategoryIcon kind={record.custom_category_id ? nameOf(record) : record.kind}/><span>
+        <span className="transaction-name"><strong>{name}</strong>{receipts ? <Paperclip className="transaction-attachment-mark" size={13} role="img" aria-label={t('Attachments: {count}', { count: receipts })}/> : null}
+         {record.business_id && businessList.length > 0 && <BusinessPicker record={record} businesses={businessList} disabled={selecting || readOnly || !businessMovable(record)} onChange={business => moveToBusiness(record, business)}/>}
+         <RecurringChip record={record}/>
+         {owner && owner.id !== SHARED && <OwnerPicker record={record} owner={owner} owners={owners} disabled={readOnly || selecting} onChange={next => void giveTo(record, next)}/>}</span>
+        <MortgageSplit record={record}/>{recordTags.length > 0 && <span className="transaction-tags">{recordTags.map(tag => <TagChip key={tag.id} name={tag.name} color={tag.color}/>)}</span>}</span></span>
+       <span className="transaction-columns"><span><CategoryPicker record={record} categories={data.categories} removed={removedCategories.kinds} disabled={!canRecategorize(record, splits) || selecting || readOnly} onChange={choice => change([record], choice)}/></span><span className="transaction-account">{account}</span></span>
        <TransactionAmount record={record}/>
       </li>;
      })}
     </DayGroup>) : <EmptyState icon={<ReceiptText/>} title={t('No transactions')} description={t(filtersTransactions(filter) || ownerFilter.length ? 'Nothing matches these filters in this period.' : 'Income and spending you record appear here, grouped by day.')}><AddTransactionMenu onAdd={addCashFlow}/></EmptyState>}
     <Pagination label={t('Transaction pages')} summary={t('Page {page} of {pages} · {count} transactions', { page: formatNumber(page, locale, 0), pages: formatNumber(pageCount, locale, 0), count: formatNumber(records.length, locale, 0) })} page={page} pageCount={pageCount} hasNext={page < pageCount} onPage={next => { setPaging({ key: listKey, page: next }); document.querySelector('.transactions-list')?.scrollIntoView({ block: 'start', behavior: 'smooth' }); }}/>
    </section>
-   <TransactionsSummary summary={summary} currency={currency}/>
+   <TransactionsSummary title={period === 'custom' ? t('Summary') : t(transactionPeriodLabels[period])} summary={summary} average={dailyAverage(summary.spent, range)} top={top} currency={currency}/>
   </div>}
   {!loading && !error && <TransactionInsights owner={user} demo={demo} revision={reload} records={planning.data.records} today={today} onReview={reviewRecurring}/>}
   {editingMany && <BulkEditSheet records={chosen} categories={data.categories} removed={removedCategories.kinds} businesses={businessList} owners={owners} tags={tags.data.tags} tagsOf={tagsOf} onCreateTag={createTag} onSave={editMany} onClose={() => setEditingMany(false)}/>}

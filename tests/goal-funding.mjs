@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {loadTS} from './helpers/load-ts.mjs';
-const {fundingPlan,fundingRoom}=loadTS('lib/goal-funding.ts');
+const {fundingPlan,fundingRoom,unassignedSurplus,planFundingLink,planFundingRequested}=loadTS('lib/goal-funding.ts');
 const goal=(id,monthly,extra={})=>({id,name:id,kind:'savings',currency:'USD',funding_monthly:monthly,funding_enabled:true,funding_priority:10,target:1000,allocated:0,...extra});
 test('one surplus is allocated by priority once across all goals with explicit shortfalls',()=>{
  const goals=[goal('b',80),goal('a',80)];const plan=fundingPlan(goals,100,'USD','2026-09-18');assert.deepEqual(plan.rows.map(row=>[row.goal.id,row.allocated,row.shortfall]),[['a',80,0],['b',20,60]]);assert.equal(plan.shortfall,60);assert.equal(plan.remaining,0);assert.equal(fundingRoom(goals,goals[0],100,'USD','2026-09-18'),20);
@@ -33,4 +33,18 @@ test('the planner offers each goal what the shared plan leaves after the goals f
  const foreign=goal('foreign',10,{currency:'EUR',funding_priority:1});
  assert.equal(fundingRoom([foreign,second],second,350,'USD','2026-09-18',{}),null);
  assert.equal(fundingRoom([{...foreign,funding_priority:3},second],second,350,'USD','2026-09-18',{}),350);
+});
+
+test('the unassigned surplus is what funded goals leave, and unknown rather than a guess',()=>{
+ assert.equal(unassignedSurplus([goal('a',80),goal('b',50,{funding_enabled:false})],500,'USD','2026-09-18'),420,'only goals included in monthly funding take a share');
+ assert.equal(unassignedSurplus([goal('a',80)],50,'USD','2026-09-18'),0,'a plan larger than the surplus leaves nothing, never a negative');
+ assert.equal(unassignedSurplus([goal('a',80)],null,'USD','2026-09-18'),null,'no surplus known yet');
+ assert.equal(unassignedSurplus([goal('a',80,{currency:'EUR'})],500,'USD','2026-09-18'),null,'a funded goal no rate converts');
+ assert.equal(unassignedSurplus([],500,'USD','2026-09-18'),null,'no goal to fund');
+ assert.equal(unassignedSurplus([goal('old',80,{archived:true})],500,'USD','2026-09-18'),null,'archived goals are not asked for funding');
+});
+test('Plan funding has an address of its own on Goals',()=>{
+ assert.equal(planFundingLink,'/goals#plan-funding');
+ assert.equal(planFundingRequested(new URL(planFundingLink,'https://app.test').hash),true);
+ assert.equal(planFundingRequested(''),false);assert.equal(planFundingRequested('#forecast'),false);
 });

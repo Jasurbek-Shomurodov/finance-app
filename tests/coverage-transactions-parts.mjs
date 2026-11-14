@@ -339,8 +339,11 @@ test('BulkEditSheet collects category, business, owner and tag changes and saves
  assert.equal(closed,3);
 });
 
-test('DayGroup names today and yesterday, formats other dates, and signs the day total',()=>{
- const day=(date,total)=>expand(h(page.DayGroup,{date,total,currency:'USD',today:'2026-10-04'},h('li',null,'row')),'d');
+test('DayGroup names today and yesterday, formats other dates, and signs the total of a day with two or more rows',()=>{
+ const day=(date,total,count=2)=>expand(h(page.DayGroup,{date,total,count,currency:'USD',today:'2026-10-04'},h('li',null,'row')),'d');
+ // One row already says its amount: the heading does not repeat it.
+ assert.equal(text(day('2026-10-04',1200,1)),'Todayrow');
+ assert.equal(findAll(day('2026-10-04',null,1),n=>n.type==='span').length,0);
  let tree=day('2026-10-04',1200);
  assert.equal(tree.props['aria-label'],'Today');
  assert.equal(text(tree),'Today+$1,200row');
@@ -356,6 +359,18 @@ test('DayGroup names today and yesterday, formats other dates, and signs the day
  assert.equal(text(findAll(tree,n=>n.type==='span')[0]),'—');
  tree=day('2026-09-29',0);
  assert.equal(findAll(tree,n=>n.type==='span')[0].props.className,undefined);
+});
+
+test('the heading row names the four columns once, and only a scheduled payment carries the Recurring chip',()=>{
+ let tree=expand(h(page.TransactionColumns,{}),'c');
+ assert.equal(tree.props.className,'transaction-columns-heading');
+ assert.deepEqual(findAll(tree,n=>n.type==='span').map(text),['Payee','Category','Account','Amount']);
+ assert.equal(tree.props['data-selecting'],undefined);
+ assert.equal(expand(h(page.TransactionColumns,{selecting:true}),'c').props['data-selecting'],true);
+ assert.equal(expand(h(page.RecurringChip,{record:entry()}),'r'),null);
+ tree=expand(h(page.RecurringChip,{record:entry({occurrence_record_id:'rent'})}),'r');
+ assert.equal(tree.props.className,'transaction-chip');
+ assert.ok(text(tree).endsWith('Recurring'));
 });
 
 test('MortgageSplit shows principal and interest only for mortgage payments',()=>{

@@ -1,5 +1,6 @@
 "use client";
 import type { ReactNode } from 'react';
+import { Repeat } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { useDisplayMoney } from '@/components/display-money';
 import { RollingText } from '@/components/presentation-foundation/rolling-text';
@@ -12,15 +13,29 @@ import { signedAmount } from '@/lib/transaction-list';
 /** What a screen reader hears for a row: the action, then its amount (`shown`, the display-currency figure the row shows) and category. */
 export const transactionRowLabel = (action: string, record: Entry, category: string, locale: string, shown?: string) => [action, shown ?? formatSignedMoney(signedAmount(record), record.currency, locale), category].join(' · ');
 
-/** One day: its date and net total in the heading, its transactions below. */
-export function DayGroup({ date, total, currency, today, children }: { date: string; total: number | null; currency: string; today: string; children: ReactNode }) {
+/** The ledger's one heading row: the columns every row below lines up under. Phones stack a row, so it hides there. */
+export function TransactionColumns({ selecting }: { selecting?: boolean }) {
+ const { t } = useLanguage();
+ return <div className="transaction-columns-heading" data-selecting={selecting || undefined} aria-hidden="true"><span>{t('Payee')}</span><span>{t('Category')}</span><span>{t('Account')}</span><span>{t('Amount')}</span></div>;
+}
+
+/** One day: its date in the heading, its transactions below. The day's net total shows only when the day has two or more
+ * rows (`count`, the whole day's, also across pages); with one row the total would repeat that row's amount. */
+export function DayGroup({ date, total, count, currency, today, children }: { date: string; total: number | null; count: number; currency: string; today: string; children: ReactNode }) {
  const { t, locale } = useLanguage();
  const yesterday = shiftDay(today, -1);
  const label = date === today ? t('Today') : date === yesterday ? t('Yesterday') : formatDate(date, locale);
  return <section className="transaction-day" aria-label={label}>
-  <div className="transaction-day-heading"><h3>{label}</h3><span className={total !== null && total > 0 ? 'positive' : undefined}>{total === null ? '—' : <RollingText text={formatSignedMoney(total, currency, locale)}/>}</span></div>
+  <div className="transaction-day-heading"><h3>{label}</h3>{count > 1 && <span className={total !== null && total > 0 ? 'positive' : undefined}>{total === null ? '—' : <RollingText text={formatSignedMoney(total, currency, locale)}/>}</span>}</div>
   <ul>{children}</ul>
  </section>;
+}
+
+/** Marks a row that paid a schedule (its `occurrence_record_id`, the one link of every scheduled payment). */
+export function RecurringChip({ record }: { record: Pick<Entry, 'occurrence_record_id'> }) {
+ const { t } = useLanguage();
+ if (!record.occurrence_record_id) return null;
+ return <span className="transaction-chip"><Repeat size={12} aria-hidden="true"/>{t('Recurring')}</span>;
 }
 
 /** A mortgage payment's split: the principal is a transfer to the debt, the interest is spending. */

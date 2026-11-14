@@ -10,6 +10,12 @@ import { nextPaletteColor } from '@/lib/business';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
 import { isLinkedTransaction } from '@/lib/linked-transactions';
 import { propertyNameOf } from '@/lib/property-totals';
+import { ownerOf, workspaceOwners } from '@/lib/household';
+import { isTransactionHistory } from '@/lib/transaction-history';
+import type { Entry } from '@/lib/finance';
+
+/** What Split takes, as the records table offers it: a recorded transaction that no other action wrote. */
+const splittable = (record: Entry) => isTransactionHistory(record) && !isLinkedTransaction(record);
 
 /** Dialogs any screen can open: record editing, trackers, payments, splitting and deletion. */
 export function WorkspaceDialogs() {
@@ -17,10 +23,11 @@ export function WorkspaceDialogs() {
  const { viewing, setViewing, splitting, setSplitting, editingIncomeSource, setEditingIncomeSource, editing, setEditing, debtPayment, setDebtPayment, tracking, trackingType, closeTracker, payingMortgage, setPayingMortgage, deleting, stopping, setStopping,
   planning, availableBusinesses, businessList, tags, attachments, assignTransactionsBusiness, setAccountBusiness, saveBusiness, newBusiness, settingUpBusinesses, setSettingUpBusinesses, transactionTools, preferencesData, earningSources, rows, summary, section, demo, busy, error,
   household, pendingInvite, dismissInvite, editRecord, requestDelete, addAccountRecord, storedRecord, closeEditing, closeDeleting, navigate, refreshRecords, recordMortgagePayment, save, remove, stopRecord, field, money, editingCashFlow, recordKinds, fetchingPrice, fetchPrice, priceMessage } = useWorkspace();
+ const owners = workspaceOwners(household.state, { shared: t('Shared'), unnamed: t('Partner') });
  return <>
  {/* A transaction row's Sankey; its details open over it. */}
  <TransactionSankey/>
- {viewing&&<TransactionDetailsDialog key={viewing.id} record={viewing} incoming={income.includes(viewing.kind)} categoryName={planning.data.categories.find(c=>c.id===viewing.custom_category_id)?.name} businesses={businessList} onBusiness={business=>assignTransactionsBusiness([viewing.id],business)} tagging={{tags:tags.data.tags,tagIds:tags.data.links.filter(link=>link.record_id===viewing.id).map(link=>link.tag_id),onTags:(add,remove)=>tags.change([viewing.id],add,remove),onCreateTag:async name=>{const id=crypto.randomUUID();await tags.save({id,name,color:nextPaletteColor(tags.data.tags.map(tag=>tag.color))});return id;}}} accountName={viewing.account_id?planning.data.records.find(a=>a.id===viewing.account_id)?.name:undefined} propertyName={propertyNameOf(viewing,planning.data.records)} attachments={<RecordAttachments recordId={viewing.id} available={attachments.available} onChange={attachments.refresh}/>} editable={!isLinkedTransaction(viewing)} onEdit={()=>{const r=viewing;setViewing(null);editRecord(r);}} onDelete={()=>{const r=viewing;setViewing(null);requestDelete(r);}} onClose={()=>setViewing(null)}/>}
+ {viewing&&<TransactionDetailsDialog key={viewing.id} record={viewing} incoming={income.includes(viewing.kind)} categoryName={planning.data.categories.find(c=>c.id===viewing.custom_category_id)?.name} businesses={businessList} onBusiness={business=>assignTransactionsBusiness([viewing.id],business)} tagging={{tags:tags.data.tags,tagIds:tags.data.links.filter(link=>link.record_id===viewing.id).map(link=>link.tag_id),onTags:(add,remove)=>tags.change([viewing.id],add,remove),onCreateTag:async name=>{const id=crypto.randomUUID();await tags.save({id,name,color:nextPaletteColor(tags.data.tags.map(tag=>tag.color))});return id;}}} accountName={viewing.account_id?planning.data.records.find(a=>a.id===viewing.account_id)?.name:undefined} propertyName={propertyNameOf(viewing,planning.data.records)} ownerName={owners.find(owner=>owner.id===ownerOf(viewing,household.state!))?.name} onSplit={splittable(viewing)&&!transactionTools.loading&&!transactionTools.error?()=>{const r=viewing;setViewing(null);setSplitting(r);}:undefined} attachments={<RecordAttachments recordId={viewing.id} available={attachments.available} onChange={attachments.refresh}/>} editable={!isLinkedTransaction(viewing)} onEdit={()=>{const r=viewing;setViewing(null);editRecord(r);}} onDelete={()=>{const r=viewing;setViewing(null);requestDelete(r);}} onClose={()=>setViewing(null)}/>}
  {settingUpBusinesses&&<BusinessSetupFlow businesses={businessList} records={planning.data.records} newBusiness={newBusiness} saveBusiness={saveBusiness} setAccountBusiness={setAccountBusiness} guideOnly={settingUpBusinesses==='guide'} hasTags={tags.data.tags.length>0} onAddAccount={()=>addAccountRecord('Cash')} onClose={()=>setSettingUpBusinesses(false)}/>}
  {splitting&&<SplitTransactionDialog key={splitting.id} record={splitting} tools={transactionTools} categories={planning.data.categories} removed={planning.data.removedKinds} onClose={()=>setSplitting(null)}/>}
  {editingIncomeSource&&<IncomeSourceEditor key={editingIncomeSource.id} initial={editingIncomeSource} currencies={preferencesData.currencies} records={planning.data.records} save={earningSources.save} close={()=>setEditingIncomeSource(null)}/>}

@@ -10,7 +10,8 @@ function open(props={}){
  const {TransactionDetailsDialog}=r.load('components/transaction-details-dialog.tsx',{
   '@/components/language-provider':{useLanguage:()=>({locale:'en-US',t})},
   '@/components/ui/dialog':{Dialog:host('dialog'),DialogContent:host('content'),DialogTitle:host('h2'),DialogDescription:host('p')},
-  '@/components/ui/button':{Button:host('button')},'lucide-react':{Pencil:host('pencil')},
+  '@/components/ui/button':{Button:host('button')},'lucide-react':{Pencil:host('pencil'),Paperclip:host('paperclip'),Split:host('split'),ChevronRight:host('chevron')},
+  '@/components/presentation-foundation/category-icon':{CategoryIcon:host('CategoryIcon')},
   '@/components/presentation-foundation/delete-button':{DeleteButton:host('DeleteButton')},
   '@/components/presentation-foundation/category-badge':{CategoryBadge:host('CategoryBadge')},
   '@/components/transactions/pickers':{BusinessPicker:host('BusinessPicker')},
@@ -26,12 +27,19 @@ function open(props={}){
  return {r,calls,feedback,rows,value};
 }
 
-test('the details list what a transaction is: amount, category, date, and only the rows it has',()=>{
+test('the details lead with the amount, then list what a transaction is, and only the rows it has',()=>{
  const plain=open();
- assert.deepEqual(plain.rows(),['Amount','Category','Date','Frequency','Tags']);
+ assert.deepEqual(plain.rows(),['Amount','Date','Category','Frequency','Tags']);
+ assert.deepEqual(plain.r.all(node=>node.props?.['data-wide']).map(node=>text(node.children[0])),['Amount','Tags'],'the amount and the tags take the whole row; short facts pair up');
+ assert.equal(plain.r.find(node=>node.type==='CategoryIcon').props.kind,'Living expense');
+ assert.equal(plain.r.all(node=>node.props?.className==='transaction-details-cards').length,0,'no cards without attachments or Split');
  assert.equal(text(plain.value('Amount')),'−$42');
- const full=open({incoming:true,categoryName:'Cafés',accountName:'Everyday checking',propertyName:'Lakeside condo',attachments:'receipt.pdf',record:{kind:'Other income',amount:1200,custom_category_id:'c1',end_date:'2026-12-31',notes:'Paid early',account_currency:'EUR',account_exchange_rate:1.08,payment_type:'bonus'}});
- assert.deepEqual(full.rows(),['Amount','Category','Date','Frequency','Last active date','Tags','Property','Account','Exchange rate','Notes','Attachments']);
+ const full=open({incoming:true,categoryName:'Cafés',accountName:'Everyday checking',propertyName:'Lakeside condo',ownerName:'Sam',attachments:'receipt.pdf',record:{kind:'Other income',amount:1200,custom_category_id:'c1',end_date:'2026-12-31',notes:'Paid early',account_currency:'EUR',account_exchange_rate:1.08,payment_type:'bonus'}});
+ assert.deepEqual(full.rows(),['Amount','Date','Account','Category','Owner','Frequency','Last active date','Property','Exchange rate','Tags','Notes']);
+ assert.equal(text(full.value('Owner')),'Sam');
+ assert.equal(full.r.find(node=>node.type==='CategoryIcon').props.kind,'Cafés','a custom category shows its own icon');
+ assert.equal(text(full.r.find(node=>node.type==='section'&&node.props['aria-label']==='Attachments')),'Attachmentsreceipt.pdf','attachments are a card under the fields');
+ assert.equal(full.value('Amount').children[0].props.className,'transaction-details-amount positive');
  assert.equal(text(full.value('Amount')),'+$1,200');
  assert.deepEqual(full.r.all(node=>node.type==='CategoryBadge').map(badge=>badge.props.label),['Bonus','Cafés']);
  assert.equal(text(full.value('Property')),'Lakeside condo');
@@ -73,11 +81,15 @@ test('tags toggle on and off, and a failed save says so',async()=>{
  assert.deepEqual(failed.feedback,['error: Tag refused']);
 });
 
-test('edit, delete and close act on the transaction; a read-only one offers neither',()=>{
- const view=open();
+test('edit, split, delete and close act on the transaction; a read-only one offers neither',()=>{
+ const view=open({onSplit:()=>view.calls.split=1});
+ const actions=view.r.find(node=>node.props?.className==='transaction-details-actions');
+ assert.deepEqual(actions.children.map(node=>node.type),['DeleteButton','button'],'the bin stands at the footer\'s start, Edit at its end');
+ view.r.fire(view.r.find(node=>node.type==='button'&&text(node)==='Split transaction'),'onClick');
+ assert.equal(view.calls.split,1);
  view.r.fire(view.r.find(node=>node.type==='DeleteButton'),'onClick');
  assert.equal(view.calls.deleted,1);
- view.r.fire(view.r.find(node=>node.type==='button'),'onClick');
+ view.r.fire(view.r.find(node=>node.type==='button'&&text(node)==='Edit'),'onClick');
  assert.equal(view.calls.edited,1);
  view.r.fire(view.r.find(node=>node.type==='dialog'),'onOpenChange',false);
  assert.equal(view.calls.closed,1);

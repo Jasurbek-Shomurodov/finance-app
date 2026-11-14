@@ -191,9 +191,9 @@ test('the shell, top bar and screens show sharing only where it applies',()=>{
  // Owner filters and pickers appear only in a shared household.
  assert.match(transactions,/const owners = useMemo\(\(\) => homes && sharedWorkspace\(homes\) \? ownerChoices\(/);
  assert.match(transactions,/\{owners\.length > 0 && <OwnerFilter owners=\{owners\} value=\{ownerFilter\} onChange=\{setOwnerFilter\}\/>\}/);
- assert.match(transactions,/\{owners\.length > 0 && <OwnerPicker record=\{record\}/);
+ assert.match(transactions,/\{owner && owner\.id !== SHARED && <OwnerPicker record=\{record\}/,'an owner shows on a row only when it is not the shared default');
  const accountsPage=fs.readFileSync('components/planning/accounts-page.tsx','utf8');
- assert.match(accountsPage,/\{owners\.length>0&&<Button variant="outline" disabled=\{readOnly\} onClick=\{\(\)=>setEditingOwners\(true\)\}>/);
+ assert.match(accountsPage,/owners\.length>0&&\{label:t\('Edit owners'\),disabled:readOnly,onSelect:\(\)=>setEditingOwners\(true\)\}/,'Edit owners sits in the page menu, only with someone to share with');
  assert.match(fs.readFileSync('components/planning/accounts/accounts-overview.tsx','utf8'),/\{owners\.length>0&&<OwnerFilter owners=\{owners\} value=\{ownerFilter\} onChange=\{setOwnerFilter\}\/>\}/);
  assert.match(fs.readFileSync('components/reports/report-filters.tsx','utf8'),/owners\.length > 0 && <OwnerFilter owners=\{owners\}/);
  const settings=fs.readFileSync('components/settings-layout.tsx','utf8');

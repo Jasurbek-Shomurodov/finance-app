@@ -4,7 +4,7 @@ import { loadTS } from './helpers/load-ts.mjs';
 const { categoryChoices, canRecategorize, recategorize, ruleMatches, ruleTargets, suggestedPattern, directionOf } = loadTS('lib/transaction-rules.ts');
 const { assignBusiness, moveAccountToBusiness, withAccount } = loadTS('lib/business.ts');
 const { changeTags } = loadTS('lib/tags.ts');
-const { periodRange, periodDays, earliestTransactionDay, transactionsIn, groupByDay, groupPageByDay, summarizeTransactions, emptyTransactionFilter, signedAmount } = loadTS('lib/transaction-list.ts');
+const { periodRange, periodDays, earliestTransactionDay, transactionsIn, groupByDay, groupPageByDay, topSpendingCategories, dailyAverage, summarizeTransactions, emptyTransactionFilter, signedAmount } = loadTS('lib/transaction-list.ts');
 
 const record = (id, name, kind, amount, date, extra = {}) => ({ id, name, kind, currency: 'USD', amount, quantity: 1, cost: 0, rate: 0, date, frequency: 'Once', notes: '', ...extra });
 const categories = [{ id: 'pets', name: 'Pets', direction: 'expense' }, { id: 'tips', name: 'Tips', direction: 'income' }];
@@ -253,6 +253,29 @@ test('a page of transactions shows each day\'s whole total, also when the day ru
  assert.deepEqual(groupPageByDay(rows, 0, 2, convert).map(day => [day.date, day.records.length, day.total]), [['2026-10-03', 2, 2600]]);
  assert.deepEqual(groupPageByDay(rows, 2, 4, convert).map(day => [day.date, day.records.length, day.total]), [['2026-10-03', 1, 2600], ['2026-10-02', 1, -12]]);
  assert.equal(groupPageByDay([{ ...rows[0], currency: 'UZS' }, rows[1]], 0, 1, (amount, unit) => unit === 'USD' ? amount : null)[0].total, null, 'a day with an unconvertible row stays unknown');
+});
+
+test('a page knows how many rows each whole day has, so a one-row day shows no total and a day cut by the page still does', () => {
+ const rows = [record('a', 'Bonus', 'Salary', 500, '2026-10-03'), record('b', 'Rent', 'Rent expense', 900, '2026-10-03'), record('c', 'Lunch', 'Living expense', 12, '2026-10-02')];
+ assert.deepEqual(groupPageByDay(rows, 0, 1, amount => amount).map(day => [day.records.length, day.count]), [[1, 2]], 'one row on this page, two that day');
+ assert.deepEqual(groupPageByDay(rows, 1, 3, amount => amount).map(day => day.count), [2, 1]);
+});
+
+test('top categories add spending by category in the display currency, largest first; income, mortgage principal and unconvertible rows stay out', () => {
+ const rows = [record('a', 'Shop', 'Living expense', 40, '2026-10-03'), record('b', 'Market', 'Living expense', 60, '2026-10-02'), record('c', 'Vet', 'Other expense', 250, '2026-10-02', { custom_category_id: 'pets' }),
+  record('d', 'Pay', 'Salary', 9000, '2026-10-01'), record('e', 'Flat', 'Rent expense', 900, '2026-10-01'), record('f', 'Gift', 'Charity', 30, '2026-10-01'), record('g', 'Misc', 'Other expense', 20, '2026-10-01'),
+  record('h', 'London', 'Living expense', 500, '2026-10-01', { currency: 'GBP' }), record('i', 'Home loan', 'Other expense', 1000, '2026-10-01', { mortgage_payment_id: 'm', payment_interest: 25 })];
+ const usd = (amount, unit) => unit === 'USD' ? amount * 2 : null;
+ assert.deepEqual(topSpendingCategories(rows, usd).map(row => [row.key, row.amount]), [['Rent expense', 1800], ['pets', 500], ['Living expense', 200], ['Other expense', 90]], 'the mortgage counts its interest only');
+ assert.deepEqual(topSpendingCategories(rows, usd)[1].choice, { kind: 'Other expense', category_id: 'pets' });
+ assert.deepEqual(topSpendingCategories(rows, usd, 2).map(row => row.key), ['Rent expense', 'pets']);
+ assert.deepEqual(topSpendingCategories([rows[3]], usd), []);
+});
+
+test('the daily average spreads spending over every day of the period, both ends counted', () => {
+ assert.equal(dailyAverage(310, { from: '2026-10-01', to: '2026-10-31' }), 10);
+ assert.equal(dailyAverage(50, { from: '2026-10-05', to: '2026-10-05' }), 50);
+ assert.equal(dailyAverage(0, { from: '2026-10-01', to: '2026-10-31' }), 0);
 });
 
 test('a day whose unconvertible row sits on another page stays unknown, never the page\'s part of it (MONEY-008)', () => {

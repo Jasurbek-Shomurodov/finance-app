@@ -6,8 +6,8 @@
  */
 import { formatCompactMoney, formatMonthShort, formatMonthYear, formatYear } from '@/lib/format';
 
-/** Chart heights: `compact` inside dialogs and cards, `regular` for a panel's main chart, `tall` for a page's lead chart. */
-export const chartHeight = { compact: 220, regular: 260, tall: 300 } as const;
+/** Chart heights: `slim` for a line inside a side panel, `compact` inside dialogs and cards, `regular` for a panel's main chart, `tall` for a page's lead chart. */
+export const chartHeight = { slim: 150, compact: 220, regular: 260, tall: 300 } as const;
 
 /** Room around the plot; the axes bring their own tick margins. */
 export const chartMargin = { top: 12, right: 8, left: 0, bottom: 4 };

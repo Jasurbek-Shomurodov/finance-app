@@ -98,3 +98,15 @@ test('the lowest balance waits for a saved Budget that failed, warns below zero,
  const euro={...low,records:[cash,bill('rent',900,{date:shiftDay(today,3),currency:'EUR'})]};
  assert.match(render({data:euro}),/Lowest balance ahead=—<p>Exchange rate unavailable\.<\/p>/);
 });
+
+test('a surplus no goal has yet is offered to Plan funding; nothing shows when all of it is assigned or it is unknown',()=>{
+ const goal=(monthly,extra={})=>({id:'g'+monthly,name:'Goal',kind:'savings',currency:'USD',funding_monthly:monthly,funding_enabled:true,funding_priority:10,target:100000,allocated:0,archived:false,...extra});
+ const withGoals=goals=>({data:{...data,goals},surplus:5000.4,surplusReady:true});
+ const html=render(withGoals([goal(128)]));
+ assert.match(html,/<article class="stat-tile surplus-nudge">.*<h3>Unassigned monthly surplus<\/h3><strong>\$4,872<\/strong>.*<a[^>]*href="\/goals#plan-funding"[^>]*>Plan funding<\/a><\/article><\/div>$/,'5,000 − 128 planned, a whole amount, after the four figures');
+ assert.doesNotMatch(render(withGoals([goal(5000.4)])),/surplus-nudge/,'every dollar has a goal');
+ assert.doesNotMatch(render(withGoals([])),/surplus-nudge/,'no goal to fund');
+ assert.doesNotMatch(render({...withGoals([goal(128)]),surplusReady:false}),/surplus-nudge/,'the estimate is not ready: no figure rather than a partial one');
+ assert.doesNotMatch(render({...withGoals([goal(128,{currency:'EUR'})])}),/surplus-nudge/,'a funded goal no rate converts');
+ assert.doesNotMatch(render({...withGoals([goal(128)]),data:null}),/surplus-nudge/);
+});

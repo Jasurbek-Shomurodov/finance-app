@@ -1,12 +1,11 @@
 "use client";
 import { useState } from 'react';
-import { BusinessMark } from '@/components/presentation-foundation/business-mark';
 import type { BusinessOption } from '@/components/presentation-foundation/business-filter';
 import { OwnerAvatar } from '@/components/presentation-foundation/person-avatar';
 import { useLanguage } from '@/components/language-provider';
 import { queryList, useLocationSearch } from '@/hooks/use-location-search';
 import { holdingOwner, inOwnerFilter, ownerOf, workspaceOwners, type HouseholdState } from '@/lib/household';
-import { HOUSEHOLD, inBusinessFilter, isBusinessAccount } from '@/lib/business';
+import { HOUSEHOLD, inBusinessFilter, isBusinessAccount, paletteColor } from '@/lib/business';
 import { directoryBusiness, type DirectoryItem } from '@/lib/account-directory';
 import type { Entry } from '@/lib/finance';
 import type { RowDetails } from './account-directory';
@@ -26,7 +25,7 @@ export function useAccountFilters({ items, records, businesses, household }: { i
  const named=(item:DirectoryItem)=>item.account.name.toLocaleLowerCase(locale).includes(query.toLocaleLowerCase(locale));
  const visible=items.filter(item=>named(item)&&inBusinessFilter(businessFilter,directoryBusiness(item))&&(!owners.length||inOwnerFilter(ownerFilter,ownerOfItem(item))));
  const details:RowDetails={
-  business:item=>{const business=businesses.find(option=>option.id===directoryBusiness(item));return business?{name:business.name,mark:<BusinessMark name={business.name} color={business.business_color} logo={business.business_logo} size="sm"/>}:null;},
+  business:item=>{const business=businesses.find(option=>option.id===directoryBusiness(item));return business?{name:business.name,color:paletteColor(business.business_color)}:null;},
   owner:item=>{const owner=owners.find(option=>option.id===ownerOfItem(item));return owner?<OwnerAvatar owner={owner} size="sm"/>:null;},
  };
  // A business filter also lists the business's other assets and debts, so its whole net assets are in view.

@@ -81,7 +81,7 @@ test('linked income choices exclude other accounts, currencies, recurring record
 
 test('funding drafts reset, preserve precision, and remain dirty on save failure', async () => {
  const slots = []; let cursor = 0, fail = true; const saved = [];
- const hooks = { ...React, useId: () => 'test', useState(initial) { const index = cursor++; if (!(index in slots)) slots[index] = typeof initial === 'function' ? initial() : initial; return [slots[index], value => { slots[index] = typeof value === 'function' ? value(slots[index]) : value; }]; } };
+ const hooks = { ...React, useId: () => 'test', useEffect() {}, useState(initial) { const index = cursor++; if (!(index in slots)) slots[index] = typeof initial === 'function' ? initial() : initial; return [slots[index], value => { slots[index] = typeof value === 'function' ? value(slots[index]) : value; }]; } };
  const { component } = setup({}, { overrides: { react: hooks } });
  const visit = (node, predicate) => { if (!node || typeof node !== 'object') return null; if (predicate(node)) return node; return React.Children.toArray(node.props?.children).map(child => visit(child, predicate)).find(Boolean); };
  const panel = component(props([goal()]));
@@ -142,4 +142,22 @@ test('the Overview funding card reads no goal activity; the History tab does', (
  calls.length = 0;
  html('activity');
  assert.equal(calls.find(call => call[0] === '/api/goal-tools')[2], true);
+});
+
+test('the dashboard nudge opens Plan funding once: the address is read after a render and cleared', () => {
+ const effects = []; let planning = false, cursor = 0;
+ const hooks = { ...React, useId: () => 'test', useEffect: effect => { effects.push(effect); }, useState(initial) { const index = cursor++; return index === 3 ? [planning, value => { planning = value; }] : [initial, () => {}]; } };
+ const { component } = setup({}, { overrides: { react: hooks } });
+ const replaced = [];
+ const visit = hash => { globalThis.window = { location: { hash, pathname: '/goals', search: '' }, history: { replaceState: (...args) => { replaced.push(args[2]); globalThis.window.location.hash = ''; } } }; effects.length = 0; cursor = 0; planning = false; return component; };
+ try {
+  visit('#plan-funding')({ ...props([goal()]), part: 'funding' }); effects.forEach(effect => effect());
+  assert.equal(planning, true); assert.deepEqual(replaced, ['/goals'], 'the address is cleared, so a later render does not reopen it');
+  visit('')({ ...props([goal()]), part: 'funding' }); effects.forEach(effect => effect());
+  assert.equal(planning, false, 'an ordinary visit to Goals opens nothing');
+  visit('#plan-funding')({ ...props([goal()]), part: 'activity' }); effects.forEach(effect => effect());
+  assert.equal(planning, false, 'the History window has no funding plan to open');
+  visit('#plan-funding')({ ...props([]), part: 'funding' }); effects.forEach(effect => effect());
+  assert.equal(planning, false, 'no goal, nothing to plan');
+ } finally { delete globalThis.window; }
 });

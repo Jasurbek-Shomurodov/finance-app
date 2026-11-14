@@ -22,9 +22,9 @@ const { AccountsPage } = r.load('components/planning/accounts-page.tsx', {
  'next/link': { __esModule: true, default: 'a' },
  // Recent activity rows open their Sankey in Cash flow.
  'next/navigation': { useRouter: () => ({ push() {} }) },
- ...Object.fromEntries(['page-header', 'segmented', 'empty-state', 'panel-title', 'stat-tile', 'animated-money', 'business-filter', 'business-mark', 'owner-filter', 'person-avatar', 'category-icon', 'count', 'sortable', 'pagination', 'rolling-text']
+ ...Object.fromEntries(['page-header', 'segmented', 'empty-state', 'panel-title', 'stat-tile', 'animated-money', 'business-filter', 'business-mark', 'owner-filter', 'person-avatar', 'category-icon', 'count', 'sortable', 'pagination', 'rolling-text', 'info-hint']
   .map(name => ['@/components/presentation-foundation/' + name, hostModule()])),
- './accounts/accounts-lazy': hostModule(),
+ './accounts/accounts-lazy': hostModule(), './accounts-lazy': hostModule(),
  '@/hooks/use-location-search': { useLocationSearch: () => search, queryList: (query, key) => new URLSearchParams(query).getAll(key) },
  '@/hooks/use-display-order': { useDisplayOrder: (key, items) => ({ items, reorder: (...move) => reorders.push(move), disabled: false, error: '' }) },
  '@/lib/feedback': { showError: message => errors.push(message) },
@@ -33,7 +33,7 @@ const { AccountsPage } = r.load('components/planning/accounts-page.tsx', {
  // Shown in a USD display currency at 1 USD = 0.9 EUR.
  '@/components/display-money': { useDisplayMoney: () => {
   const convert = (amount, from) => from === 'EUR' ? amount / 0.9 : amount, sum = list => list.reduce((total, row) => total + convert(row.amount, row.currency), 0);
-  return { currency: 'USD', convert, sum, show: (amount, from) => usd(convert(amount, from)), showSum: list => usd(sum(list)) };
+  return { currency: 'USD', convert, sum, show: (amount, from) => usd(convert(amount, from)), showSum: list => usd(sum(list)), entered: (amount, from) => usd(amount, from) };
  } },
 });
 
@@ -44,12 +44,12 @@ const apple = { id: 'aapl', name: 'AAPL', kind: 'Stock', currency: 'USD', amount
 const loose = { id: 'btc', name: 'Bitcoin', kind: 'Crypto', currency: 'USD', amount: 60000, quantity: 0.5 };
 const van = { id: 'van', name: 'Delivery van', kind: 'Property', currency: 'USD', amount: 30000, quantity: 1, business_id: 'b1' };
 const broker = { id: 'broker', name: 'Broker', kind: 'Stock', currency: 'USD' };
-const lunch = { id: 'lunch', name: 'Lunch', kind: 'Living expense', currency: 'USD', amount: 25, date: '2026-10-02', account_id: 'wallet' };
+const lunch = { id: 'lunch', name: 'Lunch', kind: 'Living expense', currency: 'USD', amount: 25, date: '2026-10-02', account_id: 'wallet', frequency: 'Once' };
 const data = {
  records: [wallet, euro, deposit, apple, loose, van, lunch], holdingAccounts: [broker], categories: [], occurrences: [],
  goals: [{ id: 'g1', account_id: 'wallet', allocated: 300, archived: false }, { id: 'g2', account_id: 'wallet', allocated: 999, archived: true }],
- activity: [{ id: 'op1', action: 'reconcile', account_id: 'wallet', target_id: null, amount: 40, fee: 0, occurred_on: '2026-10-01', notes: 'Counted', after_balance: 1000 }],
- movements: [{ id: 'm1', kind: 'buy', source_id: 'wallet', target_id: 'aapl', sent: 2000, received: 10, occurred_on: '2026-09-30', notes: '' }],
+ activity: [{ id: 'op1', action: 'reconcile', account_id: 'wallet', target_id: null, amount: 40, fee: 0, occurred_on: '2026-10-01', notes: 'Counted', before_balance: 960, after_balance: 1000 }],
+ movements: [{ id: 'm1', kind: 'buy', source_id: 'wallet', target_id: 'aapl', sent: 2000, received: 10, source_value: 2000, target_value: 2000, occurred_on: '2026-09-30', notes: '' }],
 };
 
 function open(props = {}) {
@@ -66,6 +66,8 @@ function open(props = {}) {
 const html = () => r.html();
 const button = label => r.find(node => node.type === ui.Button && text(node).includes(label));
 const item = label => r.find(node => node.type === 'DropdownMenuItem' && text(node) === label);
+const labelled = label => r.find(node => node.type === ui.Button && node.props['aria-label'] === label);
+const total = () => r.find(node => node.type === 'AnimatedMoney', [r.find(node => node.props?.className === 'accounts-hero-figure')]).props.value;
 const rowNames = () => r.all(node => node.type === 'span' && node.props.className === 'account-list-title').map(text);
 const component = name => node => node.type?.name === name;
 const showActivity = () => r.fire(r.find(byType('PageHeader')).props.tabs, 'onChange', 'activity');
@@ -84,24 +86,46 @@ test('the directory lists balances and investment accounts by group, with one to
 test('Accounts shows one total in the display currency, the grouped directory and the selected cash account', () => {
  const calls = open();
  // One total in the display currency, never a figure per currency (XAPP-019): wallet 1,000 + €500 / 0.9 + deposit 2,000 + broker 10 × 200.
- assert.deepEqual(r.all(node => node.type === 'StatTile').map(node => node.props.label), ['Total']);
- assert.equal(Math.round(r.find(node => node.type === 'StatTile').props.value.props.value), 5556);
+ assert.equal(r.all(node => node.props?.className === 'accounts-hero-figure').length, 1);
+ assert.ok(text(r.find(node => node.props?.className === 'accounts-hero-figure')).startsWith('Total across 4 accounts'));
+ assert.equal(Math.round(total()), 5556);
+ // The mix under it: cash, deposits and the brokerage in the display currency, then the cash no goal holds (1,000 − 300 + €500 / 0.9).
+ const mix = r.find(node => node.type === 'section' && node.props.className === 'panel accounts-mix');
+ assert.deepEqual(r.all(node => node.type === 'li', [mix]).map(text), ['Cash' + usd(1000 + 500 / 0.9), 'Deposits' + usd(2000), 'Stock' + usd(2000), 'Available to spend' + usd(700 + 500 / 0.9)]);
  // A group's total rolls: read it from its RollingText.
  const groups = r.all(node => node.type === 'details').map(node => text(node.children[0]) + r.all(child => child.type === 'RollingText', node.children[0]).map(child => child.props.text).join(''));
  assert.equal(groups.length, 3);
  assert.ok(groups[0].startsWith('Cash') && groups[0].includes(usd(1000 + 500 / 0.9)) && !groups[0].includes('€'), groups[0]);
- assert.ok(html().includes('Bakery'), 'the business of an account is named under it');
+ // A business is named beside its account, apart from the name for a screen reader (never "Euro cashB").
+ const euroRow = r.find(node => node.type === 'button' && node.props.className === 'account-list-row' && text(node).startsWith('Euro cash'));
+ assert.ok(text(euroRow).startsWith('Euro cash, Bakery, '), text(euroRow));
+ // A row's second line carries facts, never the account type: what goals hold, an own-currency balance, a deposit's rate and maturity.
+ const rows = r.all(node => node.type === 'button' && node.props.className === 'account-list-row').map(text);
+ assert.ok(rows[0].includes(usd(300) + ' in goals') && !rows[0].includes('Cash account'), rows[0]);
+ assert.ok(rows[1].includes(usd(500, 'EUR')), rows[1]);
+ assert.ok(rows[2].includes('4.5% annual interest · Matures ' + formatDate('2027-03-01', 'en-US')), rows[2]);
+ assert.ok(rows[3].includes('1 holdings'), rows[3]);
  assert.equal(r.all(node => node.props?.['aria-label'] === 'Search accounts').length, 0, 'no search with six accounts or fewer');
  // The first account is selected: its goals' share and what is left.
  const card = r.find(node => node.type === 'article');
  assert.ok(text(card).includes('Wallet') && text(card).includes('Allocated to goals') && text(card).includes('Available'));
  // The balance, its goals' share and what is left are display-currency figures through `show` (MONEY-008).
  assert.deepEqual(r.all(node => node.type === 'RollingText', [card]).map(node => node.props.text), [usd(1000), usd(300), usd(700)]);
+ // What the row cannot show: six months of balance ending today, this month's money in and out, and the newest activity.
+ const chart = r.find(byType('AccountBalanceChart'), [card]).props;
+ assert.equal(chart.points.length, 6);assert.equal(chart.points.at(-1).balance, 1000);assert.equal(chart.currency, 'USD');
+ assert.ok(text(card).includes('In this month') && text(card).includes('Out this month'));
+ const latest = r.all(node => node.type === 'li' && node.props.className === 'account-activity-row', [card]);
+ assert.ok(latest.length >= 1 && latest.length <= 3);
+ assert.ok(latest.some(row => text(row).includes('Lunch') && text(row).includes(usd(-25))), 'a transaction booked to the account, as it was entered');
+ r.fire(r.find(node => node.type === 'button' && text(node) === 'View all', [card]), 'onClick');
+ assert.ok(r.find(node => node.type === 'section' && node.props.className === 'panel account-activity'), 'View all opens Recent activity');
+ r.fire(r.find(byType('PageHeader')).props.tabs, 'onChange', 'accounts');
  r.fire(button('Adjust balance'), 'onClick');
  assert.deepEqual(r.find(byType('AccountOperation')).props.operation, { action: 'reconcile', account_id: 'wallet', amount: 1000 });
  r.fire(button('Reconcile statement'), 'onClick');
  assert.equal(r.find(byType('StatementReconciliation')).props.account.id, 'wallet');
- r.fire(item('Edit'), 'onSelect');
+ r.fire(labelled('Edit Wallet'), 'onClick');
  assert.deepEqual(calls.edited, ['wallet']);
  // An account that savings goals still use is not deleted; the reason is shown instead.
  r.fire(item('Delete'), 'onSelect');
@@ -114,7 +138,7 @@ test('Accounts shows one total in the display currency, the grouped directory an
 test('Total follows the search and the filters, as the groups below it do', () => {
  search = 'business=b1';
  open();
- const narrowed = r.find(node => node.type === 'StatTile').props.value.props.value;
+ const narrowed = total();
  search = '';
  assert.equal(Math.round(narrowed), Math.round(500 / 0.9), 'the Bakery’s one account, not the whole workspace');
 });
@@ -170,7 +194,7 @@ test('reconciling a statement waits for a signed-in owner', () => {
 test('a deposit tops up, withdraws, records interest and shows its details', () => {
  open();
  select('Savings deposit');
- assert.ok(text(r.find(node => node.type === 'article')).includes('4.5% annual interest'));
+ assert.ok(text(r.find(node => node.type === 'article')).includes('Annual interest4.5%'));
  r.fire(button('Top-up'), 'onClick');
  assert.deepEqual(r.find(byType('AssetMovementDialog')).props.initial, { kind: 'transfer', target_id: 'dep' });
  r.fire(button('Withdraw'), 'onClick');
@@ -188,10 +212,11 @@ test('an investment account lists its holdings, which move, sell and change acco
  select('Broker');
  const card = text(r.find(node => node.type === 'article'));
  assert.ok(card.includes('1 holdings · USD') && card.includes('Stock account'));
+ assert.equal(r.all(byType('AccountBalanceChart')).length, 0, 'no stored value history: no line for an investment account');
  r.fire(button('Add holding'), 'onClick');
  r.fire(item('Add cash balance'), 'onSelect');
  assert.deepEqual(calls.added, [['Stock', 'broker'], ['Cash', 'broker']]);
- r.fire(item('Edit account'), 'onSelect');
+ r.fire(labelled('Edit Broker'), 'onClick');
  assert.equal(r.find(byType('HoldingAccountDialog')).props.existing, true);
  r.fire(r.all(node => node.type === 'DropdownMenuItem' && text(node) === 'Sell / convert')[0], 'onSelect');
  assert.deepEqual(r.find(byType('AssetMovementDialog')).props.initial, { kind: 'sell', source_id: 'aapl' });
@@ -229,13 +254,14 @@ test('a business filter from the link narrows the accounts and lists the busines
 
 test('a shared household filters accounts by owner and shows who owns each', () => {
  open({ household: demoHousehold });
- assert.ok(button('Edit owners'));
+ // Rare lists sit behind ⋯ in the top bar; Transfer money and Add account stay buttons.
+ assert.ok(item('Edit owners') && item('Edit businesses') && button('Transfer money') && button('Add account'));
  const filter = r.find(byType('OwnerFilter'));
  assert.deepEqual(filter.props.owners.map(owner => owner.name), ['Shared', 'Alex', 'Sam']);
  r.fire(filter, 'onChange', [demoHousehold.people[1].id]);
  assert.deepEqual(rowNames(), ['Euro cash']);
  assert.equal(r.all(byType('OwnerAvatar')).length, 1);
- r.fire(button('Edit owners'), 'onClick');
+ r.fire(item('Edit owners'), 'onSelect');
  assert.ok(r.find(byType('AccountOwnersDialog')));
 });
 
@@ -269,9 +295,10 @@ test('signed in, Recent activity reads the income and spending booked to account
  const lunchless = { ...data, records: data.records.filter(record => record.id !== 'lunch') };
  booked.loading = true; resources.length = 0;
  open({ demo: false, data: lunchless, revision: 4 });
- assert.equal(resources.length, 0, 'the overview reads nothing more');
- showActivity();
+ // The overview reads them too: the selected account's panel and the rows' month figures are told from them.
  assert.deepEqual(resources.at(-1), { url: '/api/planning?scope=account-activity', owner: 'me', enabled: true, revision: 4 });
+ assert.ok(html().includes('Loading records…') && r.all(byType('AccountBalanceChart')).length === 0 && !html().includes('this month'), 'the panel waits rather than draw half a story');
+ showActivity();
  assert.ok(html().includes('Loading records…') && !html().includes('Page 1 of'), 'the view waits for the booked records');
  booked.loading = false; booked.data = { records: [lunch, wallet] };
  open({ demo: false, data: lunchless, revision: 4 });

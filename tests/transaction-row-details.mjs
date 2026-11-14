@@ -55,8 +55,9 @@ test('the Summary reads — with the rate note when a transaction cannot be conv
  assert.ok(!figures().includes('—') && note().length === 0, 'every amount converts: real figures, no note');
  planning.data.records.push({ ...market, id: 'gbp', name: 'London', currency: 'GBP', amount: 25 });
  r.mount(React.createElement(TransactionsScreen));
- assert.deepEqual(figures(), ['—', '—', '40 USD', '—'], 'Income, Spending and Net are missing; the largest expense still reads as entered');
+ assert.deepEqual(figures(), ['—', '—', '—', '40 USD', '—'], 'Net, Income, Spending and the daily average are missing; the largest expense still reads as entered');
  assert.equal(note().length, 1);
- assert.equal(r.all(node => node.type === 'dd' && node.props.className === 'positive', [summary()]).length, 0, 'a missing total is not coloured');
+ assert.equal(r.all(node => node.props?.className === 'positive', [summary()]).length, 0, 'a missing total is not coloured');
+ assert.deepEqual(r.all(node => node.props?.className === 'progress-track', [summary()]).map(node => node.children[0].props.style.width), ['0%', '0%'], 'and its bars stay empty');
  planning.data.records.pop();
 });

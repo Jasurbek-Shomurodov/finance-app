@@ -164,7 +164,8 @@ test('QA 2026-10-02: dialogs explain limits, prefill scheduled amounts and offer
  // Loans & debts: currency choice for new records, loan-only filter, payments for loans and debts, plural counts.
  assert.match(sourceWithParts('components/record-dialog.tsx'),/assetRecord\|\|lendingRecordKinds\.includes\(editing\.kind\)\)\?<CurrencySelect/);
  const table=read('components/workspace/records-table.tsx');
- assert.match(table,/categories=\{sectionKey === 'debts' \? \[\] : planning\.data\.categories\}/);
+ // Loans & debts has its own list, which offers its kinds and no spending categories.
+ assert.match(fs.readFileSync('components/loans/loans-list.tsx','utf8'),/<RecordFilters value=\{filters\} onChange=\{setFilters\} categories=\{\[\]\} kinds=\{lendingRecordKinds\}\/>/);
  assert.match(table,/\(r\.kind === 'Loan' \|\| r\.kind === 'Debt'\) && <Button.*?setDebtPayment/);
  assert.match(table,/<Pagination /);assert.match(read('components/recently-deleted.tsx'),/<Pagination /);
  assert.match(read('components/debt-summary.tsx'),/lentCount===1\?'1 lending record'/);
@@ -205,7 +206,7 @@ test('every account picker lists accounts in the Accounts order, then newest las
 
 test('an expense amount in the transaction details stays in the ink colour',()=>{
  const dialog=fs.readFileSync('components/transaction-details-dialog.tsx','utf8');
- assert.match(dialog,/className=\{incoming\?'positive':undefined\}/);
+ assert.match(dialog,/className=\{incoming\?'transaction-details-amount positive':'transaction-details-amount'\}/);
  assert.doesNotMatch(dialog,/'negative'/,'red is for overdue, overspent or owed amounts only');
 });
 
@@ -279,16 +280,17 @@ test('goal pickers, recurring categories and deposit benchmarks follow the perso
 
 test('transaction labels never narrow below a word',()=>{
  const css=stylesheet();
- assert.match(css,/\.transaction-labels\{[^}]*grid-auto-columns:minmax\(min-content,1fr\)/);
- // The labels column takes the larger share (1.6fr), so a category pill stays on one line at 1024 (was 112px, "Product sales" on two lines).
- assert.match(css,/\.transaction-row:has\(>input\)\{grid-template-columns:auto minmax\(0,\.9fr\) minmax\(min-content,1\.6fr\)/);
+ // The ledger's category and account columns share the row equally and never narrow below their longest word; the heading row uses the same template, also while selecting.
+ assert.match(css,/\.transaction-columns-heading,\.transaction-row\{display:grid;grid-template-columns:minmax\(0,1\.5fr\) minmax\(min-content,1fr\) minmax\(min-content,1fr\) minmax\(8\.5rem,\.4fr\)/);
+ assert.match(css,/\.transaction-columns-heading\[data-selecting\],\.transaction-row:has\(>input\)\{grid-template-columns:16px minmax\(0,1\.5fr\) minmax\(min-content,1fr\) minmax\(min-content,1fr\)/);
 });
 
 // 7 October 2026: a transaction opened from the list can be deleted, not only edited.
-test('the transaction details dialog offers a bin to delete and a pencil to edit, with no Close button beside the ×',()=>{
+test('the transaction details dialog offers a bin to delete and Edit, with no Close button beside the ×',()=>{
  const dialog=fs.readFileSync('components/transaction-details-dialog.tsx','utf8');
- assert.match(dialog,/<DeleteButton label=\{t\('Delete \{name\}',\{name:shownName\(record,t,categoryName\)\}\)\} onClick=\{onDelete\}\/>/);
- assert.match(dialog,/aria-label=\{t\('Edit \{name\}',\{name:shownName\(record,t,categoryName\)\}\)\} onClick=\{onEdit\}><Pencil /);
+ assert.match(dialog,/const name=shownName\(record,t,categoryName\);/);
+ assert.match(dialog,/<DeleteButton label=\{t\('Delete \{name\}',\{name\}\)\} onClick=\{onDelete\}\/>/);
+ assert.match(dialog,/aria-label=\{t\('Edit \{name\}',\{name\}\)\} onClick=\{onEdit\}><Pencil /);
  assert.doesNotMatch(dialog,/t\('Close'\)/);
  const dialogs=fs.readFileSync('components/workspace/workspace-dialogs.tsx','utf8');
  assert.match(dialogs,/onDelete=\{\(\)=>\{const r=viewing;setViewing\(null\);requestDelete\(r\);\}\}/);

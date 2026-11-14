@@ -1,4 +1,4 @@
-import { monthEnd, shiftMonth } from './calendar-days';
+import { daysBetween, monthEnd, shiftMonth } from './calendar-days';
 import { income, type Entry } from './finance';
 import { spendingAmount } from './spending';
 import { canAssignBusiness, inBusinessFilter } from './business';
@@ -92,11 +92,29 @@ export function groupByDay(records: readonly Entry[], convert: Convert) {
  return days;
 }
 
-/** One page of rows grouped by day. Each day's total covers the whole day, also the rows on the pages before or after it. */
+/** One page of rows grouped by day. Each day's total and `count` cover the whole day, also the rows on the pages before
+ * or after it; a heading shows its total only when the day has two or more rows (a single row already says it). */
 export function groupPageByDay(records: readonly Entry[], from: number, to: number, convert: Convert) {
- const totals = new Map(groupByDay(records, convert).map(day => [day.date, day.total]));
- return groupByDay(records.slice(from, to), convert).map(day => ({ ...day, total: totals.has(day.date) ? totals.get(day.date)! : day.total }));
+ const whole = new Map(groupByDay(records, convert).map(day => [day.date, day]));
+ return groupByDay(records.slice(from, to), convert).map(day => { const all = whole.get(day.date) ?? day; return { ...day, total: all.total, count: all.records.length }; });
 }
+
+/** The categories most was spent in, largest first, in the display currency. Spending follows `lib/spending.ts`; an amount
+ * no rate converts is left out (the Summary beside it says a rate is missing). */
+export function topSpendingCategories(records: readonly Entry[], convert: Convert, limit = 4) {
+ const totals = new Map<string, { choice: CategoryChoice; amount: number }>();
+ for (const record of records) {
+  if (income.includes(record.kind)) continue;
+  const value = convert(spendingAmount(record), record.currency, record);
+  if (value === null || value <= 0) continue;
+  const key = record.custom_category_id ?? record.kind, row = totals.get(key);
+  if (row) row.amount += value; else totals.set(key, { choice: { kind: record.kind, category_id: record.custom_category_id ?? null }, amount: value });
+ }
+ return [...totals].map(([key, row]) => ({ key, ...row })).sort((a, b) => b.amount - a.amount || a.key.localeCompare(b.key)).slice(0, limit);
+}
+
+/** Spending for each day of a period, both ends counted. */
+export const dailyAverage = (spent: number, range: { from: string; to: string }) => spent / Math.max(1, daysBetween(range.from, range.to) + 1);
 
 /** Summary card: how many, money in and out, and the largest single expense. Spending follows `lib/spending.ts`, so a mortgage payment counts only its interest. */
 export function summarizeTransactions(records: readonly Entry[], convert: Convert) {

@@ -49,7 +49,7 @@ export function OverviewScreen() {
  });
  const showNetWorth = !layout.hidden.includes('net_worth');
  const payouts = useExpectedPayouts(user, demo, reload, rows);
- const figures = useHeadlineFigures({ data: planningReady ? planning.data : null, forecastBudget, payouts, forecastLoading: forecastBudgetState?.loading, forecastError: !!forecastBudgetState?.error, currency, market });
+ const figures = useHeadlineFigures({ data: planningReady ? planning.data : null, forecastBudget, payouts, forecastLoading: forecastBudgetState?.loading, forecastError: !!forecastBudgetState?.error, surplus: forecast.forecast, surplusReady: forecastReady, currency, market });
  const headline = <DashboardHeadline netWorth={netWorth} netWorthTile={!showNetWorth} budget={monthBudget} spending={planningReady ? spending : undefined} figures={figures} currency={currency}/>;
  return <>
   <div data-page="Overview" className="content overview-content">

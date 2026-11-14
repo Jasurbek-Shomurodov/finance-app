@@ -92,7 +92,29 @@ label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 [data-slot=dialog-content]>[data-slot=dialog-close]{right:auto;inset-inline-end:16px}
 [data-slot=dialog-content]:has(>[data-slot=dialog-close]) [data-slot=dialog-title]{padding-inline-end:20px}
 @media(pointer:coarse){[data-slot=dialog-content]>[data-slot=dialog-close]{display:grid;place-items:center;min-width:44px;min-height:44px;top:2px;inset-inline-end:2px}[data-slot=dialog-content]:has(>[data-slot=dialog-close]) [data-slot=dialog-title]{padding-inline-end:28px}}
-.transaction-details-actions{display:flex;justify-content:flex-end;gap:8px}
+/* Transaction details: the amount first, short facts in two columns, attachments and Split as cards, the bin at the footer's start. */
+.transaction-details-head{display:flex;align-items:center;gap:12px;min-width:0}
+.transaction-details-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:0;font-size:var(--type-small)}
+.transaction-details-fields>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.transaction-details-fields>[data-wide]{grid-column:1/-1}
+.transaction-details-fields dt{color:var(--muted-foreground);font-size:var(--type-caption);font-weight:500}
+.transaction-details-fields dd{margin:0;overflow-wrap:break-word}
+.transaction-details-amount{font-size:var(--type-stat);font-weight:600;letter-spacing:-.025em;line-height:1.15;font-variant-numeric:tabular-nums}
+.transaction-details-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr));align-items:start;gap:12px;font-size:var(--type-small)}
+.transaction-details-cards>*{display:flex;gap:10px;min-width:0;padding:12px;border:1px solid var(--border);border-radius:var(--radius-control);font-weight:600;text-align:start}
+.transaction-details-cards>section{flex-direction:column;border-style:dashed;font-weight:400}
+.transaction-details-cards h3{display:flex;align-items:center;gap:8px;margin:0;font-size:var(--type-small);font-weight:600}
+.transaction-details-cards>button{align-items:center;min-height:44px;transition:background-color var(--motion-quick) var(--ease-out),border-color var(--motion-quick) var(--ease-out)}
+.transaction-details-cards>button>span{flex:1;min-width:0}
+.transaction-details-cards>button>svg{flex:none;color:var(--muted-foreground)}
+.transaction-details-cards>button:hover{border-color:var(--ring);background:var(--muted)}
+.transaction-details-cards>button:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+.transaction-details-cards>button:active{transform:scale(.985)}
+[dir=rtl] .transaction-details-cards>button>svg:last-child{transform:scaleX(-1)}
+.transaction-details-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:16px;border-top:1px solid var(--hairline)}
+.transaction-details-actions>.delete-button{margin-inline-end:auto}
+@media(prefers-reduced-motion:reduce){.transaction-details-cards>button{transition:none}}
+@media(max-width:480px){.transaction-details-fields{grid-template-columns:minmax(0,1fr)}}
 /* Every delete is a bin (DeleteButton); in a form footer it stands apart at the start. */
 .delete-button:not(:disabled){color:var(--negative)}
 .record-form-footer :is(.delete-button,.delete-button-reason){order:-1;margin-inline-end:auto}

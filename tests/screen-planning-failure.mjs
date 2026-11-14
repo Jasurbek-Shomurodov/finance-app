@@ -22,8 +22,7 @@ function screen(file, name, tab, planning) {
   '@/components/planning/add-asset-dialog': { AddAssetDialog: () => null },
   '@/components/portfolio-allocation-plan': { PortfolioAllocationPlan: part('plan') },
   '@/components/planning/debt-payoff-panel': { DebtPayoffPanel: part('plan') },
-  '@/components/debt-summary': { DebtSummary: part('summary') },
-  '@/components/workspace/records-table': { RecordsTable: part('table') },
+  '@/components/loans/loans-overview': { LoansOverview: part('overview') },
   '@/hooks/use-property-totals': { usePropertyTotals: () => null },
  });
  r.mount(h(Screen));

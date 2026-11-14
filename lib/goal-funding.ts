@@ -8,6 +8,14 @@ export function fundingBudget(goal:Goal){
  const raw=goal.funding_monthly??(goal.kind!=='investment'?goal.monthly_contribution:null)??null;
  return raw===null?null:goal.kind==='savings'?Math.min(raw,Math.max(0,goal.target-goal.allocated)):raw;
 }
+/** The address that opens Plan funding on Goals: the dashboard's unassigned-surplus nudge leads there. */
+export const planFundingLink='/goals#plan-funding';
+export const planFundingRequested=(hash:string)=>hash==='#plan-funding';
+/** What the monthly surplus leaves once every funded goal has its share, or null when there is nothing to plan with:
+ * no active goal, a surplus that is unknown, or a funded goal no rate converts. */
+export function unassignedSurplus(goals:Goal[],surplus:number|null,currency:string,today:string,rates?:Record<string,number>){
+ return goals.some(goal=>!goal.archived)?fundingPlan(goals,surplus,currency,today,rates).remaining:null;
+}
 export function fundingPlan(goals:Goal[],surplus:number|null,currency:string,today:string,rates?:Record<string,number>){
  const active=goals.filter(goal=>inFundingPlan(goal,today)).sort((a,b)=>(a.funding_priority??100)-(b.funding_priority??100)||a.id.localeCompare(b.id));
  let remaining=surplus===null?null:Math.max(0,surplus),requested=0,unknown=false;

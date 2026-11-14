@@ -31,6 +31,12 @@ test('Transactions shows the newest income and spending with formatted dates and
  assert.ok(html.indexOf('Salary')<html.indexOf('Groceries'),'newest first');
  assert.doesNotMatch(html,/Later/,'future records wait');
  assert.match(plain(html),new RegExp(`Salary Salary · ${formatDate('2026-10-19','en-US')}`));
+ // A run of one category names it once: the icon tile carries it on the rows beneath.
+ const run=plain(render(cards.RecentTransactionsCard,{data:planning([entry('Cinema','Living expense',47,'2026-10-19'),entry('Clothes','Living expense',184,'2026-10-18'),entry('Soap','Charity',9,'2026-10-17'),entry('Shoes','Living expense',60,'2026-10-16')])}));
+ assert.match(run,new RegExp(`Cinema Living expense · ${formatDate('2026-10-19','en-US')}`));
+ assert.match(run,new RegExp(`Clothes ${formatDate('2026-10-18','en-US')}`),'the same category as the row above is not repeated');
+ assert.match(run,new RegExp(`Soap Charity · ${formatDate('2026-10-17','en-US')}`));
+ assert.match(run,new RegExp(`Shoes Living expense · ${formatDate('2026-10-16','en-US')}`),'named again once another category came between');
  assert.match(html,/<strong class="positive">\+\$3,000<\/strong>/);
  assert.ok(html.includes(`<strong>${formatMoney(42.6,'USD','en-US')}</strong>`),'spending in ink without a sign');
  assert.match(html,/href="\/transactions"/);
@@ -98,7 +104,8 @@ test('Budget compares this month’s spending with the plan and lists the catego
  assert.ok(list.indexOf('Pets')<list.indexOf('Living expense')&&list.indexOf('Living expense')<list.indexOf('Rent expense'));
  assert.doesNotMatch(list,/Charity/,'three at most');
  assert.ok(list.includes(`data-tone="negative">${formatMoney(120,'USD','en-US')} over</strong>`),'an overspent category says how far over');
- assert.ok(list.includes(`<strong data-tone="neutral">${formatMoney(0,'USD','en-US')} left</strong>`),'a category spent exactly to its limit');
+ assert.ok(list.includes(`<strong>${formatMoney(0,'USD','en-US')} left</strong>`),'a category spent exactly to its limit');
+ assert.doesNotMatch(list,/data-tone="(positive|neutral)"/,'only an overspent category is coloured; what is left reads in ink');
  // Six months of history are read for the averages.
  assert.equal(resources[0].url,'/api/planning?scope=budget&month=2026-10&from=2026-04');
 });

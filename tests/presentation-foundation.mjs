@@ -98,10 +98,10 @@ test('loading skeletons keep the shape of the content they replace, so the page 
  const {AccountsSkeleton}=load('loading-placeholder.tsx',{'@/components/ui/skeleton':{Skeleton:element('span')}});
  const accounts=render(AccountsSkeleton,{label:'Loading records…'});
  assert.match(accounts,/^<div role="status" aria-busy="true" class="overview-content-loading"><span class="sr-only">Loading records…<\/span>/);
- assert.equal(accounts.match(/class="stat-tile"/g).length,1,'the Total tile');
+ assert.ok(accounts.indexOf('accounts-hero-figure')<accounts.indexOf('accounts-mix')&&accounts.indexOf('accounts-mix')<accounts.indexOf('accounts-master-detail'),'the total, its mix bar, then the list');
  assert.ok(accounts.indexOf('account-group')<accounts.indexOf('account-selected-panel'),'the account list with the selected account beside it');
  assert.equal(accounts.match(/class="account-list-row"/g).length,5);
- assert.ok(!accounts.includes('transactions-tools'));assert.ok(render(AccountsSkeleton,{label:'L',filters:true}).includes('transactions-tools'),'filters only for a shared workspace');
+ assert.ok(!accounts.includes('accounts-hero-tools'));assert.ok(render(AccountsSkeleton,{label:'L',filters:true}).includes('accounts-hero-tools'),'filters only for a shared workspace');
 });
 
 test('every drawer destination shimmers in its own layout',()=>{
@@ -115,7 +115,7 @@ test('every drawer destination shimmers in its own layout',()=>{
   '/income-expenses':['cashflow-summary','chart-skeleton','sankey-skeleton','cashflow-preview-grid'],'/reports':['data-columns="4"','sankey-skeleton','report-transactions','transactions-summary'],
   '/budget':['budget-layout','budget-section-header','budget-row','budget-side','budget-left-figure'],'/upcoming':['recurring-summary','recurring-list','recurring-row'],
   '/goals':['goals-list','goal-row','goals-split','goal-detail'],'/assets':['portfolio-summary','portfolio-allocation-body','asset-card-grid'],
-  '/loans-debts':['data-columns="3"','panel records'],'/recently-deleted':['recovery-panel','recovery-row'],'/settings':['settings-columns','settings-nav','preferences-card']};
+  '/loans-debts':['data-columns="4"','loans-layout','panel loans-list','loan-rows','loans-side'],'/recently-deleted':['recovery-panel','recovery-row'],'/settings':['settings-columns','settings-nav','preferences-card']};
  for(const path of paths){
   const html=render(NavigationShimmer,{label:'Loading records…',path});
   assert.match(html,/^<div class="content page-loading"><div role="status" aria-busy="true"[^>]*><span class="sr-only">Loading records…<\/span>/,path);

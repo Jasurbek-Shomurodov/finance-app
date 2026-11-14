@@ -6,6 +6,7 @@ import type { WorkspaceBudget } from '@/hooks/use-budget';
 import { budgetCategories, budgetReadRange, budgetRows, budgetRowsForMode, leftToBudget, monthActuals, monthsBetween, remainingTone } from '@/lib/budget';
 import { flexPlan } from '@/lib/budget-schedules';
 import { marketRates, type MarketData } from '@/lib/market';
+import { namesCategory } from '@/lib/overview';
 import { signedAmount } from '@/lib/transaction-list';
 import type { TransactionSplit } from '@/lib/transaction-tools';
 import { useLanguage } from '@/components/language-provider';
@@ -41,12 +42,14 @@ export function RecentTransactionsCard({ owner = null, demo = false, revision = 
  const remote = useOwnerResource('/api/planning?scope=review&month=' + today.slice(0, 7), owner, !!owner && !demo, revision, emptyPlanning);
  const records = owner && !demo ? remote.data.records.map(normalizeEntry) : provided.records;
  const recent = recentTransactions(records, today);
+ // A run of one category names it once; the icon tile shows it on every row.
+ const named = namesCategory(recent);
  return <section className="panel overview-panel dashboard-transactions">
   <PanelTitle title={t('Transactions')}><DrawerLink href="/transactions">{t('View all')}</DrawerLink></PanelTitle>
-  {owner && !demo && remote.loading ? <LoadingPlaceholder label={t('Loading records…')} rows={4}/> : owner && !demo && remote.error ? <InlineError message={t(remote.error)} onRetry={remote.retry}/> : recent.length ? <ul className="overview-list overview-due">{recent.map(record => {
+  {owner && !demo && remote.loading ? <LoadingPlaceholder label={t('Loading records…')} rows={4}/> : owner && !demo && remote.error ? <InlineError message={t(remote.error)} onRetry={remote.retry}/> : recent.length ? <ul className="overview-list overview-due">{recent.map((record, index) => {
    const incoming = income.includes(record.kind);
    const open = onOpen ? { role: 'button', tabIndex: 0, 'aria-label': t('View details for {name}', { name: shownName(record, t) }), onClick: () => onOpen(record), onKeyDown: (event: KeyboardEvent) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen(record); } } } : {};
-   return <li key={record.id} {...open}><CategoryIcon kind={record.kind}/><span>{shownName(record, t)}<small>{t(record.kind)} · {formatDate(record.date, locale)}</small></span><strong className={incoming ? 'positive' : undefined}>{incoming ? '+' : ''}{entered(Math.abs(signedAmount(record)), record.currency)}</strong></li>;
+   return <li key={record.id} {...open}><CategoryIcon kind={record.kind}/><span>{shownName(record, t)}<small>{named[index] && <>{t(record.kind)} · </>}{formatDate(record.date, locale)}</small></span><strong className={incoming ? 'positive' : undefined}>{incoming ? '+' : ''}{entered(Math.abs(signedAmount(record)), record.currency)}</strong></li>;
   })}</ul> : <EmptyState icon={<ReceiptText/>} description={t('No transactions recorded this month or last.')}/>}
  </section>;
 }
@@ -123,7 +126,7 @@ function BudgetCardView({ figures, currency }: { figures: MonthBudget; currency:
   <PanelTitle title={<>{t('Budget')} <span className="panel-figure">{formatMonthYear(month, locale)}</span></>}><DrawerLink href="/budget">{t('View all')}</DrawerLink></PanelTitle>
   {loading ? <LoadingPlaceholder label={t('Loading records…')} rows={3}/> : error ? <InlineError message={t(error)} onRetry={retry}/> : plan === null || plan > 0 ? <>
    <BudgetCardTotal plan={plan} spent={spent} missing={missing} currency={currency}/>
-   <ul className="overview-list dashboard-budget-list">{watched.map(row => <li key={row.key}><CategoryIcon kind={row.custom ? row.name : row.key} size="sm"/><span>{row.custom ? row.name : t(row.name)}<BudgetProgress row={row}/></span><strong data-tone={remainingTone(row.remaining)}>{row.remaining === null ? '—' : t(row.remaining < 0 ? '{amount} over' : '{amount} left', { amount: money(Math.abs(row.remaining)) })}</strong></li>)}</ul>
+   <ul className="overview-list dashboard-budget-list">{watched.map(row => <li key={row.key}><CategoryIcon kind={row.custom ? row.name : row.key} size="sm"/><span>{row.custom ? row.name : t(row.name)}<BudgetProgress row={row}/></span><strong data-tone={row.remaining !== null && row.remaining < 0 ? 'negative' : undefined}>{row.remaining === null ? '—' : t(row.remaining < 0 ? '{amount} over' : '{amount} left', { amount: money(Math.abs(row.remaining)) })}</strong></li>)}</ul>
   </> : <EmptyState icon={<ChartPie/>} description={t('Plan this month’s spending to track it here.')}><DrawerLink href="/budget">{t('Set up a budget')}</DrawerLink></EmptyState>}
  </section>;
 }

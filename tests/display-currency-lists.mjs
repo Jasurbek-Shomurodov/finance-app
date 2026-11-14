@@ -191,12 +191,13 @@ test('an account’s balance and the directory totals are display-currency figur
  const account = currency => entry('Wallet', 'Cash', currency, 1000, { date: '2026-01-01' });
  const directoryItem = currency => ({ key: 'record:Wallet', id: 'Wallet', account: account(currency), total: 1000, group: 'cash', count: null });
  const details = { business: () => null, owner: () => null };
- const directory = currency => mountScreen('components/planning/accounts/account-directory.tsx', 'AccountDirectory', { count: 1, visible: [directoryItem(currency)], query: '', onQuery() {}, onSelect() {}, order: { reorder() {}, disabled: true }, details }, { ...foundationStubs, '@/components/ui/input': hostModule(), 'lucide-react': hostModule() });
+ const directory = currency => mountScreen('components/planning/accounts/account-directory.tsx', 'AccountDirectory', { visible: [directoryItem(currency)], onSelect() {}, order: { reorder() {}, disabled: true }, details, goals: [], changes: null }, { ...foundationStubs, 'lucide-react': hostModule() });
  assert.ok(directory('USD').includes(eur(900)) && !directory('USD').includes('Exchange rate unavailable.'), directory('USD'));
  missingRate(directory('GBP'));
  const r = createRenderer(), ui = stubs();
- const { BalanceAccountCard } = r.load('components/planning/accounts/account-cards.tsx', { ...ui.modules, ...inEuros, ...foundationStubs, 'lucide-react': hostModule(), '@/components/ui/dropdown-menu': hostModule(), './account-menu': { AccountMenu: ({ children }) => children }, './holding-rows': hostModule() });
- const card = currency => { r.mount(React.createElement(BalanceAccountCard, { account: account(currency), goals: [{ id: 'g', name: 'Trip', account_id: 'Wallet', allocated: 250, target: 500, archived: false }], onEdit() {}, onDelete() {}, onMove() {}, onOperation() {} })); return r.all(node => node.type === 'RollingText').map(node => node.props.text).join(' ') + ' ' + text(r.tree); };
+ const { BalanceAccountCard } = r.load('components/planning/accounts/account-cards.tsx', { ...ui.modules, ...inEuros, ...foundationStubs, 'lucide-react': hostModule(), '@/components/ui/dropdown-menu': hostModule(), './account-menu': { AccountMenu: ({ children }) => children }, './holding-rows': hostModule(), './accounts-lazy': hostModule(), ...foundation('resource-state') });
+ const story = { context: { data: { records: [], activity: [] }, currency: 'EUR', today: '2026-11-14', rates: { USD: 1, EUR: 0.9 } }, loading: false, error: null, retry() {}, onViewAll() {} };
+ const card = currency => { r.mount(React.createElement(BalanceAccountCard, { account: account(currency), goals: [{ id: 'g', name: 'Trip', account_id: 'Wallet', allocated: 250, target: 500, archived: false }], story, onEdit() {}, onDelete() {}, onMove() {}, onOperation() {} })); return r.all(node => node.type === 'RollingText').map(node => node.props.text).join(' ') + ' ' + text(r.tree); };
  assert.ok(card('USD').startsWith([900, 225, 675].map(eur).join(' ')), card('USD'));
  missingRate(card('GBP'));
 });

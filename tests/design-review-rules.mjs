@@ -222,9 +222,11 @@ test('switches, chips and names show their whole text (SCR-085, LIST-024, LIST-0
  // Account cards are one compact line, icon, name and balance; the balance wraps under the name by itself
  // when the line is full, so the name keeps at least 7rem and never breaks between letters.
  assert.match(css,/\.account-list-row\{display:flex;flex-wrap:wrap;align-items:center;/);
- assert.match(css,/\.account-list-row>strong\{margin-inline-start:auto;max-width:100%;[^}]*white-space:nowrap\}/);
+ assert.match(css,/\.account-list-amount\{display:grid;justify-items:end;margin-inline-start:auto;max-width:100%;[^}]*white-space:nowrap\}/);
  assert.match(css,/\.account-list-name\{flex:1 1 7rem;min-width:0;font-weight:600;overflow-wrap:anywhere\}/);
- assert.match(css,/\.account-card-grid\{display:grid;grid-template-columns:repeat\(auto-fill,minmax\(min\(100%,280px\),1fr\)\);/);
+ assert.match(css,/\.account-rows\{display:grid\}/);
+ // The reorder handle is always there to find: quiet at rest, full under the pointer, focus or touch.
+ assert.match(css,/\.account-sortable-row>\.drag-handle\{position:absolute;top:50%;inset-inline-start:10px;[^}]*opacity:\.45;/);
  assert.match(css,/\.account-group>summary\{display:flex;flex-wrap:wrap;/);
  // Transaction chips keep their equal columns, and a long name wraps inside its column.
  for(const chip of ['.transaction-category>span:last-child','.transaction-business>span:last-child','.report-transaction-list>li>*>span:nth-child(2)>*']){
