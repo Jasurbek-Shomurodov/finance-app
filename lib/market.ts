@@ -103,6 +103,13 @@ export function convertAmount(amount: number, from: Entry['currency'], to: Entry
   if (!fromRate || !toRate || !Number.isFinite(fromRate) || !Number.isFinite(toRate) || fromRate <= 0 || toRate <= 0) return null;
   return amount / fromRate * toRate;
 }
+/** How two currencies trade, read the way people quote it: one unit of the dearer currency in the cheaper one
+ * (1 USD = 12,840 UZS, whichever of the two comes first). Null without a usable rate; never inferred. */
+export function quotedPair(first: string, second: string, rate?: number | Record<string, number>): { from: string; to: string; rate: number } | null {
+  const forward = convertAmount(1, first, second, rate);
+  if (first === second || forward === null) return null;
+  return forward >= 1 ? { from: first, to: second, rate: forward } : { from: second, to: first, rate: 1 / forward };
+}
 type MarketRates = Pick<MarketData, 'rates' | 'fx'>;
 const tables = new WeakMap<MarketRates, Record<string, number> | undefined>();
 /** The market feed's rates as one table, the shape `convertAmount` and `convertMoney` (lib/money.ts) both read: units of

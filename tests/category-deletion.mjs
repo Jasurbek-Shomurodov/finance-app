@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
 import {loadTS} from './helpers/load-ts.mjs';
+import {createRenderer,hostModule,language,text,byLabel,byType} from './helpers/component-tree.mjs';
 const {chosenCategoryHue}=loadTS('lib/category-colors.ts');
 const id=n=>`e0000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 const request=(body,method='DELETE')=>new Request('https://local/api/categories?id='+id(1),{method,...(method==='GET'?{}:{body:JSON.stringify(body)})});
@@ -57,47 +58,119 @@ test('delete dialog requires a loaded preview and explicit same-type replacement
   globalThis.fetch=async()=>Response.json({ok:true});find(tree,node=>node.props?.variant==='destructive').props.onClick();await new Promise(resolve=>setImmediate(resolve));assert.equal(closed,1);assert.equal(deleted,1);cleanup();
  }finally{globalThis.fetch=original;}
 });
-test('category pills are named edit buttons, disabled while loading; text fields stay editable',()=>{
- const h=harness('components/transaction-tools-panel.tsx','TransactionToolsPanel');const category={id:id(1),name:'Leisure',direction:'expense'};
- const props={categories:[category],saveCategory:async()=>{},icons:{icons:{},disabled:false,choose:async()=>{},emojiOf:kind=>kind==='food'?'🍕':'🏷️'},removed:{kinds:[],restore:async()=>{},hideForVisit(){},deleted(){},disabled:false},loading:true,error:'',onRetry(){},onDeleted(){},preferences:{data:{preferences:[]},loading:false,error:'',save:async()=>{}},owner:null,demo:true};
- const panel=h.render(props);const group=find(panel,node=>node.type?.name==='CategoryGroup'&&node.props.direction==='expense');
- // The group uses hooks from the same mocked React module.
- const tree=group.type(group.props);
- assert.equal(find(tree,node=>node.type?.name==='Input').props.disabled,false);
- const edit=find(tree,node=>node.props?.className==='category-edit-button'&&node.props['aria-label']==='Edit Leisure');assert.equal(edit.props.disabled,true);
- assert.ok(find(edit,node=>node.props?.className==='category-edit-icon'),'a pencil shows the pill can be edited');
+/** The Settings category list rendered whole, with the dialogs and the sortable kit as named stand-ins. */
+function settings(props){
+ const r=createRenderer();
+ const {TransactionToolsPanel}=r.load('components/transaction-tools-panel.tsx',{
+  '@/components/language-provider':language('en'),'lucide-react':hostModule(),
+  '@/components/ui/button':hostModule(),'@/components/ui/input':hostModule(),'@/components/ui/native-select':hostModule(),'@/components/ui/dialog':hostModule(),
+  '@/components/presentation-foundation/delete-button':hostModule(),'@/components/presentation-foundation/form-footer':hostModule(),'@/components/presentation-foundation/info-hint':hostModule(),'@/components/presentation-foundation/inline-error':hostModule(),'@/components/presentation-foundation/error-popup':hostModule(),'@/components/presentation-foundation/formatted-number-input':hostModule(),'@/components/presentation-foundation/count':hostModule(),'@/components/presentation-foundation/panel-title':hostModule(),'@/components/presentation-foundation/segmented':hostModule(),'@/components/presentation-foundation/sortable':hostModule(),
+  '@/components/category-icon-picker':hostModule(),'@/components/workspace/workspace-lazy':hostModule(),
+  '@/components/discard-changes':{useUnsavedNavigation:()=>null,useDiscardChanges:(dirty,onClose)=>({close:onClose,request:action=>action(),confirmation:null})},
+  '@/lib/feedback':{showSaved(){}},
+ });
+ const base={categories:[],saveCategory:async()=>id(5),icons:{icons:{},colors:{},disabled:false,choose:async()=>{},update:async()=>{},emojiOf:()=>'🏷️'},removed:{kinds:[],restore:async()=>{},hideForVisit(){},deleted(){},disabled:false},loading:false,error:'',onRetry(){},onDeleted(){},preferences:{data:{preferences:[]},loading:false,error:'',save:async()=>{}},owner:null,demo:true,...props};
+ r.render(r.react.createElement(TransactionToolsPanel,base));
+ const rows=()=>r.all(byType('SortableItem'));
+ const row=name=>r.find(node=>node.type==='SortableItem'&&node.props.label===name);
+ const within=(name,predicate)=>r.find(predicate,row(name).children);
+ return {r,rows,row,within,names:()=>rows().map(node=>node.props.label),show:direction=>r.fire(r.find(byType('Segmented')),'onChange',direction)};
+}
+test('categories are one list a direction at a time: each row opens its editor, with Edit and a bin of its own, disabled while loading',()=>{
+ const category={id:id(1),name:'Leisure',direction:'expense'};
+ const s=settings({categories:[category],loading:true});
+ assert.deepEqual(s.names(),['Rent expense','Living expense','Charity','Other expense','Leisure'],'expenses first, built-in and added alike');
+ assert.equal(s.r.find(byType('PanelTitle')).props.count.props.value,5);
+ const edit=s.within('Leisure',byLabel('Edit Leisure'));
+ assert.equal(edit.props.disabled,true);assert.equal(s.row('Leisure').props.onOpen,undefined,'a loading row opens nothing');
+ assert.equal(s.within('Leisure',byType('DeleteButton')).props.disabled,true);
+ assert.equal(s.r.find(node=>node.type==='Button'&&text(node)==='Add expense category').props.disabled,true);
+ s.show('income');
+ assert.deepEqual(s.names(),['Salary','Rent income','Business income','Other income']);
+ assert.equal(text(s.r.find(node=>node.type==='Button'&&text(node)==='Add income category')),'Add income category');
+ // The search narrows the open direction by name, in any letter case.
+ s.r.fire(s.r.find(byLabel('Search categories')),'onChange',{target:{value:'  RENT '}});
+ assert.deepEqual(s.names(),['Rent income']);
+ s.r.fire(s.r.find(byLabel('Search categories')),'onChange',{target:{value:'zzz'}});
+ assert.deepEqual(s.names(),[]);assert.equal(text(s.r.find(node=>node.props.role==='status')),'No matching categories.');
+ assert.equal(s.r.all(byType('SortableList')).length,0);
 });
-test('tapping a category pill edits its name and icon together; built-in names stay fixed and delete moves into the dialog',async()=>{
- const h=harness('components/transaction-tools-panel.tsx','TransactionToolsPanel');const category={id:id(1),name:'Leisure',direction:'expense'};
+test('a category row shows its colour, this month\u2019s budget and its recurring bill; a filtered list still reorders within what is shown',()=>{
+ const category={id:id(1),name:'Leisure',direction:'expense'};
+ const bill=(name,extra={})=>({id:name,name,kind:'Other expense',frequency:'Monthly',amount:10,currency:'USD',date:'2026-01-05',...extra});
+ const saves=[];
+ const plans={month:'2026-11',currency:'USD',rates:{USD:1,EUR:.5},amounts:[{category_key:id(1),month:'2026-10',amount:300,currency:'EUR',applies_forward:true},{category_key:'Charity',month:'2026-11',amount:0,currency:'USD',applies_forward:false},{category_key:'Living expense',month:'2026-11',amount:50,currency:'XXX',applies_forward:false},{category_key:'Salary',month:'2026-12',amount:900,currency:'USD',applies_forward:true}],
+  records:[bill('Gym',{custom_category_id:id(1)}),bill('Car insurance'),bill('Phone'),bill('Old bill',{archived:true}),bill('Paused bill',{source_paused:true}),bill('One-off',{frequency:'Once'}),{...bill('Employer'),kind:'Salary'}]};
+ const icons={icons:{[id(1)]:'🎬'},colors:{[id(1)]:'violet'},disabled:false,choose:async()=>{},update:async()=>{},emojiOf:kind=>kind==='Leisure'?'🎬':'🏷️'};
+ const s=settings({categories:[category],icons,plans,demo:false,owner:id(9),preferences:{data:{preferences:[]},loading:false,error:'',save:async preference=>{saves.push(preference);}}});
+ const cells=name=>s.r.all(node=>typeof node.props.className==='string'&&node.props.className.startsWith('category-row-plan'),s.row(name).children).map(text);
+ assert.deepEqual(cells('Leisure'),['$600','Gym'],'the forward budget of an earlier month, converted into the display currency');
+ assert.deepEqual(cells('Charity'),['$0','—'],'a budget of zero is still a budget');
+ assert.deepEqual(cells('Other expense'),['—','Car insurance1 more'],'running bills only: not the archived, the paused or the one-off payment');
+ assert.deepEqual(cells('Rent expense'),['—','—']);
+ const unknown=s.r.find(node=>node.props['aria-label']==='Exchange rate unavailable.',s.row('Living expense').children);
+ assert.equal(text(unknown),'—','a budget no rate converts is missing, never shown under the wrong currency');
+ const icon=s.within('Leisure',node=>node.props.className==='category-icon');
+ assert.equal(text(icon),'🎬');assert.equal(icon.props.style['--category-hue'],chosenCategoryHue(id(1),icons.colors),'the chosen colour tints the row icon');
+ assert.equal(s.within('Leisure',node=>node.props.className==='category-row-dot').props.style['--category-hue'],chosenCategoryHue(id(1),icons.colors));
+ // Income rows count recurring incomes, and a budget saved for a later month is not this month's.
+ s.show('income');
+ assert.deepEqual(cells('Salary'),['—','Employer']);
+ assert.equal(text(s.r.find(node=>node.props.className==='category-row category-list-head')),'CategoryMonthly budgetRecurring income');
+ // Dragging within a search keeps the hidden categories in their places.
+ s.show('expense');
+ s.r.fire(s.r.find(byLabel('Search categories')),'onChange',{target:{value:'expense'}});
+ assert.deepEqual(s.names(),['Rent expense','Living expense','Other expense']);
+ const list=s.r.find(byType('SortableList'));
+ assert.equal(list.props.id,'categories-expense');assert.equal(list.props.nameOf('Living expense'),'Living expense');assert.equal(list.props.nameOf('gone'),'');
+ s.r.fire(list,'onMove','Other expense','Rent expense');
+ assert.deepEqual(saves,[{key:'category_order',data:{ids:['Salary','Rent income','Business income','Other income','Other expense','Rent expense','Charity','Living expense',id(1)]}}]);
+ s.r.fire(s.r.find(byLabel('Search categories')),'onChange',{target:{value:''}});
+ assert.deepEqual(s.names(),['Other expense','Rent expense','Charity','Living expense','Leisure'],'Charity and Leisure, hidden by the search, kept their slots');
+});
+test('a row edits its name and icon together; built-in names stay fixed, the row\u2019s bin deletes, and a new category opens in a dialog',async()=>{
+ const category={id:id(1),name:'Leisure',direction:'expense'};
  const calls=[];
  const icons={icons:{[id(1)]:'🎬'},colors:{[id(1)]:'violet'},disabled:false,choose:async(key,icon)=>{calls.push(['icon',key,icon]);},update:async(key,look)=>{calls.push(['look',key,look]);},emojiOf:kind=>kind==='Leisure'?'🎬':'🏷️'};
- const hidden=[];const props={categories:[category],saveCategory:async(name,direction,existing)=>{calls.push(['save',name,direction,existing]);return existing??id(5);},icons,removed:{kinds:[],restore:async()=>{},hideForVisit:kind=>hidden.push(kind),deleted(){},disabled:false},loading:false,error:'',onRetry(){},onDeleted(){},preferences:{data:{preferences:[]},loading:false,error:'',save:async()=>{}},owner:null,demo:true};
- let panel;const group=()=>{panel=h.render(props);const node=find(panel,item=>item.type?.name==='CategoryGroup'&&item.props.direction==='expense');return node.type(node.props);};
- let tree=group();
- const pills=[];(function walk(node){if(!node||typeof node!=='object')return;if(node.props?.className==='category-edit-button')pills.push(node);for(const child of React.Children.toArray(node.props?.children))walk(child);})(tree);
- assert.equal(pills.length,5,'built-in and added categories alike');
- const leisure=pills.find(pill=>pill.props['aria-label']==='Edit Leisure');
- assert.equal(find(leisure,node=>node.props?.className==='category-icon').props.children,'🎬');
- assert.equal(find(leisure,node=>node.props?.className==='category-icon').props.style['--category-hue'],chosenCategoryHue(id(1),icons.colors),'the chosen colour tints the row icon');
- leisure.props.onClick();tree=group();
- let dialog=find(tree,node=>node.type?.name==='EditCategoryDialog');
- assert.deepEqual([dialog.props.item.label,dialog.props.icon,dialog.props.chosen,dialog.props.color],['Leisure','🎬',true,'violet']);
- assert.equal(typeof dialog.props.onDelete,'function');
- await dialog.props.onSave({name:'Hobbies',icon:'🎨',color:'teal'});
+ const hidden=[];
+ const s=settings({categories:[category],saveCategory:async(name,direction,existing)=>{calls.push(['save',name,direction,existing]);return existing??id(5);},icons,removed:{kinds:[],restore:async()=>{},hideForVisit:kind=>hidden.push(kind),deleted(){},disabled:false}});
+ const dialog=()=>s.r.find(byType('EditCategoryDialog'));
+ assert.equal(s.rows().length,5,'built-in and added categories alike');
+ s.r.fire(s.row('Leisure'),'onOpen');
+ assert.deepEqual([dialog().props.item.label,dialog().props.icon,dialog().props.chosen,dialog().props.color],['Leisure','🎬',true,'violet']);
+ assert.deepEqual(dialog().props.builtInNames,['Rent expense','Living expense','Charity','Other expense']);
+ assert.equal(typeof dialog().props.onDelete,'function');
+ await dialog().props.onSave({name:'Hobbies',icon:'🎨',color:'teal'});
  assert.deepEqual(calls.slice(-2),[['save','Hobbies','expense',id(1)],['look',id(1),{icon:'🎨',color:'teal'}]],'icon and colour are one save');
- await dialog.props.onSave({color:null});assert.deepEqual(calls.at(-1),['look',id(1),{color:null}],'a colour-only change does not rename');
+ await dialog().props.onSave({color:null});assert.deepEqual(calls.at(-1),['look',id(1),{color:null}],'a colour-only change does not rename');
+ s.r.fire(dialog(),'onClose');assert.equal(s.r.all(byType('EditCategoryDialog')).length,0);
  // A built-in category keeps its name and can be deleted too; the sample workspace hides it for the visit.
- pills.find(pill=>pill.props['aria-label']==='Edit Charity').props.onClick();tree=group();
- dialog=find(tree,node=>node.type?.name==='EditCategoryDialog');
- assert.equal(dialog.props.item.category,undefined);assert.equal(dialog.props.color,null);
- dialog.props.onDelete();assert.deepEqual(hidden,['Charity']);tree=group();
- // A new category: the name, then its icon.
- find(tree,node=>node.type?.name==='Input').props.onChange({target:{value:'Travel'}});tree=group();
- const start=find(tree,node=>node.props?.label==='Choose an icon');assert.deepEqual([start.props.icon,start.props.chosen],['🏷️',false]);
- start.props.onChoose('✈️');tree=group();
- assert.equal(find(tree,node=>node.props?.label==='Choose an icon').props.icon,'✈️');
- await find(tree,node=>node.type==='form').props.onSubmit({preventDefault(){}});
+ s.r.fire(s.within('Charity',byLabel('Edit Charity')),'onClick');
+ assert.equal(dialog().props.item.category,undefined);assert.equal(dialog().props.color,null);
+ s.r.fire(dialog(),'onDelete');assert.deepEqual(hidden,['Charity']);assert.equal(s.r.all(byType('EditCategoryDialog')).length,0);
+ // The bin on the row does the same without opening the editor; an added category asks first.
+ s.r.fire(s.within('Rent expense',byType('DeleteButton')),'onClick');assert.deepEqual(hidden,['Charity','Rent expense']);
+ assert.equal(s.within('Leisure',byType('DeleteButton')).props.label,'Delete Leisure');
+ s.r.fire(s.within('Leisure',byType('DeleteButton')),'onClick');
+ assert.deepEqual(s.r.find(byType('DeleteCategoryDialog')).props.category,category);
+ s.r.fire(s.r.find(byType('DeleteCategoryDialog')),'onClose');
+ // A new category: the name, then its icon, in a dialog named for the open direction.
+ s.r.fire(s.r.find(node=>node.type==='Button'&&text(node)==='Add expense category'&&node.props.size==='sm'),'onClick');
+ const form=()=>s.r.find(byType('form'));
+ assert.equal(text(s.r.find(byType('DialogTitle'))),'New expense category');
+ const submit=()=>s.r.find(node=>node.type==='Button'&&!node.props.type,form().children);
+ assert.equal(submit().props.disabled,true);assert.equal(submit().props.title,'Enter a name.');
+ const name=()=>s.r.find(byType('Input'),form().children);
+ s.r.fire(name(),'onChange',{target:{value:'leisure'}});
+ assert.equal(submit().props.disabled,true,'a name in use is refused, letter case aside');assert.ok(s.r.find(node=>node.props.role==='alert'));
+ s.r.fire(name(),'onChange',{target:{value:' Travel '}});
+ const picker=()=>s.r.find(byType('CategoryIconPicker'));
+ assert.deepEqual([picker().props.icon,picker().props.chosen],['🏷️',false]);
+ s.r.fire(picker(),'onChoose','✈️');
+ assert.equal(picker().props.icon,'✈️');assert.equal(submit().props.disabled,false);
+ await s.r.fireAsync(form(),'onSubmit',{preventDefault(){}});
  assert.deepEqual(calls.slice(-2),[['save','Travel','expense',undefined],['icon',id(5),'✈️']]);
+ assert.equal(s.r.all(byType('form')).length,0,'the dialog closes once the category is saved');
 });
 test('the category edit dialog saves only what changed (name, icon and colour), refuses a taken name and offers delete for added categories',async()=>{
  const h=harness('components/edit-category-dialog.tsx','EditCategoryDialog');const saved=[];let closed=0,deleted=0;
@@ -122,27 +195,23 @@ test('the category edit dialog saves only what changed (name, icon and colour), 
 });
 
 test('deleted built-in categories leave the list, are never shown again, and the last category of a direction stays',async()=>{
- const h=harness('components/transaction-tools-panel.tsx','TransactionToolsPanel');
  const removed={kinds:['Rent expense','Salary','Rent income','Business income'],hideForVisit(){},deleted(){}};
- const props={categories:[],saveCategory:async()=>id(5),icons:{icons:{},colors:{},disabled:false,choose:async()=>{},update:async()=>{},emojiOf:()=>'🏷️'},removed,loading:false,error:'',onRetry(){},onDeleted(){},preferences:{data:{preferences:[]},loading:false,error:'',save:async()=>{}},owner:id(9),demo:false};
- const panel=h.render(props);
- const groupOf=direction=>{const node=find(panel,item=>item.type?.name==='CategoryGroup'&&item.props.direction===direction);return node;};
- assert.deepEqual(groupOf('expense').props.items.map(item=>item.id),['Living expense','Charity','Other expense']);
- assert.deepEqual(groupOf('income').props.items.map(item=>item.id),['Other income']);
+ const s=settings({removed,owner:id(9),demo:false});
+ assert.deepEqual(s.names(),['Living expense','Charity','Other expense']);
  // Nothing lists what was deleted.
- assert.equal(find(panel,node=>typeof node.props?.['aria-label']==='string'&&node.props['aria-label'].startsWith('Restore')),undefined);
- // Other income is the only income category left: its bin stays disabled.
- const render=direction=>{const node=find(h.render(props),item=>item.type?.name==='CategoryGroup'&&item.props.direction===direction);return node.type(node.props);};
- const pill=(node,label)=>find(node,item=>item.props?.className==='category-edit-button'&&item.props['aria-label']===label);
- pill(render('income'),'Edit Other income').props.onClick();
- assert.equal(find(render('income'),node=>node.type?.name==='EditCategoryDialog').props.onDelete,undefined);
- // A built-in category with a database opens the delete dialog, named by its kind.
- const h2=harness('components/transaction-tools-panel.tsx','TransactionToolsPanel');
- const expense=()=>{const root=h2.render(props);const node=find(root,item=>item.type?.name==='CategoryGroup'&&item.props.direction==='expense');return {root,tree:node.type(node.props)};};
- pill(expense().tree,'Edit Charity').props.onClick();
- find(expense().tree,node=>node.type?.name==='EditCategoryDialog').props.onDelete();
- const dialog=find(expense().root,node=>node.type?.name==='DeleteCategoryDialog');
- assert.deepEqual(dialog.props.category,{id:'Charity',name:'Charity',direction:'expense'});
+ assert.equal(s.r.all(node=>typeof node.props['aria-label']==='string'&&node.props['aria-label'].startsWith('Restore')).length,0);
+ // A built-in category with a database opens the delete dialog, named by its kind, from the editor and from its bin.
+ s.r.fire(s.row('Charity'),'onOpen');
+ s.r.fire(s.r.find(byType('EditCategoryDialog')),'onDelete');
+ assert.deepEqual(s.r.find(byType('DeleteCategoryDialog')).props.category,{id:'Charity',name:'Charity',direction:'expense'});
+ assert.equal(s.r.all(byType('EditCategoryDialog')).length,0);
+ // Other income is the only income category left: its bin stays, disabled, with the reason.
+ s.show('income');
+ assert.deepEqual(s.names(),['Other income']);
+ const bin=s.within('Other income',byType('DeleteButton'));
+ assert.equal(bin.props.reason,'Keep at least one category of this type.');assert.equal(bin.props.onClick,undefined);
+ s.r.fire(s.row('Other income'),'onOpen');
+ assert.equal(s.r.find(byType('EditCategoryDialog')).props.onDelete,undefined);
 });
 test('the category API reads and deletes a built-in category by its kind',async()=>{
  const app=api();

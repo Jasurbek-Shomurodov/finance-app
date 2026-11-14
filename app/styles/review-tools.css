@@ -252,7 +252,6 @@
 .income-receipt-indicator{position:absolute;top:14px;inset-inline-end:14px;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--muted);color:var(--muted-foreground)}
 .income-receipt-indicator.is-received{background:color-mix(in srgb,var(--positive) 16%,transparent);color:var(--positive)}
 
-.currency-search-trigger{justify-self:start}
 .currency-search-dialog{max-height:85dvh;overflow-y:auto}
 .currency-search-dialog .currency-catalogue{max-height: min(45dvh,360px);background:var(--background)}
 .currency-search-dialog .currency-catalogue label:has(input:checked){background:var(--accent);color:var(--accent-foreground)}

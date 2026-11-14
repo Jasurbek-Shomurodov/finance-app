@@ -92,21 +92,41 @@
 @container content (max-width:1100px){.transactions-layout{grid-template-columns:minmax(0,1fr)}.transactions-summary{position:static;order:-1}.transactions-summary .budget-left-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(8rem,1fr));gap:12px 16px}.transactions-summary .budget-left-summary>div{flex-direction:column;justify-content:flex-start;gap:2px}.transactions-summary .budget-left-summary dd{font-size:var(--type-compact);font-weight:500}.transactions-summary .budget-left-total{padding-top:0;border-top:0}.transactions-aside{display:contents}.transactions-aside>.transactions-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));align-items:end;gap:16px 24px}.transactions-aside>.transactions-summary>:is(.panel-title,dl,[role=status]){grid-column:1/-1}}
 @container content (max-width:600px){.transaction-columns-heading{display:none}.transactions-list .transaction-day-heading{padding-inline:16px}.transaction-row{grid-template-columns:minmax(0,1fr) auto;row-gap:2px;padding-inline:16px}.transaction-row:has(>input){grid-template-columns:auto minmax(0,1fr) auto}.transaction-row>.transaction-columns{display:flex;flex-wrap:wrap;align-items:center;gap:0 8px;grid-column:-3/-2;grid-row:2;padding-inline-start:50px;font-size:var(--type-caption)}.transaction-row:has(>input)>.transaction-columns{grid-column:2}.transaction-amount{grid-row:1/3;grid-column:-2}}
 
-/* Recurring: month summary bars, a dated list with "in N days", and a calendar. */
-.recurring-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 24px;width:100%}
+/* Recurring: the month's three tiles, a dated list with Income and Bills inside a day, a calendar whose day opens beside it, and Coming up. */
+.recurring-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;width:100%}
 .recurring-summary-head{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:8px 16px;flex-wrap:wrap}
 .recurring-summary-head>h2{margin:0;font-size:var(--type-title);font-weight:600}
-.recurring-bar{display:flex;flex-direction:column;gap:6px;margin:-8px;padding:8px;border:1px solid transparent;border-radius:var(--radius-control);background:none;color:inherit;font:inherit;font-size:var(--type-small);text-align:start;cursor:pointer}
-.recurring-bar:hover{background:color-mix(in srgb,var(--accent) 35%,transparent)}
-.recurring-bar[aria-pressed=true]{border-color:var(--hairline);background:var(--muted)}
+.recurring-summary>[role=status]{grid-column:1/-1;margin:0}
+/* Income and Bills are tiles that also narrow the list to their side; the third says what the bills leave. */
+.recurring-bar,.recurring-left{display:flex;flex-direction:column;gap:8px;min-width:0;padding:20px;border:1px solid var(--border);border-radius:var(--radius-card);background:var(--card);box-shadow:var(--shadow-card);color:inherit;font:inherit;text-align:start}
+.recurring-bar{cursor:pointer}
+.recurring-bar:hover{border-color:color-mix(in srgb,var(--foreground) 16%,var(--border))}
+.recurring-bar:active{transform:scale(.985)}
+.recurring-bar[aria-pressed=true]{border-color:var(--mark-bg);box-shadow:inset 0 0 0 1px var(--mark-bg)}
 .recurring-bar:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
-.recurring-bar-line{display:flex;justify-content:space-between;gap:8px}
-.recurring-bar-line>span,.recurring-bar small{color:var(--muted-foreground);font-size:var(--type-caption)}
+.recurring-bar-label,.recurring-left>h3{font-size:var(--type-caption);font-weight:500;line-height:1.4;color:var(--muted-foreground)}
+:is(.recurring-bar,.recurring-left)>strong{font-size:var(--type-stat);font-weight:600;letter-spacing:-.03em;line-height:1.2;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.recurring-bar>small{color:var(--muted-foreground);font-size:var(--type-caption)}
+.recurring-left>.status-badge{align-self:flex-start}
 .recurring-bar .progress-track>*{background:var(--foreground)}
 .recurring-bar[data-tone=income] .progress-track>*{background:var(--positive)}
+@media(prefers-reduced-motion:reduce){.recurring-bar:active,.recurring-coming-row:active{transform:none}}
+/* The list or calendar with a side column: the picked day, or what is coming up. One column once the page is narrow. */
+.recurring-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;align-items:start;gap:var(--space-page);width:100%}
+.recurring-main,.recurring-side{display:flex;flex-direction:column;gap:var(--space-page);min-width:0}
+/* In one column the picked day follows the calendar, ahead of the debt repayments under it. */
+@container content (max-width:980px){.recurring-layout{grid-template-columns:minmax(0,1fr)}.recurring-layout:has(.recurring-calendar)>.recurring-main{display:contents}.recurring-layout:has(.recurring-calendar)>.recurring-side{order:1}.recurring-layout:has(.recurring-calendar) .recurring-main>.recurring-list{order:2}}
 .recurring-list{width:100%;padding:0;overflow:hidden}
 .recurring-list>ul{margin:0;padding:0;list-style:none}
 .recurring-list-tools{display:flex;justify-content:flex-end;padding:10px 16px;border-bottom:1px solid var(--hairline)}
+/* A group heading: its name, its count as a pill of its own, the total at the far edge, then any action for the whole group. Income and Bills inside a day are the quieter sub-headings. */
+.recurring-list .transaction-day-heading{flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:6px 8px;padding:16px 16px 6px;background:none;color:var(--foreground);font-size:var(--type-small);font-weight:600}
+.recurring-list .transaction-day-heading :is(h3,h4){margin:0;font-size:inherit;font-weight:600}
+.recurring-list .transaction-day-heading .count{margin:0}
+.recurring-group-total{margin-inline-start:auto}
+.recurring-list .recurring-row+.transaction-day-heading{border-top:1px solid var(--hairline)}
+.recurring-list .recurring-subgroup{padding-block:10px 4px;color:var(--muted-foreground);font-size:var(--type-caption)}
+.recurring-list .recurring-subgroup>.recurring-group-total:not(.positive){color:var(--foreground)}
 /* One set of columns for the whole list: each row is a subgrid, so status, amount and actions line up on every row. */
 .recurring-list>ul,.subscription-list{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto}
 .recurring-list>ul>li,.subscription-list>li{grid-column:1/-1}
@@ -116,6 +136,10 @@
 .recurring-row[data-status=paid],.recurring-row[data-status=skipped],.recurring-row[data-status=missed]{color:var(--muted-foreground)}
 .recurring-row .row-actions{justify-content:flex-end}
 .recurring-row>.status-badge{justify-self:start}
+/* With room for columns the amount ends the row and the actions sit before it, shown for the row under the pointer or holding focus (or whose menu is open); touch screens and stacked rows always show them. */
+.recurring-list [data-layout=columns]>.recurring-row>.transaction-amount{grid-area:1/4}
+.recurring-list [data-layout=columns]>.recurring-row>.row-actions{grid-area:1/3}
+@media(hover:hover) and (pointer:fine){.recurring-list [data-layout=columns]>.recurring-row:not(:hover,:focus-within)>.row-actions:not(:has([aria-expanded=true])){opacity:0}}
 .recurring-row[data-editable]{cursor:pointer}
 .recurring-row[data-editable]:hover{background:color-mix(in srgb,var(--accent) 35%,transparent)}
 .recurring-edit{all:unset;display:block;max-width:100%;font-weight:500;overflow-wrap:break-word;cursor:pointer;border-radius:4px}
@@ -133,25 +157,75 @@
 .recurring-calendar{width:100%;padding:0;overflow:hidden}
 .recurring-calendar-grid{display:flex;flex-direction:column}
 .recurring-calendar-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
-.recurring-calendar-week>[role=columnheader]{padding:8px;background:var(--muted);color:var(--muted-foreground);font-size:var(--type-caption);font-weight:500;text-align:center}
-.recurring-calendar-day{display:flex;flex-direction:column;gap:4px;min-height:96px;padding:6px;border-top:1px solid var(--hairline);border-inline-start:1px solid var(--hairline);min-width:0}
+.recurring-calendar-week>[role=columnheader]{padding:10px 8px;color:var(--muted-foreground);font-size:var(--type-caption);font-weight:600}
+.recurring-calendar-day{display:flex;flex-direction:column;min-height:112px;padding:8px;border-top:1px solid var(--hairline);border-inline-start:1px solid var(--hairline);min-width:0}
 .recurring-calendar-day:first-child{border-inline-start:0}
 .recurring-calendar-day[data-empty]{background:color-mix(in srgb,var(--muted) 50%,transparent)}
-.recurring-calendar-date{font-size:var(--type-caption);color:var(--muted-foreground)}
-.recurring-calendar-day[data-today] .recurring-calendar-date{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--mark-bg);color:var(--mark-fg);font-weight:600}
-.recurring-chip{display:flex;justify-content:space-between;gap:4px;padding:2px 6px;border-radius:6px;background:var(--muted);font-size:var(--type-micro);line-height:1.5;min-width:0}
-.recurring-chip>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.recurring-chip>strong{flex-shrink:0;font-weight:500;font-variant-numeric:tabular-nums}
-.recurring-chip[data-direction=income]{background:color-mix(in srgb,var(--positive) 12%,transparent);color:var(--positive)}
-.recurring-chip[data-status=overdue]{background:color-mix(in srgb,var(--negative) 12%,transparent);color:var(--negative)}
-.recurring-chip[data-status=paid],.recurring-chip[data-status=skipped]{opacity:.55}
+.recurring-calendar-day[data-selected]{background:color-mix(in srgb,var(--mark-bg) 8%,transparent);box-shadow:inset 0 0 0 2px var(--mark-bg)}
+.recurring-calendar-date{display:grid;place-items:center;min-width:24px;height:24px;color:var(--muted-foreground);font-size:var(--type-caption);font-weight:600}
+.recurring-calendar-day[data-today] .recurring-calendar-date{border-radius:50%;background:var(--mark-bg);color:var(--mark-fg)}
+/* A day with payments is one button filling its cell: one chip per kind of money, then how many payments (or the one's name). */
+.recurring-calendar-day:has(>.recurring-calendar-open){padding:0}
+.recurring-calendar-open{all:unset;box-sizing:border-box;display:flex;flex:1;flex-direction:column;align-items:flex-start;gap:4px;width:100%;min-width:0;padding:8px;cursor:pointer}
+.recurring-calendar-open:hover{background:color-mix(in srgb,var(--accent) 35%,transparent)}
+.recurring-calendar-open:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
+.recurring-chip{max-width:100%;padding:2px 8px;border-radius:var(--radius-control);background:var(--muted);font-size:var(--type-micro);font-weight:500;line-height:1.5;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.recurring-chip[data-tone=income]{background:color-mix(in srgb,var(--positive) 12%,transparent);color:var(--pill-positive)}
+.recurring-chip[data-tone=debt]{background:color-mix(in srgb,var(--caution) 14%,transparent);color:var(--pill-caution)}
+.recurring-chip[data-status=overdue]{background:color-mix(in srgb,var(--negative) 12%,transparent);color:var(--pill-negative)}
+.recurring-chip[data-status=paid]{opacity:.55}
+.recurring-calendar-more{max-width:100%;color:var(--muted-foreground);font-size:var(--type-micro);overflow-wrap:anywhere}
+.recurring-calendar-legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0;padding:10px 16px;border-top:1px solid var(--hairline);list-style:none;color:var(--muted-foreground);font-size:var(--type-caption)}
+.recurring-calendar-legend>li{display:flex;align-items:center;gap:6px}
+.recurring-calendar-legend>li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--foreground)}
+.recurring-calendar-legend>li[data-tone=income]::before{background:var(--positive)}
+.recurring-calendar-legend>li[data-tone=debt]::before{background:var(--caution)}
+/* Beside the month: the picked day (its totals, then each payment) or Coming up (a date tile, the payment, its amount). */
+.recurring-day .panel-title,.recurring-coming .panel-title{flex-wrap:nowrap;margin-bottom:12px}
+.recurring-day .panel-title h2{font-size:var(--type-title)}
+.recurring-day .panel-title .status-badge{font-family:var(--font-ui);letter-spacing:0}
+.recurring-day-totals{display:grid;gap:8px;margin:0 0 12px;font-size:var(--type-small)}
+.recurring-day-totals>div{display:flex;justify-content:space-between;gap:12px}
+.recurring-day-totals dt{color:var(--muted-foreground)}
+.recurring-day-totals dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
+.recurring-day-list,.recurring-coming>ul{margin:0;margin-inline:-20px;padding:0;list-style:none}
+.recurring-day-list>li{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:10px;padding-block:6px;padding-inline:20px 10px;border-top:1px solid var(--hairline);font-size:var(--type-small)}
+.recurring-day-list>li:is([data-status=paid],[data-status=skipped]){color:var(--muted-foreground)}
+.recurring-day-list>li>strong{font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.recurring-day{padding-bottom:12px}
+.recurring-day>.recurring-record-all{width:100%;margin-top:12px}
+.recurring-coming{padding-bottom:8px}
+.recurring-coming li+li{border-top:1px solid var(--hairline)}
+.recurring-coming-row{all:unset;box-sizing:border-box;display:grid;grid-template-columns:52px minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;padding:10px 20px;font-size:var(--type-small);cursor:pointer}
+.recurring-coming-row:hover{background:color-mix(in srgb,var(--accent) 35%,transparent)}
+.recurring-coming-row:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
+.recurring-coming-row:active{transform:scale(.985)}
+.recurring-date-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;height:46px;border-radius:var(--radius-control);background:var(--muted)}
+.recurring-date-tile>b{font-size:var(--type-body);font-weight:600;line-height:1.1}
+.recurring-date-tile>small{color:var(--muted-foreground);font-size:var(--type-micro);font-weight:600}
+.recurring-coming-text{display:flex;flex-direction:column;min-width:0}
+.recurring-coming-text>strong{font-weight:500;overflow-wrap:break-word}
+.recurring-coming-text>small{color:var(--muted-foreground);font-size:var(--type-caption)}
+/* Record all due today: what will be saved, each with its account, before anything is. */
+.record-due-list{margin:0;padding:0;max-height:min(46vh,360px);overflow-y:auto;border:1px solid var(--hairline);border-radius:var(--radius-control);list-style:none;font-size:var(--type-small)}
+.record-due-list>li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px}
+.record-due-list>li+li{border-top:1px solid var(--hairline)}
+.record-due-list>li[data-done]{color:var(--muted-foreground)}
+.record-due-list>li>span{display:flex;flex-direction:column;min-width:0}
+.record-due-list small{color:var(--muted-foreground);font-size:var(--type-caption)}
+.record-due-list>li>strong{font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.record-due-account{display:grid;gap:6px;font-size:var(--type-small);font-weight:500}
+.record-due-account>*{margin:0}
+.record-due-separate>h3{font-size:var(--type-caption);font-weight:600}
+.record-due-separate>p{margin:2px 0 0;color:var(--muted-foreground);font-size:var(--type-small)}
 /* Rows stack only when what is on screen leaves the name too little room, as measured by useColumnsFit; the cells keep their own widths so the next measurement reads them. */
 /* Each stacked row sizes its own columns (amounts still meet the right edge), and the name spans everything but the amount, so neither the widest amount in the list nor the actions on the second line narrow it. */
 :is(.recurring-list>ul,.subscription-list)[data-layout=stacked]{grid-template-columns:minmax(0,1fr)}[data-layout=stacked]>.recurring-row{grid-template-columns:minmax(0,1fr) auto auto;row-gap:6px}[data-layout=stacked]>.recurring-row>:nth-child(1){grid-area:1/1/2/3}[data-layout=stacked]>.recurring-row>:nth-child(2){grid-area:2/1;justify-self:start}[data-layout=stacked]>.recurring-row>:nth-child(3){grid-area:1/3;justify-self:end;text-align:end}[data-layout=stacked]>.recurring-row>.row-actions{grid-area:2/2/3/4;justify-self:end;justify-content:flex-end}[data-layout=stacked]>.recurring-row>.progress-line{min-width:0;justify-self:stretch;justify-items:start}[data-layout=stacked]>.recurring-row>.progress-line>small{white-space:normal}
 /* On the narrowest phones the status and Record payment no longer fit side by side: the actions take a third line (the status was covered at 280 px). */
 .recurring-list,.subscriptions-panel{container:recurring/inline-size}
 @container recurring (max-width:340px){.recurring-list .recurring-row{padding-inline:12px}.recurring-list .transaction-merchant{gap:8px}[data-layout=stacked]>.recurring-row>:nth-child(2){grid-area:2/1/3/4}[data-layout=stacked]>.recurring-row>.row-actions{grid-area:3/1/4/4}}
-@container content (max-width:720px){.recurring-summary{grid-template-columns:minmax(0,1fr)}.recurring-calendar-day{min-height:64px;padding:4px}.recurring-chip>strong{display:none}}
+/* Narrow: Income and Bills side by side with what is left across both; calendar chips shrink to dots (the day's button says the figures, and its list shows them). */
+@container content (max-width:720px){.recurring-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.recurring-bar,.recurring-left{padding:14px}.recurring-left{grid-column:1/-1;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between}.recurring-left>h3{flex-basis:100%}.recurring-calendar-day{min-height:64px;padding:4px}.recurring-calendar-open{flex-direction:row;flex-wrap:wrap;align-content:flex-start;padding:4px}.recurring-calendar-date{flex-basis:100%;justify-self:start;place-items:center start}.recurring-calendar-day[data-today] .recurring-calendar-date{flex-basis:auto;margin-inline-end:calc(100% - 24px);place-items:center}.recurring-chip{width:8px;height:8px;padding:0;overflow:hidden;font-size:0;line-height:0}.recurring-chip:not([data-tone=income],[data-tone=debt],[data-status=overdue]){background:var(--foreground)}.recurring-chip[data-tone=income]{background:var(--positive)}.recurring-chip[data-tone=debt]{background:var(--caution)}.recurring-chip[data-status=overdue]{background:var(--negative)}.recurring-calendar-more{display:none}}
 
 /* Dashboard extras: budget at a glance and the Customize dialog. */
 .dashboard-budget-total{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:8px}
@@ -221,8 +295,6 @@
 .cash-flow-report{display:flex;flex-direction:column;gap:16px;width:100%}
 .cash-flow-report-tools{display:flex;justify-content:flex-end}
 .cash-flow-switches{display:flex;flex-wrap:wrap;gap:8px}
-.cash-flow-breakdown{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
-.cash-flow-breakdown h3{margin:0 0 10px;font-size:var(--type-small);font-weight:600}
 .share-bars{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none;font-size:var(--type-small);container:share-bars/inline-size}
 .share-bars>li{display:grid;grid-template-columns:minmax(0,1fr) minmax(max-content,.3fr) 52px;align-items:center;gap:10px}
 /* On the narrowest phones the share moves under the amount, leaving the bar's label the room. */
@@ -238,7 +310,6 @@
 .cash-flow-sankey:not([data-measured])>.recharts-responsive-container{position:absolute;inset:0;visibility:hidden}
 .cash-flow-sankey{overflow-x:auto;background:linear-gradient(to right,var(--card) 30%,transparent) left center/32px 100% no-repeat local,linear-gradient(to left,var(--card) 30%,transparent) right center/32px 100% no-repeat local,radial-gradient(farthest-side at 0 50%,color-mix(in srgb,var(--foreground) 14%,transparent),transparent) left center/12px 100% no-repeat scroll,radial-gradient(farthest-side at 100% 50%,color-mix(in srgb,var(--foreground) 14%,transparent),transparent) right center/12px 100% no-repeat scroll}
 .sankey-label{fill:var(--foreground);font-size:var(--type-micro)}
-@container content (max-width:720px){.cash-flow-breakdown{grid-template-columns:minmax(0,1fr)}}
 
 /* Assistant: a chat about the user's own money. */
 .assistant-panel{display:flex;flex-direction:column;gap:12px;width:100%;max-width:820px;margin-inline:auto}

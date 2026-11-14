@@ -221,7 +221,8 @@ test('Recurring reads — on a side with an unconverted amount, and a carried lo
  r.mount(h(UpcomingPage, { data: { records: [loan, bill], categories: [], goals: [], occurrences: [], activity: [], debtPayments: [{ record_id: 'loan', date: shiftMonth(thisMonth, -2) + '-11' }] }, save: async () => {}, currency: 'USD', rates: { USD: 1 }, view: 'list', onView() {} }));
  const shown = text(r.tree);
  assert.ok(shown.includes('Exchange rate unavailable.'), shown);
- assert.ok(shown.includes('— total'), shown);
+ assert.ok(shown.includes('— paid · — remaining'), shown);
+ assert.ok(shown.includes('Left after bills—'), 'what is left is unknown too, never a smaller figure');
  const carried = pays.at(-1);
  carried();
  r.update();

@@ -21,7 +21,7 @@ import { untracedFlows, untracedTransfers } from '@/lib/cash-flow-untraced';
 import { interestFlows, mortgageTransactions, paymentFlows, principalFlows, principalPayments } from '@/lib/cash-flow-principal';
 import { drillFlows, drillTransactions, type DrillContext, type DrillTarget } from '@/lib/cash-flow-drill';
 import { income, type Entry } from '@/lib/finance';
-import { formatCompactMoney, formatDate, formatMoney } from '@/lib/format';
+import { formatDate, formatMoney } from '@/lib/format';
 import { measureLabel, sankeyLabelMargins, sankeyMinWidth } from '@/lib/sankey-labels';
 
 type Kind = 'income' | 'total' | 'expense' | 'savings' | 'account' | 'holding' | 'debt' | 'untraced';
@@ -32,7 +32,8 @@ const fills: Record<Kind, string> = { income: chartColors.income, savings: chart
  * Sankey, and a tap on a flow opens the node it leads to (or, from a node that cannot open, the one it comes from). */
 export function FlowSankey({ flows, currency, onOpen, canOpen }: { flows: Flows; currency: string; onOpen?: (index: number) => void; canOpen?: (index: number) => boolean }) {
  const { t, locale } = useLanguage();
- const label = (name: string, value: number) => `${name} · ${formatCompactMoney(value, currency, locale)}`;
+ // Whole amounts, as the tiles show them: each side gets the room its longest label needs.
+ const label = (name: string, value: number) => `${name} · ${formatMoney(value, currency, locale)}`;
  // Each side gets exactly the room its longest label needs; on a narrow screen the chart scrolls rather than squeezing its columns.
  const room = sankeyLabelMargins(flows, label, measureLabel);
  const opens = (index: number) => !!onOpen && (canOpen?.(index) ?? true);

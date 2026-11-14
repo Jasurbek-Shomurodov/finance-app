@@ -36,10 +36,17 @@ const overrides={
  '@/components/ui/dialog':{Dialog:host('dialog'),DialogContent:host('dialog-content'),DialogTitle:host('dialog-title')},
  '@/components/ui/popover':{Popover:host('popover'),PopoverAnchor:host('popover-anchor'),PopoverContent:host('popover-content')},
  '@/lib/feedback':{showError:message=>errors.push(message)},
+ '@/components/presentation-foundation/count':{Count:({value})=>React.createElement('x-count',null,String(value))},
+ '@/components/presentation-foundation/panel-title':{PanelTitle:host('panel-title')},
+ '@/components/presentation-foundation/error-popup':{ErrorPopup:host('error-popup')},
+ // Dragging is covered in presentation-foundation; here a movable row is its handle and its cells, and a list reports a drop.
+ '@/components/presentation-foundation/sortable':{SortableList:host('sortable-list'),SortableItem:({id,className,children})=>React.createElement('div',{className,'data-id':id},React.createElement('button',{className:'drag-handle'}),children)},
+ '@/hooks/use-display-order':{useDisplayOrder:(key,items)=>({items,reorder(){},disabled:false,error:''})},
+ '@/hooks/use-goal-order':{useGoalOrder:goals=>({goals,reorder(){},disabled:false,error:''})},
 };
 // The budget screen's parts, loaded together as one module would be.
 const cache=new Map();
-const page=Object.assign({},...['budget-rows','planned-input','left-to-budget-card','settings-dialogs'].map(name=>loadTS(`components/budget/${name}.tsx`,overrides,cache)));
+const page=Object.assign({},...['budget-rows','contribution-rows','planned-input','left-to-budget-card','settings-dialogs','plan-unplanned-dialog'].map(name=>loadTS(`components/budget/${name}.tsx`,overrides,cache)));
 const {formatMoney,formatSignedMoney,formatMonthShort,formatMonthYear}=loadTS('lib/format.ts');
 const {goalEmoji}=loadTS('lib/goal-emoji.ts');
 const money=value=>formatMoney(value,'USD','en-US');
@@ -73,6 +80,7 @@ const one=(view,type,extra)=>{const found=all(view,type,extra);assert.equal(foun
 const byClass=(view,className)=>nodes(view.tree,node=>node.props.className===className);
 const flush=()=>new Promise(resolve=>setTimeout(resolve,0));
 
+const tools=(extra={})=>({currency:'USD',today:'2026-11-14',renderPlanned:()=>'P',onOpen(){},dueOf:()=>undefined,onMove(){},moveDisabled:false,...extra});
 const row=(overrides={})=>({key:'groceries',name:'Groceries',custom:false,direction:'expense',type:'flexible',group:'Everyday spending',excluded:false,rollover:false,rolloverStart:null,rolloverBalance:0,rolloverCurrency:null,rolloverNegative:false,budget:500,actual:200,rolloverIn:0,remaining:300,progress:.4,...overrides});
 
 test('useCategoryName translates built-in names and keeps custom names as typed',()=>{
@@ -91,9 +99,14 @@ test('BudgetProgress clamps width and flags overspent expenses only',()=>{
  assert.equal(width(view),'25%');assert.equal(view.tree.props['data-over'],undefined);
 });
 
-test('BudgetSectionHeader and BudgetTotalRow show columns and formatted totals',()=>{
- const header=mount(React.createElement(page.BudgetSectionHeader,{title:'Expenses'}));
- assert.equal(text(header.tree),'ExpensesT:PlannedT:ActualT:Remaining');
+test('BudgetSection and BudgetTotalRow show the title, the month so far, the columns and formatted totals',()=>{
+ const section=mount(React.createElement(page.BudgetSection,{section:'expenses',title:'Expenses',summary:'SO FAR'},'ROWS'));
+ assert.equal(section.tree.props['data-section'],'expenses');
+ const title=one(section,'x-panel-title');assert.equal(title.props.title,'Expenses');assert.equal(text(title),'SO FAR');
+ assert.equal(text(byClass(section,'budget-row budget-section-header')[0]),'T:PlannedT:ActualT:Remaining');
+ assert.match(text(section.tree),/ROWS$/);
+ const own=mount(React.createElement(page.BudgetSection,{section:'contributions',title:'Goals',columns:'THIS MONTH'}));
+ assert.equal(text(byClass(own,'budget-row budget-section-header')[0]),'THIS MONTH');
  const total=mount(React.createElement(page.BudgetTotalRow,{label:'Total',planned:1200.6,actual:1300,remaining:-99.4,direction:'expense',currency:'USD'}));
  assert.equal(text(total.tree),'Total'+money(1200.6)+money(1300)+money(-99.4));
  assert.equal(money(1200.6),'$1,201');
@@ -103,7 +116,7 @@ test('BudgetSectionHeader and BudgetTotalRow show columns and formatted totals',
 test('BudgetGroupCard: collapsed card shows only totals and the toggle',()=>{
  const calls=[];
  const group={name:'Everyday spending',direction:'expense',type:'flexible',rows:[row()],budget:500,actual:200,remaining:300};
- const view=mount(React.createElement(page.BudgetGroupCard,{group,currency:'USD',open:false,onToggle:()=>calls.push('toggle'),showUnbudgeted:false,onShowUnbudgeted(){},renderPlanned:()=>'P',onOpen(){}}));
+ const view=mount(React.createElement(page.BudgetGroupCard,{group,tools:tools(),open:false,onToggle:()=>calls.push('toggle'),showUnbudgeted:false,onShowUnbudgeted(){}}));
  assert.equal(view.tree.props['data-open'],undefined);
  const toggle=byClass(view,'budget-group-toggle')[0];
  assert.equal(toggle.props['aria-expanded'],false);
@@ -115,15 +128,69 @@ test('BudgetGroupCard: collapsed card shows only totals and the toggle',()=>{
  toggle.props.onClick();assert.deepEqual(calls,['toggle']);
 });
 
-test('BudgetGroupCard: each row ends with its menu, after Remaining; every row keeps that last column',()=>{
+test('BudgetGroupCard: each row starts with its handle and ends with its menu, after Remaining',()=>{
  const group={name:'Everyday spending',direction:'expense',type:'flexible',rows:[row(),row({key:'rent',name:'Rent',budget:900})],budget:1400,actual:200,remaining:1200};
- const view=mount(React.createElement(page.BudgetGroupCard,{group,currency:'USD',open:true,onToggle(){},showUnbudgeted:false,onShowUnbudgeted(){},renderPlanned:()=>'P',onOpen(){},rowMenu:item=>item.key==='rent'?'MENU:'+item.key:null}));
+ const moves=[];
+ const view=mount(React.createElement(page.BudgetGroupCard,{group,tools:tools({rowMenu:item=>item.key==='rent'?'MENU:'+item.key:null,onMove:(...move)=>moves.push(move)}),open:true,onToggle(){},showUnbudgeted:false,onShowUnbudgeted(){}}));
  const rows=byClass(view,'budget-row budget-category-row');
  assert.equal(rows.length,2);
- // The menu cell comes right after the Remaining cell (only the progress line follows it).
- const cells=rows.map(item=>item.children.flat(Infinity).filter(child=>child&&typeof child==='object'));
- assert.deepEqual(cells.map(list=>list.findIndex(child=>child.props?.className==='budget-row-end')),[4,4]);
+ const cells=rows.map(item=>item.children.flat(Infinity).filter(child=>child&&typeof child==='object').map(child=>child.props?.className));
+ assert.deepEqual(cells,Array(2).fill(['drag-handle','budget-category-name','budget-state','budget-cell budget-planned','budget-cell budget-actual','budget-cell budget-remaining','budget-row-end']));
  assert.deepEqual(byClass(view,'budget-row-end').map(text),['','','MENU:rent'],'the group row has an empty end cell; the menu shows only where there is one');
+ // A drop names the rows listed together, so hidden categories keep their places in the saved order.
+ const list=one(view,'x-sortable-list');
+ assert.deepEqual(list.props.items,['groceries','rent']);assert.equal(list.props.nameOf('rent'),'T:Rent');assert.equal(list.props.nameOf('gone'),'');
+ list.props.onMove('rent','groceries');assert.deepEqual(moves,[['rent','groceries',['groceries','rent']]]);
+});
+
+test('a row shows its live state beside the bar: used or received, due, overdue, over, or not planned',()=>{
+ const state=(item,due)=>{const group={name:'Expenses',direction:item.direction,type:null,rows:[item],budget:0,actual:0,remaining:0};
+  const view=mount(React.createElement(page.BudgetGroupCard,{group,tools:tools({dueOf:()=>due}),open:true,bare:true,onToggle(){},showUnbudgeted:false,onShowUnbudgeted(){}}));
+  const cell=byClass(view,'budget-state')[0];return cell&&{text:text(cell),tone:nodes(cell,node=>node.type==='small')[0]?.props['data-tone'],bar:nodes(cell,node=>node.props.className==='budget-progress').length};};
+ assert.deepEqual(state(row()),{text:'T:40% used',tone:undefined,bar:1});
+ assert.deepEqual(state(row({direction:'income',budget:1000,actual:800,remaining:200,progress:.8})),{text:'T:80% received',tone:undefined,bar:1});
+ assert.deepEqual(state(row({actual:0,remaining:500,progress:0}),'2026-11-14'),{text:'T:Due today',tone:undefined,bar:1});
+ assert.deepEqual(state(row({actual:0,remaining:500,progress:0}),'2026-11-20'),{text:'T:Due 20 November 2026',tone:undefined,bar:1},'the date goes through the date formatter');
+ assert.deepEqual(state(row({actual:0,remaining:500,progress:0}),'2026-11-02'),{text:'T:Overdue',tone:'negative',bar:1});
+ assert.deepEqual(state(row({actual:200,remaining:300,progress:.4}),'2026-11-02'),{text:'T:40% used',tone:undefined,bar:1},'once money moved, the row reads how far it is');
+ assert.deepEqual(state(row({actual:540,remaining:-40,progress:1.08})),{text:'T:$40 over',tone:'negative',bar:1});
+ assert.deepEqual(state(row({direction:'income',budget:0,actual:1443,remaining:-1443,progress:1})),{text:'T:Not planned',tone:'positive',bar:0});
+ assert.deepEqual(state(row({budget:null,remaining:null,progress:0,missing:true})),{text:'',tone:undefined,bar:0},'an unknown plan shows no state');
+});
+
+test('spending without a plan is set apart as Unplanned: ink amounts, the total in its heading and one Plan these',()=>{
+ const rows=[row(),row({key:'supplies',name:'Supplies',custom:true,budget:0,actual:927,remaining:-927,progress:1}),row({key:'ads',name:'Ads',custom:true,budget:0,actual:309,remaining:-309,progress:1})];
+ const group={name:'Expenses',direction:'expense',type:null,rows,budget:500,actual:1436,remaining:-936};
+ const planned=[];
+ const props={group,tools:tools(),open:true,bare:true,onToggle(){},showUnbudgeted:false,onShowUnbudgeted(){},onPlanUnplanned:list=>planned.push(list.map(item=>item.key))};
+ const view=mount(React.createElement(page.BudgetGroupCard,props));
+ const head=byClass(view,'budget-subhead')[0];
+ assert.equal(text(head),'T:Unplanned2'+money(1236)+'T:Plan these');
+ nodes(head,node=>node.type==='x-button')[0].props.onClick();assert.deepEqual(planned,[['supplies','ads']]);
+ assert.deepEqual(all(view,'x-sortable-list').map(list=>list.props.items),[['groceries'],['supplies','ads']],'planned and unplanned rows each move among themselves');
+ const unplanned=byClass(view,'budget-row budget-category-row').slice(1);
+ assert.deepEqual(unplanned.map(text),['SuppliesP'+money(927)+'—','AdsP'+money(309)+'—'],'what was spent, in ink, and no red remainder');
+ assert.deepEqual(byClass(view,'budget-pill').map(pill=>pill.props['data-tone']),['positive',undefined,undefined],'nothing was exceeded');
+ assert.equal(byClass(view,'budget-state').length,1,'no bar without a plan');
+ // Someone who may only read sees the group without the action; the Flexible bucket plans its categories together.
+ assert.equal(all(mount(React.createElement(page.BudgetGroupCard,{...props,onPlanUnplanned:undefined})),'x-button').length,0);
+ assert.equal(byClass(mount(React.createElement(page.BudgetGroupCard,{...props,bare:false})),'budget-subhead').length,0);
+});
+
+test('Plan these fills each unplanned category with a whole suggestion and saves only the amounts above zero',async()=>{
+ const rows=[row({key:'supplies',name:'Supplies',custom:true,budget:0,actual:926.4}),row({key:'ads',name:'Ads',custom:true,budget:0,actual:309})];
+ const saved=[];let closed=0;
+ const view=mount(React.createElement(page.PlanUnplannedDialog,{rows,currency:'USD',suggest:item=>Math.ceil(item.actual),onSave:async plans=>saved.push(plans),onClose:()=>closed++}));
+ const inputs=all(view,'x-number-input');
+ assert.deepEqual(inputs.map(input=>[input.props.ariaLabel,input.props.value,input.props.displayFractionDigits]),[['T:Planned for Supplies',927,0],['T:Planned for Ads',309,0]]);
+ assert.deepEqual(all(view,'small').map(text),['T:'+money(926.4)+' spent','T:'+money(309)+' spent']);
+ inputs[1].props.onValueChange(0);view.render();
+ one(view,'form').props.onSubmit({preventDefault(){}});await flush();
+ assert.deepEqual(saved,[[{key:'supplies',amount:927}]],'a category left at zero stays unplanned');
+ assert.equal(closed,1);
+ const failing=mount(React.createElement(page.PlanUnplannedDialog,{rows,currency:'USD',suggest:()=>5,onSave:async()=>{throw new Error('No');},onClose:()=>closed++}));
+ errors.length=0;one(failing,'form').props.onSubmit({preventDefault(){}});await flush();
+ assert.deepEqual(errors,['T:No']);assert.equal(closed,1,'a failed save keeps the dialog open');
 });
 
 test('BudgetGroupCard: open card renders rows, rollover, settings and the unbudgeted toggle',()=>{
@@ -134,7 +201,7 @@ test('BudgetGroupCard: open card renders rows, rollover, settings and the unbudg
   row({key:'books',name:'Books',budget:null,actual:0,rolloverIn:0,remaining:null,progress:0}),
  ];
  const group={name:'Everyday spending',direction:'expense',type:'flexible',rows,budget:600,actual:320,remaining:280};
- const props={group,currency:'USD',open:true,onToggle(){},showUnbudgeted:false,onShowUnbudgeted:()=>calls.push('unbudgeted'),renderPlanned:item=>'planned:'+item.key,onOpen:item=>calls.push('open:'+item.key),header:'HEADER',footer:'FOOTER',rolloverIn:-15,onGroupSettings:()=>calls.push('group')};
+ const props={group,tools:tools({renderPlanned:item=>'planned:'+item.key,onOpen:item=>calls.push('open:'+item.key)}),open:true,onToggle(){},showUnbudgeted:false,onShowUnbudgeted:()=>calls.push('unbudgeted'),header:'HEADER',rolloverIn:-15,onGroupSettings:()=>calls.push('group')};
  let view=mount(React.createElement(page.BudgetGroupCard,props));
  assert.equal(view.tree.props['data-open'],true);
  assert.equal(all(view,'icon-ChevronDown').length,1);
@@ -152,10 +219,9 @@ test('BudgetGroupCard: open card renders rows, rollover, settings and the unbudg
  assert.equal(all(view,'x-category-icon',node=>node.props.kind==='groceries').length,1);
  assert.equal(all(view,'icon-RefreshCw').length,1);
  assert.equal(all(view,'icon-RefreshCw')[0].props['aria-label'],'T:Rollover');
- assert.equal(text(categoryRows[1]),`Dog walkerT:${formatSignedMoney(40,'USD','en-US')} rolled overplanned:custom:1${money(120)}${money(-20)}`);
+ assert.equal(text(categoryRows[1]),`Dog walkerT:${formatSignedMoney(40,'USD','en-US')} rolled overT:${money(20)} overplanned:custom:1${money(120)}${money(-20)}`);
  assert.equal(formatSignedMoney(40,'USD','en-US'),'+$40');
  names[1].props.onClick();
- assert.equal(text(nodes(view.tree,node=>node.props.className==='budget-group')[0]).includes('FOOTER'),true);
  const unbudgeted=byClass(view,'budget-unbudgeted')[0];
  assert.equal(text(unbudgeted),'T:Show 1 unbudgeted');assert.equal(all(view,'icon-Eye').length,1);
  unbudgeted.props.onClick();
@@ -172,7 +238,7 @@ test('BudgetGroupCard: open card renders rows, rollover, settings and the unbudg
 
 test('BudgetGroupCard: no unbudgeted toggle when every row has a budget',()=>{
  const group={name:'Income',direction:'income',type:null,rows:[row({direction:'income',budget:1000,actual:1200,remaining:-200})],budget:1000,actual:1200,remaining:-200};
- const view=mount(React.createElement(page.BudgetGroupCard,{group,currency:'USD',open:true,onToggle(){},showUnbudgeted:false,onShowUnbudgeted(){},renderPlanned:()=>null,onOpen(){}}));
+ const view=mount(React.createElement(page.BudgetGroupCard,{group,tools:tools({renderPlanned:()=>null}),open:true,onToggle(){},showUnbudgeted:false,onShowUnbudgeted(){}}));
  assert.equal(byClass(view,'budget-unbudgeted').length,0);
  assert.deepEqual(byClass(view,'budget-pill').map(pill=>pill.props['data-tone']),['positive','positive'],'income above plan is green');
  assert.deepEqual(byClass(view,'budget-pill').map(text),['+$200','+$200'],'income above plan shows the extra as a plus, not a negative remainder');
@@ -180,21 +246,29 @@ test('BudgetGroupCard: no unbudgeted toggle when every row has a budget',()=>{
 
 test('BudgetGroupCard: a bare card lists only its categories, always open',()=>{
  const group={name:'Expenses',direction:'expense',type:null,rows:[row()],budget:500,actual:200,remaining:300};
- const view=mount(React.createElement(page.BudgetGroupCard,{group,currency:'USD',open:true,bare:true,onToggle(){},showUnbudgeted:false,onShowUnbudgeted(){},renderPlanned:()=>'P',onOpen(){}}));
+ const view=mount(React.createElement(page.BudgetGroupCard,{group,tools:tools(),open:true,bare:true,onToggle(){},showUnbudgeted:false,onShowUnbudgeted(){}}));
  assert.equal(byClass(view,'budget-row budget-group-row').length,0,'no group heading');
  assert.equal(byClass(view,'budget-group-toggle').length,0);
  assert.equal(byClass(view,'budget-row budget-category-row').length,1);
- assert.equal(byClass(view,'drag-handle').length,0,'categories no longer move between groups');
+ assert.equal(byClass(view,'drag-handle').length,1,'every category carries its handle');
 });
 
-test('ContributionRows lists goals with their monthly amount or a dash and links to Goals',()=>{
- const goals=[{id:'a',name:'Vacation',kind:'savings'},{id:'b',name:'Car',kind:'savings'}];
- const view=mount(React.createElement(page.ContributionRows,{goals,currency:'USD',amountOf:goal=>goal.id==='a'?250.4:null}));
- const rows=byClass(view,'budget-row budget-category-row');
+test('ContributionSection lists goals in the given order with their progress, their account and this month’s amount, and links to Goals',()=>{
+ const goals=[{id:'a',name:'Vacation',kind:'savings',account_id:'cash',target:1000,allocated:440},{id:'b',name:'Car',kind:'savings',account_id:null,target:0,allocated:0,currency:'USD'}];
+ const data={records:[{id:'cash',name:'Savings',currency:'USD'}],holdingAccounts:[]};
+ const moves=[];
+ const view=mount(React.createElement(page.ContributionSection,{goals,data,currency:'USD',netWorth:null,amountOf:goal=>goal.id==='a'?250.4:null,total:null,onMove:(...move)=>moves.push(move),moveDisabled:false}));
+ const rows=byClass(view,'budget-row budget-category-row budget-contribution-row');
  assert.equal(rows.length,2);
- assert.equal(text(rows[0]),goalEmoji(goals[0])+'Vacation$250——');
- assert.equal(text(rows[1]),goalEmoji(goals[1])+'Car———');
+ assert.equal(text(rows[0]),goalEmoji(goals[0])+'VacationT:From SavingsT:44% of $1,000$250');
+ assert.equal(text(rows[1]),goalEmoji(goals[1])+'Car—','no target, no bar; no rate, a dash');
+ assert.equal(text(byClass(view,'budget-row budget-total-row')[0]),'T:Total contributions—');
+ const list=one(view,'x-sortable-list');list.props.onMove('b','a');assert.deepEqual(moves,[['b','a',['a','b']]]);
+ const title=one(view,'x-panel-title');assert.equal(title.props.title,'T:Goal contributions');
  const link=one(view,'x-drawer-link');assert.equal(link.props.href,'/goals');assert.equal(text(link),'T:Edit contributions in Goals');
+ // A net-worth goal reads the net worth in its own currency.
+ const worth=mount(React.createElement(page.ContributionSection,{goals:[{id:'n',name:'Worth',kind:'net_worth',account_id:null,target:2000,allocated:0,currency:'USD'}],data,currency:'USD',netWorth:1500,amountOf:()=>100,total:100,onMove(){},moveDisabled:true}));
+ assert.match(text(worth.tree),/T:75% of \$2,000\$100/);assert.equal(one(worth,'x-sortable-list').props.disabled,true);
 });
 
 const left={income:3000,expenses:2000,contributions:250,left:750,flexible:900,flexibleRollover:0,rollover:0};
@@ -214,12 +288,17 @@ test('LeftToBudgetCard summary tab shows planned figures with the left tone',()=
  assert.equal(view.tree.props['aria-label'],'T:Left to budget');
  assert.equal(byClass(view,'budget-left-figure')[0].props['data-tone'],'positive');
  const summary=byClass(view,'budget-left-summary')[0];
- assert.equal(text(summary),`T:Planned income${money(3000)}T:Planned spending${money(2000)}T:Contributions${money(250)}T:Left to budget${money(750)}`);
+ assert.equal(text(summary),`T:Planned income${money(3000)}T:Planned spending−${money(2000)}T:Goal contributions−${money(250)}T:Left to budget${money(750)}`);
+ // Planned income as one bar: spending, goals and what is left, named by the summary's dots.
+ assert.deepEqual(byClass(view,'budget-split')[0].children.map(part=>[part.props['data-key'],Math.round(parseFloat(part.props.style.width))]),[['spending',67],['goals',8],['left',25]]);
+ assert.deepEqual(nodes(summary,node=>node.type==='dt').map(node=>node.props['data-key']),[undefined,'spending','goals','left']);
+ const assign=one(view,'x-drawer-link');assert.equal(assign.props.href,'/goals#plan-funding');assert.equal(text(assign),`T:Assign ${money(750)}`);
  const segmented=one(view,'x-segmented');
  assert.deepEqual(segmented.props.options.map(option=>option.value),['summary','income','expenses']);
  assert.equal(segmented.props.value,'summary');
  const negative=mount(React.createElement(page.LeftToBudgetCard,{left:{...left,left:-50},rows:[],mode:'category',currency:'USD'}));
  assert.equal(byClass(negative,'budget-left-figure')[0].props['data-tone'],'negative');
+ assert.equal(all(negative,'x-drawer-link').length,0,'nothing left, nothing to assign');
 });
 
 test('LeftToBudgetCard income tab lists planned or earned income, skipping excluded and empty rows',()=>{
@@ -518,18 +597,18 @@ test('the Budget page drives the Left to budget tabs, so Income and Expenses nar
  assert.equal(byClass(view,'budget-left-summary').length,0);
  segmented.props.onChange('income');
  assert.deepEqual(picked,['income'],'a tap goes to the page');
- const screen=fs.readFileSync('components/workspace/screens/budget-screen.tsx','utf8');
+ const screen=fs.readFileSync('components/budget/budget-month.tsx','utf8');
  assert.match(screen,/<div className="budget-table" data-focus=\{focus\}>/);
- assert.match(screen,/data-section="income"[\s\S]*data-section="expenses"[\s\S]*Total contributions/,'contributions sit with expenses');
+ assert.match(screen,/section="income"[\s\S]*section="expenses"[\s\S]*<ContributionSection/);
  assert.match(screen,/<LeftToBudgetCard [^>]*tab=\{focus\} onTab=\{setFocus\}\/>/);
  const css=stylesheet();
- assert.match(css,/\.budget-section\{display:contents\}/);
- assert.match(css,/\.budget-table\[data-focus=income\]>\[data-section=expenses\],\.budget-table\[data-focus=expenses\]>\[data-section=income\]\{display:none\}/);
+ // Income shows only the income card; Expenses hides it and keeps the contributions with the spending.
+ assert.match(css,/\.budget-table\[data-focus=income\]>:not\(\[data-section=income\]\),\.budget-table\[data-focus=expenses\]>\[data-section=income\]\{display:none\}/);
 });
 
 test('LeftToBudgetCard reads — for plans no rate converts, never $0',()=>{
  const unknown=mount(React.createElement(page.LeftToBudgetCard,{left:{income:null,expenses:null,contributions:0,left:null,flexible:null,flexibleRollover:0,rollover:0,missing:1},rows:[],mode:'flex',currency:'USD'}));
- assert.equal(text(byClass(unknown,'budget-left-summary')[0]),`T:Planned income—T:Planned spending—T:Contributions${money(0)}T:Left to budget—`);
+ assert.equal(text(byClass(unknown,'budget-left-summary')[0]),`T:Planned income—T:Planned spending—T:Goal contributions${money(0)}T:Left to budget—`);
 });
 
 // Budget's plans read the schedules and its actuals the splits; the page waits for them, and Recalculate for all of it.
@@ -546,7 +625,7 @@ test('a failed or unfinished read stops the Budget page, and Recalculate saves n
   '@/hooks/use-subscriptions':{useInsightHistory:()=>({records:[]})},
   '@/components/display-money':{useDisplayMoney:()=>({show:value=>String(value)})},
   '@/components/presentation-foundation/tone':{signTone:()=>undefined},
-  '@/components/budget/budget-lazy':{BudgetSettingsDialog:host('settings'),CategoryDetailsDialog:host('details'),CategorySettingsDialog:host('category')},
+  '@/components/budget/budget-lazy':{BudgetSettingsDialog:host('settings'),CategoryDetailsDialog:host('details'),CategorySettingsDialog:host('category'),PlanUnplannedDialog:host('plan-unplanned'),SpendingPaceCard:host('pace')},
   ...Object.fromEntries([['inline-error','InlineError'],['today-button','TodayButton'],['page-header','PageHeader'],['row-menu','RowMenu']].map(([file,name])=>[`@/components/presentation-foundation/${file}`,{[name]:host(file)}])),
   '@/components/presentation-foundation/loading-placeholder':{PanelSkeleton:host('panel-skeleton'),LoadingPlaceholder:host('loading-placeholder')},
   '@/components/presentation-foundation/screen-skeletons':{BudgetSkeleton:host('budget-skeleton')},
@@ -638,7 +717,7 @@ test('LeftToBudgetCard: the Summary lists the money rolled over apart from Plann
  const rows=[row({key:'rent',name:'Rent',type:'fixed',budget:1500,actual:1600,rolloverIn:100,rollover:true}),row({key:'groceries',type:'flexible',budget:400,actual:250,rolloverIn:40,rollover:true})];
  const carried={...left,expenses:1900,rollover:140};
  const view=mount(React.createElement(page.LeftToBudgetCard,{left:carried,rows,mode:'category',currency:'USD'}));
- assert.equal(text(byClass(view,'budget-left-summary')[0]),`T:Planned income${money(3000)}T:Planned spending${money(1900)}T:Rolled over+${money(140)}T:Contributions${money(250)}T:Left to budget${money(750)}`);
+ assert.equal(text(byClass(view,'budget-left-summary')[0]),`T:Planned income${money(3000)}T:Planned spending−${money(1900)}T:Rolled over+${money(140)}T:Goal contributions−${money(250)}T:Left to budget${money(750)}`);
  one(view,'x-segmented').props.onChange('expenses');view.render();
  assert.deepEqual(all(view,'li').map(text),[`T:FixedT:${money(1600)} plannedT:${money(1600)} spentT:${money(0)} remaining`,`T:FlexibleT:${money(440)} plannedT:${money(250)} spentT:${money(190)} remaining`],'buckets plan with the carry: 1600 + 440 is Planned spending plus Rolled over');
  // Flex mode: the bucket plans its own amount plus its own carry; the categories’ carry is not its.
@@ -647,7 +726,7 @@ test('LeftToBudgetCard: the Summary lists the money rolled over apart from Plann
  assert.equal(text(all(flex,'li')[1]),`T:FlexibleT:${money(960)} plannedT:${money(250)} spentT:${money(710)} remaining`);
  // An unknown carry reads — and is never shown as a figure.
  const unknown=mount(React.createElement(page.LeftToBudgetCard,{left:{...carried,flexible:900,flexibleRollover:null,rollover:null,missing:1},rows:[rows[0]],mode:'flex',currency:'USD'}));
- assert.match(text(byClass(unknown,'budget-left-summary')[0]),/T:Rolled over—T:Contributions/);
+ assert.match(text(byClass(unknown,'budget-left-summary')[0]),/T:Rolled over—T:Goal contributions/);
  one(unknown,'x-segmented').props.onChange('expenses');unknown.render();
  assert.equal(text(all(unknown,'li')[1]),`T:FlexibleT:— plannedT:${money(0)} spentT:— remaining`);
 });
@@ -680,4 +759,26 @@ test('Year view in flex mode: a Flexible line carries the bucket’s plan, flexi
  assert.equal(cell(rowsByName['Gym']),money(120),'a flexible category shows what it spent, with no plan of its own');
  assert.equal(cell(rowsByName['T:Rent expense']),`${money(300)}T:of ${money(300)}`,'a fixed category keeps its own plan');
  assert.equal(cell(rowsByName['T:Total expenses']),`${money(420)}T:of ${money(700)}`,'the total plans Rent 300 plus the bucket 400, never Gym’s own 120');
+});
+
+test('SpendingPaceCard draws the month so far beside the even pace, with its status, the plan and the day of the month',()=>{
+ const chart=Object.fromEntries(['CartesianGrid','ComposedChart','Line','ReferenceDot','ResponsiveContainer','Tooltip','XAxis','YAxis'].map(name=>[name,host(name)]));
+ const {SpendingPaceCard}=loadTS('components/budget/spending-pace-card.tsx',{...overrides,recharts:chart});
+ const points=[{date:'2026-11-01',spent:0,pace:20},{date:'2026-11-02',spent:150.4,pace:40},{date:'2026-11-03',spent:null,pace:60}];
+ const view=mount(React.createElement(SpendingPaceCard,{pace:{points,spent:150.4,day:2,days:30,status:'above_pace'},plan:600,currency:'USD'}));
+ const title=one(view,'x-panel-title');assert.equal(title.props.title,'T:Spending pace');assert.equal(text(title),'T:Above pace');
+ assert.equal(nodes(title,node=>node.type==='span')[0].props.className,'status-badge is-caution');
+ assert.equal(text(byClass(view,'budget-pace-figure')[0]),`${money(150.4)}T:${money(600)} plannedT:Day 2 of 30`);
+ assert.deepEqual(all(view,'x-Line').map(line=>line.props.dataKey),['pace','spent']);
+ const dot=one(view,'x-ReferenceDot');assert.deepEqual([dot.props.x,dot.props.y],['2026-11-02',150.4],'the dot marks the last day reached');
+ const tip=one(view,'x-Tooltip');
+ assert.equal(tip.props.labelFormatter('2026-11-02'),'2 November 2026');
+ assert.deepEqual(tip.props.formatter(150.4,'spent'),[money(150.4),'T:Spent']);assert.deepEqual(tip.props.formatter(40,'pace'),[money(40),'T:Even pace']);
+ assert.equal(text(byClass(view,'budget-pace-axis')[0]),'1 November 20263 November 2026','dates go through the date formatter');
+ assert.equal(text(byClass(view,'budget-pace-legend')[0]),'T:SpentT:Even pace');
+ // Without a usable rate there is no plan: the spending line stands alone, and a month not reached has no day or status.
+ const bare=mount(React.createElement(SpendingPaceCard,{pace:{points:[{date:'2026-12-01',spent:null,pace:null}],spent:0,day:0,days:31,status:null},plan:null,currency:'USD'}));
+ assert.equal(text(byClass(bare,'budget-pace-figure')[0]),money(0));assert.equal(text(one(bare,'x-panel-title')),'');
+ assert.equal(all(bare,'x-ReferenceDot').length,0);assert.equal(text(byClass(bare,'budget-pace-legend')[0]),'T:Spent');
+ for(const [status,name] of [['on_pace','status-badge is-paid'],['over_plan','status-badge is-overdue']])assert.equal(nodes(one(mount(React.createElement(SpendingPaceCard,{pace:{points,spent:1,day:2,days:30,status},plan:600,currency:'USD'})),'x-panel-title'),node=>node.type==='span')[0].props.className,name);
 });

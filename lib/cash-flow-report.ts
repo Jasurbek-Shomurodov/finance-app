@@ -90,6 +90,13 @@ export function trendBarsBy(series: ReadonlyArray<TrendMonth>, period: ReportPer
  }
  return [...bars.values()].map(bar => bar.missing ? { ...bar, income: null, expenses: null } : bar);
 }
+/** The bars on screen added up: income, spending, and the average surplus a month over the `months` they cover. Null
+ * when a bar is missing an amount, so a total is never too low. */
+export function trendTotals(bars: ReadonlyArray<TrendBar>, months: number) {
+ if (!months || bars.some(bar => bar.income === null || bar.expenses === null)) return null;
+ const income = bars.reduce((sum, bar) => sum + bar.income!, 0), expenses = bars.reduce((sum, bar) => sum + bar.expenses!, 0);
+ return { income, expenses, average: (income - expenses) / months };
+}
 /** The key of the last bar when its month, quarter or year is not over by `month` (or is still running on `today`), so
  * the chart can call it "to date" rather than compare a partial period with whole ones. Null when it is complete. */
 export function partialBar(month: string, period: ReportPeriod, today: string) {

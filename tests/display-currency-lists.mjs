@@ -53,7 +53,7 @@ test('a fetched unit price is shown with at most eight decimals, while the store
  assert.equal(numberInputValue(132.50144508671133, 'en', 8), '132.50144509');
 });
 
-test('Cash flow lists every income source with its progress after Show more (CF-042)', () => {
+test('Cash flow lists five income sources and every other one that brought money in, then all after Show more (CF-042)', () => {
  const r = createRenderer();
  const ui = stubs();
  const { CashflowPreview } = r.load('components/cashflow-preview.tsx', {
@@ -63,18 +63,21 @@ test('Cash flow lists every income source with its progress after Show more (CF-
   '@/components/expense-plan-chart': hostModule(),
  });
  const source = (n, approx) => ({ id: 's' + n, name: 'Source ' + n, kind: 'Other income', currency: 'USD', mode: 'variable', approx_monthly: approx, archived: false });
- const sources = [6000, 5000, 4000, 3000, 2500, 2000].map((approx, index) => source(index + 1, approx));
+ const sources = [6000, 5000, 4000, 3000, 2500, 2000, 1500].map((approx, index) => source(index + 1, approx));
  const received = { id: 'r1', name: 'Source 6', kind: 'Other income', currency: 'USD', amount: 800, date: '2026-10-08', frequency: 'Once', earning_source_id: 's6', quantity: 1, cost: 0, rate: 0, notes: '' };
  r.mount(React.createElement(CashflowPreview, { entries: [received], sources, plans: [], month: '2026-10', currency: 'USD', loading: false, error: '', onRetry() {}, onIncome() {}, onSpending() {}, mortgages: null, watchlists: null }));
  const panel = () => r.find(node => node.props?.className === 'panel cashflow-income-preview');
  const rows = () => r.all(node => node.type === 'tr', [panel()]).slice(1).map(text);
- assert.equal(rows().length, 5);
- assert.ok(!rows().some(row => row.includes('Source 6')), 'the sixth source waits behind Show more');
+ // The 2026 redesign: the sixth source brought money in, so it is listed and the Received column adds up to the headline.
+ assert.equal(rows().length, 6);
+ assert.ok(!rows().some(row => row.includes('Source 7')), 'the seventh source waits behind Show more');
+ const sixth = rows().find(row => row.includes('Source 6'));
+ assert.ok(sixth.includes(usd(2000)) && sixth.includes('+' + usd(800)) && sixth.includes('Partly received'), sixth);
+ assert.ok(rows()[0].includes('Expected') && !rows()[0].includes('Received'), 'a source with nothing yet is still expected');
+ assert.deepEqual(r.all(node => node.type === 'th', [panel()]).map(text), ['Source', 'Status', 'Expected', 'Received', 'Progress']);
  const showMore = () => r.all(node => node.type?.displayName === 'Button' && text(node) === 'Show more');
  r.fire(showMore()[0], 'onClick');
- assert.equal(rows().length, 6);
- const sixth = rows().find(row => row.includes('Source 6'));
- assert.ok(sixth.includes(usd(2000)) && sixth.includes(usd(800)), sixth);
+ assert.equal(rows().length, 7);
  assert.equal(showMore().length, 0);
 });
 

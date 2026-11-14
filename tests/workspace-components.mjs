@@ -71,14 +71,15 @@ test('account security clears the persistent workspace session before navigating
  await find(tree).props.onSubmit({preventDefault:()=>{}});assert.equal(cleared,true);assert.deepEqual(navigation,['/']);
 });
 
-test('profile settings shows the shared country picker with its prompt and saved selection',()=>{
+test('profile settings shows the country as a searchable field with its prompt and saved selection',()=>{
  const {SettingsPanel}=loadTS('components/settings-panel.tsx',overrides);
  const render=country=>renderToStaticMarkup(React.createElement(SettingsPanel,{initial:{language:'en',currencies:['USD'],country},demo:false,onSaved:()=>{},loading:false,loadError:'',onRetry:()=>{}}));
  const html=render('');
  assert.match(html,/<label for="profile-country">Country \/ region \(optional\)/);
- assert.match(html,/<select[^>]*data-slot="native-select"[^>]*id="profile-country"/);
- assert.match(html,/<option value="" selected="">Select your country<\/option>/);
- assert.match(render('UZ'),/<option value="UZ" selected="">Uzbekistan<\/option>/);
+ assert.match(html,/<button[^>]*id="profile-country"[^>]*data-empty="true"[^>]*><span>Select your country<\/span>/);
+ assert.match(html,/<button[^>]*role="combobox"[^>]*aria-expanded="false"/);
+ assert.doesNotMatch(html,/<select[^>]*id="profile-country"/,'no native select of some 250 options');
+ assert.match(render('UZ'),/<button[^>]*id="profile-country"[^>]*><span>Uzbekistan<\/span>/);
 });
 test('preferred currencies stop at two: the trigger adds below the limit and changes at it',()=>{
  const {SettingsPanel}=loadTS('components/settings-panel.tsx',overrides);
@@ -88,6 +89,9 @@ test('preferred currencies stop at two: the trigger adds below the limit and cha
  assert.match(two,/Change currencies/);assert.doesNotMatch(two,/Add currency/);
  // The explanation sits behind the heading's ⓘ, not as a grey sentence under it.
  assert.doesNotMatch(two,/Choose one or two\./);
- assert.match(fs.readFileSync('components/settings-panel.tsx','utf8'),/<h4>\{t\('Preferred currencies'\)\}<InfoHint>\{t\('Shown in the top bar and whenever you choose a currency\. Choose one or two\.'\)\}<\/InfoHint><\/h4>/);
- assert.match(two,/aria-label="Remove INR"/);assert.doesNotMatch(two,/aria-label="Remove USD"/);
+ assert.match(fs.readFileSync('components/settings-panel.tsx','utf8'),/<SettingRow tall label=\{t\('Preferred currencies'\)\} labelId="profile-currencies" hint=\{t\('Choose one or two\. The first one becomes your primary currency\.'\)\}>/);
+ // Either of two can be removed (the other becomes primary); the only one keeps its bin, disabled, with the reason.
+ assert.match(two,/aria-label="Remove INR"/);assert.match(two,/aria-label="Remove USD"/);
+ assert.match(one,/title="Keep at least one currency"><button[^>]*aria-label="Remove USD\. Keep at least one currency"[^>]*disabled=""/);
+ assert.match(two,/aria-label="Move INR"/,'each currency has its drag handle');assert.match(two,/2 of 2/);assert.match(one,/1 of 2/);
 });

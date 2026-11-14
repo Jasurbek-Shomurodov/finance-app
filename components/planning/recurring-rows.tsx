@@ -7,7 +7,7 @@ import { Count } from '@/components/presentation-foundation/count';
 import { RowMenu, type RowMenuItem } from '@/components/presentation-foundation/row-menu';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/components/language-provider';
-import type { Category } from '@/lib/planning';
+import type { Category, DueItem } from '@/lib/planning';
 import { shownName } from '@/lib/record-names';
 import { frequencyLabels, income, type Entry } from '@/lib/finance';
 import { formatDate, formatMoney, formatNumber } from '@/lib/format';
@@ -69,10 +69,29 @@ export function OccurrenceRow({ item, dated, grouped, today, busy, categories = 
  const menu = occurrenceMenu(t, busy, item, { edit: onOpen && edit, skip: pending ? () => onSkip(item) : undefined, restore: item.status === 'skipped' && onRestore ? () => onRestore(item) : undefined, archive: onArchive, remove: onDelete && (() => onDelete({ source: 'record', record: item.record })) });
  return <li className="recurring-row" data-status={item.status} data-editable={open ? '' : undefined} onClick={rowTap(open)}>
   <span className="transaction-merchant"><DoneTick done={paid}/><CategoryIcon kind={category ?? item.record.kind}/><RowName name={shownName(item.record, t)} label={openLabel} onOpen={open} detail={occurrenceDetail(t, locale, item, grouped ? null : category ?? t(item.record.kind), dated)}/></span>
-  {status}
+  {/* Under its own day's heading an open payment needs no pill saying when; the cell stays so the columns line up. */}
+  {!dated && item.status === 'due' ? <span className="recurring-status-none"/> : status}
   <strong className={income.includes(item.record.kind) ? 'transaction-amount positive' : 'transaction-amount'}>{formatMoney(item.amount, item.record.currency, locale)}</strong>
   <div className="row-actions"><Button size="sm" variant="outline" disabled={busy || item.status === 'skipped'} onClick={() => onPay(item)}>{t('Record payment')}</Button>
    {menu.length > 0 && <RowMenu label={t('Actions for {name}', { name: item.record.name })} items={menu}/>}
+  </div>
+ </li>;
+}
+
+/** A debt repayment or a deposit maturity that falls due: its date and how far off it is, the balance as entered, and
+ * Record payment (or Dismiss reminder for a maturity). Tapping the row opens the loan or deposit. */
+export function ReminderRow({ item, today, busy, onOpen, onPay, onDismiss }: { item: DueItem; today: string; busy: boolean; onOpen?: (record: Entry) => void; onPay: (record: Entry) => void; onDismiss: (item: DueItem) => void }) {
+ const { t, locale } = useLanguage();
+ const dueLabel = useDueLabel();
+ const open = onOpen && (() => onOpen(item.record));
+ const incoming = item.type === 'maturity' || item.record.kind === 'Money lent';
+ return <li className="recurring-row" data-status={item.overdue ? 'overdue' : 'due'} data-editable={open ? '' : undefined} onClick={rowTap(open)}>
+  <span className="transaction-merchant"><DoneTick done={false}/><CategoryIcon kind={item.record.kind}/><RowName name={item.record.name} label={t('Open {name}', { name: item.record.name })} onOpen={open} detail={[t(item.record.kind), formatDate(item.date, locale)].join(' · ')}/></span>
+  <span className={item.overdue ? 'status-badge is-overdue' : 'status-badge'}>{dueLabel(today, item.date)}</span>
+  <strong className={incoming ? 'transaction-amount positive' : 'transaction-amount'}>{formatMoney(item.amount, item.record.currency, locale)}</strong>
+  <div className="row-actions">{item.type === 'maturity'
+   ? <Button size="sm" variant="outline" disabled={busy || item.date > today} onClick={() => onDismiss(item)}>{t('Dismiss reminder')}</Button>
+   : <Button size="sm" variant="outline" onClick={() => onPay(item.record)}>{t('Record payment')}</Button>}
   </div>
  </li>;
 }

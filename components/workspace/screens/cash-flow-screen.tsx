@@ -6,7 +6,9 @@ import { Plus } from 'lucide-react';
 import { CashflowPreview } from '@/components/cashflow-preview';
 import { CashFlowReport } from '@/components/cash-flow-report';
 import { CashForecastView } from '@/components/cash-forecast';
-import { DatePicker } from '@/components/presentation-foundation/date-picker';
+import { CashFlowMonthBar } from '@/components/cash-flow/month-bar';
+import { StillToCome } from '@/components/cash-flow/still-to-come';
+import { useMonthOutlook } from '@/components/cash-flow/use-month-outlook';
 import { EstimatedIncomeSources } from '@/components/estimated-income-sources';
 import { BudgetCard } from '@/components/dashboard-cards';
 import { CashflowSummarySkeleton, MonthlyReview } from '@/components/financial-review';
@@ -40,6 +42,11 @@ export function CashFlowScreen() {
  // principal and loan repayments are transfers, so they leave the net estimate but never the spending one.
  const incomeSources = earningSources.sources;
  const payouts = useExpectedPayouts(user, demo, reload, rows);
+ const estimates = forecastReady ? { income: forecast.plannedIncome, spending: forecast.monthlyExpenses + forecast.mortgageInterest, net: forecast.forecast } : null;
+ // What the running month is still expected to bring: the tiles, the month's bars and the closing card all read this.
+ const outlook = useMonthOutlook({ data: planning.data, sources: incomeSources, splits: transactionTools.data.splits, month: forecastMonth, currency, market, spendingEstimate: estimates?.spending ?? null });
+ const settled = !planning.loading && !planning.error && !transactionTools.loading && !transactionTools.error && !earningSources.loading && !earningSources.error;
+ const expected = settled && outlook && outlook.income !== null && outlook.bills !== null && outlook.other !== null ? { income: outlook.income, spending: outlook.bills + outlook.other } : null;
  const mortgages = <MonthlyMortgagePayments records={demo?rows:planning.data.records} loading={planning.loading} error={planning.error} onPay={setPayingMortgage} onEdit={editRecord}/>;
  // This month's budget, as on Overview and Budget: spending categories against their limits.
  const budgetCard = !transactionTools.loading && !transactionTools.error ? <BudgetCard owner={user} demo={demo} revision={reload} budget={budget} data={planning.data} currency={currency} market={market} splits={transactionTools.data.splits}/> : null;
@@ -47,16 +54,16 @@ export function CashFlowScreen() {
  return <>
   <div data-page="Income & expenses" className="content">
    <PageHeader title={t('Cash flow')} tabs={<Segmented as="nav" className="page-tabs" label={t('Cash flow')} options={tabs.map(name=>({value:name,label:t(name)}))} value={tab} onChange={name=>{setTab(name);if(name==='Overview')showFirstPage();}}/>}>
-    {tab!=='Forecast'&&<DatePicker mode="month" value={forecastMonth} max={depositToday()} onChange={setForecastMonth}/>}
     <Button variant="outline" className="cashflow-action" onClick={() => addCashFlow('Other income')}><Plus size={17} aria-hidden="true"/>{t("Add income")}</Button>
     {/* Expenses are added from the top bar's Add expense, the same form on every page. */}
    </PageHeader>
    <ScreenNotices/>
+   {tab!=='Forecast'&&<CashFlowMonthBar month={forecastMonth} onChange={setForecastMonth} outlook={settled?outlook:null} currency={currency}/>}
    {workspaceLoading ? (tab==='Overview' ? <CashFlowSkeleton label={t("Loading your workspace…")}/> : <PanelSkeleton label={t("Loading your workspace…")} rows={4}/>) : <>
-    {tab!=='Forecast'&&(planning.loading?<CashflowSummarySkeleton/>:!planning.error&&<MonthlyReview compact selectedMonth={forecastMonth} estimates={forecastReady?{income:forecast.plannedIncome,spending:forecast.monthlyExpenses+forecast.mortgageInterest,net:forecast.forecast}:null} owner={user} demo={demo} revision={reload} market={market} data={planning.data} tools={transactionTools} snapshots={snapshots.snapshots} historyError={snapshots.error} currency={currency}/>)}
+    {tab!=='Forecast'&&(planning.loading?<CashflowSummarySkeleton/>:!planning.error&&<MonthlyReview compact selectedMonth={forecastMonth} estimates={estimates} running={!!outlook} owner={user} demo={demo} revision={reload} market={market} data={planning.data} tools={transactionTools} snapshots={snapshots.snapshots} historyError={snapshots.error} currency={currency}/>)}
     {transactionTools.error&&<InlineError message={t(transactionTools.error)} onRetry={transactionTools.retry}/>}
-    {tab==='Overview'&&<CashFlowReport onOpenRecord={record => setViewing(storedRecord(record))} owner={user} demo={demo} revision={reload} data={planning.data} splits={transactionTools.data.splits} month={forecastMonth} currency={currency} market={market} monthReviewAbove={!planning.error}/>}
-    {tab==='Overview'&&<CashflowPreview entries={planning.data.records} sources={incomeSources} month={forecastMonth} currency={currency} rates={marketRates(market)} loading={planning.loading||earningSources.loading} error={planning.error||earningSources.error} onRetry={refreshRecords} onIncome={()=>setTab('Income')} budget={budgetCard} mortgages={mortgages} watchlists={watchlists}/>}
+    {tab==='Overview'&&<CashFlowReport onOpenRecord={record => setViewing(storedRecord(record))} owner={user} demo={demo} revision={reload} data={planning.data} splits={transactionTools.data.splits} month={forecastMonth} currency={currency} market={market} monthReviewAbove={!planning.error} expected={expected}/>}
+    {tab==='Overview'&&<CashflowPreview entries={planning.data.records} sources={incomeSources} month={forecastMonth} currency={currency} rates={marketRates(market)} loading={planning.loading||earningSources.loading} error={planning.error||earningSources.error} onRetry={refreshRecords} onIncome={()=>setTab('Income')} budget={budgetCard} mortgages={mortgages} watchlists={watchlists} closing={settled&&outlook?<StillToCome outlook={outlook} month={forecastMonth} currency={currency}/>:null}/>}
     {tab==='Income'&&<IncomeSourcesPanel controller={earningSources} currencies={preferencesData.currencies} records={planning.data.records} onRecord={recordFromSource}/>}
     {tab==='Income'&&(planning.loading || earningSources.loading ? <LoadingPlaceholder label={t('Loading records…')}/> : planning.error || earningSources.error ? <InlineError as="div" message={t(planning.error || earningSources.error)} onRetry={refreshRecords}/> : <EstimatedIncomeSources earningSources={incomeSources} entries={planning.data.records} month={forecastMonth} rates={marketRates(market)}/>)}
     {tab==='Spending'&&mortgages}

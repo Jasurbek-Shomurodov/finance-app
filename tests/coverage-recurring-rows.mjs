@@ -8,7 +8,7 @@ const { formatMoney } = loadTS('lib/format.ts');
 const r = createRenderer();
 const ui = stubs();
 const RowMenu = Object.assign(({ items }) => React.createElement('menu', null, items.map(item => React.createElement('li', { key: item.label }, item.label))), { displayName: 'RowMenu' });
-const { OccurrenceRow, ArchivedFold } = r.load('components/planning/recurring-rows.tsx', { ...ui.modules, '@/components/presentation-foundation/row-menu': { RowMenu } });
+const { OccurrenceRow, ArchivedFold, ReminderRow } = r.load('components/planning/recurring-rows.tsx', { ...ui.modules, '@/components/presentation-foundation/row-menu': { RowMenu } });
 const mount = (Component, props) => (r.mount(React.createElement(Component, props)), r);
 const usd = value => formatMoney(value, 'USD', 'en-US');
 
@@ -197,4 +197,27 @@ test('a skipped occurrence is restored from its own ⋯ menu', () => {
  assert.deepEqual(menu.map(entry => entry.label), ['Restore occurrence', 'Archive']);
  menu[0].onSelect();
  assert.deepEqual(calls, ['restore 2026-10-01']);
+});
+
+test('under its own day an open payment shows no pill; a debt falling due says when and records a payment, a maturity only dismisses', () => {
+ const plain = mount(OccurrenceRow, { item: item('due'), dated: false, today: '2026-10-01', busy: false, onPay() {}, onSkip() {} });
+ assert.equal(plain.all(node => /status-badge/.test(node.props?.className ?? '')).length, 0, 'the heading already says the day');
+ assert.equal(plain.find(byType('li')).children.length, 4, 'the empty cell keeps the columns in line');
+ assert.equal(mount(OccurrenceRow, { item: item('overdue'), dated: false, today: '2026-10-05', busy: false, onPay() {}, onSkip() {} }).all(node => node.props?.className === 'status-badge is-overdue').length, 1, 'overdue still shows');
+ const calls = [];
+ const card = { id: 'card', name: 'Card', kind: 'Debt', currency: 'USD', amount: 2300, frequency: 'Once', date: '2026-10-09' };
+ const due = { key: 'card:2026-10-09', record: card, date: '2026-10-09', type: 'repayment', overdue: false, amount: 2300 };
+ const actions = { today: '2026-10-05', busy: false, onOpen: record => calls.push(['open', record.id]), onPay: record => calls.push(['pay', record.id]), onDismiss: entry => calls.push(['dismiss', entry.key]) };
+ const view = mount(ReminderRow, { item: due, ...actions });
+ assert.ok(text(view.tree).includes('Debt · 9 October 2026in 4 days' + usd(2300) + 'Record payment'), text(view.tree));
+ view.find(byType(ui.Button)).props.onClick();
+ view.find(byType('li')).props.onClick(tap); view.find(byType('li')).props.onClick(onButton);
+ const deposit = { ...due, key: 'cd:2026-10-09', record: { ...card, id: 'cd', kind: 'Deposit' }, type: 'maturity' };
+ const waiting = mount(ReminderRow, { item: deposit, ...actions }).find(byType(ui.Button));
+ assert.deepEqual([text(waiting), waiting.props.disabled], ['Dismiss reminder', true], 'not before it matures');
+ const matured = mount(ReminderRow, { item: { ...deposit, overdue: true }, ...actions, today: '2026-10-12' });
+ assert.equal(matured.all(node => node.props?.className === 'status-badge is-overdue').length, 1);
+ matured.find(byType(ui.Button)).props.onClick();
+ assert.deepEqual(calls, [['pay', 'card'], ['open', 'card'], ['dismiss', 'cd:2026-10-09']]);
+ assert.equal(mount(ReminderRow, { item: due, ...actions, onOpen: undefined }).find(byType('li')).props['data-editable'], undefined, 'a read-only row is plain');
 });

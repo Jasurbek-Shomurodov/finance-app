@@ -7,7 +7,9 @@ import { useLanguage } from '@/components/language-provider';
 import { RulesPanel } from '@/components/transactions/rules-list';
 import { useTransactionRules } from '@/hooks/use-transaction-rules';
 import { nextPaletteColor } from '@/lib/business';
+import { depositToday } from '@/lib/deposit-interest';
 import { showNotice } from '@/lib/feedback';
+import { marketRates } from '@/lib/market';
 import { tagsByRecord } from '@/lib/tags';
 import { newRule, type TransactionRule } from '@/lib/transaction-rules';
 import { AccountAccessPanel } from '@/components/account-access-panel';
@@ -27,8 +29,11 @@ import { useWorkspace } from '@/components/workspace/workspace-provider';
 
 export function SettingsScreen() {
  const { household, user, demo, logout, currency, market, reload, preferencesData, applyPreferences, settingsLoading, settingsError, retrySettings, planning, workspacePreferences, refreshRecords, clearLocalSession, restartOnboarding,
-  businessList, tags, transactionTools, categorize, assignTransactionsBusiness, editRecord, requestDelete, setSettingUpBusinesses, categoryIcons, removedCategories } = useWorkspace();
+  businessList, tags, transactionTools, categorize, assignTransactionsBusiness, editRecord, requestDelete, setSettingUpBusinesses, categoryIcons, removedCategories, budget } = useWorkspace();
  const { t } = useLanguage();
+ const rates = marketRates(market);
+ // What each category plans this month: its budget and the schedules still running under it.
+ const plans = useMemo(() => ({ amounts: budget.loading || budget.error ? [] : budget.state.amounts, records: planning.data.records, month: depositToday().slice(0, 7), currency, rates }), [budget.loading, budget.error, budget.state.amounts, planning.data.records, currency, rates]);
  const tagMap = useMemo(() => tagsByRecord(tags.data.links), [tags.data.links]);
  const tagsOf = (id: string) => tagMap.get(id) ?? [];
  const rules = useTransactionRules(user, demo, reload, planning.data.records, transactionTools.data.splits, { categorize, assignBusiness: assignTransactionsBusiness, changeTags: tags.change, tagsOf }, refreshRecords);
@@ -38,12 +43,12 @@ export function SettingsScreen() {
   {/* Signing out (or leaving the sample workspace) lives here, beside the account's other settings. */}
   <SettingsLayout
    actions={<Button variant="outline" onClick={logout}><LogOut size={16} aria-hidden="true"/>{demo ? t('Exit demo') : t('Sign out')}</Button>}
-   preferences={<><SettingsPanel key={String(user) + settingsLoading} ratesDate={market?.ratesDate} initial={preferencesData} demo={demo} onSaved={applyPreferences} loading={!demo && settingsLoading} loadError={settingsError} onRetry={retrySettings} onRestartSetup={demo?undefined:restartOnboarding}/><PlanningError/></>}
+   preferences={<><SettingsPanel key={String(user) + settingsLoading} ratesDate={market?.ratesDate} rates={rates} initial={preferencesData} demo={demo} onSaved={applyPreferences} loading={!demo && settingsLoading} loadError={settingsError} onRetry={retrySettings} onRestartSetup={demo?undefined:restartOnboarding}/><PlanningError/></>}
    telegram={<TelegramPanel demo={demo}/>}
    household={<HouseholdPanel household={household} demo={demo}/>}
    benchmarks={<InvestmentComparisonSettings demo={demo} currencies={preferencesData.currencies}/>}
    security={<AccountAccessPanel settings onSignedOut={clearLocalSession}/>}
-   categories={<TransactionToolsPanel preferences={workspacePreferences} owner={demo?null:user} demo={demo} onDeleted={refreshRecords} categories={planning.data.categories} loading={planning.loading} error={planning.error} onRetry={refreshRecords} icons={categoryIcons} removed={removedCategories} saveCategory={async (name,direction,existing)=>{const id=existing??crypto.randomUUID();await planning.save('category',{id,name,direction});return id;}}/>}
+   categories={<TransactionToolsPanel plans={plans} preferences={workspacePreferences} owner={demo?null:user} demo={demo} onDeleted={refreshRecords} categories={planning.data.categories} loading={planning.loading} error={planning.error} onRetry={refreshRecords} icons={categoryIcons} removed={removedCategories} saveCategory={async (name,direction,existing)=>{const id=existing??crypto.randomUUID();await planning.save('category',{id,name,direction});return id;}}/>}
    businesses={<BusinessSettings businesses={businessList} records={planning.data.records} preferences={workspacePreferences} owner={demo?null:user} demo={demo} onEdit={editRecord} onDelete={requestDelete} onSetup={() => setSettingUpBusinesses(true)} onGuide={() => setSettingUpBusinesses('guide')}/>}
    tags={<TagSettings tags={tags} preferences={workspacePreferences} owner={demo?null:user} demo={demo}/>}
    rules={<><RulesPanel rules={rules.rules} loading={rules.loading} error={rules.error} onRetry={rules.retry} categories={planning.data.categories} businesses={businessList} tags={tags.data.tags} onEdit={setRule} onAdd={() => setRule(newRule())} onRemove={item => rules.remove(item.id)}/>

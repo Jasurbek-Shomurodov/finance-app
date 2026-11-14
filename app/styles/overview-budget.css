@@ -72,6 +72,7 @@
 .stat-tile-bar{height:6px;border-radius:3px;background:color-mix(in srgb,var(--foreground) 8%,transparent);overflow:hidden}
 .stat-tile-bar>i{display:block;height:100%;border-radius:inherit;background:var(--primary)}
 .stat-tile-bar.negative>i{background:var(--negative)}
+.stat-tile-bar.positive>i{background:var(--positive)}
 /* Under the figures, across both columns: the monthly surplus no goal has yet, and the way to Plan funding. */
 .surplus-nudge{grid-column:1/-1;flex-direction:row;flex-wrap:wrap;align-items:center;gap:12px 16px}
 .surplus-nudge>div{display:grid;gap:2px;flex:1 1 9rem;min-width:0}
@@ -170,37 +171,49 @@
 .budget-month-nav{display:flex;align-items:center;gap:6px}
 .budget-period{min-width:8.5em;font-size:var(--type-compact);font-weight:600;text-align:center;white-space:nowrap}
 .budget-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start;width:100%}
-.budget-table{display:flex;flex-direction:column;gap:8px;min-width:0}
-/* The name keeps 9rem before Planned, Actual and Remaining grow past 92px; a `minmax(0,1fr)` name got only what the figures left. */
-.budget-row{--budget-actions:28px;display:grid;grid-template-columns:minmax(9rem,1fr) repeat(3,minmax(92px,128px)) var(--budget-actions);align-items:center;gap:8px;padding:10px 16px;position:relative}
-/* The ⋯ column is as wide as the ⋯ button: 44px on touch, where a 28px column let it cover Remaining. */
-@media(pointer:coarse){.budget-row{--budget-actions:44px}}
+.budget-table{display:flex;flex-direction:column;gap:16px;min-width:0}
+/* One grid for every row of a section, so the figures stand under their column names: the drag handle, the name (it keeps 9rem), plan against
+ * actual, then Planned, Actual, Remaining and the ⋯. Cells are placed by name, never by position: a total row has no handle and a goal row no Planned. */
+.budget-row{--budget-actions:28px;--budget-grip:20px;display:grid;grid-template-columns:var(--budget-grip) minmax(9rem,2fr) minmax(88px,1fr) repeat(3,minmax(92px,112px)) var(--budget-actions);grid-template-areas:"grip name state planned actual remaining end";align-items:center;gap:6px 8px;padding:10px 16px;position:relative}
+/* The ⋯ column is as wide as the ⋯ button and the handle column as wide as the handle: 44px and 32px on touch, where a 28px column let the ⋯ cover Remaining. */
+@media(pointer:coarse){.budget-row{--budget-actions:44px;--budget-grip:32px}}
+.budget-row>.drag-handle{grid-area:grip}
+.budget-category-name,.budget-total-name{grid-area:name}
+.budget-group-name{grid-column:grip/name}
+.budget-state{grid-area:state}
+.budget-planned{grid-area:planned}
+.budget-actual{grid-area:actual}
+.budget-remaining{grid-area:remaining}
+.budget-row-end{grid-area:end;display:flex;justify-content:flex-end}
 .budget-cell{text-align:end;font-variant-numeric:tabular-nums;font-size:var(--type-small)}
-.budget-section-header{margin-top:8px;padding-block:8px;border-radius:var(--radius-control);background:var(--muted);color:var(--muted-foreground);font-size:var(--type-caption);font-weight:500}
+/* Each side of the budget is one card: its title with the month so far, the column names, its rows and its total. The Left to budget tabs hide the other side. */
+.budget-section{border:1px solid var(--border);border-radius:var(--radius-card);background:var(--card);box-shadow:var(--shadow-card);overflow:hidden}
+.budget-table[data-focus=income]>:not([data-section=income]),.budget-table[data-focus=expenses]>[data-section=income]{display:none}
+.budget-section>.panel-title{margin:0;padding:16px 16px 6px}
+.budget-section-sum{font-variant-numeric:tabular-nums}
+.budget-section-header{padding-block:6px;color:var(--muted-foreground);font-size:var(--type-caption);font-weight:500}
 .budget-section-header .budget-cell{font-size:var(--type-caption)}
-/* Each section is a layout-free wrapper, so the list keeps one column of groups; the Left to budget tabs hide the other side. */
-.budget-section{display:contents}
-.budget-table[data-focus=income]>[data-section=expenses],.budget-table[data-focus=expenses]>[data-section=income]{display:none}
-.budget-table>.budget-section:first-child>.budget-section-header:first-child,.budget-table[data-focus=expenses]>[data-section=expenses]>.budget-section-header:first-child{margin-top:0}
-.budget-group{border:1px solid var(--border);border-radius:var(--radius-card);background:var(--card);box-shadow:var(--shadow-card);overflow:hidden}
-.budget-group-row{font-weight:600}
+.budget-group{border-top:1px solid var(--hairline)}
+.budget-group-row{background:color-mix(in srgb,var(--muted) 55%,var(--card));font-weight:600}
 .budget-group-row .budget-cell{font-weight:600;font-size:var(--type-compact)}
 .budget-group[data-open] .budget-group-row{border-bottom:1px solid var(--hairline)}
 .budget-group-name{display:inline-flex;align-items:center;gap:4px;min-width:0}
 .budget-group-toggle{display:inline-flex;align-items:center;gap:8px;min-width:0;font-size:var(--type-compact);font-weight:600;text-align:start}
 .budget-group-toggle:focus-visible,.budget-category-name:focus-visible,.budget-unbudgeted:focus-visible{outline:2px solid var(--ring);outline-offset:2px;border-radius:6px}
 .budget-category-row+.budget-category-row{border-top:1px solid var(--hairline)}
-.budget-row-end{display:flex;justify-content:flex-end}
-.budget-category-name{display:inline-flex;align-items:center;gap:10px;min-width:0;font-size:var(--type-small);text-align:start}
+.budget-category-row[data-dragging]{background:var(--card);box-shadow:var(--shadow-card)}
+.budget-category-name{display:inline-flex;align-items:center;gap:10px;min-width:0;font-size:var(--type-small);font-weight:500;text-align:start}
 /* Category names wrap at spaces, never between letters and never behind an ellipsis. */
 .budget-category-name>span:not(.category-icon){overflow-wrap:break-word}
 .budget-category-name>svg{flex-shrink:0;color:var(--muted-foreground)}
 button.budget-category-name:hover>span:not(.category-icon){text-decoration:underline;text-underline-offset:3px}
 .budget-rollover{display:block;font-size:var(--type-caption);font-weight:400;color:var(--muted-foreground)}
-.budget-empty-cell{color:var(--muted-foreground)}
-/* On narrow pages category names wrap instead of shrinking to a few letters. */
-.budget-progress{grid-column:1/-1;height:3px;border-radius:999px;background:var(--hairline);overflow:hidden}
-.budget-category-row .budget-progress{position:absolute;inset-inline:16px;bottom:0;height:2px}
+/* Plan against actual, between the name and the figures: the bar with the row's live state under it. */
+.budget-state{display:flex;flex-direction:column;gap:4px;min-width:0}
+.budget-state>small{color:var(--muted-foreground);font-size:var(--type-caption)}
+.budget-state>small[data-tone=positive]{color:var(--positive)}
+.budget-state>small[data-tone=negative]{color:var(--negative)}
+.budget-progress{height:3px;border-radius:999px;background:var(--hairline);overflow:hidden}
 .budget-progress>div{height:100%;border-radius:inherit;background:var(--mark-bg)}
 .budget-progress[data-over]>div{background:var(--negative)}
 .budget-pill{display:inline-block;min-width:64px;padding:2px 10px;border-radius:999px;font-weight:500;text-align:center;color:var(--muted-foreground);background:var(--muted)}
@@ -208,11 +221,15 @@ button.budget-category-name:hover>span:not(.category-icon){text-decoration:under
 .budget-pill[data-tone=negative]{color:var(--negative);background:color-mix(in srgb,var(--negative) 12%,transparent)}
 .budget-input{display:inline-block;width:100%;max-width:120px}
 .budget-input input{height:32px;padding-inline:10px;text-align:end;font-variant-numeric:tabular-nums}
+/* Spending without a plan, set apart under its own heading: the count, what it comes to and Plan these. */
+.budget-subhead{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:8px 16px;border-block:1px solid var(--hairline);background:color-mix(in srgb,var(--muted) 55%,var(--card));font-size:var(--type-small)}
+.budget-subhead>h3{flex:1 1 auto;display:flex;align-items:center;margin:0;font-size:var(--type-small);font-weight:600}
+.budget-subhead>strong{font-weight:600;font-variant-numeric:tabular-nums}
+.budget-group>.budget-subhead:first-child{border-top:0}
 .budget-unbudgeted{display:flex;align-items:center;gap:6px;width:100%;padding:10px 16px;border-top:1px solid var(--hairline);color:var(--muted-foreground);font-size:var(--type-caption)}
 .budget-unbudgeted:hover{color:var(--foreground)}
-.budget-total-row{border:1px solid var(--border);border-radius:var(--radius-card);background:var(--card);font-weight:600;font-size:var(--type-compact)}
+.budget-total-row{border-top:1px solid var(--hairline);background:color-mix(in srgb,var(--muted) 55%,var(--card));font-weight:600;font-size:var(--type-compact)}
 .budget-total-row .budget-cell{font-weight:600}
-.budget-contributions-link{border-top:1px solid var(--hairline);font-size:var(--type-small)}
 /* Fits the room Radix measured, with the 16px gutter from collisionPadding (SCR-108). */
 .budget-history-popover{width:300px;max-height:var(--radix-popover-content-available-height);overflow-y:auto;padding:14px;border-radius:var(--radius-card)}
 .budget-history{display:flex;flex-direction:column;gap:12px;font-size:var(--type-small)}
@@ -238,13 +255,30 @@ button.budget-category-name:hover>span:not(.category-icon){text-decoration:under
 @media(pointer:coarse){.budget-history-forward{min-height:44px}}
 .budget-side{position:sticky;top:16px;display:flex;flex-direction:column;gap:16px;min-width:0}
 .budget-left{display:flex;flex-direction:column;gap:14px;padding:16px}
-.budget-left-figure{display:flex;flex-direction:column;align-items:center;gap:4px;padding:20px 12px;border-radius:var(--radius-control);background:var(--muted);text-align:center}
+.budget-left>.panel-title,.budget-pace>.panel-title{margin-bottom:0}
+.budget-left-figure{display:flex;flex-direction:column;gap:4px}
 .budget-left-figure strong{font-size:var(--type-stat);font-weight:500;font-variant-numeric:tabular-nums}
-.budget-left-figure span{display:inline-flex;align-items:center;gap:4px;color:var(--muted-foreground);font-size:var(--type-small)}
-.budget-left-figure[data-tone=positive]{background:color-mix(in srgb,var(--positive) 12%,transparent)}
 .budget-left-figure[data-tone=positive] strong{color:var(--positive)}
-.budget-left-figure[data-tone=negative]{background:color-mix(in srgb,var(--negative) 12%,transparent)}
 .budget-left-figure[data-tone=negative] strong{color:var(--negative)}
+/* Planned income as one bar: what is planned for spending, for goals and still left. The summary's dots name the parts. */
+.budget-left [data-key=spending]{--budget-key:var(--muted-foreground)}
+.budget-left [data-key=goals]{--budget-key:var(--chart-3)}
+.budget-left [data-key=left]{--budget-key:var(--mark-bg)}
+.budget-split{display:flex;gap:2px;height:12px;border-radius:999px;overflow:hidden}
+.budget-split>i{min-width:0;background:var(--budget-key)}
+.budget-left-summary dt[data-key]{display:inline-flex;align-items:center;gap:8px}
+.budget-left-summary dt[data-key]::before{content:"";flex-shrink:0;width:8px;height:8px;border-radius:50%;background:var(--budget-key)}
+.budget-left>[data-slot=button]{width:100%}
+/* The month's spending beside an even pace toward the plan. */
+.budget-pace{display:flex;flex-direction:column;gap:10px;padding:16px}
+.budget-pace-figure{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;margin:0;color:var(--muted-foreground);font-size:var(--type-caption)}
+.budget-pace-figure>strong{color:var(--foreground);font-size:var(--type-title);font-weight:500;font-variant-numeric:tabular-nums}
+.budget-pace-chart{height:110px}
+.budget-pace-axis,.budget-pace-legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:0;color:var(--muted-foreground);font-size:var(--type-caption)}
+.budget-pace-axis{justify-content:space-between}
+.budget-pace-legend>span{display:inline-flex;align-items:center;gap:6px}
+.budget-pace-legend>span::before{content:"";width:12px;border-top:2px solid var(--primary)}
+.budget-pace-legend>[data-key=pace]::before{border-top:2px dashed var(--muted-foreground)}
 .budget-left-tabs{display:flex;width:100%;flex-wrap:wrap;overflow:visible}
 .budget-left-tabs>button{flex:1 1 auto;padding-inline:10px}
 .budget-left-summary{display:flex;flex-direction:column;gap:8px;margin:0;font-size:var(--type-small)}
@@ -262,6 +296,12 @@ button.budget-category-name:hover>span:not(.category-icon){text-decoration:under
 .budget-left-empty{margin:0;color:var(--muted-foreground);font-size:var(--type-small);text-align:center}
 .budget-dialog{max-width:520px}
 .budget-dialog-title{display:flex;align-items:center;gap:10px}
+.budget-plan-list{display:flex;flex-direction:column;margin:0;padding:0;list-style:none}
+.budget-plan-list>li{display:flex;align-items:center;gap:10px;padding-block:8px;font-size:var(--type-small)}
+.budget-plan-list>li+li{border-top:1px solid var(--hairline)}
+.budget-plan-list>li>span:not(.category-icon,.budget-input){display:flex;flex:1;flex-direction:column;min-width:0}
+.budget-plan-list small{color:var(--muted-foreground);font-size:var(--type-caption)}
+.budget-plan-list .budget-input{flex:0 0 120px}
 .budget-dialog-fields{display:flex;flex-direction:column;gap:16px;margin-bottom:16px}
 .budget-dialog-fields>.panel-link{align-self:flex-start;margin-top:-8px}
 .budget-rollover-fields{display:flex;flex-direction:column;gap:12px;padding-inline-start:12px;border-inline-start:2px solid var(--hairline)}
@@ -298,20 +338,15 @@ button.budget-category-name:hover>span:not(.category-icon){text-decoration:under
 .budget-year tfoot tr[data-net]>*{border-bottom:0}
 .budget-year tfoot td[data-tone=negative]{color:var(--negative)}
 .budget-year>.budget-left-empty{padding:24px}
-@container content (max-width:980px){.budget-layout{grid-template-columns:minmax(0,1fr)}.budget-side{position:static;order:-1}}
-/* Planned, Actual and Remaining stay beside the name until a 9rem name and three 92px figures no longer fit (about 540px of content). Below that,
- * Actual moves under the name with its label instead of disappearing: no figure is ever hidden for lack of room. Planned and Remaining grow to
- * the same 104px in every row so the fields line up, and only a row with a labelled Actual spans the ⋯ over two lines (a placed ⋯ in the
- * header or a goal row took column 1 and pushed the title past the edge). */
-@container content (max-width:540px){.budget-row{grid-template-columns:minmax(0,1fr) minmax(84px,104px) minmax(72px,104px) var(--budget-actions);padding-inline:12px}.budget-row:has(>.budget-actual[data-label])>.budget-row-end{grid-row:1/3}.budget-row:has(>.budget-actual[data-label])>:has(+.budget-cell+.budget-actual){grid-column:1;grid-row:1}.budget-row:has(>.budget-actual[data-label])>.budget-cell:not(.budget-actual){grid-row:1/3}.budget-row>.budget-actual{grid-column:1;grid-row:2;justify-self:start;color:var(--muted-foreground);font-size:var(--type-caption);text-align:start;white-space:nowrap}.budget-row>.budget-actual::before{content:attr(data-label) " "}.budget-section-header>.budget-actual,.budget-row>.budget-empty-cell.budget-actual{display:none}.budget-category-row .budget-progress{inset-inline:12px}.budget-pill{min-width:0}}
-/* A phone leaves the name no room beside a 120px Planned field and Remaining (it was covered at 320 px):
- * the name and Remaining share the first line, Actual and the Planned field the second; the ⋯ ends the first line, beside Remaining.
- * Headers and goal rows keep their figures at the narrowest widths and drop their empty ⋯ column (group and total rows keep it, so
- * their figures line up with the categories'), so their names keep the room. Cells are found by their
- * neighbours, not by position: a movable row starts with its drag handle, which put the name in Planned's place. */
-@container content (max-width:420px){.budget-row{grid-template-columns:minmax(0,1fr) 84px 72px var(--budget-actions)}.budget-row:not(:has(>.budget-actual[data-label])):has(>.budget-row-end:empty){--budget-actions:0px}.budget-row:has(>.budget-actual[data-label]){grid-template-columns:minmax(0,1fr) auto var(--budget-actions)}.budget-row:has(>.budget-actual[data-label])>.budget-row-end{grid-area:1/3}.budget-row:has(>.budget-actual[data-label])>:has(+.budget-cell+.budget-actual){grid-area:1/1}.budget-row:has(>.budget-actual[data-label])>.budget-actual+.budget-cell{grid-area:1/2}.budget-row:has(>.budget-actual[data-label])>.budget-cell:has(+.budget-actual){grid-area:2/2}.budget-row>.budget-actual{grid-area:2/1;align-self:center;white-space:normal}}
-/* The narrowest phones (280 px) left the name 20px beside the field: the name takes the first line alone, Actual and Remaining the second, the field the third. */
-@container content (max-width:300px){.budget-row:has(>.budget-actual[data-label])>:has(+.budget-cell+.budget-actual){grid-area:1/1/2/3}.budget-row:has(>.budget-actual[data-label])>.budget-actual+.budget-cell{grid-area:2/2}.budget-row:has(>.budget-actual[data-label])>.budget-cell:has(+.budget-actual){grid-area:3/1/4/3;justify-self:end}.budget-row:has(>.budget-actual[data-label])>.budget-row-end{grid-area:1/3}}
-/* Goal and contribution rows at 320 px and below: a long name ("Pay $50K off the mortgage", "Notgroschen") ran under $2,000 in its 82px track.
- * The name takes the first line, Planned and Remaining the second, in the same columns as every other row. */
-@container content (max-width:340px){.budget-category-row:not(:has(>.budget-actual[data-label])):has(>.budget-row-end:empty)>.budget-category-name{grid-column:1/-1}.budget-category-row:not(:has(>.budget-actual[data-label])):has(>.budget-row-end:empty)>.budget-category-name+.budget-cell{grid-area:2/2}.budget-category-row:not(:has(>.budget-actual[data-label])):has(>.budget-row-end:empty)>.budget-actual+.budget-cell{grid-area:2/3}}
+/* A goal row has no Planned or Actual, so its progress line ("99% of $1,500,000") takes their room while the columns stand side by side. */
+@container content (min-width:701px){.budget-contribution-row>.budget-state{grid-column:state/actual}}
+/* Beside one column the cards stack: Left to budget leads, the list follows, the pace and Age of money close the page. */
+@container content (max-width:980px){.budget-layout{grid-template-columns:minmax(0,1fr)}.budget-side{display:contents}.budget-side>.budget-left{order:-1}}
+/* The seven columns need about 700px. Below that a row is a small card and no figure is hidden: the handle and the name with Remaining and
+ * the ⋯, the bar and its state, then Actual with its label and the Planned field with its own, at the two ends of one line. The column
+ * names go, since every figure carries one. Planned spans the whole line so its field never widens a column and squeezes the name. */
+@container content (max-width:700px){.budget-row{grid-template-columns:var(--budget-grip) minmax(0,1fr) auto var(--budget-actions);grid-template-areas:"grip name remaining end" "state state state state" "planned planned planned planned";padding-inline:12px}.budget-section-header{display:none}.budget-section>.panel-title{padding-inline:12px}.budget-subhead,.budget-unbudgeted{padding-inline:12px}.budget-total-row,.budget-group-row{grid-template-areas:"name name remaining end" "planned planned planned planned"}.budget-group-name{grid-area:name}.budget-contribution-row{grid-template-areas:"grip name remaining remaining" "state state state state"}.budget-contribution-row~.budget-total-row{grid-template-areas:"name name remaining remaining"}.budget-row>.budget-planned{display:flex;align-items:center;justify-content:flex-end;gap:8px}.budget-row>.budget-planned[data-label]::before{content:attr(data-label);color:var(--muted-foreground);font-size:var(--type-caption);font-weight:400}.budget-row>.budget-actual{grid-area:planned;justify-self:start;color:var(--muted-foreground);font-size:var(--type-caption);font-weight:400;text-align:start;white-space:nowrap}.budget-row>.budget-actual::before{content:attr(data-label) " "}.budget-pill{min-width:0}}
+/* The narrowest phones (down to 280px) leave a name no room beside a figure: the name takes the first line with the ⋯, and the figures stack
+ * under it, Actual beside Remaining and the Planned field on its own line. A contribution's amount goes under its name and bar
+ * ("Pay $50K off the mortgage" ran under $2,000). */
+@container content (max-width:340px){.budget-category-row{grid-template-areas:"grip name name end" "state state state state" "actual actual remaining remaining" "planned planned planned planned"}.budget-group-row{grid-template-areas:"name name name end" "actual actual remaining remaining" "planned planned planned planned"}:is(.budget-category-row,.budget-group-row)>.budget-actual{grid-area:actual}.budget-contribution-row{grid-template-areas:"grip name name name" "state state state state" "remaining remaining remaining remaining"}.budget-contribution-row>.budget-remaining{text-align:start}}

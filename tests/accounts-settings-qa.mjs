@@ -152,5 +152,5 @@ test('the assistant reports whether it is set up, and the screen waits for that 
 test('settings headings stay one line: explanations sit behind the ⓘ',()=>{
  for(const file of ['components/settings-panel.tsx','components/telegram-panel.tsx','components/investment-comparison-settings.tsx','components/import-history.tsx','components/data-tools.tsx'])
   assert.doesNotMatch(fs.readFileSync(file,'utf8'),/<\/h[234]>(\{[^}]*&&)?<p className="(muted|my-3 text-sm text-muted-foreground)">/,file);
- assert.match(fs.readFileSync('components/settings-panel.tsx','utf8'),/<h3>\{t\('About you'\)\}<InfoHint>\{t\('Personal details for your profile\.'\)\}<\/InfoHint><\/h3>/);
+ assert.match(fs.readFileSync('components/settings-panel.tsx','utf8'),/<SettingsCard title=\{t\('About you'\)\} hint=\{t\('Personal details for your profile\.'\)\}>/);
 });

@@ -1,8 +1,10 @@
 "use client";
 import { useMemo, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useLanguage } from '@/components/language-provider';
-import { chartAxis, chartColors, chartGrid, chartHeight, chartLegend, chartMargin, chartTooltip, chartValueAxis, groupedBar, intervalLabel, moneyTick } from '@/components/presentation-foundation/chart';
+import { chartAxis, chartColors, chartGrid, chartHeight, chartMargin, chartTooltip, chartValueAxis, groupedBar, intervalLabel, moneyTick, plannedGroupedBar } from '@/components/presentation-foundation/chart';
+import { FlowBars } from '@/components/cash-flow/flow-bars';
+import { CategoryIcon } from '@/components/presentation-foundation/category-icon';
 import { CashFlowDrillDialog, FlowSankey } from '@/components/cash-flow-sankey';
 import type { DrillTarget } from '@/lib/cash-flow-drill';
 import { drillLink, linkedTitle } from '@/lib/cash-flow-link';
@@ -15,19 +17,19 @@ import { PanelTitle } from '@/components/presentation-foundation/panel-title';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { StatTile, StatTiles } from '@/components/presentation-foundation/stat-tile';
 import { signTone } from '@/components/presentation-foundation/tone';
-import { cashFlowReport, partialBar, periodMonths, reportPeriods, sankeyFlows, topShares, otherShareKey, trendBarsBy, trendMonths, type ReportPeriod, type Share } from '@/lib/cash-flow-report';
-import { hueColor } from '@/lib/category-colors';
-import { useCategoryHue } from '@/components/category-icons-context';
+import { cashFlowReport, partialBar, periodMonths, reportPeriods, sankeyFlows, topShares, otherShareKey, trendBarsBy, trendMonths, trendTotals, type ReportPeriod, type Share, type TrendBar } from '@/lib/cash-flow-report';
 import { depositToday } from '@/lib/deposit-interest';
 import type { Entry } from '@/lib/finance';
-import { formatMoney, formatMonthYear, formatPercent } from '@/lib/format';
+import { formatMoney, formatMonthYear, formatPercent, formatSignedMoney } from '@/lib/format';
 import { marketRates, type MarketData } from '@/lib/market';
 import type { PlanningData } from '@/lib/planning';
 import type { TransactionSplit } from '@/lib/transaction-tools';
 
 const periodLabels: Record<ReportPeriod, string> = { month: 'Month', quarter: 'Quarter', year: 'Year' };
 const trendTitles: Record<ReportPeriod, string> = { month: 'Income and spending by month', quarter: 'Income and spending by quarter', year: 'Income and spending by year' };
-type Props = { /** Opens a transaction's details, as a row on Transactions does. */onOpenRecord?: (record: Entry) => void; owner: string | null; demo: boolean; revision: number; data: PlanningData; splits: TransactionSplit[]; month: string; currency: string; market: MarketData | null; /** A compact Monthly review of `month` sits above, with its own conversion note. */ monthReviewAbove?: boolean };
+type Props = { /** Opens a transaction's details, as a row on Transactions does. */onOpenRecord?: (record: Entry) => void; owner: string | null; demo: boolean; revision: number; data: PlanningData; splits: TransactionSplit[]; month: string; currency: string; market: MarketData | null; /** A compact Monthly review of `month` sits above, with its own conversion note. */ monthReviewAbove?: boolean;
+ /** What the running month still expects on top of what is recorded, in `currency`: drawn as outlines on its bars. */ expected?: Expected | null };
+type Expected = { income: number; spending: number };
 
 /** One side of the breakdown: proportional bars with amount and share, the Income / Expenses panels. The largest ten
  * are named and the rest share one "Other" row, so the rows add up to the total.
@@ -75,31 +77,89 @@ function useDrill(data: PlanningData, t: (key: string) => string, search: string
  };
 }
 
-/** Cash flow: figures for the period, monthly bars, and where money came from and went, as bars or a Sankey diagram. */
-export function CashFlowReport({ onOpenRecord, owner, demo, revision, data: provided, splits, month, currency, market, monthReviewAbove = false }: Props) {
+/** Income and spending per month, quarter or year. The running month's bars carry what is still expected as a planned
+ * outline on top of what is recorded, and the totals of the months on screen sit under the chart. */
+function TrendPanel({ trend, period, month, currency, expected }: { trend: TrendBar[]; period: ReportPeriod; month: string; currency: string; expected?: Expected | null }) {
+ const { t, locale } = useLanguage();
+ const money = (amount: number) => formatMoney(amount, currency, locale);
+ // A quarter or year still running is labelled "to date", so it is never read as a whole period beside the others.
+ const partial = partialBar(month, period, depositToday());
+ const barLabel = (long: boolean) => { const label = intervalLabel(period, locale, t, long); return (value: unknown) => value === partial && (long || period !== 'month') ? t('{period} to date', { period: label(value) }) : label(value); };
+ const outlined = !!expected && period === 'month' && trend.some(bar => bar.period === month && bar.income !== null);
+ const data = outlined ? trend.map(bar => bar.period === month ? { ...bar, expectedIncome: expected!.income, expectedExpenses: expected!.spending } : bar) : trend;
+ const months = trendMonths(month, period).length, totals = trendTotals(trend, months);
+ const names: Record<string, string> = { income: t('Income'), expenses: t('Expenses'), expectedIncome: t('Income still expected'), expectedExpenses: t('Spending still expected') };
+ // A bar with nothing still expected leaves its line out of the tooltip; a missing amount stays, as a dash.
+ const tip = (value: unknown, key: unknown) => String(key).startsWith('expected') && value == null ? null : [value === null || value === undefined ? '—' : money(Number(value)), names[String(key)] ?? String(key)];
+ return <section className="panel cash-flow-trend">
+  <PanelTitle title={t(trendTitles[period])}/>
+  <div className="cash-flow-key"><span><i style={{ background: chartColors.income }}/>{t('Income')}</span><span><i style={{ background: chartColors.expense }}/>{t('Expenses')}</span>{outlined && <span><i className="chart-planned-key"/>{t('Expected')}</span>}</div>
+  <div className="cash-flow-chart"><ResponsiveContainer width="100%" height="100%" minHeight={chartHeight.regular}>
+   <BarChart data={data} barGap={2} accessibilityLayer margin={chartMargin}>
+    <CartesianGrid {...chartGrid}/>
+    <XAxis dataKey="period" tickFormatter={barLabel(false)} {...chartAxis}/>
+    <YAxis tickFormatter={moneyTick(currency, locale)} {...chartValueAxis}/>
+    <Tooltip {...chartTooltip} filterNull={false} labelFormatter={barLabel(true)} formatter={tip as never}/>
+    <Bar dataKey="income" name="income" stackId="income" {...groupedBar} fill={chartColors.income}/>
+    {outlined && <Bar dataKey="expectedIncome" name="expectedIncome" stackId="income" {...plannedGroupedBar}/>}
+    <Bar dataKey="expenses" name="expenses" stackId="expenses" {...groupedBar} fill={chartColors.expense}/>
+    {outlined && <Bar dataKey="expectedExpenses" name="expectedExpenses" stackId="expenses" {...plannedGroupedBar}/>}
+   </BarChart>
+  </ResponsiveContainer></div>
+  <dl className="cash-flow-totals">
+   <div><dt>{t('{count}-month income', { count: months })}</dt><dd>{totals ? money(totals.income) : '—'}</dd></div>
+   <div><dt>{t('{count}-month spending', { count: months })}</dt><dd>{totals ? money(totals.expenses) : '—'}</dd></div>
+   <div><dt>{t('Average monthly surplus')}</dt><dd className={totals ? signTone(totals.average) : undefined}>{totals ? formatSignedMoney(totals.average, currency, locale) : '—'}</dd></div>
+  </dl>
+ </section>;
+}
+
+type Grouping = 'category' | 'merchant';
+/** What a row of the ranked bars opens: the same drill-downs the Sankey's nodes open. */
+const barTarget = (grouping: Grouping, side: 'income' | 'expense' | 'left', key: string): DrillTarget => side === 'left' ? { side: 'savings' }
+ : grouping === 'merchant' ? { side: 'merchant', key, income: side === 'income' } : { side, key };
+
+type View = 'bars' | 'sankey';
+type WhereProps = { report: ReturnType<typeof cashFlowReport>; flows: ReturnType<typeof sankeyFlows>; periodName: string; view: View; onView: (view: View) => void; currency: string; categories: PlanningData['categories']; onDrill: (target: DrillTarget, title: string) => void };
+/** Where the period's money went: ranked bars by category or merchant, or the Sankey. Every row and node opens its own
+ * Sankey in a dialog: a category, Savings, the merged "Other" (its categories) and the Income total (every income source). */
+function WherePanel({ report, flows, periodName, view, onView, currency, categories, onDrill }: WhereProps) {
+ const { t } = useLanguage();
+ const [grouping, setGrouping] = useState<Grouping>('category');
+ const category = (key: string) => categories.find(item => item.id === key);
+ const byCategory = grouping === 'category', shares = report[byCategory ? 'categories' : 'merchants'];
+ const label = (key: string) => byCategory ? category(key)?.name ?? t(key) : key;
+ const drillOf = (index: number): DrillTarget | null => mainTarget(flows.nodes[index]);
+ return <section className="panel cash-flow-where">
+  <PanelTitle title={t('Where {period} went', { period: periodName })}>
+   <div className="cash-flow-switches">
+    {view === 'bars' && <Segmented label={t('Group by')} options={[{ value: 'category', label: t('Category') }, { value: 'merchant', label: t('Merchant') }] as const} value={grouping} onChange={setGrouping}/>}
+    <Segmented label={t('Chart type')} options={[{ value: 'bars', label: t('Bars') }, { value: 'sankey', label: t('Sankey') }] as const} value={view} onChange={onView}/>
+   </div>
+  </PanelTitle>
+  {view === 'bars' ? <FlowBars income={shares.income} expense={shares.expense} left={report.missing ? null : report.savings} label={label} currency={currency}
+   icon={byCategory ? key => <CategoryIcon kind={category(key)?.name ?? key} size="sm"/> : undefined}
+   onOpen={(side, key) => onDrill(barTarget(grouping, side, key), side === 'left' ? t('Savings') : label(key))}/>
+  : flows.links.length ? <FlowSankey flows={flows} currency={currency} canOpen={index => !!drillOf(index)} onOpen={index => { const target = drillOf(index); if (target) onDrill(target, flows.nodes[index].name); }}/> : <p className="budget-left-empty">{t('Nothing recorded in this period.')}</p>}
+ </section>;
+}
+
+/** Cash flow: figures for the period, bars over time beside where the period's money went, as ranked bars or a Sankey diagram. */
+export function CashFlowReport({ onOpenRecord, owner, demo, revision, data: provided, splits, month, currency, market, monthReviewAbove = false, expected }: Props) {
  const { t, locale } = useLanguage();
  const today = depositToday();
  const [period, setPeriod] = useState<ReportPeriod>('month');
- const [grouping, setGrouping] = useState<'category' | 'merchant'>('category');
- const [view, setView] = useState<'bars' | 'sankey'>('sankey');
+ // Ranked bars first; the Sankey is one tap away (the 2026 redesign).
+ const [view, setView] = useState<View>('bars');
  const search = useLocationSearch();
  const { live, data, remote, goalEvents, throughToday } = useCashFlowData({ owner, demo, revision, provided, month, today, linked: drillLink(search)?.month });
  const rates = marketRates(market);
  const report = useMemo(() => cashFlowReport(data, splits, periodMonths(month, period), currency, today, rates), [data, splits, month, period, currency, today, rates]);
  const trend = useMemo(() => trendBarsBy(cashFlowReport(data, splits, trendMonths(month, period), currency, today, rates).series, period), [data, splits, month, period, currency, today, rates]);
- const money = (amount: number) => formatMoney(amount, currency, locale);
- // A quarter or year still running is labelled "to date", so it is never read as a whole period beside the others.
- const partial = partialBar(month, period, today);
- const barLabel = (long: boolean) => { const label = intervalLabel(period, locale, t, long); return (value: unknown) => value === partial && (long || period !== 'month') ? t('{period} to date', { period: label(value) }) : label(value); };
  const unknown = report.missing > 0 || trend.some(bar => bar.missing > 0);
- const categoryName = (key: string) => data.categories.find(category => category.id === key)?.name ?? t(key);
- const label = grouping === 'category' ? categoryName : (key: string) => key;
- const categoryHue = useCategoryHue();
- const colorKey = (key: string) => grouping === 'category' ? hueColor(categoryHue(data.categories.find(category => category.id === key)?.name ?? key)) : 'var(--foreground)';
+ const category = (key: string) => data.categories.find(item => item.id === key);
+ const categoryName = (key: string) => category(key)?.name ?? t(key);
  const flows = sankeyFlows(report, categoryName);
- // Every node opens its own Sankey in a dialog: a category, Savings, the merged "Other" (its categories) and the Income
- // total (every income source).
- const drillOf = (index: number): DrillTarget | null => mainTarget(flows.nodes[index]);
  const periodName = period === 'month' ? formatMonthYear(month, locale) : `${formatMonthYear(periodMonths(month, period)[0], locale)} – ${formatMonthYear(month, locale)}`;
  const { drill, setDrill, drillTitle, drillMonths, drillPeriod } = useDrill(data, t, search, { months: periodMonths(month, period), label: periodName, locale });
  if (live && remote.initialLoading) return <section className="panel cash-flow-report"><SankeySkeleton label={t('Loading records…')} height={360}/></section>;
@@ -112,32 +172,10 @@ export function CashFlowReport({ onOpenRecord, owner, demo, revision, data: prov
   {period !== 'month' && <CashFlowTiles report={report} currency={currency}/>}
   {/* The compact Monthly review above already says so for the month; a quarter or a year has amounts of its own to report. */}
   {unknown && !(monthReviewAbove && period === 'month') && <p className="partial-total" role="status">{t('Some transactions could not be converted. Current or previous month totals are incomplete.')}</p>}
-  <section className="panel">
-   <PanelTitle title={t(trendTitles[period])}/>
-   <div className="cash-flow-chart"><ResponsiveContainer width="100%" height={chartHeight.regular}>
-    <BarChart data={trend} barGap={2} accessibilityLayer margin={chartMargin}>
-     <CartesianGrid {...chartGrid}/>
-     <XAxis dataKey="period" tickFormatter={barLabel(false)} {...chartAxis}/>
-     <YAxis tickFormatter={moneyTick(currency, locale)} {...chartValueAxis}/>
-     <Tooltip {...chartTooltip} filterNull={false} labelFormatter={barLabel(true)} formatter={(value, name) => [value === null || value === undefined ? '—' : money(Number(value)), String(name)]}/>
-     <Legend {...chartLegend}/>
-     <Bar dataKey="income" name={t('Income')} {...groupedBar} fill={chartColors.income}/>
-     <Bar dataKey="expenses" name={t('Expenses')} {...groupedBar} fill={chartColors.expense}/>
-    </BarChart>
-   </ResponsiveContainer></div>
-  </section>
-  <section className="panel">
-   <PanelTitle title={<>{t('Breakdown')} <span className="panel-figure">{periodName}</span></>}>
-    <div className="cash-flow-switches">
-     {view === 'bars' && <Segmented label={t('Group by')} options={[{ value: 'category', label: t('Category') }, { value: 'merchant', label: t('Merchant') }] as const} value={grouping} onChange={setGrouping}/>}
-     <Segmented label={t('Chart type')} options={[{ value: 'bars', label: t('Bars') }, { value: 'sankey', label: t('Sankey') }] as const} value={view} onChange={setView}/>
-    </div>
-   </PanelTitle>
-   {view === 'bars' ? <div className="cash-flow-breakdown">
-    <div><h3>{t('Income')}</h3><ShareBars items={report[grouping === 'category' ? 'categories' : 'merchants'].income} label={label} colorKey={() => 'var(--positive)'} currency={currency}/></div>
-    <div><h3>{t('Expenses')}</h3><ShareBars items={report[grouping === 'category' ? 'categories' : 'merchants'].expense} label={label} colorKey={colorKey} currency={currency}/></div>
-   </div> : flows.links.length ? <FlowSankey flows={flows} currency={currency} canOpen={index => !!drillOf(index)} onOpen={index => { const target = drillOf(index); if (target) setDrill({ target, title: flows.nodes[index].name }); }}/> : <p className="budget-left-empty">{t('Nothing recorded in this period.')}</p>}
-  </section>
+  <div className="cash-flow-report-grid" data-view={view}>
+   <TrendPanel trend={trend} period={period} month={month} currency={currency} expected={expected}/>
+   <WherePanel report={report} flows={flows} periodName={periodName} view={view} onView={setView} currency={currency} categories={data.categories} onDrill={(target, title) => setDrill({ target, title })}/>
+  </div>
   {drill && <CashFlowDrillDialog target={drill.target} title={drillTitle} period={drillPeriod} savings={report.savings} context={{ data, splits, months: drillMonths, currency, today, rates, t, label: categoryName, locale, throughToday, goalEvents }} onClose={() => setDrill(null)} onOpenRecord={onOpenRecord}/>}
  </section>;
 }

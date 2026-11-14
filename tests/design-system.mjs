@@ -177,7 +177,7 @@ test('Goals, Reports and Cash flow switch their views from tabs beside the title
  assert.match(settingsLayout,/<nav className="settings-nav" aria-label=\{t\('Settings'\)\}>/);
  assert.match(settingsLayout,/aria-current=\{active===section\.id\?'page':undefined\}/);
  assert.match(fs.readFileSync('components/planning/upcoming-page.tsx','utf8'),/\{skipped\.length > 0 && <details className="panel tools-panel">/,'no empty Skipped occurrences fold');
- assert.match(fs.readFileSync('components/planning/upcoming-page.tsx','utf8'),/\{reminders\.length > 0 && <section className="panel upcoming-section"/,'no empty debt and maturity card');
+ assert.match(fs.readFileSync('components/planning/upcoming-page.tsx','utf8'),/const reminderGroup = reminders\.length > 0 && <ReminderGroup /,'no empty debt and maturity group');
  // Accounts keeps its operations behind a Recent activity tab; Cash flow adds expenses from the bar's own Add expense.
  assert.match(fs.readFileSync('components/planning/accounts-page.tsx','utf8'),/\{view==='activity'&&<AccountActivity /);
  assert.match(fs.readFileSync('components/planning/accounts/account-activity.tsx','utf8'),/<section className="panel account-activity">/);
@@ -190,7 +190,7 @@ test('Goals, Reports and Cash flow switch their views from tabs beside the title
  assert.match(budgetScreen,/\{ label: t\('Edit'\), onSelect: \(\) => edit\(row\) \}/,'a Budget row is edited from its ⋯ menu');
  assert.match(budgetScreen,/bills\.length \? \{ label: t\('Stop recurring'\), onSelect: \(\) => stopRecurring\(bills\) \} : \{ label: t\('Make recurring'\), onSelect: \(\) => makeRecurring\(row\) \}/,'a Budget row becomes recurring, or stops its bills');
  assert.match(budgetScreen,/archiveSchedule\(\{ source: 'record', record: bill \}, true\)/,'stopping archives the bills, as Recurring does');
- assert.match(budgetScreen,/onOpen=\{setViewing\}/);assert.match(budgetScreen,/<CategoryDetailsDialog /);assert.match(budgetScreen,/addCashFlow\([^\n]*'Monthly', \{ name: name\(row\), amount: Math\.round\(row\.budget \|\| row\.actual\)/);assert.match(recurringScreen,/addCashFlow\('Other expense', 'Monthly'\)/);assert.doesNotMatch(recurringScreen,/ExpensePlan/,'spending plans are Budget categories now');
+ assert.match(budgetScreen,/onOpen: setViewing/);assert.match(budgetScreen,/<CategoryDetailsDialog /);assert.match(budgetScreen,/addCashFlow\([^\n]*'Monthly', \{ name: name\(row\), amount: Math\.round\(row\.budget \|\| row\.actual\)/);assert.match(recurringScreen,/addCashFlow\('Other expense', 'Monthly'\)/);assert.doesNotMatch(recurringScreen,/ExpensePlan/,'spending plans are Budget categories now');
  const header=fs.readFileSync('components/presentation-foundation/page-header.tsx','utf8'),bar=fs.readFileSync('components/workspace/top-bar.tsx','utf8'),css=stylesheet();
  assert.match(header,/\{tabsInBar && tabs\}<\/>, slot\.title\)/,'tabs join the title while the bar has room for them');
  assert.match(header,/const tabsInBar = slot\.tabsInBar \|\| !!slot\.actions;/,'tabs stay in the bar when only the actions are crowded out');

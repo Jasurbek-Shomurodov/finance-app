@@ -114,12 +114,12 @@ test('expense uses one category above amount, including user categories and safe
   assert.equal(find(unavailable,node=>node.type?.name==='GroupedPicker'&&node.props?.label==='Category').props.disabled,true);
  }
 });
-test('Settings exposes added categories beside the category creation form',()=>{
+test('Settings lists added categories beside the search and the add button',()=>{
  const render=component('components/transaction-tools-panel.tsx','TransactionToolsPanel');
  const html=render({tools:{data:{rules:[]},loading:false,error:'',retry(){},save:async()=>{}},categories:[{id:'food',name:'Eating out',direction:'expense'}],saveCategory:async()=>{},icons:{icons:{},disabled:false,choose:async()=>{},emojiOf:kind=>kind==='food'?'🍕':'🏷️'},removed:{kinds:[],restore:async()=>{},hideForVisit(){},deleted(){},disabled:false},preferences:{data:{preferences:[]},loading:false,error:'',save:async()=>{}},owner:null,demo:true});
  assert.ok(html.includes('id="categories"'));
  assert.ok(html.includes('Eating out'));
- assert.ok(html.includes('Add expense category'));assert.ok(html.includes('Add income category'));
+ assert.ok(html.includes('Add expense category'),'the open direction names the add button');assert.ok(html.includes('Search categories'));
  assert.ok(!html.includes('Categorization rules'));assert.ok(!html.includes('Custom categories'));
 });
 

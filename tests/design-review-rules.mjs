@@ -167,9 +167,13 @@ test('names, chips and filters show their text instead of an ellipsis (LIST-018,
 test('budget rows never hide Actual: it moves under the name with its label when the row is narrow (LIST-020)',()=>{
  const css=stylesheet();
  assert.doesNotMatch(css,/\.budget-row>\.budget-cell:nth-child\(3\)\{display:none\}/);
- assert.match(css,/\.budget-row\{--budget-actions:28px;display:grid;grid-template-columns:minmax\(9rem,1fr\) repeat\(3,minmax\(92px,128px\)\)/,'the name keeps 9rem before the figures grow');
+ assert.match(css,/\.budget-row\{--budget-actions:28px;--budget-grip:20px;display:grid;grid-template-columns:var\(--budget-grip\) minmax\(9rem,2fr\) minmax\(88px,1fr\) repeat\(3,minmax\(92px,112px\)\)/,'the name keeps 9rem before the figures grow');
  assert.doesNotMatch(css,/budget-category-name[^{]*\{[^}]*(?:overflow-wrap:anywhere|text-overflow:ellipsis)/,'names wrap at spaces');
- assert.match(css,/@container content \(max-width:540px\)\{[^\n]*\.budget-row>\.budget-actual\{grid-column:1;grid-row:2;[^}]*text-align:start;white-space:nowrap\}\.budget-row>\.budget-actual::before\{content:attr\(data-label\) " "\}/);
+ // Cells are placed by name, so a row with a handle and one without keep their figures in the same columns.
+ assert.match(css,/grid-template-areas:"grip name state planned actual remaining end"/);
+ for(const [cell,area] of [['.budget-row>.drag-handle','grip'],['.budget-state','state'],['.budget-planned','planned'],['.budget-actual','actual'],['.budget-remaining','remaining']])assert.ok(css.includes(`\n${cell}{grid-area:${area}}`),cell);
+ assert.match(css,/@container content \(max-width:700px\)\{[^\n]*\.budget-row>\.budget-actual\{grid-area:planned;justify-self:start;[^}]*text-align:start;white-space:nowrap\}\.budget-row>\.budget-actual::before\{content:attr\(data-label\) " "\}/,'Actual keeps its label at the start of the Planned line');
+ assert.match(css,/@container content \(max-width:700px\)\{[^\n]*\.budget-row>\.budget-planned\[data-label\]::before\{content:attr\(data-label\)/,'and Planned carries its own once the column names go');
  const rows=fs.readFileSync('components/budget/budget-rows.tsx','utf8');
  assert.equal((rows.match(/className="budget-cell budget-actual" data-label=\{t\('Actual'\)\}/g)||[]).length,3,'group, category and total rows label their Actual');
  // On a phone a record card keeps its actions whole: a table cell width of 1% must not squeeze them into a sliver.
@@ -309,7 +313,7 @@ test('the 9 October 2026 full review fixes stay fixed (SCR-097…SCR-104, HEAD-0
   assert.doesNotMatch(read(file),/<DialogDescription>/,file);
  // Disabled controls say why.
  assert.match(read('components/cash-forecast.tsx'),/title=\{amount > 0 \? undefined : t\('Enter an amount greater than zero\.'\)\}/);
- assert.match(read('components/transaction-tools-panel.tsx'),/title=\{!name\.trim\(\)&&!disabled\?t\('Enter a name\.'\):undefined\}/);
+ assert.match(read('components/settings/add-category-dialog.tsx'),/title=\{name\.trim\(\) \? undefined : t\('Enter a name\.'\)\}/);
  assert.match(read('components/planning/goal-forecast.tsx'),/aria-describedby=\{`\$\{id\}-status`\} onClick=\{savePlan\}/);
  assert.match(read('components/import-history.tsx'),/batch\.result\.added>0&&<Button type="button" disabled=\{busy\}/,'an import that added nothing offers no Undo');
  // Full-screen steppers start on the step's question, and a standalone access page has its one h1.
@@ -363,11 +367,11 @@ test('narrow rows keep names whole and never stack controls on them (RESP-030, R
  assert.match(rule(' .records table td:first-child'),/flex:1 1 max\(12rem/);
  // Phone layouts: summary-table names, budget rows, business cards and recurring actions each take their own line.
  assert.match(css,/@container content \(max-width:420px\)\{\s*\.stack-table tbody td:first-child\{grid-row:1;grid-column:1\/-1\}/);
- assert.match(css,/@container content \(max-width:420px\)\{[^\n]*\.budget-row:has\(>\.budget-actual\[data-label\]\)\{grid-template-columns:minmax\(0,1fr\) auto var\(--budget-actions\)\}\.budget-row:has\(>\.budget-actual\[data-label\]\)>\.budget-row-end\{grid-area:1\/3\}/);
+ assert.match(css,/@container content \(max-width:700px\)\{\.budget-row\{grid-template-columns:var\(--budget-grip\) minmax\(0,1fr\) auto var\(--budget-actions\);grid-template-areas:"grip name remaining end" "state state state state" "planned planned planned planned"/);
  // The row menu has its own last column on every width, after Remaining.
- assert.match(css,/\.budget-row\{--budget-actions:28px;display:grid;grid-template-columns:minmax\(9rem,1fr\) repeat\(3,minmax\(92px,128px\)\) var\(--budget-actions\);/);
- // On touch the ⋯ column is as wide as the 44px ⋯ button, so it never covers Remaining.
- assert.match(css,/@media\(pointer:coarse\)\{\.budget-row\{--budget-actions:44px\}\}/);
+ assert.match(css,/repeat\(3,minmax\(92px,112px\)\) var\(--budget-actions\);grid-template-areas:"grip name state planned actual remaining end"/);
+ // On touch the ⋯ column is as wide as the 44px ⋯ button, so it never covers Remaining, and the handle column as wide as the handle.
+ assert.match(css,/@media\(pointer:coarse\)\{\.budget-row\{--budget-actions:44px;--budget-grip:32px\}\}/);
  assert.match(css,/@container recurring \(max-width:340px\)\{[^\n]*\.row-actions\{grid-area:3\/1\/4\/4\}/);
  // Long compound words in other languages hyphenate instead of overflowing a phone column (German budget and recurring rows).
  assert.match(css,/:root:not\(:lang\(en\)\) body\{hyphens:auto;hyphenate-limit-chars:12 5 5\}/);
@@ -393,7 +397,8 @@ test('Investments spacing: allocation rows inset evenly, filters clear the cards
 test('phone goal rows, transaction labels, square icon buttons, dialog Close and hint fit, filter options, colour tokens (3 November 2026)',()=>{
  const css=stylesheet();
  // Budget contribution rows at 320 px and below: the name takes its own line (it ran under $2,000 in an 82px track).
- assert.match(css,/@container content \(max-width:340px\)\{\.budget-category-row:not\(:has\(>\.budget-actual\[data-label\]\)\):has\(>\.budget-row-end:empty\)>\.budget-category-name\{grid-column:1\/-1\}/);
+ assert.match(css,/@container content \(max-width:340px\)\{[^\n]*\.budget-contribution-row\{grid-template-areas:"grip name name name" "state state state state" "remaining remaining remaining remaining"\}/);
+ assert.match(css,/@container content \(max-width:340px\)\{\.budget-category-row\{grid-template-areas:"grip name name end" "state state state state" "actual actual remaining remaining" "planned planned planned planned"\}/,'a category\'s figures stack under its name as well');
  // An icon button stays square when a min-height raises it (month arrows 36×42, Send 36×40).
  assert.match(css,/\[data-slot="button"\]\[data-size\^="icon"\] \{ width: auto; aspect-ratio: 1; \}/);
  // Dialog Close: logical end edge, 44px square on touch, and the title keeps clear of it.

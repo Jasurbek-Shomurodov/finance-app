@@ -42,4 +42,12 @@ export function togglePreferredCurrency(list: string[], code: string): { currenc
 }
 /** Swaps `next` in for `old`, keeping its position so the primary stays first. */
 export const replacePreferredCurrency = (list: string[], old: string, next: string) => list.map(c => c === old ? next : c);
+/** Drops `code` where `over` sits in the preferred list; the first place is the primary currency. Unknown codes change nothing. */
+export function movePreferredCurrency(list: string[], code: string, over: string): string[] {
+  const from = list.indexOf(code), to = list.indexOf(over);
+  if (from < 0 || to < 0 || from === to) return list;
+  const next = list.filter(item => item !== code);
+  next.splice(to, 0, code);
+  return next;
+}
 export const defaultPreferences: Preferences = { language: 'en', currencies: ['USD'], font: 'inter' };

@@ -1,24 +1,32 @@
 "use client";
 import { useState } from 'react';
 import { useLanguage } from '@/components/language-provider';
-import { InfoHint } from '@/components/presentation-foundation/info-hint';
+import { DrawerLink } from '@/components/presentation-foundation/drawer-link';
+import { PanelTitle } from '@/components/presentation-foundation/panel-title';
 import { Segmented } from '@/components/presentation-foundation/segmented';
+import { Button } from '@/components/ui/button';
 import { budgetTypeLabels, budgetTypes, remainingTone, type BudgetMode, type BudgetRow, type LeftToBudget } from '@/lib/budget';
+import { leftShares } from '@/lib/budget-view';
 import { formatMoney, formatSignedMoney } from '@/lib/format';
+import { planFundingLink } from '@/lib/goal-funding';
 import { RollingText } from '@/components/presentation-foundation/rolling-text';
 import { BudgetProgress, useCategoryName } from './budget-rows';
 
 export type BudgetFocus = 'summary' | 'income' | 'expenses';
 
-/** The right-hand card: money not yet given a job, with Summary / Income / Expenses tabs. The Budget page passes `tab` and `onTab`, so the
- * same tabs also narrow its list to that section; without them the card keeps its own tab. */
+/** The right-hand card: money not yet given a job, with Summary / Income / Expenses tabs. Summary draws planned income as
+ * one bar split into spending, goals and what is left, and Assign leads to Goals › Plan funding, where what is left gets
+ * its job. The Budget page passes `tab` and `onTab`, so the same tabs also narrow its list to that section; without them
+ * the card keeps its own tab. */
 export function LeftToBudgetCard({ left, rows, mode, currency, tab: chosen, onTab }: { left: LeftToBudget; rows: BudgetRow[]; mode: BudgetMode; currency: string; tab?: BudgetFocus; onTab?: (tab: BudgetFocus) => void }) {
  const { t, locale } = useLanguage();
  const name = useCategoryName();
  const [own, setOwn] = useState<BudgetFocus>('summary');
  const tab = chosen ?? own, setTab = onTab ?? setOwn;
  const money = (value: number | null) => value === null ? '—' : formatMoney(value, currency, locale);
+ const taken = (value: number | null) => value === null ? '—' : formatSignedMoney(-value, currency, locale);
  const tone = remainingTone(left.left);
+ const shares = leftShares(left);
  const income = rows.filter(row => row.direction === 'income' && !row.excluded && (row.budget || row.actual || row.missing));
  const spending = rows.filter(row => row.direction === 'expense' && !row.excluded);
  const buckets = budgetTypes.map(type => {
@@ -30,16 +38,21 @@ export function LeftToBudgetCard({ left, rows, mode, currency, tab: chosen, onTa
   return { type, planned, spent, remaining: planned === null ? null : planned - spent };
  }).filter(bucket => bucket.planned !== 0 || bucket.spent);
  return <aside className="panel budget-left" aria-label={t('Left to budget')}>
-  <div className="budget-left-figure" data-tone={tone}><strong><RollingText text={money(left.left)}/></strong><span>{t('Left to budget')}<InfoHint>{t('Planned income minus planned spending and goal contributions. Green means money still needs a job; red means you plan to spend more than you earn.')}</InfoHint></span></div>
+  <PanelTitle title={t('Left to budget')} hint={t('Planned income minus planned spending and goal contributions. Green means money still needs a job; red means you plan to spend more than you earn.')}/>
+  <div className="budget-left-figure" data-tone={tone}><strong><RollingText text={money(left.left)}/></strong></div>
   <Segmented label={t('Left to budget')} options={[{ value: 'summary', label: t('Summary') }, { value: 'income', label: t('Income') }, { value: 'expenses', label: t('Expenses') }] as const} value={tab} onChange={setTab} className="budget-left-tabs"/>
-  {tab === 'summary' && <dl className="budget-left-summary">
-   <div><dt>{t('Planned income')}</dt><dd><RollingText text={money(left.income)}/></dd></div>
-   <div><dt>{t('Planned spending')}</dt><dd><RollingText text={money(left.expenses)}/></dd></div>
-   {/* Money carried in by rollover funds is not planned from this month's income, so it stands apart: Planned spending plus this line is what the Expenses tab and the table total. */}
-   {left.rollover !== 0 && <div><dt>{t('Rolled over')}</dt><dd><RollingText text={left.rollover === null ? '—' : formatSignedMoney(left.rollover, currency, locale)}/></dd></div>}
-   <div><dt>{t('Contributions')}</dt><dd><RollingText text={money(left.contributions)}/></dd></div>
-   <div className="budget-left-total"><dt>{t('Left to budget')}</dt><dd data-tone={tone}><RollingText text={money(left.left)}/></dd></div>
-  </dl>}
+  {tab === 'summary' && <>
+   {shares && <div className="budget-split" aria-hidden="true"><i data-key="spending" style={{ width: `${shares.spending}%` }}/><i data-key="goals" style={{ width: `${shares.goals}%` }}/><i data-key="left" style={{ width: `${shares.left}%` }}/></div>}
+   <dl className="budget-left-summary">
+    <div><dt>{t('Planned income')}</dt><dd><RollingText text={money(left.income)}/></dd></div>
+    <div><dt data-key="spending">{t('Planned spending')}</dt><dd><RollingText text={taken(left.expenses)}/></dd></div>
+    {/* Money carried in by rollover funds is not planned from this month's income, so it stands apart: Planned spending plus this line is what the Expenses tab and the table total. */}
+    {left.rollover !== 0 && <div><dt>{t('Rolled over')}</dt><dd><RollingText text={left.rollover === null ? '—' : formatSignedMoney(left.rollover, currency, locale)}/></dd></div>}
+    <div><dt data-key="goals">{t('Goal contributions')}</dt><dd><RollingText text={taken(left.contributions)}/></dd></div>
+    <div className="budget-left-total"><dt data-key="left">{t('Left to budget')}</dt><dd data-tone={tone}><RollingText text={money(left.left)}/></dd></div>
+   </dl>
+   {left.left !== null && Math.round(left.left) >= 1 && <Button asChild><DrawerLink href={planFundingLink}>{t('Assign {amount}', { amount: money(left.left) })}</DrawerLink></Button>}
+  </>}
   {tab === 'income' && (income.length ? <ul className="budget-left-list">{income.map(row => <li key={row.key}><p><span>{name(row)}</span><small>{t('{amount} planned', { amount: money(row.missing ? null : row.budget ?? 0) })}</small></p><BudgetProgress row={row}/><p><small>{t('{amount} earned', { amount: money(row.actual) })}</small><small>{t('{amount} remaining', { amount: money(row.missing ? null : Math.max(0, (row.budget ?? 0) - row.actual)) })}</small></p></li>)}</ul> : <p className="budget-left-empty">{t('Add planned income to see it here.')}</p>)}
   {tab === 'expenses' && (buckets.length ? <ul className="budget-left-list">{buckets.map(bucket => <li key={bucket.type}><p><span>{t(budgetTypeLabels[bucket.type])}</span><small>{t('{amount} planned', { amount: money(bucket.planned) })}</small></p><BudgetProgress row={{ progress: bucket.planned !== null && bucket.planned > 0 ? bucket.spent / bucket.planned : bucket.spent > 0 ? 1 : 0, direction: 'expense', remaining: bucket.remaining }}/><p><small>{t('{amount} spent', { amount: money(bucket.spent) })}</small><small data-tone={remainingTone(bucket.remaining)}>{t((bucket.remaining ?? 0) < 0 ? '{amount} over' : '{amount} remaining', { amount: money(bucket.remaining === null ? null : Math.abs(bucket.remaining)) })}</small></p></li>)}</ul> : <p className="budget-left-empty">{t('You haven’t added any expense budgets yet. Once you do, a summary appears here.')}</p>)}
  </aside>;

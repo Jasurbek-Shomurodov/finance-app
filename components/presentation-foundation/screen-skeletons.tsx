@@ -83,7 +83,7 @@ function BudgetRow({ name = 120 }: { name?: number }) {
 export function BudgetSkeleton({ label }: { label: string }) {
   return <Loading label={label}>
     <div className="budget-layout">
-      <div className="budget-table">{[4, 6].map((rows, section) => <div className="budget-skeleton-section" key={section}>
+      <div className="budget-table">{[4, 6].map((rows, section) => <div className="budget-section" key={section}>
         <div className="budget-row budget-section-header skeleton-row"><span><Skeleton className="h-4 w-20"/></span>{times(3).map(cell => <Skeleton key={cell} className="h-4 w-20"/>)}</div>
         <section className="budget-group">{times(rows).map(row => <BudgetRow key={row} name={100 + (row % 3) * 30}/>)}</section>
       </div>)}</div>
@@ -99,16 +99,19 @@ function RecurringRow({ row }: { row: number }) {
   return <li className="recurring-row skeleton-row"><Merchant width={110 + (row % 3) * 30}/><Skeleton className="h-6 w-16 rounded-full"/><Skeleton className="h-5 w-14"/><Skeleton className="h-9 w-32 rounded-xl"/></li>;
 }
 
-/** Recurring's list: the month's income and expense bars, then the schedules grouped by day. */
+/** Recurring's list: the month's three tiles, then the schedules grouped by day beside what is coming up. */
 export function RecurringSkeleton({ label }: { label: string }) {
   return <Loading label={label}>
-    <section className="panel recurring-summary">
+    <section className="recurring-summary">
       <div className="recurring-summary-head"><Skeleton className="h-6 w-36"/><Skeleton className="h-9 w-32 rounded-xl"/></div>
-      {times(2).map(side => <div className="recurring-bar-skeleton" key={side}><div><Skeleton className="h-4 w-20"/><Skeleton className="h-4 w-24"/></div><Skeleton className="h-2 w-full rounded-full"/><div><Skeleton className="h-3 w-16"/><Skeleton className="h-3 w-24"/></div></div>)}
+      {times(3).map(tile => <div className="recurring-left" key={tile}><Skeleton className="h-4 w-20"/><Skeleton className="h-7 w-28"/><Skeleton className="h-3 w-40"/></div>)}
     </section>
-    <section className="panel recurring-list"><ul>
-      {[5, 3].flatMap((rows, day) => [<li className="transaction-day-heading" key={'d' + day}><Skeleton className="h-4 w-28"/><Skeleton className="h-4 w-16"/></li>, ...times(rows).map(row => <RecurringRow key={day + '-' + row} row={row}/>)])}
-    </ul></section>
+    <div className="recurring-layout">
+      <section className="panel recurring-list"><ul>
+        {[5, 3].flatMap((rows, day) => [<li className="transaction-day-heading" key={'d' + day}><Skeleton className="h-4 w-28"/><Skeleton className="h-4 w-16"/></li>, ...times(rows).map(row => <RecurringRow key={day + '-' + row} row={row}/>)])}
+      </ul></section>
+      <section className="panel recurring-coming"><Skeleton className="h-6 w-28"/><ul>{times(4).map(row => <li className="recurring-coming-row" key={row}><Skeleton className="h-11 w-full rounded-xl"/><Skeleton className="h-4 w-28"/><Skeleton className="h-4 w-12"/></li>)}</ul></section>
+    </div>
   </Loading>;
 }
 
@@ -188,11 +191,11 @@ export function RecoveryRowsSkeleton({ label, rows = 4 }: { label?: string; rows
   return label ? <div role="status" aria-busy="true"><span className="sr-only">{label}</span>{list}</div> : list;
 }
 
-/** The four Profile & preferences cards, each a heading over its fields. */
+/** The three Profile & preferences cards, each a heading over its rows of label and control. */
 export function PreferencesSkeleton({ label }: { label?: string }) {
-  const cards = <div aria-hidden="true">{[2, 1, 2, 2].map((rows, card) => <section className="panel preferences-card" key={card}>
-    <Skeleton className="mb-4 h-5 w-28"/>
-    <div className="grid gap-3">{times(rows).map(row => <div className="preferences-setting-row" key={row}><Skeleton className="h-4 w-32"/><Skeleton className="h-11 w-full rounded-xl"/></div>)}</div>
+  const cards = <div aria-hidden="true">{[2, 2, 2].map((rows, card) => <section className="panel preferences-card" key={card}>
+    <header><Skeleton className="h-5 w-28"/></header>
+    {times(rows).map(row => <div className="setting-row" key={row}><Skeleton className="h-4 w-32"/><Skeleton className="h-11 w-full rounded-xl"/></div>)}
   </section>)}</div>;
   return label ? <div role="status" aria-busy="true"><span className="sr-only">{label}</span>{cards}</div> : cards;
 }

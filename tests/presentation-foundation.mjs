@@ -128,7 +128,7 @@ test('every drawer destination shimmers in its own layout',()=>{
  const donut=render(ReportsSkeleton,{label:'L',donut:true});
  assert.ok(donut.includes('portfolio-allocation-body')&&!donut.includes('sankey-skeleton')&&donut.match(/class="stat-tile"/g).length===2,'Spending and Income: two figures and a donut');
  assert.equal(render(RecoveryRowsSkeleton,{label:'L',rows:3}).match(/class="recovery-row skeleton-row"/g).length,3);
- assert.equal(render(PreferencesSkeleton,{label:'L'}).match(/class="panel preferences-card"/g).length,4);
+ assert.equal(render(PreferencesSkeleton,{label:'L'}).match(/class="panel preferences-card"/g).length,3);assert.equal(render(PreferencesSkeleton,{label:'L'}).match(/class="setting-row"/g).length,6,'rows of label and control, as the loaded cards have');
 });
 
 test('row menu keeps rare actions behind one labelled ⋯ button and disappears when there are none',()=>{
@@ -183,6 +183,9 @@ test('panel title keeps the heading, count and hint on one line and the aside on
  assert.equal(html,'<div class="panel-title"><h2>Recent transactions<span class="count">1,234</span><i>Recorded income and expenses</i></h2><a>View all</a></div>');
  assert.equal(render(PanelTitle,{title:'Asset allocation'}),'<div class="panel-title"><h2>Asset allocation</h2></div>');
  assert.equal(render(Count,{value:12,loading:true}),'<span class="count">—</span>');
+ // Beside a heading the pill says what it counts, so a screen reader never hears "22 October 202614".
+ assert.equal(render(Count,{value:14,label:'14 payments'}),'<span class="count"><span aria-hidden="true">14</span><span class="sr-only">14 payments</span></span>');
+ assert.equal(render(Count,{value:14,label:'14 payments',loading:true}),'<span class="count">—</span>');
 });
 
 test('animated money draws each digit at its value, ready to roll, and keeps the amount whole for screen readers',()=>{

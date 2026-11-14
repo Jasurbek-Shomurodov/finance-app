@@ -4,7 +4,7 @@ import React from 'react';
 import { loadTS } from './helpers/load-ts.mjs';
 import { createRenderer, hostModule, language, text } from './helpers/component-tree.mjs';
 const { formatMonthYear } = loadTS('lib/format.ts');
-const { periodMonths, partialBar, cashFlowReport, sankeyFlows, trendMonths, trendBarsBy, topShares, otherShareKey } = loadTS('lib/cash-flow-report.ts');
+const { periodMonths, partialBar, cashFlowReport, sankeyFlows, trendMonths, trendBarsBy, trendTotals, topShares, otherShareKey } = loadTS('lib/cash-flow-report.ts');
 
 const record = (id, name, kind, amount, date, extra = {}) => ({ id, name, kind, currency: 'USD', amount, quantity: 1, cost: 0, rate: 0, date, frequency: 'Once', notes: '', ...extra });
 
@@ -80,6 +80,13 @@ test('a bar or month with an amount that could not be converted is missing, neve
  assert.deepEqual(trendBarsBy(report.series, 'month').map(bar => bar.income), [100, null]);
 });
 
+test('the totals under the chart add the bars on screen, and are unknown while a bar is missing an amount', () => {
+ const bars = [{ period: '2026-08', income: 1000, expenses: 400, missing: 0 }, { period: '2026-09', income: 500, expenses: 800, missing: 0 }];
+ assert.deepEqual(trendTotals(bars, 2), { income: 1500, expenses: 1200, average: 150 });
+ assert.equal(trendTotals([...bars, { period: '2026-10', income: null, expenses: null, missing: 1 }], 3), null, 'never a total that is too low');
+ assert.equal(trendTotals([], 0), null);
+});
+
 test('the last quarter or year bar is "to date" while it is not over, so it is never read as a whole period', () => {
  assert.equal(partialBar('2026-10', 'quarter', '2026-10-09'), '2026-Q4');
  assert.equal(partialBar('2026-10', 'year', '2026-10-09'), '2026');
@@ -95,8 +102,7 @@ test('Cash flow adds its four tiles for a quarter or a year (a month has the pag
  const r = createRenderer();
  const modules = {
   'recharts': hostModule(), '@/components/language-provider': language('en-US'),
-  ...Object.fromEntries(['stat-tile', 'segmented', 'panel-title', 'inline-error', 'loading-placeholder'].map(name => ['@/components/presentation-foundation/' + name, hostModule()])),
-  '@/components/category-icons-context': { useCategoryHue: () => key => key },
+  ...Object.fromEntries(['stat-tile', 'segmented', 'panel-title', 'inline-error', 'loading-placeholder', 'category-icon'].map(name => ['@/components/presentation-foundation/' + name, hostModule()])),
   '@/hooks/use-owner-resource': { useOwnerResource: () => ({ data: { records: [] } }) },
   '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 },
   '@/hooks/use-location-search': { useLocationSearch: () => '' },
@@ -114,7 +120,27 @@ test('Cash flow adds its four tiles for a quarter or a year (a month has the pag
  assert.deepEqual(tiles(), []);
  const tooltip = r.find(node => node.type === 'Tooltip' && node.props.labelFormatter);
  assert.equal(tooltip.props.labelFormatter(month), formatMonthYear(month, 'en-US') + ' to date', 'the running month is to date');
- assert.equal(tooltip.props.formatter(null, 'Income')[0], '—');
+ assert.equal(tooltip.props.formatter(null, 'income')[0], '—');
+ assert.deepEqual(tooltip.props.formatter(1000, 'income'), ['$1,000', 'Income']);
+ // The 2026 redesign: ranked bars first (income, spending, then what was left over), whole amounts, the Sankey one tap away.
+ const rows = () => r.all(node => node.type === 'li' && node.props['data-side']).map(node => [node.props['data-side'], text(node)]);
+ assert.deepEqual(rows(), [['income', 'Salary+$1,000'], ['expense', 'Living expense$250'], ['left', 'Left over+$750']]);
+ assert.equal(r.all(node => node.type === 'FlowSankey' || node.type === 'Sankey').length, 0);
+ // The totals of the months on screen sit under the chart.
+ assert.deepEqual(r.all(node => node.type === 'dd').map(text), ['$1,000', '$250', '+$63'], 'twelve months: $750 over 12 is $63 a month');
+ assert.deepEqual(r.all(node => node.type === 'dt').map(text), ['12-month income', '12-month spending', 'Average monthly surplus']);
+ // Without an outlook the running month has no outline; with one, what is still expected stacks on its bars only.
+ assert.equal(r.all(node => node.type === 'Bar').length, 2);
+ r.mount(React.createElement(CashFlowReport, { owner: null, demo: true, revision: 0, data: { categories: [], activity: [], investmentLinks: [], records: [record('a', 'Pay', 'Salary', 1000, month + '-01')] }, splits: [], month, currency: 'USD', market: { rates: { USD: 1 }, quotes: {} }, expected: { income: 400, spending: 90 } }));
+ r.update();
+ assert.deepEqual(r.all(node => node.type === 'Bar').map(node => [node.props.dataKey, node.props.stackId, node.props.strokeDasharray]), [['income', 'income', undefined], ['expectedIncome', 'income', '4 3'], ['expenses', 'expenses', undefined], ['expectedExpenses', 'expenses', '4 3']]);
+ const bars = r.find(node => node.type === 'BarChart').props.data;
+ assert.deepEqual([bars.at(-1).expectedIncome, bars.at(-1).expectedExpenses, bars.at(-2).expectedIncome], [400, 90, undefined]);
+ const tip = r.find(node => node.type === 'Tooltip' && node.props.labelFormatter).props.formatter;
+ assert.deepEqual(tip(400, 'expectedIncome'), ['$400', 'Income still expected']);
+ assert.equal(tip(undefined, 'expectedExpenses'), null, 'a month that expects nothing more leaves the line out');
+ assert.ok(r.find(node => node.type === 'i' && node.props.className === 'chart-planned-key'), 'the legend names the outline');
+ open([record('a', 'Pay', 'Salary', 1000, month + '-01'), record('b', 'Shop', 'Living expense', 250, month + '-01')], { rates: { USD: 1 }, quotes: {} });
  period('quarter');
  assert.deepEqual(tiles(), [['Income', '$1,000'], ['Expenses', '$250'], ['Total savings', '$750'], ['Savings rate', '75%']]);
  assert.equal(note().length, 0);

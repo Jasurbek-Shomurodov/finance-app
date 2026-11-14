@@ -33,6 +33,8 @@ export const stackTop = (top: boolean) => ({ radius: top ? chartBar.radius : [0,
 export const plannedBar = { ...chartBar, fill: 'var(--primary)', fillOpacity: .12, stroke: 'var(--primary)', strokeDasharray: '4 3' };
 /** Columns side by side (income beside expenses): narrower, so a group still reads as one period. */
 export const groupedBar = { ...chartBar, maxBarSize: 18 };
+/** What a grouped column still expects, stacked on what is recorded: the planned outline at the grouped width. */
+export const plannedGroupedBar = { ...plannedBar, maxBarSize: groupedBar.maxBarSize };
 /** A recorded column drawn inside its planned outline. */
 export const recordedBar = { ...chartBar, fillOpacity: .85 };
 

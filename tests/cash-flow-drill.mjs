@@ -638,9 +638,8 @@ test('a Cash flow link opens the goal’s Sankey for that month', () => {
  const r = createRenderer();
  const modules = {
   'recharts': hostModule(), 'lucide-react': hostModule(), '@/components/language-provider': language('en-US'), 'next/navigation': { useRouter: () => router },
-  ...Object.fromEntries(['stat-tile', 'segmented', 'panel-title', 'inline-error', 'loading-placeholder'].map(name => ['@/components/presentation-foundation/' + name, hostModule()])),
+  ...Object.fromEntries(['stat-tile', 'segmented', 'panel-title', 'inline-error', 'loading-placeholder', 'category-icon'].map(name => ['@/components/presentation-foundation/' + name, hostModule()])),
   '@/components/ui/dialog': hostModule(), '@/components/ui/button': hostModule(),
-  '@/components/category-icons-context': { useCategoryHue: () => key => key },
   '@/hooks/use-owner-resource': { useOwnerResource: () => ({ data: { records: [], events: [] } }) },
   '@/hooks/use-location-search': { useLocationSearch: () => '?open=goal&key=g&month=2026-08' },
   '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 },
@@ -780,7 +779,7 @@ test('a schedule’s Sankey shows what paid it and what is still due; a Recurrin
  assert.equal(plain.node({ x: 0, y: 0, width: 10, height: 20, index: hub, payload: { name: 'Rent', value: 1 } }).props.role, undefined, 'without details to open, the schedule is plain');
  const page = fs.readFileSync('components/planning/upcoming-page.tsx', 'utf8');
  assert.match(page, /onEdit=\{onEdit\} onOpen=\{details\.open\} onPay/, 'a Recurring row opens its history');
- assert.match(page, /<tr key=\{item\.key\} \{\.\.\.reminderRow\(onEdit, item, /, 'debt repayments and deposit maturities open their loan or deposit');
+ assert.match(page, /const reminder: ReminderActions = \{ today, busy, onOpen: onEdit, /, 'debt repayments and deposit maturities open their loan or deposit');
  assert.doesNotMatch(page, /onSankey/);
  const overview = fs.readFileSync('components/overview-page.tsx', 'utf8');
  assert.match(overview, /openRecurring = \(\) => router\.push\('\/upcoming'\)/);
@@ -832,7 +831,7 @@ test('a subscription row opens its last charge’s details; its menu and Restore
 
 test('a Budget row opens its category’s details; Money flow covers the month or the year to date', () => {
  const screen = fs.readFileSync('components/workspace/screens/budget-screen.tsx', 'utf8');
- assert.match(screen, /rowMenu=\{rowMenu\} onOpen=\{setViewing\}/, 'a row opens its category’s details');
+ assert.match(screen, /rowMenu, onOpen: setViewing/, 'a row opens its category’s details');
  assert.doesNotMatch(screen, /openSankey/);
  assert.match(screen, /title: t\('Money flow'\), month, months: view === 'year' \? periodMonths\(month, 'year'\) : undefined/);
  const r = createRenderer();
@@ -954,7 +953,7 @@ test('a business or tag Sankey counts only what it labels; in Settings a categor
  assert.deepEqual(setTransactions({ side: 'set', of: 'tag', key: 'trip', ids: ['trip1', 'trip2'] }, ctx).map(item => item.id), ['trip2', 'trip1']);
  const screen = fs.readFileSync('components/workspace/screens/settings-screen.tsx', 'utf8');
  assert.doesNotMatch(screen, /setSankey|sankey\(/);
- assert.match(fs.readFileSync('components/transaction-tools-panel.tsx', 'utf8'), /aria-label=\{t\('Edit \{name\}',\{name:label\(item\)\}\)\} onClick=\{\(\)=>setEditing\(item\)\}/, 'a category opens its editor');
+ assert.match(fs.readFileSync('components/settings/category-list.tsx', 'utf8'), /className="category-row" onOpen=\{disabled \? undefined : \(\) => onEdit\(row\.item\)\}/, 'a category opens its editor');
  const settings = fs.readFileSync('components/business-settings.tsx', 'utf8');
  assert.match(settings, /const pnl = `\/reports\?tab=cash_flow&business=\$\{business\.id\}&view=pnl`;\n    return <SortableItem as="li" key=\{business\.id\} id=\{business\.id\} label=\{business\.name\} onOpen=\{\(\) => router\.push\(pnl\)\}>/, 'a business opens its profit and loss');
  assert.match(settings, /onOpen=\{\(\) => router\.push\(`\/transactions\?tag=\$\{tag\.id\}`\)\}/, 'a tag opens the transactions it labels');
