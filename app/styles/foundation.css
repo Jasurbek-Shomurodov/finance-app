@@ -219,7 +219,7 @@ details[open]>summary:not(:has(svg))::before{transform:rotate(45deg)}
 
 /* Form fields. */
 label{display:grid;gap:8px;font-size:var(--type-small);font-weight:500;margin-bottom:20px}
-input,select,textarea{min-height:44px!important;background:var(--field)!important;color:var(--foreground);border:1px solid var(--input);border-radius:var(--radius-control);padding:10px 12px;font-size:var(--type-body)}
+input,select,textarea{min-height:44px!important;background:var(--field)!important;color:var(--foreground);border:1px solid var(--input);border-radius:var(--radius-control);padding:10px 12px;font-size:var(--type-body);transition:border-color var(--motion-quick),box-shadow var(--motion-quick)}
 :is(input,select,textarea)::placeholder{color:color-mix(in srgb,var(--muted-foreground) 70%,transparent)}
 .primary{background:var(--primary)!important;color:var(--primary-foreground)!important;min-height:44px;gap:10px}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}

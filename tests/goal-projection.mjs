@@ -101,7 +101,8 @@ test('the Goals page switches Overview, Goal planner and History from the top ba
  assert.match(page,/if\(params\.get\('view'\)==='history'\)\{setView\('history'\);setHistoryGoal\(params\.get\('goal'\)\);\}/);
  assert.match(panel,/part !== 'activity' && activeGoals\.length > 0/);assert.match(panel,/part !== 'funding' && savingsGoals\.length > 0/);
  assert.match(css,/\.goals-split\{[^}]*align-items:stretch/);
- assert.match(css,/\.segmented\.page-tabs>button\[aria-pressed=true\]\{[^}]*border-block-end-color:var\(--primary\)/);
+ // The pressed tab's underline is its marker, so it slides from the tab pressed before.
+ assert.match(css,/\.segmented\.page-tabs>button::before\{[^}]*background:var\(--primary\)/);assert.match(css,/\.segmented>button\[aria-pressed=true\]::before\{opacity:1\}/);
 });
 
 test('CF-048: the goals surplus counts variable income sources like the monthly estimate',()=>{

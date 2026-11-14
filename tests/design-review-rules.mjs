@@ -446,3 +446,23 @@ test('motion tokens, overlay exits, cause before effect, reduced motion fades (M
  assert.match(css,/@keyframes fade-only\{from\{opacity:0\}\}/,'the reduced-motion fade moves nothing');
  assert.match(motion,/\.workspace \[data-settled\]\{animation:none!important\}/,'a skeleton swapped for content never replays the entrance (MOT-021)');
 });
+
+// Every screen answers the pointer, 14 November 2026 (MOT-022): press feedback, a sliding switch marker, the drawer's
+// open-page bar, a pointer glow on key figures, and a top bar edge once the page scrolls.
+test('controls answer a press and the pointer on every screen, and stand still under reduced motion (MOT-022)',()=>{
+ const css=stylesheet(),layer=fs.readFileSync('app/styles/interaction.css','utf8');
+ assert.match(layer,/:is\(\[data-slot=button\],\.segmented>button,\.nav-item,\.pos-day\):active:not\(:disabled,\[aria-disabled=true\]\)\{transform:scale\(\.97\)\}/,'a pressed control gives');
+ assert.match(layer,/\.nav-item::before\{[^}]*transform:scaleY\(0\);transition:transform var\(--motion-settle\) var\(--ease-out\)\}\n\.nav-item\[data-active=true\]::before\{transform:scaleY\(1\)\}/,'the drawer marks the open page');
+ assert.match(layer,/@media\(hover:hover\)\{:is\(\.stat-tile,\.asset-card\):hover::after\{opacity:1\}\}/,'the glow shows only where a pointer hovers');
+ assert.match(layer,/@supports \(animation-timeline:scroll\(\)\)\{\.topbar\{animation:topbar-edge linear both/);
+ assert.doesNotMatch(layer,/cubic-bezier|transition:[^;}]*\b(width|height|top|left|margin)\b/,'tokens only, and nothing but transform, opacity and colour moves');
+ assert.match(layer.slice(layer.indexOf('@media(prefers-reduced-motion:reduce)')),/:active\{transform:none\}[\s\S]*\.topbar\{animation:none\}/);
+ // The pressed marker is a pseudo-element behind the label, so it can slide without moving the label.
+ assert.match(css,/\.segmented>button::before\{content:"";position:absolute;inset:0;z-index:-1;[^}]*opacity:0;transform-origin:0 0;pointer-events:none\}/);
+ assert.match(css,/\.segmented\.page-tabs>button::before\{inset:auto 0 -2px;height:2px;/,'page tabs slide their underline');
+ const segmented=fs.readFileSync('components/presentation-foundation/segmented.tsx','utf8');
+ assert.match(segmented,/prefers-reduced-motion: reduce\)'\)\.matches\) return;/);
+ assert.match(segmented,/pseudoElement: '::before'/);
+ assert.doesNotMatch(segmented,/cubic-bezier/,'the slide reads its timing from the tokens');
+ assert.match(fs.readFileSync('hooks/use-pointer-glow.ts','utf8'),/matchMedia\('\(hover: hover\)'\)\.matches\) return;/,'touch screens are left alone');
+});

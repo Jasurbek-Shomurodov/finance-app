@@ -75,7 +75,7 @@
 .asset-card-grid:not(.asset-layout-list)>.asset-card>.asset-card-actions{grid-row:6}
 /* The narrowest phones keep a whole word of the name beside the icon and ⋯ ("Neighborhoo/d café" broke at 280 px). */
 @container content (max-width:360px){.asset-card{padding:16px}}
-.asset-card{display:flex;flex-direction:column;min-width:0;padding:20px;border:1px solid var(--border);border-radius:var(--radius-card);background:var(--card);box-shadow:var(--shadow-card);transition:border-color .15s}
+.asset-card{display:flex;flex-direction:column;min-width:0;padding:20px;border:1px solid var(--border);border-radius:var(--radius-card);background:var(--card);box-shadow:var(--shadow-card);position:relative;transition:border-color .15s}
 /* A card that opens its Sankey. */
 .asset-card[data-clickable]{cursor:pointer}
 .asset-card[data-clickable]:focus-visible{outline:2px solid var(--ring);outline-offset:2px}

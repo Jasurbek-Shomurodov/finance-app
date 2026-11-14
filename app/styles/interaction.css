@@ -1,0 +1,35 @@
+/* What answers the pointer on every screen (14 November 2026): a control gives when pressed, a field and a card
+   brighten under the pointer, the drawer marks the open page, key figures glow where the pointer is, and the top bar
+   draws its edge once the page scrolls under it. Timed by the tokens in foundation.css; transform and opacity only. */
+
+/* Press: buttons give by 3%, wider rows by half of that, so a large row never jumps. */
+:is([data-slot=button],.segmented>button,.nav-item,.pos-day):active:not(:disabled,[aria-disabled=true]){transform:scale(.97)}
+:is(.user-link,.account-list-row,.stat-tile-link):active{transform:scale(.985)}
+/* The main action lifts off the page under the pointer. */
+@media(hover:hover){[data-slot=button][data-variant=default]:hover:not(:disabled,[aria-disabled=true]){box-shadow:0 8px 18px -10px color-mix(in srgb,var(--primary) 70%,transparent)}}
+
+/* The drawer marks the open page with a bar that grows in at the row's leading edge. */
+.nav-item::before{content:"";position:absolute;inset-block:9px;inset-inline-start:0;width:3px;border-radius:3px;background:var(--primary);transform:scaleY(0);transition:transform var(--motion-settle) var(--ease-out)}
+.nav-item[data-active=true]::before{transform:scaleY(1)}
+.nav-item:hover svg{opacity:1}
+
+/* Fields and their look-alikes show they can be changed before they are focused. */
+:is(input,select,textarea,[data-slot=select-trigger],.date-picker-trigger):hover:not(:focus-visible,:disabled,[type=checkbox],[type=radio],[type=range]){border-color:color-mix(in srgb,var(--ring) 55%,var(--input))}
+
+/* A surface under the pointer firms up its edge. */
+@media(hover:hover){.workspace .content .panel:hover{border-color:color-mix(in srgb,var(--foreground) 16%,var(--border))}}
+
+/* Key figures and holdings glow where the pointer is (`usePointerGlow` places --glow-x / --glow-y). */
+:is(.stat-tile,.asset-card)::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;background:radial-gradient(260px circle at var(--glow-x,50%) var(--glow-y,0px),color-mix(in srgb,var(--primary) 11%,transparent),transparent 70%);transition:opacity var(--motion-settle)}
+@media(hover:hover){:is(.stat-tile,.asset-card):hover::after{opacity:1}}
+.goal-detail .stat-tile::after{content:none}
+
+/* The top bar draws a hairline once the page has scrolled under it. */
+@keyframes topbar-edge{to{box-shadow:0 1px 0 var(--hairline),0 10px 24px -20px rgb(0 0 0 / 55%)}}
+@supports (animation-timeline:scroll()){.topbar{animation:topbar-edge linear both;animation-timeline:scroll();animation-range:0 56px}}
+
+@media(prefers-reduced-motion:reduce){
+ :is([data-slot=button],.segmented>button,.nav-item,.pos-day):active:not(:disabled,[aria-disabled=true]),:is(.user-link,.account-list-row,.stat-tile-link):active{transform:none}
+ [data-slot=button],.nav-item::before,:is(.stat-tile,.asset-card)::after,.panel,input,select,textarea{transition:none}
+ .topbar{animation:none}
+}

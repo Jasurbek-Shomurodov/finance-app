@@ -18,11 +18,13 @@ import { awaitingSettings } from '@/lib/onboarding';
 import { signInPath } from '@/lib/sign-in-path';
 import { showError } from '@/lib/feedback';
 import { useArrivalMarks } from '@/hooks/use-arrivals';
+import { usePointerGlow } from '@/hooks/use-pointer-glow';
 
 /** Frames the current screen with the drawer and top bar once the session is known. */
 function WorkspaceShell({ children }: { children: ReactNode }) {
  const { t } = useLanguage();
  const arrivals = useArrivalMarks<HTMLElement>();
+ usePointerGlow();
  const { ready, user, demo, preview, pathname, busy, configured, error, login, startDemo, overdueCount, onboardingNeeded, settingsLoading, preferencesData, savePreferences, applyPreferences, planning, saveTrackingStart, household } = useWorkspace();
  // A drawer tap shows its destination immediately; the routed screen replaces it once it arrives.
  const [pending, setPending] = useState<PendingNavigation | null>(null);

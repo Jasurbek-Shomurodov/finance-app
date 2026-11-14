@@ -12,14 +12,14 @@
 .nav-group{padding:0}
 .nav-group+.nav-group{margin-top:14px}
 .nav-heading{height:auto!important;padding:0 10px 4px!important;font-size:var(--type-caption)!important;font-weight:500;color:var(--muted-foreground)!important}
-.nav-item{height:34px!important;padding:0 10px!important;gap:10px!important;border-radius:8px!important;font-size:var(--type-small)!important;font-weight:500;color:var(--sidebar-foreground);transition:background .15s,color .15s}
+.nav-item{position:relative;height:34px!important;padding:0 10px!important;gap:10px!important;border-radius:8px!important;font-size:var(--type-small)!important;font-weight:500;color:var(--sidebar-foreground);transition:background .15s,color .15s,transform var(--motion-quick) var(--ease-out)}
 .nav-item svg{width:17px!important;height:17px!important;opacity:.7}
 .nav-item[data-active=true]{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground)}
 .nav-item[data-active=true] svg{opacity:1}
 .nav-item>span.count:last-child{flex:0 0 auto;min-width:max-content;margin-inline-start:auto;background:color-mix(in srgb,var(--negative) 18%,transparent);color:var(--negative)}
 .sidebar-account{padding:12px;gap:6px}
 .user-line{display:flex;align-items:center;gap:4px;min-width:0;padding-top:6px;border-top:1px solid var(--sidebar-border)}
-.user-link{display:flex;flex:1;align-items:center;gap:10px;min-width:0;padding:6px;border-radius:8px;color:inherit;transition:background .15s}
+.user-link{display:flex;flex:1;align-items:center;gap:10px;min-width:0;padding:6px;border-radius:8px;color:inherit;transition:background .15s,transform var(--motion-quick) var(--ease-out)}
 .user-link:hover,.user-link[data-active=true]{background:var(--sidebar-accent)}
 .user-link>div{flex:1;min-width:0;line-height:1.35}
 .user-line strong{display:block;font-size:var(--type-small);font-weight:600}
@@ -41,7 +41,11 @@
 /* Without room in the bar the tabs open the page, above its own actions. */
 .page-heading .page-tabs>button{padding-block:8px}
 .segmented.page-tabs>button{height:auto;padding:0 4px;border-radius:0;border-block-end:2px solid transparent;background:none;box-shadow:none;font-size:var(--type-small)}
-.segmented.page-tabs>button[aria-pressed=true]{background:none;box-shadow:none;color:var(--primary);border-block-end-color:var(--primary)}
+.segmented.page-tabs>button[aria-pressed=true]{color:var(--primary)}
+.segmented.page-tabs>button::before{inset:auto 0 -2px;height:2px;border-radius:2px;background:var(--primary);box-shadow:none}
+.segmented.page-tabs>button:hover:not([aria-pressed=true])::before{opacity:.35}
+/* Forced colours drop backgrounds, so the pressed tab keeps a real border there. */
+@media(forced-colors:active){.segmented.page-tabs>button[aria-pressed=true]{border-block-end-color:Highlight}}
 /* Focus is drawn inside each tab, so a wrapped row never cuts a ring in half. */
 .segmented.page-tabs>button:focus-visible{outline:2px solid var(--ring);outline-offset:-2px;border-radius:6px}
 .topbar-page-actions{display:flex;align-items:center;gap:8px}
@@ -68,7 +72,7 @@
 .entry-actions [data-slot=button],.entry-actions .date-picker-trigger{height:42px;min-height:42px}
 
 /* Surfaces. */
-.panel{min-width:0;padding:20px;border:1px solid var(--border);border-radius:var(--radius-card);background:radial-gradient(560px 240px at 0 0,color-mix(in srgb,var(--mark-bg) 4%,transparent),transparent),var(--card);box-shadow:var(--shadow-card)}
+.panel{min-width:0;padding:20px;border:1px solid var(--border);border-radius:var(--radius-card);background:radial-gradient(560px 240px at 0 0,color-mix(in srgb,var(--mark-bg) 4%,transparent),transparent),var(--card);box-shadow:var(--shadow-card);transition:border-color var(--motion-settle)}
 .panel-title{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 16px;margin-bottom:16px}
 .panel-title h2{flex:1 1 12rem;min-width:0;display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;font-family:var(--font-display);font-size:var(--type-display);font-weight:500;letter-spacing:-.02em;line-height:1.15}
 .panel-title h2 .count{margin-inline-start:2px;align-self:center;font-family:var(--font-ui);letter-spacing:0}
@@ -98,7 +102,7 @@ h2:has(>.info-hint){display:flex;align-items:center;gap:6px}
 /* Key figures. */
 .stat-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
 .stat-tiles[data-columns="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
-.stat-tile{display:flex;flex-direction:column;gap:8px;min-width:0;padding:20px;border:1px solid var(--border);border-radius:var(--radius-card);background:radial-gradient(90% 120% at 0 0,color-mix(in srgb,var(--mark-bg) 8%,transparent),transparent 70%),radial-gradient(70% 90% at 100% 100%,color-mix(in srgb,var(--caution) 7%,transparent),transparent 70%),var(--card);box-shadow:var(--shadow-card)}
+.stat-tile{display:flex;flex-direction:column;gap:8px;min-width:0;padding:20px;border:1px solid var(--border);border-radius:var(--radius-card);background:radial-gradient(90% 120% at 0 0,color-mix(in srgb,var(--mark-bg) 8%,transparent),transparent 70%),radial-gradient(70% 90% at 100% 100%,color-mix(in srgb,var(--caution) 7%,transparent),transparent 70%),var(--card);box-shadow:var(--shadow-card);position:relative}
 .stat-tile h3{font-size:var(--type-caption);font-weight:500;line-height:1.4;color:var(--muted-foreground)}
 .stat-tile>strong{font-size:var(--type-stat);font-weight:600;letter-spacing:-.03em;line-height:1.2;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 /* A headline tile that opens its page (StatTile href). */
@@ -118,9 +122,12 @@ h2:has(>.info-hint){display:flex;align-items:center;gap:6px}
 /* Segmented controls switch between views of the same data. */
 .segmented{display:inline-flex;gap:2px;max-width:100%;padding:3px;border:1px solid var(--border);border-radius:12px;background:var(--muted);overflow-x:auto;scrollbar-width:none}
 .segmented::-webkit-scrollbar{display:none}
-.segmented>button{flex-shrink:0;height:36px;padding-inline:14px;border-radius:9px;font-size:var(--type-small);font-weight:500;white-space:nowrap;color:var(--muted-foreground);transition:background .15s,color .15s}
+.segmented>button{position:relative;isolation:isolate;flex-shrink:0;height:36px;padding-inline:14px;border-radius:9px;font-size:var(--type-small);font-weight:500;white-space:nowrap;color:var(--muted-foreground);transition:background .15s,color .15s,transform var(--motion-quick) var(--ease-out)}
 .segmented>button:hover{color:var(--foreground)}
-.segmented>button[aria-pressed=true]{background:var(--card);color:var(--foreground);box-shadow:0 1px 2px rgb(0 0 0 / 20%)}
+/* The pressed marker is drawn behind the label, so `Segmented` can slide it from the option pressed before. */
+.segmented>button::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;background:var(--card);box-shadow:0 1px 2px rgb(0 0 0 / 20%);opacity:0;transform-origin:0 0;pointer-events:none}
+.segmented>button[aria-pressed=true]{color:var(--foreground)}
+.segmented>button[aria-pressed=true]::before{opacity:1}
 .segmented>button:focus-visible{outline:2px solid var(--ring);outline-offset:1px}
 /* On narrow pages a switch fills the row and wraps rather than hiding options off-screen. */
 @container content (max-width:520px){.segmented:not(.page-tabs){display:flex;width:100%;flex-wrap:wrap;overflow:visible}.segmented:not(.page-tabs)>button{flex:1 1 auto;padding-inline:10px}.segmented.page-tabs{flex-wrap:wrap;row-gap:4px;overflow:visible}}

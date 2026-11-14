@@ -108,6 +108,11 @@ it instead of styling a page on its own.
   A page's entrance plays once, on the first thing it shows after a link or Back; a
   skeleton swapped for content on the same page appears in place (`data-settled`). Transform and opacity only. Under reduced motion nothing travels, but arrivals and
   overlays still fade (≤150ms), so a change is never silent.
+- What answers the pointer lives in `app/styles/interaction.css`: a pressed control gives (`scale(.97)`, wide rows
+  half of that), fields and panels firm up their edge on hover, the drawer marks the open page with a bar, stat tiles
+  and asset cards glow where the pointer is (`usePointerGlow`), and the top bar draws its edge once the page scrolls.
+  `Segmented` slides its pressed marker (the option's `::before`) from the option pressed before; style the marker,
+  never the pressed button's own background. A new clickable row or card needs a hover state and a focus ring.
 - Define each shared selector once. Change the existing rule instead of adding a
   later override, and delete rules when their class is no longer rendered.
 - Cover shared UI pieces and label translations in `tests/design-system.mjs`.
