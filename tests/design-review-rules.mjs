@@ -280,7 +280,7 @@ test('Reports keeps the 8 October 2026 review fixes (SCR-095, SCR-096, HEAD-011,
 
 test('every Sankey keeps room for its columns on a phone and scrolls instead of squeezing them (17 October 2026)', () => {
  // On Cash flow the label margins took the whole phone width: the flows bent into blobs and the middle label ran over the bars.
- for(const file of ['components/cash-flow-sankey.tsx','components/business-reports.tsx']){
+ for(const file of ['components/cash-flow-sankey.tsx','components/reports/business-sankey.tsx']){
   const source=fs.readFileSync(file,'utf8'),charts=source.match(/<ResponsiveContainer[^>]*>\s*<Sankey/g)??[];
   assert.ok(charts.length,file+' draws a Sankey');
   for(const chart of charts)assert.match(chart,/minWidth=\{sankeyMinWidth\(/,file+': the Sankey sets its narrowest width from its labels and columns');
@@ -329,7 +329,7 @@ test('the 9 October 2026 follow-up stays fixed (THEME-009, MOT-001, MOT-005, A11
  // The landing hero and pillar buttons stand still under reduced motion.
  assert.match(read('components/landing-page.module.css'),/@media\(prefers-reduced-motion:reduce\)\{[^@]*\.heroReplay\{animation:none\}\.pillarList button\{transition:none\}/);
  // Every P&L drill button is named after its row (and its business), through ids safe for category names with spaces.
- const reports=read('components/business-reports.tsx');
+ const reports=read('components/reports/profit-loss-table.tsx');
  assert.match(reports,/rowId = \(key: string\) => `\$\{idBase\}\$\{encodeURIComponent\(key\)\}`/);
  assert.match(reports,/className="pnl-drill" id=\{rowId\(key\) \+ ":drill"\} aria-label=\{t\('Show transactions'\)\} aria-labelledby=/);
  // Small report-row controls keep their size but take a 44px tap on touch screens.
@@ -358,7 +358,7 @@ test('narrow rows keep names whole and never stack controls on them (RESP-030, R
  const rule=selector=>{const at=css.indexOf(selector+'{');assert.ok(at>=0,`${selector} exists`);return css.slice(at,css.indexOf('}',at));};
  // Figures never break between digits; names and account lines wrap at spaces instead of being cut with an ellipsis.
  assert.doesNotMatch(rule('.portfolio-headline strong'),/overflow-wrap:anywhere/);
- for(const selector of ['.transaction-merchant small','.report-business-name>span:last-child','.goal-funding-allocations>li>span']) assert.doesNotMatch(rule(selector),/text-overflow:ellipsis|white-space:nowrap/,selector);
+ for(const selector of ['.transaction-merchant small','.report-business-name>span:last-child','.goal-funding-figures>.goal-funding-share>dt']) assert.doesNotMatch(rule(selector),/text-overflow:ellipsis|white-space:nowrap/,selector);
  // A share bar's label may wrap inside its column instead of running under the amount.
  assert.doesNotMatch(rule('.share-bar'),/min-width:max-content/);
  // Names keep a minimum beside their figures; the figures move to the next line below it.

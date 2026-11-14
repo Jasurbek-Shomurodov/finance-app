@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useId, useRef, useState } from 'react';
-import { ArrowUp, Sparkles } from 'lucide-react';
+import { ArrowUp, Plus, Sparkles } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
 import { PageHeader } from '@/components/presentation-foundation/page-header';
@@ -10,6 +10,8 @@ import { assistantSuggestions, assistantUnavailable } from '@/lib/assistant';
 import { marketRates } from '@/lib/market';
 import { Textarea } from '@/components/ui/textarea';
 import { requestJson } from '@/lib/api-client';
+import { signInPath } from '@/lib/sign-in-path';
+import { FollowUps, TryAsking } from '@/components/assistant/try-asking';
 const notAnswered = 'The assistant could not answer. Please try again.';
 
 type Turn = { role: 'user' | 'assistant'; content: string };
@@ -71,25 +73,41 @@ export function AssistantScreen() {
    if (pending.current === controller) { pending.current = null; setBusy(false); requestAnimationFrame(() => end.current?.scrollIntoView({ block: 'end' })); }
   }
  }
+ // A fresh conversation stops a question still in flight and clears the page.
+ function restart() { pending.current?.abort(); pending.current = null; setBusy(false); setTurns([]); setDraft(''); setError(''); }
+ const questions = assistantSuggestions.map(item => t(item));
+ const asked = new Set(turns.filter(turn => turn.role === 'user').map(turn => turn.content));
+ const answered = !busy && turns.at(-1)?.role === 'assistant';
  return <div data-page="Assistant" className="content assistant-content">
-  <PageHeader title={t('Assistant')} hint={t('Your questions and a summary of your records are sent to Claude, an AI model by Anthropic, to answer them. Answers can be wrong and are not financial advice.')}/>
-  <section className="panel assistant-panel" aria-label={t('Assistant')}>
-   <div className={unavailable && !turns.length ? 'assistant-log is-unavailable' : 'assistant-log'} aria-live="polite">
-    {turns.length ? turns.map((turn, index) => <div key={index} className="assistant-turn" data-role={turn.role}><p>{turn.content}</p></div>)
-     : unavailable ? <EmptyState id={reasonId} icon={<Sparkles/>} title={t('The assistant isn’t available yet')} description={t('It will answer questions here once it has been set up for this app.')}/>
-     : <EmptyState id={reasonId} icon={<Sparkles/>} title={t('Ask anything about your money')} description={t(demo ? 'Sign in to ask about your own records. The sample workspace has no assistant.' : 'Try one of these, or type your own question.')}/>}
-    {busy && <div className="assistant-turn" data-role="assistant"><p className="assistant-thinking">{t('Thinking…')}</p></div>}
-    <div ref={end}/>
-   </div>
-   {!turns.length && !demo && !unavailable && <div className="assistant-suggestions">{assistantSuggestions.map(item => <button key={item} type="button" disabled={busy || !available} onClick={() => ask(t(item))}>{t(item)}</button>)}</div>}
-   {error && <p className="form-error" role="alert">{t(error)}</p>}
-   <form className="assistant-form" onSubmit={event => { event.preventDefault(); ask(draft); }}>
-    <Textarea aria-label={t('Ask anything about your money')} placeholder={t('Ask anything about your money…')} value={draft} maxLength={4000} rows={2} disabled={demo || !user || !available} onChange={event => setDraft(event.currentTarget.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); ask(draft); } }}/>
-    <span title={send.title}><Button size="icon" disabled={busy || demo || !available || !draft.trim()} aria-label={t('Send')} aria-describedby={send.describedBy}><ArrowUp size={18}/></Button></span>
-   </form>
-   <p className="assistant-note">{t('The assistant can make mistakes and is not financial advice.')}</p>
-  </section>
+  <PageHeader title={t('Assistant')} hint={t('Your questions and a summary of your records are sent to Claude, an AI model by Anthropic, to answer them. Answers can be wrong and are not financial advice.')}>
+   {turns.length > 0 && <Button onClick={restart}><Plus size={16} aria-hidden="true"/>{t('New conversation')}</Button>}
+  </PageHeader>
+  <div className="assistant-layout">
+   <section className="panel assistant-panel" aria-label={t('Assistant')}>
+    <div className={unavailable && !turns.length ? 'assistant-log is-unavailable' : 'assistant-log'} aria-live="polite">
+     {turns.length ? turns.map((turn, index) => <div key={index} className="assistant-turn" data-role={turn.role}><p>{turn.content}</p></div>) : <AssistantEmpty id={reasonId} demo={demo} unavailable={unavailable}/>}
+     {answered && <FollowUps questions={questions.filter(question => !asked.has(question)).slice(0, 3)} onAsk={ask}/>}
+     {busy && <div className="assistant-turn" data-role="assistant"><p className="assistant-thinking">{t('Thinking…')}</p></div>}
+     <div ref={end}/>
+    </div>
+    {error && <p className="form-error" role="alert">{t(error)}</p>}
+    <form className="assistant-form" onSubmit={event => { event.preventDefault(); ask(draft); }}>
+     <Textarea aria-label={t('Ask anything about your money')} placeholder={t('Ask anything about your money…')} value={draft} maxLength={4000} rows={2} disabled={demo || !user || !available} onChange={event => setDraft(event.currentTarget.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); ask(draft); } }}/>
+     <span title={send.title}><Button size="icon" disabled={busy || demo || !available || !draft.trim()} aria-label={t('Send')} aria-describedby={send.describedBy}><ArrowUp size={18}/></Button></span>
+    </form>
+    <p className="assistant-note">{t('The assistant can make mistakes and is not financial advice.')}</p>
+   </section>
+   {!unavailable && <TryAsking questions={questions} disabled={busy || demo || !available} onAsk={ask}/>}
+  </div>
  </div>;
+}
+
+/** Before the first question: one sentence, and in the sample workspace a way to sign in (a full page load leaves it). */
+function AssistantEmpty({ id, demo, unavailable }: { id: string; demo: boolean; unavailable: boolean }) {
+ const { t } = useLanguage();
+ if (unavailable) return <EmptyState id={id} icon={<Sparkles/>} title={t('The assistant isn’t available yet')} description={t('It will answer questions here once it has been set up for this app.')}/>;
+ if (demo) return <EmptyState id={id} icon={<Sparkles/>} title={t('Ask anything about your money')} description={t('Sign in to ask about your own records.')}><Button asChild><a href={signInPath}>{t('Sign in')}</a></Button></EmptyState>;
+ return <EmptyState id={id} icon={<Sparkles/>} title={t('Ask anything about your money')}/>;
 }
 
 type SendState = { busy: boolean; demo: boolean; unavailable: boolean; asked: boolean; draft: string };

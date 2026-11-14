@@ -18,7 +18,7 @@ function recentlyDeleted(net){
  const r=createRenderer(),ui=stubs(),saves=[];
  const {RecentlyDeleted}=r.load('components/recently-deleted.tsx',{...ui.modules,'@/lib/refresh-read':{refreshRead:net.refreshRead},
   '@/components/display-money':{useDisplayMoney:()=>({entered:(amount,currency)=>amount+' '+currency})},
-  ...foundation('confirm-dialog','empty-state','inline-error','page-header','category-badge','screen-skeletons','pagination'),'lucide-react':hostModule(),
+  ...foundation('confirm-dialog','empty-state','inline-error','page-header','segmented','screen-skeletons','pagination','row-menu','category-icon','delete-button','info-hint','progress-line'),'lucide-react':hostModule(),
   '@/lib/api-client':{requestJson:async(url,options)=>{saves.push({url,...options});return {};}},'@/lib/feedback':{showDeleted(){},showNotice(){}}});
  let saved=0;
  r.mount(React.createElement(RecentlyDeleted,{demo:false,demoItems:[],onRestore(){},onDelete(){},onSaved(){saved++;}}));
@@ -46,10 +46,10 @@ test('Recently deleted reads its page through the session loader: a load failure
  await s.r.flush();
  assert.equal(net.requests[3].url,'/api/deleted-items?page=1');assert.deepEqual(s.names(),['Coffee d1']);assert.equal(s.page().page,1);
  assert.equal(s.r.all(node=>node.type==='EmptyState').length,0);
- // A restore reads the page again and reports the save.
- s.r.fire(s.r.find(node=>node.type?.displayName==='Button'&&text(node).includes('Restore')),'onClick');
+ // A restore is one press, with no confirmation: it reads the page again and reports the save.
  net.answer(()=>Response.json({items:[],hasMore:false}));
- await s.r.fireAsync(s.r.find(node=>node.type==='ConfirmDialog'),'onConfirm');
+ await s.r.fireAsync(s.r.find(node=>node.type?.displayName==='Button'&&text(node).includes('Restore')),'onClick');
+ assert.equal(s.r.find(node=>node.type==='ConfirmDialog').props.open,false,'Restore asks nothing');
  assert.deepEqual(s.saves,[{url:'/api/deleted-items',method:'POST',body:{id:'d1'}}]);assert.equal(s.saved(),1);
  assert.equal(net.requests.length,5);assert.equal(s.r.all(node=>node.type==='EmptyState').length,1,'the last item restored leaves the empty state');
  // Leaving the screen cancels a read still under way.

@@ -35,3 +35,34 @@ test('goal status pills: completed, on track when the planned monthly amount cov
  assert.equal(status({}, null), null, 'unknown current value');
  assert.equal(status({ target_date: '2025-01-01', monthly_contribution: 1e9 }), 'at_risk', 'the target date passed before the goal was reached');
 });
+
+test('the selected goal projects to the day it reaches the target, past its date when late, never for nothing going in', () => {
+ const { goalPath } = loadTS('lib/goal-projection.ts');
+ const goal = { target: 50000, target_date: '2028-01-14', annual_return: 0 };
+ const onTime = goalPath(goal, 22000, 2000, '2026-11-14');
+ assert.equal(onTime.reachesOn, '2028-01-14', '14 contributions of 2,000 cover 28,000');
+ assert.equal(onTime.points[0].date, '2026-11-14');
+ assert.equal(onTime.points.at(-1).projected, 50000);
+ const late = goalPath(goal, 22000, 1000, '2026-11-14');
+ assert.equal(late.reachesOn, '2029-03-14', 'the line runs past the target date to the day it is reached');
+ assert.equal(late.points.at(-1).date, '2029-03-14');
+ const early = goalPath({ ...goal, target_date: '2029-11-14' }, 22000, 4000, '2026-11-14');
+ assert.equal(early.reachesOn, '2027-06-14');
+ assert.equal(early.points.at(-1).date, '2029-11-14', 'an early arrival still draws to the target date');
+ assert.equal(goalPath(goal, 22000, 0, '2026-11-14').reachesOn, null);
+ assert.equal(goalPath({ ...goal, target_date: null }, 22000, 0, '2026-11-14').points.length, 1);
+ assert.equal(goalPath(goal, 50000, 0, '2026-11-14').reachesOn, '2026-11-14', 'already reached');
+ assert.equal(goalPath(goal, null, 2000, '2026-11-14'), null);
+});
+
+test('a cash goal’s saved line takes each day’s closing balance from its activity, oldest first', () => {
+ const { goalBalanceHistory } = loadTS('lib/goal-funding.ts');
+ const events = [
+  { id: 'c', goal_id: 'g', occurred_on: '2026-10-01', balance: 3000 },
+  { id: 'b', goal_id: 'g', occurred_on: '2026-10-01', balance: 2500 },
+  { id: 'x', goal_id: 'other', occurred_on: '2026-09-15', balance: 99 },
+  { id: 'a', goal_id: 'g', occurred_on: '2026-09-01', balance: 2000 },
+  { id: 'old', goal_id: 'g', occurred_on: '2025-01-01', balance: 10 },
+ ];
+ assert.deepEqual(goalBalanceHistory(events, 'g', '2025-11-14'), [{ date: '2026-09-01', value: 2000 }, { date: '2026-10-01', value: 3000 }]);
+});

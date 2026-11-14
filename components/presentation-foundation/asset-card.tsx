@@ -14,7 +14,7 @@ import type { Entry } from '@/lib/finance';
 type Props = {
  record: Pick<Entry, 'kind' | 'name'>; label: string; menu?: ReactNode;
  worth: string; note?: ReactNode; fact?: { label: string; value: string; tone?: StatTone };
- share: number | null; detailsLabel: string; details: ReactNode; children?: ReactNode;
+ share: number | null; detailsLabel: ReactNode; details: ReactNode; children?: ReactNode;
  onOpen?: () => void; openLabel?: string; detailsOpen?: boolean;
 };
 

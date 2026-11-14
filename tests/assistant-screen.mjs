@@ -79,3 +79,20 @@ test('a reply that is not JSON shows the fallback, and "not set up" switches to 
   assert.equal(off.renderer.find(node=>node.type==='textarea').props.value,'Where did my money go?');
  }finally{off.restore();}
 });
+
+test('after an answer, the suggestions not asked yet follow it as chips, Try asking asks in one press, and New conversation starts over',async()=>{
+ const view=setup(async()=>Response.json({answer:'You have two.'}));
+ try{
+  await view.renderer.flush();
+  assert.equal(view.renderer.all(node=>node.props?.className==='assistant-suggestions').length,0,'no chips before an answer');
+  await view.renderer.fireAsync(view.renderer.find(node=>node.type==='button'&&text(node)==='What recurring expenses do I have?'),'onClick');
+  assert.ok(view.renderer.find(node=>node.props?.className==='panel assistant-prompts'),'Try asking sits beside the conversation');
+  await view.renderer.flush();
+  assert.equal(view.asked.length,1);assert.deepEqual(JSON.parse(view.asked[0].body).messages,[{role:'user',content:'What recurring expenses do I have?'}]);
+  const chips=view.renderer.find(node=>node.props?.className==='assistant-suggestions');
+  assert.deepEqual(chips.children.map(text),['How much did I spend last month, and on what?','Am I on track with my budget this month?','How are my savings goals going?']);
+  view.renderer.fire(view.renderer.find(node=>node.type==='button'&&text(node)==='New conversation'),'onClick');
+  assert.equal(view.renderer.all(node=>node.props?.className==='assistant-turn').length,0);
+  assert.equal(view.renderer.all(node=>node.type==='button'&&text(node)==='New conversation').length,0,'nothing to start over from');
+ }finally{view.restore();}
+});

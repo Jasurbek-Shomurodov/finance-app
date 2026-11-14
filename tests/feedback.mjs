@@ -37,7 +37,7 @@ test('a finished delete says Deleted in the Saved popup, in the current language
 test('deletes, restores and detail-dialog changes confirm with a toast',()=>{
  const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
  for(const path of ['components/workspace/state/use-record-save.ts','components/delete-category-dialog.tsx','components/record-attachments.tsx','components/investment-tracker.tsx','hooks/use-tags.ts','hooks/use-transaction-rules.ts'])assert.match(read(path),/showDeleted\(\)/,path);
- assert.match(read('components/recently-deleted.tsx'),/if\(permanent\)showDeleted\(\);else showNotice\('Restored'\)/);
+ assert.match(read('components/recently-deleted.tsx'),/if\(discard\)showDeleted\(\);else showNotice\('Restored'\)/);
  assert.match(read('components/import-history.tsx'),/showNotice\('Import undone'\)/);
  const details=read('components/transaction-details-dialog.tsx');
  assert.match(details,/setRecord\(\{\.\.\.record,business_id:next\}\);showSaved\(\);/);assert.match(details,/\[\.\.\.tagIds,id\]\);showSaved\(\);/);

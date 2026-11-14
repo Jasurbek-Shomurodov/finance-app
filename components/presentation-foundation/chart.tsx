@@ -48,6 +48,8 @@ export const toneColor = (amount: number) => amount < 0 ? 'var(--negative)' : 'v
 export const chartLine = { strokeWidth: 2, dot: false, isAnimationActive: false, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 export const leadLine = { ...chartLine, stroke: 'var(--primary)', strokeWidth: 2.5 } as const;
 export const guideLine = { ...chartLine, stroke: 'var(--muted-foreground)', strokeDasharray: '4 4', strokeWidth: 1.5 } as const;
+/** The lead line where it is projected rather than recorded: the same colour, dashed like `plannedBar`. Legend swatch `.chart-planned-key`. */
+export const plannedLine = { ...leadLine, strokeDasharray: '6 5' } as const;
 /** A marked data point: a ring in the line's colour around the card colour. */
 export const chartDot = { r: 4, strokeWidth: 2, fill: 'var(--card)' } as const;
 /** A filled area under the lead line, fading out: put `<ChartGradient id={id}/>` in the chart and pass the same id. */

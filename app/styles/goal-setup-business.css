@@ -8,6 +8,10 @@
 .goal-setup-steps>li[aria-current=step]{color:var(--foreground);font-weight:600}
 .goal-setup-steps button{padding:0;border:0;background:none;color:inherit;font:inherit;cursor:pointer}
 .goal-setup-steps button:hover{color:var(--foreground);text-decoration:underline}
+.goal-setup-steps>li>*{display:inline-flex;align-items:center;gap:8px}
+.goal-setup-step-mark{display:grid;place-items:center;width:22px;height:22px;flex-shrink:0;border-radius:50%;background:var(--muted);color:var(--muted-foreground);font-size:var(--type-caption);font-weight:600;font-variant-numeric:tabular-nums}
+.goal-setup-steps>li[aria-current=step] .goal-setup-step-mark{background:var(--primary);color:var(--primary-foreground)}
+.goal-setup-steps button .goal-setup-step-mark{background:color-mix(in srgb,var(--primary) 14%,transparent);color:var(--primary)}
 .goal-setup-progress{height:3px;background:var(--hairline)}
 .goal-setup-progress>span{display:block;height:100%;background:var(--primary);transition:width .25s}
 .goal-setup-body{flex:1;overflow-y:auto;padding:32px 16px 24px;container:goal-setup/inline-size}
@@ -49,6 +53,13 @@
 .goal-setup-preview ul{margin:0;padding:0;list-style:none}
 .goal-setup-preview li{display:flex;align-items:center;gap:12px;padding:12px 0}
 .goal-setup-preview li+li{border-top:1px solid var(--hairline)}
+.goal-setup-available{display:flex;flex-direction:column;gap:4px;margin-top:8px;padding-top:16px;border-top:1px solid var(--hairline)}
+.goal-setup-available h3{margin:0;font-size:var(--type-small);font-weight:600}
+.goal-setup-available p{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin:0;font-variant-numeric:tabular-nums}
+.goal-setup-available s{color:var(--muted-foreground)}
+.goal-setup-available strong{font-size:var(--type-title);font-weight:600}
+.goal-setup-available strong.negative{color:var(--negative)}
+.goal-setup-available small{font-size:var(--type-caption);color:var(--muted-foreground)}
 .goal-setup-footer{display:flex;justify-content:center;gap:12px;padding:14px 16px;border-top:1px solid var(--hairline);background:var(--background)}
 .goal-setup-footer>button:last-child{min-width:min(100%,320px)}
 @container goal-setup (max-width:760px){.goal-setup-split{grid-template-columns:minmax(0,1fr);gap:20px}.goal-setup-preview{position:static}}

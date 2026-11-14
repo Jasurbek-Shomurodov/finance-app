@@ -54,11 +54,6 @@
       "count": 1
     }
   },
-  "components/business-reports.tsx": {
-    "max-params": {
-      "count": 1
-    }
-  },
   "components/business-setup-flow.tsx": {
     "complexity": {
       "count": 1

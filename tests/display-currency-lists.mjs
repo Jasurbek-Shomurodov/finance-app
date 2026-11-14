@@ -100,7 +100,7 @@ test('holding rows and Recently deleted show amounts in the display currency, qu
  assert.equal(displayMoney({ currency: 'USD', rates: { EUR: 0.9 } }).show(0.00012345, 'USD', true), formatMoney(0.00012345, 'USD', 'en', true));
  assert.equal(money.show(2845, 'USD'), formatMoney(2845 * 0.9, 'EUR', 'en'));
  const fs = await import('node:fs');
- for (const file of ['components/planning/accounts/holding-rows.tsx', 'components/recently-deleted.tsx']) {
+ for (const file of ['components/planning/accounts/holding-rows.tsx', 'components/deleted-items/deleted-row.tsx', 'components/deleted-items/restore-panel.tsx']) {
   const source = fs.readFileSync(file, 'utf8');
   assert.match(source, /useDisplayMoney\(\)/, file);
   assert.doesNotMatch(source, /formatMoney\(/, file + ' formats no amount in its own currency');
@@ -208,9 +208,10 @@ test('an account’s balance and the directory totals are display-currency figur
 test('Recently deleted names an unnamed transaction as Transactions does, and shows no empty state over an error', async () => {
  const fs = await import('node:fs');
  const source = fs.readFileSync('components/recently-deleted.tsx', 'utf8');
- assert.match(source, /!visible\.length\?loadError\?null:<EmptyState/, 'InlineError and the empty state never render together');
+ assert.match(source, /!visible\.length\?<BinEmpty failed=\{!!loadError\}/, 'InlineError and the empty state never render together');
+ assert.match(source, /if\(failed\)return null;/);
  const r = createRenderer(), ui = stubs();
- const { RecentlyDeleted } = r.load('components/recently-deleted.tsx', { ...ui.modules, ...inEuros, ...foundation('confirm-dialog', 'empty-state', 'inline-error', 'page-header', 'category-badge', 'screen-skeletons', 'pagination'), 'lucide-react': hostModule(), '@/lib/api-client': { requestJson: async () => ({}) }, '@/lib/feedback': { showDeleted() {}, showNotice() {} } });
+ const { RecentlyDeleted } = r.load('components/recently-deleted.tsx', { ...ui.modules, ...inEuros, ...foundation('confirm-dialog', 'empty-state', 'inline-error', 'page-header', 'segmented', 'screen-skeletons', 'pagination', 'row-menu', 'category-icon', 'delete-button', 'info-hint', 'progress-line'), 'lucide-react': hostModule(), '@/lib/api-client': { requestJson: async () => ({}) }, '@/lib/feedback': { showDeleted() {}, showNotice() {} } });
  const unnamed = { id: 'd1', source: 'finance_records', deleted_at: '2026-10-20T10:00:00Z', data: { ...entry('Living expense', 'Living expense', 'USD', 12), notes: 'Coffee beans' } };
  r.mount(React.createElement(RecentlyDeleted, { demo: true, demoItems: [unnamed], onRestore() {}, onDelete() {}, onSaved() {} }));
  const shown = text(r.find(node => node.props?.className === 'recovery-info'));

@@ -153,8 +153,8 @@ test('TX-024 DEL-004 deleting an expense returns its money and restoring takes i
   await open(page, 'Accounts');
   await expect.poll(() => accountBalance(page, 'E2E Checking')).toBe(dollars(expected.checking + 12.75));
   await open(page, 'Recently deleted');
-  await page.getByRole('button', { name: 'Restore' }).first().click();
-  await page.getByRole('alertdialog').or(page.getByRole('dialog')).getByRole('button', { name: 'Restore', exact: true }).click();
+  // Restore is one press: the side panel already showed what it changes.
+  await page.getByRole('button', { name: 'Restore', exact: true }).first().click();
   await expect(page.locator('main').getByText('E2E Lunch')).toHaveCount(0);
   await open(page, 'Accounts');
   await expect.poll(() => accountBalance(page, 'E2E Checking')).toBe(dollars(expected.checking));

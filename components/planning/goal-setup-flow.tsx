@@ -1,5 +1,5 @@
 "use client";
-import { ArrowLeft, Minus, Plus, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Minus, Plus, X } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useStepFocus } from '@/hooks/use-step-focus';
@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import type { Entry } from '@/lib/finance';
+import { convertAmount } from '@/lib/market';
 import { formatDate, formatMoney, formatMonthYear, formatNumber } from '@/lib/format';
 import { goalEmoji } from '@/lib/goal-emoji';
 import { goalStatus, goalSummary, reachedIn } from '@/lib/goal-projection';
@@ -22,11 +23,13 @@ import { GoalSummaryRow } from './goal-summary-row';
 
 const stepLabels = { select: 'Select', targets: 'Targets', contribution: 'Contribution', budget: 'Budget' } as const;
 
-type Props = { goals: Goal[]; accounts: Entry[]; currency: string; currencies: string[]; netWorth: (currency: string) => number | null; today: string; maxDate: string; save: (action: string, data: unknown) => Promise<void>; onClose: () => void; onCreated: (ids: string[]) => void; onInvestment: () => void };
+type Props = { goals: Goal[]; accounts: Entry[]; currency: string; currencies: string[]; netWorth: (currency: string) => number | null; today: string; maxDate: string; save: (action: string, data: unknown) => Promise<void>; onClose: () => void; onCreated: (ids: string[]) => void; onInvestment: () => void;
+ /** What the monthly surplus leaves unassigned for goals today, in `available.currency`; the Budget step shows it beside what the new goals would take. */
+ available?: { amount: number | null; currency: string; rates?: Record<string, number> } };
 
 /** Add-goal flow: pick goals from tiles, set targets, add what is already saved, then plan the monthly amount.
  * `currency` is the primary currency every new goal starts in. */
-export function GoalSetupFlow({ goals, accounts, currency, currencies, netWorth, today, maxDate, save, onClose, onCreated, onInvestment }: Props) {
+export function GoalSetupFlow({ goals, accounts, currency, currencies, netWorth, today, maxDate, save, onClose, onCreated, onInvestment, available }: Props) {
  const { t, locale } = useLanguage();
  const [step, setStep] = useState(0), [counts, setCounts] = useState<Record<string, number>>({}), [drafts, setDrafts] = useState<SetupDraft[]>([]);
  const { ref: stepRef, onOpenAutoFocus: focusStep } = useStepFocus<HTMLDivElement>(step);
@@ -70,6 +73,7 @@ export function GoalSetupFlow({ goals, accounts, currency, currencies, netWorth,
     amount={value === null ? '—' : money(value, goal.currency)} meta={goal.target_date ? formatDate(goal.target_date, locale) : t('No target date')}
     detail={goal.target > 0 ? t('{amount} target', { amount: money(goal.target, goal.currency) }) : '—'}/></li>;
   })}</ul>
+  {name === 'budget' && available && available.amount !== null && <AvailableAfter before={available.amount} currency={available.currency} taken={newMonthly(list, available.currency, available.rates)}/>}
  </aside>;
  const problems = (goal: Goal) => touched ? draftProblems(goal, name, today) : [];
 
@@ -79,7 +83,7 @@ export function GoalSetupFlow({ goals, accounts, currency, currencies, netWorth,
     {step ? <Button variant="ghost" size="icon" disabled={busy} aria-label={t('Back')} onClick={() => { setTouched(false); setStep(step - 1); }}><ArrowLeft size={18} aria-hidden="true"/></Button> : <span className="goal-setup-spacer"/>}
     <DialogTitle className="sr-only">{t('Add goal')}</DialogTitle><DialogDescription className="sr-only">{t(stepLabels[name])}</DialogDescription>
     <ol className="goal-setup-steps">{goalSetupSteps.map((each, index) => <li key={each} aria-current={index === step ? 'step' : undefined}>
-     {index < step ? <button type="button" disabled={busy} onClick={() => { setTouched(false); setStep(index); }}>{t(stepLabels[each])}</button> : <span>{t(stepLabels[each])}</span>}
+     {index < step ? <button type="button" disabled={busy} onClick={() => { setTouched(false); setStep(index); }}><span className="goal-setup-step-mark" aria-hidden="true"><Check size={13}/></span>{t(stepLabels[each])}</button> : <span><span className="goal-setup-step-mark" aria-hidden="true">{formatNumber(index + 1, locale, 0)}</span>{t(stepLabels[each])}</span>}
     </li>)}</ol>
     <Button variant="ghost" size="icon" disabled={busy} aria-label={t('Close')} onClick={onClose}><X size={18} aria-hidden="true"/></Button>
    </header>
@@ -163,4 +167,22 @@ export function GoalSetupFlow({ goals, accounts, currency, currencies, netWorth,
    </footer>
   </DialogContent>
  </Dialog>;
+}
+
+/** What the new goals' monthly contributions add up to in `currency`; null when one of them cannot be converted. */
+function newMonthly(goals: readonly Goal[], currency: string, rates?: Record<string, number>) {
+ let total = 0;
+ for (const goal of goals) { const amount = convertAmount(Math.max(0, Number(goal.monthly_contribution ?? 0)), goal.currency ?? currency, currency, rates); if (amount === null) return null; total += amount; }
+ return total;
+}
+
+/** Available for goals today, then what is left once the new goals take their monthly contributions. */
+function AvailableAfter({ before, currency, taken }: { before: number; currency: string; taken: number | null }) {
+ const { t, locale } = useLanguage();
+ const after = taken === null ? null : before - taken;
+ return <section className="goal-setup-available" aria-label={t('Available for goals')}>
+  <h3>{t('Available for goals')}</h3>
+  <p><s>{formatMoney(before, currency, locale)}</s><ArrowRight size={16} aria-hidden="true"/><strong className={after !== null && after < 0 ? 'negative' : undefined}>{after === null ? '—' : formatMoney(after, currency, locale)}</strong></p>
+  <small>{t('After the new goals')}</small>
+ </section>;
 }

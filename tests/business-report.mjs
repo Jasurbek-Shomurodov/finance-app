@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadTS } from './helpers/load-ts.mjs';
-const { reportLedger, filterLines, profitAndLoss, businessSankey, cashFlowTrend, attributeTrend, readableRange, intervalOf, periodOf, shiftPeriod, trendWindow, drillMatches, sharesBy } = loadTS('lib/business-report.ts');
+const { reportLedger, filterLines, profitAndLoss, businessSankey, cashFlowTrend, attributeTrend, readableRange, intervalOf, periodOf, shiftPeriod, trendWindow, drillMatches, sharesBy, largestLoss, previousPeriod, yearToDate, linesIn } = loadTS('lib/business-report.ts');
+const { reportTransactionsLink } = loadTS('lib/report-view.ts');
+const { transactionsHref, transactionsQuery } = loadTS('lib/transaction-list.ts');
 const { taxSheet, defaultTaxLine, taxLineFor, taxPeriodRange, taxExportRows, defaultTaxSettings } = loadTS('lib/business-tax.ts');
 
 const record = (id, name, kind, amount, date, extra = {}) => ({ id, name, kind, currency: 'USD', amount, quantity: 1, cost: 0, rate: 0, date, frequency: 'Once', notes: '', ...extra });
@@ -73,6 +75,36 @@ test('the Sankey feeds a profit into household income and shows a loss leaving t
  assert.equal(alone.nodes[alone.links.find(item => alone.nodes[item.source].kind === 'loss').target].name, 'candles', 'without the household, the loss covers the business');
  const net = businessSankey(profitAndLoss([{ id: 'p', record: null, name: 'Pay', date: '2026-10-01', direction: 'income', amount: 900, category: 'Salary', business: null }, { id: 'f', record: null, name: 'Food', date: '2026-10-02', direction: 'expense', amount: 300, category: 'Living expense', business: null }], [], line => line.category, true), labels);
  assert.deepEqual(net.nodes.find(node => node.name === 'Savings').drill, { savings: 600 }, 'Net income carries what was saved, to open where it went');
+});
+
+test('each Sankey node knows whose money it is, and the loss that pulled net income down is named', () => {
+ const { lines } = reportLedger({ records, investmentLinks: [] }, [], range, 'USD', today, { USD: 1, UZS: 12500 });
+ const labels = { category: key => key, business: id => id, total: 'Income', savings: 'Savings', profit: 'Net profit', loss: name => `${name} net loss`, otherIncome: 'All other income', otherExpense: 'All other expenses', inBusiness: (name, business) => `${business}: ${name}` };
+ const pnl = profitAndLoss(lines, ['candles', 'rentals'], line => line.category, true);
+ const data = businessSankey(pnl, labels), owner = name => data.nodes.find(node => node.name === name).owner;
+ assert.deepEqual([owner('candles'), owner('supplies'), owner('rentals'), owner('Income'), owner('Salary')], ['candles', 'candles', 'rentals', null, null]);
+ // A flow takes its source's owner: the rentals' profit is the rentals' colour, the household covering a loss is the household's.
+ assert.equal(data.nodes[data.links.find(link => data.nodes[link.target].kind === 'loss').source].owner, null);
+ assert.equal(largestLoss(pnl).id, 'candles');
+ assert.equal(largestLoss({ businesses: [{ id: 'a', net: 10 }] }), null, 'no loss, nothing named');
+ assert.equal(largestLoss({ businesses: [{ id: 'a', net: -10 }, { id: 'b', net: -40 }] }).id, 'b', 'the larger loss');
+});
+
+test('P&L columns read the period before and the year so far, and a report opens the same list on Transactions', () => {
+ assert.deepEqual(previousPeriod({ from: '2026-10-01', to: '2026-10-14' }, 'month'), { from: '2026-09-01', to: '2026-09-30' });
+ assert.deepEqual(previousPeriod({ from: '2026-01-01', to: '2026-03-31' }, 'quarter'), { from: '2025-10-01', to: '2025-12-31' });
+ assert.deepEqual(previousPeriod({ from: '2026-01-01', to: '2026-11-14' }, 'year'), { from: '2025-01-01', to: '2025-12-31' });
+ assert.deepEqual(yearToDate({ from: '2026-10-01', to: '2026-10-14' }), { from: '2026-01-01', to: '2026-10-14' });
+ assert.deepEqual(linesIn([{ date: '2026-09-30' }, { date: '2026-10-01' }], { from: '2026-10-01', to: '2026-10-31' }), [{ date: '2026-10-01' }]);
+ const period = { from: '2026-10-01', to: '2026-10-31' };
+ assert.deepEqual(reportTransactionsLink('cash_flow', null, period, []), { range: period });
+ assert.deepEqual(reportTransactionsLink('spending', null, period, ['shop']), { range: period, direction: 'expense', businesses: ['shop'] });
+ assert.deepEqual(reportTransactionsLink('cash_flow', { direction: 'expense', category: 'Supplies', business: null }, period, ['shop']), { range: period, direction: 'expense', category: 'Supplies', businesses: ['household'] }, 'a chart click replaces the page filter');
+ assert.deepEqual(reportTransactionsLink('income', { merchant: 'Etsy', categories: ['a', 'b'] }, period, []), { range: period, direction: 'income', query: 'Etsy' }, 'a group of categories cannot be one filter');
+ const href = transactionsHref(reportTransactionsLink('cash_flow', { direction: 'expense', category: 'Supplies' }, period, ['shop', 'household']));
+ const search = href.slice(href.indexOf('?'));
+ const query = transactionsQuery(search, key => new URLSearchParams(search).getAll(key).flatMap(value => value.split(',')));
+ assert.deepEqual([query.filter.direction, query.filter.category, query.filter.businesses, query.range], ['expense', 'Supplies', ['shop', 'household'], period], 'Transactions reads the link back');
 });
 
 test('trends, shares, drill-downs, ranges and net assets', () => {

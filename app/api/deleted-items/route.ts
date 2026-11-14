@@ -5,12 +5,18 @@ import { workspaceOwner } from '@/lib/household';
 import { session, supa, sameOrigin } from '@/lib/supabase';
 import { attachmentStore, ownsAttachmentPath, removeUnconfirmedUploads } from '@/lib/record-attachments';
 import { reportError } from '@/lib/monitoring';
+import { deletedItemsFilter, deletedTypes } from '@/lib/deleted-items';
 export async function GET(req:Request) {
  try {
   const auth=await session();if(!auth)return signInAgain();
-  const page=z.coerce.number().int().min(1).max(1000000).safeParse(new URL(req.url).searchParams.get('page')||1);
+  const params=new URL(req.url).searchParams;
+  const page=z.coerce.number().int().min(1).max(1000000).safeParse(params.get('page')||1);
   if(!page.success)return Response.json({error:'Invalid pagination parameters.'},{status:400});
-  const result=await supa(`/rest/v1/deleted_items?select=id,source,data,deleted_at&order=deleted_at.desc,id.desc&limit=11&offset=${(page.data-1)*10}`,{},auth.token);
+  // A type tab and a search narrow the bin in the database, so every page of the narrowed list is full.
+  const narrowed=z.object({type:z.enum(deletedTypes).nullable(),q:z.string().max(200).nullable()}).safeParse({type:params.get('type'),q:params.get('q')});
+  if(!narrowed.success)return Response.json({error:'Invalid pagination parameters.'},{status:400});
+  const filter=deletedItemsFilter(narrowed.data.type,narrowed.data.q??'');
+  const result=await supa(`/rest/v1/deleted_items?select=id,source,data,deleted_at,splits${filter}&order=deleted_at.desc,id.desc&limit=11&offset=${(page.data-1)*10}`,{},auth.token);
   if(!result.ok)throw Error();
   const items=await result.json() as unknown[];
   return Response.json({items:items.slice(0,10),hasMore:items.length>10});

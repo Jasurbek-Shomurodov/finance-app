@@ -3,7 +3,7 @@ import { useLanguage } from '@/components/language-provider';
 import { AnimatedMoney } from '@/components/presentation-foundation/animated-money';
 import { Count } from '@/components/presentation-foundation/count';
 import { categoryColor } from '@/lib/category-colors';
-import { formatPercent } from '@/lib/format';
+import { formatNumber, formatPercent } from '@/lib/format';
 
 export type AllocationGroup = { kind: string; amount: number };
 /** A kind holding less than this share of the total counts as part of the long tail. */
@@ -32,7 +32,7 @@ export function AssetAllocationList({ groups, total, currency, loading, selected
   <span className="allocation-share" aria-hidden="true"><span style={{ inlineSize: `${total > 0 ? Math.max(group.amount, 0) / total * 100 : 0}%`, background: categoryColor(group.kind) }}/></span>
  </button></li>;
  return <ul className="overview-list">{lead.map(row)}{folded.length > 0 && <li><details className="allocation-other" open={folded.some(group => group.kind === selected) || undefined}>
-  <summary><span>{t('Other kinds')}</span><Count value={folded.length}/><strong>{money(foldedAmount)}</strong><small>{share(foldedAmount)}</small></summary>
+  <summary><span>{t('Other kinds')}</span><Count value={folded.length} label={t('{count} kinds', { count: formatNumber(folded.length, locale, 0) })}/><strong>{money(foldedAmount)}</strong><small>{share(foldedAmount)}</small></summary>
   <ul className="overview-list">{folded.map(row)}</ul>
  </details></li>}</ul>;
 }

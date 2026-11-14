@@ -47,7 +47,7 @@ let search = '', range = { data: null, loading: false, error: '', retry() { rang
 const charts = hostModule({ attributeColor: (attribute, key) => attribute + ':' + key });
 const modules = {
  ...ui.modules,
- 'lucide-react': hostModule(), '@/components/business-reports': charts, '@/components/cash-flow-report': hostModule(), '@/components/tax-prep-sheet': hostModule(),
+ 'lucide-react': hostModule(), '@/components/business-reports': charts, '@/components/cash-flow-report': hostModule(), '@/components/tax-prep-sheet': hostModule(), './business-sankey': hostModule(), './profit-loss-table': hostModule(),
  ...Object.fromEntries(['page-header', 'segmented', 'panel-title', 'stat-tile', 'business-filter', 'owner-filter', 'inline-error', 'loading-placeholder', 'screen-skeletons', 'today-button'].map(name => ['@/components/presentation-foundation/' + name, hostModule()])),
  '@/components/presentation-foundation/chart': hostModule({ intervalLabel: interval => key => `${interval}:${key}` }),
  '@/components/presentation-foundation/tone': { signTone: value => value > 0 ? 'positive' : value < 0 ? 'negative' : undefined },
@@ -74,7 +74,7 @@ const segmented = label => r.find(node => node.type === 'Segmented' && node.prop
 const pick = (label, value) => r.fire(segmented(label), 'onChange', value);
 const tile = label => r.find(node => node.type === 'StatTile' && node.props.label === label).props;
 
-test('Cash flow totals the period and switches between Sankey, profit and loss and trends', () => {
+test('Cash flow totals the period and switches between flow, profit and loss and trends', () => {
  open({ interval: null });
  const thisMonth = today.slice(5, 7) === '01';
  assert.equal(tile('Income').value, thisMonth ? '$3,900' : '$0', 'the page opens on this month');
@@ -82,8 +82,9 @@ test('Cash flow totals the period and switches between Sankey, profit and loss a
  assert.deepEqual(header().props.tabs.props.options.map(option => option.value), ['cash_flow', 'spending', 'income', 'tax']);
  assert.deepEqual([tile('Income').value, tile('Expenses').value, tile('Net income').value, tile('Net income').tone], ['$3,900', '$400', '$3,500', 'positive']);
  assert.ok(r.find(byType('BusinessSankeyChart')).props.data.links.length > 0);
- pick('Chart type', 'pnl');
+ pick('Report view', 'pnl');
  assert.equal(r.find(byType('ProfitLossTable')).props.breakdown, 'category');
+ assert.deepEqual(r.find(byType('ProfitLossTable')).props.columns.map(column => column.key), ['period', 'previous'], 'a year compares with the year before; its year to date is the year itself');
  pick('Rows', 'group');
  assert.equal(r.find(byType('ProfitLossTable')).props.breakdown, 'group');
  pick('Report view', 'trends');

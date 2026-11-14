@@ -115,7 +115,8 @@ function nameEachOnce(nodes: SankeyNode[], used: ReadonlySet<number>, inBusiness
  }
 }
 
-export type SankeyNode = { name: string; kind: 'income' | 'total' | 'expense' | 'savings' | 'business' | 'loss'; drill: Drill | null };
+/** `owner` is whose money the node is: a business's id, or null for the household. A flow takes its source's owner. */
+export type SankeyNode = { name: string; kind: 'income' | 'total' | 'expense' | 'savings' | 'business' | 'loss'; drill: Drill | null; owner: string | null };
 export type BusinessSankey = { nodes: SankeyNode[]; links: Array<{ source: number; target: number; value: number }> };
 /** Where money came from and went, with a layer for each business: its income flows into it and its expenses out of
  * it (a business with one kind of income is its own source); a profit then flows into household income, while a loss leaves the household like any other expense. Without
@@ -129,31 +130,34 @@ export function businessSankey(pnl: ProfitAndLoss, labels: { category: (key: str
   return [...named.map(item => ({ name: labels.category(item.key), amount: item.amount, drill: { direction, category: item.key, business } as Drill })), ...(rest.length ? [{ name: other, amount: sum(rest), drill: { direction, business } as Drill }] : [])];
  };
  const household = pnl.household;
- const total = household ? node({ name: labels.total, kind: 'total', drill: { business: null } }) : -1;
- if (household) for (const item of top(household.income, labels.otherIncome, 'income', null)) links.push({ source: node({ name: item.name, kind: 'income', drill: item.drill }), target: total, value: item.amount });
+ const total = household ? node({ name: labels.total, kind: 'total', drill: { business: null }, owner: null }) : -1;
+ if (household) for (const item of top(household.income, labels.otherIncome, 'income', null)) links.push({ source: node({ name: item.name, kind: 'income', drill: item.drill, owner: null }), target: total, value: item.amount });
  for (const business of pnl.businesses) {
   if (!business.grossIncome && !business.totalExpenses) continue;
   const name = labels.business(business.id);
-  const hub = node({ name, kind: 'business', drill: { business: business.id } });
+  const owner = business.id, hub = node({ name, kind: 'business', drill: { business: owner }, owner });
   // A business with a single kind of income is its own source: a node named only "Business income" would say less
   // than the business's name and repeat beside every other business.
-  if (business.income.length > 1) for (const item of top(business.income, labels.otherIncome, 'income', business.id)) links.push({ source: node({ name: item.name, kind: 'income', drill: item.drill }), target: hub, value: item.amount });
-  for (const item of top(business.expenses, labels.otherExpense, 'expense', business.id)) links.push({ source: hub, target: node({ name: item.name, kind: 'expense', drill: item.drill }), value: item.amount });
-  if (business.net > 0) links.push({ source: hub, target: household ? total : node({ name: labels.profit, kind: 'savings', drill: { business: business.id } }), value: business.net });
+  if (business.income.length > 1) for (const item of top(business.income, labels.otherIncome, 'income', business.id)) links.push({ source: node({ name: item.name, kind: 'income', drill: item.drill, owner }), target: hub, value: item.amount });
+  for (const item of top(business.expenses, labels.otherExpense, 'expense', business.id)) links.push({ source: hub, target: node({ name: item.name, kind: 'expense', drill: item.drill, owner }), value: item.amount });
+  if (business.net > 0) links.push({ source: hub, target: household ? total : node({ name: labels.profit, kind: 'savings', drill: { business: owner }, owner }), value: business.net });
   else if (business.net < 0) {
-   if (household) links.push({ source: total, target: node({ name: labels.loss(name), kind: 'loss', drill: { business: business.id } }), value: -business.net });
-   else links.push({ source: node({ name: labels.loss(name), kind: 'loss', drill: { business: business.id } }), target: hub, value: -business.net });
+   if (household) links.push({ source: total, target: node({ name: labels.loss(name), kind: 'loss', drill: { business: owner }, owner }), value: -business.net });
+   else links.push({ source: node({ name: labels.loss(name), kind: 'loss', drill: { business: owner }, owner }), target: hub, value: -business.net });
   }
  }
  if (household) {
-  for (const item of top(household.expenses, labels.otherExpense, 'expense', null)) links.push({ source: total, target: node({ name: item.name, kind: 'expense', drill: item.drill }), value: item.amount });
-  if (pnl.net > 0) links.push({ source: total, target: node({ name: labels.savings, kind: 'savings', drill: { savings: pnl.net } }), value: pnl.net });
+  for (const item of top(household.expenses, labels.otherExpense, 'expense', null)) links.push({ source: total, target: node({ name: item.name, kind: 'expense', drill: item.drill, owner: null }), value: item.amount });
+  if (pnl.net > 0) links.push({ source: total, target: node({ name: labels.savings, kind: 'savings', drill: { savings: pnl.net }, owner: null }), value: pnl.net });
  }
  const used = new Set(links.filter(link => link.value > 0).flatMap(link => [link.source, link.target]));
  nameEachOnce(nodes, used, (name, business) => labels.inBusiness(name, labels.business(business)));
  const index = new Map([...nodes.keys()].filter(key => used.has(key)).map((key, position) => [key, position]));
  return { nodes: nodes.filter((_, key) => used.has(key)), links: links.filter(link => link.value > 0).map(link => ({ source: index.get(link.source)!, target: index.get(link.target)!, value: link.value })) };
 }
+
+/** The business whose loss pulled the period's net income down the most, or null when none made a loss. */
+export const largestLoss = (pnl: Pick<ProfitAndLoss, 'businesses'>) => pnl.businesses.reduce<BusinessPnl | null>((worst, business) => business.net < 0 && (!worst || business.net < worst.net) ? business : worst, null);
 
 export const intervals = ['month', 'quarter', 'year'] as const;
 export type Interval = typeof intervals[number];
@@ -168,6 +172,12 @@ export function periodOf(interval: Interval, date: string, today: string): Repor
 }
 /** The first day of the period `steps` months, quarters or years away. */
 export const shiftPeriod = (date: string, interval: Interval, steps: number) => shiftMonth(date.slice(0, 7), steps * intervalMonths[interval]) + '-01';
+/** The period before this one: the previous month, quarter or year, whole. */
+export const previousPeriod = (period: ReportRange, interval: Interval): ReportRange => periodOf(interval, shiftPeriod(period.from, interval, -1), period.from);
+/** From the first of January of the period's year to the period's last day. */
+export const yearToDate = (period: ReportRange): ReportRange => ({ from: period.from.slice(0, 4) + '-01-01', to: period.to });
+/** The lines dated within a range. */
+export const linesIn = <L extends Pick<LedgerLine, 'date'>>(lines: readonly L[], range: ReportRange) => lines.filter(line => line.date >= range.from && line.date <= range.to);
 /** Trends end with the period: the last 12 months, 8 quarters or 2 years, within the 24 months a report reads. */
 export function trendWindow(period: ReportRange, interval: Interval): ReportRange {
  const back = interval === 'month' ? 11 : interval === 'quarter' ? 21 : 12;

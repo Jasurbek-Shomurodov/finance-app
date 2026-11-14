@@ -114,7 +114,7 @@ test('every drawer destination shimmers in its own layout',()=>{
   '/transactions':['transactions-tools','transactions-layout','transaction-day-heading','transaction-row','transactions-summary'],
   '/income-expenses':['cashflow-summary','chart-skeleton','sankey-skeleton','cashflow-preview-grid'],'/reports':['data-columns="4"','sankey-skeleton','report-transactions','transactions-summary'],
   '/budget':['budget-layout','budget-section-header','budget-row','budget-side','budget-left-figure'],'/upcoming':['recurring-summary','recurring-list','recurring-row'],
-  '/goals':['goals-list','goal-row','goals-split','goal-detail'],'/assets':['portfolio-summary','portfolio-allocation-body','asset-card-grid'],
+  '/goals':['goals-split','goals-list','goal-row','goal-detail','goal-funding-panel'],'/assets':['portfolio-summary','portfolio-allocation-body','asset-card-grid'],
   '/loans-debts':['data-columns="4"','loans-layout','panel loans-list','loan-rows','loans-side'],'/recently-deleted':['recovery-panel','recovery-row'],'/settings':['settings-columns','settings-nav','preferences-card']};
  for(const path of paths){
   const html=render(NavigationShimmer,{label:'Loading records…',path});

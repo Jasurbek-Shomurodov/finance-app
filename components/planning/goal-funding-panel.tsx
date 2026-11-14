@@ -19,6 +19,7 @@ import { FormattedNumberInput } from '@/components/presentation-foundation/forma
 import { useUnsavedNavigation } from '@/components/discard-changes';
 import { formatMoney, formatDate } from '@/lib/format';
 import { income } from '@/lib/finance';
+import { rankColor } from '@/lib/category-colors';
 import { fundingPlan, planFundingRequested, type GoalEvent } from '@/lib/goal-funding';
 import { emptyPlanning,type Goal,type PlanningData } from '@/lib/planning';
 import { useOwnerResource, saveOwnerResource } from '@/hooks/use-owner-resource';
@@ -76,18 +77,23 @@ export function GoalFundingPanel({ data, currency, surplus, surplusParts, today,
  // Goals sidebar: what is free for goals this month, the plan that uses it, and the money moved in and out of goals.
  return <>
   {part !== 'activity' && activeGoals.length > 0 && <section className="panel goal-funding-panel" aria-labelledby={`${activityId}-funding`}>
-   <PanelTitle title={<span id={`${activityId}-funding`}>{t('Available for goals')}</span>} hint={t('Plan how to divide your monthly surplus between goals. Money stays in your accounts until you move it.')}/>
+   <PanelTitle title={<span id={`${activityId}-funding`}>{t('Available for goals')}</span>} hint={t('Plan how to divide your monthly surplus between goals. Money stays in your accounts until you move it.')}>
+    <Button type="button" variant="outline" size="sm" className="goal-funding-plan" onClick={() => setPlanning(true)}><SlidersHorizontal size={16} aria-hidden="true"/>{t('Plan funding')}</Button>
+   </PanelTitle>
    <SurplusButton parts={surplusParts} currency={currency} goalFunding={plan.requested ?? 0} className="goal-available"><strong><RollingText text={money(plan.remaining)}/></strong><span>{t('Unassigned monthly surplus')}</span></SurplusButton>
+   {/* The monthly surplus as one bar: each funded goal's share, then what is not yet assigned. The figures below name every part. */}
+   {surplus !== null && surplus > 0 && plan.remaining !== null && <div className="goal-funding-bar" aria-hidden="true">
+    {plan.rows.map((row, index) => row.allocated ? <i key={row.goal.id} style={{ width: `${row.allocated / surplus * 100}%`, background: rankColor(index) }}/> : null)}
+    {plan.remaining > 0 && <i className="is-unassigned" style={{ width: `${plan.remaining / surplus * 100}%` }}/>}
+   </div>}
    <dl className="goal-funding-figures">
     <div><dt>{t('Available monthly surplus')}</dt><dd><SurplusButton parts={surplusParts} currency={currency} className="surplus-link">{money(surplus)}</SurplusButton></dd></div>
+    {plan.rows.map((row, index) => <div key={row.goal.id} className="goal-funding-share"><dt><i style={{ background: rankColor(index) }}/>{row.goal.name}</dt><dd>{money(row.allocated)}</dd></div>)}
     <div><dt>{t('Planned goal funding')}</dt><dd>{money(plan.requested)}</dd></div>
+    <div className="goal-funding-share is-unassigned"><dt><i/>{t('Unassigned')}</dt><dd>{money(plan.remaining)}</dd></div>
    </dl>
    {plan.shortfall !== null && plan.shortfall > 0 && <p className="goal-funding-notice negative" role="status">{t('Your funding plan exceeds your monthly surplus by {amount}.', { amount: money(plan.shortfall) })}</p>}
    {!plan.complete && <p className="goal-funding-notice" role="status">{t('Enter each enabled goal’s monetary budget and provide all exchange rates to complete the plan.')}</p>}
-   {plan.rows.length > 0 && <ul className="goal-funding-allocations" aria-label={t('Planned goal funding')}>
-    {plan.rows.map(row => <li key={row.goal.id}><span>{row.goal.name}</span><strong>{money(row.allocated)}</strong></li>)}
-   </ul>}
-   <Button type="button" className="goal-funding-plan" onClick={() => setPlanning(true)}><SlidersHorizontal size={16} aria-hidden="true"/>{t('Plan funding')}</Button>
    <Dialog open={planning} onOpenChange={setPlanning}><DialogContent className="record-dialog goal-funding-dialog">
     <DialogTitle className="goal-dialog-title">{t('Priorities and monthly funding')}<InfoHint>{t('Lower priority numbers are funded first. Include only separate commitments so the same money is not planned twice.')}</InfoHint></DialogTitle>
     <div className="goal-funding-editors">{activeGoals.map(goal => <FundingEditor key={JSON.stringify(goal)} goal={goal} today={today} busy={busy || demo} save={save}/>)}</div>

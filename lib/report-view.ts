@@ -1,5 +1,6 @@
 import { HOUSEHOLD } from './business';
-import type { Drill, LedgerLine } from './business-report';
+import type { Drill, LedgerLine, ReportRange } from './business-report';
+import type { TransactionLink } from './transaction-list';
 import { income } from './finance';
 import type { Category } from './planning';
 
@@ -48,4 +49,17 @@ export function reportNames<B extends { id: string; name: string }>(categories: 
 export function describeDrill(drill: Drill, names: Pick<ReturnType<typeof reportNames>, 'category' | 'business'>, t: Translate) {
  const what = drill.savings !== undefined ? t('Net income') : drill.category ? names.category(drill.category) : drill.categories ? t('{count} categories', { count: drill.categories.length }) : drill.direction ? t(drill.direction === 'income' ? 'Income' : 'Expenses') : null;
  return [what, drill.merchant, drill.business !== undefined ? names.business(drill.business) : null].filter(Boolean).join(' · ');
+}
+
+/** Transactions filtered to what a report shows: its period, its businesses, the tab's direction and what a chart
+ * click narrowed to. A group of categories or net income cannot be one Transactions filter, so they open the whole list. */
+export function reportTransactionsLink(tab: ReportTab, drill: Drill | null, period: ReportRange, businesses: readonly string[]): TransactionLink {
+ const direction = drill?.direction ?? (tab === 'spending' ? 'expense' : tab === 'income' ? 'income' : undefined);
+ return {
+  range: { from: period.from, to: period.to },
+  ...(direction ? { direction } : {}),
+  ...(drill?.category ? { category: drill.category } : {}),
+  ...(drill?.merchant ? { query: drill.merchant } : {}),
+  ...(drill?.business !== undefined ? { businesses: [drill.business ?? HOUSEHOLD] } : businesses.length ? { businesses } : {}),
+ };
 }

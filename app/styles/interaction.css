@@ -4,7 +4,7 @@
 
 /* Press: buttons give by 3%, wider rows by half of that, so a large row never jumps. */
 :is([data-slot=button],.segmented>button,.nav-item,.pos-day):active:not(:disabled,[aria-disabled=true]){transform:scale(.97)}
-:is(.user-link,.account-list-row,.stat-tile-link):active{transform:scale(.985)}
+:is(.user-link,.account-list-row,.stat-tile-link,.recovery-select,.assistant-prompts button,.assistant-suggestions>button):active{transform:scale(.985)}
 /* The main action lifts off the page under the pointer. */
 @media(hover:hover){[data-slot=button][data-variant=default]:hover:not(:disabled,[aria-disabled=true]){box-shadow:0 8px 18px -10px color-mix(in srgb,var(--primary) 70%,transparent)}}
 
@@ -29,7 +29,7 @@
 @supports (animation-timeline:scroll()){.topbar{animation:topbar-edge linear both;animation-timeline:scroll();animation-range:0 56px}}
 
 @media(prefers-reduced-motion:reduce){
- :is([data-slot=button],.segmented>button,.nav-item,.pos-day):active:not(:disabled,[aria-disabled=true]),:is(.user-link,.account-list-row,.stat-tile-link):active{transform:none}
+ :is([data-slot=button],.segmented>button,.nav-item,.pos-day):active:not(:disabled,[aria-disabled=true]),:is(.user-link,.account-list-row,.stat-tile-link,.recovery-select,.assistant-prompts button,.assistant-suggestions>button):active{transform:none}
  [data-slot=button],.nav-item::before,:is(.stat-tile,.asset-card)::after,.panel,input,select,textarea{transition:none}
  .topbar{animation:none}
 }

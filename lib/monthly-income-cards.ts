@@ -1,6 +1,7 @@
 import { depositToday } from './deposit-interest';
 import type { EarningSource } from './earning-sources';
-import { earnsIn, income, interestKinds, monthly, duplicatesAssetEstimate, type Entry } from './finance';
+import { income, monthly, duplicatesAssetEstimate, type Entry } from './finance';
+import { earnsMonthly } from './holding-figures';
 import { convertAmount } from './market';
 import { amountIn, type Money, type PairRate, type RateTable } from './money';
 import { ratesOrPair } from './transaction-rates';
@@ -73,7 +74,7 @@ function linkedCard(cards: readonly IncomeCard[], entry: Entry, sources: readonl
 // Requires individual dated records, never the all-time valuation summary. A payment in another currency than its
 // card counts in the card's currency through `rates` (migration 120); without a usable rate its amount is missing.
 export function monthlyIncomeCards(entries: Entry[], month: string, sources: EarningSource[] = [], today = depositToday(), rates?: RateTable | PairRate | null): IncomeCard[] {
- const assets = entries.filter(entry => ['Business', 'Property', ...interestKinds].includes(entry.kind) && (entry.estimated_monthly_income ?? 0) > 0 && earnsIn(entry, month));
+ const assets = entries.filter(entry => earnsMonthly(entry, month));
  const businessIds = new Set(assets.filter(entry => entry.kind === 'Business').map(entry => entry.id));
  const propertyIds = new Set(assets.filter(entry => entry.kind === 'Property').map(entry => entry.id));
  const recurring = entries.filter(entry => income.includes(entry.kind) && !entry.source_paused && !entry.archived);

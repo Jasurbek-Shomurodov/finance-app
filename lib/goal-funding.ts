@@ -38,3 +38,10 @@ export function fundingRoom(goals:Goal[],selected:Goal,surplus:number|null,curre
  for(const row of position<0?rows:rows.slice(0,position)){if(row.requested===null)return null;room-=row.requested;}
  return Math.max(0,room);
 }
+/** A cash goal's balance at the end of each day it moved, from `from` on, oldest first: the saved line of its chart.
+ * Activity arrives newest first (as `/api/goal-tools` reads it), so the first event seen on a day holds its closing balance. */
+export function goalBalanceHistory(events:readonly GoalEvent[],goalId:string,from:string){
+ const days=new Map<string,number>();
+ for(const event of events)if(event.goal_id===goalId&&event.occurred_on>=from&&!days.has(event.occurred_on)&&Number.isFinite(Number(event.balance)))days.set(event.occurred_on,Number(event.balance));
+ return [...days].map(([date,value])=>({date,value})).sort((a,b)=>a.date.localeCompare(b.date));
+}

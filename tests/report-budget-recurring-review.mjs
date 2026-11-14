@@ -87,7 +87,8 @@ test('a report total with an unconverted amount reads —, in the summary and in
  r.mount(h(reports.ReportSummary, { lines: [line], missing: 1, mixed: true, names, currency: 'UZS', fileName: 'x' }));
  assert.ok(text(r.tree).includes('Total spending—') && text(r.tree).includes('Average transaction—'), text(r.tree));
  const pnl = report.profitAndLoss([line], [], item => item.category, true);
- r.mount(h(reports.ProfitLossTable, { pnl, breakdown: 'category', names, groupOf: key => key, currency: 'UZS', missing: true, onDrill() {} }));
+ const { ProfitLossTable } = r.load('components/reports/profit-loss-table.tsx', { ...stubs().modules, 'lucide-react': hostModule(), '@/components/business-reports': { BusinessName: () => null } });
+ r.mount(h(ProfitLossTable, { columns: [{ key: 'period', label: 'October 2026', pnl, missing: true }], breakdown: 'category', names, groupOf: key => key, currency: 'UZS', onDrill() {} }));
  const cells = r.all(byType('tr')).map(node => text(node));
  assert.ok(cells.find(cell => cell.startsWith('Net cash flow')).endsWith('—'), cells.join(' | '));
  assert.ok(cells.some(cell => cell.endsWith(formatMoney(120000, 'UZS', 'en-US'))), 'a category line keeps its figure');

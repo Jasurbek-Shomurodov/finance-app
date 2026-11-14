@@ -118,13 +118,13 @@ export function RecurringSkeleton({ label }: { label: string }) {
 /** Goals: the goal list with its progress lines, then the chosen goal beside what is available for goals. */
 export function GoalsSkeleton({ label }: { label: string }) {
   return <Loading label={label}>
-    <section className="panel goals-list"><Heading width={100}/><ul className="goal-rows">{times(4).map(row => <li className="goal-row goal-row-skeleton" key={row}>
-      <Skeleton className="size-10 shrink-0 rounded-xl"/>
-      <div className="goal-row-skeleton-body"><div><Skeleton className="h-4 w-40 max-w-full"/><Skeleton className="h-4 w-20"/></div><div><Skeleton className="h-3 w-32"/><Skeleton className="h-3 w-24"/></div><Skeleton className="h-1.5 w-full rounded-full"/></div>
-    </li>)}</ul></section>
     <div className="goals-split">
-      <section className="panel goal-detail"><div className="goal-detail-head"><header><Skeleton className="size-10 rounded-xl"/><Skeleton className="h-6 w-48 max-w-full"/></header><Skeleton className="h-9 w-40"/><Skeleton className="h-2 w-full rounded-full"/></div><StatTilesSkeleton/></section>
-      <section className="panel goal-funding-panel"><Heading width={180}/><Skeleton className="mb-4 h-24 w-full rounded-xl"/><Figures rows={4}/></section>
+      <section className="panel goals-list"><Heading width={100}/><ul className="goal-rows">{times(4).map(row => <li className="goal-row goal-row-skeleton" key={row}>
+        <Skeleton className="size-10 shrink-0 rounded-xl"/>
+        <div className="goal-row-skeleton-body"><div><Skeleton className="h-4 w-40 max-w-full"/><Skeleton className="h-4 w-20"/></div><div><Skeleton className="h-3 w-32"/><Skeleton className="h-3 w-24"/></div><Skeleton className="h-1.5 w-full rounded-full"/></div>
+      </li>)}</ul></section>
+      <section className="panel goal-detail"><header className="goal-detail-head"><Skeleton className="size-11 rounded-xl"/><Skeleton className="h-6 w-48 max-w-full"/></header><Skeleton className="h-9 w-40"/><Skeleton className="h-36 w-full rounded-xl"/><StatTilesSkeleton columns={2} count={4}/></section>
+      <section className="panel goal-funding-panel"><Heading width={180}/><Skeleton className="h-9 w-48"/><Skeleton className="h-3 w-full rounded-full"/><Figures rows={4}/></section>
     </div>
   </Loading>;
 }

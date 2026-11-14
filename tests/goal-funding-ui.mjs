@@ -161,3 +161,14 @@ test('the dashboard nudge opens Plan funding once: the address is read after a r
   assert.equal(planning, false, 'no goal, nothing to plan');
  } finally { delete globalThis.window; }
 });
+
+test('Available for goals splits the monthly surplus into one bar: each funded goal, then what is not yet assigned', () => {
+ const { render } = setup();
+ const html = render([goal('savings', { id: 'car', name: 'Car', funding_enabled: true, funding_monthly: 2000 }), goal('net_worth', { id: 'nw', name: 'Net worth', funding_enabled: true, funding_monthly: 4500 })]);
+ const bar = html.match(/<div class="goal-funding-bar" aria-hidden="true">(.*?)<\/div>/)?.[1] ?? '';
+ assert.equal((bar.match(/<i /g) ?? []).length, 3, 'two goals and the unassigned rest');
+ assert.match(bar, /class="is-unassigned" style="width:38\.8\d*%"/, '4,132 of 10,632');
+ assert.match(html, /<div class="goal-funding-share"><dt><i[^>]*><\/i>Car<\/dt><dd>\$2,000<\/dd><\/div>/);
+ assert.match(html, /<div class="goal-funding-share is-unassigned"><dt><i><\/i>Unassigned<\/dt><dd>\$4,132<\/dd><\/div>/);
+ assert.match(html, /Planned goal funding<\/dt><dd>\$6,500/);
+});

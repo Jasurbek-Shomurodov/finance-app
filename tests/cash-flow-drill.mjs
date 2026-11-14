@@ -929,9 +929,10 @@ test('picking an account shows its card; a holding or other asset opens its deta
  assert.match(fs.readFileSync('components/planning/accounts/accounts-overview.tsx', 'utf8'), /<BusinessHoldings records=\{businessHoldings\} market=\{market\} onOpen=\{holdingActions\.onOpen\}\/>/);
 });
 
-test('a goal row on Goals shows the goal: its progress and history, or an investment goal’s plan', () => {
+test('a goal row on Goals shows the goal in the panel beside the list, investment goals too (redesign, 14 November 2026)', () => {
  const page = fs.readFileSync('components/planning/goals-page.tsx', 'utf8');
- assert.match(page, /const pick=\(goal:Goal\)=>\{if\(goal\.kind==='investment'\)\{plannerFor\(goal\.id\);return;\}setSelected\(goal\.id\);/);
+ assert.match(page, /const pick=\(goal:Goal\)=>\{setSelected\(goal\.id\);/);
+ assert.match(page, /active\.kind==='investment'\?<InvestmentGoalDetail /);
  assert.match(page, /className="goal-row-main" aria-current=\{active\?\.id===goal\.id\|\|undefined\} onClick=\{\(\)=>pick\(goal\)\}/);
  assert.doesNotMatch(page + fs.readFileSync('components/workspace/screens/goals-screen.tsx', 'utf8'), /onSankey|setSankey/);
 });

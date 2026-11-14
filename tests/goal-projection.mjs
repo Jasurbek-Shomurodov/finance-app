@@ -94,13 +94,14 @@ test('a goal without a target date shows the month it is reached at the amount t
 test('the Goals page switches Overview, Goal planner and History from the top bar',()=>{
  const css=stylesheet(),page=fs.readFileSync('components/planning/goals-page.tsx','utf8'),panel=fs.readFileSync('components/planning/goal-funding-panel.tsx','utf8');
  assert.match(page,/<PageHeader title=\{t\('Goals'\)\} tabs=\{<Segmented className="page-tabs"[^\n]*value:'overview'[^\n]*value:'planner'[^\n]*value:'history'/);
- // Overview: the list, then the chosen goal beside what is free for goals; the other views stand alone.
- assert.match(page,/\{view==='overview'&&<>[\s\S]*goals-list[\s\S]*<div className="goals-split">[\s\S]*<GoalDetail[\s\S]*part="funding"\/>/);
+ // Overview: the list with what is free for goals under it, and the chosen goal in a panel beside them; the other views stand alone.
+ assert.match(page,/\{view==='overview'&&<div className="goals-split">[\s\S]*goals-list[\s\S]*<GoalDetail[\s\S]*part="funding"\/>/);
  assert.match(page,/\{view==='planner'&&\(active\?/);assert.match(page,/\{view==='history'&&<GoalFundingPanel[^\n]*part="activity" goal=\{historyGoal\} onShowAll=\{\(\)=>setHistoryGoal\(null\)\}\/>\}/);
  // /goals?view=history&goal=… (from the Cash flow drill-down) opens History showing that goal.
  assert.match(page,/if\(params\.get\('view'\)==='history'\)\{setView\('history'\);setHistoryGoal\(params\.get\('goal'\)\);\}/);
  assert.match(panel,/part !== 'activity' && activeGoals\.length > 0/);assert.match(panel,/part !== 'funding' && savingsGoals\.length > 0/);
- assert.match(css,/\.goals-split\{[^}]*align-items:stretch/);
+ assert.match(css,/\.goals-split\{[^}]*grid-template-areas:"list detail" "funding detail"/);
+ assert.match(css,/@container content \(max-width:900px\)\{\.goals-split\{[^}]*grid-template-areas:"list" "detail" "funding"\}/,'on a narrow page the chosen goal follows the list');
  // The pressed tab's underline is its marker, so it slides from the tab pressed before.
  assert.match(css,/\.segmented\.page-tabs>button::before\{[^}]*background:var\(--primary\)/);assert.match(css,/\.segmented>button\[aria-pressed=true\]::before\{opacity:1\}/);
 });

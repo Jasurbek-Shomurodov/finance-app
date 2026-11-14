@@ -14,7 +14,7 @@ import { formatMoney, formatNumber } from '@/lib/format';
 import { attributeLabels, rangeText, type TabProps } from './report-labels';
 import { TrendRateNote } from './report-filters';
 
-/** Spending or income: the total, a breakdown by category, group, merchant or business (bars or a donut), and trends. */
+/** Spending or income: the total, where the money went or came from as a breakdown by category, group, merchant or business (bars or a donut), and trends. */
 /** `missing` counts the period's amounts no rate converts: the total reads — rather than leaving them out (MONEY-008). */
 export function AttributeTab({ direction, lines, trendLines, trendRange, interval, names, groupOf, hasBusinesses, currency, onDrill, missing = 0, trendMissing = 0 }: TabProps & { direction: Direction; hasBusinesses: boolean }) {
  const { t, locale } = useLanguage();
@@ -40,7 +40,7 @@ export function AttributeTab({ direction, lines, trendLines, trendRange, interva
    <StatTile label={t('Transactions')} value={formatNumber(new Set(lines.map(line => line.record?.id ?? line.id)).size, locale, 0)}/>
   </StatTiles>
   <section className="panel">
-   <PanelTitle title={t(mode === 'breakdown' ? 'Breakdown' : 'Trends')} hint={mode === 'trends' ? rangeText(trendRange, locale) : undefined}>
+   <PanelTitle title={t(direction === 'expense' ? 'Where the money went' : 'Where the money came from')} hint={mode === 'trends' ? rangeText(trendRange, locale) : undefined}>
     <div className="cash-flow-switches">
      <Segmented label={t('Report view')} options={[{ value: 'breakdown', label: t('Breakdown') }, { value: 'trends', label: t('Trends') }] as const} value={mode} onChange={setMode}/>
      <Segmented label={t('Group by')} options={attributes.map(value => ({ value, label: t(attributeLabels[value]) }))} value={attribute} onChange={setAttribute}/>

@@ -42,7 +42,9 @@ test('the screens still ask for those addresses, starting from those defaults', 
  assert.match(source('hooks/use-report-data.ts'), /`\/api\/planning\?scope=budget&month=\$\{read\.to\.slice\(0, 7\)\}&from=\$\{read\.from\.slice\(0, 7\)\}`, user, live && enabled, reload,/);
  assert.match(source('components/workspace/screens/upcoming-screen.tsx'), /useState<RecurringView>\('list'\)/);
  assert.match(source('components/workspace/screens/upcoming-screen.tsx'), /view === 'subscriptions'\)/, 'the Subscriptions read waits for its view');
- assert.match(source('components/recently-deleted.tsx'), /useSessionResource\('\/api\/deleted-items\?page='\+page,!demo,reload,/);
+ assert.match(source('components/recently-deleted.tsx'), /useSessionResource\('\/api\/deleted-items\?page='\+page\+narrowed,!demo,reload,/);
+ // The whole bin (no tab, no search) adds nothing to the address, so it is the one the warm-up read.
+ assert.match(source('components/recently-deleted.tsx'), /const narrowed=\(type\?'&type='\+type:''\)\+\(term\?'&q='\+encodeURIComponent\(term\):''\);/);
 });
 
 test('the warm-up reads under the owner and revision each card asks with, once per section and revision', () => {

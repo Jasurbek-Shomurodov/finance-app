@@ -25,6 +25,8 @@ import { marketEntry, type MarketData } from '@/lib/market';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { Pagination } from '@/components/presentation-foundation/pagination';
 import type { PropertyTotals } from '@/lib/property-totals';
+import { holdingGain, monthlyAssetIncome, type HoldingSum } from '@/lib/holding-figures';
+import { depositToday } from '@/lib/deposit-interest';
 
 type Props = {
  excludedCurrencies?:string[];
@@ -51,6 +53,14 @@ function PropertyYear({ totals, money }: { totals?: PropertyTotals; money: (amou
   <div><dt>{t('Net this year')}</dt><dd className={totals && !totals.missing ? signTone(net) : undefined}>{totals?.missing ? t('Exchange rate unavailable.') : shown(net)}</dd></div></>;
 }
 
+/** What the rentals, businesses and interest-bearing holdings bring in a month; "—" with a note when one has no rate. */
+function AssetIncome({ income, currency, loading }: { income: HoldingSum; currency: string; loading: boolean }) {
+ const { t } = useLanguage();
+ if (!income.count) return null;
+ const missing = !loading && income.amount === null;
+ return <div><span>{t('Monthly income from assets')}</span><strong>{loading || income.amount === null ? '—' : <AnimatedMoney value={income.amount} currency={currency}/>}</strong>{missing && <small>{t('Exchange rate unavailable.')}</small>}</div>;
+}
+
 export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoading, accountsError, onRetryAccounts, onAddHolding, records, currency, market, netWorth, debt, loading, demo, onAdd, onEdit, onTrack, onInvest, onDelete, quoteLabel, propertyTotals = null }: Props) {
  const { t, locale } = useLanguage();
  const [category, setCategory] = useState('all');
@@ -70,6 +80,8 @@ export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoadin
  const page = Math.min(assetPage, pageCount);
  const visible = filtered.slice((page - 1) * assetsPerPage, page * assetsPerPage);
  const money = (amount: number, unit = currency) => formatMoney(amount, unit, locale);
+ const counted = (key: string, count: number) => t(key, { count: formatNumber(count, locale, 0) });
+ const income = monthlyAssetIncome(holdings, depositToday().slice(0, 7));
  const selectCategory = (kind: string) => { setCategory(kind); setAssetPage(1); };
  const scrollTo = (target: HTMLElement | null) => target?.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
  // Tapping a row in the allocation list moves the reader down to the filtered assets it now shows. A kind held only in
@@ -86,7 +98,7 @@ export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoadin
     // A quote the conversion or a live price changed is a calculation, read to the cent; the person's own keeps its decimals.
     const quote = !converted ? '—' : original.currency === currency && record.amount === original.amount ? formatMoney(record.amount, currency, locale, true) : formatConvertedQuote(record.amount, currency, locale);
     const hasQuote = unitPricedKinds.includes(record.kind);
-    const gain = hasQuote && record.cost > 0 ? (record.amount - record.cost) * record.quantity : null;
+    const gain = holdingGain(record);
     const fact = gain !== null ? { label: t('Gain/loss'), value: shown(gain), tone: signTone(gain) }
      : (record.estimated_monthly_income ?? 0) > 0 ? { label: t('Estimated monthly income'), value: shown(record.estimated_monthly_income!) }
      : interestKinds.includes(record.kind) && record.rate > 0 ? { label: t('Annual interest'), value: formatPercent(record.rate, locale, 8) }
@@ -106,11 +118,12 @@ export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoadin
   <section className="portfolio-summary" aria-label={t('Your holdings')}>
    <div className="portfolio-summary-main">
     <div className="portfolio-summary-total">
-     <h2>{t('Your holdings')}<Count value={holdings.length}/></h2>
+     <h2>{t('Your holdings')}<Count value={holdings.length} label={counted('{count} holdings', holdings.length)}/></h2>
      <strong className="portfolio-summary-value">{loading ? '—' : <AnimatedMoney value={total} currency={currency}/>}</strong>
      <PartialTotal currencies={excludedCurrencies}/>
     </div>
-    <div className="portfolio-summary-metrics"><div><span>{t('Net worth')}</span><strong>{loading ? '—' : <AnimatedMoney value={netWorth} currency={currency}/>}</strong></div><div><span>{t('Outstanding debt')}</span><strong>{loading ? '—' : <AnimatedMoney value={debt} currency={currency}/>}</strong></div></div>
+    <div className="portfolio-summary-metrics"><div><span>{t('Net worth')}</span><strong>{loading ? '—' : <AnimatedMoney value={netWorth} currency={currency}/>}</strong></div><div><span>{t('Outstanding debt')}</span><strong>{loading ? '—' : <AnimatedMoney value={debt} currency={currency}/>}</strong></div>
+    <AssetIncome income={income} currency={currency} loading={loading}/></div>
    </div>
    <div className="portfolio-summary-allocation">
     <h3>{t('Asset allocation')}</h3>
@@ -123,9 +136,9 @@ export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoadin
   <AssetAccounts ref={accountsRef} accounts={accounts} records={records} market={market} loading={accountsLoading || loading} error={accountsError} onRetry={onRetryAccounts} onAdd={onAddHolding} currency={currency} portfolioTotal={total} accountCount={accountRecords.length} onEdit={onEdit} onTrack={onTrack} demo={demo}>{accountRecords.map(renderCard)}</AssetAccounts>
 
   <section ref={holdingsRef} className="asset-holdings" aria-label={t('Assets & investments')}>
-   <div className="asset-holdings-heading"><h2>{t('Other assets')}<Count value={otherHoldings.length}/></h2><div className="asset-layout-switch" role="group" aria-label={t('Asset layout')}><Button variant="ghost" size="icon" aria-label={t('Card view')} aria-pressed={layout === 'grid'} onClick={() => setLayout('grid')}><LayoutGrid size={17}/></Button><Button variant="ghost" size="icon" aria-label={t('Compact view')} aria-pressed={layout === 'list'} onClick={() => setLayout('list')}><List size={18}/></Button></div></div>
+   <div className="asset-holdings-heading"><h2>{t('Other assets')}<Count value={otherHoldings.length} label={counted('{count} assets', otherHoldings.length)}/></h2><div className="asset-layout-switch" role="group" aria-label={t('Asset layout')}><Button variant="ghost" size="icon" aria-label={t('Card view')} aria-pressed={layout === 'grid'} onClick={() => setLayout('grid')}><LayoutGrid size={17}/></Button><Button variant="ghost" size="icon" aria-label={t('Compact view')} aria-pressed={layout === 'list'} onClick={() => setLayout('list')}><List size={18}/></Button></div></div>
 
-   <Segmented className="asset-category-filters" label={t('Filter assets by category')} value={category} onChange={selectCategory} options={[{ value: 'all', label: <>{t('All assets')}<span>{formatNumber(otherHoldings.length, locale, 0)}</span></> }, ...otherCategories.map(group => ({ value: group.kind, label: <><i style={{ '--asset-color': categoryColor(group.kind) } as CSSProperties}/>{t(group.kind)}<span>{formatNumber(group.count, locale, 0)}</span></> }))]}/>
+   <Segmented className="asset-category-filters" label={t('Filter assets by category')} value={category} onChange={selectCategory} options={[{ value: 'all', label: <>{t('All assets')}<span aria-hidden="true">{formatNumber(otherHoldings.length, locale, 0)}</span><span className="sr-only">{counted('{count} assets', otherHoldings.length)}</span></> }, ...otherCategories.map(group => ({ value: group.kind, label: <><i style={{ '--asset-color': categoryColor(group.kind) } as CSSProperties}/>{t(group.kind)}<span aria-hidden="true">{formatNumber(group.count, locale, 0)}</span><span className="sr-only">{counted('{count} assets', group.count)}</span></> }))]}/>
    {category !== 'all' && <p className="asset-result-count" role="status">{t('{shown} of {total} assets', { shown: formatNumber(filtered.length, locale, 0), total: formatNumber(otherHoldings.length, locale, 0) })}<button onClick={clearFilters}>{t('Clear filters')}</button></p>}
    {loading ? <LoadingPlaceholder label={t('Loading records…')}/> : !filtered.length ? <EmptyState icon={<Search size={26}/>} title={t(otherHoldings.length ? 'No matching assets' : 'A fresh start')} description={t(otherHoldings.length ? 'Try another category.' : 'Add your first asset to start building your portfolio.')}><Button variant="outline" onClick={otherHoldings.length ? clearFilters : onAdd}>{t(otherHoldings.length ? 'Clear filters' : 'Add your first record')}</Button></EmptyState> : <div className={'asset-card-grid asset-layout-' + layout}>{visible.map(renderCard)}</div>}
    {!loading && <Pagination label={t('Asset pages')} summary={t('Page {page} of {pages} · {count} records', { page: formatNumber(page, locale, 0), pages: formatNumber(pageCount, locale, 0), count: formatNumber(filtered.length, locale, 0) })} page={page} pageCount={pageCount} hasNext={page < pageCount} onPage={next => { setAssetPage(next); holdingsRef.current?.scrollIntoView({ block: 'start' }); }}/>}

@@ -10,6 +10,13 @@
 .sankey-link[data-clickable]:hover{stroke:color-mix(in srgb,var(--mark-bg) 38%,transparent)}
 .sankey-node[data-clickable]:hover .sankey-label{text-decoration:underline}
 .sankey-node[data-clickable]:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+.sankey-link[data-owner]{stroke:color-mix(in srgb,var(--flow) 30%,transparent)}
+.sankey-link[data-owner][data-clickable]:hover{stroke:color-mix(in srgb,var(--flow) 55%,transparent)}
+.sankey-net{fill:var(--muted-foreground)}
+.sankey-net[data-tone=negative]{fill:var(--negative)}
+.sankey-legend{display:flex;flex-wrap:wrap;gap:6px 20px;margin:0 0 12px;padding:0;list-style:none;font-size:var(--type-caption);font-weight:500;color:var(--muted-foreground)}
+.sankey-legend>li{display:inline-flex;align-items:center;gap:8px}
+.sankey-legend>li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--flow)}
 /* A tapped Cash flow Sankey node opens its own Sankey: wide enough for three columns and their labels. */
 .record-dialog.cash-flow-drill-dialog{max-width:min(960px,calc(100vw - 32px))!important}
 .cash-flow-drill-back{justify-self:start;margin-inline-start:-8px}

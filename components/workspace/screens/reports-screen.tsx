@@ -18,7 +18,8 @@ import { HOUSEHOLD } from '@/lib/business';
 import { drillMatches, filterLines, periodOf, reportLedger, shiftPeriod, trendWindow, unconvertedCount, type Drill, type Interval, type LedgerLine, type UnconvertedLine } from '@/lib/business-report';
 import { depositToday } from '@/lib/deposit-interest';
 import { inOwnerFilter, ownerOf, SHARED, workspaceOwners } from '@/lib/household';
-import { describeDrill, groupFinder, reportNames, reportTabsFor, tabLines, type ReportTab } from '@/lib/report-view';
+import { describeDrill, groupFinder, reportNames, reportTabsFor, reportTransactionsLink, tabLines, type ReportTab } from '@/lib/report-view';
+import { transactionsHref } from '@/lib/transaction-list';
 import { marketRates } from '@/lib/market';
 
 const tabLabels: Record<ReportTab, string> = { cash_flow: 'Cash flow', spending: 'Spending', income: 'Income', tax: 'Business tax prep' };
@@ -66,22 +67,22 @@ export function ReportsScreen() {
  // Changing what the page shows starts again from every transaction.
  const reset = <T,>(set: (value: T) => void) => (value: T) => { set(value); setDrill(null); };
  const open = (line: LedgerLine) => line.record && setViewing(storedRecord(line.record));
- const tabProps = { trendLines, trendRange, interval, names, groupOf, currency, onDrill: narrow, missing: unconvertedCount(tabLines(shownTab, unconverted)), trendMissing: unconvertedCount(tabLines(shownTab, trendUnconverted)) };
+ const tabProps = { period, trendLines, trendRange, interval, names, groupOf, currency, onDrill: narrow, missing: unconvertedCount(tabLines(shownTab, unconverted)), trendMissing: unconvertedCount(tabLines(shownTab, trendUnconverted)) };
 
  return <div data-page="Reports" className="content reports-content">
   <PageHeader title={t('Reports')} tabs={<Segmented as="nav" className="page-tabs" label={t('Reports')} options={visibleTabs.map(value => ({ value, label: t(tabLabels[value]) }))} value={shownTab} onChange={reset(setTab)}/>} hint={t('Cash flow, spending and income for your household and each business. Click any part of a chart or table to see its transactions.')}>
    {shownTab !== 'tax' && <ReportFilters businesses={businessList} business={businesses} onBusiness={reset(setBusinesses)} owners={owners} owner={ownerFilter} onOwner={reset(setOwnerFilter)} interval={interval} onInterval={reset(setInterval)} period={period} today={today} onStep={reset((steps: number) => setAnchor(shiftPeriod(period.from, interval, steps)))} onToday={() => reset(setAnchor)(today)}/>}
   </PageHeader>
   {shownTab === 'tax' ? <TaxTab preferences={workspacePreferences.data.preferences} save={workspacePreferences.save} saving={workspacePreferences.loading} onOpen={open}/>
-   : error ? <InlineError message={t(error)} onRetry={retry}/> : loading ? <ReportsSkeleton label={t('Loading records…')} donut={shownTab !== 'cash_flow'}/> : <ReportBody tab={shownTab} lines={lines} names={names} currency={currency} drill={drill} onClear={() => setDrill(null)} unconverted={unconverted} fileName={`${shownTab.replace('_', '-')}-${period.from}-${period.to}`} onOpen={open}>
+   : error ? <InlineError message={t(error)} onRetry={retry}/> : loading ? <ReportsSkeleton label={t('Loading records…')} donut={shownTab !== 'cash_flow'}/> : <ReportBody tab={shownTab} lines={lines} names={names} currency={currency} drill={drill} onClear={() => setDrill(null)} unconverted={unconverted} fileName={`${shownTab.replace('_', '-')}-${period.from}-${period.to}`} href={transactionsHref(reportTransactionsLink(shownTab, drill?.drill ?? null, period, businesses))} onOpen={open}>
     {shownTab === 'cash_flow' ? <CashFlowTab {...tabProps} lines={lines} includeHousehold={!businesses.length || businesses.includes(HOUSEHOLD)} businessIds={businessList.map(item => item.id).filter(id => businesses.includes(id) || (!businesses.length && (cashMode === 'trends' ? trendLines : lines).some(line => line.business === id)))} view={cashView} onView={setCashView} mode={cashMode} onMode={setCashMode}/>
      : <AttributeTab {...tabProps} key={shownTab} direction={shownTab === 'spending' ? 'expense' : 'income'} lines={tabLines(shownTab, lines)} trendLines={tabLines(shownTab, trendLines)} hasBusinesses={businessList.length > 0}/>}
    </ReportBody>}
  </div>;
 }
 
-/** A report tab's chart, then the transactions it narrows to beside their summary. */
-function ReportBody({ tab, lines, names, currency, drill, onClear, unconverted, fileName, onOpen, children }: { tab: ReportTab; lines: LedgerLine[]; names: ReportNames; currency: string; drill: { drill: Drill; label: string } | null; onClear: () => void; unconverted: UnconvertedLine[]; fileName: string; onOpen: (line: LedgerLine) => void; children: ReactNode }) {
+/** A report tab's chart, then the transactions it narrows to, largest first with a link to the same list on Transactions, beside their summary. */
+function ReportBody({ tab, lines, names, currency, drill, onClear, unconverted, fileName, href, onOpen, children }: { tab: ReportTab; lines: LedgerLine[]; names: ReportNames; currency: string; drill: { drill: Drill; label: string } | null; onClear: () => void; unconverted: UnconvertedLine[]; fileName: string; href: string; onOpen: (line: LedgerLine) => void; children: ReactNode }) {
  const { t } = useLanguage();
  const shown = tabLines(tab, lines).filter(line => drillMatches(drill?.drill ?? null, line));
  const missing = unconvertedCount(tabLines(tab, unconverted).filter(line => drillMatches(drill?.drill ?? null, line)));
@@ -89,7 +90,7 @@ function ReportBody({ tab, lines, names, currency, drill, onClear, unconverted, 
   {children}
   {missing > 0 && <p className="muted">{t('{count} transactions in other currencies are left out until exchange rates load.', { count: missing })}</p>}
   <div className="transactions-layout">
-   <ReportTransactions key={drill?.label ?? 'all'} lines={shown} drill={drill?.drill ?? null} label={drill?.label ?? null} names={names} onClear={onClear} onOpen={onOpen}/>
+   <ReportTransactions key={drill?.label ?? 'all'} lines={shown} drill={drill?.drill ?? null} label={drill?.label ?? null} names={names} href={href} onClear={onClear} onOpen={onOpen}/>
    <ReportSummary lines={shown} missing={missing} mixed={tab === 'cash_flow'} names={names} currency={currency} fileName={fileName}/>
   </div>
  </>;

@@ -79,6 +79,26 @@ export function reachedIn(left: number | null, monthly: number, today: string) {
  return `${Math.floor(index / 12)}-${String(index % 12 + 1).padStart(2, '0')}`;
 }
 
+/** Where a goal heads at `monthly` a month: its value on each monthly anniversary from today until it reaches the
+ * target, or until its target date when that comes later, and the day it reaches the target (null when it never does
+ * within a century, or nothing goes in). Contributions earn the goal's assumed return as in `projectGoal`. Null without a
+ * current value or a target. */
+export function goalPath(goal: { target: number; target_date: string | null; annual_return?: number | null }, current: number | null, monthly: number, today: string) {
+ const target = Number(goal.target), rate = Number(goal.annual_return ?? 0);
+ if (current === null || !(target > 0) || !Number.isFinite(current)) return null;
+ if (current >= target) return { points: [{ date: today, projected: current }], reachesOn: today };
+ const steady = monthly > 0 ? Math.ceil((target - current) / monthly) : null;
+ // Without a return the target is reached after `steady` contributions; a return only brings that day closer.
+ const reachBy = steady !== null && steady <= 1200 ? addMonths(today, steady) : null;
+ const horizon = [goal.target_date, reachBy].filter((date): date is string => !!date && date > today).sort().pop();
+ if (!horizon) return { points: [{ date: today, projected: current }], reachesOn: null };
+ const projection = projectGoal(current, target, today, horizon, Math.max(0, monthly), rate);
+ if (!projection) return { points: [{ date: today, projected: current }], reachesOn: null };
+ const reached = monthly > 0 ? projection.points.find(point => point.projected >= target - 0.005)?.date ?? null : null;
+ const end = reached && (!goal.target_date || reached > goal.target_date) ? reached : horizon;
+ return { points: projection.points.filter(point => point.date <= end).map(point => ({ date: point.date, projected: point.projected })), reachesOn: reached };
+}
+
 export type GoalStatus = 'completed' | 'on_track' | 'at_risk';
 /** Translation keys for the status pill. */
 export const goalStatusLabels: Record<GoalStatus, string> = { completed: 'Completed', on_track: 'On track', at_risk: 'At risk' };

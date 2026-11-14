@@ -32,14 +32,15 @@ export const earliestTransactionDay = (today: string) => shiftMonth(today.slice(
 /** `businesses` holds business ids and `household`, `tags` holds tag ids (none means all); `tagMatch` says whether a row needs any or all of the tags. */
 export type TransactionFilter = { query: string; direction: 'all' | 'income' | 'expense'; category: string; businesses: string[]; tags: string[]; tagMatch: TagMatch };
 export const emptyTransactionFilter: TransactionFilter = { query: '', direction: 'all', category: 'all', businesses: [], tags: [], tagMatch: 'any' };
-/** A link to Transactions already filtered: a direction (`type`), a category, the search (`q`), and a period by name or by
- * its first and last day. */
-export type TransactionLink = { direction?: 'income' | 'expense'; category?: string; query?: string; period?: TransactionPeriod; range?: { from: string; to: string } };
+/** A link to Transactions already filtered: a direction (`type`), a category, the search (`q`), businesses (ids and
+ * `household`), and a period by name or by its first and last day. */
+export type TransactionLink = { direction?: 'income' | 'expense'; category?: string; query?: string; businesses?: readonly string[]; period?: TransactionPeriod; range?: { from: string; to: string } };
 export function transactionsHref(link: TransactionLink) {
  const params = new URLSearchParams();
  if (link.direction) params.set('type', link.direction);
  if (link.category) params.set('category', link.category);
  if (link.query) params.set('q', link.query);
+ if (link.businesses?.length) params.set('business', link.businesses.join(','));
  if (link.period) params.set('period', link.period);
  if (link.range) { params.set('from', link.range.from); params.set('to', link.range.to); }
  const search = params.toString();
