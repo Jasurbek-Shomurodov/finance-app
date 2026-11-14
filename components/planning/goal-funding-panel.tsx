@@ -121,7 +121,7 @@ export function GoalFundingPanel({ data, currency, surplus, surplusParts, today,
 
 function FundingEditor({ goal, today, busy, save }: { goal: Goal; today: string; busy: boolean; save: (action: string, data: unknown) => Promise<void> }) {
  const { t, locale } = useLanguage(); const id = useId();
- const initial = { goal_id: goal.id, priority: goal.funding_priority ?? 100, monthly: goal.funding_monthly ?? null, enabled: goal.funding_enabled ?? false, paused_until: goal.paused_until ?? null, mode: goal.funding_mode ?? 'one_time' };
+ const initial = { goal_id: goal.id, priority: goal.funding_priority ?? 100, monthly: goal.funding_monthly ?? null, enabled: goal.funding_enabled ?? true, paused_until: goal.paused_until ?? null, mode: goal.funding_mode ?? 'one_time' };
  const [draft, setDraft] = useState(initial), [saved, setSaved] = useState(initial);
  const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
  const guard = useUnsavedNavigation(dirty);

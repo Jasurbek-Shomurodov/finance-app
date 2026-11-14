@@ -9,9 +9,10 @@ test('one surplus is allocated by priority once across all goals with explicit s
 test('pauses, completion and refill targets release future funding without changing balances',()=>{
  const plan=fundingPlan([goal('paused',20,{paused_until:'2026-09-30'}),goal('archived',20,{archived:true}),goal('done',20,{completed_on:'2026-09-17'}),goal('refill',20,{funding_mode:'refill',completed_on:'2026-09-17'})],100,'USD','2026-09-18');assert.deepEqual(plan.rows.map(row=>row.goal.id),['refill']);assert.equal(plan.remaining,80);
 });
-test('unknown commitments or FX never appear as an affordable plan, and units are not treated as cash',()=>{
+test('unknown FX never appears as an affordable plan, and units are not treated as cash',()=>{
  assert.equal(fundingPlan([goal('eur',80,{currency:'EUR'})],100,'USD','2026-09-18').complete,false);
- assert.equal(fundingPlan([goal('unit',null,{kind:'investment',monthly_contribution:.1})],100,'USD','2026-09-18').requested,null);
+ // A holdings goal's contribution is in units: without a cash budget it asks the plan for nothing.
+ assert.equal(fundingPlan([goal('unit',null,{kind:'investment',monthly_contribution:.1})],100,'USD','2026-09-18').requested,0);
  assert.equal(fundingPlan([goal('eur',80,{currency:'EUR'})],100,'USD','2026-09-18',{USD:1,EUR:.8}).requested,100);
  assert.equal(fundingPlan([goal('a',10)],null,'USD','2026-09-18').rows[0].allocated,null);
 });

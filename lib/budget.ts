@@ -238,7 +238,7 @@ export function sectionGroups(rows: readonly BudgetRow[], flex: boolean): Budget
 
 /** A goal's planned monthly saving: the Contributions section. It is what Goals › Available for goals funds, so the
  * two pages never disagree: only goals included in monthly funding count. */
-export const goalContribution = (goal: Goal, today: string) => inFundingPlan(goal, today) ? Math.max(0, Number(fundingBudget(goal) ?? 0)) : 0;
+export const goalContribution = (goal: Goal, today: string) => inFundingPlan(goal, today) ? Math.max(0, fundingBudget(goal)) : 0;
 
 /** In flex mode flexible categories carry no budget of their own: only the bucket is planned, and they show what was spent.
  * Their saved amounts are kept for Category mode, but never shown as a plan the totals ignore. */
