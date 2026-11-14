@@ -4,9 +4,9 @@ const unitPricedKinds = ['Stock','Crypto','Precious metals','Equity compensation
 const valuedKinds = ['Property','Business','Valuables','Vehicle','Retirement account'];
 export const trackedKinds: readonly string[] = ['Cash','Stock','Crypto','Precious metals','Equity compensation','Deposit','Treasury bill','Bond','Retirement account','Property','Business','Vehicle','Valuables','Money lent','Mortgage','Loan','Debt'];
 /** The columns of a transaction or income schedule the Overview charts read (/api/portfolio-history): the expense and
- * income funding of the benchmarks, the period summary, the income chart's receipts and monthly estimates, and the
- * rates each one converts at. A full row is about 60 columns, which made the read megabytes for a long history. */
-export const historyCashflowColumns = 'id,name,kind,amount,currency,date,frequency,recurrence_days,end_date,source_paused,archived,archive_pauses,business_id,income_source_id,property_id,history_event_id,movement_id,mortgage_payment_id,payment_principal,payment_interest,account_currency,account_exchange_rate,day_rates';
+ * income funding of the benchmarks, the period summary, the income chart's receipts and monthly estimates, the
+ * rates each one converts at, and the account and entry day the net worth history dates its cash change by. A full row is about 60 columns, which made the read megabytes for a long history. */
+export const historyCashflowColumns = 'id,name,kind,amount,currency,date,frequency,recurrence_days,end_date,source_paused,archived,archive_pauses,business_id,income_source_id,property_id,history_event_id,movement_id,mortgage_payment_id,payment_principal,payment_interest,account_currency,account_exchange_rate,day_rates,account_id,operation_id,created_at';
 export const historyKindGroups = { interestKinds, simpleInterestKinds, unitPricedKinds, valuedKinds };
 export type HistoryEvent = {
  id:string; record_id:string; event_type:'baseline'|'valuation'|'contribution'|'withdrawal'|'income'|'expense'|'mortgage_payment';

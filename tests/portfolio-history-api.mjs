@@ -47,6 +47,7 @@ test('repayments saved from Accounts reach the chart as dated repayments, read w
    {id:'r1',action:'repayment',account_id:'wallet',target_id:'loan',amount:400.25,occurred_on:'2026-09-10',notes:'September',created_at:'2026-09-10T08:00:00Z'},
    {id:'r2',action:'repayment',account_id:'wallet',target_id:'lent',amount:150,occurred_on:'2026-09-12',notes:'',created_at:'2026-09-12T08:00:00Z'},
    {id:'r3',action:'repayment',account_id:'wallet',target_id:'someone-else',amount:99,occurred_on:'2026-09-12',notes:''},
+   {id:'m1',action:'mortgage',account_id:'wallet',target_id:'home',amount:300,occurred_on:'2026-09-03',notes:'',created_at:'2026-09-09T08:00:00Z',before_balance:2000,after_balance:1500},
   ]);
   if(path.includes('investment_history'))return Response.json([{id:'v',record_id:'loan',event_type:'valuation',balance:599.75,occurred_on:'2026-09-10'}]);
   if(path.includes('finance_records?kind=in.(Cash'))return Response.json([{id:'wallet',kind:'Cash',currency:'USD'},{id:'loan',kind:'Loan',currency:'USD'},{id:'lent',kind:'Money lent',currency:'USD'}]);
@@ -54,7 +55,10 @@ test('repayments saved from Accounts reach the chart as dated repayments, read w
  });
  const result=await(await GET()).json();
  const call=calls.find(item=>item.path.includes('account_activity'));
- assert.ok(call.path.includes('action=eq.repayment'));assert.equal(call.token,'owner');
+ assert.ok(call.path.includes('action=in.(repayment,mortgage)'));assert.ok(call.path.includes('before_balance,after_balance'));assert.equal(call.token,'owner');
+ // Mortgage payments and repayments also travel as operations, with the paying account's balance on each side.
+ assert.deepEqual(result.operations.map(row=>row.id),['r1','r2','r3','m1']);
+ assert.deepEqual(result.operations[3],{id:'m1',action:'mortgage',account_id:'wallet',occurred_on:'2026-09-03',created_at:'2026-09-09T08:00:00Z',before_balance:2000,after_balance:1500});
  const repaid=result.events.filter(event=>event.id.startsWith('repayment:'));
  assert.deepEqual(repaid.map(event=>[event.record_id,event.event_type,event.amount,event.balance,event.occurred_on,event.account_link.amount]),[['loan','withdrawal',400.25,null,'2026-09-10',-400.25],['lent','withdrawal',150,null,'2026-09-12',150]]);
  // The balance written with the repayment stays the only valuation.

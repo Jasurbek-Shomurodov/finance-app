@@ -21,6 +21,7 @@ import { formatMoney, formatNumber, formatPercent, formatSignedMoney } from '@/l
 import { depositToday } from '@/lib/deposit-interest';
 import { mergePortfolioPoints } from '@/lib/portfolio-snapshots';
 import { portfolioHistory, portfolioWindow, trackingWindowStart } from '@/lib/portfolio-history';
+import { balanceMoves } from '@/lib/net-worth-moves';
 import { useComparisonProfile } from '@/hooks/use-comparison-profile';
 import { type MarketData, marketRates } from '@/lib/market';
 import type { PortfolioHistory } from '@/hooks/use-portfolio-history';
@@ -38,7 +39,9 @@ export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecord
  const money = (amount: number) => formatMoney(amount, currency, locale);
  const {totalAssets:assetTotal,totalDebt:debt}=financialTotals(entries);
  const rates = marketRates(market);
- const recorded = useMemo(() => portfolioHistory(history?.records ?? noHistory.records, history?.events ?? noHistory.events, currency, rates, today, true), [history, currency, rates, today]);
+ // Each day shows what had happened by then: a transaction or payment entered late counts from its own date.
+ const moves = useMemo(() => balanceMoves(history ?? noHistory, today), [history, today]);
+ const recorded = useMemo(() => portfolioHistory(history?.records ?? noHistory.records, history?.events ?? noHistory.events, currency, rates, today, true, moves), [history, currency, rates, today, moves]);
  const portfolioValue = assetTotal - debt;
  const points = useMemo(() => mergePortfolioPoints(recorded.points, [], {date:today,assets:assetTotal,debt,net:portfolioValue}), [recorded.points, today, assetTotal, debt, portfolioValue]);
  const windowStart = trackingWindowStart(range, today, comparison.trackingStart);
