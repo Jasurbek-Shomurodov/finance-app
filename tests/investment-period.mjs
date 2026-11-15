@@ -61,6 +61,15 @@ test('expenses group by spending category, with added categories by their own na
  assert.ok(details.expenses.every(item=>item.detail===undefined));
 });
 
+test('an expense paid for a holding names that holding',()=>{
+ const details={income:[],expenses:[],invested:[]};
+ const row=(id,extra)=>({id,kind:'Other expense',amount:25,currency:'USD',date:'2026-09-19',frequency:'Once',...extra});
+ const records=[{...input.records[0],name:'Sheep farm'},{id:'flat',kind:'Property',currency:'USD',name:'Lake flat'},input.records[1]];
+ investmentPeriodTotals({...input,records,cashflows:[row('feed',{name:'Feed store',business_id:'sheep'}),row('fix',{name:'Plumber',property_id:'flat'}),row('lunch',{name:'Cafe'})]},'2026-09-19',details);
+ const named=Object.fromEntries(details.expenses.filter(item=>item.amount===25).map(item=>[item.name,item.investment]));
+ assert.deepEqual(named,{'Feed store':'Sheep farm',Plumber:'Lake flat',Cafe:undefined});
+});
+
 const {investmentDecisionComparison}=loadTS('lib/investment-benchmarks.ts');
 const prices={start:'2026-09-01',end:'2026-09-04',fx:[],prices:{BTC:[1,2,3,4].map(n=>({date:'2026-09-0'+n,close:n*100}))},errors:{}};
 const dated=(id,record_id,date,event_type,amount,balance,extra={})=>({id,record_id,occurred_on:date,created_at:date+'T12:00:00Z',event_type,amount,balance,ownership_percentage:100,principal:0,interest:0,notes:'',...extra});
