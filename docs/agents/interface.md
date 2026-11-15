@@ -117,6 +117,14 @@ it instead of styling a page on its own.
   and asset cards glow where the pointer is (`usePointerGlow`), and the top bar draws its edge once the page scrolls.
   `Segmented` slides its pressed marker (the option's `::before`) from the option pressed before; style the marker,
   never the pressed button's own background. A new clickable row or card needs a hover state and a focus ring.
+- The command menu (`components/workspace/command-menu.tsx`, styles in `app/styles/command.css`, rules in
+  `lib/command-menu.ts`) opens with ⌘K / Ctrl+K, "/" outside a field, or the top bar's search button. It lists every
+  drawer destination (read from `navigation.ts`, so a new page appears by itself), the common actions and, once
+  something is typed, saved records and goals plus a search of Transactions. A new workspace-wide action gets a line
+  there. The shell renders it once; the top bar opens it by event (`openCommandMenu`) and never imports it.
+- Light and dark trade places as a circle opening from the toggle (`useThemeSwitch` in `components/theme-provider.tsx`,
+  a view transition); change the theme through it, never `setTheme` directly. A tapped destination draws a line along
+  the top bar's edge (`data-pending`) until its route arrives.
 - Define each shared selector once. Change the existing rule instead of adding a
   later override, and delete rules when their class is no longer rendered.
 - Cover shared UI pieces and label translations in `tests/design-system.mjs`.

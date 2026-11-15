@@ -2972,5 +2972,16 @@
   "Drag to move through time, scroll to zoom": "Seret untuk bergerak merentas masa, tatal untuk zum",
   "Zoom in": "Zum masuk",
   "Zoom out": "Zum keluar",
-  "Show all history": "Tunjukkan semua sejarah"
+  "Show all history": "Tunjukkan semua sejarah",
+  "Search": "Cari",
+  "Search or jump to…": "Cari atau pergi ke…",
+  "Go to": "Pergi ke",
+  "Your records": "Rekod anda",
+  "No results.": "Tiada hasil.",
+  "Search transactions for “{query}”": "Cari “{query}” dalam transaksi",
+  "Show amounts in {currency}": "Tunjukkan amaun dalam {currency}",
+  "Command menu": "Menu arahan",
+  "Switch to dark mode": "Tukar ke mod gelap",
+  "Switch to light mode": "Tukar ke mod cerah",
+  "Navigate": "Navigasi"
 }

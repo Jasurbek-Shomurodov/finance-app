@@ -8,6 +8,7 @@
 @import "./styles/shell.css";
 @import "./styles/motion.css";
 @import "./styles/interaction.css";
+@import "./styles/command.css";
 @import "./styles/tables.css";
 @import "./styles/forms.css";
 @import "./styles/assets.css";

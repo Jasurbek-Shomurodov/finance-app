@@ -2972,5 +2972,16 @@
   "Drag to move through time, scroll to zoom": "ลากเพื่อเลื่อนดูช่วงเวลา เลื่อนล้อเพื่อซูม",
   "Zoom in": "ซูมเข้า",
   "Zoom out": "ซูมออก",
-  "Show all history": "แสดงประวัติทั้งหมด"
+  "Show all history": "แสดงประวัติทั้งหมด",
+  "Search": "ค้นหา",
+  "Search or jump to…": "ค้นหาหรือไปที่…",
+  "Go to": "ไปที่",
+  "Your records": "รายการของคุณ",
+  "No results.": "ไม่พบผลลัพธ์",
+  "Search transactions for “{query}”": "ค้นหา “{query}” ในธุรกรรม",
+  "Show amounts in {currency}": "แสดงจำนวนเงินเป็น {currency}",
+  "Command menu": "เมนูคำสั่ง",
+  "Switch to dark mode": "เปลี่ยนเป็นโหมดมืด",
+  "Switch to light mode": "เปลี่ยนเป็นโหมดสว่าง",
+  "Navigate": "เลื่อนดู"
 }

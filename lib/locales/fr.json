@@ -2972,5 +2972,16 @@
   "Drag to move through time, scroll to zoom": "Faites glisser pour parcourir le temps, défilez pour zoomer",
   "Zoom in": "Zoom avant",
   "Zoom out": "Zoom arrière",
-  "Show all history": "Afficher tout l’historique"
+  "Show all history": "Afficher tout l’historique",
+  "Search": "Rechercher",
+  "Search or jump to…": "Rechercher ou aller à…",
+  "Go to": "Aller à",
+  "Your records": "Vos enregistrements",
+  "No results.": "Aucun résultat.",
+  "Search transactions for “{query}”": "Rechercher « {query} » dans les transactions",
+  "Show amounts in {currency}": "Afficher les montants en {currency}",
+  "Command menu": "Menu de commandes",
+  "Switch to dark mode": "Passer en mode sombre",
+  "Switch to light mode": "Passer en mode clair",
+  "Navigate": "Naviguer"
 }

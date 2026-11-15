@@ -2972,5 +2972,16 @@
   "Drag to move through time, scroll to zoom": "Seret untuk bergerak menyusuri waktu, gulir untuk memperbesar",
   "Zoom in": "Perbesar",
   "Zoom out": "Perkecil",
-  "Show all history": "Tampilkan seluruh riwayat"
+  "Show all history": "Tampilkan seluruh riwayat",
+  "Search": "Cari",
+  "Search or jump to…": "Cari atau buka…",
+  "Go to": "Buka",
+  "Your records": "Catatan Anda",
+  "No results.": "Tidak ada hasil.",
+  "Search transactions for “{query}”": "Cari “{query}” di transaksi",
+  "Show amounts in {currency}": "Tampilkan jumlah dalam {currency}",
+  "Command menu": "Menu perintah",
+  "Switch to dark mode": "Beralih ke mode gelap",
+  "Switch to light mode": "Beralih ke mode terang",
+  "Navigate": "Navigasi"
 }

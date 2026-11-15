@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { ThemeToggle } from '@/components/theme-provider';
 import { Segmented } from '@/components/presentation-foundation/segmented';
@@ -8,6 +8,7 @@ import { useTopBarSlot } from '@/components/presentation-foundation/top-bar-slot
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
+import { openCommandMenu } from '@/lib/command-menu';
 import { sectionLabel } from '@/components/workspace/navigation';
 
 /** Two staggered bars, the long one over the short: the drawer's menu mark. */
@@ -77,6 +78,8 @@ export function TopBar({ pendingSection }: { pendingSection?: string | null }) {
  const setTabsInBar = slot?.setTabsInBar;
  useEffect(() => { setTabsInBar?.(roomy && crowded < 2); }, [setTabsInBar, roomy, crowded]);
  const section = pendingSection ?? current;
+ // The shortcut as this keyboard writes it; the server and the first paint show the neutral form.
+ const shortcut = useSyncExternalStore(() => () => {}, () => /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl K', () => 'Ctrl K');
  const currentLabel = t(sectionLabel(current));
  // Each screen names its browser tab, so history and tab switchers tell the pages apart.
  // The router writes the site's title once a route settles, which can be after this effect, so the screen's name is kept.
@@ -88,7 +91,7 @@ export function TopBar({ pendingSection }: { pendingSection?: string | null }) {
   changed.observe(document.head, { childList: true, subtree: true, characterData: true });
   return () => changed.disconnect();
  }, [currentLabel]);
- return <header ref={bar} className="topbar">
+ return <header ref={bar} className="topbar" data-pending={pendingSection ? '' : undefined}>
   <div className="topbar-location">{drawerHidden && <SidebarTrigger variant="outline" className="drawer-toggle" aria-label={t('Toggle Sidebar')}><DrawerIcon/></SidebarTrigger>}<div className="topbar-page-title" ref={slot?.titleRef}/><span className="topbar-title">{t(sectionLabel(section))}</span></div>
   <div className="topbar-actions">
    {roomy && !crowded && <div className="topbar-page-actions" ref={slot?.actionsRef}/>}
@@ -96,6 +99,8 @@ export function TopBar({ pendingSection }: { pendingSection?: string | null }) {
    {preferencesData.currencies.length > 1 && <Segmented className="header-currency-switch" label={t('Display currency')} options={preferencesData.currencies.map(code => ({ value: code, label: code }))} value={currency} onChange={setCurrency}/>}
    {/* Adding an expense belongs to Cash flow; other pages carry their own main action. */}
    {!readOnly && section === 'Income & expenses' && <Button size="sm" className="quick-expense" aria-label={t('Add expense')} onClick={quickExpense}><Plus size={16} aria-hidden="true"/><span>{t('Add expense')}</span></Button>}
+   {/* Every page, action and saved record, one search away (⌘K). */}
+   <Button variant="outline" size="sm" className="command-search" aria-label={t('Search')} aria-keyshortcuts="Meta+K Control+K" onClick={openCommandMenu}><Search size={16} aria-hidden="true"/><span>{t('Search')}</span><kbd aria-hidden="true">{shortcut}</kbd></Button>
    <DisplayPreferences/>
   </div>
  </header>;

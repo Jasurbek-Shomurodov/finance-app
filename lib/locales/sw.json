@@ -2972,5 +2972,16 @@
   "Drag to move through time, scroll to zoom": "Buruta kusogea katika muda, sogeza kukuza",
   "Zoom in": "Kuza",
   "Zoom out": "Punguza",
-  "Show all history": "Onyesha historia yote"
+  "Show all history": "Onyesha historia yote",
+  "Search": "Tafuta",
+  "Search or jump to…": "Tafuta au nenda kwa…",
+  "Go to": "Nenda kwa",
+  "Your records": "Rekodi zako",
+  "No results.": "Hakuna matokeo.",
+  "Search transactions for “{query}”": "Tafuta “{query}” kwenye miamala",
+  "Show amounts in {currency}": "Onyesha kiasi kwa {currency}",
+  "Command menu": "Menyu ya amri",
+  "Switch to dark mode": "Badilisha hadi hali ya giza",
+  "Switch to light mode": "Badilisha hadi hali ya mwanga",
+  "Navigate": "Vinjari"
 }

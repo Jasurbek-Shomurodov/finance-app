@@ -2972,5 +2972,16 @@
   "Drag to move through time, scroll to zoom": "Vaqt bo‘ylab siljish uchun torting, kattalashtirish uchun aylantiring",
   "Zoom in": "Kattalashtirish",
   "Zoom out": "Kichiklashtirish",
-  "Show all history": "Butun tarixni ko‘rsatish"
+  "Show all history": "Butun tarixni ko‘rsatish",
+  "Search": "Qidirish",
+  "Search or jump to…": "Qidiring yoki oʻting…",
+  "Go to": "Oʻtish",
+  "Your records": "Yozuvlaringiz",
+  "No results.": "Hech narsa topilmadi.",
+  "Search transactions for “{query}”": "Tranzaksiyalardan “{query}”ni qidirish",
+  "Show amounts in {currency}": "Summalarni {currency}da koʻrsatish",
+  "Command menu": "Buyruqlar menyusi",
+  "Switch to dark mode": "Tungi rejimga oʻtish",
+  "Switch to light mode": "Yorugʻ rejimga oʻtish",
+  "Navigate": "Harakatlanish"
 }

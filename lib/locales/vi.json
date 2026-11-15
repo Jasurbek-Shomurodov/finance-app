@@ -2972,5 +2972,16 @@
   "Drag to move through time, scroll to zoom": "Kéo để di chuyển theo thời gian, cuộn để thu phóng",
   "Zoom in": "Phóng to",
   "Zoom out": "Thu nhỏ",
-  "Show all history": "Hiển thị toàn bộ lịch sử"
+  "Show all history": "Hiển thị toàn bộ lịch sử",
+  "Search": "Tìm kiếm",
+  "Search or jump to…": "Tìm hoặc chuyển đến…",
+  "Go to": "Đi tới",
+  "Your records": "Bản ghi của bạn",
+  "No results.": "Không có kết quả.",
+  "Search transactions for “{query}”": "Tìm “{query}” trong giao dịch",
+  "Show amounts in {currency}": "Hiển thị số tiền bằng {currency}",
+  "Command menu": "Trình đơn lệnh",
+  "Switch to dark mode": "Chuyển sang chế độ tối",
+  "Switch to light mode": "Chuyển sang chế độ sáng",
+  "Navigate": "Điều hướng"
 }

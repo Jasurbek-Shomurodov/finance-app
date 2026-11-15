@@ -2972,5 +2972,16 @@
   "Drag to move through time, scroll to zoom": "拖动以浏览不同时间，滚动以缩放",
   "Zoom in": "放大",
   "Zoom out": "缩小",
-  "Show all history": "显示全部历史"
+  "Show all history": "显示全部历史",
+  "Search": "搜索",
+  "Search or jump to…": "搜索或跳转到…",
+  "Go to": "前往",
+  "Your records": "您的记录",
+  "No results.": "没有结果。",
+  "Search transactions for “{query}”": "在交易中搜索“{query}”",
+  "Show amounts in {currency}": "以 {currency} 显示金额",
+  "Command menu": "命令菜单",
+  "Switch to dark mode": "切换到深色模式",
+  "Switch to light mode": "切换到浅色模式",
+  "Navigate": "导航"
 }

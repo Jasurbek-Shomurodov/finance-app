@@ -2972,5 +2972,16 @@
   "Drag to move through time, scroll to zoom": "Sleep om door de tijd te bewegen, scroll om te zoomen",
   "Zoom in": "Inzoomen",
   "Zoom out": "Uitzoomen",
-  "Show all history": "Hele geschiedenis tonen"
+  "Show all history": "Hele geschiedenis tonen",
+  "Search": "Zoeken",
+  "Search or jump to…": "Zoek of ga naar…",
+  "Go to": "Ga naar",
+  "Your records": "Uw gegevens",
+  "No results.": "Geen resultaten.",
+  "Search transactions for “{query}”": "Zoek “{query}” in transacties",
+  "Show amounts in {currency}": "Bedragen tonen in {currency}",
+  "Command menu": "Opdrachtmenu",
+  "Switch to dark mode": "Overschakelen naar donkere modus",
+  "Switch to light mode": "Overschakelen naar lichte modus",
+  "Navigate": "Navigeren"
 }

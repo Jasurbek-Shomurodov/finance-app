@@ -2972,5 +2972,16 @@
   "Drag to move through time, scroll to zoom": "برای حرکت در زمان بکشید، برای بزرگ‌نمایی اسکرول کنید",
   "Zoom in": "بزرگ‌نمایی",
   "Zoom out": "کوچک‌نمایی",
-  "Show all history": "نمایش کل سابقه"
+  "Show all history": "نمایش کل سابقه",
+  "Search": "جستجو",
+  "Search or jump to…": "جستجو یا رفتن به…",
+  "Go to": "رفتن به",
+  "Your records": "سوابق شما",
+  "No results.": "نتیجه‌ای یافت نشد.",
+  "Search transactions for “{query}”": "جستجوی «{query}» در تراکنش‌ها",
+  "Show amounts in {currency}": "نمایش مبالغ به {currency}",
+  "Command menu": "منوی فرمان",
+  "Switch to dark mode": "تغییر به حالت تیره",
+  "Switch to light mode": "تغییر به حالت روشن",
+  "Navigate": "پیمایش"
 }

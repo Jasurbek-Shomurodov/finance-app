@@ -2972,5 +2972,16 @@
   "Drag to move through time, scroll to zoom": "드래그하여 기간을 이동하고 스크롤하여 확대/축소",
   "Zoom in": "확대",
   "Zoom out": "축소",
-  "Show all history": "전체 기록 보기"
+  "Show all history": "전체 기록 보기",
+  "Search": "검색",
+  "Search or jump to…": "검색하거나 바로 이동…",
+  "Go to": "이동",
+  "Your records": "내 기록",
+  "No results.": "결과가 없습니다.",
+  "Search transactions for “{query}”": "거래에서 “{query}” 검색",
+  "Show amounts in {currency}": "금액을 {currency}(으)로 표시",
+  "Command menu": "명령 메뉴",
+  "Switch to dark mode": "다크 모드로 전환",
+  "Switch to light mode": "라이트 모드로 전환",
+  "Navigate": "탐색"
 }

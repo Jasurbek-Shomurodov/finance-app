@@ -2972,5 +2972,16 @@
   "Drag to move through time, scroll to zoom": "اسحب للتنقل عبر الزمن، ومرّر للتكبير",
   "Zoom in": "تكبير",
   "Zoom out": "تصغير",
-  "Show all history": "عرض السجل كاملاً"
+  "Show all history": "عرض السجل كاملاً",
+  "Search": "بحث",
+  "Search or jump to…": "ابحث أو انتقل إلى…",
+  "Go to": "انتقال إلى",
+  "Your records": "سجلاتك",
+  "No results.": "لا توجد نتائج.",
+  "Search transactions for “{query}”": "ابحث في المعاملات عن «{query}»",
+  "Show amounts in {currency}": "عرض المبالغ بعملة {currency}",
+  "Command menu": "قائمة الأوامر",
+  "Switch to dark mode": "التبديل إلى الوضع الداكن",
+  "Switch to light mode": "التبديل إلى الوضع الفاتح",
+  "Navigate": "تنقّل"
 }

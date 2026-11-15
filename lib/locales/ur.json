@@ -2972,5 +2972,16 @@
   "Drag to move through time, scroll to zoom": "وقت میں آگے پیچھے جانے کے لیے گھسیٹیں، زوم کے لیے اسکرول کریں",
   "Zoom in": "زوم اِن",
   "Zoom out": "زوم آؤٹ",
-  "Show all history": "پوری تاریخ دکھائیں"
+  "Show all history": "پوری تاریخ دکھائیں",
+  "Search": "تلاش",
+  "Search or jump to…": "تلاش کریں یا سیدھا جائیں…",
+  "Go to": "جائیں",
+  "Your records": "آپ کے ریکارڈ",
+  "No results.": "کوئی نتیجہ نہیں۔",
+  "Search transactions for “{query}”": "لین دین میں “{query}” تلاش کریں",
+  "Show amounts in {currency}": "رقوم {currency} میں دکھائیں",
+  "Command menu": "کمانڈ مینو",
+  "Switch to dark mode": "ڈارک موڈ پر جائیں",
+  "Switch to light mode": "لائٹ موڈ پر جائیں",
+  "Navigate": "نیویگیٹ"
 }

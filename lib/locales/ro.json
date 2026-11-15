@@ -2972,5 +2972,16 @@
   "Drag to move through time, scroll to zoom": "Trage pentru a te deplasa în timp, derulează pentru zoom",
   "Zoom in": "Mărește",
   "Zoom out": "Micșorează",
-  "Show all history": "Arată tot istoricul"
+  "Show all history": "Arată tot istoricul",
+  "Search": "Caută",
+  "Search or jump to…": "Caută sau mergi la…",
+  "Go to": "Mergi la",
+  "Your records": "Înregistrările tale",
+  "No results.": "Niciun rezultat.",
+  "Search transactions for “{query}”": "Caută „{query}” în tranzacții",
+  "Show amounts in {currency}": "Afișează sumele în {currency}",
+  "Command menu": "Meniu de comenzi",
+  "Switch to dark mode": "Comută la modul întunecat",
+  "Switch to light mode": "Comută la modul luminos",
+  "Navigate": "Navighează"
 }

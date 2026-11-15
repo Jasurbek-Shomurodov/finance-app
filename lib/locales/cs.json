@@ -2972,5 +2972,16 @@
   "Drag to move through time, scroll to zoom": "Tažením se posunete v čase, kolečkem přiblížíte",
   "Zoom in": "Přiblížit",
   "Zoom out": "Oddálit",
-  "Show all history": "Zobrazit celou historii"
+  "Show all history": "Zobrazit celou historii",
+  "Search": "Hledat",
+  "Search or jump to…": "Hledejte nebo přejděte na…",
+  "Go to": "Přejít na",
+  "Your records": "Vaše záznamy",
+  "No results.": "Žádné výsledky.",
+  "Search transactions for “{query}”": "Hledat v transakcích „{query}“",
+  "Show amounts in {currency}": "Zobrazit částky v {currency}",
+  "Command menu": "Nabídka příkazů",
+  "Switch to dark mode": "Přepnout na tmavý režim",
+  "Switch to light mode": "Přepnout na světlý režim",
+  "Navigate": "Procházet"
 }

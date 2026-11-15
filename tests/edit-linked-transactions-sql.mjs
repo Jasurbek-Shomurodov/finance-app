@@ -31,15 +31,16 @@ async function workspace(){
  return {db,as,rows,today,value,pay,category,recategorize};
 }
 
-test('migration 164 is the end of setup.sql, reports its version and changes nothing when applied again',{skip},async()=>{
- assert.ok(setup.trimEnd().endsWith(migration.trimEnd()));
- assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 164/);
+test('migration 164 is in setup.sql and changes nothing when applied again',{skip},async()=>{
+ assert.ok(setup.includes(migration.trimEnd()));
+ assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 165/);
  const db=await database();
  try{
   const functions=()=>db.query(`SELECT md5(string_agg(pg_get_functiondef(p.oid),'' ORDER BY p.oid::regprocedure::text)) AS sum FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prokind='f'`).then(r=>r.rows[0].sum);
-  assert.equal((await db.query("SELECT finance_capabilities()->>'schema_version' AS v")).rows[0].v,'164');
   const before=await functions();
   await db.exec(migration);
+  // Applied again it rewrites only the capability version, which the next migration moves on.
+  await db.exec(fs.readFileSync('migrations/165_trigger_grants_and_reference_indexes.sql','utf8'));
   assert.equal(await functions(),before);
   const grants=(await db.query(`SELECT p.proname,has_function_privilege('authenticated',p.oid,'EXECUTE') AS run FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname IN ('edit_mortgage_payment','inherit_mortgage_payment_category') ORDER BY 1`)).rows;
   assert.deepEqual(grants.map(row=>[row.proname,row.run]),[['edit_mortgage_payment',true],['inherit_mortgage_payment_category',false]]);

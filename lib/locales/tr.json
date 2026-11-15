@@ -2972,5 +2972,16 @@
   "Drag to move through time, scroll to zoom": "Zamanda ilerlemek için sürükleyin, yakınlaştırmak için kaydırın",
   "Zoom in": "Yakınlaştır",
   "Zoom out": "Uzaklaştır",
-  "Show all history": "Tüm geçmişi göster"
+  "Show all history": "Tüm geçmişi göster",
+  "Search": "Ara",
+  "Search or jump to…": "Ara veya şuraya git…",
+  "Go to": "Git",
+  "Your records": "Kayıtlarınız",
+  "No results.": "Sonuç yok.",
+  "Search transactions for “{query}”": "İşlemlerde “{query}” ara",
+  "Show amounts in {currency}": "Tutarları {currency} olarak göster",
+  "Command menu": "Komut menüsü",
+  "Switch to dark mode": "Koyu moda geç",
+  "Switch to light mode": "Açık moda geç",
+  "Navigate": "Gezin"
 }

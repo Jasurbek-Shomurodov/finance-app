@@ -2972,5 +2972,16 @@
   "Drag to move through time, scroll to zoom": "I-drag para gumalaw sa panahon, mag-scroll para mag-zoom",
   "Zoom in": "Mag-zoom in",
   "Zoom out": "Mag-zoom out",
-  "Show all history": "Ipakita ang buong kasaysayan"
+  "Show all history": "Ipakita ang buong kasaysayan",
+  "Search": "Maghanap",
+  "Search or jump to…": "Maghanap o pumunta sa…",
+  "Go to": "Pumunta sa",
+  "Your records": "Iyong mga rekord",
+  "No results.": "Walang resulta.",
+  "Search transactions for “{query}”": "Hanapin ang “{query}” sa mga transaksyon",
+  "Show amounts in {currency}": "Ipakita ang mga halaga sa {currency}",
+  "Command menu": "Menu ng mga utos",
+  "Switch to dark mode": "Lumipat sa madilim na mode",
+  "Switch to light mode": "Lumipat sa maliwanag na mode",
+  "Navigate": "Mag-navigate"
 }

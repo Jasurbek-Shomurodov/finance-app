@@ -38,11 +38,38 @@
 [data-slot=sheet-content][data-state=open]{--tw-animation-duration:.34s;--tw-ease:var(--ease-out)}
 [data-slot=sheet-content][data-state=closed]{--tw-animation-duration:.2s;--tw-ease:var(--ease-in)}
 
+/* Waiting has a shape too. Opening the app, the mark arrives and sends out a slow ring while the session is checked;
+   the placeholder rows follow it, and their sheen travels down the rows instead of blinking in step. A tapped
+   destination draws a line along the top bar's edge that keeps growing until its route arrives. */
+@keyframes mark-ring{from{opacity:.55;transform:scale(1)}to{opacity:0;transform:scale(1.75)}}
+@keyframes route-progress{from{transform:scaleX(0)}55%{transform:scaleX(.72)}to{transform:scaleX(.94)}}
+.session-loading>.brand{animation:rise-in var(--motion-settle) var(--ease-out) backwards}
+.session-loading>.loading-placeholder{animation:rise-in var(--motion-settle) var(--ease-out) var(--motion-lead) backwards}
+.session-loading .mark{position:relative}
+.session-loading .mark::after{content:"";position:absolute;inset:0;border-radius:inherit;border:2px solid var(--mark-bg);pointer-events:none;animation:mark-ring 1.8s var(--ease-out) .3s infinite backwards}
+:is(.loading-row,.screen-skeleton>*):nth-child(2) .skeleton-sheen::after{animation-delay:.12s}
+:is(.loading-row,.screen-skeleton>*):nth-child(3) .skeleton-sheen::after{animation-delay:.24s}
+:is(.loading-row,.screen-skeleton>*):nth-child(4) .skeleton-sheen::after{animation-delay:.36s}
+:is(.loading-row,.screen-skeleton>*):nth-child(n+5) .skeleton-sheen::after{animation-delay:.48s}
+.topbar[data-pending]::after{content:"";position:absolute;inset-inline:0;bottom:0;height:2px;border-radius:2px;background:var(--mark-bg);transform-origin:left;pointer-events:none;animation:route-progress 6s var(--ease-out) both}
+[dir=rtl] .topbar[data-pending]::after{transform-origin:right}
+
+/* Light and dark trade places as a circle that opens from the toggle that was pressed (`useThemeSwitch` sets the
+   origin and radius); the old theme stays still underneath. Only while a switch is running, so no other view
+   transition inherits it. */
+@keyframes theme-reveal{from{clip-path:circle(0 at var(--theme-x) var(--theme-y))}to{clip-path:circle(var(--theme-r) at var(--theme-x) var(--theme-y))}}
+html[data-theme-switch]::view-transition-old(root){animation:none;z-index:0}
+html[data-theme-switch]::view-transition-new(root){animation:theme-reveal .52s var(--ease-out) both;z-index:1;mix-blend-mode:normal}
+
 /* Under reduced motion nothing travels, grows or lifts, but a change is not silent either: arrivals become a short
    fade, so it still shows that something appeared, and overlays only fade in and out. */
 @media(prefers-reduced-motion:reduce){
  .workspace .content>*,.stat-tiles>.stat-tile,.dashboard-grid>*,[data-arrived]{animation:fade-only .15s linear backwards;transition:none}
  .stat-tile-bar>i,.progress-track>*,.budget-progress>div,.asset-card-share i,.allocation-share>span,.stat-tile-link{animation:none;transition:none}
  .stat-tile-link:hover{transform:none}
+ html[data-theme-switch]::view-transition-new(root){animation:none}
+ .session-loading>.brand,.session-loading>.loading-placeholder,.session-loading .mark::after,.topbar[data-pending]::after{animation:none}
+ .session-loading .mark::after{content:none}
+ .topbar[data-pending]::after{transform:scaleX(.94);opacity:.5}
  :is([data-slot=dialog-content],[data-slot=alert-dialog-content],[data-slot=popover-content],[data-slot=dropdown-menu-content],[data-slot=dropdown-menu-sub-content],[data-slot=tooltip-content],[data-slot=sheet-content],[data-slot=dialog-overlay],[data-slot=alert-dialog-overlay],[data-slot=sheet-overlay])[data-state]{--tw-enter-scale:1;--tw-exit-scale:1;--tw-enter-translate-x:0;--tw-enter-translate-y:0;--tw-exit-translate-x:0;--tw-exit-translate-y:0;--tw-animation-duration:.12s;--tw-ease:linear}
 }

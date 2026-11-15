@@ -2972,5 +2972,16 @@
   "Drag to move through time, scroll to zoom": "Drag to move through time, scroll to zoom",
   "Zoom in": "Zoom in",
   "Zoom out": "Zoom out",
-  "Show all history": "Show all history"
+  "Show all history": "Show all history",
+  "Search": "Search",
+  "Search or jump to…": "Search or jump to…",
+  "Go to": "Go to",
+  "Your records": "Your records",
+  "No results.": "No results.",
+  "Search transactions for “{query}”": "Search transactions for “{query}”",
+  "Show amounts in {currency}": "Show amounts in {currency}",
+  "Command menu": "Command menu",
+  "Switch to dark mode": "Switch to dark mode",
+  "Switch to light mode": "Switch to light mode",
+  "Navigate": "Navigate"
 }

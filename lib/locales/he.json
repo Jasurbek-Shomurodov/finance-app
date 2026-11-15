@@ -2972,5 +2972,16 @@
   "Drag to move through time, scroll to zoom": "גררו כדי לנוע בזמן, גללו כדי להתקרב",
   "Zoom in": "התקרבות",
   "Zoom out": "התרחקות",
-  "Show all history": "הצגת כל ההיסטוריה"
+  "Show all history": "הצגת כל ההיסטוריה",
+  "Search": "חיפוש",
+  "Search or jump to…": "חפשו או עברו אל…",
+  "Go to": "מעבר אל",
+  "Your records": "הרשומות שלך",
+  "No results.": "אין תוצאות.",
+  "Search transactions for “{query}”": "חיפוש „{query}” בעסקאות",
+  "Show amounts in {currency}": "הצגת סכומים ב-{currency}",
+  "Command menu": "תפריט פקודות",
+  "Switch to dark mode": "מעבר למצב כהה",
+  "Switch to light mode": "מעבר למצב בהיר",
+  "Navigate": "ניווט"
 }

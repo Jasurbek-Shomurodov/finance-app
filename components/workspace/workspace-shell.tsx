@@ -9,6 +9,7 @@ import { LandingPage, OnboardingScreen, SignInScreen, TelegramPanel } from '@/co
 import { useVisitor } from '@/components/visitor-context';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { TopBarSlotProvider } from '@/components/presentation-foundation/top-bar-slot';
+import { CommandMenu } from '@/components/workspace/command-menu';
 import { AppDrawer } from '@/components/workspace/app-drawer';
 import { pendingDestination, sectionFor, type PendingNavigation } from '@/components/workspace/navigation';
 import { DisplayPreferences, TopBar } from '@/components/workspace/top-bar';
@@ -25,7 +26,7 @@ function WorkspaceShell({ children }: { children: ReactNode }) {
  const { t } = useLanguage();
  const arrivals = useArrivalMarks<HTMLElement>();
  usePointerGlow();
- const { ready, user, demo, preview, pathname, busy, configured, error, login, startDemo, overdueCount, onboardingNeeded, settingsLoading, preferencesData, savePreferences, applyPreferences, planning, saveTrackingStart, household } = useWorkspace();
+ const { ready, user, demo, preview, pathname, busy, configured, error, login, startDemo, overdueCount, onboardingNeeded, navigate: openPath, settingsLoading, preferencesData, savePreferences, applyPreferences, planning, saveTrackingStart, household } = useWorkspace();
  // A drawer tap shows its destination immediately; the routed screen replaces it once it arrives.
  const [pending, setPending] = useState<PendingNavigation | null>(null);
  const destination = pendingDestination(pending, pathname);
@@ -36,6 +37,8 @@ function WorkspaceShell({ children }: { children: ReactNode }) {
   return () => clearTimeout(timer);
  }, [destination]);
  function navigate(path: string) { setPending({ from: pathname, to: path }); window.scrollTo({ top: 0 }); }
+ // The command menu opens a page as a drawer tap does: its shape at once, then the route.
+ function go(path: string) { const page = path.split('?')[0]; if (page !== pathname) navigate(page); openPath(path); }
  const visitor = useVisitor();
  const signedIn = !!user || demo;
  // The server already knows a visitor without session cookies is signed out, so the tour and the sign-in card render there without waiting for the session check.
@@ -66,6 +69,7 @@ function WorkspaceShell({ children }: { children: ReactNode }) {
    {destination ? <NavigationShimmer label={t("Loading records…")} path={destination}/> : children}
   </main></TopBarSlotProvider>
   <WorkspaceDialogs/>
+  <CommandMenu onNavigate={go}/>
  </SidebarProvider>;
 }
 

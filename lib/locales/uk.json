@@ -2972,5 +2972,16 @@
   "Drag to move through time, scroll to zoom": "Перетягніть, щоб рухатися в часі, прокрутіть для масштабу",
   "Zoom in": "Наблизити",
   "Zoom out": "Віддалити",
-  "Show all history": "Показати всю історію"
+  "Show all history": "Показати всю історію",
+  "Search": "Пошук",
+  "Search or jump to…": "Знайти або перейти…",
+  "Go to": "Перейти",
+  "Your records": "Ваші записи",
+  "No results.": "Нічого не знайдено.",
+  "Search transactions for “{query}”": "Шукати «{query}» в операціях",
+  "Show amounts in {currency}": "Показувати суми в {currency}",
+  "Command menu": "Меню команд",
+  "Switch to dark mode": "Увімкнути темну тему",
+  "Switch to light mode": "Увімкнути світлу тему",
+  "Navigate": "Переміщення"
 }

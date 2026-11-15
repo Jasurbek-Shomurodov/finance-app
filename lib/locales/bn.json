@@ -2972,5 +2972,16 @@
   "Drag to move through time, scroll to zoom": "সময়ের মধ্যে যেতে টানুন, জুম করতে স্ক্রল করুন",
   "Zoom in": "জুম ইন",
   "Zoom out": "জুম আউট",
-  "Show all history": "পুরো ইতিহাস দেখুন"
+  "Show all history": "পুরো ইতিহাস দেখুন",
+  "Search": "অনুসন্ধান",
+  "Search or jump to…": "খুঁজুন বা সরাসরি যান…",
+  "Go to": "যান",
+  "Your records": "আপনার রেকর্ড",
+  "No results.": "কোনো ফলাফল নেই।",
+  "Search transactions for “{query}”": "লেনদেনে “{query}” খুঁজুন",
+  "Show amounts in {currency}": "{currency}-এ পরিমাণ দেখান",
+  "Command menu": "কমান্ড মেনু",
+  "Switch to dark mode": "ডার্ক মোডে যান",
+  "Switch to light mode": "লাইট মোডে যান",
+  "Navigate": "নেভিগেট"
 }

@@ -1,0 +1,36 @@
+/* The command menu (15 November 2026): every page, action and saved record one search away. It opens with ⌘K, "/" or
+   the top bar's search button, sits in the upper third like a desktop launcher, and takes its timing from the dialog
+   rules in motion.css. */
+.command-search{gap:8px;padding-inline:10px 6px;color:var(--muted-foreground);font-weight:500}
+.command-search kbd,.command-menu-keys kbd{display:inline-grid;place-items:center;min-width:22px;height:22px;padding-inline:6px;border:1px solid var(--border);border-radius:6px;background:var(--muted);color:var(--muted-foreground);font:500 11px/1 var(--font-ui);white-space:nowrap}
+@media(hover:hover){.command-search:hover{color:var(--foreground)}}
+/* Narrow bars keep the magnifier alone. */
+@container topbar (max-width:900px){.command-search{width:38px;padding:0}.command-search>:is(span,kbd){display:none}}
+@media(pointer:coarse){.command-search kbd{display:none}}
+
+[data-slot=dialog-content].command-menu{top:min(16vh,150px);--tw-translate-y:0;gap:0;padding:0;width:min(640px,calc(100vw - 24px));max-width:none;max-height:min(560px,calc(100dvh - 32vh));overflow:hidden;border-radius:16px;border-color:color-mix(in srgb,var(--foreground) 12%,var(--border));background:color-mix(in srgb,var(--popover) 92%,transparent);backdrop-filter:saturate(1.6) blur(22px);box-shadow:0 32px 80px -24px rgb(0 0 0 / 45%),0 0 0 1px rgb(255 255 255 / 4%) inset}
+.command-menu [data-slot=command]{background:transparent;border-radius:0}
+.command-menu [data-slot=command-input-wrapper]{height:56px;gap:12px;padding-inline:18px;border-bottom:1px solid var(--hairline)}
+.command-menu [data-slot=command-input-wrapper] svg{width:18px;height:18px}
+.command-menu [data-slot=command-input],.command-menu [data-slot=command-input]:focus-visible{min-height:0!important;height:54px;padding:0;border:0!important;border-radius:0;outline:0!important;background:transparent!important;box-shadow:none!important;font-size:var(--type-body)}
+.command-menu [data-slot=command-list]{max-height:min(400px,calc(100dvh - 32vh - 100px));padding:6px 8px 8px;scroll-padding-block:8px}
+.command-menu [cmdk-group-heading]{padding:10px 10px 6px;font-size:var(--type-caption);font-weight:600;color:var(--muted-foreground)}
+.command-menu [data-slot=command-empty]{padding-block:36px;color:var(--muted-foreground);font-size:var(--type-small)}
+.command-line{gap:12px;min-height:44px;padding:6px 10px;border-radius:10px;font-size:var(--type-small);cursor:pointer;transition:background-color var(--motion-quick) var(--ease-out)}
+.command-line-icon{display:grid;place-items:center;flex-shrink:0;width:30px;height:30px;border-radius:8px;background:color-mix(in srgb,var(--foreground) 6%,transparent);transition:background-color var(--motion-quick),color var(--motion-quick)}
+.command-line-icon .record-icon{width:30px;height:30px;font-size:15px}
+.command-line-label{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:500}
+.command-line>small{flex-shrink:0;color:var(--muted-foreground);font-size:var(--type-caption)}
+.command-line-enter{opacity:0;transform:translateX(-4px);transition:opacity var(--motion-quick),transform var(--motion-quick) var(--ease-out)}
+[dir=rtl] .command-line-enter{transform:translateX(4px) scaleX(-1)}
+.command-line[data-selected=true]{background:color-mix(in srgb,var(--primary) 11%,transparent)}
+.command-line[data-selected=true] .command-line-icon:not(:has(.record-icon)){background:var(--primary);color:var(--primary-foreground)}
+.command-line[data-selected=true] .command-line-icon:not(:has(.record-icon)) svg{color:inherit}
+.command-line[data-selected=true] .command-line-enter{opacity:.7;transform:none}
+[dir=rtl] .command-line[data-selected=true] .command-line-enter{transform:scaleX(-1)}
+.command-line:active{transform:scale(.99)}
+.command-menu-keys{display:flex;gap:16px;align-items:center;padding:10px 18px;border-top:1px solid var(--hairline);color:var(--muted-foreground);font-size:var(--type-caption)}
+.command-menu-keys>span{display:inline-flex;align-items:center;gap:6px}
+@media(pointer:coarse){.command-menu-keys{display:none}}
+@media(max-width:640px){[data-slot=dialog-content].command-menu{top:12px;max-height:calc(100dvh - 24px)}.command-menu [data-slot=command-list]{max-height:calc(100dvh - 140px)}}
+@media(prefers-reduced-motion:reduce){.command-line,.command-line-icon,.command-line-enter{transition:none}.command-line:active{transform:none}}

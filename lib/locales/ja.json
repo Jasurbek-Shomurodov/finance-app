@@ -2972,5 +2972,16 @@
   "Drag to move through time, scroll to zoom": "ドラッグで期間を移動、スクロールで拡大縮小",
   "Zoom in": "拡大",
   "Zoom out": "縮小",
-  "Show all history": "全履歴を表示"
+  "Show all history": "全履歴を表示",
+  "Search": "検索",
+  "Search or jump to…": "検索または移動…",
+  "Go to": "移動",
+  "Your records": "保存した項目",
+  "No results.": "結果がありません。",
+  "Search transactions for “{query}”": "取引で「{query}」を検索",
+  "Show amounts in {currency}": "金額を {currency} で表示",
+  "Command menu": "コマンドメニュー",
+  "Switch to dark mode": "ダークモードに切り替え",
+  "Switch to light mode": "ライトモードに切り替え",
+  "Navigate": "移動する"
 }
