@@ -2917,6 +2917,7 @@
   "Record these one by one": "이 항목은 하나씩 기록하세요",
   "Recorded {done} of {count}.": "{count}건 중 {done}건을 기록했습니다.",
   "Debt payments": "부채 상환",
+  "The main line is your net worth: everything you own minus your debts. Each benchmark line is the net worth you would have had the same money gone into that benchmark instead.": "기본 선은 순자산입니다. 보유한 모든 것에서 부채를 뺀 금액입니다. 각 벤치마크 선은 같은 돈을 해당 벤치마크에 넣었다면 가졌을 순자산을 보여 줍니다.",
   "Due today": "오늘 납부일",
   "Due {date}": "{date} 납부일",
   "{percent} received": "{percent} 수령",

@@ -2917,6 +2917,7 @@
   "Record these one by one": "Эти запишите по одному",
   "Recorded {done} of {count}.": "Записано {done} из {count}.",
   "Debt payments": "Платежи по долгам",
+  "The main line is your net worth: everything you own minus your debts. Each benchmark line is the net worth you would have had the same money gone into that benchmark instead.": "Основная линия — ваш капитал: всё, чем вы владеете, за вычетом долгов. Каждая линия сравнения показывает капитал, который был бы у вас, если бы те же деньги были вложены в этот ориентир.",
   "Due today": "Срок сегодня",
   "Due {date}": "Срок {date}",
   "{percent} received": "Получено {percent}",

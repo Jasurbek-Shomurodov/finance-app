@@ -2917,6 +2917,7 @@
   "Record these one by one": "Enregistrez ceux-ci un par un",
   "Recorded {done} of {count}.": "{done} sur {count} enregistrés.",
   "Debt payments": "Paiements de dettes",
+  "The main line is your net worth: everything you own minus your debts. Each benchmark line is the net worth you would have had the same money gone into that benchmark instead.": "La ligne principale est votre patrimoine net : tout ce que vous possédez moins vos dettes. Chaque ligne de référence montre le patrimoine net que vous auriez si le même argent avait été placé dans cette référence.",
   "Due today": "Dû aujourd’hui",
   "Due {date}": "Dû le {date}",
   "{percent} received": "{percent} reçu",

@@ -2917,6 +2917,7 @@
   "Record these one by one": "इन्हें एक-एक करके दर्ज करें",
   "Recorded {done} of {count}.": "{count} में से {done} दर्ज किए गए।",
   "Debt payments": "ऋण भुगतान",
+  "The main line is your net worth: everything you own minus your debts. Each benchmark line is the net worth you would have had the same money gone into that benchmark instead.": "मुख्य रेखा आपकी निवल संपत्ति है: आपके पास जो कुछ है उसमें से आपके कर्ज़ घटाकर। हर बेंचमार्क रेखा वह निवल संपत्ति दिखाती है जो वही पैसा उस बेंचमार्क में लगाने पर आपके पास होती।",
   "Due today": "आज देय",
   "Due {date}": "{date} को देय",
   "{percent} received": "{percent} प्राप्त",

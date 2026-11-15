@@ -2917,6 +2917,7 @@
   "Record these one by one": "את אלה יש לרשום אחד אחד",
   "Recorded {done} of {count}.": "נרשמו {done} מתוך {count}.",
   "Debt payments": "תשלומי חובות",
+  "The main line is your net worth: everything you own minus your debts. Each benchmark line is the net worth you would have had the same money gone into that benchmark instead.": "הקו הראשי הוא השווי הנקי שלך: כל מה שבבעלותך פחות החובות שלך. כל קו השוואה הוא השווי הנקי שהיה לך אילו אותו כסף היה מושקע במדד הזה.",
   "Due today": "לתשלום היום",
   "Due {date}": "לתשלום ב־{date}",
   "{percent} received": "{percent} התקבל",

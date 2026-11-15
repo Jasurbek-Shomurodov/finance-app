@@ -2917,6 +2917,7 @@
   "Record these one by one": "এগুলো একটি একটি করে রেকর্ড করুন",
   "Recorded {done} of {count}.": "{count}টির মধ্যে {done}টি রেকর্ড হয়েছে।",
   "Debt payments": "ঋণ পরিশোধ",
+  "The main line is your net worth: everything you own minus your debts. Each benchmark line is the net worth you would have had the same money gone into that benchmark instead.": "মূল রেখাটি আপনার নিট সম্পদ: আপনার যা কিছু আছে তা থেকে আপনার ঋণ বাদ দিয়ে। প্রতিটি বেঞ্চমার্ক রেখা দেখায়, একই অর্থ ওই বেঞ্চমার্কে গেলে আপনার নিট সম্পদ কত হতো।",
   "Due today": "আজ বকেয়া",
   "Due {date}": "{date} তারিখে বকেয়া",
   "{percent} received": "{percent} পাওয়া গেছে",

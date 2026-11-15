@@ -2917,6 +2917,7 @@
   "Record these one by one": "این‌ها را تک‌تک ثبت کنید",
   "Recorded {done} of {count}.": "{done} از {count} ثبت شد.",
   "Debt payments": "پرداخت‌های بدهی",
+  "The main line is your net worth: everything you own minus your debts. Each benchmark line is the net worth you would have had the same money gone into that benchmark instead.": "خط اصلی دارایی خالص شماست: هر آنچه دارید منهای بدهی‌هایتان. هر خط معیار، دارایی خالصی است که اگر همان پول به آن معیار می‌رفت می‌داشتید.",
   "Due today": "سررسید امروز",
   "Due {date}": "سررسید {date}",
   "{percent} received": "{percent} دریافت شده",

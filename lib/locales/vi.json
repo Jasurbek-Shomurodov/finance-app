@@ -2917,6 +2917,7 @@
   "Record these one by one": "Ghi nhận từng khoản này riêng",
   "Recorded {done} of {count}.": "Đã ghi nhận {done} trên {count}.",
   "Debt payments": "Thanh toán nợ",
+  "The main line is your net worth: everything you own minus your debts. Each benchmark line is the net worth you would have had the same money gone into that benchmark instead.": "Đường chính là tài sản ròng của bạn: mọi thứ bạn sở hữu trừ đi các khoản nợ. Mỗi đường chuẩn so sánh là tài sản ròng bạn sẽ có nếu cùng số tiền đó được đưa vào chuẩn so sánh ấy.",
   "Due today": "Đến hạn hôm nay",
   "Due {date}": "Đến hạn {date}",
   "{percent} received": "Đã nhận {percent}",

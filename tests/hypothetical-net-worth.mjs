@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {loadTS} from './helpers/load-ts.mjs';
 
-const {hypotheticalNetWorth}=loadTS('lib/hypothetical-net-worth.ts');
+const {hypotheticalNetWorth,netWorthComparison}=loadTS('lib/hypothetical-net-worth.ts');
 
 test('each benchmark replaces the actual investments in today’s net worth',()=>{
  const point={date:'2026-10-21',actual:400000,contributed:380000,SPY:425000,BTC:390000,BIL:null};
@@ -39,4 +39,28 @@ test('a benchmark line takes its chosen palette or custom colour, else its own',
  assert.match(benchmarkColor('BTC',{BTC:'violet'}),/^hsl\(270 /);
  assert.equal(benchmarkColor('BTC',{BTC:'url(x)'}),defaultBenchmarkColor('BTC'));
  assert.equal(benchmarkColor('SPY',undefined),defaultBenchmarkColor('SPY'));
+});
+
+test('the chart draws net worth with debts subtracted, and keeps each benchmark the same distance from it',()=>{
+ // Investments are worth 400,000 but 90,000 of debt is outstanding: the line must read 310,000, not 400,000.
+ const points=[
+  {date:'2026-10-01',actual:380000,contributed:380000,invested:380000,SPY:380000,BTC:380000},
+  {date:'2026-10-02',actual:390000,contributed:380000,invested:380000,SPY:395000,BTC:null},
+  {date:'2026-10-03',actual:400000,contributed:385000,invested:385000,SPY:425000,BTC:390000},
+ ];
+ const history=[{date:'2026-09-30',net:280000},{date:'2026-10-03',net:310000}];
+ assert.deepEqual(netWorthComparison(points,history,['SPY','BTC']),[
+  {date:'2026-10-01',actual:280000,contributed:380000,invested:380000,SPY:280000,BTC:280000},
+  {date:'2026-10-02',actual:280000,contributed:380000,invested:380000,SPY:285000,BTC:null},
+  {date:'2026-10-03',actual:310000,contributed:385000,invested:385000,SPY:335000,BTC:300000},
+ ]);
+ // The last day agrees with the what-if cards for the same net worth.
+ assert.equal(hypotheticalNetWorth(310000,points[2],['SPY'])[0].netWorth,335000);
+});
+
+test('days before the first net worth figure are left out, and a day without an investment value shows no benchmark',()=>{
+ const points=[{date:'2026-10-01',actual:100,contributed:100,SPY:110},{date:'2026-10-02',actual:null,contributed:100,SPY:120}];
+ assert.deepEqual(netWorthComparison(points,[{date:'2026-10-02',net:-50}],['SPY']),[{date:'2026-10-02',actual:-50,contributed:100,SPY:null}]);
+ assert.deepEqual(netWorthComparison(points,[],['SPY']),[]);
+ assert.deepEqual(netWorthComparison(points,[{date:'2026-10-01',net:Number.NaN}],['SPY']),[]);
 });

@@ -2917,6 +2917,7 @@
   "Record these one by one": "Diese einzeln erfassen",
   "Recorded {done} of {count}.": "{done} von {count} erfasst.",
   "Debt payments": "Schuldenzahlungen",
+  "The main line is your net worth: everything you own minus your debts. Each benchmark line is the net worth you would have had the same money gone into that benchmark instead.": "Die Hauptlinie ist Ihr Nettovermögen: alles, was Sie besitzen, abzüglich Ihrer Schulden. Jede Vergleichslinie zeigt das Nettovermögen, das Sie hätten, wenn dasselbe Geld stattdessen in diesen Vergleichswert geflossen wäre.",
   "Due today": "Heute fällig",
   "Due {date}": "Fällig am {date}",
   "{percent} received": "{percent} erhalten",
