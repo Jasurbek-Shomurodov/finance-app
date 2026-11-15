@@ -17,6 +17,18 @@ export function niceAxis(values:readonly number[],count=5):{domain:[number,numbe
  return {domain:[ticks[0],ticks.at(-1)!],ticks};
 }
 
+// A value axis that starts exactly at `floor` (the value a chart's main line opens on), so that line begins in the
+// bottom-left corner. Round ticks continue above it, none closer than half a step to the floor; values below it are
+// left for the chart to cut off at the bottom edge.
+export function flooredAxis(values:readonly number[],floor:number,count=5):{domain:[number,number];ticks:number[]}{
+ if(!Number.isFinite(floor))return niceAxis(values,count);
+ const nice=niceAxis([floor,...values.filter(value=>Number.isFinite(value)&&value>floor)],count);
+ const step=nice.ticks.length>1?nice.ticks[1]-nice.ticks[0]:1;
+ const above=nice.ticks.filter(tick=>tick-floor>=step/2);
+ const top=above.at(-1)??floor+step;
+ return {domain:[floor,top],ticks:[floor,...(above.length?above:[top])]};
+}
+
 // Where each line's end label sits on the value axis: at its last value, pushed apart so no two are closer than
 // `gap` (a value distance), and kept inside the axis. Labels keep the order of their values.
 export function spreadLabels<T extends {value:number}>(items:readonly T[],domain:[number,number],gap:number):(T&{at:number})[]{

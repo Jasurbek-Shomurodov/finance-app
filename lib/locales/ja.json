@@ -2917,7 +2917,6 @@
   "Record these one by one": "これらは1件ずつ記録してください",
   "Recorded {done} of {count}.": "{count}件中{done}件を記録しました。",
   "Debt payments": "借入金の返済",
-  "The main line is your net worth: everything you own minus your debts. Each benchmark line is the net worth you would have had the same money gone into that benchmark instead.": "メインの線は純資産です。保有するすべてから負債を差し引いた額です。各ベンチマークの線は、同じお金をそのベンチマークに投じていた場合の純資産を示します。",
   "Due today": "本日期限",
   "Due {date}": "{date}期限",
   "{percent} received": "{percent}受取済み",

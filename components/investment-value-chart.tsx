@@ -5,7 +5,7 @@ import { Area, CartesianGrid, ComposedChart, ResponsiveContainer, Tooltip, XAxis
 import { useLanguage } from '@/components/language-provider';
 import { formatDate, formatMoney } from '@/lib/format';
 import { ChartGradient, EndLabelTick, chartAxis, chartEndAxis, chartGrid, chartLine, chartTooltip, chartValueAxis, endLabelMoney, endLabelWidth, leadArea, moneyTick } from '@/components/presentation-foundation/chart';
-import { niceAxis, spreadLabels } from '@/lib/chart-scale';
+import { flooredAxis, niceAxis, spreadLabels } from '@/lib/chart-scale';
 import { historyChartDate } from '@/lib/investment-history';
 
 type Series={key:string;label:string;color:string;dash?:string;primary?:boolean};
@@ -13,7 +13,8 @@ type Point={date:string;[key:string]:string|number|null};
 /** Renders nothing: the tooltip keeps tracking the touched day without drawing over the details window. */
 const noTooltip=()=>null;
 
-export function InvestmentValueChart({points,series,currency,tooltip,onPointSelect,height=310,label='Investment value'}:{points:Point[];series:Series[];currency:string;tooltip?:ReactElement;onPointSelect?:(date:string)=>void;height?:number;label?:string}){
+/** `floor`, when given, is where the value axis starts: the chart's main line then opens in the bottom-left corner. */
+export function InvestmentValueChart({points,series,currency,tooltip,onPointSelect,floor,height=310,label='Investment value'}:{points:Point[];series:Series[];currency:string;tooltip?:ReactElement;onPointSelect?:(date:string)=>void;floor?:number;height?:number;label?:string}){
  const {locale,t}=useLanguage(),id=useId();
  const mobile=useIsMobile();
  // On phones a tap opens the point's details window; a tooltip drawn under the same finger would show through it
@@ -23,7 +24,7 @@ export function InvestmentValueChart({points,series,currency,tooltip,onPointSele
  const first=data[0]?.timestamp,last=data.at(-1)?.timestamp;
  const single=data.length===1;
  const values=points.flatMap(point=>series.map(item=>point[item.key])).filter((value):value is number=>typeof value==='number'&&Number.isFinite(value));
- const axis=niceAxis(values);
+ const axis=floor===undefined?niceAxis(values):flooredAxis(values,floor);
  const money=(amount:number)=>formatMoney(amount,currency,locale);
  // Each line's latest figure sits at its right end, spread so close lines keep readable labels (about 24px apart).
  const endMoney=endLabelMoney(currency,locale),lastPoint=points.at(-1);

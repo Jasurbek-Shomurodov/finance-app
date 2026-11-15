@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {niceAxis,spreadLabels} from '../lib/chart-scale.ts';
+import {flooredAxis,niceAxis,spreadLabels} from '../lib/chart-scale.ts';
 test('money axes use round ticks and never show negative values for non-negative data',()=>{
  assert.deepEqual(niceAxis([49645,3105952]),{domain:[0,4000000],ticks:[0,1000000,2000000,3000000,4000000]});
  assert.deepEqual(niceAxis([148480,901509]).ticks,[0,250000,500000,750000,1000000]);
@@ -36,4 +36,16 @@ test('end labels sit at their values, spread apart in value order and kept insid
  assert.deepEqual(at([{key:'a',value:401},{key:'b',value:402},{key:'c',value:399}]),[['b',410],['a',405],['c',400]]);
  assert.deepEqual(at([{key:'a',value:999}]),[['a',440]]);
  assert.deepEqual(spreadLabels([],[0,1],1),[]);
+});
+
+test('a floored axis starts exactly at the main line’s opening value, with round ticks above it',()=>{
+ // Investments open at 311,000; Bitcoin later falls to 253,000 and is cut off at the bottom edge instead of lowering the axis.
+ const {domain,ticks}=flooredAxis([311000,321000,345000,253000,328000],311000);
+ assert.equal(domain[0],311000);assert.equal(ticks[0],311000);
+ assert.ok(domain[1]>=345000);
+ assert.ok(ticks.slice(1).every(tick=>tick%5000===0&&tick>311000),JSON.stringify(ticks));
+ const step=ticks[2]-ticks[1];assert.ok(ticks[1]-311000>=step/2,'no tick crowds the floor');
+ // Nothing above the floor still leaves a usable range, and an unusable floor falls back to the usual axis.
+ const flat=flooredAxis([100,90],100);assert.equal(flat.domain[0],100);assert.ok(flat.domain[1]>100);
+ assert.deepEqual(flooredAxis([0,10],Number.NaN),niceAxis([0,10]));
 });

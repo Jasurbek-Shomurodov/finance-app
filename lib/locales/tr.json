@@ -2917,7 +2917,6 @@
   "Record these one by one": "Bunları tek tek kaydedin",
   "Recorded {done} of {count}.": "{count} ödemeden {done} tanesi kaydedildi.",
   "Debt payments": "Borç ödemeleri",
-  "The main line is your net worth: everything you own minus your debts. Each benchmark line is the net worth you would have had the same money gone into that benchmark instead.": "Ana çizgi net değerinizdir: sahip olduğunuz her şey eksi borçlarınız. Her karşılaştırma çizgisi, aynı para o ölçüte yatırılsaydı sahip olacağınız net değeri gösterir.",
   "Due today": "Bugün vadesi doluyor",
   "Due {date}": "Vade: {date}",
   "{percent} received": "{percent} alındı",

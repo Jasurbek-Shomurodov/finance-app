@@ -2917,7 +2917,6 @@
   "Record these one by one": "บันทึกรายการเหล่านี้ทีละรายการ",
   "Recorded {done} of {count}.": "บันทึกแล้ว {done} จาก {count} รายการ",
   "Debt payments": "การชำระหนี้",
-  "The main line is your net worth: everything you own minus your debts. Each benchmark line is the net worth you would have had the same money gone into that benchmark instead.": "เส้นหลักคือความมั่งคั่งสุทธิของคุณ: ทุกอย่างที่คุณมีหักด้วยหนี้สินของคุณ เส้นเกณฑ์เปรียบเทียบแต่ละเส้นคือความมั่งคั่งสุทธิที่คุณจะมี หากเงินจำนวนเดียวกันถูกนำไปลงในเกณฑ์นั้นแทน",
   "Due today": "ครบกำหนดวันนี้",
   "Due {date}": "ครบกำหนด {date}",
   "{percent} received": "ได้รับแล้ว {percent}",

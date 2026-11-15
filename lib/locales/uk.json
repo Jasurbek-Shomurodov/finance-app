@@ -2917,7 +2917,6 @@
   "Record these one by one": "Ці запишіть по одному",
   "Recorded {done} of {count}.": "Записано {done} із {count}.",
   "Debt payments": "Платежі за боргами",
-  "The main line is your net worth: everything you own minus your debts. Each benchmark line is the net worth you would have had the same money gone into that benchmark instead.": "Основна лінія — ваш капітал: усе, чим ви володієте, за вирахуванням боргів. Кожна лінія порівняння показує капітал, який ви мали б, якби ті самі гроші було вкладено в цей орієнтир.",
   "Due today": "Термін сьогодні",
   "Due {date}": "Термін {date}",
   "{percent} received": "Отримано {percent}",

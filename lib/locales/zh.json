@@ -2917,7 +2917,6 @@
   "Record these one by one": "这些请逐笔记录",
   "Recorded {done} of {count}.": "已记录 {done}/{count} 笔。",
   "Debt payments": "债务还款",
-  "The main line is your net worth: everything you own minus your debts. Each benchmark line is the net worth you would have had the same money gone into that benchmark instead.": "主线是您的净资产：您拥有的一切减去债务。每条基准线表示，如果同样的钱投入该基准，您本应拥有的净资产。",
   "Due today": "今日到期",
   "Due {date}": "{date}到期",
   "{percent} received": "已收到 {percent}",
