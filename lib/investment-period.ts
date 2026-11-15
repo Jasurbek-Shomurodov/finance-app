@@ -15,7 +15,8 @@ type PeriodDetails=Record<'income'|'invested'|'expenses',PeriodRow[]>;
 export function investmentPeriodTotals(input:PeriodInput,start:string,details?:PeriodDetails,scope:FundingScope='investments'){
  const totals=periodTotals(input,start,details);
  if(scope!=='expenses')return totals;
- details?.invested.push(...details.expenses);
+ // The expenses stay together under their own heading, apart from the purchases.
+ details?.invested.push(...details.expenses.map(row=>({...row,category:'Expenses paid'})));
  return {...totals,invested:totals.invested+totals.expenses};
 }
 function periodTotals(input:PeriodInput,start:string,details?:PeriodDetails){
