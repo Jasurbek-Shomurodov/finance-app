@@ -63,3 +63,10 @@ export function dropCard(layout: DashboardLayout, card: DashboardCard, over: Das
 
 export const toggleCard = (layout: DashboardLayout, card: DashboardCard): DashboardLayout =>
  ({ ...layout, hidden: layout.hidden.includes(card) ? layout.hidden.filter(item => item !== card) : [...layout.hidden, card] });
+
+/** The dashboard's shown cards by column from the saved workspace preferences, the default layout when none is saved:
+ * the drawer's shimmer draws the dashboard in this order before the screen itself has loaded. */
+export function savedDashboardColumns(preferences: readonly { key: string; data: unknown }[]) {
+ const saved = preferences.find(item => item.key === 'dashboard');
+ return dashboardColumns(normalizeLayout(saved ? saved.data : defaultDashboardLayout));
+}

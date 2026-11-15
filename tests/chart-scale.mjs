@@ -48,6 +48,7 @@ test('a floored axis starts exactly at the main line’s opening value, with rou
  assert.ok(ticks.slice(1).every(tick=>tick%5000===0&&tick>311000),JSON.stringify(ticks));
  const step=ticks[2]-ticks[1];assert.ok(ticks[1]-311000>=step/2,'no tick crowds the floor');
  // Nothing above the floor still leaves a usable range, and an unusable floor falls back to the usual axis.
- const flat=flooredAxis([100,90],100);assert.equal(flat.domain[0],100);assert.ok(flat.domain[1]>100);
+ const flat=flooredAxis([100,100],100);assert.equal(flat.domain[0],100);assert.ok(flat.domain[1]>100);
+ assert.equal(flooredAxis([100,90],100).domain[0],90,'a value under the floor lowers the axis, as the comparison lines need');
  assert.deepEqual(flooredAxis([0,10],Number.NaN),niceAxis([0,10]));
 });

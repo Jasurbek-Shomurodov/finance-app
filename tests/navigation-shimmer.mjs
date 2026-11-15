@@ -23,8 +23,8 @@ test('the workspace layout and its banner stay on first load only', () => {
 
 test('the navigation shimmer is the destination layout, never the workspace banner', () => {
  const shimmer = placeholders.slice(placeholders.indexOf('export function NavigationShimmer'));
- assert.match(shell, /<NavigationShimmer label=\{t\("Loading records…"\)\} path=\{destination\}\/>/, 'the shimmer is drawn for the tapped destination');
+ assert.match(shell, /<NavigationShimmer label=\{t\("Loading records…"\)\} path=\{destination\} dashboard=\{savedDashboardColumns\(workspacePreferences\.data\.preferences\)\}\/>/, 'the shimmer is drawn for the tapped destination, the dashboard in its saved order');
  assert.match(shimmer, /screenSkeletons\[path\]/);
- assert.match(placeholders, /function Loading\(.*\n.*role="status" aria-busy="true"/);
+ assert.match(fs.readFileSync('components/presentation-foundation/skeleton-kit.tsx', 'utf8'), /function Loading\(.*\n.*role="status" aria-busy="true"/);
  assert.doesNotMatch(placeholders, /Loading your workspace/);
 });

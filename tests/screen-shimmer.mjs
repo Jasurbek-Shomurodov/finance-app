@@ -46,3 +46,26 @@ test('Still to come opens Recurring at its real route', () => {
  assert.match(routes, /label: 'Recurring'.*path: '\/upcoming'/);
  assert.match(read('components/cash-flow/still-to-come.tsx'), /<DrawerLink href="\/upcoming">/);
 });
+
+test('Cash flow tabs other than Overview shimmer in their own layout, not a generic panel', () => {
+ assert.match(screen, /<CashFlowTabSkeleton label=\{t\("Loading your workspace…"\)\} tab=\{tab\}\/>/);
+ const tabs = body(skeletons, 'CashFlowTabSkeleton');
+ inOrder(tabs, ["tab === 'Spending'", 'monthly-mortgage-payments', 'dashboard-budget', 'tools-panel'], 'the Spending tab, as the screen draws mortgages, budget and watchlists');
+ inOrder(screen, ["tab==='Spending'&&mortgages", "tab==='Spending'&&budgetCard", "tab==='Spending'&&watchlists"], 'the Spending tab');
+});
+
+test('the drawer shimmer draws the dashboard in the saved card order', async () => {
+ const { savedDashboardColumns, defaultDashboardLayout } = await import('../lib/dashboard-layout.ts');
+ assert.deepEqual(savedDashboardColumns([]), { left: [...defaultDashboardLayout.columns.left], right: [...defaultDashboardLayout.columns.right] });
+ const saved = { columns: { left: [...defaultDashboardLayout.columns.right], right: [...defaultDashboardLayout.columns.left] }, hidden: [defaultDashboardLayout.columns.left[0]] };
+ const columns = savedDashboardColumns([{ key: 'other', data: {} }, { key: 'dashboard', data: saved }]);
+ assert.deepEqual(columns.left, saved.columns.left);
+ assert.deepEqual(columns.right, saved.columns.right.filter(card => !saved.hidden.includes(card)), 'hidden cards are not drawn');
+});
+
+test('every drawer destination has its own shimmer, and each in-screen skeleton is the same component', () => {
+ const routes = [...read('components/workspace/navigation.ts').matchAll(/path: '([^']+)'/g)].map(match => match[1]);
+ for (const route of routes) assert.match(skeletons, new RegExp(`'${route}': \\(?label`), route);
+ for (const [file, name] of [['transactions', 'TransactionsSkeleton'], ['reports', 'ReportsSkeleton'], ['budget', 'BudgetSkeleton'], ['upcoming', 'RecurringSkeleton'], ['goals', 'GoalsSkeleton'], ['assets', 'InvestmentsSkeleton'], ['loans-debts', 'LoansSkeleton'], ['cash-flow', 'CashFlowSkeleton']])
+  assert.match(read(`components/workspace/screens/${file}-screen.tsx`), new RegExp(`<${name} `), `${file} loads in the drawer's shape`);
+});

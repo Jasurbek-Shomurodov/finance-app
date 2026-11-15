@@ -1,230 +1,153 @@
 import type { ReactNode } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AccountsSkeleton, CashFlowReportSkeleton, CashflowPreviewSkeleton, ChartSkeleton, SankeySkeleton, SkeletonRows, StatTilesSkeleton, WorkspaceSkeleton } from './loading-placeholder';
+import { AccountsSkeleton, CashFlowReportSkeleton, CashflowPreviewSkeleton, SankeySkeleton, SkeletonRows, StatTilesSkeleton, WorkspaceSkeleton } from './loading-placeholder';
+import { Bar, Figures, Heading, Loading, Merchant, Switches, Tiles, Toolbar, Track, times } from './skeleton-kit';
+import { AssistantSkeleton, GoalsSkeleton, InvestmentsSkeleton, LoansSkeleton, RecentlyDeletedSkeleton, SettingsSkeleton } from './planning-skeletons';
 
-// Each screen's loading shape, built from the classes its loaded blocks use, so the page keeps its layout when the
-// records arrive. The drawer shows the whole screen's shape; a screen that already drew its toolbar asks for the rest.
+export { AssistantSkeleton, GoalsSkeleton, InvestmentsSkeleton, LoansSkeleton, PreferencesSkeleton, RecoveryRowsSkeleton, SettingsSkeleton } from './planning-skeletons';
 
-/** A screen region still loading: announced once, its blocks spaced like the page's own `.content`. */
-function Loading({ label, children }: { label: string; children: ReactNode }) {
-  return <div role="status" aria-busy="true" className="screen-skeleton-region"><span className="sr-only">{label}</span><div aria-hidden="true" className="screen-skeleton">{children}</div></div>;
+// Each screen's loading shape, built from the classes its loaded blocks use, in the loaded page's order, so the page keeps
+// its layout when the records arrive. The drawer shows the whole screen's shape; a screen that already drew its toolbar
+// asks for the rest. Change a screen, change its shape here with it (docs/agents/interface.md, Shimmer follows the screen).
+
+/** A transaction row on the list's grid: name, then category and account (`.transaction-columns`), then the amount. */
+function TransactionRow({ row }: { row: number }) {
+  return <li className="transaction-row"><Merchant width={110 + (row % 3) * 30}/><span className="transaction-columns"><span><Skeleton className="h-7 w-28 rounded-full"/></span><span className="transaction-account"><Skeleton className="h-4 w-24"/></span></span><span className="transaction-amount"><Skeleton className="ms-auto h-5 w-20"/></span></li>;
 }
 
-const times = (count: number) => Array.from({ length: count }, (_, index) => index);
-
-/** A panel's heading row: the title, and an aside (a switch or a button) when the loaded panel has one. */
-function Heading({ width = 160, aside = false }: { width?: number; aside?: boolean }) {
-  return <div className="panel-title-skeleton"><Skeleton className="h-6 max-w-full" style={{ width }}/>{aside && <Skeleton className="h-9 w-40 rounded-xl"/>}</div>;
-}
-
-/** The filter row above a list: an optional search box that takes the room, then a control per width. */
-function Toolbar({ search = false, controls }: { search?: boolean; controls: number[] }) {
-  return <div className="transactions-tools">{search && <Skeleton className="h-11 min-w-48 flex-1 rounded-xl"/>}{controls.map((width, index) => <Skeleton key={index} className="h-11 rounded-xl" style={{ width }}/>)}</div>;
-}
-
-/** A row's name cell: the category tile, the name and the line under it. */
-function Merchant({ width = 128 }: { width?: number }) {
-  return <span className="transaction-merchant"><Skeleton className="size-9 shrink-0 rounded-[10px]"/><span><Skeleton className="h-4 max-w-full" style={{ width }}/><Skeleton className="mt-1.5 h-3 w-20"/></span></span>;
-}
-
-/** Label and figure pairs, as in the Summary and Left to budget lists. */
-function Figures({ rows }: { rows: number }) {
-  return <div className="budget-left-summary">{times(rows).map(row => <div key={row}><Skeleton className="h-4 w-24"/><Skeleton className="h-4 w-16"/></div>)}</div>;
-}
-
-function SummaryAside({ rows = 5 }: { rows?: number }) {
-  return <aside className="panel transactions-summary"><Skeleton className="h-6 w-28"/><Figures rows={rows}/></aside>;
-}
-
-/** Transactions: the filters, then the day groups beside the Summary. */
+/** Transactions: the filters, the column names over the day groups and the pages, beside the Summary and Top categories. */
 export function TransactionsSkeleton({ label, tools = true }: { label: string; tools?: boolean }) {
   return <Loading label={label}>
-    {tools && <Toolbar search controls={[150, 170]}/>}
+    {tools && <Toolbar search controls={[176, 227]}/>}
     <div className="transactions-layout">
-      <section className="panel transactions-list">{[3, 4, 2].map((rows, day) => <section className="transaction-day" key={day}>
-        <div className="transaction-day-heading"><Skeleton className="h-4 w-28"/><Skeleton className="h-4 w-14"/></div>
-        <ul>{times(rows).map(row => <li className="transaction-row skeleton-row" key={row}><Merchant width={110 + (row % 3) * 30}/><Skeleton className="h-6 w-28 rounded-full"/><Skeleton className="h-5 w-16"/></li>)}</ul>
-      </section>)}</section>
-      <SummaryAside/>
+      <section className="panel transactions-list">
+        <div className="transaction-columns-heading">{[56, 64, 56, 56].map((width, index) => <span key={index}><Bar className={index === 3 ? 'ms-auto h-5' : 'h-5'} width={width}/></span>)}</div>
+        {[2, 5, 3].map((rows, day) => <section className="transaction-day" key={day}>
+          <div className="transaction-day-heading"><Skeleton className="h-4 w-32"/><Skeleton className="h-4 w-16"/></div>
+          <ul>{times(rows).map(row => <TransactionRow key={row} row={row}/>)}</ul>
+        </section>)}
+        <div className="records-pagination"><Skeleton className="h-4 w-44"/><Skeleton className="h-9 w-40 rounded-lg"/></div>
+      </section>
+      <div className="transactions-aside">
+        <aside className="panel transactions-summary"><Heading width={120}/>
+          <div className="transactions-net"><Skeleton className="h-5 w-12"/><Skeleton className="h-8 w-32"/></div>
+          <div className="transactions-flow">{times(2).map(line => <div className="grid gap-2" key={line}><div className="flex justify-between"><Skeleton className="h-4 w-16"/><Skeleton className="h-4 w-20"/></div><Track/></div>)}</div>
+          <Figures rows={3}/>
+        </aside>
+        <section className="panel transactions-top"><Heading width={140} link/><ul>{times(4).map(row => <li key={row}><Skeleton className="size-7 shrink-0 rounded-lg"/><span className="grid flex-1 gap-2"><span className="flex justify-between"><Skeleton className="h-4 w-24"/><Skeleton className="h-4 w-14"/></span><Track/></span></li>)}</ul></section>
+      </div>
     </div>
+    {tools && <section className="panel tools-panel"><Skeleton className="h-11 w-60 rounded-xl"/></section>}
   </Loading>;
 }
 
-/** Reports: the Cash flow tab's four figures and Breakdown Sankey, or with `donut` the Spending and Income tabs' two
- * figures and category donut; then the transactions beside the Summary. */
-export function ReportsSkeleton({ label, donut = false }: { label: string; donut?: boolean }) {
+/** Reports: with `filters` (the drawer's shimmer) the business, interval and period row first; then the Cash flow tab's
+ * four figures and its Flow Sankey, or with `donut` the Spending and Income tabs' two figures and category donut; then
+ * the transactions beside the Summary and its Download CSV. */
+export function ReportsSkeleton({ label, donut = false, filters = false }: { label: string; donut?: boolean; filters?: boolean }) {
   return <Loading label={label}>
-    {donut ? <div className="stat-tiles" data-columns="auto">{times(2).map(tile => <article className="stat-tile" key={tile}><Skeleton className="h-4 w-24"/><Skeleton className="h-8 w-32"/></article>)}</div> : <StatTilesSkeleton columns={4}/>}
-    <section className="panel"><Heading width={140} aside/>{donut
+    {filters && <div className="page-heading page-heading-actions"><div className="entry-actions"><Skeleton className="h-11 w-44 rounded-xl"/><Skeleton className="h-11 w-64 rounded-xl"/><Skeleton className="h-11 w-72 rounded-xl"/></div></div>}
+    {donut ? <Tiles count={2} columns="auto"/> : <Tiles count={4}/>}
+    <section className="panel"><div className="panel-title-skeleton"><Bar className="h-7" width={220}/><Switches widths={donut ? [190, 170, 150] : [260]}/></div>{donut
       ? <div className="portfolio-allocation-body"><Skeleton className="size-48 justify-self-center rounded-full"/><SkeletonRows rows={4}/></div>
       : <SankeySkeleton height={300}/>}</section>
     <div className="transactions-layout">
-      <section className="panel report-transactions"><Heading width={140}/><SkeletonRows rows={4}/></section>
-      <SummaryAside/>
+      <section className="panel report-transactions"><Heading width={150} link/><SkeletonRows rows={5}/></section>
+      <aside className="panel transactions-summary"><Heading width={110}/><Figures rows={donut ? 6 : 7}/><Skeleton className="h-9 w-full rounded-lg"/></aside>
     </div>
   </Loading>;
 }
 
-/** Cash flow's Overview, top to bottom as the loaded page: the month bar (the drawer's shimmer only: the screen draws its own), the month's four figures, the report (Period switch, bars by
- * month beside Where the month went), the income table beside Still to come, Budget and mortgages, the watchlists and
- * Recent transactions. Change this with the screen (docs/agents/interface.md, Shimmer follows the screen). */
+/** Cash flow's Overview, top to bottom as the loaded page: the month bar (the drawer's shimmer only: the screen draws its
+ * own), the month's four figures, the report (Period switch, bars by month beside Where the month went), the income table
+ * beside Still to come, Budget and mortgages, the watchlists and Recent transactions. */
 export function CashFlowSkeleton({ label, monthBar = false }: { label: string; monthBar?: boolean }) {
   return <Loading label={label}>
     {monthBar && <div className="cashflow-month-bar"><div className="flex gap-2"><Skeleton className="size-10 rounded-xl"/><Skeleton className="h-10 w-44 rounded-xl"/><Skeleton className="size-10 rounded-xl"/><Skeleton className="h-10 w-16 rounded-xl"/></div><div className="flex gap-2"><Skeleton className="h-7 w-28 rounded-full"/><Skeleton className="h-7 w-52 rounded-full"/></div></div>}
     <section className="cashflow-summary"><StatTilesSkeleton columns={4}/></section>
     <CashFlowReportSkeleton/>
     <CashflowPreviewSkeleton/>
-    <section className="panel records"><Heading width={180} aside/><SkeletonRows rows={4}/></section>
+    <section className="panel records"><Heading width={220} link/><SkeletonRows rows={4}/></section>
   </Loading>;
 }
 
-function BudgetRow({ name = 120 }: { name?: number }) {
-  return <div className="budget-row skeleton-row"><Merchant width={name}/>{times(3).map(cell => <Skeleton key={cell} className="h-5 w-20"/>)}</div>;
+/** Cash flow's other tabs. Income: the income sources and the month's estimated income. Spending: mortgages, the budget
+ * and the watchlists. Forecast: the forecast's figures and chart over its events. */
+export function CashFlowTabSkeleton({ label, tab }: { label: string; tab: 'Income' | 'Spending' | 'Forecast' }) {
+  if (tab === 'Forecast') return <Loading label={label}><Tiles count={3} note/><section className="panel"><Heading width={200} aside={200}/><Skeleton className="h-64 w-full rounded-xl"/></section><section className="panel"><Heading width={160}/><SkeletonRows rows={5}/></section></Loading>;
+  if (tab === 'Spending') return <Loading label={label}>
+    <section className="panel monthly-mortgage-payments"><Heading width={260}/><SkeletonRows rows={1}/></section>
+    <section className="panel overview-panel dashboard-budget"><Heading width={200} link/><Skeleton className="mb-4 h-8 w-40"/><SkeletonRows rows={4}/></section>
+    <section className="panel tools-panel"><Skeleton className="mb-4 h-6 w-48"/><Skeleton className="h-5 w-44"/></section>
+  </Loading>;
+  return <Loading label={label}>
+    <section className="panel"><Heading width={200} aside={160}/><SkeletonRows rows={4}/></section>
+    <section className="panel"><Heading width={240}/><SkeletonRows rows={3}/></section>
+  </Loading>;
 }
 
-/** Budget's month: income and expense categories in their columns, Left to budget and Age of money beside them. */
+/** A budget row on the table's grid: grip, category, its state, then Planned, Actual and Remaining, and the row's end. */
+function BudgetRow({ name = 120 }: { name?: number }) {
+  return <div className="budget-row budget-category-row"><span className="drag-handle"><Skeleton className="h-6 w-4 rounded"/></span><span className="budget-category-name"><Merchant width={name}/></span><span className="budget-state"><Skeleton className="h-6 w-20 rounded-full"/></span>{cells}<span className="budget-row-end"><Skeleton className="size-7 rounded-lg"/></span></div>;
+}
+
+/** The Planned, Actual and Remaining cells, each in its own grid area. */
+const cells = ['budget-planned', 'budget-actual', 'budget-remaining'].map(area => <span className={'budget-cell ' + area} key={area}><Skeleton className="ms-auto h-5 w-20"/></span>);
+
+/** Budget's month: Income and Expenses, each a title over its column names, rows and total, beside Left to budget, the
+ * spending pace and Age of money. */
 export function BudgetSkeleton({ label }: { label: string }) {
   return <Loading label={label}>
     <div className="budget-layout">
-      <div className="budget-table">{[4, 6].map((rows, section) => <div className="budget-section" key={section}>
-        <div className="budget-row budget-section-header skeleton-row"><span><Skeleton className="h-4 w-20"/></span>{times(3).map(cell => <Skeleton key={cell} className="h-4 w-20"/>)}</div>
+      <div className="budget-table">{[3, 6].map((rows, section) => <div className="budget-section" key={section}>
+        <div className="panel-title"><Bar className="h-7" width={110}/><Skeleton className="h-4 w-36"/></div>
+        <div className="budget-row budget-section-header">{cells}</div>
         <section className="budget-group">{times(rows).map(row => <BudgetRow key={row} name={100 + (row % 3) * 30}/>)}</section>
+        <div className="budget-row budget-total-row"><span className="budget-total-name"><Skeleton className="h-5 w-28"/></span>{cells}</div>
       </div>)}</div>
       <div className="budget-side">
-        <aside className="panel budget-left"><div className="budget-left-figure"><Skeleton className="h-8 w-28"/><Skeleton className="h-4 w-24"/></div><Skeleton className="h-9 w-full rounded-xl"/><Figures rows={4}/></aside>
-        <article className="stat-tile"><Skeleton className="h-4 w-24"/><Skeleton className="h-7 w-20"/><Skeleton className="h-3 w-32"/></article>
+        <aside className="panel budget-left"><Heading width={140}/><div className="budget-left-figure"><Skeleton className="h-9 w-32"/></div><Skeleton className="h-11 w-full rounded-xl"/><Skeleton className="h-3 w-full rounded-full"/><Figures rows={4}/><Skeleton className="h-10 w-full rounded-lg"/></aside>
+        <section className="panel budget-pace"><Heading width={150}/><Skeleton className="h-6 w-48"/><Skeleton className="h-28 w-full rounded-xl"/><Skeleton className="h-4 w-full"/></section>
+        <article className="stat-tile"><Skeleton className="h-4 w-24"/><Skeleton className="h-8 w-20"/><Skeleton className="h-3 w-32"/></article>
       </div>
     </div>
   </Loading>;
 }
 
+/** A schedule on its day: tick, icon and name, its status, the amount, then Record payment and the row menu. */
 function RecurringRow({ row }: { row: number }) {
-  return <li className="recurring-row skeleton-row"><Merchant width={110 + (row % 3) * 30}/><Skeleton className="h-6 w-16 rounded-full"/><Skeleton className="h-5 w-14"/><Skeleton className="h-9 w-32 rounded-xl"/></li>;
+  return <li className="recurring-row"><span className="transaction-merchant"><Skeleton className="size-[18px] shrink-0 rounded-full"/><Skeleton className="size-9 shrink-0 rounded-[10px]"/><span><Bar width={110 + (row % 3) * 30}/><Skeleton className="mt-1.5 h-3 w-28"/></span></span><Skeleton className="h-6 w-20 rounded-full"/><span className="transaction-amount"><Skeleton className="ms-auto h-5 w-16"/></span><div className="row-actions"><Skeleton className="h-9 w-32 rounded-lg"/><Skeleton className="size-9 rounded-lg"/></div></li>;
 }
 
-/** Recurring's list: the month's three tiles, then the schedules grouped by day beside what is coming up. */
+/** Recurring's list: the month's income and bills bars and what is left, then the list's view switch and the schedules
+ * grouped by day, beside what is coming up. */
 export function RecurringSkeleton({ label }: { label: string }) {
   return <Loading label={label}>
     <section className="recurring-summary">
-      <div className="recurring-summary-head"><Skeleton className="h-6 w-36"/><Skeleton className="h-9 w-32 rounded-xl"/></div>
-      {times(3).map(tile => <div className="recurring-left" key={tile}><Skeleton className="h-4 w-20"/><Skeleton className="h-7 w-28"/><Skeleton className="h-3 w-40"/></div>)}
+      <div className="recurring-summary-head"><Skeleton className="h-7 w-32"/><Skeleton className="h-10 w-32 rounded-xl"/></div>
+      {times(2).map(bar => <div className="recurring-bar" key={bar}><Skeleton className="h-4 w-24"/><Skeleton className="h-8 w-32"/><Track/><Skeleton className="h-4 w-40"/></div>)}
+      <div className="recurring-left"><Skeleton className="h-4 w-24"/><Skeleton className="h-8 w-28"/></div>
     </section>
     <div className="recurring-layout">
-      <section className="panel recurring-list"><ul>
-        {[5, 3].flatMap((rows, day) => [<li className="transaction-day-heading" key={'d' + day}><Skeleton className="h-4 w-28"/><Skeleton className="h-4 w-16"/></li>, ...times(rows).map(row => <RecurringRow key={day + '-' + row} row={row}/>)])}
-      </ul></section>
-      <section className="panel recurring-coming"><Skeleton className="h-6 w-28"/><ul>{times(4).map(row => <li className="recurring-coming-row" key={row}><Skeleton className="h-11 w-full rounded-xl"/><Skeleton className="h-4 w-28"/><Skeleton className="h-4 w-12"/></li>)}</ul></section>
+      <div className="recurring-main"><section className="panel recurring-list">
+        <div className="recurring-list-tools"><Skeleton className="ms-auto h-11 w-72 rounded-xl"/></div>
+        <ul data-layout="columns">{[3, 4].flatMap((rows, day) => [<li className="transaction-day-heading" key={'d' + day}><Skeleton className="h-5 w-40"/><Skeleton className="h-5 w-16"/></li>, ...times(rows).map(row => <RecurringRow key={day + '-' + row} row={row}/>)])}</ul>
+      </section></div>
+      <aside className="recurring-side"><section className="panel recurring-coming"><Heading width={170} aside={92}/><ul>{times(3).map(row => <li key={row}><div className="recurring-coming-row"><Skeleton className="h-11 w-11 rounded-xl"/><Skeleton className="h-4 w-28"/><Skeleton className="h-4 w-12"/></div></li>)}</ul></section></aside>
     </div>
   </Loading>;
 }
 
-/** Goals: the goal list with its progress lines, then the chosen goal beside what is available for goals. */
-export function GoalsSkeleton({ label }: { label: string }) {
-  return <Loading label={label}>
-    <div className="goals-split">
-      <section className="panel goals-list"><Heading width={100}/><ul className="goal-rows">{times(4).map(row => <li className="goal-row goal-row-skeleton" key={row}>
-        <Skeleton className="size-10 shrink-0 rounded-xl"/>
-        <div className="goal-row-skeleton-body"><div><Skeleton className="h-4 w-40 max-w-full"/><Skeleton className="h-4 w-20"/></div><div><Skeleton className="h-3 w-32"/><Skeleton className="h-3 w-24"/></div><Skeleton className="h-1.5 w-full rounded-full"/></div>
-      </li>)}</ul></section>
-      <section className="panel goal-detail"><header className="goal-detail-head"><Skeleton className="size-11 rounded-xl"/><Skeleton className="h-6 w-48 max-w-full"/></header><Skeleton className="h-9 w-40"/><Skeleton className="h-36 w-full rounded-xl"/><StatTilesSkeleton columns={2} count={4}/></section>
-      <section className="panel goal-funding-panel"><Heading width={180}/><Skeleton className="h-9 w-48"/><Skeleton className="h-3 w-full rounded-full"/><Figures rows={4}/></section>
-    </div>
-  </Loading>;
-}
+type DashboardColumns = { left: readonly string[]; right: readonly string[] };
 
-/** Investments' Holdings: the total with its two figures and the allocation donut, then the account cards. */
-export function InvestmentsSkeleton({ label }: { label: string }) {
-  return <Loading label={label}>
-    <div className="asset-dashboard">
-      <section className="portfolio-summary">
-        <div className="portfolio-summary-main"><div className="portfolio-summary-total"><Skeleton className="h-4 w-32"/><Skeleton className="mt-2 h-10 w-56 max-w-full"/></div><div className="portfolio-summary-metrics">{times(2).map(metric => <div key={metric}><Skeleton className="h-3 w-20"/><Skeleton className="h-7 w-28"/></div>)}</div></div>
-        <div className="portfolio-summary-allocation"><Skeleton className="mb-4 h-5 w-36"/><div className="portfolio-allocation-body"><Skeleton className="size-44 justify-self-center rounded-full"/><SkeletonRows rows={4}/></div></div>
-      </section>
-      <section><div className="asset-holdings-heading"><Skeleton className="h-7 w-32"/><Skeleton className="h-5 w-28"/></div>
-        <div className="asset-card-grid">{times(3).map(card => <article className="panel asset-card-skeleton" key={card}><Merchant width={120}/><Skeleton className="h-8 w-32"/></article>)}</div>
-      </section>
-    </div>
-  </Loading>;
-}
-
-/** A lending row on the list's own grid: icon and name, the paid-off bar, the balance and the actions. */
-function LoanRow({ row }: { row: number }) {
-  return <li className="loan-row">
-    <div className="loan-row-name"><Skeleton className="size-9 shrink-0 rounded-[10px]"/><div><Skeleton className="h-4 max-w-full" style={{ width: 110 + (row % 3) * 30 }}/><Skeleton className="h-3 w-40 max-w-full"/></div></div>
-    <div className="loan-row-progress"><Skeleton className="h-1.5 w-full rounded-full"/><Skeleton className="h-3 w-32"/></div>
-    <div className="loan-row-amount"><Skeleton className="h-4 w-20"/></div>
-    <div className="row-actions"><Skeleton className="size-8 rounded-lg"/></div>
-  </li>;
-}
-
-/** Loans & debts: the four lending figures, then the list with its search and groups beside what is owed. */
-export function LoansSkeleton({ label }: { label: string }) {
-  return <Loading label={label}>
-    <StatTilesSkeleton columns={4}/>
-    <div className="loans-layout">
-      <section className="panel loans-list">
-        <div className="panel-title"><Skeleton className="h-8 w-48 max-w-full"/></div>
-        <div className="record-filters"><div className="grid gap-2"><Skeleton className="h-4 w-24"/><Skeleton className="h-11 w-full rounded-xl"/></div><Skeleton className="h-11 w-28 rounded-xl"/></div>
-        <ul className="loan-rows">{[3, 1].flatMap((rows, group) => [
-          <li className="loan-group" key={'g' + group}><Skeleton className="h-4 w-32"/><Skeleton className="h-4 w-20"/></li>,
-          ...times(rows).map(row => <LoanRow key={group + '-' + row} row={row}/>),
-        ])}</ul>
-      </section>
-      <div className="loans-side"><section className="panel"><div className="panel-title"><Skeleton className="h-8 w-36"/></div><ChartSkeleton height={132}/></section></div>
-    </div>
-  </Loading>;
-}
-
-/** The Assistant's panel: the opening message, the question box and the note under it. */
-export function AssistantSkeleton({ label }: { label: string }) {
-  return <Loading label={label}>
-    <section className="panel assistant-panel">
-      <div className="assistant-log is-unavailable"><div className="empty"><Skeleton className="size-10 rounded-xl"/><Skeleton className="h-5 w-56 max-w-full"/><Skeleton className="h-4 w-72 max-w-full"/></div></div>
-      <div className="assistant-form"><Skeleton className="h-12 flex-1 rounded-xl"/><Skeleton className="size-11 rounded-xl"/></div>
-      <Skeleton className="h-3 w-64 max-w-full self-center"/>
-    </section>
-  </Loading>;
-}
-
-/** Recently deleted rows: icon, name and category, amount and date, and the two actions. */
-export function RecoveryRowsSkeleton({ label, rows = 4 }: { label?: string; rows?: number }) {
-  const list = <ul aria-hidden="true" className="recovery-list">{times(rows).map(row => <li className="recovery-row skeleton-row" key={row}>
-    <span className="transaction-merchant"><Skeleton className="size-9 shrink-0 rounded-[10px]"/><span className="grid gap-1.5"><Skeleton className="h-4 w-36 max-w-full"/><Skeleton className="h-5 w-24 rounded-full"/></span></span><span className="grid gap-1.5"><Skeleton className="h-4 w-16"/><Skeleton className="h-3 w-24"/></span><span className="flex gap-2"><Skeleton className="h-9 w-24 rounded-xl"/><Skeleton className="size-9 rounded-xl"/></span>
-  </li>)}</ul>;
-  return label ? <div role="status" aria-busy="true"><span className="sr-only">{label}</span>{list}</div> : list;
-}
-
-/** The three Profile & preferences cards, each a heading over its rows of label and control. */
-export function PreferencesSkeleton({ label }: { label?: string }) {
-  const cards = <div aria-hidden="true">{[2, 2, 2].map((rows, card) => <section className="panel preferences-card" key={card}>
-    <header><Skeleton className="h-5 w-28"/></header>
-    {times(rows).map(row => <div className="setting-row" key={row}><Skeleton className="h-4 w-32"/><Skeleton className="h-11 w-full rounded-xl"/></div>)}
-  </section>)}</div>;
-  return label ? <div role="status" aria-busy="true"><span className="sr-only">{label}</span>{cards}</div> : cards;
-}
-
-/** Settings: the section list beside Profile & preferences. */
-export function SettingsSkeleton({ label }: { label: string }) {
-  return <Loading label={label}>
-    <div className="settings-layout"><div className="settings-columns">
-      <nav className="settings-nav">{[3, 7].map((items, group) => <div className="grid gap-1.5 p-1" key={group}><Skeleton className="mb-1 h-3 w-16"/>{times(items).map(item => <Skeleton key={item} className="h-8 w-full rounded-lg"/>)}</div>)}</nav>
-      <div className="settings-sections"><Skeleton className="mb-4 h-7 w-48"/><PreferencesSkeleton/></div>
-    </div></div>
-  </Loading>;
-}
-
-function RecentlyDeletedSkeleton({ label }: { label: string }) {
-  return <Loading label={label}><section className="panel records recovery-panel"><RecoveryRowsSkeleton/></section></Loading>;
-}
-
-/** Every drawer destination's loading shape, by route. */
-export const screenSkeletons: Record<string, (label: string) => ReactNode> = {
-  '/': label => <WorkspaceSkeleton label={label}/>,
+/** Every drawer destination's loading shape, by route; the dashboard's follows the person's saved card order. */
+export const screenSkeletons: Record<string, (label: string, dashboard?: DashboardColumns) => ReactNode> = {
+  '/': (label, dashboard) => <WorkspaceSkeleton label={label} columns={dashboard}/>,
   '/assistant': label => <AssistantSkeleton label={label}/>,
   '/accounts': label => <AccountsSkeleton label={label}/>,
   '/transactions': label => <TransactionsSkeleton label={label}/>,
   '/income-expenses': label => <CashFlowSkeleton label={label} monthBar/>,
-  '/reports': label => <ReportsSkeleton label={label}/>,
+  '/reports': label => <ReportsSkeleton label={label} filters/>,
   '/budget': label => <BudgetSkeleton label={label}/>,
   '/upcoming': label => <RecurringSkeleton label={label}/>,
   '/goals': label => <GoalsSkeleton label={label}/>,
@@ -235,6 +158,6 @@ export const screenSkeletons: Record<string, (label: string) => ReactNode> = {
 };
 
 /** Shimmer for a drawer tap, in the destination's own layout. The full workspace layout with its banner is for the first load and reloads. */
-export function NavigationShimmer({ label, path }: { label: string; path: string }) {
-  return <div className="content page-loading">{(screenSkeletons[path] ?? screenSkeletons['/'])(label)}</div>;
+export function NavigationShimmer({ label, path, dashboard }: { label: string; path: string; dashboard?: DashboardColumns }) {
+  return <div className="content page-loading">{(screenSkeletons[path] ?? screenSkeletons['/'])(label, dashboard)}</div>;
 }

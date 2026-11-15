@@ -110,12 +110,19 @@ test('every drawer destination shimmers in its own layout',()=>{
  const paths=[...fs.readFileSync('components/workspace/navigation.ts','utf8').matchAll(/path: '([^']+)'/g)].map(match=>match[1]);
  assert.deepEqual(Object.keys(screenSkeletons).sort(),[...paths].sort(),'one skeleton per destination');
  // What each loaded screen is built from, so its shimmer stands where the records will.
- const shapes={'/':['stat-tiles','dashboard-grid'],'/assistant':['assistant-panel','assistant-form'],'/accounts':['accounts-master-detail','account-selected-panel'],
-  '/transactions':['transactions-tools','transactions-layout','transaction-day-heading','transaction-row','transactions-summary'],
-  '/income-expenses':['cashflow-month-bar','cashflow-summary','cash-flow-report-grid','chart-skeleton','cashflow-preview-grid','panel records'],'/reports':['data-columns="4"','sankey-skeleton','report-transactions','transactions-summary'],
-  '/budget':['budget-layout','budget-section-header','budget-row','budget-side','budget-left-figure'],'/upcoming':['recurring-summary','recurring-list','recurring-row'],
-  '/goals':['goals-split','goals-list','goal-row','goal-detail','goal-funding-panel'],'/assets':['portfolio-summary','portfolio-allocation-body','asset-card-grid'],
-  '/loans-debts':['data-columns="4"','loans-layout','panel loans-list','loan-rows','loans-side'],'/recently-deleted':['recovery-panel','recovery-row'],'/settings':['settings-columns','settings-nav','preferences-card']};
+ // Each loaded screen's blocks in page order (docs/agents/interface.md, Shimmer follows the screen), so its shimmer
+ // stands where the records will.
+ const shapes={'/':['stat-tiles','dashboard-grid','dashboard-column','overview-hero','dashboard-lead'],'/assistant':['assistant-layout','assistant-panel','assistant-log','assistant-form'],
+  '/accounts':['accounts-hero','accounts-mix','accounts-master-detail','account-directory','account-selected-panel'],
+  '/transactions':['transactions-tools','transactions-layout','transaction-columns-heading','transaction-day-heading','transaction-row','transaction-columns','records-pagination','transactions-aside','transactions-summary','transactions-net','transactions-flow','transactions-top','tools-panel'],
+  '/income-expenses':['cashflow-month-bar','cashflow-summary','cash-flow-report-tools','cash-flow-report-grid','cash-flow-trend','cash-flow-where','cashflow-income-preview','cashflow-still-to-come','dashboard-budget','monthly-mortgage-payments','tools-panel','panel records'],
+  '/reports':['page-heading-actions','data-columns="4"','sankey-skeleton','report-transactions','transactions-summary'],
+  '/budget':['budget-layout','budget-section','panel-title','budget-section-header','budget-category-row','budget-total-row','budget-side','budget-left','budget-left-figure','budget-pace','stat-tile'],
+  '/upcoming':['recurring-summary','recurring-bar','recurring-left','recurring-layout','recurring-main','recurring-list-tools','transaction-day-heading','recurring-row','row-actions','recurring-side','recurring-coming'],
+  '/goals':['goals-split','goals-list','goal-row','goal-row-main','goal-detail','goal-detail-head','goal-detail-chart','stat-tiles','goal-funding-panel','goal-funding-figures'],
+  '/assets':['portfolio-summary','portfolio-summary-metrics','portfolio-allocation-body','asset-account-section','asset-card-grid','asset-card-details','asset-holdings','asset-card-grid'],
+  '/loans-debts':['data-columns="4"','loans-layout','panel loans-list','record-filters','loan-rows-head','loan-group','loan-row','loans-side','owed-breakdown','payoff-plan-card'],
+  '/recently-deleted':['recovery-layout','recovery-tools','recovery-day','recovery-row','recovery-side','recovery-detail'],'/settings':['settings-columns','settings-nav','settings-nav-group','settings-sections','preferences-card','setting-label','setting-control']};
  for(const path of paths){
   const html=render(NavigationShimmer,{label:'Loading records…',path});
   assert.match(html,/^<div class="content page-loading"><div role="status" aria-busy="true"[^>]*><span class="sr-only">Loading records…<\/span>/,path);
@@ -128,7 +135,7 @@ test('every drawer destination shimmers in its own layout',()=>{
  const donut=render(ReportsSkeleton,{label:'L',donut:true});
  assert.ok(donut.includes('portfolio-allocation-body')&&!donut.includes('sankey-skeleton')&&donut.match(/class="stat-tile"/g).length===2,'Spending and Income: two figures and a donut');
  assert.equal(render(RecoveryRowsSkeleton,{label:'L',rows:3}).match(/class="recovery-row skeleton-row"/g).length,3);
- assert.equal(render(PreferencesSkeleton,{label:'L'}).match(/class="panel preferences-card"/g).length,3);assert.equal(render(PreferencesSkeleton,{label:'L'}).match(/class="setting-row"/g).length,6,'rows of label and control, as the loaded cards have');
+ assert.equal(render(PreferencesSkeleton,{label:'L'}).match(/class="panel preferences-card"/g).length,3);assert.equal(render(PreferencesSkeleton,{label:'L'}).match(/class="setting-row"/g).length,7,'rows of label and control, as the loaded cards have');
 });
 
 test('row menu keeps rare actions behind one labelled ⋯ button and disappears when there are none',()=>{

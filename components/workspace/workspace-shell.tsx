@@ -5,6 +5,7 @@ import { DatabaseStatus } from '@/components/database-status';
 import { LanguageProvider, useLanguage } from '@/components/language-provider';
 import { LoadingPlaceholder } from '@/components/presentation-foundation/loading-placeholder';
 import { NavigationShimmer } from '@/components/presentation-foundation/screen-skeletons';
+import { savedDashboardColumns } from '@/lib/dashboard-layout';
 import { LandingPage, OnboardingScreen, SignInScreen, TelegramPanel } from '@/components/workspace/workspace-lazy';
 import { useVisitor } from '@/components/visitor-context';
 import { SidebarProvider } from '@/components/ui/sidebar';
@@ -26,7 +27,7 @@ function WorkspaceShell({ children }: { children: ReactNode }) {
  const { t } = useLanguage();
  const arrivals = useArrivalMarks<HTMLElement>();
  usePointerGlow();
- const { ready, user, demo, preview, pathname, busy, configured, error, login, startDemo, overdueCount, onboardingNeeded, navigate: openPath, settingsLoading, preferencesData, savePreferences, applyPreferences, planning, saveTrackingStart, household } = useWorkspace();
+ const { ready, user, demo, preview, pathname, busy, configured, error, login, startDemo, overdueCount, onboardingNeeded, navigate: openPath, settingsLoading, preferencesData, savePreferences, applyPreferences, planning, saveTrackingStart, household, workspacePreferences } = useWorkspace();
  // A drawer tap shows its destination immediately; the routed screen replaces it once it arrives.
  const [pending, setPending] = useState<PendingNavigation | null>(null);
  const destination = pendingDestination(pending, pathname);
@@ -66,7 +67,7 @@ function WorkspaceShell({ children }: { children: ReactNode }) {
   <TopBarSlotProvider><main className="workspace" ref={arrivals}>
    <DatabaseStatus owner={user} demo={demo}/>
    <TopBar pendingSection={destination && sectionFor(destination)}/>
-   {destination ? <NavigationShimmer label={t("Loading records…")} path={destination}/> : children}
+   {destination ? <NavigationShimmer label={t("Loading records…")} path={destination} dashboard={savedDashboardColumns(workspacePreferences.data.preferences)}/> : children}
   </main></TopBarSlotProvider>
   <WorkspaceDialogs/>
   <CommandMenu onNavigate={go}/>

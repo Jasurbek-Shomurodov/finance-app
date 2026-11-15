@@ -15,7 +15,7 @@ import { CashflowSummarySkeleton, MonthlyReview } from '@/components/financial-r
 import { IncomeSourcesPanel } from '@/components/income-sources-panel';
 import { useLanguage } from '@/components/language-provider';
 import { LoadingPlaceholder, PanelSkeleton } from '@/components/presentation-foundation/loading-placeholder';
-import { CashFlowSkeleton } from '@/components/presentation-foundation/screen-skeletons';
+import { CashFlowSkeleton, CashFlowTabSkeleton } from '@/components/presentation-foundation/screen-skeletons';
 import { MonthlyMortgagePayments } from '@/components/monthly-mortgage-payments';
 import { PageHeader } from '@/components/presentation-foundation/page-header';
 import { SpendingWatchlists } from '@/components/spending-watchlists';
@@ -59,7 +59,7 @@ export function CashFlowScreen() {
    </PageHeader>
    <ScreenNotices/>
    {tab!=='Forecast'&&<CashFlowMonthBar month={forecastMonth} onChange={setForecastMonth} outlook={settled?outlook:null} currency={currency}/>}
-   {workspaceLoading ? (tab==='Overview' ? <CashFlowSkeleton label={t("Loading your workspace…")}/> : <PanelSkeleton label={t("Loading your workspace…")} rows={4}/>) : <>
+   {workspaceLoading ? (tab==='Overview' ? <CashFlowSkeleton label={t("Loading your workspace…")}/> : <CashFlowTabSkeleton label={t("Loading your workspace…")} tab={tab}/>) : <>
     {tab!=='Forecast'&&(planning.loading?<CashflowSummarySkeleton/>:!planning.error&&<MonthlyReview compact selectedMonth={forecastMonth} estimates={estimates} running={!!outlook} owner={user} demo={demo} revision={reload} market={market} data={planning.data} tools={transactionTools} snapshots={snapshots.snapshots} historyError={snapshots.error} currency={currency}/>)}
     {transactionTools.error&&<InlineError message={t(transactionTools.error)} onRetry={transactionTools.retry}/>}
     {tab==='Overview'&&<CashFlowReport onOpenRecord={record => setViewing(storedRecord(record))} owner={user} demo={demo} revision={reload} data={planning.data} splits={transactionTools.data.splits} month={forecastMonth} currency={currency} market={market} monthReviewAbove={!planning.error} expected={expected}/>}
