@@ -113,3 +113,13 @@ test('partial-history view retains older observations after a positive new openi
  assert.equal(portfolioWindow(result.points,30,'2026-09-25')[0].partial,true);
  assert.deepEqual(portfolioHistory(rows,events,'USD',undefined,'2026-09-25').points,result.points.slice(-1));
 });
+
+test('today’s parts come from the live records: each asset kind, debts together and negative, adding up to net worth',async()=>{
+ const {loadTS}=await import('./helpers/load-ts.mjs');
+ const {currentParts}=loadTS('lib/portfolio-history.ts');
+ const entries=[record('c','Cash'),record('b','Business'),record('m','Mortgage'),record('k','Property')].map((entry,index)=>({...entry,amount:[500,3000,1200,250][index],quantity:0}));
+ const parts=currentParts(entries);
+ assert.deepEqual(parts,{Cash:500,Business:3000,Property:250,Debt:-1200});
+ assert.equal(Object.values(parts).reduce((sum,value)=>sum+value,0),2550);
+ assert.deepEqual(currentParts([]),{},'nothing recorded names nothing');
+});

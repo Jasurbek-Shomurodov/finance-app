@@ -1,5 +1,5 @@
 import { shiftDay } from './calendar-days';
-import { assets, income, liabilities, valuedKinds, type Entry } from './finance';
+import { assets, income, liabilities, totalValue, valuedKinds, type Entry } from './finance';
 import type { HistoryEvent } from './investment-history';
 import { convertAmount } from './market';
 
@@ -79,6 +79,18 @@ export function portfolioHistory(records: Entry[], events: HistoryEvent[], curre
   days.set(date, { date, assets: assetTotal, debt, net: assetTotal - debt, ...(balances.size !== included.length ? {partial:true} : {}), parts });
  }
  return { points: [...days.values()], missing: included.length - balances.size, excluded: eligible.length - included.length };
+}
+
+/** Today's net worth by kind, from the live records (already in the display currency): the same `parts` the history
+ * keeps for each day, so today's point can say what moved since the last recorded day. */
+export function currentParts(entries: readonly Entry[]): Record<string, number> {
+ const parts: Record<string, number> = {};
+ for (const kind of new Set(entries.map(entry => entry.kind))) {
+  if (assets.includes(kind)) parts[kind] = totalValue(entries, [kind]);
+ }
+ const debt = totalValue(entries, liabilities);
+ if (debt || entries.some(entry => liabilities.includes(entry.kind))) parts.Debt = -debt;
+ return parts;
 }
 
 // The first day a history period shows: the period's own start, or the owner's

@@ -22,7 +22,7 @@ import { financialTotals, type Entry } from '@/lib/finance';
 import { formatMoney, formatNumber, formatPercent, formatSignedMoney } from '@/lib/format';
 import { depositToday } from '@/lib/deposit-interest';
 import { mergePortfolioPoints } from '@/lib/portfolio-snapshots';
-import { portfolioHistory, portfolioWindow, trackingWindowStart } from '@/lib/portfolio-history';
+import { currentParts, portfolioHistory, portfolioWindow, trackingWindowStart } from '@/lib/portfolio-history';
 import { balanceMoves } from '@/lib/net-worth-moves';
 import { useComparisonProfile } from '@/hooks/use-comparison-profile';
 import { type MarketData, marketRates } from '@/lib/market';
@@ -46,7 +46,8 @@ export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecord
  const moves = useMemo(() => balanceMoves(history ?? noHistory, today), [history, today]);
  const recorded = useMemo(() => portfolioHistory(history?.records ?? noHistory.records, history?.events ?? noHistory.events, currency, rates, today, true, moves), [history, currency, rates, today, moves]);
  const portfolioValue = assetTotal - debt;
- const points = useMemo(() => mergePortfolioPoints(recorded.points, [], {date:today,assets:assetTotal,debt,net:portfolioValue}), [recorded.points, today, assetTotal, debt, portfolioValue]);
+ // Today's point carries its own breakdown by kind, so the chart can say what moved net worth since the last recorded day.
+ const points = useMemo(() => mergePortfolioPoints(recorded.points, [], {date:today,assets:assetTotal,debt,net:portfolioValue,parts:currentParts(entries)}), [recorded.points, today, assetTotal, debt, portfolioValue, entries]);
  const windowStart = trackingWindowStart(range, today, comparison.trackingStart);
  const visible = portfolioWindow(points, range, today, comparison.trackingStart);
  const partialHistory = visible.some(point=>point.partial);
