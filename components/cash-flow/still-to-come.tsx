@@ -16,7 +16,7 @@ export function StillToCome({ outlook, month, currency }: { outlook: MonthOutloo
   <dd className={incoming && amount ? 'positive' : undefined}>{amount === null ? '—' : incoming ? formatSignedMoney(amount, currency, locale) : formatMoney(amount, currency, locale)}</dd></div>;
  return <section className="panel cashflow-still-to-come">
   <PanelTitle title={<>{t('Still to come')} <span className="panel-figure">{formatMonthYear(month, locale)}</span></>} hint={t('Income its sources still expect, less the scheduled bills not paid yet and the rest of the month’s expected spending. Loan and mortgage principal payments are transfers and are not counted.')}>
-   <DrawerLink href="/recurring">{t('Recurring')}</DrawerLink>
+   <DrawerLink href="/upcoming">{t('View all')}</DrawerLink>
   </PanelTitle>
   <dl>
    {line(<ArrowDownLeft size={16} aria-hidden="true"/>, t('Income expected'), outlook.income, true)}

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AccountsSkeleton, CashflowPreviewSkeleton, ChartSkeleton, SankeySkeleton, SkeletonRows, StatTilesSkeleton, WorkspaceSkeleton } from './loading-placeholder';
+import { AccountsSkeleton, CashFlowReportSkeleton, CashflowPreviewSkeleton, ChartSkeleton, SankeySkeleton, SkeletonRows, StatTilesSkeleton, WorkspaceSkeleton } from './loading-placeholder';
 
 // Each screen's loading shape, built from the classes its loaded blocks use, so the page keeps its layout when the
 // records arrive. The drawer shows the whole screen's shape; a screen that already drew its toolbar asks for the rest.
@@ -65,13 +65,16 @@ export function ReportsSkeleton({ label, donut = false }: { label: string; donut
   </Loading>;
 }
 
-/** Cash flow's Overview: four figures, the monthly bars, the Breakdown Sankey and the two preview panels. */
-export function CashFlowSkeleton({ label }: { label: string }) {
+/** Cash flow's Overview, top to bottom as the loaded page: the month bar (the drawer's shimmer only: the screen draws its own), the month's four figures, the report (Period switch, bars by
+ * month beside Where the month went), the income table beside Still to come, Budget and mortgages, the watchlists and
+ * Recent transactions. Change this with the screen (docs/agents/interface.md, Shimmer follows the screen). */
+export function CashFlowSkeleton({ label, monthBar = false }: { label: string; monthBar?: boolean }) {
   return <Loading label={label}>
+    {monthBar && <div className="cashflow-month-bar"><div className="flex gap-2"><Skeleton className="size-10 rounded-xl"/><Skeleton className="h-10 w-44 rounded-xl"/><Skeleton className="size-10 rounded-xl"/><Skeleton className="h-10 w-16 rounded-xl"/></div><div className="flex gap-2"><Skeleton className="h-7 w-28 rounded-full"/><Skeleton className="h-7 w-52 rounded-full"/></div></div>}
     <section className="cashflow-summary"><StatTilesSkeleton columns={4}/></section>
-    <section className="panel"><Heading width={260}/><ChartSkeleton bars height={260}/></section>
-    <section className="panel"><Heading width={140} aside/><SankeySkeleton height={300}/></section>
+    <CashFlowReportSkeleton/>
     <CashflowPreviewSkeleton/>
+    <section className="panel records"><Heading width={180} aside/><SkeletonRows rows={4}/></section>
   </Loading>;
 }
 
@@ -220,7 +223,7 @@ export const screenSkeletons: Record<string, (label: string) => ReactNode> = {
   '/assistant': label => <AssistantSkeleton label={label}/>,
   '/accounts': label => <AccountsSkeleton label={label}/>,
   '/transactions': label => <TransactionsSkeleton label={label}/>,
-  '/income-expenses': label => <CashFlowSkeleton label={label}/>,
+  '/income-expenses': label => <CashFlowSkeleton label={label} monthBar/>,
   '/reports': label => <ReportsSkeleton label={label}/>,
   '/budget': label => <BudgetSkeleton label={label}/>,
   '/upcoming': label => <RecurringSkeleton label={label}/>,

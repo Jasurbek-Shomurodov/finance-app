@@ -70,7 +70,7 @@ test('loading skeletons keep the shape of the content they replace, so the page 
  assert.match(render(PanelSkeleton,{label:'Loading records…',rows:2,className:'tools-panel'}),/^<section class="panel tools-panel">.*role="status" aria-busy="true".*Loading records…/);
  const preview=render(CashflowPreviewSkeleton,{label:'Loading records…'});
  assert.match(preview,/class="cashflow-preview-grid"/);
- assert.equal(preview.match(/class="panel"/g).length,2);
+ for(const block of ['panel cashflow-income-preview','panel cashflow-still-to-come','panel dashboard-budget','panel monthly-mortgage-payments','panel tools-panel'])assert.equal(preview.match(new RegExp(`class="${block}"`,'g')).length,1,block);
  const {NetWorthBodySkeleton,ChartSkeleton,SankeySkeleton}=load('loading-placeholder.tsx',{'@/components/ui/skeleton':{Skeleton:element('span')}});
  const body=render(NetWorthBodySkeleton,{label:'Loading history…'});
  assert.match(body,/^<div role="status" aria-busy="true"><span class="sr-only">Loading history…<\/span><div aria-hidden="true">/);
@@ -112,7 +112,7 @@ test('every drawer destination shimmers in its own layout',()=>{
  // What each loaded screen is built from, so its shimmer stands where the records will.
  const shapes={'/':['stat-tiles','dashboard-grid'],'/assistant':['assistant-panel','assistant-form'],'/accounts':['accounts-master-detail','account-selected-panel'],
   '/transactions':['transactions-tools','transactions-layout','transaction-day-heading','transaction-row','transactions-summary'],
-  '/income-expenses':['cashflow-summary','chart-skeleton','sankey-skeleton','cashflow-preview-grid'],'/reports':['data-columns="4"','sankey-skeleton','report-transactions','transactions-summary'],
+  '/income-expenses':['cashflow-month-bar','cashflow-summary','cash-flow-report-grid','chart-skeleton','cashflow-preview-grid','panel records'],'/reports':['data-columns="4"','sankey-skeleton','report-transactions','transactions-summary'],
   '/budget':['budget-layout','budget-section-header','budget-row','budget-side','budget-left-figure'],'/upcoming':['recurring-summary','recurring-list','recurring-row'],
   '/goals':['goals-split','goals-list','goal-row','goal-detail','goal-funding-panel'],'/assets':['portfolio-summary','portfolio-allocation-body','asset-card-grid'],
   '/loans-debts':['data-columns="4"','loans-layout','panel loans-list','loan-rows','loans-side'],'/recently-deleted':['recovery-panel','recovery-row'],'/settings':['settings-columns','settings-nav','preferences-card']};

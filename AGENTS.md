@@ -34,6 +34,13 @@ keep ISO dates and plain numbers. `tests/formatting-rules.mjs` scans the whole c
 - Editable amounts use `FormattedNumberInput`, dates use `formatDate` / `formatDateTime`, and every date field is `DatePicker`; their full rules are in `docs/agents/formatting.md`.
 - Store numbers and ISO dates, never formatted display strings. Formatting must not mutate amounts, purchase costs, or exchange-rate calculations.
 
+# Shimmer follows the screen
+
+Whenever a screen is updated, update its loading shimmer in the same change (the user's rule, 15 November 2026): the
+drawer shimmer in `components/presentation-foundation/screen-skeletons.tsx` and any in-screen skeleton must show the
+loaded page's blocks in the same order, columns and classes, so nothing jumps when records arrive. Full rule in
+`docs/agents/interface.md` (Shimmer follows the screen).
+
 # Workspace structure
 
 The drawer, the shell and the screens are separate. Keep them that way.

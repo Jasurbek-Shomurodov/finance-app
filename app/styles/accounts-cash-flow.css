@@ -228,9 +228,12 @@ button.flow-bar-row:focus-visible{outline:2px solid var(--ring);outline-offset:-
 .cashflow-income-preview footer{margin-top:auto;padding-top:8px;border-top:1px solid var(--hairline)}
 .cashflow-income-preview footer button{padding-inline-start:0;font-size:var(--type-small);color:var(--primary)}
 .cashflow-spending-preview{display:grid;gap:16px;min-width:0}
-.workspace .content .cashflow-spending-preview .monthly-mortgage-payments{margin-top:16px;padding:16px 0 0;border:0;border-top:1px solid var(--border);border-radius:0;box-shadow:none;background:none}
+/* The column's cards are panels of their own, as Still to come and Budget: mortgages read as one more card, not a strip under Budget. */
 .cashflow-spending-preview .monthly-mortgage-payments .panel-title{margin-bottom:8px}
-.cashflow-spending-preview .monthly-mortgage-payments h2{font-size:var(--type-small)}
+/* A long title in the narrow column wraps as text, so its ⓘ stays after the last word instead of on a line of its own. */
+.cashflow-spending-preview .monthly-mortgage-payments h2{display:block;text-wrap:balance}
+.cashflow-spending-preview .monthly-mortgage-payments h2>.info-hint{margin-inline-start:8px;vertical-align:middle}
+.cashflow-spending-preview .panel-title :is(a,[data-variant=link]){white-space:nowrap;font-size:var(--type-caption);font-weight:500;color:var(--primary)}
 .cashflow-spending-preview .monthly-mortgage-payments :is(th,td):nth-child(3){display:none}
 .cashflow-view-history{display:flex;margin:4px 16px 12px auto;font-size:var(--type-small)}
 @container content (max-width:900px){.cashflow-preview-grid,.cash-flow-report-grid{grid-template-columns:minmax(0,1fr)}}

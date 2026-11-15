@@ -72,6 +72,13 @@ it instead of styling a page on its own.
   A failed load is `InlineError` with its Retry callback; a fetched resource's
   loading, failed and ready states are `ResourceState`. Confirmations use
   `ConfirmDialog`; dialog forms close with `FormFooter`.
+- **Shimmer follows the screen (the user's rule, 15 November 2026).** Whenever a screen, tab or panel changes
+  (a block added, removed, moved, resized or restyled), update its loading shimmer in the same change. Every loading
+  shape is built from the loaded blocks' own classes, in the same order and columns: the drawer shimmer per route in
+  `presentation-foundation/screen-skeletons.tsx` (`screenSkeletons`), the in-screen skeletons in
+  `presentation-foundation/loading-placeholder.tsx`, and any panel's own loading state. When records arrive nothing
+  may jump, appear from nowhere or vanish. Check it in the browser: capture the shimmer (a drawer tap) and the loaded
+  page at the same width and compare them block for block. `tests/screen-shimmer.mjs` pins the order for Cash flow.
 - Every chart takes its look from the chart kit, `presentation-foundation/chart.tsx`: spread
   `chartGrid`, `chartAxis` / `chartValueAxis`, `chartTooltip`, `chartBar` (`groupedBar`, `stackTop`),
   `plannedBar` for anything scheduled or estimated (legend swatch `.chart-planned-key`), `sideBar` / `sideGrid` for bars drawn sideways from zero and `toneColor` for a gain or loss, `leadLine` /

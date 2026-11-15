@@ -72,13 +72,38 @@ export function AccountsSkeleton({ label, filters = false }: { label: string; fi
   </div>;
 }
 
-/** The two Cash flow preview panels (income this month, spending plans) while their records load. */
+const lines = (count: number) => Array.from({ length: count }, (_, index) => index);
+
+/** A panel heading in a Cash flow column: the title with its month figure, and the link on the right. */
+function PreviewHeading({ width }: { width: number }) {
+  return <div className="panel-title-skeleton"><Skeleton className="h-6 max-w-full" style={{ width }}/><Skeleton className="h-4 w-14"/></div>;
+}
+
+/** Cash flow's lower half while its records load, block for block: Income this month's source table beside the column of
+ * Still to come, Budget and Monthly mortgage payments, then Spending watchlists across the width. */
 export function CashflowPreviewSkeleton({ label }: { label?: string }) {
   const grid = <div aria-hidden="true" className="cashflow-preview-grid">
-    <section className="panel"><Skeleton className="mb-4 h-5 w-1/3"/><SkeletonRows rows={3}/></section>
-    <section className="panel"><Skeleton className="mb-4 h-5 w-1/3"/><SkeletonRows rows={3}/></section>
+    <section className="panel cashflow-income-preview"><PreviewHeading width={240}/><SkeletonRows rows={5}/><footer><Skeleton className="h-5 w-36"/></footer></section>
+    <div className="cashflow-spending-preview">
+      <section className="panel cashflow-still-to-come"><PreviewHeading width={180}/><div className="grid gap-3">{lines(4).map(line => <div key={line} className="flex items-center justify-between gap-3"><Skeleton className="h-4 w-36"/><Skeleton className="h-4 w-16"/></div>)}</div></section>
+      <section className="panel dashboard-budget"><PreviewHeading width={150}/><Skeleton className="mb-4 h-8 w-40"/><SkeletonRows rows={3}/></section>
+      <section className="panel monthly-mortgage-payments"><PreviewHeading width={200}/><SkeletonRows rows={1}/></section>
+    </div>
+    <section className="panel tools-panel"><Skeleton className="mb-4 h-6 w-48"/><Skeleton className="h-5 w-44"/></section>
   </div>;
   return label ? <div role="status" aria-busy="true"><span className="sr-only">{label}</span>{grid}</div> : grid;
+}
+
+/** Cash flow's report while its records load: the Period switch, then the bars by month beside Where the month went. */
+export function CashFlowReportSkeleton({ label }: { label?: string }) {
+  const report = <div aria-hidden="true" className="cash-flow-report">
+    <div className="cash-flow-report-tools"><Skeleton className="h-10 w-52 rounded-xl"/></div>
+    <div className="cash-flow-report-grid">
+      <section className="panel cash-flow-trend"><Skeleton className="mb-3 h-7 w-72 max-w-full"/><Skeleton className="mb-3 h-4 w-48"/><ChartSkeleton bars height={260}/><div className="cash-flow-totals">{lines(3).map(total => <Skeleton key={total} className="h-4 w-36"/>)}</div></section>
+      <section className="panel cash-flow-where"><Skeleton className="mb-3 h-7 w-60 max-w-full"/><div className="mb-4 flex flex-wrap gap-2"><Skeleton className="h-10 w-44 rounded-xl"/><Skeleton className="h-10 w-36 rounded-xl"/></div><SkeletonRows rows={5}/></section>
+    </div>
+  </div>;
+  return label ? <div role="status" aria-busy="true"><span className="sr-only">{label}</span>{report}</div> : report;
 }
 
 // Twelve months of bars, a pair a month, as the Cash flow chart draws income and spending.

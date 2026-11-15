@@ -12,7 +12,7 @@ import { useCashFlowData } from '@/components/cash-flow-data';
 import { mainTarget } from '@/lib/cash-flow-main';
 import { useLocationSearch } from '@/hooks/use-location-search';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
-import { SankeySkeleton } from '@/components/presentation-foundation/loading-placeholder';
+import { CashFlowReportSkeleton } from '@/components/presentation-foundation/loading-placeholder';
 import { PanelTitle } from '@/components/presentation-foundation/panel-title';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { StatTile, StatTiles } from '@/components/presentation-foundation/stat-tile';
@@ -162,7 +162,7 @@ export function CashFlowReport({ onOpenRecord, owner, demo, revision, data: prov
  const flows = sankeyFlows(report, categoryName);
  const periodName = period === 'month' ? formatMonthYear(month, locale) : `${formatMonthYear(periodMonths(month, period)[0], locale)} – ${formatMonthYear(month, locale)}`;
  const { drill, setDrill, drillTitle, drillMonths, drillPeriod } = useDrill(data, t, search, { months: periodMonths(month, period), label: periodName, locale });
- if (live && remote.initialLoading) return <section className="panel cash-flow-report"><SankeySkeleton label={t('Loading records…')} height={360}/></section>;
+ if (live && remote.initialLoading) return <CashFlowReportSkeleton label={t('Loading records…')}/>;
  if (live && remote.error) return <section className="panel cash-flow-report"><InlineError message={t(remote.error)} onRetry={remote.retry}/></section>;
  return <section className="cash-flow-report" aria-label={t('Cash flow')}>
   <div className="cash-flow-report-tools">
