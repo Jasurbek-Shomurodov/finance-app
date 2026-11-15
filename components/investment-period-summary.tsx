@@ -7,18 +7,22 @@ import { formatDate,formatMoney } from '@/lib/format';
 import { Popover,PopoverTrigger,PopoverContent } from '@/components/ui/popover';
 import { AnimatedMoney } from '@/components/presentation-foundation/animated-money';
 import { ChevronRight } from 'lucide-react';
-/** One line of the details. An expense recorded as a transaction is a button that opens it. */
-function DetailsRow({row,money,onOpen}:{row:PeriodRow;money:(value:number|null)=>string;onOpen?:(id:string)=>void}){
+/** What a line of the details can open: a transaction's details, or a holding's history. */
+export type PeriodOpener={transaction?:(id:string)=>void;holding?:(id:string)=>void};
+/** One line of the details: a button that opens the transaction or the holding it came from, when it can. */
+function DetailsRow({row,money,opener}:{row:PeriodRow;money:(value:number|null)=>string;opener?:PeriodOpener}){
  const {t,locale}=useLanguage();
- const body=<><div><strong>{row.name}</strong><span>{[formatDate(row.date,locale),row.detail&&t(row.detail),row.investment!==row.name&&row.investment].filter(Boolean).join(' · ')}</span></div><b>{money(row.amount)}</b></>;
- const id=row.transactionId;
- if(!id||!onOpen)return <div className="portfolio-tooltip-row">{body}</div>;
- return <button type="button" className="portfolio-tooltip-row detail-row-link" aria-label={t('View details for {name}',{name:row.name})} onClick={()=>onOpen(id)}>{body}<ChevronRight className="detail-row-chevron" aria-hidden/></button>;
+ const body=<><div><strong>{row.name}</strong><span>{[formatDate(row.date,locale),row.detail&&t(row.detail),row.investment!==row.name&&row.investment,row.household&&t('Household')].filter(Boolean).join(' · ')}</span></div><b>{money(row.amount)}</b></>;
+ const {transactionId,holdingId}=row;
+ const open=transactionId&&opener?.transaction?()=>opener.transaction?.(transactionId):holdingId&&opener?.holding?()=>opener.holding?.(holdingId):null;
+ if(!open)return <div className="portfolio-tooltip-row">{body}</div>;
+ return <button type="button" className="portfolio-tooltip-row detail-row-link" aria-label={t(transactionId?'View details for {name}':'Open {name}',{name:row.name})} onClick={open}>{body}<ChevronRight className="detail-row-chevron" aria-hidden/></button>;
 }
-function AmountDetails({label,amount,rows,currency,open,onOpenChange,onOpenTransaction}:{label:string;amount:number|null;rows:PeriodRow[];currency:string;open:boolean;onOpenChange:(open:boolean)=>void;onOpenTransaction?:(id:string)=>void}){
+function AmountDetails({label,amount,rows,currency,open,onOpenChange,opener}:{label:string;amount:number|null;rows:PeriodRow[];currency:string;open:boolean;onOpenChange:(open:boolean)=>void;opener?:PeriodOpener}){
  const {t,locale}=useLanguage();
- // Opening a transaction closes the details, so its dialog is not covered.
- const openTransaction=onOpenTransaction&&((id:string)=>{onOpenChange(false);onOpenTransaction(id);});
+ // Opening a row closes the details, so the dialog it opens is not covered.
+ const closing=(open?:(id:string)=>void)=>open&&((id:string)=>{onOpenChange(false);open(id);});
+ const rowOpener=opener&&{transaction:closing(opener.transaction),holding:closing(opener.holding)};
  const timer=useRef<ReturnType<typeof setTimeout>|undefined>(undefined);
  // Hover opens the details without moving focus. Return focus to the amount only when
  // it moved into the details; otherwise closing would draw a keyboard focus ring on it.
@@ -28,12 +32,12 @@ function AmountDetails({label,amount,rows,currency,open,onOpenChange,onOpenTrans
  const leave=()=>{timer.current=setTimeout(()=>onOpenChange(false),200);};
  const money=(value:number|null)=>value===null?'—':formatMoney(value,currency,locale);
  const groups=new Map<string,PeriodRow[]>();for(const row of rows)groups.set(row.category,[...(groups.get(row.category)??[]),row]);
- return <div><span>{t(label)}</span><Popover open={open} onOpenChange={onOpenChange}><PopoverTrigger asChild><button type="button" className="period-amount" onMouseEnter={enter} onMouseLeave={leave} aria-label={t(label)}><strong>{amount===null?'—':<AnimatedMoney value={amount} currency={currency}/>}</strong></button></PopoverTrigger><PopoverContent align="start" className="period-details portfolio-tooltip" onOpenAutoFocus={event=>{event.preventDefault();focusedInside.current=false;}} onFocus={()=>{focusedInside.current=true;}} onCloseAutoFocus={event=>{if(!focusedInside.current)event.preventDefault();}} onMouseEnter={enter} onMouseLeave={leave}><header><small>{t(label)}</small><strong>{money(amount)}</strong></header><div className="portfolio-tooltip-body" tabIndex={0}>{rows.length?[...groups].map(([category,items])=><section key={category}><h4>{t(category)} · {money(items.some(row=>row.amount===null)?null:items.reduce((sum,row)=>sum+(row.amount??0),0))}</h4>{items.map((row,index)=><DetailsRow key={index} row={row} money={money} onOpen={openTransaction}/>)}</section>):<p>{t('No recorded activity in this interval.')}</p>}</div></PopoverContent></Popover></div>;
+ return <div><span>{t(label)}</span><Popover open={open} onOpenChange={onOpenChange}><PopoverTrigger asChild><button type="button" className="period-amount" onMouseEnter={enter} onMouseLeave={leave} aria-label={t(label)}><strong>{amount===null?'—':<AnimatedMoney value={amount} currency={currency}/>}</strong></button></PopoverTrigger><PopoverContent align="start" className="period-details portfolio-tooltip" onOpenAutoFocus={event=>{event.preventDefault();focusedInside.current=false;}} onFocus={()=>{focusedInside.current=true;}} onCloseAutoFocus={event=>{if(!focusedInside.current)event.preventDefault();}} onMouseEnter={enter} onMouseLeave={leave}><header><small>{t(label)}</small><strong>{money(amount)}</strong></header><div className="portfolio-tooltip-body" tabIndex={0}>{rows.length?[...groups].map(([category,items])=><section key={category}><h4>{t(category)} · {money(items.some(row=>row.amount===null)?null:items.reduce((sum,row)=>sum+(row.amount??0),0))}</h4>{items.map((row,index)=><DetailsRow key={index} row={row} money={money} opener={rowOpener}/>)}</section>):<p>{t('No recorded activity in this interval.')}</p>}</div></PopoverContent></Popover></div>;
 }
-export function InvestmentPeriodSummary({input,start,scope,onOpenTransaction,children}:{input:Parameters<typeof investmentPeriodTotals>[0];start:string;scope?:FundingScope;/** Opens a transaction's details by its id. */onOpenTransaction?:(id:string)=>void;children?:ReactNode}){
+export function InvestmentPeriodSummary({input,start,scope,opener,children}:{input:Parameters<typeof investmentPeriodTotals>[0];start:string;scope?:FundingScope;opener?:PeriodOpener;children?:ReactNode}){
  const {t}=useLanguage();
  const [active,setActive]=useState<string|null>(null);
  const details:Record<'invested'|'expenses'|'income',PeriodRow[]>={invested:[],expenses:[],income:[]};
  const totals=investmentPeriodTotals(input,start,details,scope);
- return <div><div className="portfolio-headline">{children}{([['invested','Money invested'],['expenses','Expenses paid'],['income','Overall income received']] as const).map(([key,label])=><AmountDetails key={key} open={active===key} onOpenChange={open=>setActive(current=>open?key:current===key?null:current)} label={label} amount={totals.missing.length?null:totals[key]} rows={details[key]} currency={input.currency} onOpenTransaction={onOpenTransaction}/>)}</div>{!!totals.missing.length&&<p className="muted">{t('Some investment balances or exchange rates are missing.')}</p>}</div>;
+ return <div><div className="portfolio-headline">{children}{([['invested','Money invested'],['expenses','Expenses paid'],['income','Overall income received']] as const).map(([key,label])=><AmountDetails key={key} open={active===key} onOpenChange={open=>setActive(current=>open?key:current===key?null:current)} label={label} amount={totals.missing.length?null:totals[key]} rows={details[key]} currency={input.currency} opener={opener}/>)}</div>{!!totals.missing.length&&<p className="muted">{t('Some investment balances or exchange rates are missing.')}</p>}</div>;
 }

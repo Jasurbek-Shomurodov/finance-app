@@ -72,6 +72,37 @@ test('an expense paid for a holding names that holding',()=>{
  assert.deepEqual(details.expenses.map(item=>item.transactionId??null).sort(),['feed','fix','lunch',null,null].sort());
 });
 
+test('every detail line names its business and opens what it came from',()=>{
+ const details={income:[],expenses:[],invested:[]};
+ const row=(id,kind,extra)=>({id,kind,amount:40,currency:'USD',date:'2026-09-19',frequency:'Once',...extra});
+ // Household is a business of the workspace but not a holding in the history: its name comes from `holdings`.
+ const totals=investmentPeriodTotals({...input,records:[{...input.records[0],name:'Sheep farm'},input.records[1]],holdings:[{id:'home',name:'Household'}],categories:[{id:'ai',name:'AI tools'},{id:'rent',name:'Flat rent'}],
+  cashflows:[row('chat','Other expense',{name:'AI subscriptions',business_id:'home',custom_category_id:'ai'}),row('tenant','Other income',{name:'Tenant',business_id:'home',custom_category_id:'rent'}),row('wool','Business income',{name:'Wool sale',business_id:'sheep'})]},'2026-09-19',details);
+ const line=(key,name)=>details[key].find(item=>item.name===name);
+ assert.deepEqual(line('expenses','AI subscriptions'),{name:'AI subscriptions',date:'2026-09-19',category:'AI tools',investment:'Household',transactionId:'chat',amount:40});
+ // Income from transactions shows its own category and business too, and opens its transaction.
+ assert.deepEqual(line('income','Tenant'),{name:'Tenant',date:'2026-09-19',category:'Flat rent',investment:'Household',transactionId:'tenant',amount:40});
+ assert.equal(line('income','Wool sale').investment,'Sheep farm');
+ // Lines entered in a holding's history open that holding: a purchase, its income and a running cost.
+ assert.ok(details.invested.filter(item=>item.category==='Business investment').every(item=>item.holdingId==='sheep'&&!item.transactionId));
+ assert.ok(details.income.filter(item=>!item.transactionId).every(item=>item.holdingId==='sheep'));
+ assert.equal(details.expenses.find(item=>item.category==='Other expense'&&!item.transactionId).holdingId,'sheep');
+ assert.equal(details.expenses.find(item=>item.category==='Mortgage interest').holdingId,'debt');
+ // Every line opens something, and the totals are unchanged by the labels.
+ for(const key of Object.keys(details))assert.ok(details[key].every(item=>item.transactionId||item.holdingId),key);
+ assert.equal(totals.income,150+80);
+});
+
+test('with businesses in the workspace, a transaction for none of them is the Household\'s',()=>{
+ const details={income:[],expenses:[],invested:[]};
+ const row=(id,extra)=>({id,kind:'Living expense',amount:10,currency:'USD',date:'2026-09-19',frequency:'Once',name:id,...extra});
+ const run=businesses=>{const found={income:[],expenses:[],invested:[]};investmentPeriodTotals({...input,businesses,holdings:[{id:'shop',name:'Shop'}],cashflows:[row('lunch'),row('stock',{business_id:'shop'})]},'2026-09-19',found);return found.expenses.filter(item=>item.amount===10);};
+ assert.deepEqual(run(true).map(item=>[item.name,item.investment??null,item.household??false]),[['lunch',null,true],['stock','Shop',false]]);
+ // Without businesses there is nothing to tell apart, so no line says Household.
+ assert.ok(run(false).every(item=>!item.household));
+ assert.equal(details.expenses.length,0);
+});
+
 const {investmentDecisionComparison}=loadTS('lib/investment-benchmarks.ts');
 const prices={start:'2026-09-01',end:'2026-09-04',fx:[],prices:{BTC:[1,2,3,4].map(n=>({date:'2026-09-0'+n,close:n*100}))},errors:{}};
 const dated=(id,record_id,date,event_type,amount,balance,extra={})=>({id,record_id,occurred_on:date,created_at:date+'T12:00:00Z',event_type,amount,balance,ownership_percentage:100,principal:0,interest:0,notes:'',...extra});

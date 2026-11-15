@@ -2,7 +2,7 @@
 import { InlineError } from '@/components/presentation-foundation/inline-error';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { demoHistory } from '@/lib/demo-finance';
-import { InvestmentPeriodSummary } from '@/components/investment-period-summary';
+import { InvestmentPeriodSummary, type PeriodOpener } from '@/components/investment-period-summary';
 import { InvestmentComparison } from '@/components/investment-comparison';
 import { investmentValueChange } from '@/lib/investment-portfolio';
 import { PartialTotal } from '@/components/presentation-foundation/partial-total';
@@ -31,7 +31,7 @@ import type { PortfolioHistory } from '@/hooks/use-portfolio-history';
 /** One empty history for every render, so the comparison's memos keyed on it hold until the real one loads. */
 const noHistory: PortfolioHistory = { records: [], events: [] };
 /** `savedHistory` is the screen's read (`usePortfolioHistory`), started before this card mounts; the sample workspace builds its own. */
-export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecords, currency, market, demo, savedHistory, historyError: error, onHistoryRetry, onAddIncome, board, categories, onOpenTransaction }: { /** The workspace's own categories, for naming expenses. */ categories?: readonly { id: string; name: string }[]; /** Opens a transaction's details by its id. */ onOpenTransaction?: (id: string) => void; savedHistory: PortfolioHistory | null; historyError: boolean; onHistoryRetry: () => void; board: (cards: { netWorth: ReactNode; income: ReactNode }) => ReactNode; onAddIncome?: () => void; demoRecords?: Entry[]; excludedCurrencies?:string[]; entries: Entry[]; currency: string; market: MarketData | null; demo: boolean }) {
+export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecords, currency, market, demo, savedHistory, historyError: error, onHistoryRetry, onAddIncome, board, categories, holdings, businesses, opener }: { /** The workspace's own categories and records, naming a detail line's category and business; `businesses` says it has any. */ categories?: readonly { id: string; name: string }[]; holdings?: readonly { id: string; name: string }[]; businesses?: boolean; /** Opens what a detail line came from. */ opener?: PeriodOpener; savedHistory: PortfolioHistory | null; historyError: boolean; onHistoryRetry: () => void; board: (cards: { netWorth: ReactNode; income: ReactNode }) => ReactNode; onAddIncome?: () => void; demoRecords?: Entry[]; excludedCurrencies?:string[]; entries: Entry[]; currency: string; market: MarketData | null; demo: boolean }) {
  const { t, locale } = useLanguage();
  const [range, setRange] = useState<number | null>(null);
  // Counts period choices: in full screen choosing a period zooms the chart to it, even the one already chosen.
@@ -82,7 +82,7 @@ export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecord
     </div>
    </header>
    {loading ? <NetWorthBodySkeleton label={t('Loading history…')}/> : error ? <InlineError message={t('Could not load portfolio history.')} onRetry={onHistoryRetry}/> : <>
-    <InvestmentComparison allPoints={tracked} periodPick={periodPick} onViewMove={markMoved} chartHeight={chartHeight} history={history??noHistory} today={today} currency={currency} market={market} demo={demo} windowStart={windowStart} points={visible} profile={comparison.profile} profileError={comparison.error} trackingStart={comparison.trackingStart} onTrackingStartChange={comparison.saveTrackingStart} onGrowth={setGrowth} summary={(fx,scope)=><InvestmentPeriodSummary scope={scope} onOpenTransaction={onOpenTransaction} input={{records:history?.records??noHistory.records,events:history?.events??noHistory.events,cashflows:history?.cashflows,movements:history?.movements,market,currency,today,fx,categories}} start={windowStart}/>}/>
+    <InvestmentComparison allPoints={tracked} periodPick={periodPick} onViewMove={markMoved} chartHeight={chartHeight} history={history??noHistory} today={today} currency={currency} market={market} demo={demo} windowStart={windowStart} points={visible} profile={comparison.profile} profileError={comparison.error} trackingStart={comparison.trackingStart} onTrackingStartChange={comparison.saveTrackingStart} onGrowth={setGrowth} summary={(fx,scope)=><InvestmentPeriodSummary scope={scope} opener={opener} input={{records:history?.records??noHistory.records,events:history?.events??noHistory.events,cashflows:history?.cashflows,movements:history?.movements,market,currency,today,fx,categories,holdings,businesses}} start={windowStart}/>}/>
     {recorded.missing > 0 && <p className="muted overview-hero-note">{t('Some holdings have no recorded history yet.')}</p>}
     {excludedCurrencies.length > 0 && <p className="muted overview-hero-note">{t('Some currencies could not be converted and are excluded from totals.')}</p>}
    </>}

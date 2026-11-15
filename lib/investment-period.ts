@@ -1,18 +1,30 @@
 import { benchmarkExpenseFunding, benchmarkInvestment, investmentActivity, openingFunding, type BenchmarkMovement, type FundingScope } from './investment-benchmarks';
-import { income, liabilities } from './finance';
+import { income, liabilities, type Entry } from './finance';
 import { convertAmount, marketRates } from './market';
 import { convertHistorical } from './investment-comparison';
 import type { FxPoint } from './benchmark-data';
 import type { InvestmentPortfolioInput } from './investment-portfolio';
 import { capitalizedInterest, copiesCapitalizedInterest } from './investment-history';
 
-/** `detail` is a row's own category when it is listed under a wider heading; `investment` the holding an expense was paid for;
- * `transactionId` the transaction an expense was recorded as, which its row opens. */
-export type PeriodRow={name:string;date:string;category:string;amount:number|null;detail?:string;investment?:string;transactionId?:string};
+/** `detail` is a row's own category when it is listed under a wider heading; `investment` the holding or business a
+ * transaction was paid for or received from. A row opens what it came from: `transactionId` a transaction,
+ * `holdingId` a holding's history (a purchase, a recorded value, a running cost or income entered there). */
+export type PeriodRow={name:string;date:string;category:string;amount:number|null;detail?:string;investment?:string;household?:boolean;transactionId?:string;holdingId?:string};
+type RowContext=Omit<PeriodRow,'amount'>;
 // The three figures follow the chart's funding rules: money invested is what funds benchmarks
 // when expenses are excluded (purchases, principal repayments and values recorded without a purchase), and expenses paid is what "Including expenses" adds to it.
-/** `categories` are the workspace's own categories, so an expense in one shows its name. */
-type PeriodInput=InvestmentPortfolioInput&{movements?:BenchmarkMovement[];fx?:FxPoint[];categories?:readonly {id:string;name:string}[]};
+/** `categories` are the workspace's own categories, so a transaction in one shows its name; `holdings` are every record of
+ * the workspace, naming a business or property that is not a holding in the history (a Household business, say). */
+type Named=readonly {id:string;name:string}[];
+/** With `businesses` true, a transaction for no business or property is the Household's (`household`), as its details say. */
+type PeriodInput=InvestmentPortfolioInput&{movements?:BenchmarkMovement[];fx?:FxPoint[];categories?:Named;holdings?:Named;businesses?:boolean};
+/** What a transaction's row shows and opens: its category by its own name, the holding it belongs to, and itself. */
+function transactionRow(row:Entry,input:PeriodInput,records:ReadonlyMap<string,Entry>):RowContext{
+ const own=input.categories?.find(category=>category.id===row.custom_category_id)?.name;
+ const linked=row.business_id??row.property_id??row.income_source_id;
+ const investment=linked?records.get(linked)?.name??input.holdings?.find(item=>item.id===linked)?.name:undefined;
+ return {name:row.name,date:row.date,category:own??row.kind,transactionId:row.id,...investment?{investment}:input.businesses&&{household:true}};
+}
 type PeriodDetails=Record<'income'|'invested'|'expenses',PeriodRow[]>;
 // With `scope` 'expenses' the benchmarks invest that spending too, so money invested includes it.
 export function investmentPeriodTotals(input:PeriodInput,start:string,details?:PeriodDetails,scope:FundingScope='investments'){
@@ -27,7 +39,7 @@ function periodTotals(input:PeriodInput,start:string,details?:PeriodDetails){
  const missing=new Set<string>();
  const records=new Map(input.records.map(record=>[record.id,record]));
  const rates=marketRates(input.market)??{};
- let context={name:'',date:'',category:''};
+ let context:RowContext={name:'',date:'',category:''};
  // `category` replaces the context's when the row belongs under another heading.
  const add=(key:keyof typeof totals,amount:number,currency:string,category=context.category)=>{
   // With the chart's dated rates, convert like the chart: to USD at the day's rate, then to the display currency at today's.
@@ -41,14 +53,14 @@ function periodTotals(input:PeriodInput,start:string,details?:PeriodDetails){
  for(const item of activity.items){
   if(item.payout||!inPeriod(item.date))continue;
   const kind=records.get(item.recordId)?.kind??'';
-  context={name:item.name,date:item.date,category:kind==='Property'?'Rental improvements':kind==='Valuables'?'Valuables purchase':kind==='Vehicle'?'Vehicle purchase':kind==='Retirement account'?'Retirement contribution':kind==='Business'?'Business investment':kind};
+  context={name:item.name,date:item.date,category:kind==='Property'?'Rental improvements':kind==='Valuables'?'Valuables purchase':kind==='Vehicle'?'Vehicle purchase':kind==='Retirement account'?'Retirement contribution':kind==='Business'?'Business investment':kind,holdingId:item.recordId};
   // Money moved from another investment is the same capital, not a new investment.
   add('invested',Math.max(0,item.amount-item.reused),item.currency);
  }
  // A holding valued without a recorded purchase counts its first value as invested that day, as in the chart.
  for(const item of openingFunding(input.records,input.events,input.today).values()){
   if(!inPeriod(item.date))continue;
-  context={name:item.name,date:item.date,category:'Recorded value · purchase not recorded'};
+  context={name:item.name,date:item.date,category:'Recorded value · purchase not recorded',holdingId:item.recordId};
   add('invested',item.amount,item.currency);
  }
  const eventIds=new Set(activity.events.map(event=>event.id));
@@ -56,7 +68,7 @@ function periodTotals(input:PeriodInput,start:string,details?:PeriodDetails){
  for(const event of activity.events){
   const record=records.get(event.record_id);
   if(!record||!inPeriod(event.occurred_on))continue;
-  context={name:record.name,date:event.occurred_on,category:record.kind};
+  context={name:record.name,date:event.occurred_on,category:record.kind,holdingId:record.id};
   if(benchmarkInvestment(record)&&event.event_type==='income')add('income',Number(event.amount),record.currency);
   // Older Tracker expenses and payments have no transaction copy; count them from the Tracker.
   // They carry no spending category, so they group under Other expense, not the holding's kind.
@@ -66,9 +78,7 @@ function periodTotals(input:PeriodInput,start:string,details?:PeriodDetails){
  for(const row of benchmarkExpenseFunding(input.cashflows,input.today)){
   if(!inPeriod(row.date))continue;
   const source=(input.cashflows??[]).find(item=>'expense:'+item.id===row.id);
-  const own=input.categories?.find(category=>category.id===source?.custom_category_id)?.name;
-  const investment=records.get(source?.business_id??source?.property_id??'')?.name;
-  context={name:row.name,date:row.date,category:source?.mortgage_payment_id?'Mortgage interest':own??row.kind,...investment&&{investment},...source&&{transactionId:source.id}};
+  context=source?{...transactionRow(source,input,records),name:row.name,date:row.date,...source.mortgage_payment_id&&{category:'Mortgage interest'}}:{name:row.name,date:row.date,category:row.kind};
   add('expenses',row.amount,row.currency);
  }
  // Actual cashflow rows include salary and other income. Linked Tracker
@@ -76,7 +86,7 @@ function periodTotals(input:PeriodInput,start:string,details?:PeriodDetails){
  const capitalized=capitalizedInterest(activity.events);
  for(const row of input.cashflows??[]){
   if(row.frequency!=='Once'||!row.date||!inPeriod(row.date))continue;
-  context={name:row.name,date:row.date,category:row.kind};
+  context=transactionRow(row,input,records);
   if(row.mortgage_payment_id&&!eventIds.has(row.mortgage_payment_id)){
    // The payment itself could not be read: its saved copy still carries the principal.
    context.category='Mortgage';
