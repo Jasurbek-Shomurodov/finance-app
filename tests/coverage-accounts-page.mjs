@@ -11,6 +11,9 @@ const directory = loadTS('lib/account-directory.ts');
 const usd = (value, currency = 'USD') => formatMoney(value, currency, 'en-US');
 
 const r = createRenderer();
+const pnlReads = [];
+const pnlHolding = (id, invested, total) => ({ id, value: invested + total, invested, realized: 0, unrealized: total, income: 0, costs: 0, linked: 0, currencyEffect: 0, total, returnPercent: total / invested * 100 });
+const earned = { holdings: [pnlHolding('aapl', 1500, 500), pnlHolding('btc', 31000, -1000)], missing: 0 };
 const ui = stubs();
 const errors = [], reorders = [], resources = [];
 const booked = { data: { records: [] }, loading: false, error: '' };
@@ -29,6 +32,8 @@ const { AccountsPage } = r.load('components/planning/accounts-page.tsx', {
  '@/hooks/use-display-order': { useDisplayOrder: (key, items) => ({ items, reorder: (...move) => reorders.push(move), disabled: false, error: '' }) },
  '@/lib/feedback': { showError: message => errors.push(message) },
  // A signed-in Recent activity reads what was booked to the accounts on its own.
+ // What each holding earned since tracking began, as the Investments screen reads it.
+ '@/hooks/use-investment-pnl': { useInvestmentPnl: options => { pnlReads.push(options); return { pnl: earned }; } },
  '@/hooks/use-owner-resource': { useOwnerResource: (url, owner, enabled, revision, empty) => { resources.push({ url, owner, enabled, revision }); return { data: enabled ? booked.data : empty, initialLoading: enabled && booked.loading, error: enabled ? booked.error : '', retry() {} }; } },
  // Shown in a USD display currency at 1 USD = 0.9 EUR.
  '@/components/display-money': { useDisplayMoney: () => {
@@ -212,6 +217,10 @@ test('an investment account lists its holdings, which move, sell and change acco
  select('Broker');
  const card = text(r.find(node => node.type === 'article'));
  assert.ok(card.includes('1 holdings · USD') && card.includes('Stock account'));
+ // What its holdings earned, in the display currency, beside the value; the sample workspace reads its own history.
+ assert.ok(card.includes('Profit & loss+$500 · +33.3%'), card);
+ assert.equal(r.find(node => node.type === 'p' && node.props.className === 'account-card-pnl').children.at(-1).props.className, 'positive');
+ assert.deepEqual(pnlReads.map(({ currency, demo }) => [currency, demo]).at(-1), ['USD', true]);
  assert.equal(r.all(byType('AccountBalanceChart')).length, 0, 'no stored value history: no line for an investment account');
  r.fire(button('Add holding'), 'onClick');
  r.fire(item('Add cash balance'), 'onSelect');
@@ -224,6 +233,7 @@ test('an investment account lists its holdings, which move, sell and change acco
  assert.equal(r.find(byType('CorporateEventDialog')).props.record.id, 'aapl');
  // The holding without an account sits in its own panel; moving it into one goes through assignHolding.
  const unassigned = r.find(node => node.type === 'section' && node.props.className === 'panel account-unassigned');
+ assert.ok(text(unassigned).includes('Profit & loss: \u2212$1,000 · \u22123.2%'), 'each holding row shows its own result');
  const choose = r.all(node => node.type === ui.NativeSelect, [unassigned])[0];
  await choose.props.onChange({ target: { value: 'fail' } });r.update();
  assert.deepEqual(calls.assigned, [['btc', 'fail']]);

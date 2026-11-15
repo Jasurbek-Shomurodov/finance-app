@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {loadTS} from './helpers/load-ts.mjs';
-const {investmentPnl,groupPnl,sumPnl,realizedYears,realizedExportRows}=loadTS('lib/investment-pnl.ts');
+const {investmentPnl,groupPnl,sumPnl,realizedYears,realizedExportRows,historyPnl,pnlOf}=loadTS('lib/investment-pnl.ts');
 const {investmentReturns,monthlyResults,moneyWeightedReturn}=loadTS('lib/investment-returns.ts');
 const {propertyYields,costLadder,dcaPlan,expectedPayouts,isBitcoin,priceAlertReached,newlyReached}=loadTS('lib/investment-insights.ts');
 
@@ -194,4 +194,17 @@ test('a period counts each holding from what it was worth on its first day, and 
  assert.equal(returns.days[0].date,'2026-01-01');near(returns.days[0].pnl,600);near(returns.days.reduce((sum,day)=>sum+day.pnl,0),pnl.totals.total);
  // Without a start everything counts.
  near(run(records,events,{cashflows}).holdings.find(item=>item.id==='fund').realized,100-1000*100/1300);
+});
+
+test('a holding or an account reads its own result from the portfolio figures, and nothing before they load',()=>{
+ const records=[record('a','Valuables',1200),record('b','Valuables',300),record('c','Valuables',50)];
+ const events=[event('a1','a','contribution',1000,'2026-02-01',1000),event('a2','a','valuation',0,'2026-10-01',1200),event('b1','b','contribution',400,'2026-02-01',400),event('b2','b','valuation',0,'2026-10-01',300)];
+ const pnl=historyPnl({records,events},{market,currency:'USD',today});
+ assert.deepEqual(pnl,run(records,events),'the history read gives the same figures as the engine');
+ near(pnlOf(pnl,['a']).total,200);near(pnlOf(pnl,['a']).returnPercent,20);
+ // An account adds its holdings: +200 on 1,000 and −100 on 400 is +100 on 1,400.
+ const account=pnlOf(pnl,['a','b']);near(account.total,100);near(account.invested,1400);near(account.returnPercent,100/1400*100);
+ assert.equal(pnlOf(null,['a']),null,'nothing while the history loads');
+ assert.equal(pnlOf(pnl,['missing']),null,'a holding with no figures falls back to what the card showed before');
+ assert.equal(pnlOf(pnl,[]),null);
 });

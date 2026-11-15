@@ -160,6 +160,9 @@
 .account-menu-content [data-slot=dropdown-menu-item]{min-height:40px;white-space:normal}
 .account-card-balance{display:grid;gap:2px}
 .account-card-balance>span{font-size:var(--type-caption);color:var(--muted-foreground)}
+.account-card-pnl{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;font-size:var(--type-small)}
+.account-card-pnl>span{color:var(--muted-foreground)}
+.account-card-pnl>strong{font-weight:600;font-variant-numeric:tabular-nums}
 .account-card-value{display:block;font-size:var(--type-display);font-weight:600;letter-spacing:-.025em;line-height:1.15;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .account-balance-chart{margin-top:4px}
 .account-card>.muted{font-size:var(--type-caption)}
@@ -193,6 +196,7 @@
 .account-holding-row>div:nth-child(2)>strong{font-weight:600;overflow-wrap:anywhere}
 .account-holding-row p{margin-top:2px;font-size:var(--type-caption);overflow-wrap:anywhere}
 .account-holding-value{order:1;font-size:var(--type-compact);font-weight:650;text-align:end;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.account-holding-row .account-holding-pnl{font-weight:500;font-variant-numeric:tabular-nums}
 .account-holding-actions{display:contents}
 .account-holding-actions label{margin:0;min-width:0}
 .account-holding-actions select{width:100%;max-width:100%;min-height:38px!important;height:38px;padding-block:6px;font-size:var(--type-small)}

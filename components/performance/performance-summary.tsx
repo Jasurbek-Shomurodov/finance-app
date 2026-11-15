@@ -6,15 +6,9 @@ import { InfoHint } from '@/components/presentation-foundation/info-hint';
 import { RollingText } from '@/components/presentation-foundation/rolling-text';
 import { StatTile, StatTiles } from '@/components/presentation-foundation/stat-tile';
 import { signTone } from '@/components/presentation-foundation/tone';
-import { formatMoney, formatPercent, formatSignedMoney } from '@/lib/format';
+import { formatMoney, formatPercent, formatSignedMoney, formatSignedPercent as signedPercent } from '@/lib/format';
 import type { PnlTotals } from '@/lib/investment-pnl';
 import type { InvestmentReturns } from '@/lib/investment-returns';
-
-/** A signed percentage: "+12.4%", "−3%". */
-export function signedPercent(value: number | null, locale: string) {
- if (value === null || !Number.isFinite(value)) return '—';
- return (value > 0 ? '+' : '') + formatPercent(value, locale, 1);
-}
 
 /** The headline: total profit or loss, the five lines it is made of, and the three ways to read the return. */
 export function PerformanceSummary({ totals, returns, missing, dated, currency, children }: { /** The period switch, beside today's value. */ children?: ReactNode; totals: PnlTotals; returns: InvestmentReturns; missing: number; /** Past days convert at their own rate, so the currency line means something. */ dated: boolean; currency: string }) {

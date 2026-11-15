@@ -42,7 +42,7 @@ const movements = [{ id: 'm1', kind: 'buy', source_id: 'cash', target_id: 'BTC',
 const saved = [];
 const preferences = (items, fail) => ({ data: { preferences: items ? [{ key: 'price_alerts', data: { items } }] : [] }, save: async preference => { if (fail) throw fail === true ? 'no' : Error(fail); saved.push(preference); } });
 const history = { records, events, movements, cashflows: [] };
-const open = (props = {}) => r.mount(React.createElement(PerformanceView, { history, error: false, onRetry() {}, currency: 'USD', market, accounts: [{ id: 'wallet', name: 'Cold wallet', kind: 'Crypto', currency: 'USD' }], preferences: preferences(), demo: false, ...props }));
+const open = (props = {}) => r.mount(React.createElement(PerformanceView, { history, rate, error: false, onRetry() {}, currency: 'USD', market, accounts: [{ id: 'wallet', name: 'Cold wallet', kind: 'Crypto', currency: 'USD' }], preferences: preferences(), demo: false, ...props }));
 const panel = title => r.find(node => node.type === 'section' && text(r.all(byType('PanelTitle'), node)[0]?.props.title ?? '').includes(title));
 const named = name => node => node.type?.displayName === name;
 const tile = label => r.find(node => node.type === 'StatTile' && node.props.label === label).props;

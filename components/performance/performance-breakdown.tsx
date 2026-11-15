@@ -7,9 +7,8 @@ import { PanelTitle } from '@/components/presentation-foundation/panel-title';
 import { RecordIcon } from '@/components/presentation-foundation/record-icon';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { signTone } from '@/components/presentation-foundation/tone';
-import { signedPercent } from '@/components/performance/performance-summary';
 import type { Entry } from '@/lib/finance';
-import { formatMoney, formatNumber, formatSignedMoney } from '@/lib/format';
+import { formatMoney, formatNumber, formatSignedMoney, formatSignedPercent as signedPercent } from '@/lib/format';
 import type { HoldingAccount } from '@/lib/holding-accounts';
 import { groupPnl, type HoldingPnl, type PnlTotals } from '@/lib/investment-pnl';
 

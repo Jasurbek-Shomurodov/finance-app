@@ -14,13 +14,12 @@ import { PriceAlerts } from '@/components/performance/price-alerts';
 import { PropertyYields } from '@/components/performance/property-yields';
 import { RealizedGains } from '@/components/performance/realized-gains';
 import type { PortfolioHistory } from '@/hooks/use-portfolio-history';
-import { useRateHistory } from '@/hooks/use-rate-history';
 import type { PreferenceResource } from '@/hooks/use-workspace-preferences';
 import { addMonths } from '@/lib/calendar-days';
 import { depositToday } from '@/lib/deposit-interest';
 import type { HoldingAccount } from '@/lib/holding-accounts';
 import { expectedPayouts, isBitcoin, propertyYields } from '@/lib/investment-insights';
-import { investmentPnl, pnlPeriodStart, pnlPeriods, type PnlPeriod } from '@/lib/investment-pnl';
+import { historyPnl, pnlPeriodStart, pnlPeriods, type DatedRate, type PnlPeriod } from '@/lib/investment-pnl';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { investmentReturns, monthlyResults, runningTotal } from '@/lib/investment-returns';
 import { PnlHoldingBars, PnlTrendChart } from '@/components/charts-lazy';
@@ -31,19 +30,18 @@ const periodLabels: Record<PnlPeriod, string> = { year: 'This year', months: 'La
 
 type Props = {
  history: PortfolioHistory | null; error: boolean; onRetry: () => void;
+ /** Each past day's rate, once loaded; amounts convert at today's rate until then. */ rate?: DatedRate;
  currency: string; market: MarketData | null; accounts: readonly HoldingAccount[]; preferences: PreferenceResource; demo: boolean;
 };
 
 /** Investments › Profit & loss: what the holdings earned and how, read from the same history as the Overview chart. */
-export function PerformanceView({ history, error, onRetry, currency, market, accounts, preferences, demo }: Props) {
+export function PerformanceView({ history, error, onRetry, rate, currency, market, accounts, preferences, demo }: Props) {
  const { t } = useLanguage();
  const today = depositToday();
- const first = history?.events.reduce<string | null>((earliest, event) => !earliest || event.occurred_on < earliest ? event.occurred_on : earliest, null) ?? null;
- const rate = useRateHistory(first, today, demo);
  const [period, setPeriod] = useState<PnlPeriod>('all');
  // Everything recorded, for what does not follow the period: the sales of each year, a property's last twelve months.
- const whole = useMemo(() => history ? investmentPnl({ records: history.records, events: history.events, cashflows: history.cashflows, movements: history.movements, market, currency, today, rate }) : null, [history, market, currency, today, rate]);
- const pnl = useMemo(() => !history || period === 'all' ? whole : investmentPnl({ records: history.records, events: history.events, cashflows: history.cashflows, movements: history.movements, market, currency, today, rate, start: pnlPeriodStart(period, today) }), [history, whole, period, market, currency, today, rate]);
+ const whole = useMemo(() => history ? historyPnl(history, { market, currency, today, rate }) : null, [history, market, currency, today, rate]);
+ const pnl = useMemo(() => !history || period === 'all' ? whole : historyPnl(history, { market, currency, today, rate, start: pnlPeriodStart(period, today) }), [history, whole, period, market, currency, today, rate]);
  const returns = useMemo(() => {
   if (!pnl) return null;
   const rates = marketRates(market);

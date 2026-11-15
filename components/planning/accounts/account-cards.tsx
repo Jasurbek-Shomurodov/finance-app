@@ -19,6 +19,9 @@ import type { Operation } from '../account-operation';
 import { AccountMenu } from './account-menu';
 import { HoldingRows, type HoldingActions } from './holding-rows';
 import { AccountStoryView, type StoryState } from './account-story';
+import { pnlOf } from '@/lib/investment-pnl';
+import { signTone } from '@/components/presentation-foundation/tone';
+import { pnlText } from '@/components/investment-pnl/pnl-figure';
 
 /** What can open from a cash account's or deposit's card. */
 export type BalanceCardActions = {
@@ -65,9 +68,12 @@ export function InvestmentAccountCard({ account, records, onEditAccount, onAdd, 
  const {holdings,total}=holdingAccountValue(account,records,holdingActions.market);
  // A balance is a display-currency figure, like the directory beside it.
  const shown=total===null?null:display.convert(total,account.currency);
+ // What its holdings earned since tracking began, as the Investments screen shows it.
+ const earned=pnlOf(holdingActions.pnl??null,holdings.map(record=>record.id));
  return <article className="panel account-card">
   <header><CategoryIcon kind={account.kind}/><h2>{account.name}</h2><Button variant="ghost" size="icon" className="account-card-menu" aria-label={t('Edit {name}',{name:account.name})} onClick={()=>onEditAccount(account)}><Pencil size={17} aria-hidden="true"/></Button><AccountMenu name={account.name}><DropdownMenuItem onSelect={()=>onAdd('Cash',account.id)}>{t('Add cash balance')}</DropdownMenuItem></AccountMenu></header>
   <div className="account-card-balance"><span>{t(holdingAccountLabel(account.kind))}</span><strong className="account-card-value">{shown===null?'—':<AnimatedMoney value={shown} currency={display.currency??account.currency}/>}</strong></div><p className="muted">{t('{count} holdings',{count:formatNumber(holdings.filter(isHolding).length,locale,0)})} · {account.currency}</p>
+  {earned&&holdingActions.pnlCurrency&&<p className="account-card-pnl"><span>{t('Profit & loss')}</span><strong className={signTone(earned.total)}>{pnlText(earned,holdingActions.pnlCurrency,locale)}</strong></p>}
   {shown===null&&<p className="muted">{t('Exchange rates are missing. The account total is unavailable.')}</p>}
   <div className="account-card-actions"><Button onClick={()=>onAdd(account.kind,account.id)}><Plus size={16} aria-hidden="true" />{t(account.kind==='Cash'?'Add cash balance':'Add holding')}</Button></div>
   {holdings.length>0&&<Dialog><DialogTrigger asChild><Button variant="ghost" className="account-details-trigger">{t('Holdings')}</Button></DialogTrigger><DialogContent className="record-dialog" aria-describedby={undefined}><DialogTitle>{account.name} · {t('Holdings')}</DialogTitle><HoldingRows records={holdings} {...holdingActions}/></DialogContent></Dialog>}

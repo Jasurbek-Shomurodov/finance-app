@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { formatNumberInput, numberInputValue, formatMoney, formatConvertedQuote, formatAccountOption, formatSignedMoney, formatCompactMoney, formatDate, formatDateTime, formatMonthYear, formatPercent } from '../lib/format.ts';
+import { formatNumberInput, numberInputValue, formatMoney, formatConvertedQuote, formatAccountOption, formatSignedMoney, formatCompactMoney, formatDate, formatDateTime, formatMonthYear, formatPercent, formatSignedPercent } from '../lib/format.ts';
 test('amount entry groups digits and round-trips supported locales',()=>{
  for(const locale of ['en-US','ru-RU','uz-UZ']) {
   const formatted=numberInputValue(9300.25,locale);
@@ -238,4 +238,13 @@ test('precise compact money keeps three significant digits so close end labels d
  assert.equal(formatCompactMoney(1445355,'USD','en-US'),'$1.4M');
  assert.equal(formatCompactMoney(812,'USD','en-US',true),'$812');
  for(const locale of ['ru-RU','uz-UZ'])assert.match(formatCompactMoney(1445355,'USD',locale,true),/1[,.]45/);
+});
+
+test('a signed percentage shows its direction with a true minus, and a dash when unknown', () => {
+ assert.equal(formatSignedPercent(12.44, 'en-US'), '+12.4%');
+ assert.equal(formatSignedPercent(-3, 'en-US'), '\u22123%');
+ assert.equal(formatSignedPercent(0, 'en-US'), '0%');
+ assert.equal(formatSignedPercent(null, 'en-US'), '\u2014');
+ assert.equal(formatSignedPercent(Infinity, 'en-US'), '\u2014');
+ assert.equal(formatSignedPercent(-1.5, 'de-DE'), '\u22121,5%');
 });

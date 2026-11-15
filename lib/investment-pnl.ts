@@ -230,6 +230,17 @@ export function investmentPnl(input: PnlInput): InvestmentPnl {
  return { holdings: holdings.sort((a, b) => b.value - a.value), totals: sumPnl(holdings), flows: ledger.flows.sort(day), sales: ledger.sales.sort(day), marks: ledger.marks.sort(day), missing: ledger.missing };
 }
 
+/** The holding history the Overview chart reads (/api/portfolio-history), as profit and loss. */
+export type PnlHistory = Pick<PnlInput, 'records' | 'events' | 'cashflows' | 'movements'>;
+export const historyPnl = ({ records, events, cashflows, movements }: PnlHistory, options: Omit<PnlInput, keyof PnlHistory>) => investmentPnl({ records, events, cashflows, movements, ...options });
+
+/** The holdings among `ids` as one line; null when none of them is in the figures (nothing recorded, or no rate). */
+export function pnlOf(pnl: Pick<InvestmentPnl, 'holdings'> | null, ids: Iterable<string>): PnlTotals | null {
+ if (!pnl) return null;
+ const wanted = new Set(ids), holdings = pnl.holdings.filter(holding => wanted.has(holding.id));
+ return holdings.length ? sumPnl(holdings) : null;
+}
+
 /** The running profit or loss on a day, for the chart of it over time. */
 export type PnlPoint = { date: string; total: number };
 export type PnlGroup = PnlTotals & { key: string; count: number };

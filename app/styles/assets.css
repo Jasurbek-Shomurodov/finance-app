@@ -8,10 +8,12 @@
 .portfolio-summary-total h2{font-size:var(--type-small);font-weight:500;color:var(--muted-foreground)}
 .portfolio-summary-value{display:block;margin:6px 0 8px;font-size:var(--type-hero);font-weight:650;letter-spacing:-.04em;line-height:1.05;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .portfolio-summary-metrics{display:flex;gap:16px 20px;min-width:0}
-.portfolio-summary-metrics>div{display:grid;flex:0 0 auto;gap:4px;min-width:max-content;padding-inline-start:20px;border-inline-start:1px solid var(--border)}
+.portfolio-summary-metrics>div{display:grid;align-content:start;flex:0 0 auto;gap:4px;min-width:max-content;padding-inline-start:20px;border-inline-start:1px solid var(--border)}
 .portfolio-summary-metrics>div:first-child{padding-inline-start:0;border-inline-start:0}
 .portfolio-summary-metrics span{font-size:var(--type-caption);color:var(--muted-foreground);white-space:nowrap}
 .portfolio-summary-metrics strong{font-size:var(--type-heading);font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.portfolio-summary-pnl small{justify-self:start;font-size:var(--type-caption)}
+.portfolio-summary-pnl .panel-link{justify-self:start;min-height:0;padding:0;font-size:var(--type-caption);font-weight:500;color:var(--primary)}
 .portfolio-summary-allocation{min-width:0;padding:24px 28px 28px;border-top:1px solid var(--border)}
 /* A wide page sets the figures beside the allocation, stacked under the total, so neither side is mostly blank. */
 @container content (min-width:1000px){.portfolio-summary{grid-template-columns:minmax(max-content,1fr) minmax(0,3fr)}.portfolio-summary-value{white-space:nowrap}.portfolio-summary-metrics{flex-direction:column;align-self:stretch}.portfolio-summary-metrics>div,.portfolio-summary-metrics>div:first-child{padding:16px 0 0;border-inline-start:0;border-top:1px solid var(--border)}.portfolio-summary-main{flex-direction:column;flex-wrap:nowrap;justify-content:flex-start;gap:24px;border-inline-end:1px solid var(--border)}.portfolio-summary-allocation{border-top:0}}

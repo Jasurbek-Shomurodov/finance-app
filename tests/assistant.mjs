@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadTS } from './helpers/load-ts.mjs';
 const { assistantContext, assistantRequestSchema, assistantInstructions } = loadTS('lib/assistant.ts');
+const { investmentPnl } = loadTS('lib/investment-pnl.ts');
 
 const record = (id, name, kind, amount, date, extra = {}) => ({ id, name, kind, currency: 'USD', amount, quantity: 1, cost: 0, rate: 0, date, frequency: 'Once', notes: '', ...extra });
 const data = { categories: [{ id: 'pets', name: 'Pets', direction: 'expense' }], occurrences: [], activity: [], investmentLinks: [],
@@ -98,11 +99,13 @@ test('the assistant route needs a key and a session, reads only the owner rows a
  class Fake { constructor(settings) { clients.push(settings); this.beta = { messages: { create: async (body, opts) => { calls.push(body); options.push(opts); if (opts?.signal?.aborted) throw Error('aborted'); return reply; } } }; } }
  Fake.RateLimitError = class extends Error {}; Fake.AuthenticationError = class extends Error {};
  let auth = { token: 'owner-token', user: { id: 'u1' } };
- let planningFails = false;
+ let planningFails = false, historyFails = false;
+ const history = { records: [record('gold', 'Gold coins', 'Valuables', 1300, '2026-01-01')], events: [{ id: 'g1', record_id: 'gold', event_type: 'contribution', amount: 1000, occurred_on: '2026-02-01', created_at: '2026-02-01T10:00:00Z', balance: 1000, notes: '' }, { id: 'g2', record_id: 'gold', event_type: 'valuation', amount: 0, occurred_on: '2026-09-01', created_at: '2026-09-01T10:00:00Z', balance: 1300, notes: '' }] };
  const planningReads = [];
  const route = loadTS('app/api/assistant/route.ts', {
   '@anthropic-ai/sdk': { __esModule: true, default: Fake },
   '@/lib/supabase': { session: async () => auth, sameOrigin: () => true },
+  '@/app/api/portfolio-history/route': { GET: async () => historyFails ? Response.json({ error: 'Could not load portfolio history.' }, { status: 503 }) : Response.json(history) },
   '@/app/api/planning/route': { GET: async req => { planningReads.push(req.url); return planningFails ? Response.json({ error: 'Could not load' }, { status: 503 }) : Response.json({ ...data, records }); } },
   '@/lib/server-records': { readOwnerRows: async (table, token) => { reads.push([table, token]); return [{ record_id: 'food', position: 0, category_id: 'pets', amount: 120.6 }]; } },
   '@/lib/monitoring': { reportError: async () => {} },
@@ -126,6 +129,13 @@ test('the assistant route needs a key and a session, reads only the owner rows a
   const asked = new URL(planningReads[0]);
   assert.deepEqual([asked.pathname, asked.searchParams.get('scope'), asked.searchParams.has('debts')], ['/api/planning', 'budget', true]);
   assert.match(calls.at(-1).messages[0].content[0].text, /Pets \$121/, 'a split transaction counts under the category it was split into');
+  // What the investments earned comes from the history Profit & loss reads, at the request's rates without a market feed.
+  assert.match(calls.at(-1).messages[0].content[0].text, /## Investment profit and loss since tracking began \(USD\)\n- Total: \+\$300 \(\+30%\) on \$1,000 invested; value today \$1,300/);
+  assert.match(calls.at(-1).messages[0].content[0].text, /- Gold coins \(Valuables\): \+\$300 \(\+30%\), value \$1,300/);
+  historyFails = true;
+  assert.equal((await route.POST(request(body))).status, 200, 'an unreadable history leaves the section out, and still answers');
+  assert.doesNotMatch(calls.at(-1).messages[0].content[0].text, /Investment profit and loss/);
+  historyFails = false;
   planningFails = true;
   assert.equal((await route.POST(request(body))).status, 503, 'a failed read answers, and asks the model nothing');
   planningFails = false;
@@ -185,4 +195,15 @@ test('the snapshot counts what the screens count: every target of an investment 
  const reminders = debtPayments => assistantContext({ ...planned, debtPayments }, '2026-10-02', 'USD', { USD: 1, UZS: 12500 }).split('## Debt and deposit reminders')[1].split('## Savings goals')[0];
  assert.match(reminders([]), /15 October 2026 Bank loan \(Loan\): \$100/, 'an unpaid month is listed');
  assert.doesNotMatch(reminders([{ record_id: 'monthly', date: '2026-10-05', amount: 100 }]), /15 October 2026 Bank loan/, 'a paid month is not');
+});
+
+test('the snapshot says what the investments earned, in total and by holding, in the person\'s number style', () => {
+ const records = [record('flat', 'Flat', 'Property', 90000, '2026-01-01'), record('btc', 'Bitcoin', 'Valuables', 500, '2026-01-01')];
+ const event = (id, record_id, event_type, amount, occurred_on, balance) => ({ id, record_id, event_type, amount, occurred_on, created_at: occurred_on + 'T10:00:00Z', balance, notes: '' });
+ const pnl = investmentPnl({ records, events: [event('f1', 'flat', 'contribution', 100000, '2026-02-01', 100000), event('f2', 'flat', 'valuation', 0, '2026-09-01', 90000), event('b1', 'btc', 'contribution', 400, '2026-02-01', 400), event('b2', 'btc', 'valuation', 0, '2026-09-01', 500)], market: { rates: { USD: 1 }, quotes: {}, errors: {}, fx: null, stocksConfigured: false }, currency: 'USD', today: '2026-10-02' });
+ const text = assistantContext(data, '2026-10-02', 'USD', { USD: 1, UZS: 12500 }, { pnl, language: 'de' });
+ assert.match(text, /- Total: \u22129\.900\s\$ \(\u22129,9\s?%\) on 100\.400\s\$ invested/);
+ assert.match(text, /- Flat \(Property\): \u221210\.000\s\$ \(\u221210\s?%\), value 90\.000\s\$/);
+ assert.match(text, /- Bitcoin \(Valuables\): \+100\s\$ \(\+25\s?%\)/);
+ assert.doesNotMatch(assistantContext(data, '2026-10-02', 'USD', { USD: 1 }), /Investment profit and loss/, 'no history, no section');
 });

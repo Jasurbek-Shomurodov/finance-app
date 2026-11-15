@@ -2,9 +2,10 @@ import { z } from 'zod';
 import { shiftMonth } from './calendar-days';
 import { cashFlowReport } from './cash-flow-report';
 import { assets, liabilities, value, type Entry } from './finance';
-import { formatDate, formatMoney, formatMonthYear, formatNumber } from './format';
+import { formatDate, formatMoney, formatMonthYear, formatNumber, formatSignedMoney, formatSignedPercent } from './format';
 import { goalCurrentValue } from './goal-projection';
 import { investmentGoalItems } from './investment-goals';
+import type { InvestmentPnl, PnlTotals } from './investment-pnl';
 import { isLanguage, locales } from './languages';
 import { convertAmount, marketEntry, type MarketData } from './market';
 import type { RecurringItem } from './recurring';
@@ -50,8 +51,20 @@ export const assistantSuggestions = ['What recurring expenses do I have?', 'How 
  * these figures are the ones those screens show. A holding is worth what the Net worth card says: its live quote through `market` (`marketEntry`), the stored price only
  * without one. Kinds, frequencies and statuses are words the person reads in the app, so `t` translates them (the
  * server's `translate`); without it they stay English. */
-export function assistantContext(data: Pick<PlanningData, 'records' | 'categories' | 'goals' | 'occurrences' | 'activity' | 'investmentLinks' | 'holdingAccounts' | 'debtPayments'>, today: string, currency: string, rates: Record<string, number>, options: { language?: string; market?: MarketData | null; splits?: TransactionSplit[]; t?: (key: string) => string } = {}) {
- const month = today.slice(0, 7), { language = 'en', market = null, splits = [], t = (key: string) => key } = options;
+/** What the investments earned since tracking began, in total and holding by holding, as Investments › Profit & loss shows it. */
+export function investmentPnlLines(pnl: InvestmentPnl, currency: string, locale: string, t: (key: string) => string = key => key) {
+ const signed = (amount: number) => formatSignedMoney(amount, currency, locale), money = (amount: number) => formatMoney(amount, currency, locale);
+ const result = (totals: PnlTotals) => `${signed(totals.total)}${totals.returnPercent === null ? '' : ` (${formatSignedPercent(totals.returnPercent, locale)})`}`;
+ const { totals } = pnl;
+ return [
+  `Total: ${result(totals)} on ${money(totals.invested)} invested; value today ${money(totals.value)}; unrealized ${signed(totals.unrealized)}, realized ${signed(totals.realized)}, income ${signed(totals.income)}, costs ${signed(-totals.costs)}, currency effect ${signed(totals.currencyEffect)}`,
+  ...pnl.holdings.map(holding => `${holding.name} (${t(holding.kind)}): ${result(holding)}, value ${money(holding.value)}`),
+  ...(pnl.missing ? [`${formatNumber(pnl.missing, locale, 0)} holdings or payments without an exchange rate are left out`] : []),
+ ];
+}
+
+export function assistantContext(data: Pick<PlanningData, 'records' | 'categories' | 'goals' | 'occurrences' | 'activity' | 'investmentLinks' | 'holdingAccounts' | 'debtPayments'>, today: string, currency: string, rates: Record<string, number>, options: { language?: string; market?: MarketData | null; splits?: TransactionSplit[]; t?: (key: string) => string; /** What the investments earned; left out when the history could not be read. */ pnl?: InvestmentPnl | null } = {}) {
+ const month = today.slice(0, 7), { language = 'en', market = null, splits = [], t = (key: string) => key, pnl = null } = options;
  const locale = isLanguage(language) ? locales[language] : locales.en, money = (amount: number, unit = currency) => formatMoney(amount, unit, locale), day = (date: string) => formatDate(date, locale);
  let unconverted = 0;
  const shown = (converted: number | null) => { if (converted === null) unconverted++; return converted === null ? '— (Exchange rate unavailable)' : money(converted); };
@@ -81,7 +94,7 @@ export function assistantContext(data: Pick<PlanningData, 'records' | 'categorie
  });
  const section = (title: string, lines: string[]) => `## ${title}\n${lines.length ? lines.map(line => `- ${line}`).join('\n') : '- none'}`;
  const header = `Today is ${day(today)}. Display currency: ${currency}.${unconverted ? ` ${formatNumber(unconverted, locale, 0)} amounts in currencies without a rate are written as — and left out of any total.` : ''}`;
- return [header, section('Holdings', holdings), section('Debts', debts), section(`Cash flow by month (${currency})`, flows), section(`Scheduled income and bills in ${formatMonthYear(month, locale)}`, recurring), section('Debt and deposit reminders', reminders), section('Savings goals', goals)].join('\n\n');
+ return [header, section('Holdings', holdings), ...(pnl?.holdings.length ? [section(`Investment profit and loss since tracking began (${currency})`, investmentPnlLines(pnl, currency, locale, t))] : []), section('Debts', debts), section(`Cash flow by month (${currency})`, flows), section(`Scheduled income and bills in ${formatMonthYear(month, locale)}`, recurring), section('Debt and deposit reminders', reminders), section('Savings goals', goals)].join('\n\n');
 }
 
 /** The assistant's standing instructions. Kept free of per-user data so it caches. */

@@ -27,6 +27,8 @@ import { Pagination } from '@/components/presentation-foundation/pagination';
 import type { PropertyTotals } from '@/lib/property-totals';
 import { holdingGain, monthlyAssetIncome, type HoldingSum } from '@/lib/holding-figures';
 import { depositToday } from '@/lib/deposit-interest';
+import { pnlOf, type InvestmentPnl, type PnlTotals } from '@/lib/investment-pnl';
+import { PortfolioPnl, pnlFact } from '@/components/investment-pnl/pnl-figure';
 
 type Props = {
  excludedCurrencies?:string[];
@@ -39,6 +41,9 @@ type Props = {
  quoteLabel: (entry: Entry) => string;
  /** Each property's rent and costs since 1 January in `currency`; null while they load. */
  propertyTotals?: Map<string, PropertyTotals> | null;
+ /** What each holding earned since tracking began; null while the history loads or when it cannot be read. */
+ pnl?: InvestmentPnl | null; pnlError?: boolean;
+ /** Opens the Profit & loss tab. */ onShowPnl?: () => void;
 };
 
 const assetsPerPage = 12;
@@ -61,7 +66,26 @@ function AssetIncome({ income, currency, loading }: { income: HoldingSum; curren
  return <div><span>{t('Monthly income from assets')}</span><strong>{loading || income.amount === null ? '—' : <AnimatedMoney value={income.amount} currency={currency}/>}</strong>{missing && <small>{t('Exchange rate unavailable.')}</small>}</div>;
 }
 
-export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoading, accountsError, onRetryAccounts, onAddHolding, records, currency, market, netWorth, debt, loading, demo, onAdd, onEdit, onTrack, onInvest, onDelete, quoteLabel, propertyTotals = null }: Props) {
+type Translate = (key: string, values?: Record<string, string>) => string;
+/** A card's one fact: what it earned since tracking began; before its history loads, or without one, the gain on its
+ * unit price, then what it brings in, its interest rate or the share owned. */
+function cardFact(record: Entry, earned: PnlTotals | null, shown: (amount: number) => string, { currency, locale, t }: { currency: string; locale: string; t: Translate }) {
+ if (earned) return pnlFact(earned, currency, locale, t);
+ const gain = holdingGain(record);
+ if (gain !== null) return { label: t('Gain/loss'), value: shown(gain), tone: signTone(gain) };
+ if ((record.estimated_monthly_income ?? 0) > 0) return { label: t('Estimated monthly income'), value: shown(record.estimated_monthly_income!) };
+ if (interestKinds.includes(record.kind) && record.rate > 0) return { label: t('Annual interest'), value: formatPercent(record.rate, locale, 8) };
+ return record.kind === 'Business' ? { label: t('Ownership'), value: formatPercent(record.ownership_percentage ?? 100, locale, 8) } : undefined;
+}
+
+/** What a holding brings in, in its details once profit and loss has taken the card's fact line. */
+function EarningFacts({ record, shown }: { record: Entry; shown: (amount: number) => string }) {
+ const { t, locale } = useLanguage();
+ return <>{(record.estimated_monthly_income ?? 0) > 0 && <div><dt>{t('Estimated monthly income')}</dt><dd>{shown(record.estimated_monthly_income!)}</dd></div>}
+  {interestKinds.includes(record.kind) && record.rate > 0 && <div><dt>{t('Annual interest')}</dt><dd>{formatPercent(record.rate, locale, 8)}</dd></div>}</>;
+}
+
+export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoading, accountsError, onRetryAccounts, onAddHolding, records, currency, market, netWorth, debt, loading, demo, onAdd, onEdit, onTrack, onInvest, onDelete, quoteLabel, propertyTotals = null, pnl = null, pnlError = false, onShowPnl }: Props) {
  const { t, locale } = useLanguage();
  const [category, setCategory] = useState('all');
  const holdingsRef = useRef<HTMLElement>(null), accountsRef = useRef<HTMLElement>(null);
@@ -98,12 +122,9 @@ export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoadin
     // A quote the conversion or a live price changed is a calculation, read to the cent; the person's own keeps its decimals.
     const quote = !converted ? '—' : original.currency === currency && record.amount === original.amount ? formatMoney(record.amount, currency, locale, true) : formatConvertedQuote(record.amount, currency, locale);
     const hasQuote = unitPricedKinds.includes(record.kind);
-    const gain = holdingGain(record);
-    const fact = gain !== null ? { label: t('Gain/loss'), value: shown(gain), tone: signTone(gain) }
-     : (record.estimated_monthly_income ?? 0) > 0 ? { label: t('Estimated monthly income'), value: shown(record.estimated_monthly_income!) }
-     : interestKinds.includes(record.kind) && record.rate > 0 ? { label: t('Annual interest'), value: formatPercent(record.rate, locale, 8) }
-     : record.kind === 'Business' ? { label: t('Ownership'), value: formatPercent(record.ownership_percentage ?? 100, locale, 8) }
-     : undefined;
+    // What it earned since tracking began, from its history; before that loads, or without one, the gain on its unit price.
+    const earned = pnlOf(pnl, [original.id]);
+    const fact = cardFact(record, earned, shown, { currency, locale, t });
     return <AssetCard key={original.id} record={original} label={t(record.kind)} worth={shown(worth)} fact={fact}
      onOpen={!isAccount && !demo && onInvest ? () => onInvest(original) : undefined} openLabel={t('Open Tracker for {name}', { name: original.name })}
      detailsOpen={isAccount || layout === 'grid'}
@@ -111,7 +132,7 @@ export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoadin
      note={!converted && <small>{t('Exchange rate unavailable.')}</small>}
      menu={<DropdownMenu><DropdownMenuTrigger asChild><Button size="icon" variant="ghost" aria-label={t('Actions for {name}', { name: original.name })}><Ellipsis size={18}/></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => onEdit(original)}>{t('Edit {name}', { name: original.name })}</DropdownMenuItem>{!demo && <DropdownMenuItem onSelect={() => onTrack(original)}>{t('Open Tracker for {name}', { name: original.name })}</DropdownMenuItem>}{!original.history_event_id && <DropdownMenuItem variant="destructive" onSelect={() => onDelete(original)}><Trash2 aria-hidden="true"/>{t('Delete {name}', { name: original.name })}</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>}
      detailsLabel={t(isAccount?'Account details':'Asset details')}
-     details={<dl><div><dt>{t('Date / due date')}</dt><dd>{formatDate(original.date, locale)}</dd></div>{record.kind === 'Business' && <div><dt>{t('Ownership')}</dt><dd>{formatPercent(record.ownership_percentage ?? 100, locale, 8)}</dd></div>}{hasQuote && <><div><dt>{t('Quantity')}</dt><dd>{formatNumber(record.quantity, locale)}</dd></div><div><dt>{t('Price per unit')}</dt><dd>{quote}</dd></div><div><dt>{t('Price source')}</dt><dd>{quoteLabel(record)}</dd></div></>}{original.kind === 'Property' && <PropertyYear totals={propertyTotals?.get(original.id)} money={money}/>}{original.currency !== currency && <div><dt>{t('Saved value')}</dt><dd>{money(value(original), original.currency)}</dd></div>}{original.notes && <div><dt>{t('Notes')}</dt><dd>{original.notes}</dd></div>}</dl>}/>;
+     details={<dl><div><dt>{t('Date / due date')}</dt><dd>{formatDate(original.date, locale)}</dd></div>{record.kind === 'Business' && <div><dt>{t('Ownership')}</dt><dd>{formatPercent(record.ownership_percentage ?? 100, locale, 8)}</dd></div>}{earned && <EarningFacts record={record} shown={shown}/>}{hasQuote && <><div><dt>{t('Quantity')}</dt><dd>{formatNumber(record.quantity, locale)}</dd></div><div><dt>{t('Price per unit')}</dt><dd>{quote}</dd></div><div><dt>{t('Price source')}</dt><dd>{quoteLabel(record)}</dd></div></>}{original.kind === 'Property' && <PropertyYear totals={propertyTotals?.get(original.id)} money={money}/>}{original.currency !== currency && <div><dt>{t('Saved value')}</dt><dd>{money(value(original), original.currency)}</dd></div>}{original.notes && <div><dt>{t('Notes')}</dt><dd>{original.notes}</dd></div>}</dl>}/>;
    };
 
  return <div className="asset-dashboard" aria-busy={loading}>
@@ -123,7 +144,7 @@ export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoadin
      <PartialTotal currencies={excludedCurrencies}/>
     </div>
     <div className="portfolio-summary-metrics"><div><span>{t('Net worth')}</span><strong>{loading ? '—' : <AnimatedMoney value={netWorth} currency={currency}/>}</strong></div><div><span>{t('Outstanding debt')}</span><strong>{loading ? '—' : <AnimatedMoney value={debt} currency={currency}/>}</strong></div>
-    <AssetIncome income={income} currency={currency} loading={loading}/></div>
+    <AssetIncome income={income} currency={currency} loading={loading}/>{onShowPnl && <PortfolioPnl pnl={loading ? null : pnl} error={pnlError} currency={currency} onOpen={onShowPnl}/>}</div>
    </div>
    <div className="portfolio-summary-allocation">
     <h3>{t('Asset allocation')}</h3>
@@ -133,7 +154,7 @@ export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoadin
    </div>
   </section>
 
-  <AssetAccounts ref={accountsRef} accounts={accounts} records={records} market={market} loading={accountsLoading || loading} error={accountsError} onRetry={onRetryAccounts} onAdd={onAddHolding} currency={currency} portfolioTotal={total} accountCount={accountRecords.length} onEdit={onEdit} onTrack={onTrack} demo={demo}>{accountRecords.map(renderCard)}</AssetAccounts>
+  <AssetAccounts ref={accountsRef} pnl={pnl} accounts={accounts} records={records} market={market} loading={accountsLoading || loading} error={accountsError} onRetry={onRetryAccounts} onAdd={onAddHolding} currency={currency} portfolioTotal={total} accountCount={accountRecords.length} onEdit={onEdit} onTrack={onTrack} demo={demo}>{accountRecords.map(renderCard)}</AssetAccounts>
 
   <section ref={holdingsRef} className="asset-holdings" aria-label={t('Assets & investments')}>
    <div className="asset-holdings-heading"><h2>{t('Other assets')}<Count value={otherHoldings.length} label={counted('{count} assets', otherHoldings.length)}/></h2><div className="asset-layout-switch" role="group" aria-label={t('Asset layout')}><Button variant="ghost" size="icon" aria-label={t('Card view')} aria-pressed={layout === 'grid'} onClick={() => setLayout('grid')}><LayoutGrid size={17}/></Button><Button variant="ghost" size="icon" aria-label={t('Compact view')} aria-pressed={layout === 'list'} onClick={() => setLayout('list')}><List size={18}/></Button></div></div>

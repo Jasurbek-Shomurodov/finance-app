@@ -28,6 +28,7 @@ import { AddAccountDialog, type AccountType } from './accounts/add-account-dialo
 import { AccountBusinessesDialog, AccountOperation, AccountOwnersDialog, AssetMovementDialog, CorporateEventDialog, HoldingAccountDialog, StatementReconciliation } from './accounts/accounts-lazy';
 import { AccountsOverview, selectedItem } from './accounts/accounts-overview';
 import { lastTransferTarget, movementSources } from '@/lib/asset-movements';
+import { useInvestmentPnl } from '@/hooks/use-investment-pnl';
 
 type Props = {
  owner:string|null; onSaved:()=>void;
@@ -69,7 +70,9 @@ export function AccountsPage({ owner,loadFailed,onSaved,revision=0,data, save, o
  const filters=useAccountFilters({items:accountItems,records:data.records,businesses,household});
  // Picking an account shows its card beside the directory: balance, details and activity. A holding or another asset
  // opens its details.
- const holdingActions:HoldingActions={accounts:investmentAccounts,market,onEdit,onTrack,assignHolding,onMove:setMovement,onCorporate:setCorporate,onOpen:onEdit};
+ // What each holding earned, from the history the Investments screen reads (one shared request).
+ const earned=useInvestmentPnl({owner,demo,revision,records:data.records,currency,market});
+ const holdingActions:HoldingActions={accounts:investmentAccounts,market,pnl:earned.pnl,pnlCurrency:currency,onEdit,onTrack,assignHolding,onMove:setMovement,onCorporate:setCorporate,onOpen:onEdit};
  const choose=(kind:AccountType)=>{if(kind==='Cash'||kind==='Deposit')onAdd(kind);else setDraft({id:crypto.randomUUID(),kind:kind==='CashInvestment'?'Cash':kind,name:'',currency});};
  const owners=filters.owners;
  // Transfer money starts from the account shown beside the directory, when money can leave it, to where it last sent money.

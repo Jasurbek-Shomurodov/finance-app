@@ -50,6 +50,11 @@ export function formatSignedMoney(value: number, currency: string, locale: strin
   const shown = plainMoney(Math.abs(value), currency, locale);
   return oneRun(Math.abs(value) < 0.5 ? shown : (value > 0 ? '+' : '\u2212') + shown, locale);
 }
+/** A percentage with its direction: "+12.4%", "−3%"; "—" when unknown. */
+export function formatSignedPercent(value: number | null, locale: string) {
+  if (value === null || !Number.isFinite(value)) return '\u2014';
+  return (value > 0 ? '+' : '') + formatPercent(value, locale, 1);
+}
 // Short axis labels ("$1.2M"); tooltips and totals keep formatMoney precision.
 // `precise` keeps three significant digits ("$1.45M", "$433K"), for labels that must tell close figures apart.
 export function formatCompactMoney(value: number, currency: string, locale: string, precise = false) {
