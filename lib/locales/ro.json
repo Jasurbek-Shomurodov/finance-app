@@ -2968,5 +2968,9 @@
   "{amount} to principal": "{amount} din principal",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Fă clic pe o plată pentru a o deschide: acolo o poți edita sau șterge. Actualizările de sold se șterg începând cu cea mai nouă.",
   "Page not found": "Pagina nu a fost găsită",
-  "This address does not open anything here.": "Această adresă nu deschide nimic aici."
+  "This address does not open anything here.": "Această adresă nu deschide nimic aici.",
+  "Drag to move through time, scroll to zoom": "Trage pentru a te deplasa în timp, derulează pentru zoom",
+  "Zoom in": "Mărește",
+  "Zoom out": "Micșorează",
+  "Show whole period": "Arată toată perioada"
 }

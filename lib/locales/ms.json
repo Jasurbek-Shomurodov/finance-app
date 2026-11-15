@@ -2968,5 +2968,9 @@
   "{amount} to principal": "{amount} ke prinsipal",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Klik bayaran untuk membukanya: anda boleh mengedit atau memadamnya di sana. Kemas kini baki dipadam bermula daripada yang terbaharu.",
   "Page not found": "Halaman tidak ditemui",
-  "This address does not open anything here.": "Alamat ini tidak membuka apa-apa di sini."
+  "This address does not open anything here.": "Alamat ini tidak membuka apa-apa di sini.",
+  "Drag to move through time, scroll to zoom": "Seret untuk bergerak merentas masa, tatal untuk zum",
+  "Zoom in": "Zum masuk",
+  "Zoom out": "Zum keluar",
+  "Show whole period": "Tunjukkan seluruh tempoh"
 }

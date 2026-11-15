@@ -2968,5 +2968,9 @@
   "{amount} to principal": "{amount} to principal",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.",
   "Page not found": "Page not found",
-  "This address does not open anything here.": "This address does not open anything here."
+  "This address does not open anything here.": "This address does not open anything here.",
+  "Drag to move through time, scroll to zoom": "Drag to move through time, scroll to zoom",
+  "Zoom in": "Zoom in",
+  "Zoom out": "Zoom out",
+  "Show whole period": "Show whole period"
 }

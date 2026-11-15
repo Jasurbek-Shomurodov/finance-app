@@ -2968,5 +2968,9 @@
   "{amount} to principal": "元金 {amount}",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "支払いをクリックすると開き、そこで編集や削除ができます。残高の更新は新しいものから削除します。",
   "Page not found": "ページが見つかりません",
-  "This address does not open anything here.": "このアドレスで開けるものはありません。"
+  "This address does not open anything here.": "このアドレスで開けるものはありません。",
+  "Drag to move through time, scroll to zoom": "ドラッグで期間を移動、スクロールで拡大縮小",
+  "Zoom in": "拡大",
+  "Zoom out": "縮小",
+  "Show whole period": "期間全体を表示"
 }

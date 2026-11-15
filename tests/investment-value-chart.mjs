@@ -2,7 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {loadTS} from './helpers/load-ts.mjs';
 const names=['Area','CartesianGrid','ComposedChart','ResponsiveContainer','Tooltip','XAxis','YAxis'];
-const {InvestmentValueChart}=loadTS('components/investment-value-chart.tsx',{'@/hooks/use-mobile':{useIsMobile:()=>false},react:{useId:()=> 'chart-id'},recharts:Object.fromEntries(names.map(name=>[name,name])),'@/components/language-provider':{useLanguage:()=>({locale:'en',t:s=>s})}});
+// The pan and zoom state is a hook; each test sets the view it wants the chart to draw.
+const viewport={view:null,whole:true,dragged:false};
+const viewportHook={useChartViewport:(extent,enabled)=>({ref:null,view:viewport.view??extent,whole:!enabled||viewport.whole,zoom:()=>{},reset:()=>{},consumeDrag:()=>viewport.dragged})};
+const {InvestmentValueChart}=loadTS('components/investment-value-chart.tsx',{'@/hooks/use-chart-viewport':viewportHook,'@/hooks/use-mobile':{useIsMobile:()=>false},react:{useId:()=> 'chart-id'},recharts:Object.fromEntries(names.map(name=>[name,name])),'@/components/language-provider':{useLanguage:()=>({locale:'en',t:s=>s})}});
 const chart=points=>InvestmentValueChart({points,currency:'USD',series:[{key:'actual',label:'Investments',color:'green',primary:true}]}).props.children.props.children;
 test('date axis starts at the first displayed complete balance, not an earlier hidden repayment',()=>{
  const result=chart([{date:'2026-09-17',actual:396269},{date:'2026-09-20',actual:403026}]);
@@ -50,4 +53,30 @@ test('each shown line ends in a label with its latest figure on a right-hand axi
  assert.equal(ends.props.orientation,'right');
  assert.deepEqual(ends.props.tick.props.labels.map(label=>[label.text,label.color]),[["$433K","blue"],["$410K","green"]]);
  assert.deepEqual(ends.props.ticks,[433000,410000]);
+});
+
+test('full screen: a zoomed chart draws only the days in view and fits both axes to them',()=>{
+ const points=['2026-09-01','2026-09-05','2026-09-10','2026-09-15','2026-09-20'].map((date,index)=>({date,actual:[100,500,200,220,900][index],SPY:[100,150,240,260,300][index]}));
+ const series=[{key:'actual',label:'Net worth',color:'green',primary:true},{key:'SPY',label:'SPY',color:'blue'}];
+ Object.assign(viewport,{view:{start:Date.parse('2026-09-09T00:00:00Z'),end:Date.parse('2026-09-16T00:00:00Z')},whole:false});
+ try{
+  const root=InvestmentValueChart({points,series,currency:'USD',floor:100,navigable:true});
+  assert.equal(root.props['data-navigable'],'');
+  const result=root.props.children[1].props.children;
+  assert.deepEqual(result.props.data.map(point=>point.date),['2026-09-05','2026-09-10','2026-09-15','2026-09-20']);
+  const axis=result.props.children.find(child=>child.type==='XAxis');
+  assert.deepEqual(axis.props.domain,[viewport.view.start,viewport.view.end]);assert.equal(axis.props.allowDataOverflow,true);
+  // The value axis starts at the lowest net worth drawn, not the floor of the whole period.
+  const values=result.props.children.find(child=>child.type==='YAxis'&&!child.props.yAxisId);
+  assert.equal(values.props.domain[0],200);
+ }finally{Object.assign(viewport,{view:null,whole:true});}
+});
+test('full screen: the press that ends a drag through time opens no day',()=>{
+ const opened=[];
+ viewport.dragged=true;
+ try{
+  const root=InvestmentValueChart({points:[{date:'2026-09-17',actual:100},{date:'2026-09-18',actual:120}],currency:'USD',series:[{key:'actual',label:'Net worth',color:'green'}],onPointSelect:date=>opened.push(date),navigable:true});
+  root.props.children[1].props.children.props.onClick({activeTooltipIndex:0,isTooltipActive:true});
+  assert.deepEqual(opened,[]);
+ }finally{viewport.dragged=false;}
 });

@@ -2968,5 +2968,9 @@
   "{amount} to principal": "{amount} 用于本金",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "点击一笔还款即可打开：可在其中编辑或删除。余额更新从最新的一条开始删除。",
   "Page not found": "未找到页面",
-  "This address does not open anything here.": "此地址在这里打不开任何内容。"
+  "This address does not open anything here.": "此地址在这里打不开任何内容。",
+  "Drag to move through time, scroll to zoom": "拖动以浏览不同时间，滚动以缩放",
+  "Zoom in": "放大",
+  "Zoom out": "缩小",
+  "Show whole period": "显示整个时段"
 }

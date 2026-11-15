@@ -2968,5 +2968,9 @@
   "{amount} to principal": "{amount} لأصل الدين",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "انقر على دفعة لفتحها: يمكنك تعديلها أو حذفها هناك. تُحذف تحديثات الرصيد بدءًا من الأحدث.",
   "Page not found": "الصفحة غير موجودة",
-  "This address does not open anything here.": "هذا العنوان لا يفتح شيئًا هنا."
+  "This address does not open anything here.": "هذا العنوان لا يفتح شيئًا هنا.",
+  "Drag to move through time, scroll to zoom": "اسحب للتنقل عبر الزمن، ومرّر للتكبير",
+  "Zoom in": "تكبير",
+  "Zoom out": "تصغير",
+  "Show whole period": "عرض الفترة كاملة"
 }

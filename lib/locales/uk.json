@@ -2968,5 +2968,9 @@
   "{amount} to principal": "{amount} в основний борг",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Натисніть на платіж, щоб відкрити його: там його можна змінити або видалити. Оновлення балансу видаляються починаючи з найновішого.",
   "Page not found": "Сторінку не знайдено",
-  "This address does not open anything here.": "Ця адреса тут нічого не відкриває."
+  "This address does not open anything here.": "Ця адреса тут нічого не відкриває.",
+  "Drag to move through time, scroll to zoom": "Перетягніть, щоб рухатися в часі, прокрутіть для масштабу",
+  "Zoom in": "Наблизити",
+  "Zoom out": "Віддалити",
+  "Show whole period": "Показати весь період"
 }

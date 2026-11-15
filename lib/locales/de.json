@@ -2968,5 +2968,9 @@
   "{amount} to principal": "{amount} Tilgung",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Klicken Sie auf eine Zahlung, um sie zu öffnen: Dort können Sie sie bearbeiten oder löschen. Saldoaktualisierungen werden ab der neuesten gelöscht.",
   "Page not found": "Seite nicht gefunden",
-  "This address does not open anything here.": "Diese Adresse öffnet hier nichts."
+  "This address does not open anything here.": "Diese Adresse öffnet hier nichts.",
+  "Drag to move through time, scroll to zoom": "Ziehen, um durch die Zeit zu blättern, scrollen zum Zoomen",
+  "Zoom in": "Vergrößern",
+  "Zoom out": "Verkleinern",
+  "Show whole period": "Ganzen Zeitraum anzeigen"
 }

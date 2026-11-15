@@ -2968,5 +2968,9 @@
   "{amount} to principal": "{amount} เป็นเงินต้น",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "คลิกการชำระเพื่อเปิด: คุณแก้ไขหรือลบได้ที่นั่น การอัปเดตยอดคงเหลือจะลบจากรายการล่าสุดก่อน",
   "Page not found": "ไม่พบหน้า",
-  "This address does not open anything here.": "ที่อยู่นี้ไม่ได้เปิดอะไรที่นี่"
+  "This address does not open anything here.": "ที่อยู่นี้ไม่ได้เปิดอะไรที่นี่",
+  "Drag to move through time, scroll to zoom": "ลากเพื่อเลื่อนดูช่วงเวลา เลื่อนล้อเพื่อซูม",
+  "Zoom in": "ซูมเข้า",
+  "Zoom out": "ซูมออก",
+  "Show whole period": "แสดงทั้งช่วงเวลา"
 }

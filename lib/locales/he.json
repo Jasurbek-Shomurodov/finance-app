@@ -2968,5 +2968,9 @@
   "{amount} to principal": "{amount} לקרן",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "לחצו על תשלום כדי לפתוח אותו: שם אפשר לערוך או למחוק אותו. עדכוני יתרה נמחקים מהחדש ביותר.",
   "Page not found": "הדף לא נמצא",
-  "This address does not open anything here.": "הכתובת הזו לא פותחת כאן דבר."
+  "This address does not open anything here.": "הכתובת הזו לא פותחת כאן דבר.",
+  "Drag to move through time, scroll to zoom": "גררו כדי לנוע בזמן, גללו כדי להתקרב",
+  "Zoom in": "התקרבות",
+  "Zoom out": "התרחקות",
+  "Show whole period": "הצגת התקופה כולה"
 }

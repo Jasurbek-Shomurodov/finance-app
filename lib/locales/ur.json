@@ -2968,5 +2968,9 @@
   "{amount} to principal": "{amount} اصل رقم میں",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "کسی ادائیگی کو کھولنے کے لیے اس پر کلک کریں: وہاں آپ اس میں ترمیم یا اسے حذف کر سکتے ہیں۔ بیلنس کی تازہ کاریاں سب سے نئی سے حذف ہوتی ہیں۔",
   "Page not found": "صفحہ نہیں ملا",
-  "This address does not open anything here.": "یہ پتا یہاں کچھ نہیں کھولتا۔"
+  "This address does not open anything here.": "یہ پتا یہاں کچھ نہیں کھولتا۔",
+  "Drag to move through time, scroll to zoom": "وقت میں آگے پیچھے جانے کے لیے گھسیٹیں، زوم کے لیے اسکرول کریں",
+  "Zoom in": "زوم اِن",
+  "Zoom out": "زوم آؤٹ",
+  "Show whole period": "پوری مدت دکھائیں"
 }

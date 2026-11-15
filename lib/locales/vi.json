@@ -2968,5 +2968,9 @@
   "{amount} to principal": "{amount} vào gốc",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Nhấp vào một khoản thanh toán để mở: tại đó bạn có thể sửa hoặc xóa. Các cập nhật số dư được xóa từ mục mới nhất.",
   "Page not found": "Không tìm thấy trang",
-  "This address does not open anything here.": "Địa chỉ này không mở gì ở đây."
+  "This address does not open anything here.": "Địa chỉ này không mở gì ở đây.",
+  "Drag to move through time, scroll to zoom": "Kéo để di chuyển theo thời gian, cuộn để thu phóng",
+  "Zoom in": "Phóng to",
+  "Zoom out": "Thu nhỏ",
+  "Show whole period": "Hiển thị toàn bộ kỳ"
 }

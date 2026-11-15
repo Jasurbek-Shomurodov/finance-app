@@ -4,7 +4,7 @@
  * change here changes every chart at once. Colours, tick text and the tooltip box live in `app/styles/assets.css`
  * (`.recharts-*`). This file imports nothing from recharts, so a test can stub the library and still use it.
  */
-import { formatCompactMoney, formatMonthShort, formatMonthYear, formatYear } from '@/lib/format';
+import { formatCompactMoney, formatMoney, formatMonthShort, formatMonthYear, formatYear } from '@/lib/format';
 
 /** Chart heights: `slim` for a line inside a side panel, `compact` inside dialogs and cards, `regular` for a panel's main chart, `tall` for a page's lead chart. */
 export const chartHeight = { slim: 150, compact: 220, regular: 260, tall: 300 } as const;
@@ -88,6 +88,13 @@ export const sankeyNodeRadius = 3;
 
 /** Tick and tooltip labels through the shared formatters. */
 export const moneyTick = (currency: string, locale: string) => (value: unknown) => formatCompactMoney(Number(value), currency, locale);
+/** Value-axis ticks that never read the same: compact while that tells them apart, then three significant digits,
+ * then the whole amount (a zoomed-in chart can have ticks $1.40M and $1.45M, which one decimal would both call $1.4M). */
+export const distinctMoneyTick = (ticks: readonly number[], currency: string, locale: string) => {
+ const formats = [(value: number) => formatCompactMoney(value, currency, locale), (value: number) => formatCompactMoney(value, currency, locale, true), (value: number) => formatMoney(value, currency, locale)];
+ const format = formats.find(candidate => new Set(ticks.map(candidate)).size === ticks.length) ?? formats[2];
+ return (value: unknown) => format(Number(value));
+};
 /** A line's end label: compact, but precise enough to tell close lines apart. */
 export const endLabelMoney = (currency: string, locale: string) => (value: number) => formatCompactMoney(value, currency, locale, true);
 export const monthTick = (locale: string) => (month: unknown) => formatMonthShort(String(month), locale);

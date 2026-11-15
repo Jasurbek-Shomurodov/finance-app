@@ -2968,5 +2968,9 @@
   "{amount} to principal": "{amount} aflossing",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Klik op een betaling om haar te openen: daar kunt u haar bewerken of verwijderen. Saldo-updates worden vanaf de nieuwste verwijderd.",
   "Page not found": "Pagina niet gevonden",
-  "This address does not open anything here.": "Dit adres opent hier niets."
+  "This address does not open anything here.": "Dit adres opent hier niets.",
+  "Drag to move through time, scroll to zoom": "Sleep om door de tijd te bewegen, scroll om te zoomen",
+  "Zoom in": "Inzoomen",
+  "Zoom out": "Uitzoomen",
+  "Show whole period": "Hele periode tonen"
 }

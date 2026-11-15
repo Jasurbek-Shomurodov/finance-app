@@ -582,3 +582,11 @@ test('colour choices can add fixed colours and the system picker, whose changes 
  label.props.children.props.onChange({currentTarget:{value:'#abcdef'}});
  assert.deepEqual(picked,[['#abcdef',true]]);
 });
+
+test('value-axis money ticks never read the same: compact first, then more digits, then the whole amount', () => {
+ const {distinctMoneyTick}=load('chart.tsx');
+ const read=ticks=>ticks.map(distinctMoneyTick(ticks,'USD','en-US'));
+ assert.deepEqual(read([0,1000000,2000000]),['$0','$1M','$2M']);
+ assert.deepEqual(read([1400000,1425000,1450000,1475000]),['$1.4M','$1.43M','$1.45M','$1.48M']);
+ assert.deepEqual(read([1400000,1405000,1410000]),['$1,400,000','$1,405,000','$1,410,000']);
+});

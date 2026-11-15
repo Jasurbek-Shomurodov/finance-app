@@ -2968,5 +2968,9 @@
   "{amount} to principal": "{amount} sa prinsipal",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "I-click ang isang bayad para buksan ito: doon mo ito mae-edit o mabubura. Binubura ang mga update ng balanse mula sa pinakabago.",
   "Page not found": "Hindi nahanap ang pahina",
-  "This address does not open anything here.": "Walang binubuksan dito ang address na ito."
+  "This address does not open anything here.": "Walang binubuksan dito ang address na ito.",
+  "Drag to move through time, scroll to zoom": "I-drag para gumalaw sa panahon, mag-scroll para mag-zoom",
+  "Zoom in": "Mag-zoom in",
+  "Zoom out": "Mag-zoom out",
+  "Show whole period": "Ipakita ang buong panahon"
 }

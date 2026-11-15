@@ -356,3 +356,9 @@ button.budget-category-name:hover>span:not(.category-icon){text-decoration:under
  * under it, Actual beside Remaining and the Planned field on its own line. A contribution's amount goes under its name and bar
  * ("Pay $50K off the mortgage" ran under $2,000). */
 @container content (max-width:340px){.budget-category-row{grid-template-areas:"grip name name end" "state state state state" "actual actual remaining remaining" "planned planned planned planned"}.budget-group-row{grid-template-areas:"name name name end" "actual actual remaining remaining" "planned planned planned planned"}:is(.budget-category-row,.budget-group-row)>.budget-actual{grid-area:actual}.budget-contribution-row{grid-template-areas:"grip name name name" "state state state state" "remaining remaining remaining remaining"}.budget-contribution-row>.budget-remaining{text-align:start}}
+/* The full-screen net worth chart moves through time like a trading chart: drag to pan, scroll or pinch to zoom. */
+.portfolio-chart[data-navigable]{display:flex;flex-direction:column;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.portfolio-chart[data-navigable][data-panning]{cursor:grabbing}
+.chart-viewport-tools{display:flex;align-items:center;justify-content:flex-end;gap:6px;min-height:36px;margin-block-end:8px;cursor:default}
+.chart-viewport-tools>span{margin-inline-end:6px;color:var(--muted-foreground);font-size:var(--type-caption)}
+@media(max-width:700px){.chart-viewport-tools>span{display:none}}

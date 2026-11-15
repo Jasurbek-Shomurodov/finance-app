@@ -2968,5 +2968,9 @@
   "{amount} to principal": "{amount} kwa mkopo msingi",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Bofya malipo ili kuyafungua: hapo unaweza kuyahariri au kuyafuta. Masasisho ya salio hufutwa kuanzia la karibuni zaidi.",
   "Page not found": "Ukurasa haukupatikana",
-  "This address does not open anything here.": "Anwani hii haifungui chochote hapa."
+  "This address does not open anything here.": "Anwani hii haifungui chochote hapa.",
+  "Drag to move through time, scroll to zoom": "Buruta kusogea katika muda, sogeza kukuza",
+  "Zoom in": "Kuza",
+  "Zoom out": "Punguza",
+  "Show whole period": "Onyesha kipindi chote"
 }

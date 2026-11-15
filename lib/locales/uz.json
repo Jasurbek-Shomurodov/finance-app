@@ -2968,5 +2968,9 @@
   "{amount} to principal": "{amount} asosiy qarzga",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "To‘lovni ochish uchun ustiga bosing: u yerda tahrirlash yoki o‘chirish mumkin. Balans yangilanishlari eng yangisidan boshlab o‘chiriladi.",
   "Page not found": "Sahifa topilmadi",
-  "This address does not open anything here.": "Bu manzil bu yerda hech narsani ochmaydi."
+  "This address does not open anything here.": "Bu manzil bu yerda hech narsani ochmaydi.",
+  "Drag to move through time, scroll to zoom": "Vaqt bo‘ylab siljish uchun torting, kattalashtirish uchun aylantiring",
+  "Zoom in": "Kattalashtirish",
+  "Zoom out": "Kichiklashtirish",
+  "Show whole period": "Butun davrni ko‘rsatish"
 }

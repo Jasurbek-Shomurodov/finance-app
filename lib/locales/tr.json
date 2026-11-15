@@ -2968,5 +2968,9 @@
   "{amount} to principal": "{amount} anaparaya",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Açmak için bir ödemeye tıklayın: orada düzenleyebilir veya silebilirsiniz. Bakiye güncellemeleri en yenisinden başlanarak silinir.",
   "Page not found": "Sayfa bulunamadı",
-  "This address does not open anything here.": "Bu adres burada hiçbir şey açmıyor."
+  "This address does not open anything here.": "Bu adres burada hiçbir şey açmıyor.",
+  "Drag to move through time, scroll to zoom": "Zamanda ilerlemek için sürükleyin, yakınlaştırmak için kaydırın",
+  "Zoom in": "Yakınlaştır",
+  "Zoom out": "Uzaklaştır",
+  "Show whole period": "Tüm dönemi göster"
 }

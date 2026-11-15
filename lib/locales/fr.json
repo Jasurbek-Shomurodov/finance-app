@@ -2968,5 +2968,9 @@
   "{amount} to principal": "{amount} de capital",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Cliquez sur un paiement pour l’ouvrir : vous pouvez le modifier ou le supprimer là. Les mises à jour de solde se suppriment à partir de la plus récente.",
   "Page not found": "Page introuvable",
-  "This address does not open anything here.": "Cette adresse n’ouvre rien ici."
+  "This address does not open anything here.": "Cette adresse n’ouvre rien ici.",
+  "Drag to move through time, scroll to zoom": "Faites glisser pour parcourir le temps, défilez pour zoomer",
+  "Zoom in": "Zoom avant",
+  "Zoom out": "Zoom arrière",
+  "Show whole period": "Afficher toute la période"
 }

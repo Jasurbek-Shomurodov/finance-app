@@ -2968,5 +2968,9 @@
   "{amount} to principal": "{amount} ke pokok",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Klik pembayaran untuk membukanya: di sana Anda dapat mengedit atau menghapusnya. Pembaruan saldo dihapus mulai dari yang terbaru.",
   "Page not found": "Halaman tidak ditemukan",
-  "This address does not open anything here.": "Alamat ini tidak membuka apa pun di sini."
+  "This address does not open anything here.": "Alamat ini tidak membuka apa pun di sini.",
+  "Drag to move through time, scroll to zoom": "Seret untuk bergerak menyusuri waktu, gulir untuk memperbesar",
+  "Zoom in": "Perbesar",
+  "Zoom out": "Perkecil",
+  "Show whole period": "Tampilkan seluruh periode"
 }

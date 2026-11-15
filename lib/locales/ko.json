@@ -2968,5 +2968,9 @@
   "{amount} to principal": "원금 {amount}",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "납부 내역을 클릭하면 열립니다. 거기서 수정하거나 삭제할 수 있습니다. 잔액 업데이트는 최신 항목부터 삭제됩니다.",
   "Page not found": "페이지를 찾을 수 없습니다",
-  "This address does not open anything here.": "이 주소로는 여기서 열 수 있는 것이 없습니다."
+  "This address does not open anything here.": "이 주소로는 여기서 열 수 있는 것이 없습니다.",
+  "Drag to move through time, scroll to zoom": "드래그하여 기간을 이동하고 스크롤하여 확대/축소",
+  "Zoom in": "확대",
+  "Zoom out": "축소",
+  "Show whole period": "전체 기간 보기"
 }

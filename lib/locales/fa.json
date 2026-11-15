@@ -2968,5 +2968,9 @@
   "{amount} to principal": "{amount} بابت اصل وام",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "برای باز کردن یک پرداخت روی آن کلیک کنید: آنجا می‌توانید ویرایش یا حذفش کنید. به‌روزرسانی‌های موجودی از جدیدترین حذف می‌شوند.",
   "Page not found": "صفحه پیدا نشد",
-  "This address does not open anything here.": "این نشانی در اینجا چیزی را باز نمی‌کند."
+  "This address does not open anything here.": "این نشانی در اینجا چیزی را باز نمی‌کند.",
+  "Drag to move through time, scroll to zoom": "برای حرکت در زمان بکشید، برای بزرگ‌نمایی اسکرول کنید",
+  "Zoom in": "بزرگ‌نمایی",
+  "Zoom out": "کوچک‌نمایی",
+  "Show whole period": "نمایش کل دوره"
 }

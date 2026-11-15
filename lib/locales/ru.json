@@ -2968,5 +2968,9 @@
   "{amount} to principal": "{amount} в основной долг",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Нажмите на платёж, чтобы открыть его: там его можно изменить или удалить. Обновления баланса удаляются начиная с самого нового.",
   "Page not found": "Страница не найдена",
-  "This address does not open anything here.": "Этот адрес здесь ничего не открывает."
+  "This address does not open anything here.": "Этот адрес здесь ничего не открывает.",
+  "Drag to move through time, scroll to zoom": "Перетащите, чтобы двигаться по времени, прокрутите для масштаба",
+  "Zoom in": "Приблизить",
+  "Zoom out": "Отдалить",
+  "Show whole period": "Показать весь период"
 }

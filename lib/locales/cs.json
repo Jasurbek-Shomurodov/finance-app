@@ -2968,5 +2968,9 @@
   "{amount} to principal": "{amount} na jistinu",
   "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Kliknutím splátku otevřete: tam ji můžete upravit nebo smazat. Aktualizace zůstatku se mažou od nejnovější.",
   "Page not found": "Stránka nenalezena",
-  "This address does not open anything here.": "Tato adresa zde nic neotevírá."
+  "This address does not open anything here.": "Tato adresa zde nic neotevírá.",
+  "Drag to move through time, scroll to zoom": "Tažením se posunete v čase, kolečkem přiblížíte",
+  "Zoom in": "Přiblížit",
+  "Zoom out": "Oddálit",
+  "Show whole period": "Zobrazit celé období"
 }
