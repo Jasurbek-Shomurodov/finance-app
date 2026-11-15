@@ -46,6 +46,8 @@ test('Including expenses counts the spending it funds as money invested',()=>{
  // The spending is listed apart from the purchases, under one heading.
  assert.equal(details.invested.filter(row=>row.category==='Expenses paid').reduce((sum,row)=>sum+row.amount,0),40);
  assert.equal(details.expenses.find(row=>row.category==='Mortgage interest').amount,20);
+ // Each expense keeps its own category beside the heading.
+ assert.deepEqual(details.invested.filter(row=>row.category==='Expenses paid').map(row=>row.detail).sort(),['Business','Mortgage interest']);
  assert.deepEqual(investmentPeriodTotals(input,'2026-09-19',undefined,'investments'),investmentPeriodTotals(input,'2026-09-19'));
 });
 

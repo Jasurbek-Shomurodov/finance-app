@@ -6,7 +6,8 @@ import type { FxPoint } from './benchmark-data';
 import type { InvestmentPortfolioInput } from './investment-portfolio';
 import { capitalizedInterest, copiesCapitalizedInterest } from './investment-history';
 
-export type PeriodRow={name:string;date:string;category:string;amount:number|null};
+/** `detail` is a row's own category when it is listed under a wider heading. */
+export type PeriodRow={name:string;date:string;category:string;amount:number|null;detail?:string};
 // The three figures follow the chart's funding rules: money invested is what funds benchmarks
 // when expenses are excluded (purchases, principal repayments and values recorded without a purchase), and expenses paid is what "Including expenses" adds to it.
 type PeriodInput=InvestmentPortfolioInput&{movements?:BenchmarkMovement[];fx?:FxPoint[]};
@@ -16,7 +17,7 @@ export function investmentPeriodTotals(input:PeriodInput,start:string,details?:P
  const totals=periodTotals(input,start,details);
  if(scope!=='expenses')return totals;
  // The expenses stay together under their own heading, apart from the purchases.
- details?.invested.push(...details.expenses.map(row=>({...row,category:'Expenses paid'})));
+ details?.invested.push(...details.expenses.map(row=>({...row,category:'Expenses paid',detail:row.category})));
  return {...totals,invested:totals.invested+totals.expenses};
 }
 function periodTotals(input:PeriodInput,start:string,details?:PeriodDetails){
