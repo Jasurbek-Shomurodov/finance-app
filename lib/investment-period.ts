@@ -16,11 +16,9 @@ type PeriodDetails=Record<'income'|'invested'|'expenses',PeriodRow[]>;
 // With `scope` 'expenses' the benchmarks invest that spending too, so money invested includes it.
 export function investmentPeriodTotals(input:PeriodInput,start:string,details?:PeriodDetails,scope:FundingScope='investments'){
  const totals=periodTotals(input,start,details);
- // Every expense names its category on its own line.
- for(const row of details?.expenses??[])row.detail=row.category;
  if(scope!=='expenses')return totals;
- // The expenses stay together under their own heading, apart from the purchases.
- details?.invested.push(...details.expenses.map(row=>({...row,category:'Expenses paid'})));
+ // The expenses stay together under their own heading, apart from the purchases, each naming its category.
+ details?.invested.push(...details.expenses.map(row=>({...row,category:'Expenses paid',detail:row.category})));
  return {...totals,invested:totals.invested+totals.expenses};
 }
 function periodTotals(input:PeriodInput,start:string,details?:PeriodDetails){
@@ -29,11 +27,12 @@ function periodTotals(input:PeriodInput,start:string,details?:PeriodDetails){
  const records=new Map(input.records.map(record=>[record.id,record]));
  const rates=marketRates(input.market)??{};
  let context={name:'',date:'',category:''};
- const add=(key:keyof typeof totals,amount:number,currency:string)=>{
+ // `category` replaces the context's when the row belongs under another heading.
+ const add=(key:keyof typeof totals,amount:number,currency:string,category=context.category)=>{
   // With the chart's dated rates, convert like the chart: to USD at the day's rate, then to the display currency at today's.
   const usd=input.fx?.length?convertHistorical(amount,currency,'USD',context.date,input.fx):null;
   const converted=usd===null?convertAmount(amount,currency,input.currency,rates):convertAmount(usd,'USD',input.currency,rates);
-  if(amount!==0)details?.[key].push({...context,amount:converted});
+  if(amount!==0)details?.[key].push({...context,category,amount:converted});
   if(converted===null||!Number.isFinite(converted))missing.add(currency);else totals[key]+=converted;
  };
  const inPeriod=(date:string)=>date>=start&&date<=input.today;
@@ -59,8 +58,9 @@ function periodTotals(input:PeriodInput,start:string,details?:PeriodDetails){
   context={name:record.name,date:event.occurred_on,category:record.kind};
   if(benchmarkInvestment(record)&&event.event_type==='income')add('income',Number(event.amount),record.currency);
   // Older Tracker expenses and payments have no transaction copy; count them from the Tracker.
-  else if(benchmarkInvestment(record)&&event.event_type==='expense'&&!copied.has(event.id))add('expenses',Number(event.amount),record.currency);
-  else if(liabilities.includes(record.kind)&&event.event_type==='mortgage_payment'&&!(input.cashflows??[]).some(row=>row.mortgage_payment_id===event.id)){context.category='Mortgage interest';add('expenses',Number(event.interest??Number(event.amount)-Number(event.principal)),record.currency);}
+  // They carry no spending category, so they group under Other expense, not the holding's kind.
+  else if(benchmarkInvestment(record)&&event.event_type==='expense'&&!copied.has(event.id))add('expenses',Number(event.amount),record.currency,'Other expense');
+  else if(liabilities.includes(record.kind)&&event.event_type==='mortgage_payment'&&!(input.cashflows??[]).some(row=>row.mortgage_payment_id===event.id))add('expenses',Number(event.interest??Number(event.amount)-Number(event.principal)),record.currency,'Mortgage interest');
  }
  for(const row of benchmarkExpenseFunding(input.cashflows,input.today)){
   if(!inPeriod(row.date))continue;

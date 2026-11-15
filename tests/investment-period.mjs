@@ -47,17 +47,18 @@ test('Including expenses counts the spending it funds as money invested',()=>{
  assert.equal(details.invested.filter(row=>row.category==='Expenses paid').reduce((sum,row)=>sum+row.amount,0),40);
  assert.equal(details.expenses.find(row=>row.category==='Mortgage interest').amount,20);
  // Each expense keeps its own category beside the heading.
- assert.deepEqual(details.invested.filter(row=>row.category==='Expenses paid').map(row=>row.detail).sort(),['Business','Mortgage interest']);
+ assert.deepEqual(details.invested.filter(row=>row.category==='Expenses paid').map(row=>row.detail).sort(),['Mortgage interest','Other expense']);
  assert.deepEqual(investmentPeriodTotals(input,'2026-09-19',undefined,'investments'),investmentPeriodTotals(input,'2026-09-19'));
 });
 
-test('every expense names its category, with added categories by their own name',()=>{
+test('expenses group by spending category, with added categories by their own name',()=>{
  const details={income:[],expenses:[],invested:[]};
  const row=(id,kind,extra={})=>({id,kind,amount:30,currency:'USD',date:'2026-09-19',frequency:'Once',...extra});
  investmentPeriodTotals({...input,cashflows:[row('beans','Other expense',{custom_category_id:'coffee'}),row('rent','Living expense'),row('lost','Other expense',{custom_category_id:'gone'})],categories:[{id:'coffee',name:'Coffee'}]},'2026-09-19',details);
- // A Tracker cost keeps its holding's kind; an added category whose name is unknown falls back to the kind.
- assert.deepEqual(details.expenses.map(item=>item.detail).sort(),['Business','Coffee','Living expense','Mortgage interest','Other expense']);
- assert.equal(details.expenses.find(item=>item.date==='2026-09-19'&&item.amount===30&&item.detail==='Coffee')?.category,'Coffee');
+ // A Tracker running cost has no category of its own, so it is Other expense, never its holding's kind
+ // (Business); an added category whose name is unknown falls back to its kind too.
+ assert.deepEqual(details.expenses.map(item=>item.category).sort(),['Coffee','Living expense','Mortgage interest','Other expense','Other expense']);
+ assert.ok(details.expenses.every(item=>item.detail===undefined));
 });
 
 const {investmentDecisionComparison}=loadTS('lib/investment-benchmarks.ts');
