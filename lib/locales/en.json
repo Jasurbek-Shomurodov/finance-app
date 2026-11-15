@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} units · Gain/loss {amount}",
   "1 unit · Gain/loss {amount}": "1 unit · Gain/loss {amount}",
   "{rate}% annual interest": "{rate}% annual interest",
-  "One-time record": "One-time record",
   "One time": "One time",
   "Every month": "Every month",
   "Every year": "Every year",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "Sign in to ask about your own records.",
   "Open in full screen": "Open in full screen",
   "Exit full screen": "Exit full screen",
-  "What changed your net worth": "What changed your net worth"
+  "What changed your net worth": "What changed your net worth",
+  "This transaction keeps its category.": "This transaction keeps its category.",
+  "Payment on {name}": "Payment on {name}",
+  "Open mortgage": "Open mortgage",
+  "Transfer or repayment fee": "Transfer or repayment fee",
+  "Asset transfer": "Asset transfer",
+  "Asset tracker update": "Asset tracker update",
+  "To change the amount or date, delete it and record it again.": "To change the amount or date, delete it and record it again.",
+  "Edit mortgage payment": "Edit mortgage payment",
+  "Could not load the payment.": "Could not load the payment.",
+  "Payment not found.": "Payment not found.",
+  "{amount} to principal": "{amount} to principal",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.",
+  "Page not found": "Page not found",
+  "This address does not open anything here.": "This address does not open anything here."
 }

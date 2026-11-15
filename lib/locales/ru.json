@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} ед. · Прибыль/убыток {amount}",
   "1 unit · Gain/loss {amount}": "1 ед. · Прибыль/убыток {amount}",
   "{rate}% annual interest": "{rate}% годовых",
-  "One-time record": "Разовая запись",
   "One time": "Один раз",
   "Every month": "Каждый месяц",
   "Every year": "Каждый год",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "Войдите, чтобы спрашивать о своих записях.",
   "Open in full screen": "Открыть на весь экран",
   "Exit full screen": "Выйти из полноэкранного режима",
-  "What changed your net worth": "Что изменило ваш капитал"
+  "What changed your net worth": "Что изменило ваш капитал",
+  "This transaction keeps its category.": "Эта операция сохраняет свою категорию.",
+  "Payment on {name}": "Платёж по «{name}»",
+  "Open mortgage": "Открыть ипотеку",
+  "Transfer or repayment fee": "Комиссия за перевод или погашение",
+  "Asset transfer": "Перевод актива",
+  "Asset tracker update": "Обновление из истории актива",
+  "To change the amount or date, delete it and record it again.": "Чтобы изменить сумму или дату, удалите операцию и запишите её заново.",
+  "Edit mortgage payment": "Изменить ипотечный платёж",
+  "Could not load the payment.": "Не удалось загрузить платёж.",
+  "Payment not found.": "Платёж не найден.",
+  "{amount} to principal": "{amount} в основной долг",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Нажмите на платёж, чтобы открыть его: там его можно изменить или удалить. Обновления баланса удаляются начиная с самого нового.",
+  "Page not found": "Страница не найдена",
+  "This address does not open anything here.": "Этот адрес здесь ничего не открывает."
 }

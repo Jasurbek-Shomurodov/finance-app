@@ -187,6 +187,13 @@ test('the sample workspace starts from the backend and changes only its own copy
  // The sample payment leaves the cash account the dialog named, as a signed-in one does: principal and interest, 120.
  assert.equal(ws().rows.find(row => row.id === 'pay').account_id, payingFrom.id);
  assert.equal(ws().rows.find(row => row.id === payingFrom.id).amount, payingFrom.amount - 120);
+ // The sample payment opens in its form with its own values, and an edit moves both balances by the difference.
+ assert.deepEqual(await ws().mortgagePaymentSource(ws().rows.find(row => row.id === 'pay')), { id: 'pay', mortgage_id: mortgage.id, principal: 100, interest: 20, date: today, notes: '', account_id: payingFrom.id });
+ await ws().editMortgagePayment({ id: 'pay', mortgage_id: mortgage.id, principal: 150, interest: 10, date: today, notes: 'Fixed', account_id: payingFrom.id, category: { kind: 'Living expense', category_id: null } });r.update();
+ assert.equal(ws().rows.find(row => row.id === mortgage.id).amount, before - 150);
+ assert.equal(ws().rows.find(row => row.id === payingFrom.id).amount, payingFrom.amount - 160);
+ assert.deepEqual([ws().rows.find(row => row.id === 'pay').kind, ws().rows.find(row => row.id === 'pay').notes], ['Living expense', 'Fixed']);
+ await assert.rejects(ws().mortgagePaymentSource({ ...ws().rows.find(row => row.id === 'pay'), name: 'No such mortgage' }), /Mortgage not found/);
  ws().setStopping(expense);r.update();
  await ws().stopRecord('2030-01-01');r.update();
  assert.equal(ws().rows.find(row => row.id === expense.id).end_date, '2030-01-01');
@@ -278,6 +285,19 @@ test('signed in, settings and records are read, and every change is sent and rea
  server.gateway = 'POST /api/mortgage-payments';
  await assert.rejects(ws().recordMortgagePayment({ id: 'pay4', mortgage_id: 'm1', principal: 1, interest: 0, date: today, notes: '' }), error => error.confirmedFailure === false && error.message === 'Payment could not be confirmed. Retry with the same details.');
  delete server.gateway;
+ // A category chosen in the payment form travels as a category change; an edit goes out as one PATCH without it.
+ await ws().recordMortgagePayment({ id: 'pay5', mortgage_id: 'm1', principal: 10, interest: 2, date: today, notes: '', account_id: 'c1', category: { kind: 'Charity', category_id: null } });
+ assert.deepEqual(requests.filter(request => request.url === '/api/mortgage-payments').at(-1).body, { id: 'pay5', mortgage_id: 'm1', principal: 10, interest: 2, date: today, notes: '', account_id: 'c1' });
+ assert.deepEqual(requests.filter(request => request.url === '/api/transaction-rules').at(-1).body, { action: 'categorize', data: { ids: ['pay5'], kind: 'Charity', category_id: null } });
+ await ws().editMortgagePayment({ id: 'pay5', mortgage_id: 'm1', principal: 11, interest: 1, date: today, notes: 'Fixed', account_id: 'c1' });
+ assert.deepEqual(requests.filter(request => request.method === 'PATCH' && request.url === '/api/mortgage-payments').at(-1).body, { id: 'pay5', mortgage_id: 'm1', principal: 11, interest: 1, date: today, notes: 'Fixed', account_id: 'c1' });
+ await ws().mortgagePaymentSource({ ...record, id: 'pay5', mortgage_payment_id: 'pay5' });
+ assert.ok(requests.some(request => request.method === 'GET' && request.url === '/api/mortgage-payments?id=pay5'));
+ // Edit on a mortgage payment's transaction opens the payment form, not the record form.
+ const formBefore = ws().editing;
+ ws().editRecord({ ...record, id: 'pay5', mortgage_payment_id: 'pay5' });r.update();
+ assert.equal(ws().editingPayment.id, 'pay5');assert.equal(ws().editing, formBefore);
+ ws().setEditingPayment(null);r.update();
  ws().setStopping(record);r.update();await ws().stopRecord('2030-01-01');
  // Fetching a price fills the holding's amount, or says why it could not.
  ws().setEditing({ ...record, kind: 'Crypto', name: 'Bitcoin (BTC)', amount: 0 });r.update();

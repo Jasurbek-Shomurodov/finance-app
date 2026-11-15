@@ -15,15 +15,17 @@ test('category choices list one direction: built-in kinds, then custom categorie
  assert.equal(directionOf('Salary'), 'income');assert.equal(directionOf('Charity'), 'expense');assert.equal(directionOf('Cash'), null);
 });
 
-test('only plain transactions change category, within their direction, and unchanged rows are not counted', () => {
+test('one-time transactions change category, within their direction, and unchanged rows are not counted', () => {
  const rows = [record('a', 'Shop', 'Living expense', 5, '2026-09-01'), record('b', 'Pay', 'Salary', 900, '2026-09-01'), record('c', 'Fee', 'Other expense', 1, '2026-09-01', { operation_id: 'op' }),
   record('d', 'Split', 'Other expense', 10, '2026-09-01'), record('e', 'Plan', 'Living expense', 50, '2026-09-01', { frequency: 'Monthly' }), record('f', 'Pets', 'Other expense', 4, '2026-09-01', { custom_category_id: 'pets' })];
  const splits = [{ record_id: 'd', position: 0, category_id: 'pets', amount: 5 }];
  assert.ok(canRecategorize(rows[0]));
- for (const index of [2, 4]) assert.ok(!canRecategorize(rows[index]));
+ // A fee written by a transfer changes category like any expense; a schedule does not.
+ assert.ok(canRecategorize(rows[2]));assert.ok(!canRecategorize(rows[4]));
  assert.ok(!canRecategorize(rows[3], splits));
  const result = recategorize(rows, ['a', 'b', 'c', 'd', 'e', 'f'], { kind: 'Other expense', category_id: 'pets' }, splits);
- assert.equal(result.changed, 1);
+ assert.equal(result.changed, 2);
+ assert.equal(result.records.find(row => row.id === 'c').custom_category_id, 'pets');
  assert.deepEqual(result.records.find(row => row.id === 'a'), { ...rows[0], kind: 'Other expense', custom_category_id: 'pets' });
  assert.equal(result.records.find(row => row.id === 'b').kind, 'Salary');
  assert.equal(rows[0].kind, 'Living expense', 'the input is not mutated');

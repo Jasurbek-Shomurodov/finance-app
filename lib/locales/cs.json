@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} ks · Zisk/ztráta {amount}",
   "1 unit · Gain/loss {amount}": "1 ks · Zisk/ztráta {amount}",
   "{rate}% annual interest": "{rate}% roční úrok",
-  "One-time record": "Jednorázový záznam",
   "One time": "Jednorázově",
   "Every month": "Každý měsíc",
   "Every year": "Každý rok",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "Přihlaste se a ptejte se na vlastní záznamy.",
   "Open in full screen": "Otevřít na celou obrazovku",
   "Exit full screen": "Ukončit celou obrazovku",
-  "What changed your net worth": "Co změnilo vaše čisté jmění"
+  "What changed your net worth": "Co změnilo vaše čisté jmění",
+  "This transaction keeps its category.": "Tato transakce si ponechává svou kategorii.",
+  "Payment on {name}": "Splátka: {name}",
+  "Open mortgage": "Otevřít hypotéku",
+  "Transfer or repayment fee": "Poplatek za převod nebo splátku",
+  "Asset transfer": "Převod aktiva",
+  "Asset tracker update": "Aktualizace ze sledování aktiva",
+  "To change the amount or date, delete it and record it again.": "Chcete-li změnit částku nebo datum, smažte ji a zaznamenejte znovu.",
+  "Edit mortgage payment": "Upravit splátku hypotéky",
+  "Could not load the payment.": "Splátku se nepodařilo načíst.",
+  "Payment not found.": "Splátka nenalezena.",
+  "{amount} to principal": "{amount} na jistinu",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Kliknutím splátku otevřete: tam ji můžete upravit nebo smazat. Aktualizace zůstatku se mažou od nejnovější.",
+  "Page not found": "Stránka nenalezena",
+  "This address does not open anything here.": "Tato adresa zde nic neotevírá."
 }

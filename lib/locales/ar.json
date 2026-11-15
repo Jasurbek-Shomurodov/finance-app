@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} وحدة · الربح/الخسارة {amount}",
   "1 unit · Gain/loss {amount}": "وحدة واحدة · الربح/الخسارة {amount}",
   "{rate}% annual interest": "فائدة سنوية {rate}%",
-  "One-time record": "سجل لمرة واحدة",
   "One time": "مرة واحدة",
   "Every month": "كل شهر",
   "Every year": "كل سنة",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "سجّل الدخول لتسأل عن سجلاتك أنت.",
   "Open in full screen": "فتح في وضع ملء الشاشة",
   "Exit full screen": "الخروج من وضع ملء الشاشة",
-  "What changed your net worth": "ما الذي غيّر صافي ثروتك"
+  "What changed your net worth": "ما الذي غيّر صافي ثروتك",
+  "This transaction keeps its category.": "تحتفظ هذه المعاملة بفئتها.",
+  "Payment on {name}": "دفعة على {name}",
+  "Open mortgage": "فتح الرهن العقاري",
+  "Transfer or repayment fee": "رسوم تحويل أو سداد",
+  "Asset transfer": "تحويل أصل",
+  "Asset tracker update": "تحديث من متتبّع الأصل",
+  "To change the amount or date, delete it and record it again.": "لتغيير المبلغ أو التاريخ، احذفها وسجّلها من جديد.",
+  "Edit mortgage payment": "تعديل دفعة الرهن العقاري",
+  "Could not load the payment.": "تعذّر تحميل الدفعة.",
+  "Payment not found.": "الدفعة غير موجودة.",
+  "{amount} to principal": "{amount} لأصل الدين",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "انقر على دفعة لفتحها: يمكنك تعديلها أو حذفها هناك. تُحذف تحديثات الرصيد بدءًا من الأحدث.",
+  "Page not found": "الصفحة غير موجودة",
+  "This address does not open anything here.": "هذا العنوان لا يفتح شيئًا هنا."
 }

@@ -11,8 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { Entry } from '@/lib/finance';
+import { isLinkedTransaction } from '@/lib/linked-transactions';
 import type { Category } from '@/lib/planning';
-import { categoryChoices, choiceKey, directionOf, type CategoryChoice } from '@/lib/transaction-rules';
+import { canTakeCategory, categoryChoices, choiceKey, directionOf, type CategoryChoice } from '@/lib/transaction-rules';
 
 type Choice = ReturnType<typeof categoryChoices>[number];
 
@@ -24,11 +25,11 @@ export function useChoiceName(categories: readonly Category[]) {
 }
 
 /** A searchable list of one direction's categories. */
-function CategoryList({ categories, removed = [], direction, selected, onSelect }: { categories: readonly Category[]; /** Deleted built-in categories, not offered. */ removed?: readonly string[]; direction: Category['direction']; selected?: string; onSelect: (choice: Choice) => void }) {
+function CategoryList({ categories, removed = [], direction, selected, allow, onSelect }: { categories: readonly Category[]; /** Deleted built-in categories, not offered. */ removed?: readonly string[]; direction: Category['direction']; selected?: string; /** Leaves out what the transaction cannot take. */ allow?: (choice: Choice) => boolean; onSelect: (choice: Choice) => void }) {
  const { t } = useLanguage();
  const [query, setQuery] = useState('');
  const name = (choice: Choice) => choice.custom ? choice.name : t(choice.name);
- const options = categoryChoices(categories, direction, removed).filter(choice => name(choice).toLowerCase().includes(query.trim().toLowerCase()));
+ const options = categoryChoices(categories, direction, removed).filter(choice => (!allow || allow(choice)) && name(choice).toLowerCase().includes(query.trim().toLowerCase()));
  return <div className="category-picker">
   <Input autoFocus placeholder={t('Search categories')} aria-label={t('Search categories')} value={query} onChange={event => setQuery(event.currentTarget.value)}/>
   <p className="category-picker-heading">{t(direction === 'income' ? 'Income' : 'Expenses')}</p>
@@ -41,20 +42,21 @@ function CategoryList({ categories, removed = [], direction, selected, onSelect 
  </div>;
 }
 
-/** A transaction's category as a pill; clicking it opens the category list. */
-export function CategoryPicker({ record, categories, removed, disabled, onChange }: { record: Entry; categories: readonly Category[]; removed?: readonly string[]; disabled?: boolean; onChange: (choice: CategoryChoice) => void }) {
+/** A transaction's category as a pill; clicking it opens the category list, which leaves out what a linked
+ * transaction cannot take (`canTakeCategory`). `children` replaces the pill, where the category is drawn another way. */
+export function CategoryPicker({ record, categories, removed, disabled, onChange, children }: { record: Entry; categories: readonly Category[]; removed?: readonly string[]; disabled?: boolean; onChange: (choice: CategoryChoice) => void; children?: ReactNode }) {
  const { t } = useLanguage();
  const [open, setOpen] = useState(false);
  const direction = directionOf(record.kind) ?? 'expense';
  const choice = { kind: record.kind, category_id: record.custom_category_id ?? null };
  const label = useChoiceName(categories)(choice);
  // The row already shows the category's icon beside its name, so the pill names it only.
- const pill = <span className="transaction-category"><span>{label}</span></span>;
+ const pill = children ?? <span className="transaction-category"><span>{label}</span></span>;
  if (disabled) return pill;
  return <Popover open={open} onOpenChange={setOpen}>
   <PopoverTrigger asChild><button type="button" className="transaction-category-button" aria-label={t('Change category for {name}', { name: record.name })}>{pill}</button></PopoverTrigger>
   <PopoverContent className="category-picker-popover" align="start">
-   <CategoryList categories={categories} removed={removed} direction={direction} selected={choiceKey(choice)} onSelect={next => { setOpen(false); if (choiceKey(next) !== choiceKey(choice) || next.kind !== record.kind) onChange(next); }}/>
+   <CategoryList categories={categories} removed={removed} direction={direction} selected={choiceKey(choice)} allow={next => !isLinkedTransaction(record) || canTakeCategory(record, next)} onSelect={next => { setOpen(false); if (choiceKey(next) !== choiceKey(choice) || next.kind !== record.kind) onChange(next); }}/>
   </PopoverContent>
  </Popover>;
 }

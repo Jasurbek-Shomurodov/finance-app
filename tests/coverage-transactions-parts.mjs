@@ -348,6 +348,9 @@ test('DayGroup names today and yesterday, formats other dates, and signs the tot
  assert.equal(tree.props['aria-label'],'Today');
  assert.equal(text(tree),'Today+$1,200row');
  assert.equal(findAll(tree,n=>n.type==='span')[0].props.className,'positive');
+ // A day with mortgage payments says what went to principal, which the total leaves out.
+ assert.equal(text(expand(h(page.DayGroup,{date:'2026-10-04',total:-1200,principal:950,count:2,currency:'USD',today:'2026-10-04'},h('li',null,'row')),'d')),'Today−$1,200 · $950 to principalrow');
+ assert.equal(text(expand(h(page.DayGroup,{date:'2026-10-04',total:-1200,principal:0,count:2,currency:'USD',today:'2026-10-04'},h('li',null,'row')),'d')),'Today−$1,200row');
  tree=day('2026-10-03',-13.4);
  assert.equal(text(findAll(tree,n=>n.type==='h3')[0]),'Yesterday');
  assert.equal(text(findAll(tree,n=>n.type==='span')[0]),formatSignedMoney(-13.4,'USD','en'));

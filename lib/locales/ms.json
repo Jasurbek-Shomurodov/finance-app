@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} unit · Untung/rugi {amount}",
   "1 unit · Gain/loss {amount}": "1 unit · Untung/rugi {amount}",
   "{rate}% annual interest": "Faedah tahunan {rate}%",
-  "One-time record": "Rekod sekali sahaja",
   "One time": "Sekali sahaja",
   "Every month": "Setiap bulan",
   "Every year": "Setiap tahun",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "Log masuk untuk bertanya tentang rekod anda sendiri.",
   "Open in full screen": "Buka dalam skrin penuh",
   "Exit full screen": "Keluar daripada skrin penuh",
-  "What changed your net worth": "Apa yang mengubah nilai bersih anda"
+  "What changed your net worth": "Apa yang mengubah nilai bersih anda",
+  "This transaction keeps its category.": "Transaksi ini mengekalkan kategorinya.",
+  "Payment on {name}": "Bayaran untuk {name}",
+  "Open mortgage": "Buka gadai janji",
+  "Transfer or repayment fee": "Yuran pindahan atau bayaran balik",
+  "Asset transfer": "Pindahan aset",
+  "Asset tracker update": "Kemas kini daripada penjejak aset",
+  "To change the amount or date, delete it and record it again.": "Untuk menukar jumlah atau tarikh, padam dan rekodkan semula.",
+  "Edit mortgage payment": "Edit bayaran gadai janji",
+  "Could not load the payment.": "Bayaran tidak dapat dimuatkan.",
+  "Payment not found.": "Bayaran tidak ditemui.",
+  "{amount} to principal": "{amount} ke prinsipal",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Klik bayaran untuk membukanya: anda boleh mengedit atau memadamnya di sana. Kemas kini baki dipadam bermula daripada yang terbaharu.",
+  "Page not found": "Halaman tidak ditemui",
+  "This address does not open anything here.": "Alamat ini tidak membuka apa-apa di sini."
 }

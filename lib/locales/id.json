@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} unit · Untung/rugi {amount}",
   "1 unit · Gain/loss {amount}": "1 unit · Untung/rugi {amount}",
   "{rate}% annual interest": "Bunga {rate}% per tahun",
-  "One-time record": "Catatan sekali bayar",
   "One time": "Sekali",
   "Every month": "Setiap bulan",
   "Every year": "Setiap tahun",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "Masuk untuk bertanya tentang catatan Anda sendiri.",
   "Open in full screen": "Buka dalam layar penuh",
   "Exit full screen": "Keluar dari layar penuh",
-  "What changed your net worth": "Apa yang mengubah kekayaan bersih Anda"
+  "What changed your net worth": "Apa yang mengubah kekayaan bersih Anda",
+  "This transaction keeps its category.": "Transaksi ini tetap pada kategorinya.",
+  "Payment on {name}": "Pembayaran untuk {name}",
+  "Open mortgage": "Buka KPR",
+  "Transfer or repayment fee": "Biaya transfer atau pelunasan",
+  "Asset transfer": "Transfer aset",
+  "Asset tracker update": "Pembaruan dari pelacak aset",
+  "To change the amount or date, delete it and record it again.": "Untuk mengubah jumlah atau tanggal, hapus lalu catat lagi.",
+  "Edit mortgage payment": "Edit pembayaran KPR",
+  "Could not load the payment.": "Pembayaran tidak dapat dimuat.",
+  "Payment not found.": "Pembayaran tidak ditemukan.",
+  "{amount} to principal": "{amount} ke pokok",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Klik pembayaran untuk membukanya: di sana Anda dapat mengedit atau menghapusnya. Pembaruan saldo dihapus mulai dari yang terbaru.",
+  "Page not found": "Halaman tidak ditemukan",
+  "This address does not open anything here.": "Alamat ini tidak membuka apa pun di sini."
 }

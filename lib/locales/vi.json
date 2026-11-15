@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} đơn vị · Lãi/lỗ {amount}",
   "1 unit · Gain/loss {amount}": "1 đơn vị · Lãi/lỗ {amount}",
   "{rate}% annual interest": "Lãi suất {rate}%/năm",
-  "One-time record": "Bản ghi một lần",
   "One time": "Một lần",
   "Every month": "Mỗi tháng",
   "Every year": "Mỗi năm",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "Đăng nhập để hỏi về dữ liệu của chính bạn.",
   "Open in full screen": "Mở toàn màn hình",
   "Exit full screen": "Thoát toàn màn hình",
-  "What changed your net worth": "Điều gì đã thay đổi tài sản ròng của bạn"
+  "What changed your net worth": "Điều gì đã thay đổi tài sản ròng của bạn",
+  "This transaction keeps its category.": "Giao dịch này giữ nguyên danh mục.",
+  "Payment on {name}": "Khoản trả cho {name}",
+  "Open mortgage": "Mở khoản vay thế chấp",
+  "Transfer or repayment fee": "Phí chuyển khoản hoặc trả nợ",
+  "Asset transfer": "Chuyển tài sản",
+  "Asset tracker update": "Cập nhật từ trình theo dõi tài sản",
+  "To change the amount or date, delete it and record it again.": "Để đổi số tiền hoặc ngày, hãy xóa rồi ghi lại.",
+  "Edit mortgage payment": "Sửa khoản trả vay thế chấp",
+  "Could not load the payment.": "Không thể tải khoản thanh toán.",
+  "Payment not found.": "Không tìm thấy khoản thanh toán.",
+  "{amount} to principal": "{amount} vào gốc",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Nhấp vào một khoản thanh toán để mở: tại đó bạn có thể sửa hoặc xóa. Các cập nhật số dư được xóa từ mục mới nhất.",
+  "Page not found": "Không tìm thấy trang",
+  "This address does not open anything here.": "Địa chỉ này không mở gì ở đây."
 }

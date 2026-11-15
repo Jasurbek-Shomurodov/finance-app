@@ -130,7 +130,7 @@ test('the browser upload checks the file first, then prepares, stores and confir
 });
 
 test('the workspace shows receipts on the transaction drawer and marks rows that have them',()=>{
- const dialogs=fs.readFileSync('components/workspace/workspace-dialogs.tsx','utf8'),screen=fs.readFileSync('components/workspace/screens/transactions-screen.tsx','utf8'),component=fs.readFileSync('components/record-attachments.tsx','utf8');
+ const dialogs=fs.readFileSync('components/workspace/transaction-details.tsx','utf8'),screen=fs.readFileSync('components/workspace/screens/transactions-screen.tsx','utf8'),component=fs.readFileSync('components/record-attachments.tsx','utf8');
  assert.match(dialogs,/<RecordAttachments recordId=\{viewing\.id\} available=\{attachments\.available\}/);
  assert.match(screen,/transaction-attachment-mark/);
  assert.match(component,/Attachments are not available in the sample workspace\./,'the sample workspace explains instead of uploading');

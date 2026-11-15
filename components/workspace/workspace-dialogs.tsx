@@ -1,40 +1,32 @@
 "use client";
-import { BusinessSetupFlow, IncomeSourceEditor, JoinHouseholdDialog, MortgagePaymentDialog, RecordDialog, SplitTransactionDialog, StopScheduleDialog, TransactionDetailsDialog } from '@/components/workspace/workspace-lazy';
+import { BusinessSetupFlow, IncomeSourceEditor, JoinHouseholdDialog, MortgagePaymentDialog, RecordDialog, SplitTransactionDialog, StopScheduleDialog } from '@/components/workspace/workspace-lazy';
 import { ConfirmDialog } from '@/components/presentation-foundation/confirm-dialog';
 import { InvestmentTracker } from '@/components/investment-tracker-lazy';
 import { useLanguage } from '@/components/language-provider';
 import { TransactionSankey } from '@/components/workspace/transaction-sankey';
-import { RecordAttachments } from '@/components/record-attachments';
-import { income } from '@/lib/finance';
-import { nextPaletteColor } from '@/lib/business';
+import { MortgagePaymentEditor, WorkspaceTransactionDetails } from '@/components/workspace/transaction-details';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
 import { isLinkedTransaction } from '@/lib/linked-transactions';
-import { propertyNameOf } from '@/lib/property-totals';
-import { ownerOf, workspaceOwners } from '@/lib/household';
-import { isTransactionHistory } from '@/lib/transaction-history';
-import type { Entry } from '@/lib/finance';
-
-/** What Split takes, as the records table offers it: a recorded transaction that no other action wrote. */
-const splittable = (record: Entry) => isTransactionHistory(record) && !isLinkedTransaction(record);
+import { latestPaymentCategory } from '@/lib/mortgage-payment-edit';
 
 /** Dialogs any screen can open: record editing, trackers, payments, splitting and deletion. */
 export function WorkspaceDialogs() {
  const { t } = useLanguage();
- const { viewing, setViewing, splitting, setSplitting, editingIncomeSource, setEditingIncomeSource, editing, setEditing, debtPayment, setDebtPayment, tracking, trackingType, closeTracker, payingMortgage, setPayingMortgage, deleting, stopping, setStopping,
-  planning, availableBusinesses, businessList, tags, attachments, assignTransactionsBusiness, setAccountBusiness, saveBusiness, newBusiness, settingUpBusinesses, setSettingUpBusinesses, transactionTools, preferencesData, earningSources, rows, summary, section, demo, busy, error,
-  household, pendingInvite, dismissInvite, editRecord, requestDelete, addAccountRecord, storedRecord, closeEditing, closeDeleting, navigate, refreshRecords, recordMortgagePayment, save, remove, stopRecord, field, money, editingCashFlow, recordKinds, fetchingPrice, fetchPrice, priceMessage } = useWorkspace();
- const owners = workspaceOwners(household.state, { shared: t('Shared'), unnamed: t('Partner') });
+ const { setViewing, splitting, setSplitting, editingIncomeSource, setEditingIncomeSource, editing, setEditing, debtPayment, setDebtPayment, tracking, trackingType, closeTracker, payingMortgage, setPayingMortgage, deleting, stopping, setStopping,
+  planning, availableBusinesses, businessList, tags, setAccountBusiness, saveBusiness, newBusiness, settingUpBusinesses, setSettingUpBusinesses, transactionTools, preferencesData, earningSources, rows, summary, section, demo, busy, error,
+  household, pendingInvite, dismissInvite, addAccountRecord, storedRecord, closeEditing, closeDeleting, navigate, refreshRecords, recordMortgagePayment, save, remove, stopRecord, field, money, editingCashFlow, recordKinds, fetchingPrice, fetchPrice, priceMessage } = useWorkspace();
  return <>
  {/* A transaction row's Sankey; its details open over it. */}
  <TransactionSankey/>
- {viewing&&<TransactionDetailsDialog key={viewing.id} record={viewing} incoming={income.includes(viewing.kind)} categoryName={planning.data.categories.find(c=>c.id===viewing.custom_category_id)?.name} businesses={businessList} onBusiness={business=>assignTransactionsBusiness([viewing.id],business)} tagging={{tags:tags.data.tags,tagIds:tags.data.links.filter(link=>link.record_id===viewing.id).map(link=>link.tag_id),onTags:(add,remove)=>tags.change([viewing.id],add,remove),onCreateTag:async name=>{const id=crypto.randomUUID();await tags.save({id,name,color:nextPaletteColor(tags.data.tags.map(tag=>tag.color))});return id;}}} accountName={viewing.account_id?planning.data.records.find(a=>a.id===viewing.account_id)?.name:undefined} propertyName={propertyNameOf(viewing,planning.data.records)} ownerName={owners.find(owner=>owner.id===ownerOf(viewing,household.state!))?.name} onSplit={splittable(viewing)&&!transactionTools.loading&&!transactionTools.error?()=>{const r=viewing;setViewing(null);setSplitting(r);}:undefined} attachments={<RecordAttachments recordId={viewing.id} available={attachments.available} onChange={attachments.refresh}/>} editable={!isLinkedTransaction(viewing)} onEdit={()=>{const r=viewing;setViewing(null);editRecord(r);}} onDelete={()=>{const r=viewing;setViewing(null);requestDelete(r);}} onClose={()=>setViewing(null)}/>}
+ <WorkspaceTransactionDetails/>
+ <MortgagePaymentEditor/>
  {settingUpBusinesses&&<BusinessSetupFlow businesses={businessList} records={planning.data.records} newBusiness={newBusiness} saveBusiness={saveBusiness} setAccountBusiness={setAccountBusiness} guideOnly={settingUpBusinesses==='guide'} hasTags={tags.data.tags.length>0} onAddAccount={()=>addAccountRecord('Cash')} onClose={()=>setSettingUpBusinesses(false)}/>}
  {splitting&&<SplitTransactionDialog key={splitting.id} record={splitting} tools={transactionTools} categories={planning.data.categories} removed={planning.data.removedKinds} onClose={()=>setSplitting(null)}/>}
  {editingIncomeSource&&<IncomeSourceEditor key={editingIncomeSource.id} initial={editingIncomeSource} currencies={preferencesData.currencies} records={planning.data.records} save={earningSources.save} close={()=>setEditingIncomeSource(null)}/>}
  <RecordDialog household={household.state} navigate={navigate} onDebtSaved={refreshRecords} onMortgageSave={recordMortgagePayment} onDebtPayment={record=>{setEditing(null);if(record.kind==='Mortgage')setPayingMortgage(record);else setDebtPayment(record);}} earningSources={earningSources} currencies={preferencesData.currencies} key={editing?.id??'closed'} accountMode={section==='Accounts'&&!!editing&&['Cash','Deposit','Stock','Crypto'].includes(editing.kind)} editing={editing} setEditing={update=>{if(update===null)closeEditing();else setEditing(update);}} busy={busy} rows={planning.data.records.length ? planning.data.records : rows} save={save} editingCashFlow={editingCashFlow} recordKinds={recordKinds} demo={demo} summary={summary} field={field} availableBusinesses={availableBusinesses} money={money} fetchingPrice={fetchingPrice} fetchPrice={fetchPrice} priceMessage={priceMessage} error={error} planning={planning}/>
  {debtPayment&&<InvestmentTracker key={debtPayment.id} initialType="withdrawal" record={debtPayment} accounts={planning.data.records} accountsReady={!planning.loading&&!planning.refreshing&&!planning.error} onClose={()=>setDebtPayment(null)} onSaved={refreshRecords} onPayment={()=>{}}/>}
- {tracking && <InvestmentTracker key={tracking.id + (trackingType ?? '')} initialType={trackingType ?? undefined} record={tracking} accounts={planning.data.records} accountsReady={!planning.loading&&!planning.refreshing&&!planning.error} onClose={closeTracker} onSaved={refreshRecords} onPayment={() => { setPayingMortgage(storedRecord(tracking)); closeTracker(); }}/>}
- {payingMortgage && <MortgagePaymentDialog key={payingMortgage.id} mortgage={payingMortgage} accounts={planning.data.records} onClose={() => setPayingMortgage(null)} onSave={recordMortgagePayment}/>}
+ {tracking && <InvestmentTracker key={tracking.id + (trackingType ?? '')} initialType={trackingType ?? undefined} record={tracking} accounts={planning.data.records} accountsReady={!planning.loading&&!planning.refreshing&&!planning.error} onClose={closeTracker} onSaved={refreshRecords} onPayment={() => { setPayingMortgage(storedRecord(tracking)); closeTracker(); }} onOpenPayment={id => { const payment = [...planning.data.records, ...rows].find(row => row.id === id && !!row.mortgage_payment_id); return payment && (() => { closeTracker(); setViewing(payment); }); }}/>}
+ {payingMortgage && <MortgagePaymentDialog key={payingMortgage.id} mortgage={payingMortgage} accounts={planning.data.records} category={{ categories: planning.data.categories, removed: planning.data.removedKinds, initial: latestPaymentCategory(planning.data.records.length ? planning.data.records : rows, payingMortgage) }} onClose={() => setPayingMortgage(null)} onSave={recordMortgagePayment}/>}
  <ConfirmDialog deletes open={!!deleting} onClose={closeDeleting} busy={busy} error={error} title={t("Delete this record?")} description={<>{deleting&&isLinkedTransaction(deleting)?t('Move {name} to Recently deleted? It came from a transfer, a mortgage payment or an asset update, so everything that action changed is undone and the balances go back. Restore puts it all back.',{name:deleting.name}):t('Move {name} to Recently deleted? It will be removed from your records, totals and all planning months. Separate transactions stay unchanged. You can restore it from Recently deleted.',{name:deleting?.name||''})}{deleting?.frequency!=='Once'&&<span className="block">{t('To keep past planning and only end future repeats, choose Stop instead.')}</span>}</>} cancelLabel={t("Keep record")} confirmLabel={t("Delete record")} onConfirm={() => void remove()}/>
  {pendingInvite&&!demo&&<JoinHouseholdDialog token={pendingInvite} household={household} onClose={dismissInvite}/>}
  {stopping&&<StopScheduleDialog name={stopping.name} start={stopping.date} onSave={stopRecord} onClose={()=>setStopping(null)}/>}

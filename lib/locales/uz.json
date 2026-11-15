@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} dona · Foyda/zarar {amount}",
   "1 unit · Gain/loss {amount}": "1 dona · Foyda/zarar {amount}",
   "{rate}% annual interest": "Yillik {rate}% foiz",
-  "One-time record": "Bir martalik yozuv",
   "One time": "Bir marta",
   "Every month": "Har oy",
   "Every year": "Har yil",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "O‘z yozuvlaringiz haqida so‘rash uchun tizimga kiring.",
   "Open in full screen": "To‘liq ekranda ochish",
   "Exit full screen": "To‘liq ekrandan chiqish",
-  "What changed your net worth": "Sof boyligingizni nima o‘zgartirdi"
+  "What changed your net worth": "Sof boyligingizni nima o‘zgartirdi",
+  "This transaction keeps its category.": "Bu tranzaksiya o‘z toifasida qoladi.",
+  "Payment on {name}": "{name} bo‘yicha to‘lov",
+  "Open mortgage": "Ipotekani ochish",
+  "Transfer or repayment fee": "O‘tkazma yoki qaytarish komissiyasi",
+  "Asset transfer": "Aktiv o‘tkazmasi",
+  "Asset tracker update": "Aktiv kuzatuvidan yangilanish",
+  "To change the amount or date, delete it and record it again.": "Summa yoki sanani o‘zgartirish uchun uni o‘chirib, qaytadan yozing.",
+  "Edit mortgage payment": "Ipoteka to‘lovini tahrirlash",
+  "Could not load the payment.": "To‘lovni yuklab bo‘lmadi.",
+  "Payment not found.": "To‘lov topilmadi.",
+  "{amount} to principal": "{amount} asosiy qarzga",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "To‘lovni ochish uchun ustiga bosing: u yerda tahrirlash yoki o‘chirish mumkin. Balans yangilanishlari eng yangisidan boshlab o‘chiriladi.",
+  "Page not found": "Sahifa topilmadi",
+  "This address does not open anything here.": "Bu manzil bu yerda hech narsani ochmaydi."
 }

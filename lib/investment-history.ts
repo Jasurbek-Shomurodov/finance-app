@@ -81,3 +81,12 @@ export const historyChartDate = (timestamp: number) => new Date(timestamp).toISO
  * the copy by: a figure that adds both the Tracker and transactions counts the event alone. */
 export const capitalizedInterest=(events:readonly Pick<HistoryEvent,'event_type'|'occurred_on'|'amount'>[])=>new Set(events.filter(event=>event.event_type==='income').map(event=>event.occurred_on+':'+Number(event.amount)));
 export const copiesCapitalizedInterest=(row:{movement_id?:string|null;date?:string|null;amount:number|string},capitalized:ReadonlySet<string>)=>!!row.movement_id&&capitalized.has(row.date+':'+Number(row.amount));
+
+/** The History list without the balance update a mortgage payment wrote for itself: the entry right after a payment,
+ * on the same day and with the balance the payment left, only repeats the payment's own "Outstanding balance". */
+export function withoutRepeatedBalances<T extends Pick<HistoryEvent, 'event_type' | 'occurred_on' | 'balance'>>(events: readonly T[]): T[] {
+ return events.filter((event, index) => {
+  const before = events[index - 1];
+  return !(event.event_type === 'valuation' && before?.event_type === 'mortgage_payment' && before.occurred_on === event.occurred_on && before.balance !== null && Number(before.balance) === Number(event.balance));
+ });
+}

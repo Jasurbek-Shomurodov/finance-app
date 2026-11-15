@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} unità · Utile/perdita {amount}",
   "1 unit · Gain/loss {amount}": "1 unità · Utile/perdita {amount}",
   "{rate}% annual interest": "{rate}% di interesse annuo",
-  "One-time record": "Voce una tantum",
   "One time": "Una tantum",
   "Every month": "Ogni mese",
   "Every year": "Ogni anno",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "Accedi per chiedere dei tuoi dati.",
   "Open in full screen": "Apri a schermo intero",
   "Exit full screen": "Esci da schermo intero",
-  "What changed your net worth": "Cosa ha cambiato il tuo patrimonio netto"
+  "What changed your net worth": "Cosa ha cambiato il tuo patrimonio netto",
+  "This transaction keeps its category.": "Questa transazione mantiene la sua categoria.",
+  "Payment on {name}": "Pagamento per {name}",
+  "Open mortgage": "Apri mutuo",
+  "Transfer or repayment fee": "Commissione di trasferimento o rimborso",
+  "Asset transfer": "Trasferimento di attività",
+  "Asset tracker update": "Aggiornamento dal monitoraggio dell’attività",
+  "To change the amount or date, delete it and record it again.": "Per cambiare l’importo o la data, eliminala e registrala di nuovo.",
+  "Edit mortgage payment": "Modifica pagamento del mutuo",
+  "Could not load the payment.": "Impossibile caricare il pagamento.",
+  "Payment not found.": "Pagamento non trovato.",
+  "{amount} to principal": "{amount} di capitale",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Fai clic su un pagamento per aprirlo: lì puoi modificarlo o eliminarlo. Gli aggiornamenti del saldo si eliminano a partire dal più recente.",
+  "Page not found": "Pagina non trovata",
+  "This address does not open anything here.": "Questo indirizzo non apre nulla qui."
 }

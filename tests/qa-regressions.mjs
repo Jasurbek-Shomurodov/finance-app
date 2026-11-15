@@ -293,8 +293,9 @@ test('the transaction details dialog offers a bin to delete and Edit, with no Cl
  assert.match(dialog,/<DeleteButton label=\{t\('Delete \{name\}',\{name\}\)\} onClick=\{onDelete\}\/>/);
  assert.match(dialog,/aria-label=\{t\('Edit \{name\}',\{name\}\)\} onClick=\{onEdit\}><Pencil /);
  assert.doesNotMatch(dialog,/t\('Close'\)/);
- const dialogs=fs.readFileSync('components/workspace/workspace-dialogs.tsx','utf8');
- assert.match(dialogs,/onDelete=\{\(\)=>\{const r=viewing;setViewing\(null\);requestDelete\(r\);\}\}/);
+ const details=fs.readFileSync('components/workspace/transaction-details.tsx','utf8');
+ assert.match(details,/const leaveTo = \(open: \(record: Entry\) => void\) => \(\) => \{ const record = viewing; close\(\); open\(record\); \};/);
+ assert.match(details,/onEdit=\{leaveTo\(editRecord\)\} onDelete=\{leaveTo\(requestDelete\)\}/);
 });
 
 test('every Notes field is a multi-line Textarea, never a one-line input', () => {

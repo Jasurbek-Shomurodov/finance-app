@@ -3,6 +3,7 @@ import type { Category } from './planning';
 import type { TransactionSplit } from './transaction-tools';
 import { canAssignBusiness } from './business';
 import { canTag } from './tags';
+import { isLinkedTransaction } from './linked-transactions';
 
 /** Where a transaction belongs: a built-in kind, or a custom category on the general kind of its direction. */
 export type CategoryChoice = { kind: Entry['kind']; category_id: string | null };
@@ -52,14 +53,16 @@ export function categoryChoices(categories: readonly Category[], direction: Cate
  ];
 }
 
-/** Only plain income and spending can change category here; generated, split and source-linked rows keep theirs.
- * A business transaction may take any category. Mirrors the filter in `public.recategorize_transactions`. */
+/** Income and spending change category here; generated, split and source-linked rows keep theirs. A transaction
+ * written by a larger action (a mortgage payment, a fee, a tracker update) changes too. Mirrors the filter in
+ * `public.recategorize_transactions` (migration 164). */
 export function canRecategorize(record: Entry, splits: readonly TransactionSplit[] = []) {
- return record.frequency === 'Once' && !!directionOf(record.kind) && !record.movement_id && !record.operation_id && !record.mortgage_payment_id && !record.history_event_id
-  && !record.income_source_id && !record.earning_source_id && !splits.some(part => part.record_id === record.id);
+ return record.frequency === 'Once' && !!directionOf(record.kind) && !record.income_source_id && !record.earning_source_id && !splits.some(part => part.record_id === record.id);
 }
-/** Business income always names its business, so only a transaction with a business can move into it. */
-export const canTakeCategory = (record: Entry, choice: CategoryChoice, splits: readonly TransactionSplit[] = []) => canRecategorize(record, splits) && (choice.kind !== 'Business income' || !!record.business_id);
+/** Business income always names its business, so only a transaction with a business can move into it. A linked
+ * income keeps the kind its action gave it (rent from a property): it takes custom categories only. */
+export const canTakeCategory = (record: Entry, choice: CategoryChoice, splits: readonly TransactionSplit[] = []) => canRecategorize(record, splits) && (choice.kind !== 'Business income' || !!record.business_id)
+ && (!isLinkedTransaction(record) || !income.includes(record.kind) || choice.kind === record.kind);
 
 /** Moves the chosen transactions of the choice's direction to it; returns the changed records and how many changed. */
 export function recategorize(records: readonly Entry[], ids: readonly string[], choice: CategoryChoice, splits: readonly TransactionSplit[] = [], categories: readonly { id: string; name: string }[] = []) {
@@ -99,7 +102,7 @@ export function ruleMatches(rule: Criteria, record: Pick<Entry, 'name' | 'kind' 
 export function ruleTargets(rule: TransactionRule, records: readonly Entry[], splits: readonly TransactionSplit[] = [], tagsOf: (id: string) => readonly string[] = () => []) {
  const choice = ruleChoice(rule);
  return records.filter(record => ruleMatches(rule, record) && (
-  (!!choice && canTakeCategory(record, choice, splits) && !sameChoice(record, choice))
+  (!!choice && !isLinkedTransaction(record) && canTakeCategory(record, choice, splits) && !sameChoice(record, choice))
   || (!!rule.business_id && canAssignBusiness(record, rule.business_id))
   || (canTag(record) && rule.tag_ids.some(tag => !tagsOf(record.id).includes(tag))))).map(record => record.id);
 }

@@ -15,6 +15,7 @@ const guard = { closes: [] };
 const { MortgagePaymentDialog } = r.load('components/mortgage-payment-dialog.tsx', {
  ...ui.modules,
  '@/hooks/use-dated-exchange-rate': { useDatedExchangeRate: (from, to) => ({ rate: !from || !to ? null : from === to ? 1 : fx.rates[from + to] ?? null, retry() { fx.retries++; } }) },
+ '@/components/transactions/pickers': { CategoryChoiceButton: Object.assign(({ value }) => React.createElement('i', { 'data-category': value.category_id ?? value.kind }), { displayName: 'CategoryChoiceButton' }) },
  '@/components/discard-changes': { useDiscardChanges: (dirty, onClose, busy) => ({ close: () => { guard.closes.push({ dirty, busy }); if (!busy) onClose(); }, confirmation: React.createElement('i', { 'data-dirty': String(dirty) }) }) },
 });
 
@@ -182,4 +183,42 @@ test('inline mode renders the payment form without its own dialog', () => {
  assert.doesNotMatch(html, /Record mortgage payment/);
  view.find(byType(ui.FormFooter)).props.onCancel();
  assert.equal(guard.closes.at(-1).busy, false);
+});
+
+test('editing a payment opens on its values, counts back what it took and saves under the same id', async () => {
+ const editing = { id: 'p1', mortgage_id: 'm1', principal: 400, interest: 1200, date: '2026-10-01', notes: 'October', account_id: 'c1' };
+ const category = { categories: [{ id: 'housing', name: 'Housing', direction: 'expense' }], initial: { kind: 'Other expense', category_id: 'housing' } };
+ const { view, save, calls, number, setPrincipal, setInterest } = open({ mortgage: { ...mortgage, amount: 99600 }, accounts: [{ ...cash, amount: 3400 }, euro, stock], editing, category });
+ const html = view.html();
+ assert.match(html, /<h2>Edit mortgage payment<i data-hint=/);
+ // The mortgage owed 100,000 before this payment and the wallet held 5,000: both are counted back.
+ assert.equal(number(0).props.value, 400);assert.equal(number(1).props.value, 1200);assert.equal(number(0).props.max, 100000);
+ assert.ok(html.includes(`Remaining balance: ${formatMoney(99600, 'USD', 'en-US')}`));
+ assert.ok(html.includes(`Cash balance after update: ${formatMoney(3400, 'USD', 'en-US')}`));
+ assert.match(html, /data-category="housing"/);
+ assert.match(html, /data-dirty="false"/, 'opening a payment is not a change to discard');
+ // The whole 5,000 can be paid; one more cannot.
+ setPrincipal(3800);
+ assert.equal(save().props.disabled, false);
+ setInterest(1201);
+ assert.equal(save().props.disabled, true);
+ assert.match(view.html(), /Not enough money in the selected cash account\./);
+ setInterest(1000);setPrincipal(500);
+ view.find(element => element.type?.displayName === 'CategoryChoiceButton').props.onChange({ kind: 'Charity', category_id: null });view.update();
+ view.find(element => element.type?.displayName === 'CategoryChoiceButton').props.onChange(null);view.update();
+ assert.match(view.html(), /data-category="Charity"/, 'clearing the field keeps the last choice');
+ await save().props.onClick();
+ assert.deepEqual(calls.saved, [{ ...editing, principal: 500, interest: 1000, category: { kind: 'Charity', category_id: null } }]);
+ assert.equal(calls.closed, 1);
+});
+
+test('an edited payment from an account in another currency leaves the balance check to the server', () => {
+ fx.rates.EURUSD = 2;
+ const editing = { id: 'p1', mortgage_id: 'm1', principal: 400, interest: 1200, date: '2026-10-01', notes: '', account_id: 'c2' };
+ const { view, save } = open({ mortgage: { ...mortgage, amount: 99600 }, accounts: [cash, { ...euro, amount: 100 }, stock], editing });
+ // 1,600 dollars is 800 euros and the account shows 100 after the payment took its part: the form cannot know what it took.
+ assert.equal(save().props.disabled, false);
+ assert.doesNotMatch(view.html(), /Not enough money/);
+ assert.doesNotMatch(view.html(), /data-category/, 'no category field without its categories');
+ delete fx.rates.EURUSD;
 });

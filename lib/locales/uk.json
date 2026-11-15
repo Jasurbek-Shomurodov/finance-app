@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} од. · Прибуток/збиток {amount}",
   "1 unit · Gain/loss {amount}": "1 од. · Прибуток/збиток {amount}",
   "{rate}% annual interest": "{rate}% річних",
-  "One-time record": "Одноразовий запис",
   "One time": "Одноразово",
   "Every month": "Щомісяця",
   "Every year": "Щороку",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "Увійдіть, щоб запитувати про власні записи.",
   "Open in full screen": "Відкрити на весь екран",
   "Exit full screen": "Вийти з повноекранного режиму",
-  "What changed your net worth": "Що змінило ваш капітал"
+  "What changed your net worth": "Що змінило ваш капітал",
+  "This transaction keeps its category.": "Ця операція зберігає свою категорію.",
+  "Payment on {name}": "Платіж за «{name}»",
+  "Open mortgage": "Відкрити іпотеку",
+  "Transfer or repayment fee": "Комісія за переказ або погашення",
+  "Asset transfer": "Переказ активу",
+  "Asset tracker update": "Оновлення з історії активу",
+  "To change the amount or date, delete it and record it again.": "Щоб змінити суму або дату, видаліть операцію й запишіть її знову.",
+  "Edit mortgage payment": "Змінити іпотечний платіж",
+  "Could not load the payment.": "Не вдалося завантажити платіж.",
+  "Payment not found.": "Платіж не знайдено.",
+  "{amount} to principal": "{amount} в основний борг",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Натисніть на платіж, щоб відкрити його: там його можна змінити або видалити. Оновлення балансу видаляються починаючи з найновішого.",
+  "Page not found": "Сторінку не знайдено",
+  "This address does not open anything here.": "Ця адреса тут нічого не відкриває."
 }

@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} unités · Gain/perte {amount}",
   "1 unit · Gain/loss {amount}": "1 unité · Gain/perte {amount}",
   "{rate}% annual interest": "{rate} % d’intérêt annuel",
-  "One-time record": "Enregistrement ponctuel",
   "One time": "Ponctuel",
   "Every month": "Chaque mois",
   "Every year": "Chaque année",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "Connectez-vous pour poser des questions sur vos propres données.",
   "Open in full screen": "Ouvrir en plein écran",
   "Exit full screen": "Quitter le plein écran",
-  "What changed your net worth": "Ce qui a modifié votre patrimoine net"
+  "What changed your net worth": "Ce qui a modifié votre patrimoine net",
+  "This transaction keeps its category.": "Cette transaction conserve sa catégorie.",
+  "Payment on {name}": "Paiement pour {name}",
+  "Open mortgage": "Ouvrir le prêt immobilier",
+  "Transfer or repayment fee": "Frais de virement ou de remboursement",
+  "Asset transfer": "Transfert d’actif",
+  "Asset tracker update": "Mise à jour du suivi de l’actif",
+  "To change the amount or date, delete it and record it again.": "Pour modifier le montant ou la date, supprimez-la et enregistrez-la de nouveau.",
+  "Edit mortgage payment": "Modifier le paiement du prêt immobilier",
+  "Could not load the payment.": "Impossible de charger le paiement.",
+  "Payment not found.": "Paiement introuvable.",
+  "{amount} to principal": "{amount} de capital",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Cliquez sur un paiement pour l’ouvrir : vous pouvez le modifier ou le supprimer là. Les mises à jour de solde se suppriment à partir de la plus récente.",
+  "Page not found": "Page introuvable",
+  "This address does not open anything here.": "Cette adresse n’ouvre rien ici."
 }

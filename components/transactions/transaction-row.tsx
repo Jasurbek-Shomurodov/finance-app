@@ -6,7 +6,7 @@ import { useDisplayMoney } from '@/components/display-money';
 import { RollingText } from '@/components/presentation-foundation/rolling-text';
 import { shiftDay } from '@/lib/calendar-days';
 import { income, type Entry } from '@/lib/finance';
-import { formatDate, formatSignedMoney } from '@/lib/format';
+import { formatDate, formatMoney, formatSignedMoney } from '@/lib/format';
 import { isMortgagePayment, spendingAmount, transferAmount } from '@/lib/spending';
 import { signedAmount } from '@/lib/transaction-list';
 
@@ -20,13 +20,14 @@ export function TransactionColumns({ selecting }: { selecting?: boolean }) {
 }
 
 /** One day: its date in the heading, its transactions below. The day's net total shows only when the day has two or more
- * rows (`count`, the whole day's, also across pages); with one row the total would repeat that row's amount. */
-export function DayGroup({ date, total, count, currency, today, children }: { date: string; total: number | null; count: number; currency: string; today: string; children: ReactNode }) {
+ * rows (`count`, the whole day's, also across pages); with one row the total would repeat that row's amount. A day with
+ * mortgage payments says how much went to principal, which the total leaves out while the rows show whole payments. */
+export function DayGroup({ date, total, principal, count, currency, today, children }: { date: string; total: number | null; /** Mortgage principal paid that day, in the display currency. */ principal?: number | null; count: number; currency: string; today: string; children: ReactNode }) {
  const { t, locale } = useLanguage();
  const yesterday = shiftDay(today, -1);
  const label = date === today ? t('Today') : date === yesterday ? t('Yesterday') : formatDate(date, locale);
  return <section className="transaction-day" aria-label={label}>
-  <div className="transaction-day-heading"><h3>{label}</h3>{count > 1 && <span className={total !== null && total > 0 ? 'positive' : undefined}>{total === null ? '—' : <RollingText text={formatSignedMoney(total, currency, locale)}/>}</span>}</div>
+  <div className="transaction-day-heading"><h3>{label}</h3>{count > 1 && <span className={total !== null && total > 0 ? 'positive' : undefined}>{total === null ? '—' : <RollingText text={formatSignedMoney(total, currency, locale)}/>}{!!principal && <> · {t('{amount} to principal', { amount: formatMoney(principal, currency, locale) })}</>}</span>}</div>
   <ul>{children}</ul>
  </section>;
 }

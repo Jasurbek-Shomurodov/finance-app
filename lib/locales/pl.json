@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} szt. · Zysk/strata {amount}",
   "1 unit · Gain/loss {amount}": "1 szt. · Zysk/strata {amount}",
   "{rate}% annual interest": "{rate}% rocznego oprocentowania",
-  "One-time record": "Rekord jednorazowy",
   "One time": "Jednorazowo",
   "Every month": "Co miesiąc",
   "Every year": "Co rok",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "Zaloguj się, aby pytać o własne dane.",
   "Open in full screen": "Otwórz na pełnym ekranie",
   "Exit full screen": "Zamknij pełny ekran",
-  "What changed your net worth": "Co zmieniło Twoją wartość netto"
+  "What changed your net worth": "Co zmieniło Twoją wartość netto",
+  "This transaction keeps its category.": "Ta transakcja zachowuje swoją kategorię.",
+  "Payment on {name}": "Płatność: {name}",
+  "Open mortgage": "Otwórz kredyt hipoteczny",
+  "Transfer or repayment fee": "Opłata za przelew lub spłatę",
+  "Asset transfer": "Przeniesienie aktywa",
+  "Asset tracker update": "Aktualizacja z historii aktywa",
+  "To change the amount or date, delete it and record it again.": "Aby zmienić kwotę lub datę, usuń ją i zapisz ponownie.",
+  "Edit mortgage payment": "Edytuj ratę kredytu hipotecznego",
+  "Could not load the payment.": "Nie udało się wczytać płatności.",
+  "Payment not found.": "Nie znaleziono płatności.",
+  "{amount} to principal": "{amount} na kapitał",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Kliknij płatność, aby ją otworzyć: tam możesz ją edytować lub usunąć. Aktualizacje salda usuwa się od najnowszej.",
+  "Page not found": "Nie znaleziono strony",
+  "This address does not open anything here.": "Ten adres niczego tutaj nie otwiera."
 }

@@ -11,7 +11,7 @@ export type SankeyRequest = { target: DrillTarget; title: string; month: string;
  /** What was saved in the period, for a Savings Sankey (where it went). */ savings?: number };
 
 /** Which of the shell's dialogs is open, and for which record: ending a schedule, splitting, viewing, a Money flow
- * Sankey, tracking a holding, a mortgage or debt payment, an income source, or business setup (`guide` reopens only its closing guide,
+ * Sankey, tracking a holding, a mortgage or debt payment, changing a recorded mortgage payment, an income source, or business setup (`guide` reopens only its closing guide,
  * from Settings). */
 export function useOpenDialogs() {
     const [stopping,setStopping]=useState<Entry|null>(null);
@@ -26,10 +26,12 @@ export function useOpenDialogs() {
     const investIn = (record: Entry) => { setTrackingType('contribution'); setTracking(record); };
     const closeTracker = () => { setTracking(null); setTrackingType(null); };
     const [payingMortgage, setPayingMortgage] = useState<Entry | null>(null);
+    /** The mortgage payment (its transaction) whose recorded amounts are being changed. */
+    const [editingPayment, setEditingPayment] = useState<Entry | null>(null);
     const [debtPayment,setDebtPayment]=useState<Entry|null>(null);
     const [editingIncomeSource,setEditingIncomeSource]=useState<EarningSource|null>(null);
     const [settingUpBusinesses,setSettingUpBusinesses]=useState<boolean|'guide'>(false);
     /** Signing out closes the record dialogs and business setup. */
-    const closeRecordDialogs = () => { setStopping(null); setSplitting(null); setViewing(null); setSankey(null); closeTracker(); setPayingMortgage(null); setSettingUpBusinesses(false); };
-    return { stopping, setStopping, splitting, setSplitting, viewing, setViewing, sankey, setSankey, tracking, setTracking, trackingType, investIn, closeTracker, payingMortgage, setPayingMortgage, debtPayment, setDebtPayment, editingIncomeSource, setEditingIncomeSource, settingUpBusinesses, setSettingUpBusinesses, closeRecordDialogs };
+    const closeRecordDialogs = () => { setStopping(null); setSplitting(null); setViewing(null); setSankey(null); closeTracker(); setPayingMortgage(null); setEditingPayment(null); setSettingUpBusinesses(false); };
+    return { stopping, setStopping, splitting, setSplitting, viewing, setViewing, sankey, setSankey, tracking, setTracking, trackingType, investIn, closeTracker, payingMortgage, setPayingMortgage, editingPayment, setEditingPayment, debtPayment, setDebtPayment, editingIncomeSource, setEditingIncomeSource, settingUpBusinesses, setSettingUpBusinesses, closeRecordDialogs };
 }

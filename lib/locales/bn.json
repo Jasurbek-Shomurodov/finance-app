@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} ইউনিট · লাভ/ক্ষতি {amount}",
   "1 unit · Gain/loss {amount}": "1 ইউনিট · লাভ/ক্ষতি {amount}",
   "{rate}% annual interest": "বার্ষিক সুদ {rate}%",
-  "One-time record": "এককালীন রেকর্ড",
   "One time": "এককালীন",
   "Every month": "প্রতি মাসে",
   "Every year": "প্রতি বছর",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "নিজের রেকর্ড নিয়ে জিজ্ঞেস করতে সাইন ইন করুন।",
   "Open in full screen": "পূর্ণ পর্দায় খুলুন",
   "Exit full screen": "পূর্ণ পর্দা থেকে বের হন",
-  "What changed your net worth": "আপনার নিট সম্পদে কী বদলেছে"
+  "What changed your net worth": "আপনার নিট সম্পদে কী বদলেছে",
+  "This transaction keeps its category.": "এই লেনদেনের বিভাগ একই থাকছে।",
+  "Payment on {name}": "{name}-এর কিস্তি",
+  "Open mortgage": "বন্ধকি ঋণ খুলুন",
+  "Transfer or repayment fee": "স্থানান্তর বা পরিশোধের ফি",
+  "Asset transfer": "সম্পদ স্থানান্তর",
+  "Asset tracker update": "সম্পদ ট্র্যাকারের আপডেট",
+  "To change the amount or date, delete it and record it again.": "পরিমাণ বা তারিখ বদলাতে এটি মুছে আবার রেকর্ড করুন।",
+  "Edit mortgage payment": "বন্ধকি কিস্তি সম্পাদনা",
+  "Could not load the payment.": "কিস্তিটি লোড করা যায়নি।",
+  "Payment not found.": "কিস্তি পাওয়া যায়নি।",
+  "{amount} to principal": "{amount} আসল পরিশোধে",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "কোনো কিস্তি খুলতে তাতে ক্লিক করুন: সেখানে সম্পাদনা বা মুছতে পারবেন। ব্যালেন্স আপডেট সবচেয়ে নতুনটি থেকে মোছা হয়।",
+  "Page not found": "পৃষ্ঠা পাওয়া যায়নি",
+  "This address does not open anything here.": "এই ঠিকানায় এখানে কিছু খোলে না।"
 }

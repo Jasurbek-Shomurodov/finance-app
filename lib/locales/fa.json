@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} واحد · سود/زیان {amount}",
   "1 unit · Gain/loss {amount}": "1 واحد · سود/زیان {amount}",
   "{rate}% annual interest": "{rate}٪ بهرهٔ سالانه",
-  "One-time record": "مورد یک‌باره",
   "One time": "یک‌بار",
   "Every month": "هر ماه",
   "Every year": "هر سال",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "برای پرسیدن درباره سوابق خودتان وارد شوید.",
   "Open in full screen": "باز کردن در حالت تمام‌صفحه",
   "Exit full screen": "خروج از حالت تمام‌صفحه",
-  "What changed your net worth": "چه چیزی دارایی خالص شما را تغییر داد"
+  "What changed your net worth": "چه چیزی دارایی خالص شما را تغییر داد",
+  "This transaction keeps its category.": "این تراکنش دستهٔ خود را نگه می‌دارد.",
+  "Payment on {name}": "پرداخت برای {name}",
+  "Open mortgage": "باز کردن وام مسکن",
+  "Transfer or repayment fee": "کارمزد انتقال یا بازپرداخت",
+  "Asset transfer": "انتقال دارایی",
+  "Asset tracker update": "به‌روزرسانی از ردیاب دارایی",
+  "To change the amount or date, delete it and record it again.": "برای تغییر مبلغ یا تاریخ، آن را حذف و دوباره ثبت کنید.",
+  "Edit mortgage payment": "ویرایش پرداخت وام مسکن",
+  "Could not load the payment.": "پرداخت بارگیری نشد.",
+  "Payment not found.": "پرداخت پیدا نشد.",
+  "{amount} to principal": "{amount} بابت اصل وام",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "برای باز کردن یک پرداخت روی آن کلیک کنید: آنجا می‌توانید ویرایش یا حذفش کنید. به‌روزرسانی‌های موجودی از جدیدترین حذف می‌شوند.",
+  "Page not found": "صفحه پیدا نشد",
+  "This address does not open anything here.": "این نشانی در اینجا چیزی را باز نمی‌کند."
 }

@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity}단위 · 손익 {amount}",
   "1 unit · Gain/loss {amount}": "1단위 · 손익 {amount}",
   "{rate}% annual interest": "연 이자율 {rate}%",
-  "One-time record": "일회성 기록",
   "One time": "일회성",
   "Every month": "매월",
   "Every year": "매년",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "내 기록에 대해 물어보려면 로그인하세요.",
   "Open in full screen": "전체 화면으로 열기",
   "Exit full screen": "전체 화면 종료",
-  "What changed your net worth": "순자산을 바꾼 항목"
+  "What changed your net worth": "순자산을 바꾼 항목",
+  "This transaction keeps its category.": "이 거래는 기존 카테고리를 유지합니다.",
+  "Payment on {name}": "{name} 납부",
+  "Open mortgage": "주택담보대출 열기",
+  "Transfer or repayment fee": "이체 또는 상환 수수료",
+  "Asset transfer": "자산 이전",
+  "Asset tracker update": "자산 추적기 업데이트",
+  "To change the amount or date, delete it and record it again.": "금액이나 날짜를 바꾸려면 삭제한 뒤 다시 기록하세요.",
+  "Edit mortgage payment": "주택담보대출 납부 수정",
+  "Could not load the payment.": "납부 내역을 불러오지 못했습니다.",
+  "Payment not found.": "납부 내역을 찾을 수 없습니다.",
+  "{amount} to principal": "원금 {amount}",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "납부 내역을 클릭하면 열립니다. 거기서 수정하거나 삭제할 수 있습니다. 잔액 업데이트는 최신 항목부터 삭제됩니다.",
+  "Page not found": "페이지를 찾을 수 없습니다",
+  "This address does not open anything here.": "이 주소로는 여기서 열 수 있는 것이 없습니다."
 }

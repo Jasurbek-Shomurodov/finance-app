@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} यूनिट · लाभ/हानि {amount}",
   "1 unit · Gain/loss {amount}": "1 यूनिट · लाभ/हानि {amount}",
   "{rate}% annual interest": "{rate}% वार्षिक ब्याज",
-  "One-time record": "एकमुश्त रिकॉर्ड",
   "One time": "एक बार",
   "Every month": "हर महीने",
   "Every year": "हर साल",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "अपने रिकॉर्ड के बारे में पूछने के लिए साइन इन करें।",
   "Open in full screen": "पूर्ण स्क्रीन में खोलें",
   "Exit full screen": "पूर्ण स्क्रीन से बाहर निकलें",
-  "What changed your net worth": "आपकी निवल संपत्ति में क्या बदला"
+  "What changed your net worth": "आपकी निवल संपत्ति में क्या बदला",
+  "This transaction keeps its category.": "इस लेन-देन की श्रेणी वही रहेगी।",
+  "Payment on {name}": "{name} का भुगतान",
+  "Open mortgage": "बंधक ऋण खोलें",
+  "Transfer or repayment fee": "अंतरण या चुकौती शुल्क",
+  "Asset transfer": "परिसंपत्ति अंतरण",
+  "Asset tracker update": "परिसंपत्ति ट्रैकर का अपडेट",
+  "To change the amount or date, delete it and record it again.": "राशि या तारीख बदलने के लिए इसे हटाकर दोबारा दर्ज करें।",
+  "Edit mortgage payment": "बंधक भुगतान संपादित करें",
+  "Could not load the payment.": "भुगतान लोड नहीं हो सका।",
+  "Payment not found.": "भुगतान नहीं मिला।",
+  "{amount} to principal": "{amount} मूलधन में",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "किसी भुगतान को खोलने के लिए उस पर क्लिक करें: वहाँ आप उसे संपादित या हटा सकते हैं। शेष के अपडेट सबसे नए से हटाए जाते हैं।",
+  "Page not found": "पृष्ठ नहीं मिला",
+  "This address does not open anything here.": "यह पता यहाँ कुछ नहीं खोलता।"
 }

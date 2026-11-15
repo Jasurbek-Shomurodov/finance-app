@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} หน่วย · กำไร/ขาดทุน {amount}",
   "1 unit · Gain/loss {amount}": "1 หน่วย · กำไร/ขาดทุน {amount}",
   "{rate}% annual interest": "ดอกเบี้ย {rate}% ต่อปี",
-  "One-time record": "รายการครั้งเดียว",
   "One time": "ครั้งเดียว",
   "Every month": "ทุกเดือน",
   "Every year": "ทุกปี",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "ลงชื่อเข้าใช้เพื่อถามเกี่ยวกับข้อมูลของคุณเอง",
   "Open in full screen": "เปิดแบบเต็มหน้าจอ",
   "Exit full screen": "ออกจากโหมดเต็มหน้าจอ",
-  "What changed your net worth": "สิ่งที่ทำให้ความมั่งคั่งสุทธิของคุณเปลี่ยน"
+  "What changed your net worth": "สิ่งที่ทำให้ความมั่งคั่งสุทธิของคุณเปลี่ยน",
+  "This transaction keeps its category.": "ธุรกรรมนี้ยังคงอยู่ในหมวดหมู่เดิม",
+  "Payment on {name}": "การชำระสำหรับ {name}",
+  "Open mortgage": "เปิดสินเชื่อบ้าน",
+  "Transfer or repayment fee": "ค่าธรรมเนียมการโอนหรือการชำระคืน",
+  "Asset transfer": "การโอนสินทรัพย์",
+  "Asset tracker update": "การอัปเดตจากตัวติดตามสินทรัพย์",
+  "To change the amount or date, delete it and record it again.": "หากต้องการเปลี่ยนจำนวนเงินหรือวันที่ ให้ลบแล้วบันทึกใหม่",
+  "Edit mortgage payment": "แก้ไขการชำระสินเชื่อบ้าน",
+  "Could not load the payment.": "โหลดการชำระไม่ได้",
+  "Payment not found.": "ไม่พบการชำระ",
+  "{amount} to principal": "{amount} เป็นเงินต้น",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "คลิกการชำระเพื่อเปิด: คุณแก้ไขหรือลบได้ที่นั่น การอัปเดตยอดคงเหลือจะลบจากรายการล่าสุดก่อน",
+  "Page not found": "ไม่พบหน้า",
+  "This address does not open anything here.": "ที่อยู่นี้ไม่ได้เปิดอะไรที่นี่"
 }

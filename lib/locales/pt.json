@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} unidades · Ganho/perda {amount}",
   "1 unit · Gain/loss {amount}": "1 unidade · Ganho/perda {amount}",
   "{rate}% annual interest": "{rate}% de juros ao ano",
-  "One-time record": "Registro único",
   "One time": "Única vez",
   "Every month": "Todo mês",
   "Every year": "Todo ano",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "Entre para perguntar sobre os seus próprios registros.",
   "Open in full screen": "Abrir em tela cheia",
   "Exit full screen": "Sair da tela cheia",
-  "What changed your net worth": "O que alterou o seu património líquido"
+  "What changed your net worth": "O que alterou o seu património líquido",
+  "This transaction keeps its category.": "Esta transação mantém a sua categoria.",
+  "Payment on {name}": "Pagamento de {name}",
+  "Open mortgage": "Abrir hipoteca",
+  "Transfer or repayment fee": "Taxa de transferência ou reembolso",
+  "Asset transfer": "Transferência de ativo",
+  "Asset tracker update": "Atualização do acompanhamento do ativo",
+  "To change the amount or date, delete it and record it again.": "Para alterar o valor ou a data, elimine-a e registe-a de novo.",
+  "Edit mortgage payment": "Editar pagamento da hipoteca",
+  "Could not load the payment.": "Não foi possível carregar o pagamento.",
+  "Payment not found.": "Pagamento não encontrado.",
+  "{amount} to principal": "{amount} de capital",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Clique num pagamento para o abrir: aí pode editá-lo ou eliminá-lo. As atualizações de saldo são eliminadas a partir da mais recente.",
+  "Page not found": "Página não encontrada",
+  "This address does not open anything here.": "Este endereço não abre nada aqui."
 }

@@ -175,7 +175,7 @@ export function TransactionsScreen() {
   {error ? <InlineError message={t(error)} onRetry={live ? remote.retry : refreshRecords}/> : loading ? <TransactionsSkeleton label={t('Loading records…')} tools={false}/> : <div className="transactions-layout">
    <section className="panel transactions-list" aria-label={t('Transactions')}>
     {days.length > 0 && <TransactionColumns selecting={selecting}/>}
-    {days.length ? days.map(day => <DayGroup key={day.date} date={day.date} total={day.total} count={day.count} currency={currency} today={today}>
+    {days.length ? days.map(day => <DayGroup key={day.date} date={day.date} total={day.total} principal={day.principal} count={day.count} currency={currency} today={today}>
      {day.records.map(record => {
       const recordTags = tagsOf(record.id).map(id => tagById.get(id)).filter(tag => !!tag);
       const name = shownName(record, t, nameOf(record)), receipts = attachments.counts.get(record.id), account = record.account_id ? accounts.get(record.account_id) : undefined;

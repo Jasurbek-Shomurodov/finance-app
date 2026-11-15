@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} yunit · Kita/lugi {amount}",
   "1 unit · Gain/loss {amount}": "1 yunit · Kita/lugi {amount}",
   "{rate}% annual interest": "{rate}% taunang interes",
-  "One-time record": "Minsanang record",
   "One time": "Minsan lang",
   "Every month": "Bawat buwan",
   "Every year": "Bawat taon",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "Mag-sign in para magtanong tungkol sa sarili mong mga rekord.",
   "Open in full screen": "Buksan sa full screen",
   "Exit full screen": "Lumabas sa full screen",
-  "What changed your net worth": "Ano ang nagbago sa iyong net worth"
+  "What changed your net worth": "Ano ang nagbago sa iyong net worth",
+  "This transaction keeps its category.": "Nananatili ang kategorya ng transaksyong ito.",
+  "Payment on {name}": "Bayad sa {name}",
+  "Open mortgage": "Buksan ang mortgage",
+  "Transfer or repayment fee": "Bayarin sa paglipat o pagbabayad",
+  "Asset transfer": "Paglipat ng asset",
+  "Asset tracker update": "Update mula sa tracker ng asset",
+  "To change the amount or date, delete it and record it again.": "Para baguhin ang halaga o petsa, burahin ito at itala muli.",
+  "Edit mortgage payment": "I-edit ang bayad sa mortgage",
+  "Could not load the payment.": "Hindi ma-load ang bayad.",
+  "Payment not found.": "Hindi nahanap ang bayad.",
+  "{amount} to principal": "{amount} sa prinsipal",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "I-click ang isang bayad para buksan ito: doon mo ito mae-edit o mabubura. Binubura ang mga update ng balanse mula sa pinakabago.",
+  "Page not found": "Hindi nahanap ang pahina",
+  "This address does not open anything here.": "Walang binubuksan dito ang address na ito."
 }

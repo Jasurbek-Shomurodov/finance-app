@@ -7,11 +7,11 @@ const {fundingPlan,unassignedSurplus}=loadTS('lib/goal-funding.ts');
 const goal=(id,extra={})=>({id,name:id,kind:'savings',currency:'USD',funding_enabled:true,funding_priority:10,target:1000,allocated:0,...extra});
 
 test('migration 163 is in setup.sql, moves only the default and touches no existing goal',()=>{
- assert.ok(fs.readFileSync('database/setup.sql','utf8').trimEnd().endsWith(migration.trimEnd()));
+ assert.ok(fs.readFileSync('database/setup.sql','utf8').includes(migration.trimEnd()));
  assert.match(migration,/ALTER COLUMN funding_enabled SET DEFAULT true/);
  assert.doesNotMatch(migration,/UPDATE public\.savings_goals/);
  assert.match(migration,/'schema_version',163/);
- assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 163/);
+ assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 164/);
 });
 
 test('a new goal is in the funding plan, and one without a budget asks for nothing rather than hiding the plan',()=>{

@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} unități · Câștig/pierdere {amount}",
   "1 unit · Gain/loss {amount}": "1 unitate · Câștig/pierdere {amount}",
   "{rate}% annual interest": "Dobândă anuală {rate}%",
-  "One-time record": "Înregistrare unică",
   "One time": "O singură dată",
   "Every month": "În fiecare lună",
   "Every year": "În fiecare an",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "Conectează-te ca să întrebi despre propriile înregistrări.",
   "Open in full screen": "Deschide pe tot ecranul",
   "Exit full screen": "Ieși din ecranul complet",
-  "What changed your net worth": "Ce v-a schimbat averea netă"
+  "What changed your net worth": "Ce v-a schimbat averea netă",
+  "This transaction keeps its category.": "Această tranzacție își păstrează categoria.",
+  "Payment on {name}": "Plată pentru {name}",
+  "Open mortgage": "Deschide ipoteca",
+  "Transfer or repayment fee": "Comision de transfer sau rambursare",
+  "Asset transfer": "Transfer de activ",
+  "Asset tracker update": "Actualizare din istoricul activului",
+  "To change the amount or date, delete it and record it again.": "Pentru a schimba suma sau data, șterge-o și înregistreaz-o din nou.",
+  "Edit mortgage payment": "Editează plata ipotecii",
+  "Could not load the payment.": "Plata nu a putut fi încărcată.",
+  "Payment not found.": "Plata nu a fost găsită.",
+  "{amount} to principal": "{amount} din principal",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Fă clic pe o plată pentru a o deschide: acolo o poți edita sau șterge. Actualizările de sold se șterg începând cu cea mai nouă.",
+  "Page not found": "Pagina nu a fost găsită",
+  "This address does not open anything here.": "Această adresă nu deschide nimic aici."
 }

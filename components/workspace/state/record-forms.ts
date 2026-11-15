@@ -14,6 +14,8 @@ export type RecordFormsInput = {
     setRecordKinds: Dispatch<SetStateAction<readonly string[]>>;
     setEditing: Dispatch<SetStateAction<Entry | null>>; setDeleting: Dispatch<SetStateAction<Entry | null>>;
     setEditingIncomeSource: Dispatch<SetStateAction<EarningSource | null>>;
+    /** Opens a recorded mortgage payment in its own form. */
+    setEditingPayment: Dispatch<SetStateAction<Entry | null>>;
     currency: string; section: string; cashFlowSection: boolean;
     holdingAccounts?: HoldingAccount[]; preferredCurrencies: string[]; sources: EarningSource[];
     /** The saved record behind a table row, in its own currency. */
@@ -24,7 +26,7 @@ export type RecordFormsInput = {
 
 /** Opening and closing the record form and the delete confirmation. Each form offers only the kinds that fit where it
  * was opened from, and starts in the workspace currency. */
-export function recordForms({ editable, setError, setRecordKinds, setEditing, setDeleting, setEditingIncomeSource, currency, section, cashFlowSection, holdingAccounts, preferredCurrencies, sources, storedRecord, categories, removedKinds }: RecordFormsInput) {
+export function recordForms({ editable, setError, setRecordKinds, setEditing, setDeleting, setEditingIncomeSource, setEditingPayment, currency, section, cashFlowSection, holdingAccounts, preferredCurrencies, sources, storedRecord, categories, removedKinds }: RecordFormsInput) {
     const start = (kind: Entry['kind']) => offeredChoice(kind, categories, removedKinds);
     /** Opens the income or expense form; Recurring's Add recurring › Bill opens it already repeating, as a schedule.
      * `preset` fills in fields the caller already knows, such as Budget's Make recurring (name, category and amount). */
@@ -45,12 +47,13 @@ export function recordForms({ editable, setError, setRecordKinds, setEditing, se
         const account=holdingAccounts?.find(item=>item.id===holdingAccountId);
         setEditing({...fresh(),kind,is_investment:kind==='Cash'&&account?.kind==='Cash',currency:account&&preferredCurrencies.includes(account.currency)?account.currency:currency,holding_account_id:holdingAccountId??null});
     };
-    /** Opens a record's form; a scheduled income source opens its own form instead. */
+    /** Opens a record's form; a scheduled income source and a mortgage payment open their own forms instead. */
     const editRecord = (record: Entry) => {
         const source=sources.find(source=>source.schedule_id===record.id);
         if(!editable())return;
         if(source){setEditingIncomeSource(source);return;}
         setError('');
+        if(record.mortgage_payment_id){setEditingPayment(storedRecord(record));return;}
         setRecordKinds(income.includes(record.kind) ? income : expenses.includes(record.kind) ? expenses : assetRecordKinds.includes(record.kind) ? assetRecordKinds : lendingRecordKinds);
         setEditing(storedRecord(record));
     };

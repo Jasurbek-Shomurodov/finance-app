@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} adet · Kâr/zarar {amount}",
   "1 unit · Gain/loss {amount}": "1 adet · Kâr/zarar {amount}",
   "{rate}% annual interest": "Yıllık %{rate} faiz",
-  "One-time record": "Tek seferlik kayıt",
   "One time": "Tek seferlik",
   "Every month": "Her ay",
   "Every year": "Her yıl",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "Kendi kayıtlarınız hakkında soru sormak için giriş yapın.",
   "Open in full screen": "Tam ekranda aç",
   "Exit full screen": "Tam ekrandan çık",
-  "What changed your net worth": "Net değerinizi ne değiştirdi"
+  "What changed your net worth": "Net değerinizi ne değiştirdi",
+  "This transaction keeps its category.": "Bu işlem kategorisini koruyor.",
+  "Payment on {name}": "{name} ödemesi",
+  "Open mortgage": "İpoteği aç",
+  "Transfer or repayment fee": "Transfer veya geri ödeme ücreti",
+  "Asset transfer": "Varlık transferi",
+  "Asset tracker update": "Varlık takibinden güncelleme",
+  "To change the amount or date, delete it and record it again.": "Tutarı veya tarihi değiştirmek için silip yeniden kaydedin.",
+  "Edit mortgage payment": "İpotek ödemesini düzenle",
+  "Could not load the payment.": "Ödeme yüklenemedi.",
+  "Payment not found.": "Ödeme bulunamadı.",
+  "{amount} to principal": "{amount} anaparaya",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Açmak için bir ödemeye tıklayın: orada düzenleyebilir veya silebilirsiniz. Bakiye güncellemeleri en yenisinden başlanarak silinir.",
+  "Page not found": "Sayfa bulunamadı",
+  "This address does not open anything here.": "Bu adres burada hiçbir şey açmıyor."
 }

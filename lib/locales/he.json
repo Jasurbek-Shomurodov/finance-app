@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} יחידות · רווח/הפסד {amount}",
   "1 unit · Gain/loss {amount}": "יחידה אחת · רווח/הפסד {amount}",
   "{rate}% annual interest": "ריבית שנתית {rate}%",
-  "One-time record": "רשומה חד-פעמית",
   "One time": "חד-פעמי",
   "Every month": "כל חודש",
   "Every year": "כל שנה",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "התחברו כדי לשאול על הרשומות שלכם.",
   "Open in full screen": "פתיחה במסך מלא",
   "Exit full screen": "יציאה ממסך מלא",
-  "What changed your net worth": "מה שינה את השווי הנקי שלך"
+  "What changed your net worth": "מה שינה את השווי הנקי שלך",
+  "This transaction keeps its category.": "העסקה הזו שומרת על הקטגוריה שלה.",
+  "Payment on {name}": "תשלום עבור {name}",
+  "Open mortgage": "פתיחת המשכנתה",
+  "Transfer or repayment fee": "עמלת העברה או החזר",
+  "Asset transfer": "העברת נכס",
+  "Asset tracker update": "עדכון ממעקב הנכס",
+  "To change the amount or date, delete it and record it again.": "כדי לשנות את הסכום או התאריך, מחקו אותה ורשמו אותה מחדש.",
+  "Edit mortgage payment": "עריכת תשלום משכנתה",
+  "Could not load the payment.": "לא ניתן היה לטעון את התשלום.",
+  "Payment not found.": "התשלום לא נמצא.",
+  "{amount} to principal": "{amount} לקרן",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "לחצו על תשלום כדי לפתוח אותו: שם אפשר לערוך או למחוק אותו. עדכוני יתרה נמחקים מהחדש ביותר.",
+  "Page not found": "הדף לא נמצא",
+  "This address does not open anything here.": "הכתובת הזו לא פותחת כאן דבר."
 }

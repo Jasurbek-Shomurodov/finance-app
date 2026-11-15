@@ -1,14 +1,14 @@
 "use client";
-import type { CSSProperties } from 'react';
+import type { CSSProperties, KeyboardEvent, MouseEvent } from 'react';
 import { ArrowUpFromLine, Banknote, ChartLine, Flag, HandCoins, Landmark, Receipt, type LucideIcon } from 'lucide-react';
 import { DeleteButton } from '@/components/presentation-foundation/delete-button';
 import { useLanguage } from '@/components/language-provider';
 import { formatDate, formatMoney, formatPercent } from '@/lib/format';
 import type { Entry } from '@/lib/finance';
 import { categoryHue } from '@/lib/category-colors';
-import { historyEventLabel, historyEventMovesCash, type TrackerEvent } from '@/lib/investment-history';
+import { historyEventLabel, historyEventMovesCash, withoutRepeatedBalances, type TrackerEvent } from '@/lib/investment-history';
 
-type Props = { events: TrackerEvent[]; record: Entry; accounts: Entry[]; valueLabel: string; help: string[]; deletable: (event: TrackerEvent) => boolean; deleteDisabled: boolean; onDelete: (event: TrackerEvent) => void };
+type Props = { events: TrackerEvent[]; record: Entry; accounts: Entry[]; valueLabel: string; /** What clicking an entry opens: a mortgage payment opens its transaction. Undefined where there is nothing to open. */ open?: (event: TrackerEvent) => (() => void) | undefined; deletable: (event: TrackerEvent) => boolean; deleteDisabled: boolean; onDelete: (event: TrackerEvent) => void };
 
 /** Each kind of entry keeps one symbol and hue; invested money and income match their lines on the Overview chart. */
 const eventMarks: Record<TrackerEvent['event_type'], { icon: LucideIcon; hue: number }> = {
@@ -16,8 +16,15 @@ const eventMarks: Record<TrackerEvent['event_type'], { icon: LucideIcon; hue: nu
  withdrawal: { icon: ArrowUpFromLine, hue: 32 }, income: { icon: Banknote, hue: categoryHue('Deposit') }, expense: { icon: Receipt, hue: 0 }, mortgage_payment: { icon: Landmark, hue: 350 },
 };
 
+/** What makes an entry open on a click or on Enter and Space, while its own buttons keep their press. */
+const openable = (onOpen: (() => void) | undefined, label: string) => !onOpen ? {} : ({
+ className: 'tracker-event-open', tabIndex: 0, role: 'button', 'aria-label': label,
+ onClick: (press: MouseEvent) => { if (!(press.target as HTMLElement).closest('button')) onOpen(); },
+ onKeyDown: (press: KeyboardEvent) => { if (press.target === press.currentTarget && (press.key === 'Enter' || press.key === ' ')) { press.preventDefault(); onOpen(); } },
+});
+
 /** One entry: what happened on the left, its amount on the right, and a bin only when the tracker may delete it. */
-function HistoryRow({ event, record, accounts, valueLabel, deletable, deleteDisabled, onDelete }: Omit<Props, 'events' | 'help'> & { event: TrackerEvent }) {
+function HistoryRow({ event, record, accounts, valueLabel, onOpen, deletable, deleteDisabled, onDelete }: Omit<Props, 'events' | 'open'> & { event: TrackerEvent; onOpen?: () => void }) {
  const { t, locale } = useLanguage();
  const money = (value: number) => formatMoney(value, record.currency, locale);
  const value = Number(event.balance) * Number(event.ownership_percentage) / 100;
@@ -28,9 +35,10 @@ function HistoryRow({ event, record, accounts, valueLabel, deletable, deleteDisa
  const shared = event.balance !== null && Number(event.ownership_percentage) < 100;
  // A payment entered in another currency counts in the asset's currency at its own day's rate.
  const converted = event.entered && event.entered.currency !== record.currency && event.amount !== null;
- return <li data-event={event.event_type}>
+ const label = t(historyEventLabel(record.kind, event.event_type));
+ return <li data-event={event.event_type} {...openable(onOpen, t('View details for {name}', { name: label }))}>
   <span className="record-icon category-record-icon" style={{ '--category-hue': mark.hue } as CSSProperties} aria-hidden="true"><Icon/></span>
-  <div className="tracker-event-main"><strong>{t(historyEventLabel(record.kind, event.event_type))}</strong><small><time>{formatDate(event.occurred_on, locale)}</time>{account && <> · {account}</>}</small>{event.notes && <p>{event.notes}</p>}</div>
+  <div className="tracker-event-main"><strong>{label}</strong><small><time>{formatDate(event.occurred_on, locale)}</time>{account && <> · {account}</>}</small>{event.notes && <p>{event.notes}</p>}</div>
   <div className="tracker-event-amount">
    {historyEventMovesCash(event) ? <><strong>{event.entered ? formatMoney(event.entered.amount, event.entered.currency, locale) : money(Number(event.amount))}</strong>{converted && <span>{t('{amount} at that day\'s rate', { amount: money(Number(event.amount)) })}</span>}{event.balance !== null && <span>{t(valueLabel)}: {money(value)}</span>}</>
     : <>{event.balance !== null && <strong>{money(value)}</strong>}{Number(event.amount) > 0 && <span>{t('Cash amount (your share)')}: {money(Number(event.amount))}</span>}</>}
@@ -41,11 +49,10 @@ function HistoryRow({ event, record, accounts, valueLabel, deletable, deleteDisa
  </li>;
 }
 
-/** The tracker's History tab: every entry, newest first. */
-export function TrackerHistory({ events, help, ...row }: Props) {
+/** The tracker's History tab: every entry, newest first. Its explanations sit behind the tracker's ⓘ. */
+export function TrackerHistory({ events, open, ...row }: Props) {
  const { t } = useLanguage();
  return <div className="tracker-history">
-  {help.map(text => <p key={text} className="tracker-help">{text}</p>)}
-  {events.length ? <ul>{[...events].reverse().map(event => <HistoryRow key={event.id} event={event} {...row}/>)}</ul> : <p>{t('No history yet.')}</p>}
+  {events.length ? <ul>{withoutRepeatedBalances(events).reverse().map(event => <HistoryRow key={event.id} event={event} onOpen={open?.(event)} {...row}/>)}</ul> : <p>{t('No history yet.')}</p>}
  </div>;
 }

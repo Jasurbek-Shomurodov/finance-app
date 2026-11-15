@@ -1,6 +1,6 @@
 import { daysBetween, monthEnd, shiftMonth } from './calendar-days';
 import { income, type Entry } from './finance';
-import { spendingAmount } from './spending';
+import { spendingAmount, transferAmount } from './spending';
 import { canAssignBusiness, inBusinessFilter } from './business';
 import { matchesTags, type TagMatch } from './tags';
 import { isTransactionHistory } from './transaction-history';
@@ -80,15 +80,18 @@ export const signedAmount = (record: Pick<Entry, 'kind' | 'amount'>) => income.i
  * shows the whole payment (`signedAmount`). */
 export const netAmount = (record: Parameters<typeof spendingAmount>[0]) => income.includes(record.kind) ? Number(record.amount) : -spendingAmount(record);
 
-/** Rows grouped by day; a day's total adds up its rows' `netAmount` and is null when a currency cannot be converted. */
+/** Rows grouped by day; a day's total adds up its rows' `netAmount` and is null when a currency cannot be converted.
+ * `principal` is the mortgage principal the day's payments moved to the debt: the rows show it, the total leaves it out. */
 export function groupByDay(records: readonly Entry[], convert: Convert) {
- const days: Array<{ date: string; records: Entry[]; total: number | null }> = [];
+ const days: Array<{ date: string; records: Entry[]; total: number | null; principal: number | null }> = [];
+ const add = (sum: number | null, value: number | null) => value === null || sum === null ? null : sum + value;
  for (const record of records) {
   let day = days.at(-1);
-  if (!day || day.date !== record.date) { day = { date: record.date, records: [], total: 0 }; days.push(day); }
+  if (!day || day.date !== record.date) { day = { date: record.date, records: [], total: 0, principal: 0 }; days.push(day); }
   day.records.push(record);
-  const value = convert(netAmount(record), record.currency, record);
-  day.total = value === null || day.total === null ? null : day.total + value;
+  day.total = add(day.total, convert(netAmount(record), record.currency, record));
+  const principal = transferAmount(record);
+  if (principal) day.principal = add(day.principal, convert(principal, record.currency, record));
  }
  return days;
 }
@@ -97,7 +100,7 @@ export function groupByDay(records: readonly Entry[], convert: Convert) {
  * or after it; a heading shows its total only when the day has two or more rows (a single row already says it). */
 export function groupPageByDay(records: readonly Entry[], from: number, to: number, convert: Convert) {
  const whole = new Map(groupByDay(records, convert).map(day => [day.date, day]));
- return groupByDay(records.slice(from, to), convert).map(day => { const all = whole.get(day.date) ?? day; return { ...day, total: all.total, count: all.records.length }; });
+ return groupByDay(records.slice(from, to), convert).map(day => { const all = whole.get(day.date) ?? day; return { ...day, total: all.total, principal: all.principal, count: all.records.length }; });
 }
 
 /** The categories most was spent in, largest first, in the display currency. Spending follows `lib/spending.ts`; an amount

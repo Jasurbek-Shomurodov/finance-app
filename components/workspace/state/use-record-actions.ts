@@ -1,6 +1,6 @@
 "use client";
 import type { Dispatch, SetStateAction } from 'react';
-import type { MortgagePayment } from '@/components/mortgage-payment-dialog';
+import { mortgageOfPayment, paymentFields, paymentFromRow, withEditedPayment, withPayment, type MortgagePayment } from '@/lib/mortgage-payment-edit';
 import { requestJson } from '@/lib/api-client';
 import { assignBusiness, moveAccountToBusiness } from '@/lib/business';
 import { decimalSum } from '@/lib/decimal-amounts';
@@ -43,20 +43,42 @@ export function useRecordActions({ demo, rows, setRows, refreshRecords, splits, 
         else { await requestJson('/api/records',{body:stopped}); refreshRecords(); }
         showSaved();
     }
+    /** A payment's category as the person chose it; a no-op when it already has it. */
+    const categorizePayment = (payment: MortgagePayment) => payment.category
+        ? requestJson('/api/transaction-rules', { body: { action: 'categorize', data: { ids: [payment.id], kind: payment.category.kind, category_id: payment.category.category_id } } }).catch(() => undefined)
+        : undefined;
     async function recordMortgagePayment(payment: MortgagePayment) {
         if (demo) {
             if (rows.some(row => row.id === payment.id)) return;
-            const mortgage = rows.find(row => row.id === payment.mortgage_id)!;
-            const expense: Entry = { ...fresh(), id: payment.id, name: mortgage.name, kind: 'Other expense', currency: mortgage.currency, amount: decimalSum([payment.principal, payment.interest]), date: payment.date, account_id: payment.account_id ?? null, account_exchange_rate: payment.exchange_rate ?? null, notes: payment.notes, mortgage_payment_id: payment.id, payment_principal: payment.principal, payment_interest: payment.interest };
             // The payment leaves the cash account it names, as a saved expense does; too little money refuses it.
-            setRows(applyRecordChange(rows.map(row => row.id === mortgage.id ? { ...row, amount: row.amount - payment.principal } : row), undefined, expense));
+            setRows(withPayment(rows, fresh(), payment));
         } else {
             const crossCurrency=payment.exchange_rate!==undefined;
-            const payload=crossCurrency?{...payment,record_id:payment.mortgage_id,type:'mortgage_payment',amount:decimalSum([payment.principal,payment.interest]),balance:null}:payment;
+            const fields = paymentFields(payment);
+            const payload=crossCurrency?{...fields,record_id:payment.mortgage_id,type:'mortgage_payment',amount:decimalSum([payment.principal,payment.interest]),balance:null}:fields;
             await requestJson(crossCurrency?'/api/investment-history/exchange':'/api/mortgage-payments', { body: payload, fallback: 'Payment could not be confirmed. Retry with the same details.' });
+            await categorizePayment(payment);
             refreshRecords();
         }
         showSaved();
+    }
+    /** Changes a recorded mortgage payment: its amounts, day, account, note and category. The balances follow. */
+    async function editMortgagePayment(payment: MortgagePayment) {
+        if (demo) setRows(withEditedPayment(rows, payment));
+        else {
+            await requestJson('/api/mortgage-payments', { method: 'PATCH', body: paymentFields(payment), fallback: 'Payment could not be confirmed. Retry with the same details.' });
+            await categorizePayment(payment);
+            refreshRecords();
+        }
+        showSaved();
+    }
+    /** A payment row's form values. Signed in they are read from the payment itself, which knows its mortgage and the
+     * account that paid it; the sample workspace finds them on its rows. */
+    async function mortgagePaymentSource(record: Entry): Promise<MortgagePayment> {
+        if (!demo) return requestJson<MortgagePayment>(`/api/mortgage-payments?id=${record.id}`, { method: 'GET', fallback: 'Could not load the payment.' });
+        const mortgage = mortgageOfPayment(rows, record);
+        if (!mortgage) throw Error('Mortgage not found.');
+        return paymentFromRow(record, mortgage.id);
     }
     const saveHoldingAccount = async (account: HoldingAccount) => {
         if(demo){setDemoHoldingAccounts(items=>[...items.filter(item=>item.id!==account.id),account]);showSaved();return;}
@@ -113,5 +135,5 @@ export function useRecordActions({ demo, rows, setRows, refreshRecords, splits, 
         if (demo) setRows(previous => applyRecordChange(previous, previous.find(row => row.id === record.id), record));
         else { await requestJson('/api/records', { body: record }); refreshRecords(); }
     }
-    return { stopRecord, recordMortgagePayment, saveHoldingAccount, assignHolding, categorize, assignTransactionsBusiness, setAccountBusiness, assignRecordOwner, setAccountOwner, saveBusiness };
+    return { stopRecord, recordMortgagePayment, editMortgagePayment, mortgagePaymentSource, saveHoldingAccount, assignHolding, categorize, assignTransactionsBusiness, setAccountBusiness, assignRecordOwner, setAccountOwner, saveBusiness };
 }

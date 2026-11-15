@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} 单位 · 盈亏 {amount}",
   "1 unit · Gain/loss {amount}": "1 单位 · 盈亏 {amount}",
   "{rate}% annual interest": "年利率 {rate}%",
-  "One-time record": "一次性记录",
   "One time": "一次性",
   "Every month": "每月",
   "Every year": "每年",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "登录后即可询问你自己的记录。",
   "Open in full screen": "全屏打开",
   "Exit full screen": "退出全屏",
-  "What changed your net worth": "是什么改变了您的净资产"
+  "What changed your net worth": "是什么改变了您的净资产",
+  "This transaction keeps its category.": "此交易保留原有类别。",
+  "Payment on {name}": "{name} 的还款",
+  "Open mortgage": "打开房贷",
+  "Transfer or repayment fee": "转账或还款手续费",
+  "Asset transfer": "资产转移",
+  "Asset tracker update": "资产跟踪更新",
+  "To change the amount or date, delete it and record it again.": "要更改金额或日期，请删除后重新记录。",
+  "Edit mortgage payment": "编辑房贷还款",
+  "Could not load the payment.": "无法加载这笔还款。",
+  "Payment not found.": "未找到这笔还款。",
+  "{amount} to principal": "{amount} 用于本金",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "点击一笔还款即可打开：可在其中编辑或删除。余额更新从最新的一条开始删除。",
+  "Page not found": "未找到页面",
+  "This address does not open anything here.": "此地址在这里打不开任何内容。"
 }

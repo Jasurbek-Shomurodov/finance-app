@@ -48,6 +48,10 @@ it instead of styling a page on its own.
 - Income amounts are green; expenses stay in the ink colour. Red marks overdue,
   overspent or owed amounts only.
 - Rare row actions go in a ⋯ menu rather than a row of buttons.
+- Every transaction can be changed from wherever it is shown (the user's rule, 15 November 2026). Its category,
+  business and tags change in place, also on a transaction a larger action wrote (`isLinkedTransaction`); a mortgage
+  payment's Edit opens its own form (`edit_mortgage_payment`, migration 164). Never leave a row without actions or a
+  dialog without saying where the transaction came from.
 - Delete is always a bin. A delete button is `DeleteButton`
   (`presentation-foundation/delete-button.tsx`): icon only, its label naming what
   it deletes; in a form footer it sits apart at the start. A ⋯ menu's delete is a

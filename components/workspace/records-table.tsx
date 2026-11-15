@@ -19,6 +19,7 @@ import { metalWeight } from '@/lib/precious-metals';
 import { formatDate, formatNumber, formatSignedMoney } from '@/lib/format';
 import { signedAmount } from '@/lib/transaction-list';
 import { trackedKinds } from '@/lib/investment-history';
+import { isLinkedTransaction } from '@/lib/linked-transactions';
 import { isTransactionHistory } from '@/lib/transaction-history';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
 import { noteLine, shownName } from '@/lib/record-names';
@@ -70,11 +71,10 @@ export function RecordsTable({ title, transactions = false, limit, pagination = 
       // A loan, debt or mortgage leads with Record payment, so its tracker is the rarer action.
       !demo && trackedKinds.includes(r.kind) && paidByPayment(r) && { label: t('Tracker'), onSelect: () => setTracking(storedRecord(r)) },
       [...income, ...expenses].includes(r.kind) && r.frequency !== 'Once' && !r.end_date && { label: t('Stop'), onSelect: () => setStopping(storedRecord(r)) },
-      ...(!r.movement_id && !r.operation_id && !r.mortgage_payment_id && !r.history_event_id ? [
-       isTransactionHistory(r) && { label: t('Split'), disabled: transactionTools.loading || !!transactionTools.error, onSelect: () => setSplitting(storedRecord(r)) },
-       { label: t('Edit'), onSelect: () => editRecord(r) },
-       { label: t('Delete'), deletes: true, onSelect: () => requestDelete(r) },
-      ] : []),
+      // A transaction written by a larger action is not split; a mortgage payment has its own Edit, and deleting any of them undoes the action.
+      !isLinkedTransaction(r) && isTransactionHistory(r) && { label: t('Split'), disabled: transactionTools.loading || !!transactionTools.error, onSelect: () => setSplitting(storedRecord(r)) },
+      (!isLinkedTransaction(r) || !!r.mortgage_payment_id) && { label: t('Edit'), onSelect: () => editRecord(r) },
+      { label: t('Delete'), deletes: true, onSelect: () => requestDelete(r) },
      ]}/></div></td>
    </tr>;
  return <section id="workspace-records" className={`panel records${historyOnly ? ' transaction-history' : ''}`}>

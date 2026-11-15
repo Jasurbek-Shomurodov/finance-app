@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} vipimo · Faida/hasara {amount}",
   "1 unit · Gain/loss {amount}": "Kipimo 1 · Faida/hasara {amount}",
   "{rate}% annual interest": "Riba ya mwaka {rate}%",
-  "One-time record": "Rekodi ya mara moja",
   "One time": "Mara moja",
   "Every month": "Kila mwezi",
   "Every year": "Kila mwaka",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "Ingia ili uulize kuhusu rekodi zako mwenyewe.",
   "Open in full screen": "Fungua kwenye skrini nzima",
   "Exit full screen": "Ondoka kwenye skrini nzima",
-  "What changed your net worth": "Kilichobadilisha thamani yako halisi"
+  "What changed your net worth": "Kilichobadilisha thamani yako halisi",
+  "This transaction keeps its category.": "Muamala huu unabaki na kategoria yake.",
+  "Payment on {name}": "Malipo ya {name}",
+  "Open mortgage": "Fungua rehani",
+  "Transfer or repayment fee": "Ada ya uhamisho au marejesho",
+  "Asset transfer": "Uhamisho wa mali",
+  "Asset tracker update": "Sasisho kutoka kwa kifuatiliaji cha mali",
+  "To change the amount or date, delete it and record it again.": "Ili kubadilisha kiasi au tarehe, ufute kisha uurekodi tena.",
+  "Edit mortgage payment": "Hariri malipo ya rehani",
+  "Could not load the payment.": "Malipo hayakuweza kupakiwa.",
+  "Payment not found.": "Malipo hayakupatikana.",
+  "{amount} to principal": "{amount} kwa mkopo msingi",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Bofya malipo ili kuyafungua: hapo unaweza kuyahariri au kuyafuta. Masasisho ya salio hufutwa kuanzia la karibuni zaidi.",
+  "Page not found": "Ukurasa haukupatikana",
+  "This address does not open anything here.": "Anwani hii haifungui chochote hapa."
 }

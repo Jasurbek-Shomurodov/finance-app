@@ -2,7 +2,9 @@
 import { DeleteButton } from '@/components/presentation-foundation/delete-button';
 import { useState, type ReactNode } from 'react';
 import type { BusinessOption } from '@/components/presentation-foundation/business-filter';
-import { BusinessPicker } from '@/components/transactions/pickers';
+import { BusinessPicker, CategoryPicker } from '@/components/transactions/pickers';
+import type { Category } from '@/lib/planning';
+import type { CategoryChoice } from '@/lib/transaction-rules';
 import { TagSelector } from '@/components/transactions/tags';
 import { showError, showNotice, showSaved } from '@/lib/feedback';
 import { canAssignBusiness } from '@/lib/business';
@@ -18,12 +20,17 @@ import type { Entry } from '@/lib/finance';
 import { shownName } from '@/lib/record-names';
 
 type TagProps={tags:readonly Tag[];tagIds:readonly string[];onTags:(add:string[],remove:string[])=>Promise<unknown>;onCreateTag:(name:string)=>Promise<string>};
-/** A transaction at a glance: the amount first, then its fields in two columns, with attachments and Split as cards. Its business, tags and receipts change right here; Edit opens its form and the bin, at the footer's start, moves it to Recently deleted after a confirmation; the dialog's own × closes it. */
-export function TransactionDetailsDialog({record:initial,incoming,categoryName,businesses,onBusiness,tagging,accountName,propertyName,ownerName,attachments,editable,onEdit,onSplit,onDelete,onClose}:{record:Entry;incoming:boolean;categoryName?:string;businesses:readonly BusinessOption[];onBusiness:(business:string|null)=>Promise<number>;tagging:TagProps;accountName?:string;/** The property it was paid for or received from. */propertyName?:string;/** Who it belongs to, in a shared household. */ownerName?:string;attachments?:ReactNode;editable:boolean;onEdit:()=>void;/** Opens Split transaction, when this one can be split. */onSplit?:()=>void;onDelete?:()=>void;onClose:()=>void}) {
+/** Changing the category right in the dialog: the categories on offer and the change itself, resolving to how many rows changed. */
+export type CategoryEditing={categories:readonly Category[];removed?:readonly string[];onChange:(choice:CategoryChoice)=>Promise<number>};
+/** Where a transaction written by a larger action came from: a line naming it, and for a mortgage payment a button that opens the mortgage. */
+export type TransactionOrigin={label:string;openLabel?:string;onOpen?:()=>void};
+/** A transaction at a glance: the amount first, then its fields in two columns, with attachments and Split as cards. Its category, business, tags and receipts change right here; Edit opens its form and the bin, at the footer's start, moves it to Recently deleted after a confirmation; the dialog's own × closes it. */
+export function TransactionDetailsDialog({record:initial,incoming,categoryName,businesses,onBusiness,tagging,accountName,propertyName,ownerName,attachments,editable,onEdit,onSplit,onDelete,onClose,categoryEditing,origin}:{categoryEditing?:CategoryEditing;origin?:TransactionOrigin;record:Entry;incoming:boolean;categoryName?:string;businesses:readonly BusinessOption[];onBusiness:(business:string|null)=>Promise<number>;tagging:TagProps;accountName?:string;/** The property it was paid for or received from. */propertyName?:string;/** Who it belongs to, in a shared household. */ownerName?:string;attachments?:ReactNode;editable:boolean;onEdit:()=>void;/** Opens Split transaction, when this one can be split. */onSplit?:()=>void;onDelete?:()=>void;onClose:()=>void}) {
  const {t,locale}=useLanguage();
  const [record,setRecord]=useState(initial),[tagIds,setTagIds]=useState<readonly string[]>(tagging.tagIds);
  const business=businesses.find(item=>item.id===record.business_id);
  async function changeBusiness(next:string|null){try{if(await onBusiness(next)){setRecord({...record,business_id:next});showSaved();}else showNotice('This transaction keeps its business.');}catch(reason){showError((reason as Error).message||'Could not save changes.');}}
+ async function changeCategory(choice:CategoryChoice){try{if(await categoryEditing!.onChange(choice)){setRecord({...record,kind:choice.kind,custom_category_id:choice.category_id});showSaved();}else showNotice('This transaction keeps its category.');}catch(reason){showError((reason as Error).message||'Could not save changes.');}}
  async function toggleTag(id:string){const has=tagIds.includes(id);try{await tagging.onTags(has?[]:[id],has?[id]:[]);setTagIds(has?tagIds.filter(item=>item!==id):[...tagIds,id]);showSaved();}catch(reason){showError((reason as Error).message||'Could not save changes.');}}
  const money=(value:number)=>formatMoney(value,record.currency,locale);
  const name=shownName(record,t,categoryName);
@@ -33,9 +40,14 @@ export function TransactionDetailsDialog({record:initial,incoming,categoryName,b
   [t('Date'),formatDate(record.date,locale)],
  ];
  if(accountName)rows.push([t('Account'),accountName]);
- rows.push([t('Category'),<span key="c" className="flex flex-wrap gap-1"><CategoryBadge kind={record.kind} label={t(record.payment_type==='bonus'?'Bonus':record.kind)}/>{categoryName&&record.custom_category_id&&<CategoryBadge kind={record.custom_category_id} label={categoryName}/>}</span>]);
+ // The category reads from the record as it stands, so a change made here shows at once.
+ const customName=record.custom_category_id?categoryEditing?.categories.find(category=>category.id===record.custom_category_id)?.name??categoryName:undefined;
+ const badges=<span key="c" className="flex flex-wrap gap-1"><CategoryBadge kind={record.kind} label={t(record.payment_type==='bonus'?'Bonus':record.kind)}/>{customName&&record.custom_category_id&&<CategoryBadge kind={record.custom_category_id} label={customName}/>}</span>;
+ rows.push([t('Category'),categoryEditing?<CategoryPicker key="c" record={record} categories={categoryEditing.categories} removed={categoryEditing.removed} onChange={choice=>void changeCategory(choice)}>{badges}</CategoryPicker>:badges]);
+ if(origin)rows.push([t('Source'),<span key="o" className="transaction-details-origin"><span>{origin.label}</span>{origin.onOpen&&origin.openLabel&&<Button type="button" size="sm" variant="outline" onClick={origin.onOpen}>{origin.openLabel}</Button>}</span>,true]);
  if(ownerName)rows.push([t('Owner'),ownerName]);
- rows.push([t('Frequency'),t(record.frequency==='Once'?'One-time record':record.frequency)]);
+ // A one-time transaction has no frequency worth a row; a schedule names its own.
+ if(record.frequency!=='Once')rows.push([t('Frequency'),t(record.frequency)]);
  if(record.end_date)rows.push([t('Last active date'),formatDate(record.end_date,locale)]);
  if(record.mortgage_payment_id)rows.push([t('Principal'),money(Number(record.payment_principal))],[t('Interest'),money(Number(record.payment_interest))]);
  const businessEditable=businesses.length>0&&(canAssignBusiness(record,null)||businesses.some(item=>canAssignBusiness(record,item.id)));
@@ -45,8 +57,8 @@ export function TransactionDetailsDialog({record:initial,incoming,categoryName,b
  if(record.account_currency&&record.account_currency!==record.currency&&record.account_exchange_rate)rows.push([t('Exchange rate'),`1 ${record.account_currency} = ${formatNumber(record.account_exchange_rate,locale)} ${record.currency}`]);
  if(canTag(record))rows.push([t('Tags'),<TagSelector key="t" tags={tagging.tags} selected={tagIds} onToggle={id=>void toggleTag(id)} onCreate={tagging.onCreateTag}/>,true]);
  if(record.notes)rows.push([t('Notes'),<span key="n" className="whitespace-pre-wrap break-words">{record.notes}</span>,true]);
- return <Dialog open onOpenChange={open=>{if(!open)onClose();}}><DialogContent className="transaction-details">
-  <div className="transaction-details-head"><CategoryIcon kind={record.custom_category_id&&categoryName?categoryName:record.kind}/><DialogTitle>{shownName(record, t)}</DialogTitle></div>
+ return <Dialog open onOpenChange={open=>{if(!open)onClose();}}><DialogContent className="transaction-details" onOpenAutoFocus={event=>{/* Reading comes first: focus the dialog, not its tag field. */event.preventDefault();(event.currentTarget as HTMLElement).focus();}}>
+  <div className="transaction-details-head"><CategoryIcon kind={record.custom_category_id&&customName?customName:record.kind}/><DialogTitle>{shownName(record, t)}</DialogTitle></div>
   <DialogDescription className="sr-only">{t('Transaction details')}</DialogDescription>
   <dl className="transaction-details-fields">{rows.map(([label,value,wide])=><div key={label} data-wide={wide||undefined}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
   {(attachments||onSplit)&&<div className="transaction-details-cards">

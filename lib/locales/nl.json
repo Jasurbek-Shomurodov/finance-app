@@ -55,7 +55,6 @@
   "{quantity} units · Gain/loss {amount}": "{quantity} eenheden · Winst/verlies {amount}",
   "1 unit · Gain/loss {amount}": "1 eenheid · Winst/verlies {amount}",
   "{rate}% annual interest": "{rate}% rente per jaar",
-  "One-time record": "Eenmalige post",
   "One time": "Eenmalig",
   "Every month": "Elke maand",
   "Every year": "Elk jaar",
@@ -2955,5 +2954,19 @@
   "Sign in to ask about your own records.": "Log in om vragen te stellen over uw eigen gegevens.",
   "Open in full screen": "Openen op volledig scherm",
   "Exit full screen": "Volledig scherm sluiten",
-  "What changed your net worth": "Wat je nettovermogen veranderde"
+  "What changed your net worth": "Wat je nettovermogen veranderde",
+  "This transaction keeps its category.": "Deze transactie behoudt haar categorie.",
+  "Payment on {name}": "Betaling voor {name}",
+  "Open mortgage": "Hypotheek openen",
+  "Transfer or repayment fee": "Kosten van overboeking of aflossing",
+  "Asset transfer": "Overdracht van bezit",
+  "Asset tracker update": "Update uit de tracker van het bezit",
+  "To change the amount or date, delete it and record it again.": "Verwijder de transactie en leg haar opnieuw vast om het bedrag of de datum te wijzigen.",
+  "Edit mortgage payment": "Hypotheekbetaling bewerken",
+  "Could not load the payment.": "De betaling kon niet worden geladen.",
+  "Payment not found.": "Betaling niet gevonden.",
+  "{amount} to principal": "{amount} aflossing",
+  "Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.": "Klik op een betaling om haar te openen: daar kunt u haar bewerken of verwijderen. Saldo-updates worden vanaf de nieuwste verwijderd.",
+  "Page not found": "Pagina niet gevonden",
+  "This address does not open anything here.": "Dit adres opent hier niets."
 }
