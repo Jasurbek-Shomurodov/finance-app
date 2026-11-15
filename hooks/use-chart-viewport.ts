@@ -17,21 +17,27 @@ function plotBox(element: HTMLElement): DOMRect {
  * history. `extent` is the history the chart holds; with `enabled` false the view always shows all of it. `initial`
  * is where the view opens (a chosen period, from its start to the latest day): choosing a period only zooms, and
  * the history before it stays a drag away. A new `initial.pick` (the same period chosen again) opens it afresh.
+ * `onMove` hears every move the person makes (a drag, a zoom, showing all), so a chosen period can stop looking chosen.
  * `consumeDrag` tells a click handler that the press it ends was a drag, so a drag never opens a day. */
-export function useChartViewport(extent: Viewport | null, enabled: boolean, initial?: { start: number; pick: number }) {
+export function useChartViewport(extent: Viewport | null, enabled: boolean, initial?: { start: number; pick: number }, onMove?: () => void) {
  const ref = useRef<HTMLDivElement>(null);
  // The view belongs to one history and one choice of period: another of either opens at the chosen period again.
  const key = enabled && extent ? `${extent.start}:${extent.end}:${initial?.start}:${initial?.pick}` : '';
  const [state, setState] = useState<{ key: string; view: Viewport | null }>({ key: '', view: null });
- const setView = useCallback((view: Viewport | null) => setState({ key, view }), [key]);
- const viewRef = useRef<Viewport | null>(null), extentRef = useRef(extent);
+ const viewRef = useRef<Viewport | null>(null), extentRef = useRef(extent), moveRef = useRef(onMove);
+ // Only a view that really changed counts as a move: zooming out at the whole history leaves the period chosen.
+ const setView = useCallback((view: Viewport | null) => {
+  const now = viewRef.current;
+  setState({ key, view });
+  if (view && (!now || now.start !== view.start || now.end !== view.end)) moveRef.current?.();
+ }, [key]);
  const press = useRef<Press | null>(null), dragged = useRef(false);
  const touches = useRef(new Map<number, number>()), pinch = useRef<Pinch | null>(null);
  const view = state.key === key ? state.view : null;
  const opening = extent && initial ? { start: initial.start, end: extent.end } : extent;
  const current = enabled && extent && opening ? clampViewport(view ?? opening, extent) : extent;
  // The gesture listeners read the latest view and history without being added again on every move.
- useEffect(() => { viewRef.current = current; extentRef.current = extent; });
+ useEffect(() => { viewRef.current = current; extentRef.current = extent; moveRef.current = onMove; });
  const zoom = useCallback((factor: number, anchor = .5) => {
   const now = viewRef.current, all = extentRef.current;
   if (now && all) setView(zoomViewport(now, all, anchor, factor));

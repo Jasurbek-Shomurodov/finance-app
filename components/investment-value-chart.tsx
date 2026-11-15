@@ -55,8 +55,9 @@ const noTooltip=()=>null;
 
 /** `floor`, when given, is where the value axis starts: the chart's main line then opens in the bottom-left corner.
  * `navigable` (the full-screen card) lets the person drag through time and zoom, as on a trading chart; it opens at
- * `initialStart` (the chosen period's first day), and `periodPick` changes each time a period is chosen. */
-export function InvestmentValueChart({points,series,currency,tooltip,onPointSelect,floor,height=310,label='Investment value',navigable=false,initialStart,periodPick=0}:{initialStart?:string;periodPick?:number;points:Point[];series:Series[];currency:string;tooltip?:ReactElement;onPointSelect?:(date:string)=>void;floor?:number;height?:number;label?:string;navigable?:boolean}){
+ * `initialStart` (the chosen period's first day), `periodPick` changes each time a period is chosen, and `onViewMove`
+ * hears the person drag or zoom away from it. */
+export function InvestmentValueChart({points,series,currency,tooltip,onPointSelect,floor,height=310,label='Investment value',navigable=false,initialStart,periodPick=0,onViewMove}:{initialStart?:string;periodPick?:number;onViewMove?:()=>void;points:Point[];series:Series[];currency:string;tooltip?:ReactElement;onPointSelect?:(date:string)=>void;floor?:number;height?:number;label?:string;navigable?:boolean}){
  const {locale,t}=useLanguage(),id=useId();
  const mobile=useIsMobile();
  // On phones a tap opens the point's details window; a tooltip drawn under the same finger would show through it
@@ -65,7 +66,7 @@ export function InvestmentValueChart({points,series,currency,tooltip,onPointSele
  const all:Drawn[]=points.map(point=>({...point,timestamp:Date.parse(point.date+'T00:00:00Z')}));
  const first=all[0]?.timestamp,last=all.at(-1)?.timestamp;
  const single=all.length===1;
- const {ref:viewportRef,view:viewportView,whole,zoom,reset,consumeDrag}=useChartViewport(extentOf(all),navigable,opening(initialStart,periodPick));
+ const {ref:viewportRef,view:viewportView,whole,zoom,reset,consumeDrag}=useChartViewport(extentOf(all),navigable,opening(initialStart,periodPick),onViewMove);
  const view=navigable&&!whole?viewportView:null;
  const {data,values,floor:shownFloor,lastPoint}=drawnWindow(all,view,series,floor);
  const axis=shownFloor===undefined?niceAxis(values):flooredAxis(values,shownFloor);

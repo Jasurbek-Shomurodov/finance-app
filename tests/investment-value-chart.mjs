@@ -4,7 +4,7 @@ import {loadTS} from './helpers/load-ts.mjs';
 const names=['Area','CartesianGrid','ComposedChart','ResponsiveContainer','Tooltip','XAxis','YAxis'];
 // The pan and zoom state is a hook; each test sets the view it wants the chart to draw.
 const viewport={view:null,whole:true,dragged:false,calls:[]};
-const viewportHook={useChartViewport:(extent,enabled,initial)=>(viewport.calls.push({extent,enabled,initial}),{ref:null,view:viewport.view??extent,whole:!enabled||viewport.whole,zoom:()=>{},reset:()=>{},consumeDrag:()=>viewport.dragged})};
+const viewportHook={useChartViewport:(extent,enabled,initial,onMove)=>(viewport.calls.push({extent,enabled,initial,onMove}),{ref:null,view:viewport.view??extent,whole:!enabled||viewport.whole,zoom:()=>{},reset:()=>{},consumeDrag:()=>viewport.dragged})};
 const {InvestmentValueChart}=loadTS('components/investment-value-chart.tsx',{'@/hooks/use-chart-viewport':viewportHook,'@/hooks/use-mobile':{useIsMobile:()=>false},react:{useId:()=> 'chart-id'},recharts:Object.fromEntries(names.map(name=>[name,name])),'@/components/language-provider':{useLanguage:()=>({locale:'en',t:s=>s})}});
 const chart=points=>InvestmentValueChart({points,currency:'USD',series:[{key:'actual',label:'Investments',color:'green',primary:true}]}).props.children.props.children;
 test('date axis starts at the first displayed complete balance, not an earlier hidden repayment',()=>{
@@ -83,11 +83,14 @@ test('full screen: the press that ends a drag through time opens no day',()=>{
 
 test('full screen: the chart holds the whole history and opens at the chosen period, which only sets the zoom',()=>{
  viewport.calls.length=0;
+ const moved=()=>{};
  const points=[{date:'2026-01-01',actual:100},{date:'2026-06-01',actual:150},{date:'2026-11-15',actual:200}];
- InvestmentValueChart({points,currency:'USD',series:[{key:'actual',label:'Net worth',color:'green',primary:true}],navigable:true,initialStart:'2026-08-17',periodPick:3});
+ InvestmentValueChart({points,currency:'USD',series:[{key:'actual',label:'Net worth',color:'green',primary:true}],navigable:true,initialStart:'2026-08-17',periodPick:3,onViewMove:moved});
  const [call]=viewport.calls;
  assert.deepEqual(call.extent,{start:Date.parse('2026-01-01T00:00:00Z'),end:Date.parse('2026-11-15T00:00:00Z')});
  assert.deepEqual(call.initial,{start:Date.parse('2026-08-17T00:00:00Z'),pick:3});
+ // A drag or zoom is reported, so the card can stop showing the period as chosen.
+ assert.equal(call.onMove,moved);
  viewport.calls.length=0;
  InvestmentValueChart({points,currency:'USD',series:[]});
  assert.equal(viewport.calls[0].initial,undefined);assert.equal(viewport.calls[0].enabled,false);
