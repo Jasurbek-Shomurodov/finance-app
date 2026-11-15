@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import React from 'react';
 import { createRenderer, stubs, text } from './helpers/component-tree.mjs';
 import { loadTS } from './helpers/load-ts.mjs';
+import { chartPart, chartParts, recharts } from './helpers/recharts-stub.mjs';
 
 const h = React.createElement;
 const { formatMoney } = loadTS('lib/format.ts');
@@ -117,4 +118,125 @@ test('a failed planning read offers a retry instead of a fresh start', () => {
  assert.match(failed, /role="alert" data-retry="true"/);
  assert.doesNotMatch(failed, /class="empty"/);
  assert.match(list({ visible: [] }).html(), /class="empty"/);
+});
+
+// The chart library is stubbed (helpers/recharts-stub.mjs): a test reads what each chart part was given.
+const debtPlan = loadTS('lib/debt-plan.ts');
+
+function charts(r) {
+ return r.load('components/loans/payoff-charts.tsx', { recharts, ...stubs().modules });
+}
+
+test('the owed donut names each debt\'s share in its label and tooltip, one slice per debt', () => {
+ const r = createRenderer();
+ const { OwedDonut } = charts(r);
+ r.mount(h(OwedDonut, { currency: 'USD', slices: [{ id: 'a', name: 'Card', amount: 750, color: 'red' }, { id: 'b', name: 'Car', amount: 250, color: 'blue' }] }));
+ assert.match(r.html(), /role="img" aria-label="What you owe: Card 75%, Car 25%"/);
+ assert.deepEqual(chartParts(r, 'Cell').map(cell => cell.props.fill), ['red', 'blue']);
+ assert.deepEqual(chartPart(r, 'Tooltip').props.formatter(750, 'Card'), [`${usd(750)} · 75%`, 'Card']);
+ r.mount(h(OwedDonut, { currency: 'USD', slices: [] }));
+ assert.match(r.html(), /aria-label="What you owe: "/, 'nothing owed divides nothing');
+});
+
+test('the payoff chart draws the plan against minimums only; the compact card hides its axes', () => {
+ const r = createRenderer();
+ const { PayoffChart } = charts(r);
+ const points = [{ month: '2026-11', plan: 1200, minimums: 1200 }, { month: '2026-12', plan: 600, minimums: 1100 }, { month: '2027-01', plan: 0, minimums: null }];
+ r.mount(h(PayoffChart, { points, currency: 'USD' }));
+ const box = () => r.find(element => element.props?.className === 'payoff-chart').props;
+ assert.deepEqual([box().style.height, box().role, box()['aria-label'], box()['data-compact']], [260, 'img', 'Balance owed', undefined]);
+ const axis = chartPart(r, 'YAxis').props;
+ assert.equal(axis.hide, false);
+ assert.equal(axis.domain[0], 0);
+ assert.ok(axis.domain[1] >= 1200 && axis.ticks.every(tick => tick >= 0), axis.ticks);
+ assert.equal(chartPart(r, 'XAxis').props.tickFormatter('2026-12'), 'December 2026');
+ const tooltip = chartPart(r, 'Tooltip').props;
+ assert.deepEqual(tooltip.formatter(600, 'plan'), [usd(600), 'Your plan']);
+ assert.deepEqual(tooltip.formatter(1100, 'minimums'), [usd(1100), 'Minimums only']);
+ r.mount(h(PayoffChart, { points, currency: 'USD', compact: true }));
+ assert.deepEqual([box().style.height, box()['data-compact']], [110, true]);
+ assert.equal(chartPart(r, 'XAxis').props.hide, true);
+});
+
+function side() {
+ const r = createRenderer(), ui = stubs();
+ const payoff = charts(r);
+ const modules = { ...ui.modules, recharts, '@/components/loans/loans-lazy': { OwedDonut: payoff.OwedDonut, PayoffChartCompact: payoff.PayoffChart },
+  '@/components/display-money': { useDisplayMoney: () => ({ currency: 'USD', convert: (amount, currency) => currency === 'USD' ? amount : currency === 'UZS' ? amount / 12000 : null,
+   show: (amount, currency) => formatMoney(amount, currency, 'en-US') + ' shown', sum: amounts => amounts.reduce((sum, row) => sum + (row.currency === 'UZS' ? row.amount / 12000 : row.amount), 0) }) } };
+ return { r, ...r.load('components/loans/loans-side.tsx', modules) };
+}
+
+test('what you owe: a slice per convertible debt, this month\'s interest in the display currency and each rate beside its balance', () => {
+ const { r, OwedBreakdown } = side();
+ const euro = { ...card, id: 'euro', name: 'Euro loan', currency: 'EUR', amount: 100, rate: 0 };
+ r.mount(h(OwedBreakdown, { debts: [flat, card, euro] }));
+ const words = text(r.tree);
+ // 120M UZS at 12% is 100 USD a month, the card's 2,300 at 21.9% is 41.98; the payments are the flat's 2.4M UZS.
+ assert.ok(words.includes(`Interest this month${usd(100 + 2300 * 21.9 / 1200)}of ${usd(200)} in payments`), words);
+ assert.deepEqual(chartPart(r, 'Pie').props.data.map(slice => [slice.name, slice.amount]), [['Flat', 10000], ['Card', 2300]], 'a debt no rate converts has no slice');
+ assert.ok(words.includes(`Card21.9%${usd(2300)} shown`) && words.includes(`Euro loan${formatMoney(100, 'EUR', 'en-US')} shown`), words);
+});
+
+test('the payoff plan card shows the extra payment, the interest it saves and opens the planner', () => {
+ const { r, PayoffPlanCard } = side();
+ const plan = { currency: 'USD', extra: 200, method: 'avalanche', payments: { card: 100 } };
+ const worked = debtPlan.payoffPlan([card], plan);
+ let opened = 0;
+ r.mount(h(PayoffPlanCard, { plan, worked, today: '2026-11-14', onOpen: () => opened++ }));
+ const words = text(r.tree);
+ assert.ok(words.includes('Payoff plan') && words.includes('Highest interest first'), words);
+ assert.ok(words.includes(`Extra monthly payment${usd(200)}`), words);
+ assert.ok(words.includes(`Interest saved by extra payments${usd(worked.minimums.interest - worked.result.interest)}`), words);
+ assert.ok(words.startsWith('Payoff planHighest interest firstNovember 2026'), words);
+ assert.equal(r.all(element => element.type === 'dd')[1].props.className, 'positive');
+ assert.deepEqual(chartPart(r, 'ComposedChart').props.data, debtPlan.payoffSeries('2026-11-14', worked.result, worked.minimums), 'the extra is drawn against minimums only');
+ r.fire(r.find(element => element.type?.displayName === 'Button'), 'onClick');
+ assert.equal(opened, 1);
+ r.mount(h(PayoffPlanCard, { plan, worked: { ...worked, debts: [] }, today: '2026-11-14', onOpen() {} }));
+ assert.equal(r.html(), '', 'no debt in the plan\'s currency, no card');
+});
+
+function overview({ demo = false, records = [card], preferences = [], loading = false } = {}) {
+ const r = createRenderer(), seen = {};
+ const keep = name => props => { seen[name] = props; return h('i', { 'data-part': name }); };
+ const workspace = { user: { id: 'me' }, demo, rows: ['row'], current: ['current'], currency: 'USD', reload: 3,
+  planning: { loading, error: '', data: { records } }, workspacePreferences: { loading: false, data: { preferences } } };
+ const { LoansOverview } = r.load('components/loans/loans-overview.tsx', {
+  '@/components/workspace/workspace-provider': { useWorkspace: () => workspace },
+  '@/components/debt-summary': { DebtSummary: keep('summary') }, '@/components/loans/loans-list': { LoansList: keep('list') },
+  '@/components/loans/loans-side': { OwedBreakdown: keep('owed'), PayoffPlanCard: keep('plan') },
+  '@/hooks/use-portfolio-history': { usePortfolioHistory: (user, isDemo, reload) => ({ history: { events: [{ saved: [user.id, isDemo, reload] }] } }) },
+  '@/lib/demo-finance': { demoHistory: (rows, today) => ({ events: [{ sample: [rows, today] }] }) },
+  '@/lib/deposit-interest': { depositToday: () => '2026-11-14' },
+ });
+ let planner = 0;
+ r.mount(h(LoansOverview, { onOpenPlanner: () => planner++ }));
+ return { r, seen, opened: () => planner };
+}
+
+test('the loans overview reads the saved history, or the sample one, and plans with the saved plan in this currency', () => {
+ const plan = { currency: 'USD', extra: 150, method: 'snowball', payments: {} };
+ const { seen, opened } = overview({ preferences: [{ key: 'debt_plan', data: plan }] });
+ assert.deepEqual(seen.list.events, [{ saved: ['me', false, 3] }]);
+ assert.deepEqual(seen.owed.debts, [card]);
+ assert.equal(seen.plan.plan, plan);
+ const worked = debtPlan.payoffPlan([card], plan);
+ assert.equal(seen.summary.debtFree.ready, true);
+ assert.equal(seen.summary.debtFree.day, debtPlan.payoffDay('2026-11-14', worked.result.months));
+ assert.equal(seen.summary.debtFree.minimumsDay, debtPlan.payoffDay('2026-11-14', worked.minimums.months));
+ seen.summary.debtFree.onOpen(); seen.plan.onOpen();
+ assert.equal(opened(), 2);
+ assert.deepEqual(overview({ demo: true }).seen.list.events, [{ sample: [['row'], '2026-11-14'] }]);
+ // A plan saved for another currency is replaced by an empty one in this currency.
+ assert.equal(overview({ preferences: [{ key: 'debt_plan', data: { ...plan, currency: 'EUR' } }] }).seen.plan.plan.extra, 0);
+});
+
+test('the loans overview leaves out the side panel without debts and the plan card while planning loads', () => {
+ const none = overview({ records: [ali] });
+ assert.ok(!none.seen.owed && !none.seen.plan);
+ assert.equal(none.seen.summary.debtFree.ready, false);
+ assert.doesNotMatch(none.r.html(), /loans-side/);
+ const loading = overview({ loading: true });
+ assert.ok(loading.seen.owed && !loading.seen.plan);
 });

@@ -100,7 +100,12 @@ function under 150 lines, 40 statements, complexity 20, nesting depth 4, 5 param
 callbacks. Older breaches are listed in `eslint-suppressions.json`, which only shrinks: never add to
 it by hand; after fixing a listed spot run `npm run lint:prune`. The pre-commit hook
 (`.githooks/pre-commit`, enabled by `npm install` through the `prepare` script) runs `npm run lint`
-and refuses the commit when it fails; fix the code rather than skipping it with `--no-verify`. Split a large screen into a folder of
+and refuses the commit when it fails; fix the code rather than skipping it with `--no-verify`.
+The pre-push hook (`.githooks/pre-push`, `scripts/ci-guard.mjs`) prints a warning when the last CI run on the branch
+failed, refuses the push when `npm run typecheck` fails, and then watches the pushed commit's CI run in the background,
+raising a desktop notification if it fails. **A red CI is yours to fix:** when the hook says CI is red, read
+`gh run view <id> --log-failed`, fix it and push the fix, even when the failure predates your change. A test that
+asserts on markup or page text (`e2e/`, source-matching tests) is updated in the same change that redesigns that screen. Split a large screen into a folder of
 parts (`components/transactions/`, `components/budget/`) and styles into `app/styles/`.
 
 Run the tests that cover what you changed (`node --experimental-strip-types --experimental-specifier-resolution=node --test tests/<file>.mjs`) while working; leave the full

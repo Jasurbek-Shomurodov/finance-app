@@ -102,3 +102,55 @@ test('an empty bin says so in one sentence with a way back; a tab with nothing i
  bin.r.fire(bin.tabs(),'onChange','goals');
  assert.equal(bin.r.find(node=>node.type==='EmptyState').props.title,'No matching records');
 });
+
+function restoreContext({demo=false,loading=false,error='',monthRecords=[entry('old','Living expense',30)]}={}){
+ const r=createRenderer(),reads=[];
+ const category={id:'cat-pets',name:'Pets',direction:'expense'};
+ const workspace={demo,user:{id:'me'},reload:2,currency:'USD',market:{rates:{EUR:0.5}},removedCategories:{kinds:[]},transactionTools:{data:{splits:[]}},
+  planning:{data:{records:[entry('acc','Cash',1000,{name:'Checking'}),entry('car','Loan',900,{name:'Car loan'}),...(demo?monthRecords:[])],categories:[category],activity:[],occurrences:[],goals:[],investmentLinks:[]}},
+  budget:{state:{categories:[],amounts:[{category_key:'Living expense',month:'2026-11',amount:100,currency:'USD',applies_forward:false}]}}};
+ const {useRestorePreview}=r.load('components/deleted-items/use-restore-preview.ts',{
+  '@/components/language-provider':{useLanguage:()=>({t:key=>'T:'+key})},'@/components/workspace/workspace-provider':{useWorkspace:()=>workspace},'@/lib/deposit-interest':{depositToday:()=>'2026-11-14'},
+  '@/hooks/use-owner-resource':{useOwnerResource:(url,owner,enabled,revision,empty)=>{reads.push({url,owner,enabled,revision,empty});return {loading,error,data:{records:monthRecords.map(row=>({...row,amount:String(row.amount)})),activity:[],investmentLinks:[]}};}}});
+ let context;
+ const Probe=()=>{context=useRestorePreview();return null;};
+ r.mount(React.createElement(Probe));
+ return {context,reads};
+}
+
+test('the restore preview names categories and cash accounts the way the workspace does',()=>{
+ const {context,reads}=restoreContext();
+ assert.deepEqual(reads.map(read=>[read.url,read.owner,read.enabled,read.revision]),[['/api/planning?scope=review&month=2026-11',{id:'me'},true,2]],'this month, read as the Budget reads it');
+ assert.equal(context.categoryName(entry('vet','Living expense',40,{custom_category_id:'cat-pets'})),'Pets');
+ assert.equal(context.categoryName(entry('lunch','Living expense',12)),'T:Living expense','a built-in kind reads in the current language');
+ assert.equal(context.accountName('acc'),'Checking');
+ assert.equal(context.accountName('car'),null,'only a cash account pays a transaction');
+ assert.equal(context.accountName(null),null);
+ assert.equal(context.preview({id:'g',source:'savings_goals',deleted_at:'2026-11-14T08:00:00Z',data:{id:'g',name:'Trip',target:500}}),null,'a goal moves no money');
+});
+
+test('restoring this month\'s expense previews its account and category from this month\'s read, read numbers as numbers',()=>{
+ const {context}=restoreContext();
+ const lunch=record('l',entry('lunch','Living expense',12,{account_id:'acc'}));
+ assert.deepEqual(context.preview(lunch),{
+  account:{id:'acc',name:'Checking',currency:'USD',balance:{before:1000,after:988}},
+  category:{key:'Living expense',name:'T:Living expense',currency:'USD',spent:{before:30,after:42},budget:100,left:{before:70,after:58}},
+ });
+ assert.equal(context.preview({...lunch,splits:[{category_id:'x',amount:12}]}).category,undefined,'a split transaction is left out');
+});
+
+test('while this month is still loading or failed to load, the preview shows the account and leaves the category out',()=>{
+ const lunch=record('l',entry('lunch','Living expense',12,{account_id:'acc'}));
+ for(const state of [{loading:true},{error:'Could not load planning data.'}]){
+  const {context}=restoreContext(state);
+  assert.deepEqual(context.preview(lunch),{account:{id:'acc',name:'Checking',currency:'USD',balance:{before:1000,after:988}},category:undefined},JSON.stringify(state));
+ }
+});
+
+test('the sample workspace previews from its own records and asks the server for nothing',()=>{
+ const {context,reads}=restoreContext({demo:true,loading:true});
+ assert.deepEqual(reads.map(read=>[read.owner,read.enabled]),[[null,false]]);
+ const preview=context.preview(record('l',entry('lunch','Living expense',12)));
+ assert.equal(preview.account,undefined,'no account named, none moves');
+ assert.deepEqual(preview.category.spent,{before:30,after:42});
+});

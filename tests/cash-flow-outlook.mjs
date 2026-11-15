@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { createRenderer } from './helpers/component-tree.mjs';
 import { loadTS } from './helpers/load-ts.mjs';
 const { incomeStillExpected, billsStillDue, monthOutlook } = loadTS('lib/cash-flow-outlook.ts');
 
@@ -63,4 +64,37 @@ test('the closing card and the month bar read whole amounts, written dates and a
  assert.match(bar('2026-11', outlook), /\$6,000 income still expected/);
  assert.match(bar('2026-11', outlook), /aria-label="Next month" disabled=""/, 'no month after the running one');
  assert.doesNotMatch(bar('2026-10', null), /Day \d|still expected|aria-label="Next month" disabled/);
+});
+
+test('the month outlook adds the review totals to the open income and bills, converted into the display currency', () => {
+ const calls = {};
+ const record = (name, ...args) => { calls[name] = args; };
+ const data = { records: ['records'], occurrences: ['occurrences'], activity: ['activity'], investmentLinks: ['links'] };
+ // EUR is worth twice the dollar; GBP has no rate.
+ const income = [card(1000, 400), card(100, 0, { entry: { currency: 'EUR' } })];
+ let review = { received: 4000, spent: 3000, missing: 0 }, bills = [due('Living expense', 120, '2026-11-20'), due('Living expense', 50, '2026-11-25', { record: { kind: 'Living expense', currency: 'EUR' } })];
+ const r = createRenderer();
+ const { useMonthOutlook } = r.load('components/cash-flow/use-month-outlook.ts', {
+  '@/lib/deposit-interest': { depositToday: () => '2026-11-14' },
+  '@/lib/transaction-tools': { monthlyReview: (...args) => { record('review', ...args); return review; } },
+  '@/lib/monthly-income-cards': { monthlyIncomeCards: (...args) => { record('income', ...args); return income; } },
+  '@/lib/planning': { upcomingPayments: (...args) => { record('upcoming', ...args); return bills; } },
+ });
+ let outlook;
+ const Probe = props => { outlook = useMonthOutlook(props); return null; };
+ const input = { data, sources: ['source'], splits: ['split'], month: '2026-11', currency: 'USD', market: { rates: { EUR: 0.5 } }, spendingEstimate: 5000 };
+ r.mount(React.createElement(Probe, input));
+ assert.deepEqual(outlook, monthOutlook({ month: '2026-11', today: '2026-11-14', received: 4000, spent: 3000, spendingEstimate: 5000, incomeExpected: 600 + 200, billsDue: 120 + 100 }));
+ assert.deepEqual(calls.review, [['records'], ['split'], [], '2026-11', 'USD', '2026-11-14', ['activity'], { EUR: 0.5, USD: 1 }, ['links']]);
+ assert.deepEqual(calls.income, [['records'], '2026-11', ['source'], '2026-11-14', { EUR: 0.5, USD: 1 }]);
+ assert.deepEqual(calls.upcoming, [['records'], ['occurrences'], '2026-11-14', '2026-11-30'], 'the open due dates up to the month\'s end');
+ // A review with an amount no rate converts leaves what was received and spent unknown, never a partial figure.
+ review = { received: 4000, spent: 3000, missing: 1 };
+ r.mount(React.createElement(Probe, { ...input, spendingEstimate: 4999 }));
+ assert.equal(outlook.surplus, null);
+ bills = [due('Living expense', 50, '2026-11-25', { record: { kind: 'Living expense', currency: 'GBP' } })];
+ r.mount(React.createElement(Probe, { ...input, spendingEstimate: 4998 }));
+ assert.equal(outlook.bills, null, 'a bill no rate converts leaves the bills unknown');
+ r.mount(React.createElement(Probe, { ...input, month: '2026-10' }));
+ assert.equal(outlook, null, 'only the running month has anything still to come');
 });

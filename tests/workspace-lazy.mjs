@@ -24,7 +24,7 @@ test('the shell and dialog parts load on demand, each from its own module and ex
 });
 
 // Every screen's own lazy file: each part resolves to a module that really exports it, and loads that export.
-for(const file of ['components/planning/accounts/accounts-lazy.tsx','components/planning/goals-lazy.tsx','components/budget/budget-lazy.tsx','components/transactions/lazy.tsx'])
+for(const file of ['components/planning/accounts/accounts-lazy.tsx','components/planning/goals-lazy.tsx','components/budget/budget-lazy.tsx','components/transactions/lazy.tsx','components/loans/loans-lazy.tsx'])
  test(`${file} names each part's real module and export`,async()=>{
   const source=fs.readFileSync(file,'utf8'),parts=[...source.matchAll(/import\('([^']+)'\)\.then\(module => module\.(\w+)\)/g)].map(match=>({from:match[1],name:match[2]}));
   assert.ok(parts.length>1);
@@ -37,3 +37,11 @@ for(const file of ['components/planning/accounts/accounts-lazy.tsx','components/
   const lazy=loadTS(file,overrides);
   for(const {name} of parts)if(lazy[name])assert.deepEqual(await lazy[name].load(),{component:name},name);
  });
+
+test('the loan charts load in the browser only, each holding its own height until the chart library arrives',async()=>{
+ const options=[];
+ const lazy=loadTS('components/loans/loans-lazy.tsx',{'next/dynamic':{__esModule:true,default:(load,option)=>{options.push(option);return {load};}},
+  '@/components/presentation-foundation/loading-placeholder':{ChartSkeleton:props=>props},'@/components/loans/payoff-charts':{OwedDonut:'donut',PayoffChart:'payoff'}});
+ assert.deepEqual(options.map(option=>[option.ssr,option.loading().props.height]),[[false,132],[false,260],[false,110]]);
+ assert.deepEqual([await lazy.OwedDonut.load(),await lazy.PayoffChart.load(),await lazy.PayoffChartCompact.load()],['donut','payoff','payoff'],'the compact card draws the same chart');
+});

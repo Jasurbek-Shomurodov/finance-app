@@ -1,0 +1,19 @@
+#!/bin/sh
+# Before a push: say when CI is already red, refuse the push when the type check fails, then watch the CI run of
+# what is pushed and raise a desktop notification if it fails (scripts/ci-guard.mjs).
+# The full test suite and the browser tests stay in CI: they take 10 to 20 minutes, too long to hold every push.
+# A post-commit hook could not help here: CI runs on push, so there is nothing to check yet after a commit.
+branch=$(git rev-parse --abbrev-ref HEAD)
+node scripts/ci-guard.mjs status "$branch"
+
+echo "pre-push: running npm run typecheck"
+if ! npm run typecheck --silent; then
+  echo "pre-push: type check failed, push aborted. Fix the errors above and push again." >&2
+  exit 1
+fi
+
+# The commits being pushed arrive on stdin as "<local ref> <local sha> <remote ref> <remote sha>".
+while read -r _ local_sha _ _; do
+  case "$local_sha" in 0000000000000000000000000000000000000000|"") ;; *) node scripts/ci-guard.mjs spawn-watch "$local_sha" ;; esac
+done
+exit 0

@@ -1,7 +1,7 @@
 // P0 cases from .claude/skills/qa/references/cases.md, run in a browser on the fixed fixture (e2e/fixture.mjs).
 // Each test names its catalog cases. Expected figures are worked out from the fixture, never read off the screen.
 import { test, expect } from '@playwright/test';
-import { accountBalance, chooseOption, closeDialog, dollars, figureAfter, open, pageText, resetDatabase } from './helpers.mjs';
+import { accountBalance, accountsTotal, chooseOption, closeDialog, dollars, figureAfter, open, pageText, resetDatabase } from './helpers.mjs';
 import { expected, ids, today } from './fixture.mjs';
 import { testAccount } from './settings.mjs';
 
@@ -71,7 +71,7 @@ test('XAPP-003 DASH-001 net worth is the same on the Dashboard and Investments',
 test('ACC-001 a new cash account keeps its exact opening balance and adds it to the total', async ({ page }) => {
   await page.goto('/accounts');
   // The total also holds the euro account at the day's rate, so it is checked by how much it grows.
-  const total = async () => Number((await figureAfter(page, 'Total'))?.replace(/[$,]/g, '') || NaN);
+  const total = () => accountsTotal(page);
   await expect.poll(total).toBeGreaterThan(expected.usdCash);
   const before = await total();
   await page.getByRole('button', { name: 'Add account' }).click();
@@ -186,7 +186,7 @@ test('REC-027 REC-003 a schedule started two years back keeps its unpaid months 
 
 test('LOAN-004 LOAN-012 a loan repayment moves loan and cash together, and deleting it puts both back', async ({ page }) => {
   await page.goto('/loans-debts');
-  await page.getByRole('row', { name: /E2E Car loan/ }).getByRole('button', { name: 'Record payment' }).click();
+  await page.getByRole('button', { name: 'Record payment: E2E Car loan' }).click();
   const dialog = page.getByRole('dialog');
   await chooseOption(dialog.locator('select').nth(1), 'E2E Checking');
   await dialog.getByPlaceholder('0').first().fill('50');
@@ -222,7 +222,7 @@ test('INV-054 a bill linked to a property shows as money invested, and its bin m
   await expect(row).toHaveCount(0);
   await dialog.getByRole('button', { name: 'Close', exact: true }).first().click();
   await open(page, 'Recently deleted');
-  await expect(page.locator('main').getByText('E2E Roof repair')).toBeVisible();
+  await expect(page.locator('main').getByText('E2E Roof repair').first()).toBeVisible();
   await open(page, 'Accounts');
   await expect.poll(() => accountBalance(page, 'E2E Checking')).toBe(dollars(expected.checking));
 });

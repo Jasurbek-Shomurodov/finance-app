@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import React from 'react';
+import { createRenderer, stubs } from './helpers/component-tree.mjs';
 import { loadTS } from './helpers/load-ts.mjs';
+import { chartPart, recharts } from './helpers/recharts-stub.mjs';
 
 const { accountStory, monthChanges, latestActivity } = loadTS('lib/account-story.ts');
 const { accountMix, directoryItems } = loadTS('lib/account-directory.ts');
@@ -80,4 +83,21 @@ test('the mix adds accounts by type in one currency and leaves out of Available 
  assert.equal(mix.available, 6100 - 1500 - 50);
  assert.equal(accountMix(items, goals, (amount, from) => from === 'EUR' ? null : amount), null, 'no share from a partial total');
  assert.equal(accountMix([{ ...items[0], total: null }], goals, convert), null);
+});
+
+test('the balance chart draws each month-end balance with its month as the tick and the account named in the tooltip', () => {
+ const { formatMoney } = loadTS('lib/format.ts');
+ const r = createRenderer();
+ const { AccountBalanceChart } = r.load('components/planning/accounts/account-balance-chart.tsx', { recharts, ...stubs().modules });
+ const points = [{ month: '2026-09', balance: 800 }, { month: '2026-10', balance: 1200 }, { month: '2026-11', balance: 950 }];
+ r.mount(React.createElement(AccountBalanceChart, { points, currency: 'USD', label: 'Balance' }));
+ assert.equal(chartPart(r, 'AreaChart').props.data, points);
+ assert.equal(chartPart(r, 'Area').props.dataKey, 'balance');
+ assert.equal(chartPart(r, 'ResponsiveContainer').props.height, 150, 'the slim chart height');
+ assert.equal(chartPart(r, 'XAxis').props.tickFormatter('2026-10'), 'Oct');
+ const axis = chartPart(r, 'YAxis').props;
+ assert.ok(axis.hide && axis.domain[0] <= 800 && axis.domain[1] >= 1200, axis.domain);
+ const tooltip = chartPart(r, 'Tooltip').props;
+ assert.equal(tooltip.labelFormatter('2026-10'), 'October 2026');
+ assert.deepEqual(tooltip.formatter(1200), [formatMoney(1200, 'USD', 'en-US'), 'Balance']);
 });

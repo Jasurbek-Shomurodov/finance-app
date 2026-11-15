@@ -39,6 +39,7 @@
 .detail-row-link:focus-visible{outline:2px solid var(--ring);outline-offset:1px}
 @media(hover:hover){.detail-row-link:hover{background:color-mix(in srgb,var(--foreground) 5%,transparent)}}
 .detail-row-link:active{transform:scale(.985)}
+@media(prefers-reduced-motion:reduce){.detail-row-link{transition:none}.detail-row-link:active{transform:none}}
 .portfolio-tooltip-row>small.detail-row-page{display:inline-flex;align-items:center;gap:2px;color:var(--primary)}
 .detail-row-page svg{width:12px;height:12px}
 /* A details line that opens a transaction: a full-width button that reads like the other lines. */

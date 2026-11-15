@@ -29,9 +29,17 @@ export async function open(page, label) {
   await expect(page).toHaveTitle(`${label} · Hoggish Finance`);
 }
 
-/** A cash account's balance as listed on Accounts, or null until it is on screen. Poll it: the page refreshes after a save. */
+/** An account's balance as its Accounts row shows it, or null until the row is on screen. Poll it: the page refreshes after a save. */
 export async function accountBalance(page, name) {
-  return (await pageText(page)).match(new RegExp(`\\n${name}\\nCash account\\n([^\\n]+)`))?.[1] ?? null;
+  const row = page.locator('.account-list-row').filter({ has: page.locator('.account-list-title').getByText(name, { exact: true }) });
+  if (await row.count() !== 1) return null;
+  return (await row.locator('.account-list-amount strong').innerText()).trim();
+}
+
+/** The total across all accounts at the top of Accounts, as a number, or NaN until it is on screen. */
+export async function accountsTotal(page) {
+  const figure = (await pageText(page)).match(/\nTotal across [\d,]+ accounts?\n([^\n]+)/)?.[1];
+  return Number(figure?.replace(/[$,]/g, '') || NaN);
 }
 
 /** Chooses the option of a native select whose label contains `text` (labels carry live balances). */

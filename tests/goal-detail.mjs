@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import React from 'react';
+import { createRenderer, stubs } from './helpers/component-tree.mjs';
 import { loadTS } from './helpers/load-ts.mjs';
+import { chartPart, recharts } from './helpers/recharts-stub.mjs';
 const { goalSummary, goalStatus } = loadTS('lib/goal-projection.ts');
 const { demoGoals, demoRecords } = loadTS('lib/demo-finance.ts');
 
@@ -65,4 +68,32 @@ test('a cash goal’s saved line takes each day’s closing balance from its act
   { id: 'old', goal_id: 'g', occurred_on: '2025-01-01', balance: 10 },
  ];
  assert.deepEqual(goalBalanceHistory(events, 'g', '2025-11-14'), [{ date: '2026-09-01', value: 2000 }, { date: '2026-10-01', value: 3000 }]);
+});
+
+test('the goal chart puts the first month, today and the last day on its axis, and the target as a level', () => {
+ const r = createRenderer();
+ const { GoalProjectionChart } = r.load('components/planning/goal-projection-chart.tsx', { recharts, ...stubs().modules });
+ const { formatMoney } = loadTS('lib/format.ts');
+ const time = day => Date.parse(day + 'T00:00:00Z');
+ const points = [{ date: '2026-01-15', saved: 1000 }, { date: '2026-11-14', saved: 4200, projected: 4200 }, { date: '2027-12-02', projected: 9800 }];
+ r.mount(React.createElement(GoalProjectionChart, { points, target: 10000, today: '2026-11-14', currency: 'USD', labels: { saved: 'Saved', projected: 'Projected' } }));
+ assert.deepEqual(chartPart(r, 'ComposedChart').props.data.map(point => point.time), points.map(point => time(point.date)));
+ const axis = chartPart(r, 'XAxis').props;
+ assert.deepEqual(axis.ticks, [time('2026-01-15'), time('2026-11-14'), time('2027-12-02')]);
+ // The edge labels hug the chart's sides; today sits in the middle.
+ const tick = value => axis.tick({ x: 0, y: 0, payload: { value } }).props;
+ assert.deepEqual([tick(axis.ticks[0]).children, tick(axis.ticks[0]).textAnchor], ['January 2026', 'start']);
+ assert.deepEqual([tick(axis.ticks[1]).children, tick(axis.ticks[1]).textAnchor], ['Today', 'middle']);
+ assert.deepEqual([tick(axis.ticks[2]).children, tick(axis.ticks[2]).textAnchor], ['2 December 2027', 'end']);
+ assert.equal(chartPart(r, 'ReferenceLine').props.y, 10000);
+ assert.ok(chartPart(r, 'YAxis').props.domain[1] >= 10000, 'the target fits on the axis');
+ const tooltip = chartPart(r, 'Tooltip').props;
+ assert.equal(tooltip.labelFormatter(time('2026-11-14')), '14 November 2026');
+ assert.deepEqual(tooltip.formatter(4200, 'saved'), [formatMoney(4200, 'USD', 'en-US'), 'Saved']);
+ assert.deepEqual(tooltip.formatter(9800, 'projected'), [formatMoney(9800, 'USD', 'en-US'), 'Projected']);
+ // A goal with one point has a single tick, centred.
+ r.mount(React.createElement(GoalProjectionChart, { points: [{ date: '2026-11-14', saved: 50 }], target: 100, today: '2026-11-14', currency: 'USD', labels: { saved: 'Saved', projected: 'Projected' } }));
+ const single = chartPart(r, 'XAxis').props;
+ assert.deepEqual(single.ticks, [time('2026-11-14')]);
+ assert.equal(single.tick({ x: 0, y: 0, payload: { value: single.ticks[0] } }).props.textAnchor, 'middle');
 });

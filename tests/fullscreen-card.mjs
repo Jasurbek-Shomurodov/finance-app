@@ -77,7 +77,7 @@ test('the net worth card carries the button, and the stylesheet lays the open ca
  const source=fs.readFileSync('components/portfolio-overview.tsx','utf8'),css=stylesheet();
  assert.match(source,/data-fullscreen=\{filling \|\| undefined\}/);
  assert.match(source,/aria-pressed=\{filling\}/);
- assert.match(source,/<InvestmentComparison chartHeight=\{chartHeight\}/);
+ assert.match(source,/<InvestmentComparison [^>]*chartHeight=\{chartHeight\}/);
  const rule=css.match(/\.overview-hero\[data-fullscreen\]\{([^}]*)\}/)?.[1]??'';
  assert.match(rule,/position:fixed;inset:0;z-index:40/);assert.match(rule,/height:100dvh/);
  assert.match(css,/\.overview-hero\[data-fullscreen\]>\.portfolio-chart\{flex:1 1 0;min-height:320px/);
