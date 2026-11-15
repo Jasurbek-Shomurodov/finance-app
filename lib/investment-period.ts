@@ -1,4 +1,4 @@
-import { benchmarkExpenseFunding, benchmarkInvestment, investmentActivity, openingFunding, type BenchmarkMovement } from './investment-benchmarks';
+import { benchmarkExpenseFunding, benchmarkInvestment, investmentActivity, openingFunding, type BenchmarkMovement, type FundingScope } from './investment-benchmarks';
 import { income, liabilities } from './finance';
 import { convertAmount, marketRates } from './market';
 import { convertHistorical } from './investment-comparison';
@@ -9,7 +9,16 @@ import { capitalizedInterest, copiesCapitalizedInterest } from './investment-his
 export type PeriodRow={name:string;date:string;category:string;amount:number|null};
 // The three figures follow the chart's funding rules: money invested is what funds benchmarks
 // when expenses are excluded (purchases, principal repayments and values recorded without a purchase), and expenses paid is what "Including expenses" adds to it.
-export function investmentPeriodTotals(input:InvestmentPortfolioInput&{movements?:BenchmarkMovement[];fx?:FxPoint[]},start:string,details?:Record<'income'|'invested'|'expenses',PeriodRow[]>){
+type PeriodInput=InvestmentPortfolioInput&{movements?:BenchmarkMovement[];fx?:FxPoint[]};
+type PeriodDetails=Record<'income'|'invested'|'expenses',PeriodRow[]>;
+// With `scope` 'expenses' the benchmarks invest that spending too, so money invested includes it.
+export function investmentPeriodTotals(input:PeriodInput,start:string,details?:PeriodDetails,scope:FundingScope='investments'){
+ const totals=periodTotals(input,start,details);
+ if(scope!=='expenses')return totals;
+ details?.invested.push(...details.expenses);
+ return {...totals,invested:totals.invested+totals.expenses};
+}
+function periodTotals(input:PeriodInput,start:string,details?:PeriodDetails){
  const totals={income:0,invested:0,expenses:0};
  const missing=new Set<string>();
  const records=new Map(input.records.map(record=>[record.id,record]));

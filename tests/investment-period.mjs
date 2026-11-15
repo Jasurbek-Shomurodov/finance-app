@@ -37,6 +37,15 @@ test('mortgage cashflow fallback splits principal and interest exactly once and 
  assert.equal(details.invested[0].category,'Mortgage');assert.equal(details.expenses[0].category,'Mortgage interest');
 });
 
+test('Including expenses counts the spending it funds as money invested',()=>{
+ const details={income:[],expenses:[],invested:[]};
+ const totals=investmentPeriodTotals(input,'2026-09-19',details,'expenses');
+ // 164 invested plus the 40 of expenses the benchmarks now also invest; expenses paid still shows 40.
+ assert.deepEqual(totals,{income:150,invested:204,expenses:40,missing:[]});
+ assert.equal(details.invested.reduce((sum,row)=>sum+row.amount,0),204);
+ assert.deepEqual(investmentPeriodTotals(input,'2026-09-19',undefined,'investments'),investmentPeriodTotals(input,'2026-09-19'));
+});
+
 const {investmentDecisionComparison}=loadTS('lib/investment-benchmarks.ts');
 const prices={start:'2026-09-01',end:'2026-09-04',fx:[],prices:{BTC:[1,2,3,4].map(n=>({date:'2026-09-0'+n,close:n*100}))},errors:{}};
 const dated=(id,record_id,date,event_type,amount,balance,extra={})=>({id,record_id,occurred_on:date,created_at:date+'T12:00:00Z',event_type,amount,balance,ownership_percentage:100,principal:0,interest:0,notes:'',...extra});
