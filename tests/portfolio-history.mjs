@@ -11,7 +11,8 @@ const record = (id, kind, currency = 'USD') => ({ id, kind, currency });
 const event = (record_id, date, balance, ownership_percentage = 100) => ({ id: record_id + date, record_id, occurred_on: date, balance, ownership_percentage, created_at: date });
 test('waits for full coverage, applies ownership and FX, and carries debt forward', () => {
  const result = portfolioHistory([record('a','Business'),record('b','Loan','UZS')], [event('a','2026-01-01',1000,50),event('b','2026-01-02',1200000),event('a','2026-01-03',1400,50)], 'USD', { UZS:12000 }, '2026-09-17');
- assert.deepEqual(result.points, [{date:'2026-01-02',assets:500,debt:100,net:400},{date:'2026-01-03',assets:700,debt:100,net:600}]);
+ // Each day also keeps net worth by kind: debts together, negative, so the parts add up to net worth.
+ assert.deepEqual(result.points, [{date:'2026-01-02',assets:500,debt:100,net:400,parts:{Business:500,Debt:-100}},{date:'2026-01-03',assets:700,debt:100,net:600,parts:{Business:700,Debt:-100}}]);
  assert.equal(result.missing,0);
 });
 test('does not invent missing history or use future, removed, or cash-only events', () => {

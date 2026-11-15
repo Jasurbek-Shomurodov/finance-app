@@ -8,7 +8,8 @@ import { convertAmount } from './market';
 export function historyIncomeRecords(history: { cashflows?: Entry[]; recurringIncome?: Entry[]; incomeRecords?: Entry[] }): Entry[] {
  return history.incomeRecords ?? [...(history.cashflows ?? []).filter(record => income.includes(record.kind)), ...(history.recurringIncome ?? [])];
 }
-export type PortfolioPoint = { date: string; assets: number; debt: number; net: number; partial?: boolean };
+/** `parts` is the day's net worth by kind of record (debts together under `Debt`, negative), so a change can be traced to what moved it. */
+export type PortfolioPoint = { date: string; assets: number; debt: number; net: number; partial?: boolean; parts?: Record<string, number> };
 /** A balance change shown on the day it happened rather than the day its snapshot was written (`balanceMoves`). */
 type Move = { record_id: string; date: string; entered: string; amount: number };
 type DayChanges = { events: HistoryEvent[]; shifts: Array<[string, number]> };
@@ -66,13 +67,16 @@ export function portfolioHistory(records: Entry[], events: HistoryEvent[], curre
   if (!observed && !changes.shifts.some(([id]) => balances.has(id))) continue;
   if (!includePartial && balances.size !== included.length) continue;
   let assetTotal = 0, debt = 0;
+  const parts: Record<string, number> = {};
   for (const [id, amount] of balances) {
    const record = byId.get(id)!;
    const value = convertAmount(amount + (shifted.get(id) ?? 0), record.currency, currency, rates) ?? 0;
-   if (assets.includes(record.kind)) assetTotal += value;
+   const asset = assets.includes(record.kind), part = asset ? record.kind : 'Debt';
+   parts[part] = (parts[part] ?? 0) + (asset ? value : -value);
+   if (asset) assetTotal += value;
    else debt += value;
   }
-  days.set(date, { date, assets: assetTotal, debt, net: assetTotal - debt, ...(balances.size !== included.length ? {partial:true} : {}) });
+  days.set(date, { date, assets: assetTotal, debt, net: assetTotal - debt, ...(balances.size !== included.length ? {partial:true} : {}), parts });
  }
  return { points: [...days.values()], missing: included.length - balances.size, excluded: eligible.length - included.length };
 }

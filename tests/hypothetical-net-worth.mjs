@@ -64,3 +64,33 @@ test('days before the first net worth figure are left out, and a day without an 
  assert.deepEqual(netWorthComparison(points,[],['SPY']),[]);
  assert.deepEqual(netWorthComparison(points,[{date:'2026-10-01',net:Number.NaN}],['SPY']),[]);
 });
+
+test('each day names what moved net worth since the chart’s day before it, by kind, with debts together',()=>{
+ // The user's October dip: cash spent on 10 October while a business was paid into, then debt repaid on the 18th.
+ const points=['2026-10-09','2026-10-10','2026-10-11','2026-10-18'].map(date=>({date,actual:100,contributed:100}));
+ const history=[
+  {date:'2026-10-09',net:318359,parts:{Cash:6918,Business:94800,Debt:-91469}},
+  {date:'2026-10-10',net:314954,parts:{Cash:513,Business:97800,Debt:-91469}},
+  {date:'2026-10-18',net:316202,parts:{Cash:513,Business:97800,Debt:-90221,'Money lent':-0.2}},
+ ];
+ const moves=netWorthComparison(points,history,[]).map(point=>Object.fromEntries(Object.entries(point).filter(([key])=>key.startsWith('move:'))));
+ assert.deepEqual(moves,[{},{'move:Cash':-6405,'move:Business':3000},{},{'move:Debt':1248}],'no change under half a unit, and nothing on the first day or a day without a new figure');
+ // A day whose figure has no parts (today's live total) names nothing.
+ const today=netWorthComparison([{date:'2026-10-09',actual:1,contributed:0},{date:'2026-10-10',actual:1,contributed:0}],[{date:'2026-10-09',net:1,parts:{Cash:1}},{date:'2026-10-10',net:5}],[]);
+ assert.ok(!Object.keys(today[1]).some(key=>key.startsWith('move:')));
+});
+
+test('the point details list what changed net worth, largest first, signed and toned',async()=>{
+ const React=(await import('react')).default;
+ const {renderToStaticMarkup}=await import('react-dom/server');
+ const language={useLanguage:()=>({locale:'en-US',t:(text,values={})=>text.replace(/\{(\w+)\}/g,(_,key)=>values[key]??key)})};
+ const {BenchmarkTooltip}=loadTS('components/benchmark-tooltip.tsx',{'@/components/language-provider':language});
+ const point={date:'2026-10-10',actual:314954,contributed:410289,'move:Business':3000,'move:Cash':-6405};
+ const html=renderToStaticMarkup(React.createElement(BenchmarkTooltip,{active:true,payload:[{payload:point}],receipts:[],fundingDetails:[],currency:'USD',series:[{key:'actual',label:'Net worth',color:'red'}]}));
+ assert.match(html,/What changed your net worth/);
+ assert.ok(html.indexOf('Cash')<html.indexOf('Business'),'the larger change comes first');
+ assert.match(html,/class="negative">−\$6,405</);
+ assert.match(html,/class="positive">\+\$3,000</);
+ const quiet=renderToStaticMarkup(React.createElement(BenchmarkTooltip,{active:true,payload:[{payload:{date:'2026-10-11',actual:1,contributed:0}}],receipts:[],fundingDetails:[],currency:'USD',series:[]}));
+ assert.doesNotMatch(quiet,/What changed your net worth/);
+});
