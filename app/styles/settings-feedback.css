@@ -142,10 +142,12 @@
 .portfolio-tooltip-body section{padding:15px 0}
 .portfolio-tooltip-body section+section{border-top:1px solid var(--border)}
 .portfolio-tooltip h4{font-size:var(--type-small);color:var(--muted-foreground);margin:0 0 12px;font-weight:500}
-.portfolio-tooltip-row{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:var(--type-small)}
+/* A row wraps rather than squeezing its name: the name keeps at least 8rem, and a note under the row takes a line of its own. */
+.portfolio-tooltip-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px;font-size:var(--type-small)}
 .portfolio-tooltip-row>i{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.portfolio-tooltip-row>div{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
-.portfolio-tooltip-row strong{font-weight:500;overflow-wrap:anywhere}
+.portfolio-tooltip-row>div{display:flex;flex:1 1 8rem;min-width:0;flex-direction:column;gap:3px}
+.portfolio-tooltip-row strong{font-weight:500;overflow-wrap:break-word}
+.portfolio-tooltip-row>small{flex-basis:100%;padding-inline-start:18px;color:var(--muted-foreground);font-size:var(--type-micro)}
 .portfolio-tooltip-row span{color:var(--muted-foreground);font-size:var(--type-micro)}
 .portfolio-tooltip-row>b{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
 .portfolio-tooltip-note{font-size:var(--type-micro);line-height:1.6;color:var(--muted-foreground);margin:14px 0}
@@ -266,7 +268,6 @@
  .portfolio-tooltip header{padding:12px;grid-template-columns:minmax(0,1fr) auto;gap:6px}
  .portfolio-tooltip header>strong{font-size:var(--type-title);overflow-wrap:anywhere;min-width:0}
  .portfolio-tooltip-body{padding-inline:12px}
- .portfolio-tooltip-row{flex-wrap:wrap}
  .portfolio-tooltip-row>b{margin-inline-start:auto;max-width:100%;white-space:normal;overflow-wrap:anywhere}
 }
 
