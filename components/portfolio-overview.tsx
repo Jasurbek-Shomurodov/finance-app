@@ -34,6 +34,8 @@ const noHistory: PortfolioHistory = { records: [], events: [] };
 export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecords, currency, market, demo, savedHistory, historyError: error, onHistoryRetry, onAddIncome, board, categories }: { /** The workspace's own categories, for naming expenses. */ categories?: readonly { id: string; name: string }[]; savedHistory: PortfolioHistory | null; historyError: boolean; onHistoryRetry: () => void; board: (cards: { netWorth: ReactNode; income: ReactNode }) => ReactNode; onAddIncome?: () => void; demoRecords?: Entry[]; excludedCurrencies?:string[]; entries: Entry[]; currency: string; market: MarketData | null; demo: boolean }) {
  const { t, locale } = useLanguage();
  const [range, setRange] = useState<number | null>(null);
+ // Counts period choices: in full screen choosing a period zooms the chart to it, even the one already chosen.
+ const [periodPick, setPeriodPick] = useState(0);
  const [growth, setGrowth] = useState<PeriodGrowth | null>(null);
  const comparison = useComparisonProfile(demo);
  const { ref: cardRef, open: filling, toggle: toggleFullscreen, chartHeight } = useFullscreenCard<HTMLElement>();
@@ -50,6 +52,7 @@ export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecord
  const points = useMemo(() => mergePortfolioPoints(recorded.points, [], {date:today,assets:assetTotal,debt,net:portfolioValue,parts:currentParts(entries)}), [recorded.points, today, assetTotal, debt, portfolioValue, entries]);
  const windowStart = trackingWindowStart(range, today, comparison.trackingStart);
  const visible = portfolioWindow(points, range, today, comparison.trackingStart);
+ const tracked = useMemo(() => portfolioWindow(points, null, today, comparison.trackingStart), [points, today, comparison.trackingStart]);
  const partialHistory = visible.some(point=>point.partial);
  const change = partialHistory ? null : investmentValueChange(visible.map(point=>point.net));
  const loading = !demo && !history && !error;
@@ -68,13 +71,13 @@ export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecord
      <PartialTotal currencies={excludedCurrencies}/>
     </div>
     <div className="overview-hero-tools">
-     <Segmented label={t('History period')} options={[30, 90, 365, null].map(days => ({ value: days, label: days === null ? t('All history') : t('{days} days', { days: formatNumber(days, locale, 0) }) }))} value={range} onChange={setRange}/>
+     <Segmented label={t('History period')} options={[30, 90, 365, null].map(days => ({ value: days, label: days === null ? t('All history') : t('{days} days', { days: formatNumber(days, locale, 0) }) }))} value={range} onChange={days => { setRange(days); setPeriodPick(pick => pick + 1); }}/>
      {/* The card fills the window and comes back; the period, the lines shown and an open day all stay as they were. */}
      <Button type="button" variant="outline" size="icon" aria-pressed={filling} aria-label={t(filling ? 'Exit full screen' : 'Open in full screen')} title={t(filling ? 'Exit full screen' : 'Open in full screen')} onClick={toggleFullscreen}>{filling ? <Minimize2 aria-hidden="true"/> : <Maximize2 aria-hidden="true"/>}</Button>
     </div>
    </header>
    {loading ? <NetWorthBodySkeleton label={t('Loading history…')}/> : error ? <InlineError message={t('Could not load portfolio history.')} onRetry={onHistoryRetry}/> : <>
-    <InvestmentComparison chartHeight={chartHeight} history={history??noHistory} today={today} currency={currency} market={market} demo={demo} windowStart={windowStart} points={visible} profile={comparison.profile} profileError={comparison.error} trackingStart={comparison.trackingStart} onTrackingStartChange={comparison.saveTrackingStart} onGrowth={setGrowth} summary={(fx,scope)=><InvestmentPeriodSummary scope={scope} input={{records:history?.records??noHistory.records,events:history?.events??noHistory.events,cashflows:history?.cashflows,movements:history?.movements,market,currency,today,fx,categories}} start={windowStart}/>}/>
+    <InvestmentComparison allPoints={tracked} periodPick={periodPick} chartHeight={chartHeight} history={history??noHistory} today={today} currency={currency} market={market} demo={demo} windowStart={windowStart} points={visible} profile={comparison.profile} profileError={comparison.error} trackingStart={comparison.trackingStart} onTrackingStartChange={comparison.saveTrackingStart} onGrowth={setGrowth} summary={(fx,scope)=><InvestmentPeriodSummary scope={scope} input={{records:history?.records??noHistory.records,events:history?.events??noHistory.events,cashflows:history?.cashflows,movements:history?.movements,market,currency,today,fx,categories}} start={windowStart}/>}/>
     {recorded.missing > 0 && <p className="muted overview-hero-note">{t('Some holdings have no recorded history yet.')}</p>}
     {excludedCurrencies.length > 0 && <p className="muted overview-hero-note">{t('Some currencies could not be converted and are excluded from totals.')}</p>}
    </>}

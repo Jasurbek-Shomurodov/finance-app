@@ -14,26 +14,29 @@ function plotBox(element: HTMLElement): DOMRect {
 
 /** Pan and zoom over time, as on a trading chart: drag (or swipe) moves through history, the wheel, a trackpad pinch
  * or a two-finger pinch zooms around the pointer, a sideways scroll moves, and a double click shows the whole
- * history again. `extent` is the history the chart holds; with `enabled` false the view always shows all of it.
+ * history. `extent` is the history the chart holds; with `enabled` false the view always shows all of it. `initial`
+ * is where the view opens (a chosen period, from its start to the latest day): choosing a period only zooms, and
+ * the history before it stays a drag away. A new `initial.pick` (the same period chosen again) opens it afresh.
  * `consumeDrag` tells a click handler that the press it ends was a drag, so a drag never opens a day. */
-export function useChartViewport(extent: Viewport | null, enabled: boolean) {
+export function useChartViewport(extent: Viewport | null, enabled: boolean, initial?: { start: number; pick: number }) {
  const ref = useRef<HTMLDivElement>(null);
- // The view belongs to one history: another period or comparison (a new extent) starts from the whole of it again.
- const key = enabled && extent ? `${extent.start}:${extent.end}` : '';
+ // The view belongs to one history and one choice of period: another of either opens at the chosen period again.
+ const key = enabled && extent ? `${extent.start}:${extent.end}:${initial?.start}:${initial?.pick}` : '';
  const [state, setState] = useState<{ key: string; view: Viewport | null }>({ key: '', view: null });
  const setView = useCallback((view: Viewport | null) => setState({ key, view }), [key]);
  const viewRef = useRef<Viewport | null>(null), extentRef = useRef(extent);
  const press = useRef<Press | null>(null), dragged = useRef(false);
  const touches = useRef(new Map<number, number>()), pinch = useRef<Pinch | null>(null);
  const view = state.key === key ? state.view : null;
- const current = enabled && extent ? clampViewport(view ?? extent, extent) : extent;
+ const opening = extent && initial ? { start: initial.start, end: extent.end } : extent;
+ const current = enabled && extent && opening ? clampViewport(view ?? opening, extent) : extent;
  // The gesture listeners read the latest view and history without being added again on every move.
  useEffect(() => { viewRef.current = current; extentRef.current = extent; });
  const zoom = useCallback((factor: number, anchor = .5) => {
   const now = viewRef.current, all = extentRef.current;
   if (now && all) setView(zoomViewport(now, all, anchor, factor));
  }, [setView]);
- const reset = useCallback(() => setView(null), [setView]);
+ const reset = useCallback(() => setView(extentRef.current), [setView]);
  useEffect(() => {
   const element = ref.current;
   if (!enabled || !element) return;
@@ -85,7 +88,7 @@ export function useChartViewport(extent: Viewport | null, enabled: boolean) {
    press.current = null;
    delete element.dataset.panning;
   };
-  const onDouble = () => setView(null);
+  const onDouble = () => setView(extentRef.current);
   element.addEventListener('wheel', onWheel, { passive: false });
   element.addEventListener('pointerdown', onDown);
   element.addEventListener('dblclick', onDouble);

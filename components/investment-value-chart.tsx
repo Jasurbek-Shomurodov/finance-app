@@ -34,6 +34,12 @@ function timeDomain(first:number|undefined,last:number|undefined,view:Window):[n
  return [first,last===first?first+86400000:last];
 }
 
+/** The history a chart can move through: none for a lone day. */
+const extentOf=(all:Drawn[])=>all.length>1?{start:all[0].timestamp,end:all.at(-1)!.timestamp}:null;
+
+/** Where a full-screen chart opens: the chosen period's first day, renewed each time a period is chosen. */
+const opening=(start:string|undefined,pick:number)=>start?{start:Date.parse(start+'T00:00:00Z'),pick}:undefined;
+
 /** The full-screen chart's zoom buttons, beside a line on how to drag and zoom. */
 function ViewportTools({whole,canZoomIn,zoom,reset}:{whole:boolean;canZoomIn:boolean;zoom:(factor:number)=>void;reset:()=>void}){
  const {t}=useLanguage();
@@ -41,15 +47,16 @@ function ViewportTools({whole,canZoomIn,zoom,reset}:{whole:boolean;canZoomIn:boo
   <span>{t('Drag to move through time, scroll to zoom')}</span>
   <Button type="button" variant="outline" size="icon" aria-label={t('Zoom out')} title={t('Zoom out')} disabled={whole} onClick={()=>zoom(1.6)}><ZoomOut aria-hidden="true"/></Button>
   <Button type="button" variant="outline" size="icon" aria-label={t('Zoom in')} title={t('Zoom in')} disabled={!canZoomIn} onClick={()=>zoom(1/1.6)}><ZoomIn aria-hidden="true"/></Button>
-  <Button type="button" variant="outline" size="icon" aria-label={t('Show whole period')} title={t('Show whole period')} disabled={whole} onClick={reset}><Maximize aria-hidden="true"/></Button>
+  <Button type="button" variant="outline" size="icon" aria-label={t('Show all history')} title={t('Show all history')} disabled={whole} onClick={reset}><Maximize aria-hidden="true"/></Button>
  </div>;
 }
 /** Renders nothing: the tooltip keeps tracking the touched day without drawing over the details window. */
 const noTooltip=()=>null;
 
 /** `floor`, when given, is where the value axis starts: the chart's main line then opens in the bottom-left corner.
- * `navigable` (the full-screen card) lets the person drag through time and zoom, as on a trading chart. */
-export function InvestmentValueChart({points,series,currency,tooltip,onPointSelect,floor,height=310,label='Investment value',navigable=false}:{points:Point[];series:Series[];currency:string;tooltip?:ReactElement;onPointSelect?:(date:string)=>void;floor?:number;height?:number;label?:string;navigable?:boolean}){
+ * `navigable` (the full-screen card) lets the person drag through time and zoom, as on a trading chart; it opens at
+ * `initialStart` (the chosen period's first day), and `periodPick` changes each time a period is chosen. */
+export function InvestmentValueChart({points,series,currency,tooltip,onPointSelect,floor,height=310,label='Investment value',navigable=false,initialStart,periodPick=0}:{initialStart?:string;periodPick?:number;points:Point[];series:Series[];currency:string;tooltip?:ReactElement;onPointSelect?:(date:string)=>void;floor?:number;height?:number;label?:string;navigable?:boolean}){
  const {locale,t}=useLanguage(),id=useId();
  const mobile=useIsMobile();
  // On phones a tap opens the point's details window; a tooltip drawn under the same finger would show through it
@@ -58,7 +65,7 @@ export function InvestmentValueChart({points,series,currency,tooltip,onPointSele
  const all:Drawn[]=points.map(point=>({...point,timestamp:Date.parse(point.date+'T00:00:00Z')}));
  const first=all[0]?.timestamp,last=all.at(-1)?.timestamp;
  const single=all.length===1;
- const {ref:viewportRef,view:viewportView,whole,zoom,reset,consumeDrag}=useChartViewport(first===undefined||single?null:{start:first,end:last!},navigable);
+ const {ref:viewportRef,view:viewportView,whole,zoom,reset,consumeDrag}=useChartViewport(extentOf(all),navigable,opening(initialStart,periodPick));
  const view=navigable&&!whole?viewportView:null;
  const {data,values,floor:shownFloor,lastPoint}=drawnWindow(all,view,series,floor);
  const axis=shownFloor===undefined?niceAxis(values):flooredAxis(values,shownFloor);
