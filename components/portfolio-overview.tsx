@@ -12,7 +12,9 @@ import { InfoHint } from '@/components/presentation-foundation/info-hint';
 import { RollingText } from '@/components/presentation-foundation/rolling-text';
 import { signTone } from '@/components/presentation-foundation/tone';
 import type { PeriodGrowth } from '@/lib/period-growth';
-import { TrendingDown, TrendingUp } from 'lucide-react';
+import { Maximize2, Minimize2, TrendingDown, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useFullscreenCard } from '@/hooks/use-fullscreen-card';
 import { changePercent } from '@/lib/overview';
 import { useLanguage } from '@/components/language-provider';
 import { NetWorthBodySkeleton } from '@/components/presentation-foundation/loading-placeholder';
@@ -34,6 +36,7 @@ export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecord
  const [range, setRange] = useState<number | null>(null);
  const [growth, setGrowth] = useState<PeriodGrowth | null>(null);
  const comparison = useComparisonProfile(demo);
+ const { ref: cardRef, open: filling, toggle: toggleFullscreen, chartHeight } = useFullscreenCard<HTMLElement>();
  const today = depositToday();
  const history: PortfolioHistory | null = useMemo(() => demo ? demoHistory(demoRecords ?? [], today) : savedHistory, [demo, demoRecords, today, savedHistory]);
  const money = (amount: number) => formatMoney(amount, currency, locale);
@@ -52,7 +55,7 @@ export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecord
  const percent = changePercent(portfolioValue, change);
  const Trend = change !== null && change < 0 ? TrendingDown : TrendingUp;
  // Net worth and income over time are cards of the dashboard board, which places them wherever the person dragged them.
- const netWorth = <section className="panel portfolio-trend overview-hero" aria-labelledby="overview-net-worth">
+ const netWorth = <section ref={cardRef} data-fullscreen={filling || undefined} className="panel portfolio-trend overview-hero" aria-labelledby="overview-net-worth">
    <header className="overview-hero-head">
     <div className="overview-hero-value">
      <h2 id="overview-net-worth">{t('Net worth over time')}</h2>
@@ -63,10 +66,14 @@ export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecord
      {!loading && !error && change !== null && growth && <p className="overview-change-split"><span><i className="returns" aria-hidden="true"/>{t('Investment returns')} <b className={signTone(growth.returns)}>{formatSignedMoney(growth.returns, currency, locale)}</b></span><span><i aria-hidden="true"/>{t('Your own money')} <b className={signTone(change - growth.returns)}>{formatSignedMoney(change - growth.returns, currency, locale)}</b></span><InfoHint>{t('Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.', { amount: money(Math.max(0, growth.invested)) })}</InfoHint></p>}
      <PartialTotal currencies={excludedCurrencies}/>
     </div>
-    <Segmented label={t('History period')} options={[30, 90, 365, null].map(days => ({ value: days, label: days === null ? t('All history') : t('{days} days', { days: formatNumber(days, locale, 0) }) }))} value={range} onChange={setRange}/>
+    <div className="overview-hero-tools">
+     <Segmented label={t('History period')} options={[30, 90, 365, null].map(days => ({ value: days, label: days === null ? t('All history') : t('{days} days', { days: formatNumber(days, locale, 0) }) }))} value={range} onChange={setRange}/>
+     {/* The card fills the window and comes back; the period, the lines shown and an open day all stay as they were. */}
+     <Button type="button" variant="outline" size="icon" aria-pressed={filling} aria-label={t(filling ? 'Exit full screen' : 'Open in full screen')} title={t(filling ? 'Exit full screen' : 'Open in full screen')} onClick={toggleFullscreen}>{filling ? <Minimize2 aria-hidden="true"/> : <Maximize2 aria-hidden="true"/>}</Button>
+    </div>
    </header>
    {loading ? <NetWorthBodySkeleton label={t('Loading history…')}/> : error ? <InlineError message={t('Could not load portfolio history.')} onRetry={onHistoryRetry}/> : <>
-    <InvestmentComparison history={history??noHistory} today={today} currency={currency} market={market} demo={demo} windowStart={windowStart} points={visible} profile={comparison.profile} profileError={comparison.error} trackingStart={comparison.trackingStart} onTrackingStartChange={comparison.saveTrackingStart} onGrowth={setGrowth} summary={fx=><InvestmentPeriodSummary input={{records:history?.records??noHistory.records,events:history?.events??noHistory.events,cashflows:history?.cashflows,movements:history?.movements,market,currency,today,fx}} start={windowStart}/>}/>
+    <InvestmentComparison chartHeight={chartHeight} history={history??noHistory} today={today} currency={currency} market={market} demo={demo} windowStart={windowStart} points={visible} profile={comparison.profile} profileError={comparison.error} trackingStart={comparison.trackingStart} onTrackingStartChange={comparison.saveTrackingStart} onGrowth={setGrowth} summary={fx=><InvestmentPeriodSummary input={{records:history?.records??noHistory.records,events:history?.events??noHistory.events,cashflows:history?.cashflows,movements:history?.movements,market,currency,today,fx}} start={windowStart}/>}/>
     {recorded.missing > 0 && <p className="muted overview-hero-note">{t('Some holdings have no recorded history yet.')}</p>}
     {excludedCurrencies.length > 0 && <p className="muted overview-hero-note">{t('Some currencies could not be converted and are excluded from totals.')}</p>}
    </>}
