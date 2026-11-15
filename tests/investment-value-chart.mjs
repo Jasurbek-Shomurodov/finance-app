@@ -66,9 +66,9 @@ test('full screen: a zoomed chart draws only the days in view and fits both axes
   assert.deepEqual(result.props.data.map(point=>point.date),['2026-09-05','2026-09-10','2026-09-15','2026-09-20']);
   const axis=result.props.children.find(child=>child.type==='XAxis');
   assert.deepEqual(axis.props.domain,[viewport.view.start,viewport.view.end]);assert.equal(axis.props.allowDataOverflow,true);
-  // The value axis starts at the lowest net worth drawn, not the floor of the whole period.
+  // The value axis starts at the lowest value drawn (SPY's 150 here), not the floor of the whole period, so no line is cut off.
   const values=result.props.children.find(child=>child.type==='YAxis'&&!child.props.yAxisId);
-  assert.equal(values.props.domain[0],200);
+  assert.equal(values.props.domain[0],150);
  }finally{Object.assign(viewport,{view:null,whole:true});}
 });
 test('full screen: the press that ends a drag through time opens no day',()=>{

@@ -39,8 +39,10 @@ test('end labels sit at their values, spread apart in value order and kept insid
 });
 
 test('a floored axis starts exactly at the main line’s opening value, with round ticks above it',()=>{
- // Investments open at 311,000; Bitcoin later falls to 253,000 and is cut off at the bottom edge instead of lowering the axis.
- const {domain,ticks}=flooredAxis([311000,321000,345000,253000,328000],311000);
+ // Investments open at 311,000; Bitcoin later falls to 253,000, which lowers the axis so its line is shown in full.
+ const lowered=flooredAxis([311000,321000,345000,253000,328000],311000);
+ assert.equal(lowered.domain[0],253000);assert.ok(lowered.domain[1]>=345000);
+ const {domain,ticks}=flooredAxis([311000,321000,345000,328000],311000);
  assert.equal(domain[0],311000);assert.equal(ticks[0],311000);
  assert.ok(domain[1]>=345000);
  assert.ok(ticks.slice(1).every(tick=>tick%5000===0&&tick>311000),JSON.stringify(ticks));

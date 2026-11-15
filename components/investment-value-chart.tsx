@@ -18,7 +18,7 @@ type Drawn=Point&{timestamp:number};
 type Window={start:number;end:number}|null;
 
 /** What a view draws: zoomed in, only the days in view, with the value axis fitted to them as a trading chart does
- * (its floor follows the lowest main-line value shown); otherwise everything, on the floor the caller gave. */
+ * (its floor follows the lowest value shown); otherwise everything, on the floor the caller gave. */
 function drawnWindow(all:Drawn[],view:Window,series:Series[],floor:number|undefined){
  const data=view?pointsInView(all,view):all;
  const finite=(keys:readonly string[])=>data.flatMap(point=>keys.map(key=>point[key])).filter((value):value is number=>typeof value==='number'&&Number.isFinite(value));

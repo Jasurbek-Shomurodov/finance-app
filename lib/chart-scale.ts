@@ -18,10 +18,11 @@ export function niceAxis(values:readonly number[],count=5):{domain:[number,numbe
 }
 
 // A value axis that starts exactly at `floor` (the value a chart's main line opens on), so that line begins in the
-// bottom-left corner. Round ticks continue above it, none closer than half a step to the floor; values below it are
-// left for the chart to cut off at the bottom edge.
+// bottom-left corner. Round ticks continue above it, none closer than half a step to the floor. A line that falls
+// below the floor lowers the axis to its lowest value, so every line is shown in full.
 export function flooredAxis(values:readonly number[],floor:number,count=5):{domain:[number,number];ticks:number[]}{
  if(!Number.isFinite(floor))return niceAxis(values,count);
+ floor=values.reduce((lowest,value)=>Number.isFinite(value)&&value<lowest?value:lowest,floor);
  const nice=niceAxis([floor,...values.filter(value=>Number.isFinite(value)&&value>floor)],count);
  const step=nice.ticks.length>1?nice.ticks[1]-nice.ticks[0]:1;
  const above=nice.ticks.filter(tick=>tick-floor>=step/2);
