@@ -6,8 +6,9 @@ import type { FxPoint } from './benchmark-data';
 import type { InvestmentPortfolioInput } from './investment-portfolio';
 import { capitalizedInterest, copiesCapitalizedInterest } from './investment-history';
 
-/** `detail` is a row's own category when it is listed under a wider heading; `investment` the holding an expense was paid for. */
-export type PeriodRow={name:string;date:string;category:string;amount:number|null;detail?:string;investment?:string};
+/** `detail` is a row's own category when it is listed under a wider heading; `investment` the holding an expense was paid for;
+ * `transactionId` the transaction an expense was recorded as, which its row opens. */
+export type PeriodRow={name:string;date:string;category:string;amount:number|null;detail?:string;investment?:string;transactionId?:string};
 // The three figures follow the chart's funding rules: money invested is what funds benchmarks
 // when expenses are excluded (purchases, principal repayments and values recorded without a purchase), and expenses paid is what "Including expenses" adds to it.
 /** `categories` are the workspace's own categories, so an expense in one shows its name. */
@@ -67,7 +68,7 @@ function periodTotals(input:PeriodInput,start:string,details?:PeriodDetails){
   const source=(input.cashflows??[]).find(item=>'expense:'+item.id===row.id);
   const own=input.categories?.find(category=>category.id===source?.custom_category_id)?.name;
   const investment=records.get(source?.business_id??source?.property_id??'')?.name;
-  context={name:row.name,date:row.date,category:source?.mortgage_payment_id?'Mortgage interest':own??row.kind,...investment&&{investment}};
+  context={name:row.name,date:row.date,category:source?.mortgage_payment_id?'Mortgage interest':own??row.kind,...investment&&{investment},...source&&{transactionId:source.id}};
   add('expenses',row.amount,row.currency);
  }
  // Actual cashflow rows include salary and other income. Linked Tracker

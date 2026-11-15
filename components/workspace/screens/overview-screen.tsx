@@ -32,6 +32,11 @@ export function OverviewScreen() {
  // The net worth history is read now, beside the workspace reads, not once they have finished.
  const portfolioHistory = usePortfolioHistory(user, demo, reload);
  const spending = useSpendingPace({ owner: user, demo, revision: reload, data: planning.data, splits: transactionTools.data.splits, currency, market });
+ // An expense in the net worth card's details opens its transaction, as a row in Transactions does.
+ const openTransaction = (id: string) => {
+  const found = [...planning.data.records, ...rows, ...(portfolioHistory.history?.cashflows ?? [])].find(row => row.id === id);
+  if (found) setViewing(storedRecord(found));
+ };
  const [customizing, setCustomizing] = useState(false);
  // Rearrange mode: handles show and the cards wiggle until Done.
  const [arranging, setArranging] = useState(false);
@@ -56,7 +61,7 @@ export function OverviewScreen() {
    <OverviewHeading name={preferencesData.display_name?.trim()} firstVisit={!demo && firstVisit(preferencesData, depositToday())}>{arranging ? <Button onClick={() => setArranging(false)}><Check size={16} aria-hidden="true"/>{t('Done')}</Button> : <Button variant="outline" onClick={() => setCustomizing(true)}><LayoutGrid size={16} aria-hidden="true"/>{t('Customize')}</Button>}</OverviewHeading>
    <ScreenNotices/>
    {!workspaceLoading&&<TelegramNudge demo={demo}/>}
-   {workspaceLoading ? <WorkspaceSkeleton label={t("Loading your workspace…")} columns={dashboardColumns(layout)}/> : <PortfolioOverview categories={planning.data.categories} excludedCurrencies={excludedCurrencies} key={demo ? 'demo' : user} entries={current} demoRecords={demo ? rows : undefined} currency={currency} market={market} demo={demo} savedHistory={portfolioHistory.history} historyError={portfolioHistory.error} onHistoryRetry={portfolioHistory.retry} onAddIncome={() => addCashFlow('Other income')} board={nodes => <>
+   {workspaceLoading ? <WorkspaceSkeleton label={t("Loading your workspace…")} columns={dashboardColumns(layout)}/> : <PortfolioOverview categories={planning.data.categories} onOpenTransaction={openTransaction} excludedCurrencies={excludedCurrencies} key={demo ? 'demo' : user} entries={current} demoRecords={demo ? rows : undefined} currency={currency} market={market} demo={demo} savedHistory={portfolioHistory.history} historyError={portfolioHistory.error} onHistoryRetry={portfolioHistory.retry} onAddIncome={() => addCashFlow('Other income')} board={nodes => <>
     {/* The key figures sit at the top of the column beside Net worth over time; with one column, or no net worth
         card, they open the page instead. */}
     <div className="dashboard-headline" data-beside={showNetWorth || undefined}>{headline}</div>

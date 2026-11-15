@@ -68,6 +68,8 @@ test('an expense paid for a holding names that holding',()=>{
  investmentPeriodTotals({...input,records,cashflows:[row('feed',{name:'Feed store',business_id:'sheep'}),row('fix',{name:'Plumber',property_id:'flat'}),row('lunch',{name:'Cafe'})]},'2026-09-19',details);
  const named=Object.fromEntries(details.expenses.filter(item=>item.amount===25).map(item=>[item.name,item.investment]));
  assert.deepEqual(named,{'Feed store':'Sheep farm',Plumber:'Lake flat',Cafe:undefined});
+ // Each row opens the transaction it was recorded as; a Tracker running cost has none to open.
+ assert.deepEqual(details.expenses.map(item=>item.transactionId??null).sort(),['feed','fix','lunch',null,null].sort());
 });
 
 const {investmentDecisionComparison}=loadTS('lib/investment-benchmarks.ts');
