@@ -8,11 +8,22 @@ import { benchmarkUnitPrice } from '@/lib/investment-comparison';
 import type { BenchmarkData } from '@/lib/benchmark-data';
 import type { FundingDetail } from '@/lib/investment-benchmarks';
 import type { receivedIncome } from '@/lib/income-history';
+import type { ReactNode } from 'react';
+import { ChevronRight } from 'lucide-react';
+import { DrawerLink } from '@/components/presentation-foundation/drawer-link';
+import { activityLink, moveLink, type MoveLink } from '@/lib/net-worth-move-links';
 
 type Receipt=ReturnType<typeof receivedIncome>[number];
 type Point={date:string;contributed?:number;[key:string]:string|number|null|undefined};
-type Props={fundingDetails?:FundingDetail[];marketHistory?:BenchmarkData|null;openingNetWorth?:{date:string;amount:number};active?:boolean;payload?:readonly {payload?:Point}[];receipts:Receipt[];currency:string;series:{key:string;label:string;color:string;quotes?:{key:string;symbol:string}[]}[]};
-export function BenchmarkTooltip({active,payload,receipts,currency,series,openingNetWorth,marketHistory,fundingDetails}:Props){
+type Props={fundingDetails?:FundingDetail[];marketHistory?:BenchmarkData|null;openingNetWorth?:{date:string;amount:number};active?:boolean;payload?:readonly {payload?:Point}[];receipts:Receipt[];currency:string;series:{key:string;label:string;color:string;quotes?:{key:string;symbol:string}[]}[];/** In the pinned details (not the hover card) each line opens the page that explains it. */linked?:boolean};
+/** A details line; with a link the whole line opens its page and says which page under the name. */
+function DetailRow({link,children,label}:{link:MoveLink|null;children:ReactNode;label:string}){
+ const {t}=useLanguage();
+ if(!link)return <div className="portfolio-tooltip-row">{children}</div>;
+ const page=t(link.label,{name:link.page?t(link.page):''});
+ return <DrawerLink href={link.href} className="portfolio-tooltip-row detail-row-link" aria-label={`${label} · ${page}`}>{children}<small className="detail-row-page">{page}<ChevronRight aria-hidden/></small></DrawerLink>;
+}
+export function BenchmarkTooltip({active,payload,receipts,currency,series,openingNetWorth,marketHistory,fundingDetails,linked=false}:Props){
  const {t,locale}=useLanguage();
  const point=payload?.[0]?.payload;
  if(!active||!point)return null;
@@ -26,8 +37,8 @@ export function BenchmarkTooltip({active,payload,receipts,currency,series,openin
   <div className="portfolio-tooltip-body" tabIndex={0} role="region" aria-label={t(fundingDetails?'Investment activity on this date':'Income invested on this date')} onKeyDown={event=>{if(event.key!=='Escape')event.stopPropagation();}}>
    <p className="portfolio-tooltip-note">{t('Total funding invested by this date')} <strong>{typeof point.contributed==='number'?formatMoney(point.contributed,currency,locale):'—'}</strong></p>
    {openingNetWorth&&point.date>=openingNetWorth.date&&<p className="portfolio-tooltip-note">{t('Opening net worth invested')} · {formatDate(openingNetWorth.date,locale)} <strong>{formatMoney(openingNetWorth.amount,currency,locale)}</strong></p>}
-   {moves.length>0&&<section className="net-worth-moves"><h4>{t('What changed your net worth')}</h4>{moves.map(move=><div className="portfolio-tooltip-row" key={move.kind}><i style={{background:categoryColor(move.kind)}}/><div><strong>{t(move.kind)}</strong></div><b className={signTone(move.amount)}>{formatSignedMoney(move.amount,currency,locale)}</b></div>)}</section>}
-   <section><h4>{t(fundingDetails?'Investment activity on this date':'Income invested on this date')}</h4>{funding.length?funding.map(receipt=><div className="portfolio-tooltip-row" key={receipt.id}><i style={{background:categoryColor('kind' in receipt&&receipt.kind?receipt.kind:'Other income')}}/><div><strong>{receipt.id==='opening'?t(receipt.name):receipt.name}</strong><span>{'source' in receipt&&receipt.source==='expense'?t('Expense funding')+' · '+t(receipt.kind??'Other expense'):'source' in receipt&&receipt.source==='opening'?t('Recorded value · purchase not recorded'):t('principal' in receipt?'Principal repaid':fundingDetails?'Fresh investment funding':'Income received and invested')}</span></div><b>{formatMoney('principal' in receipt&&typeof receipt.principal==='number'?receipt.principal:receipt.amount,receipt.currency,locale)}</b>{'reused' in receipt&&receipt.reused>0&&<small>{t('Transferred from an existing investment')}: {formatMoney(receipt.reused,receipt.currency,locale)}</small>}{'fromIncome' in receipt&&typeof receipt.fromIncome==='number'&&receipt.fromIncome>0&&<small>{t('Paid from investment income')}: {formatMoney(receipt.fromIncome,receipt.currency,locale)}</small>}</div>):<p className="portfolio-tooltip-note">{t(fundingDetails?'No new investment funding on this date.':'No new income invested on this date.')}</p>}</section>
+   {moves.length>0&&<section className="net-worth-moves"><h4>{t('What changed your net worth')}</h4>{moves.map(move=><DetailRow key={move.kind} label={t(move.kind)} link={linked?moveLink(move.kind,point.date):null}><i style={{background:categoryColor(move.kind)}}/><div><strong>{t(move.kind)}</strong></div><b className={signTone(move.amount)}>{formatSignedMoney(move.amount,currency,locale)}</b></DetailRow>)}</section>}
+   <section><h4>{t(fundingDetails?'Investment activity on this date':'Income invested on this date')}</h4>{funding.length?funding.map(receipt=><DetailRow key={receipt.id} label={receipt.id==='opening'?t(receipt.name):receipt.name} link={linked?activityLink(receipt):null}><i style={{background:categoryColor('kind' in receipt&&receipt.kind?receipt.kind:'Other income')}}/><div><strong>{receipt.id==='opening'?t(receipt.name):receipt.name}</strong><span>{'source' in receipt&&receipt.source==='expense'?t('Expense funding')+' · '+t(receipt.kind??'Other expense'):'source' in receipt&&receipt.source==='opening'?t('Recorded value · purchase not recorded'):t('principal' in receipt?'Principal repaid':fundingDetails?'Fresh investment funding':'Income received and invested')}</span></div><b>{formatMoney('principal' in receipt&&typeof receipt.principal==='number'?receipt.principal:receipt.amount,receipt.currency,locale)}</b>{'reused' in receipt&&receipt.reused>0&&<small>{t('Transferred from an existing investment')}: {formatMoney(receipt.reused,receipt.currency,locale)}</small>}{'fromIncome' in receipt&&typeof receipt.fromIncome==='number'&&receipt.fromIncome>0&&<small>{t('Paid from investment income')}: {formatMoney(receipt.fromIncome,receipt.currency,locale)}</small>}</DetailRow>):<p className="portfolio-tooltip-note">{t(fundingDetails?'No new investment funding on this date.':'No new income invested on this date.')}</p>}</section>
   </div>
  </div>;
 }

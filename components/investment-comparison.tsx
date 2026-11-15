@@ -143,7 +143,7 @@ export function InvestmentComparison({history,today,currency,market,demo,windowS
   </details>
   <Dialog open={!!detailPoint} onOpenChange={open=>{if(!open)setDetailDate(null);}}><DialogContent className="chart-point-details sm:max-w-xl"><DialogHeader><DialogTitle>{t('Activity and investments')}</DialogTitle><DialogDescription>{detailDate?formatDate(detailDate,locale):''}</DialogDescription></DialogHeader>
    {detailPoint&&<>
-    <BenchmarkTooltip marketHistory={ready} fundingDetails={decision?.details} active payload={[{payload:detailPoint}]} receipts={[]} currency={currency} series={chartSeries}/>
+    <BenchmarkTooltip linked marketHistory={ready} fundingDetails={decision?.details} active payload={[{payload:detailPoint}]} receipts={[]} currency={currency} series={chartSeries}/>
    </>}
   </DialogContent></Dialog>
   {error&&<InlineError message={t(error)} onRetry={()=>{setLoadedKey('');setError('');setRetry(n=>n+1);}}/>}
