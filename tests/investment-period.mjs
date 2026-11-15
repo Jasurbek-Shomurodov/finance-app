@@ -51,6 +51,15 @@ test('Including expenses counts the spending it funds as money invested',()=>{
  assert.deepEqual(investmentPeriodTotals(input,'2026-09-19',undefined,'investments'),investmentPeriodTotals(input,'2026-09-19'));
 });
 
+test('every expense names its category, with added categories by their own name',()=>{
+ const details={income:[],expenses:[],invested:[]};
+ const row=(id,kind,extra={})=>({id,kind,amount:30,currency:'USD',date:'2026-09-19',frequency:'Once',...extra});
+ investmentPeriodTotals({...input,cashflows:[row('beans','Other expense',{custom_category_id:'coffee'}),row('rent','Living expense'),row('lost','Other expense',{custom_category_id:'gone'})],categories:[{id:'coffee',name:'Coffee'}]},'2026-09-19',details);
+ // A Tracker cost keeps its holding's kind; an added category whose name is unknown falls back to the kind.
+ assert.deepEqual(details.expenses.map(item=>item.detail).sort(),['Business','Coffee','Living expense','Mortgage interest','Other expense']);
+ assert.equal(details.expenses.find(item=>item.date==='2026-09-19'&&item.amount===30&&item.detail==='Coffee')?.category,'Coffee');
+});
+
 const {investmentDecisionComparison}=loadTS('lib/investment-benchmarks.ts');
 const prices={start:'2026-09-01',end:'2026-09-04',fx:[],prices:{BTC:[1,2,3,4].map(n=>({date:'2026-09-0'+n,close:n*100}))},errors:{}};
 const dated=(id,record_id,date,event_type,amount,balance,extra={})=>({id,record_id,occurred_on:date,created_at:date+'T12:00:00Z',event_type,amount,balance,ownership_percentage:100,principal:0,interest:0,notes:'',...extra});

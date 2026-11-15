@@ -10,14 +10,17 @@ import { capitalizedInterest, copiesCapitalizedInterest } from './investment-his
 export type PeriodRow={name:string;date:string;category:string;amount:number|null;detail?:string};
 // The three figures follow the chart's funding rules: money invested is what funds benchmarks
 // when expenses are excluded (purchases, principal repayments and values recorded without a purchase), and expenses paid is what "Including expenses" adds to it.
-type PeriodInput=InvestmentPortfolioInput&{movements?:BenchmarkMovement[];fx?:FxPoint[]};
+/** `categories` are the workspace's own categories, so an expense in one shows its name. */
+type PeriodInput=InvestmentPortfolioInput&{movements?:BenchmarkMovement[];fx?:FxPoint[];categories?:readonly {id:string;name:string}[]};
 type PeriodDetails=Record<'income'|'invested'|'expenses',PeriodRow[]>;
 // With `scope` 'expenses' the benchmarks invest that spending too, so money invested includes it.
 export function investmentPeriodTotals(input:PeriodInput,start:string,details?:PeriodDetails,scope:FundingScope='investments'){
  const totals=periodTotals(input,start,details);
+ // Every expense names its category on its own line.
+ for(const row of details?.expenses??[])row.detail=row.category;
  if(scope!=='expenses')return totals;
  // The expenses stay together under their own heading, apart from the purchases.
- details?.invested.push(...details.expenses.map(row=>({...row,category:'Expenses paid',detail:row.category})));
+ details?.invested.push(...details.expenses.map(row=>({...row,category:'Expenses paid'})));
  return {...totals,invested:totals.invested+totals.expenses};
 }
 function periodTotals(input:PeriodInput,start:string,details?:PeriodDetails){
@@ -62,7 +65,8 @@ function periodTotals(input:PeriodInput,start:string,details?:PeriodDetails){
  for(const row of benchmarkExpenseFunding(input.cashflows,input.today)){
   if(!inPeriod(row.date))continue;
   const source=(input.cashflows??[]).find(item=>'expense:'+item.id===row.id);
-  context={name:row.name,date:row.date,category:source?.mortgage_payment_id?'Mortgage interest':row.kind};
+  const own=input.categories?.find(category=>category.id===source?.custom_category_id)?.name;
+  context={name:row.name,date:row.date,category:source?.mortgage_payment_id?'Mortgage interest':own??row.kind};
   add('expenses',row.amount,row.currency);
  }
  // Actual cashflow rows include salary and other income. Linked Tracker
