@@ -720,6 +720,7 @@
   "Choose a category and enter an expense amount. Add notes if needed.": "เลือกหมวดหมู่และป้อนจำนวนรายจ่าย เพิ่มหมายเหตุได้หากต้องการ",
   "Optional details": "รายละเอียดเพิ่มเติม (ไม่บังคับ)",
   "Save expense": "บันทึกรายจ่าย",
+  "Save and add another": "บันทึกและเพิ่มอีกรายการ",
   "Expense type": "ประเภทรายจ่าย",
   "Expense": "รายจ่าย",
   "Account amount": "จำนวนเงินในบัญชี",

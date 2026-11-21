@@ -87,6 +87,7 @@ label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 [data-slot=dialog-content] .record-form-footer{display:flex;justify-content:flex-end;gap:12px;padding-top:18px;border-top:1px solid var(--border)}
 [data-slot=dialog-content] .record-form-footer button{min-height:44px;border-radius:10px;padding-inline:22px}
 [data-slot=dialog-content] .record-form-footer .primary{min-width:160px}
+[data-slot=dialog-content] .record-form-footer{flex-wrap:wrap}[data-slot=dialog-content] .record-form-footer .primary{order:1}
 /* The Close × sits at the end edge in either direction (the primitive pins it right, the start side in Arabic). On touch it is 44px
  * square (it was 16×44), with its icon where it was: 16px from the top and the end edge. */
 [data-slot=dialog-content]>[data-slot=dialog-close]{right:auto;inset-inline-end:16px}

@@ -7,7 +7,7 @@ import { liabilities, type Entry } from '@/lib/finance';
 import { resolveIncomeSource } from '@/lib/income-sources';
 import type { Category, Occurrence } from '@/lib/planning';
 import { applyRecordChange, lendFromAccount, withSavedRecord } from '@/lib/record-balance';
-import { businessMoveFrom, cashAccountProblem, debtDatesProblem, demoScheduleLink, expenseName, recordSaveProblem } from '@/lib/record-save';
+import { anotherEntry, businessMoveFrom, cashAccountProblem, debtDatesProblem, demoScheduleLink, expenseName, recordSaveProblem } from '@/lib/record-save';
 import { depositToday } from '@/lib/deposit-interest';
 import { savedRecord } from '@/lib/record-table';
 import { isLinkedTransaction } from '@/lib/linked-transactions';
@@ -48,6 +48,7 @@ export function useRecordSave(input: RecordSaveInput) {
     }
     async function save(e: React.FormEvent) {
         e.preventDefault(); if (!editing) return;
+        const another = ((e.nativeEvent as SubmitEvent | undefined)?.submitter as HTMLButtonElement | null | undefined)?.name === 'another';
         const problem = recordSaveProblem(editing);
         if (problem) { fail(problem); return; }
         setBusy(true); setError('');
@@ -71,7 +72,8 @@ export function useRecordSave(input: RecordSaveInput) {
                 input.refreshRecords();
             }
             if(move)await input.setAccountBusiness(editing.id,editing.business_id??null);
-            setEditing(null);
+            // Save and add another keeps the form open on a blank record of the same kind, date and account.
+            setEditing(another ? anotherEntry(record) : null);
             showSaved();
         }
         catch (e) { fail((e as Error).message); }

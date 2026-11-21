@@ -22,3 +22,12 @@ test('the transfer link is recognised by its hash alone', () => {
  assert.equal(transferRequested(''),false);
  assert.equal(transferRequested('#transfers'),false);
 });
+
+test('Save and add another keeps the kind, category, date, account and owner, and clears the rest', () => {
+ const {anotherEntry}=loadTS('lib/record-save.ts');
+ const saved={id:'a',name:'Lunch',kind:'Other expense',custom_category_id:'cat',currency:'EUR',amount:12.5,date:'2026-11-20',account_id:'wallet',shared:false,member_id:'me',frequency:'Once',notes:'with Sam'};
+ const next=anotherEntry(saved);
+ assert.notEqual(next.id,'a');
+ assert.deepEqual([next.kind,next.custom_category_id,next.currency,next.date,next.account_id,next.shared,next.member_id,next.frequency],['Other expense','cat','EUR','2026-11-20','wallet',false,'me','Once']);
+ assert.deepEqual([next.name,next.amount,next.notes],['',0,'']);
+});

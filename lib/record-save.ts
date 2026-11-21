@@ -9,6 +9,10 @@ const today = depositToday;
 /** A blank record for a form to fill in, dated today. */
 export const freshEntry = (): Entry => ({ id: crypto.randomUUID(), name: '', kind: 'Cash', currency: 'USD', amount: 0, quantity: 1, cost: 0, rate: 0, date: today(), lent_date: today(), frequency: 'Once', notes: '', business_id: null, ownership_percentage: 100, estimated_monthly_income: 0, estimated_monthly_payment: 0 });
 
+/** The next blank record after "Save and add another": the same kind, category, currency, date, account and owner, so a
+ * run of receipts needs only each amount. */
+export const anotherEntry = (saved: Entry): Entry => ({ ...freshEntry(), kind: saved.kind, custom_category_id: saved.custom_category_id, currency: saved.currency, date: saved.date, account_id: saved.account_id, shared: saved.shared, member_id: saved.member_id, frequency: 'Once' });
+
 /** The rule a record breaks before it is sent, named as the server would name it; empty when it may be saved. */
 export function recordSaveProblem(editing: Entry) {
  const dateProblem = editing.kind === 'Money lent' ? (!editing.lent_date ? 'Date lent is required.' : editing.date && editing.date < editing.lent_date ? 'Due date must not precede lending date.' : '')

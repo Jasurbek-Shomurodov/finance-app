@@ -60,7 +60,8 @@ other screens link to it.
 ## Decisions taken (21 November 2026, on the owner's "decide and build")
 
 1. **Add on every screen.** The top bar's Add offers Expense, Income and Transfer everywhere; Transfer opens Accounts
-   with the dialog ready (`/accounts#transfer`, also in ⌘K). Still to do: ⌘Enter to save and add another.
+   with the dialog ready (`/accounts#transfer`, also in ⌘K). The expense form has Save and add another, which keeps the
+   category, date and account. Still to do: the same on the income form.
 2. **Cash flow and Reports stay separate.** Cash flow is this month and what is ahead; Reports is any period and any
    business. Cash flow's Overview no longer repeats the Budget card, mortgage payments, watchlists (all on Spending)
    or recent transactions (Transactions). Still to do: move the period switch and long-range trend to Reports.
@@ -116,7 +117,7 @@ numbers; profit and loss by share.
 ## Build order
 
 1. **Net worth line always draws.** Done.
-2. **Entry:** global Add (done), save and add another, inline field errors, one payment dialog, investment stepper that can
+2. **Entry:** global Add (done), save and add another (expenses done), inline field errors, one payment dialog, investment stepper that can
    pay from an account.
 3. **Dashboard:** safe to spend, where it is going, what to improve; every row opens its item.
 4. **Shimmers:** Cash flow tabs, Overview cards, Investments, Loans, Recently deleted; headers outside the skeleton.

@@ -123,8 +123,8 @@ function PaymentNameDetails({form}:{form:ExpenseContext}){
 /** The error and the Save and Cancel buttons; a debt payment that saves on its own shows none. */
 function ExpenseActions({form}:{form:ExpenseContext}){
  const {t}=useLanguage();
- const {onMortgageSave,setEditing,busy,error,demo,selectedDebt,mode}=form;
- return <>  {!(mode==='debt'&&selectedDebt&&((selectedDebt.kind==='Mortgage'&&onMortgageSave)||(!demo&&selectedDebt.kind!=='Mortgage')))&&<div className="expense-form-actions"><ErrorPopup message={error}/><FormFooter busy={busy} onCancel={()=>setEditing(null)}>{mode!=='debt'&&<Button className="primary" disabled={busy}>{t(busy?'Saving…':demo?'Save in demo':'Save expense')}</Button>}</FormFooter></div>}</>;
+ const {onMortgageSave,setEditing,busy,error,demo,selectedDebt,mode,original,editing}=form;
+ return <>  {!(mode==='debt'&&selectedDebt&&((selectedDebt.kind==='Mortgage'&&onMortgageSave)||(!demo&&selectedDebt.kind!=='Mortgage')))&&<div className="expense-form-actions"><ErrorPopup message={error}/><FormFooter busy={busy} onCancel={()=>setEditing(null)}>{mode!=='debt'&&<Button className="primary" disabled={busy}>{t(busy?'Saving…':demo?'Save in demo':'Save expense')}</Button>}{/* After the main button in the form, so Enter still saves and closes; the styles draw it before. */}{mode!=='debt'&&!original&&!editing.revision&&editing.frequency==='Once'&&<Button type="submit" variant="outline" name="another" value="1" disabled={busy}>{t('Save and add another')}</Button>}</FormFooter></div>}</>;
 }
 
 export function ExpenseRecordForm({onLeave,onSuggest,onDebtSaved,onMortgageSave,onMortgageDone,onPaymentDraftState,requestPaymentSwitch,onDebtPayment,household,editing,setEditing,busy,save,planning,error,demo,currencies,rows,original}:RecordDialogProps){
