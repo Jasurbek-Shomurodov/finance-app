@@ -36,6 +36,12 @@ export function netWorthComparison(points: readonly ComparisonPoint[], history: 
  });
 }
 
+// Net worth alone, one point per recorded day: what the chart draws while the benchmarks are still loading, or when
+// they cannot be worked out (no price history, a missing exchange rate). The main line never waits for them.
+export function netWorthLine(history: readonly { date: string; net: number; parts?: Record<string, number> }[]): ComparisonPoint[] {
+ return netWorthComparison(history.map(point => ({ date: point.date, actual: null, contributed: 0 })), history, []);
+}
+
 // What changed between two days' parts, as `move:<kind>` keys; a change under half a unit is not a change.
 function movesBetween(before: Record<string, number> | undefined, after: Record<string, number> | undefined): Record<string, number> {
  if (!before || !after) return {};

@@ -94,3 +94,13 @@ test('the point details list what changed net worth, largest first, signed and t
  const quiet=renderToStaticMarkup(React.createElement(BenchmarkTooltip,{active:true,payload:[{payload:{date:'2026-10-11',actual:1,contributed:0}}],receipts:[],fundingDetails:[],currency:'USD',series:[]}));
  assert.doesNotMatch(quiet,/What changed your net worth/);
 });
+
+test('net worth alone is drawn from its own history, without any benchmark data',()=>{
+ const {netWorthLine}=loadTS('lib/hypothetical-net-worth.ts');
+ assert.deepEqual(netWorthLine([{date:'2026-10-01',net:100,parts:{Cash:100}},{date:'2026-10-02',net:-20,parts:{Cash:80,Debt:-100}}]),[
+  {date:'2026-10-01',actual:100,contributed:0},
+  {date:'2026-10-02',actual:-20,contributed:0,'move:Cash':-20,'move:Debt':-100},
+ ]);
+ assert.deepEqual(netWorthLine([]),[]);
+ assert.deepEqual(netWorthLine([{date:'2026-10-01',net:Number.NaN}]),[],'a day without a usable figure is left out');
+});

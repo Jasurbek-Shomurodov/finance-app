@@ -3,7 +3,7 @@ import { pastDatePresets } from '@/lib/date-picker-calendar';
 import { DatePicker } from '@/components/presentation-foundation/date-picker';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { HypotheticalNetWorthCards } from '@/components/hypothetical-net-worth';
-import { hypotheticalNetWorth, netWorthComparison } from '@/lib/hypothetical-net-worth';
+import { hypotheticalNetWorth, netWorthComparison, netWorthLine } from '@/lib/hypothetical-net-worth';
 import { periodGrowth,type PeriodGrowth } from '@/lib/period-growth';
 import { benchmarkMethodStorageKey, readBenchmarkScope, investmentComparisonCoverage, investmentDecisionComparison, purchaseComparisonStart, comparisonMethod, type ComparisonMethod, type BenchmarkMovement, type FundingScope } from '@/lib/investment-benchmarks';
 import { showError } from '@/lib/feedback';
@@ -106,11 +106,14 @@ export function InvestmentComparison({allPoints,periodPick,onViewMove,history,to
  // The chart draws net worth, debts subtracted, and each benchmark as the net worth it would have led to. The
  // comparison's own points keep the investment value, which the period's growth and funding totals read.
  const benchmarkKeys=displayed.filter(item=>item.key!=='actual').map(item=>item.key);
- const shownPoints=netWorthComparison(chartPoints,points,benchmarkKeys);
+ const benchmarkList=benchmarkKeys.join(',');
+ const shownPoints=useMemo(()=>netWorthComparison((overviewResult?.points??[]).filter(point=>point.date>=windowStart),points,benchmarkList?benchmarkList.split(','):[]),[overviewResult,windowStart,points,benchmarkList]);
  // In full screen the chart holds the whole history, as a trading chart does: the period picks where it opens, and
  // dragging or zooming out reaches every earlier day. Its value axis fits the days in view.
  const navigable=chartHeight!==undefined;
- const chartData=navigable&&allPoints?netWorthComparison(overviewResult?.points??[],allPoints,benchmarkKeys):shownPoints;
+ // Net worth needs no benchmark data: while comparisons load, or when they cannot be worked out, its line is drawn alone.
+ const wholeHistory=navigable&&allPoints?allPoints:null;
+ const chartData=useMemo(()=>overviewResult?wholeHistory?netWorthComparison(overviewResult.points,wholeHistory,benchmarkList?benchmarkList.split(','):[]):shownPoints:netWorthLine(wholeHistory??points),[overviewResult,wholeHistory,benchmarkList,shownPoints,points]);
  const detailPoint=chartData.find(point=>point.date===detailDate);
  // The axis starts at net worth on the first shown day, so its line opens in the bottom-left corner. A later dip
  // below that value lowers the floor to it: the main line is never cut off, only benchmarks below it are.
@@ -134,7 +137,7 @@ export function InvestmentComparison({allPoints,periodPick,onViewMove,history,to
   <div className="overview-chart-heading"><div className="overview-chart-title"><Segmented className="funding-switch" label={t('Benchmark funding')} options={[{value:'investments' as FundingScope,label:t('Excluding expenses')},{value:'expenses' as FundingScope,label:t('Including expenses')}]} value={scope} onChange={next=>{if(overviewOwner)chooseScope(next);}}/></div><div className="comparison-legend" aria-busy={comparisonsLoading}>{displayed.map(item=><button key={item.key} type="button" aria-pressed={visibleKeys.has(item.key)} disabled={!overviewOwner} onClick={()=>toggleOverview(item.key)}><i style={{background:item.color}}/>{item.label}</button>)}</div></div>
   {ready&&!decision&&<p className="comparison-notice">{t('Investment history or exchange rates are incomplete for this comparison.')}</p>}
   {ready&&visibleSeries.filter(item=>item.key!=='actual').map(item=>{const reason=ready.errors[item.key]??ready.errors.fx??(overviewResult?.unavailable.includes(item.key)?'Price data, exchange rates or funds needed for a matching withdrawal are unavailable.':null);return reason?<p key={item.key} className="comparison-note">{item.label}: {t(reason)}</p>:null;})}
-  {comparisonsLoading?<ChartSkeleton label={t('Loading comparisons…')}/>:!!chartData.length&&<><InvestmentValueChart navigable={navigable} initialStart={navigable?windowStart:undefined} periodPick={periodPick} onViewMove={onViewMove} onPointSelect={setDetailDate} label={t('Net worth')} floor={floor} height={chartHeight} points={chartData} currency={currency} series={chartSeries.map(item=>({...item,primary:item.key==='actual'}))} tooltip={<BenchmarkTooltip marketHistory={ready} fundingDetails={decision?.details} receipts={[]} currency={currency} series={chartSeries}/>}/></>}
+  {comparisonsLoading&&!chartData.length?<ChartSkeleton label={t('Loading comparisons…')}/>:!!chartData.length&&<><InvestmentValueChart navigable={navigable} initialStart={navigable?windowStart:undefined} periodPick={periodPick} onViewMove={onViewMove} onPointSelect={setDetailDate} label={t('Net worth')} floor={floor} height={chartHeight} points={chartData} currency={currency} series={(overviewResult?chartSeries:chartSeries.filter(item=>item.key==='actual')).map(item=>({...item,primary:item.key==='actual'}))} tooltip={<BenchmarkTooltip marketHistory={ready} fundingDetails={decision?.details} receipts={[]} currency={currency} series={chartSeries}/>}/></>}
   {scope==='expenses'&&netWorth!==undefined&&<HypotheticalNetWorthCards netWorth={netWorth} rows={whatIf} series={visibleSeries} currency={currency}/>}
   {summaryNode}
   <details className="overview-details"><summary>{t('Tracking since {date}',{date:formatDate(method.date,locale)})}</summary>

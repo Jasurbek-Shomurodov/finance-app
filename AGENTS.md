@@ -13,6 +13,7 @@ contract.
 | `migrations/`, `database/setup.sql`, `e2e/` | `docs/agents/database-and-tests.md` |
 | API routes, rate limits, day arithmetic, client requests, Telegram messages | `docs/agents/shared-modules.md` |
 | Locales, languages, RTL, signed-out pages | `docs/agents/languages.md` |
+| Adding a feature, card, tab or dialog, or moving one between screens | `docs/product-map.md` (one home per feature; update it when it changes) |
 
 # Shared formatting rules
 

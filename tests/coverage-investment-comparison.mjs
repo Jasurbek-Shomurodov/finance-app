@@ -39,7 +39,7 @@ const params=url=>Object.fromEntries(new URL(url,'https://app.test').searchParam
 test('the sample workspace loads sample benchmarks, draws the chart from the window start and notes the sample data',async t=>{
  const s=comparison(t,{demo:true,profile:null});
  assert.equal(s.r.find(node=>node.props.className==='comparison-legend').props['aria-busy'],true,'comparisons load first');
- assert.equal(s.r.find(byType('ChartSkeleton')).props.label,'Loading comparisons…');
+ (()=>{const chart=s.r.find(byType('InvestmentValueChart'));assert.deepEqual(chart.props.series.map(series=>series.key),['actual'],'net worth is drawn alone while comparisons load');assert.deepEqual(chart.props.points.map(point=>[point.date,point.actual]),[['2026-08-01',40],['2026-09-30',100]]);assert.equal(s.r.all(byType('ChartSkeleton')).length,0);})();
  await s.r.flush();
  assert.deepEqual(s.requests.map(request=>request.url),['/api/benchmarks?demo=1']);
  assert.deepEqual(s.legend().map(text),['Net worth','Bitcoin · BTC','S&P 500 · SPY','US Treasury bills · BIL','USD deposit · 8%']);
@@ -110,7 +110,7 @@ test('a missing profile waits; a profile error loads the default benchmarks with
  const s=comparison(t,{profile:null});
  await s.r.flush();
  assert.deepEqual(s.requests,[]);
- assert.ok(s.r.find(byType('ChartSkeleton')));
+ (()=>{const chart=s.r.find(byType('InvestmentValueChart'));assert.deepEqual(chart.props.series.map(series=>series.key),['actual'],'net worth does not wait for the profile');assert.deepEqual(chart.props.points.map(point=>[point.date,point.actual]),[['2026-08-01',40],['2026-09-30',100]]);assert.equal(s.r.all(byType('ChartSkeleton')).length,0);})();
  assert.ok(s.legend().every(button=>button.props.disabled),'there is no owner to remember a choice for');
  s.r.fire(s.legend()[1],'onClick');
  s.r.fire(s.r.find(node=>node.type==='Segmented'),'onChange','expenses');
@@ -135,10 +135,10 @@ test('a failed request shows the error with a retry that asks again',async t=>{
  await s.r.flush();
  const error=s.r.find(byType('InlineError'));
  assert.equal(error.props.message,'Benchmark prices are unavailable.');
- assert.equal(s.r.all(byType('InvestmentValueChart')).length,0);
+ (()=>{const chart=s.r.find(byType('InvestmentValueChart'));assert.deepEqual(chart.props.series.map(series=>series.key),['actual'],'a failed benchmark request still leaves the net worth line');assert.deepEqual(chart.props.points.map(point=>[point.date,point.actual]),[['2026-08-01',40],['2026-09-30',100]]);assert.equal(s.r.all(byType('ChartSkeleton')).length,0);})();
  fail=false;
  s.r.fire(error,'onRetry');
- assert.ok(s.r.find(byType('ChartSkeleton')),'retrying shows the loading state');
+ (()=>{const chart=s.r.find(byType('InvestmentValueChart'));assert.deepEqual(chart.props.series.map(series=>series.key),['actual'],'retrying keeps the net worth line');assert.deepEqual(chart.props.points.map(point=>[point.date,point.actual]),[['2026-08-01',40],['2026-09-30',100]]);assert.equal(s.r.all(byType('ChartSkeleton')).length,0);})();
  await s.r.flush();
  assert.equal(s.requests.length,2);
  assert.equal(s.r.all(byType('InlineError')).length,0);
@@ -177,7 +177,7 @@ test('benchmark gaps are explained per line, and an incomplete history is noted'
  const incomplete=comparison(t,{},{decide:()=>null});
  await incomplete.r.flush();
  assert.equal(text(incomplete.r.find(node=>node.props.className==='comparison-notice')),'Investment history or exchange rates are incomplete for this comparison.');
- assert.equal(incomplete.r.all(byType('InvestmentValueChart')).length,0);
+ (()=>{const chart=incomplete.r.find(byType('InvestmentValueChart'));assert.deepEqual(chart.props.series.map(series=>series.key),['actual'],'an incomplete comparison still draws net worth');assert.deepEqual(chart.props.points.map(point=>[point.date,point.actual]),[['2026-08-01',40],['2026-09-30',100]]);assert.equal(incomplete.r.all(byType('ChartSkeleton')).length,0);})();
 });
 
 test('choosing a chart point opens its details with the formatted date, and closing clears it',async t=>{
