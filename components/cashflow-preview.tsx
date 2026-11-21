@@ -35,10 +35,10 @@ function IncomeRow({card}:{card:Card}){
   <td data-label={t('Progress')}>{!card.excluded&&!card.missing&&<ProgressLine value={card.receivedAmount} target={card.amount} tone="income"/>}</td></tr>;
 }
 
-/** Cash flow's overview: the month's income by source beside this month's budget, mortgage payments and what is still to
- * come (`closing`). `rates` converts a payment no rate converted into the display currency into its card's; without one
+/** Cash flow's overview: the month's income by source beside what is still to come (`closing`). The budget, mortgage
+ * payments and watchlists live on the Spending tab alone. `rates` converts a payment no rate converted into the display currency into its card's; without one
  * its amount is missing. */
-export function CashflowPreview({entries,sources,month,currency,rates,loading,error,onRetry,onIncome,budget,mortgages,watchlists,closing}:{entries:Entry[];sources:EarningSource[];month:string;currency:string;rates?:RateTable|null;loading:boolean;error:string;onRetry:()=>void;onIncome:()=>void;budget:ReactNode;mortgages:ReactNode;watchlists:ReactNode;closing?:ReactNode}){
+export function CashflowPreview({entries,sources,month,currency,rates,loading,error,onRetry,onIncome,onAddSource,closing}:{entries:Entry[];sources:EarningSource[];month:string;currency:string;rates?:RateTable|null;loading:boolean;error:string;onRetry:()=>void;onIncome:()=>void;/** Opens the income source editor. */onAddSource:()=>void;closing?:ReactNode}){
  const {t,locale}=useLanguage();
  const {convert}=useDisplayMoney();
  // Five sources at first, and every other one that brought money in, so the Received column adds up to the headline;
@@ -56,9 +56,8 @@ export function CashflowPreview({entries,sources,month,currency,rates,loading,er
    {income.missing>0&&<p role="status" className="muted">{t('Exchange rate unavailable.')}</p>}
    {!allSources&&allCards.length>cards.length&&<Button variant="link" onClick={()=>setAllSources(true)}>{t('Show more')}</Button>}
    {!cards.length&&<p className="muted">{t('No income is included for this month. Add a monthly salary or another income source below.')}</p>}
-   <footer><Button variant="ghost" onClick={onIncome}><Plus size={18} aria-hidden="true"/>{t('Add income source')}</Button></footer>
+   <footer><Button variant="ghost" onClick={onAddSource}><Plus size={18} aria-hidden="true"/>{t('Add income source')}</Button></footer>
   </section>
-  <div className="cashflow-spending-preview">{closing}{budget}{mortgages}</div>
-  {watchlists}
+  <div className="cashflow-spending-preview">{closing}</div>
  </div>;
 }

@@ -19,7 +19,7 @@ function el(selector,{width=0,scrollWidth=0,children=[]}={}){
  return node;
 }
 
-const quickExpense=node=>node.type==='button'&&node.props.className==='quick-expense';
+const addMenu=node=>node.type==='add-menu';
 
 function setup({roomy=true,workspace={},sidebar={state:'expanded',isMobile:false},slot={titleRef:{current:null},actionsRef:{current:null}},bar=null,page=null}={}){
  const listeners=[],observers=[];
@@ -32,13 +32,14 @@ function setup({roomy=true,workspace={},sidebar={state:'expanded',isMobile:false
  globalThis.ResizeObserver=observer('resize');globalThis.MutationObserver=observer('mutation');
  const renderer=createRenderer({attach:element=>element.type==='header'?bar:null});
  const changes=[],quick=[];
- const state={section:'Overview',currency:'USD',setCurrency:code=>changes.push(code),preferencesData:{currencies:['USD']},quickExpense:()=>quick.push(1),readOnly:false,...workspace};
+ const state={section:'Overview',currency:'USD',setCurrency:code=>changes.push(code),preferencesData:{currencies:['USD']},quickExpense:()=>quick.push('expense'),addCashFlow:kind=>quick.push(kind),readOnly:false,...workspace};
  const loaded=renderer.load('components/workspace/top-bar.tsx',{
   '@/components/language-provider':{useLanguage:()=>({locale:'en-US',t:message=>message})},
   '@/components/theme-provider':{ThemeToggle:host('theme-toggle')},
   '@/components/presentation-foundation/segmented':{Segmented:host('segmented')},
   '@/components/presentation-foundation/top-bar-slot':{useTopBarSlot:()=>slot},
   '@/components/ui/button':{Button:host('button')},
+  '@/components/workspace/add-menu':{AddMenu:host('add-menu')},
   '@/components/ui/sidebar':{SidebarTrigger:host('sidebar-trigger'),useSidebar:()=>sidebar},
   '@/components/workspace/workspace-provider':{useWorkspace:()=>state},
  });
@@ -71,7 +72,7 @@ test('the bar names the section, sets the browser tab title and shows only the c
  assert.equal(text(view.find(node=>node.props.className==='topbar-title')),'Dashboard');
  assert.equal(view.all(node=>node.type==='sidebar-trigger').length,0,'the open drawer has its own button');
  assert.equal(view.all(node=>node.type==='segmented').length,0,'one currency has nothing to switch');
- assert.equal(view.all(quickExpense).length,0,'no quick expense outside Cash flow');
+ assert.equal(view.all(addMenu).length,1,'Add is in the bar on every screen');
  const search=view.find(node=>node.props.className==='command-search');
  assert.equal(search.props['aria-label'],'Search');assert.match(text(search),/^Search(⌘K|Ctrl K)$/);
  let opened=0;globalThis.window.dispatchEvent=event=>{opened+=event.type==='hoggish:command-menu'?1:0;};
@@ -96,16 +97,15 @@ test('the drawer button, currency switch and quick expense follow the workspace 
  assert.deepEqual(currency.props.options,[{value:'EUR',label:'EUR'},{value:'USD',label:'USD'}]);
  assert.equal(currency.props.value,'EUR');assert.equal(currency.props.label,'Display currency');
  currency.props.onChange('USD');assert.deepEqual(view.changes,['USD']);
- const add=view.find(quickExpense);
- assert.equal(add.props['aria-label'],'Add expense');assert.match(text(add),/Add expense/);
- add.props.onClick();assert.equal(view.quick.length,1);
+ const add=view.find(addMenu);
+ add.props.onExpense();add.props.onIncome();assert.deepEqual(view.quick,['expense','Other income'],'Add opens the expense form and a one-off income');
  // A pending destination names the bar while its route loads; the tab title keeps the open page.
  view.render({pendingSection:'Budget'});
  assert.equal(text(view.find(node=>node.props.className==='topbar-title')),'Budget');
- assert.equal(view.all(quickExpense).length,0);
+ assert.equal(view.all(addMenu).length,1);
  assert.equal(document.title,'Cash flow · Hoggish Finance');
  const viewer=setup({roomy:false,workspace:{section:'Income & expenses',readOnly:true}});
- assert.equal(viewer.all(quickExpense).length,0,'viewers cannot add');
+ assert.equal(viewer.all(addMenu).length,0,'viewers cannot add');
  assert.equal(viewer.all(node=>node.props.className==='command-search').length,1,'viewers can still search');
 });
 

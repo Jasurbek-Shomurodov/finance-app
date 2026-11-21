@@ -110,7 +110,7 @@ test('unsearched it lists every page and the actions; a page opens as a drawer t
  assert.deepEqual(view.groups(),['Go to','Actions']);
  assert.deepEqual(view.labels().slice(0,3),['Dashboard','Assistant','Accounts']);
  assert.ok(view.labels().includes('Settings'));
- assert.deepEqual(view.labels().slice(-5),['Add expense','Add income','Add account','Switch to dark mode','Show amounts in EUR']);
+ assert.deepEqual(view.labels().slice(-6),['Add expense','Add income','Transfer money','Add account','Switch to dark mode','Show amounts in EUR']);
  view.key('k',{metaKey:true});view.type('bud');
  assert.deepEqual(view.labels(),['Budget','Search transactions for “bud”']);
  view.choose('Budget');
@@ -121,8 +121,8 @@ test('unsearched it lists every page and the actions; a page opens as a drawer t
 
 test('actions run what the workspace offers; a viewer keeps the pages and the display choices only',()=>{
  const view=menu();
- view.choose('Add expense');view.choose('Add income');view.choose('Add account');view.choose('Show amounts in EUR');view.choose('Switch to dark mode');
- assert.deepEqual(view.ran,['expense','income:Salary','account:Cash','currency:EUR']);
+ view.choose('Add expense');view.choose('Add income');view.choose('Transfer money');view.choose('Add account');view.choose('Show amounts in EUR');view.choose('Switch to dark mode');
+ assert.deepEqual(view.ran,['expense','income:Other income','account:Cash','currency:EUR']);assert.deepEqual(view.opened,['/accounts#transfer'],'a transfer opens on Accounts');
  assert.deepEqual(view.themes,[undefined],'the theme opens from the top of the page');
  const dark=menu({theme:'dark',workspace:{readOnly:true,preferencesData:{currencies:['USD']}}});
  assert.deepEqual(dark.labels().slice(-2),['Settings','Switch to light mode']);

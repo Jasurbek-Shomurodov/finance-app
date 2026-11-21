@@ -3,7 +3,8 @@ import { ErrorPopup } from '@/components/presentation-foundation/error-popup';
 import { PageHeader } from '@/components/presentation-foundation/page-header';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { RowMenu } from '@/components/presentation-foundation/row-menu';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { transferRequested } from '@/lib/add-links';
 import { ArrowRightLeft, Plus } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { Button } from '@/components/ui/button';
@@ -78,8 +79,12 @@ export function AccountsPage({ owner,loadFailed,onSaved,revision=0,data, save, o
  // Transfer money starts from the account shown beside the directory, when money can leave it, to where it last sent money.
  const shown=selectedItem(filters.visible,selected)?.key;
  const transferFrom=movementSources('transfer',data.records).find(record=>shown===`record:${record.id}`)?.id;
+ const startTransfer=()=>setMovement({kind:'transfer',source_id:transferFrom,target_id:lastTransferTarget(data.movements??[],transferFrom,data.records)});
+ // The bar's Add arrives as #transfer. The router sets the address after the page first renders, so it is read after
+ // every render until it is found; opening clears it, so it opens once.
+ useEffect(()=>{const check=()=>{if(readOnly||!transferRequested(window.location.hash))return;window.history.replaceState(null,'',window.location.pathname+window.location.search);startTransfer();};check();window.addEventListener('hashchange',check);return()=>window.removeEventListener('hashchange',check);});
  return <>
-  <PageHeader title={t('Accounts')} tabs={<Segmented className="page-tabs" as="nav" label={t('Accounts')} options={[{value:'accounts',label:t('Overview')},{value:'activity',label:t('Recent activity')}]} value={view} onChange={setView}/>}>{/* Rarely used lists sit behind ⋯; moving money and adding an account stay in view. */}<RowMenu label={t('More actions')} items={[owners.length>0&&{label:t('Edit owners'),disabled:readOnly,onSelect:()=>setEditingOwners(true)},businesses.length>0&&{label:t('Edit businesses'),onSelect:()=>setEditingBusinesses(true)}]}/><Button variant="outline" onClick={()=>setMovement({kind:'transfer',source_id:transferFrom,target_id:lastTransferTarget(data.movements??[],transferFrom,data.records)})}><ArrowRightLeft size={17} aria-hidden="true"/>{t('Transfer money')}</Button><Button onClick={()=>setChoosing(true)}><Plus size={17} aria-hidden="true" />{t('Add account')}</Button></PageHeader>
+  <PageHeader title={t('Accounts')} tabs={<Segmented className="page-tabs" as="nav" label={t('Accounts')} options={[{value:'accounts',label:t('Overview')},{value:'activity',label:t('Recent activity')}]} value={view} onChange={setView}/>}>{/* Rarely used lists sit behind ⋯; moving money and adding an account stay in view. */}<RowMenu label={t('More actions')} items={[owners.length>0&&{label:t('Edit owners'),disabled:readOnly,onSelect:()=>setEditingOwners(true)},businesses.length>0&&{label:t('Edit businesses'),onSelect:()=>setEditingBusinesses(true)}]}/><Button variant="outline" onClick={startTransfer}><ArrowRightLeft size={17} aria-hidden="true"/>{t('Transfer money')}</Button><Button onClick={()=>setChoosing(true)}><Plus size={17} aria-hidden="true" />{t('Add account')}</Button></PageHeader>
   {view==='accounts'&&<AccountsOverview loadFailed={loadFailed} items={accountItems} data={data} filters={filters} order={order} businesses={businesses} holdingActions={holdingActions} onEditAccount={setDraft} onAdd={onAdd} onAddAccount={()=>setChoosing(true)} selected={selected} onSelect={setSelected}
    story={{context:story,...reading,onViewAll:()=>setView('activity'),onView}}
    cardActions={{onEdit,onTrack,onDelete:remove,onMove:setMovement,onOperation:setOperation,onStatement:owner?setStatement:undefined}}/>}

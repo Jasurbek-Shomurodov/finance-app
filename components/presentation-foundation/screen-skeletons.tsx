@@ -60,14 +60,13 @@ export function ReportsSkeleton({ label, donut = false, filters = false }: { lab
 
 /** Cash flow's Overview, top to bottom as the loaded page: the month bar (the drawer's shimmer only: the screen draws its
  * own), the month's four figures, the report (Period switch, bars by month beside Where the month went), the income table
- * beside Still to come, Budget and mortgages, the watchlists and Recent transactions. */
+ * beside Still to come. */
 export function CashFlowSkeleton({ label, monthBar = false }: { label: string; monthBar?: boolean }) {
   return <Loading label={label}>
     {monthBar && <div className="cashflow-month-bar"><div className="flex gap-2"><Skeleton className="size-10 rounded-xl"/><Skeleton className="h-10 w-44 rounded-xl"/><Skeleton className="size-10 rounded-xl"/><Skeleton className="h-10 w-16 rounded-xl"/></div><div className="flex gap-2"><Skeleton className="h-7 w-28 rounded-full"/><Skeleton className="h-7 w-52 rounded-full"/></div></div>}
     <section className="cashflow-summary"><StatTilesSkeleton columns={4}/></section>
     <CashFlowReportSkeleton/>
     <CashflowPreviewSkeleton/>
-    <section className="panel records"><Heading width={220} link/><SkeletonRows rows={4}/></section>
   </Loading>;
 }
 
@@ -75,12 +74,16 @@ export function CashFlowSkeleton({ label, monthBar = false }: { label: string; m
  * and the watchlists. Forecast: the forecast's figures and chart over its events. */
 export function CashFlowTabSkeleton({ label, tab }: { label: string; tab: 'Income' | 'Spending' | 'Forecast' }) {
   if (tab === 'Forecast') return <Loading label={label}><Tiles count={3} note/><section className="panel"><Heading width={200} aside={200}/><Skeleton className="h-64 w-full rounded-xl"/></section><section className="panel"><Heading width={160}/><SkeletonRows rows={5}/></section></Loading>;
+  // Income and Spending open with the month's four figures, as Overview does.
+  const summary = <section className="cashflow-summary"><StatTilesSkeleton columns={4}/></section>;
   if (tab === 'Spending') return <Loading label={label}>
+    {summary}
     <section className="panel monthly-mortgage-payments"><Heading width={260}/><SkeletonRows rows={1}/></section>
     <section className="panel overview-panel dashboard-budget"><Heading width={200} link/><Skeleton className="mb-4 h-8 w-40"/><SkeletonRows rows={4}/></section>
     <section className="panel tools-panel"><Skeleton className="mb-4 h-6 w-48"/><Skeleton className="h-5 w-44"/></section>
   </Loading>;
   return <Loading label={label}>
+    {summary}
     <section className="panel"><Heading width={200} aside={160}/><SkeletonRows rows={4}/></section>
     <section className="panel"><Heading width={240}/><SkeletonRows rows={3}/></section>
   </Loading>;

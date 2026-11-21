@@ -243,8 +243,10 @@ test('investments worth nothing and never funded show the invitation instead of 
  const flat=[{date:'2026-09-10',actual:0,contributed:0},{date:'2026-09-20',actual:0,contributed:0}];
  const s=comparison(t,{},{decide:()=>({result:{points:flat,unavailable:[]},details:{}})});
  await s.r.flush();
- const empty=s.r.find(byType('EmptyState'));
- assert.equal(empty.props.title,'No investments yet');
+ // With net worth on record its line is drawn alone, and the invitation sits under it.
+ assert.equal(s.r.all(byType('EmptyState')).length,0);
+ assert.deepEqual(s.r.find(byType('InvestmentValueChart')).props.series.map(series=>series.key),['actual']);
+ assert.equal(s.r.all(node=>node.props.className==='comparison-legend').length,0,'no benchmark controls without investments');
  assert.equal(s.r.find(byType('Link')).props.href,'/assets');
  assert.equal(text(s.r.find(byType('Link'))),'Add asset');
  const store=storage({values:{'finance:benchmark-method:owner-1':JSON.stringify({scope:'expenses'})}});

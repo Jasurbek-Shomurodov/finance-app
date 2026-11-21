@@ -323,7 +323,6 @@ button.budget-category-name:hover>span:not(.category-icon){text-decoration:under
 .budget-choice>span,.budget-check>span,.budget-recalculate>span{display:flex;flex-direction:column;gap:2px}
 .budget-choice small,.budget-check small,.budget-recalculate small{color:var(--muted-foreground);font-size:var(--type-caption);font-weight:400}
 .budget-choice strong{display:flex;align-items:center;gap:8px;font-weight:500}
-.budget-text{height:38px;padding-inline:10px;border:1px solid var(--border);border-radius:var(--radius-control);background:var(--field);font-weight:400}
 .budget-recalculate{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-control);font-size:var(--type-small)}
 .budget-year{width:100%;padding:0;overflow:hidden}
 .budget-year-scroll{overflow-x:auto}

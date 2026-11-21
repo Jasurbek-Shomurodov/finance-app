@@ -9,6 +9,9 @@ const { formatMoney, formatDate } = loadTS('lib/format.ts');
 const { demoHousehold } = loadTS('lib/household.ts');
 const directory = loadTS('lib/account-directory.ts');
 const usd = (value, currency = 'USD') => formatMoney(value, currency, 'en-US');
+// The page reads the address for the bar's Add → Transfer (#transfer).
+const address = { hash: '', pathname: '/accounts', search: '' }, replaced = [];
+globalThis.window = { location: address, history: { replaceState: (...args) => { replaced.push(args[2]); address.hash = ''; } }, addEventListener() {}, removeEventListener() {} };
 
 const r = createRenderer();
 const pnlReads = [];
@@ -330,4 +333,12 @@ test('a row of Recent activity opens as the whole stored record, and its form ke
  assert.equal(savedRecord(opened.id, [], [], opened)?.revision, 7, 'Edit saves against the revision it read');
  const { planningReadFilters } = loadTS('lib/planning-reads.ts');
  assert.deepEqual(planningReadFilters('account-activity', '2026-10').records, { account_id: 'not.is.null', frequency: 'eq.Once' }, 'no narrowed select: a missing frequency stopped the details dialog');
+});
+
+test('the bar’s Add → Transfer arrives as #transfer and opens Transfer money once', () => {
+ address.hash = '#transfer';
+ open();
+ assert.equal(r.find(byType('AssetMovementDialog')).props.initial.kind, 'transfer');
+ assert.deepEqual(replaced.at(-1), '/accounts', 'the address is cleared, so it opens once');
+ assert.equal(address.hash, '');
 });

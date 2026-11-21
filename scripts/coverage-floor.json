@@ -6,7 +6,6 @@
   "app/(workspace)/accounts/page.tsx",
   "app/(workspace)/assets/page.tsx",
   "app/(workspace)/assistant/page.tsx",
-  "app/(workspace)/benchmarks/page.tsx",
   "app/(workspace)/budget/page.tsx",
   "app/(workspace)/goals/page.tsx",
   "app/(workspace)/income-expenses/page.tsx",

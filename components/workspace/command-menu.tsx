@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { ArrowDownLeft, ArrowUpRight, Coins, CornerDownLeft, Moon, Search, Sun, Target, Wallet } from 'lucide-react';
+import { ArrowDownLeft, ArrowRightLeft, ArrowUpRight, Coins, CornerDownLeft, Moon, Search, Sun, Target, Wallet } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { transferLink } from '@/lib/add-links';
 import { useLanguage } from '@/components/language-provider';
 import { RecordIcon } from '@/components/presentation-foundation/record-icon';
 import { useThemeSwitch } from '@/components/theme-provider';
@@ -42,7 +43,8 @@ export function CommandMenu({ onNavigate }: { onNavigate: (path: string) => void
   const pages: Line[] = sections.map(({ name, label, icon: Icon, path }) => ({ id: 'page:' + path, group: 'pages', label: t(label), keywords: `${t(name)} ${name} ${label}`, icon: <Icon aria-hidden="true"/>, run: () => onNavigate(path) }));
   const adds: Line[] = readOnly ? [] : [
    { id: 'add-expense', group: 'actions', label: t('Add expense'), icon: <ArrowUpRight aria-hidden="true"/>, run: quickExpense },
-   { id: 'add-income', group: 'actions', label: t('Add income'), icon: <ArrowDownLeft aria-hidden="true"/>, run: () => addCashFlow('Salary') },
+   { id: 'add-income', group: 'actions', label: t('Add income'), icon: <ArrowDownLeft aria-hidden="true"/>, run: () => addCashFlow('Other income') },
+   { id: 'transfer', group: 'actions', label: t('Transfer money'), icon: <ArrowRightLeft aria-hidden="true"/>, run: () => onNavigate(transferLink) },
    { id: 'add-account', group: 'actions', label: t('Add account'), icon: <Wallet aria-hidden="true"/>, run: () => addAccountRecord('Cash') },
   ];
   const dark = resolvedTheme !== 'light';

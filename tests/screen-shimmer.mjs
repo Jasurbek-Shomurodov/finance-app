@@ -24,8 +24,8 @@ const inOrder = (source, marks, what) => {
 };
 
 test('Cash flow shimmer draws the Overview blocks in the page order', () => {
- inOrder(screen, ['<CashFlowMonthBar', '<MonthlyReview', '<CashFlowReport', '<CashflowPreview', '<RecordsTable'], 'the screen');
- inOrder(body(skeletons, 'CashFlowSkeleton'), ['cashflow-month-bar', 'cashflow-summary', '<CashFlowReportSkeleton', '<CashflowPreviewSkeleton', 'panel records'], 'the shimmer');
+ inOrder(screen, ['<CashFlowMonthBar', '<MonthlyReview', '<CashFlowReport', '<CashflowPreview'], 'the screen');
+ inOrder(body(skeletons, 'CashFlowSkeleton'), ['cashflow-month-bar', 'cashflow-summary', '<CashFlowReportSkeleton', '<CashflowPreviewSkeleton'], 'the shimmer');
  assert.match(skeletons, /'\/income-expenses': label => <CashFlowSkeleton label=\{label\} monthBar\/>/, 'the drawer shimmer includes the month bar the screen draws first');
  assert.match(screen, /<CashFlowSkeleton label=\{t\("Loading your workspace…"\)\}\/>/, 'inside the screen the real month bar is already there');
 });
@@ -36,9 +36,11 @@ test('the report shimmer is the Period switch, then the bars beside Where the mo
  inOrder(body(placeholders, 'CashFlowReportSkeleton'), ['cash-flow-report-tools', 'cash-flow-report-grid', 'cash-flow-trend', 'cash-flow-where'], 'the report shimmer');
 });
 
-test('the preview shimmer is the income table beside Still to come, Budget and mortgages, then the watchlists', () => {
- inOrder(preview, ['cashflow-income-preview', 'cashflow-spending-preview">{closing}{budget}{mortgages}', '{watchlists}'], 'the preview');
- inOrder(body(placeholders, 'CashflowPreviewSkeleton'), ['cashflow-income-preview', 'cashflow-spending-preview', 'cashflow-still-to-come', 'dashboard-budget', 'monthly-mortgage-payments', 'tools-panel'], 'the preview shimmer');
+test('the preview shimmer is the income table beside Still to come; budget, mortgages and watchlists belong to Spending', () => {
+ inOrder(preview, ['cashflow-income-preview', 'cashflow-spending-preview">{closing}</div>'], 'the preview');
+ assert.doesNotMatch(preview, /\{budget\}|\{mortgages\}|\{watchlists\}/, 'Overview does not repeat the Spending tab');
+ inOrder(body(placeholders, 'CashflowPreviewSkeleton'), ['cashflow-income-preview', 'cashflow-spending-preview', 'cashflow-still-to-come'], 'the preview shimmer');
+ assert.doesNotMatch(body(placeholders, 'CashflowPreviewSkeleton'), /dashboard-budget|monthly-mortgage-payments|tools-panel/);
 });
 
 test('Still to come opens Recurring at its real route', () => {
@@ -50,7 +52,7 @@ test('Still to come opens Recurring at its real route', () => {
 test('Cash flow tabs other than Overview shimmer in their own layout, not a generic panel', () => {
  assert.match(screen, /<CashFlowTabSkeleton label=\{t\("Loading your workspace…"\)\} tab=\{tab\}\/>/);
  const tabs = body(skeletons, 'CashFlowTabSkeleton');
- inOrder(tabs, ["tab === 'Spending'", 'monthly-mortgage-payments', 'dashboard-budget', 'tools-panel'], 'the Spending tab, as the screen draws mortgages, budget and watchlists');
+ inOrder(tabs, ['cashflow-summary', "tab === 'Spending'", '{summary}', 'monthly-mortgage-payments', 'dashboard-budget', 'tools-panel'], 'the Spending tab, as the screen draws mortgages, budget and watchlists');
  inOrder(screen, ["tab==='Spending'&&mortgages", "tab==='Spending'&&budgetCard", "tab==='Spending'&&watchlists"], 'the Spending tab');
 });
 

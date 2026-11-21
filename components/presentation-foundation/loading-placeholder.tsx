@@ -79,17 +79,13 @@ function PreviewHeading({ width }: { width: number }) {
   return <div className="panel-title-skeleton"><Skeleton className="h-6 max-w-full" style={{ width }}/><Skeleton className="h-4 w-14"/></div>;
 }
 
-/** Cash flow's lower half while its records load, block for block: Income this month's source table beside the column of
- * Still to come, Budget and Monthly mortgage payments, then Spending watchlists across the width. */
+/** Cash flow's lower half while its records load, block for block: Income this month's source table beside Still to come. */
 export function CashflowPreviewSkeleton({ label }: { label?: string }) {
   const grid = <div aria-hidden="true" className="cashflow-preview-grid">
     <section className="panel cashflow-income-preview"><PreviewHeading width={240}/><SkeletonRows rows={5}/><footer><Skeleton className="h-5 w-36"/></footer></section>
     <div className="cashflow-spending-preview">
       <section className="panel cashflow-still-to-come"><PreviewHeading width={180}/><div className="grid gap-3">{lines(4).map(line => <div key={line} className="flex items-center justify-between gap-3"><Skeleton className="h-4 w-36"/><Skeleton className="h-4 w-16"/></div>)}</div></section>
-      <section className="panel dashboard-budget"><PreviewHeading width={150}/><Skeleton className="mb-4 h-8 w-40"/><SkeletonRows rows={3}/></section>
-      <section className="panel monthly-mortgage-payments"><PreviewHeading width={200}/><SkeletonRows rows={1}/></section>
     </div>
-    <section className="panel tools-panel"><Skeleton className="mb-4 h-6 w-48"/><Skeleton className="h-5 w-44"/></section>
   </div>;
   return label ? <div role="status" aria-busy="true"><span className="sr-only">{label}</span>{grid}</div> : grid;
 }

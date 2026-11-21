@@ -70,7 +70,7 @@ test('loading skeletons keep the shape of the content they replace, so the page 
  assert.match(render(PanelSkeleton,{label:'Loading records…',rows:2,className:'tools-panel'}),/^<section class="panel tools-panel">.*role="status" aria-busy="true".*Loading records…/);
  const preview=render(CashflowPreviewSkeleton,{label:'Loading records…'});
  assert.match(preview,/class="cashflow-preview-grid"/);
- for(const block of ['panel cashflow-income-preview','panel cashflow-still-to-come','panel dashboard-budget','panel monthly-mortgage-payments','panel tools-panel'])assert.equal(preview.match(new RegExp(`class="${block}"`,'g')).length,1,block);
+ for(const block of ['panel cashflow-income-preview','panel cashflow-still-to-come'])assert.equal(preview.match(new RegExp(`class="${block}"`,'g')).length,1,block);
  const {NetWorthBodySkeleton,ChartSkeleton,SankeySkeleton}=load('loading-placeholder.tsx',{'@/components/ui/skeleton':{Skeleton:element('span')}});
  const body=render(NetWorthBodySkeleton,{label:'Loading history…'});
  assert.match(body,/^<div role="status" aria-busy="true"><span class="sr-only">Loading history…<\/span><div aria-hidden="true">/);
@@ -115,7 +115,7 @@ test('every drawer destination shimmers in its own layout',()=>{
  const shapes={'/':['stat-tiles','dashboard-grid','dashboard-column','overview-hero','dashboard-lead'],'/assistant':['assistant-layout','assistant-panel','assistant-log','assistant-form'],
   '/accounts':['accounts-hero','accounts-mix','accounts-master-detail','account-directory','account-selected-panel'],
   '/transactions':['transactions-tools','transactions-layout','transaction-columns-heading','transaction-day-heading','transaction-row','transaction-columns','records-pagination','transactions-aside','transactions-summary','transactions-net','transactions-flow','transactions-top','tools-panel'],
-  '/income-expenses':['cashflow-month-bar','cashflow-summary','cash-flow-report-tools','cash-flow-report-grid','cash-flow-trend','cash-flow-where','cashflow-income-preview','cashflow-still-to-come','dashboard-budget','monthly-mortgage-payments','tools-panel','panel records'],
+  '/income-expenses':['cashflow-month-bar','cashflow-summary','cash-flow-report-tools','cash-flow-report-grid','cash-flow-trend','cash-flow-where','cashflow-income-preview','cashflow-still-to-come'],
   '/reports':['page-heading-actions','data-columns="4"','sankey-skeleton','report-transactions','transactions-summary'],
   '/budget':['budget-layout','budget-section','panel-title','budget-section-header','budget-category-row','budget-total-row','budget-side','budget-left','budget-left-figure','budget-pace','stat-tile'],
   '/upcoming':['recurring-summary','recurring-bar','recurring-left','recurring-layout','recurring-main','recurring-list-tools','transaction-day-heading','recurring-row','row-actions','recurring-side','recurring-coming'],

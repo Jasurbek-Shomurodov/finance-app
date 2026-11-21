@@ -151,7 +151,7 @@ test('page titles and actions sit in the top bar, as in a desktop app',()=>{
  assert.match(header,/createPortal\(<>\{heading\}/);
  assert.match(header,/slot\.actions \? actions && createPortal\(actions, slot\.actions\) : \(\(!tabsInBar && tabs\) \|\| actions\) && <header/,'actions stay on the page on phones');
  assert.match(css,/\.topbar-page-title:not\(:empty\)\+\.topbar-title\{display:none\}/);
- assert.match(fs.readFileSync('components/workspace/top-bar.tsx','utf8'),/\{!readOnly && section === 'Income & expenses' && <Button size="sm" className="quick-expense"/,'Add expense sits in the bar on Cash flow only');
+ assert.match(fs.readFileSync('components/workspace/top-bar.tsx','utf8'),/\{!readOnly && <AddMenu onExpense=\{quickExpense\} onIncome=/,'Add sits in the bar on every screen');
  assert.doesNotMatch(fs.readFileSync('components/presentation-foundation/loading-placeholder.tsx','utf8'),/className="page-heading"/,'no heading placeholder under a bar that already names the page');
 });
 
@@ -178,7 +178,7 @@ test('Goals, Reports and Cash flow switch their views from tabs beside the title
  assert.match(settingsLayout,/aria-current=\{active===section\.id\?'page':undefined\}/);
  assert.match(fs.readFileSync('components/planning/upcoming-page.tsx','utf8'),/\{skipped\.length > 0 && <details className="panel tools-panel">/,'no empty Skipped occurrences fold');
  assert.match(fs.readFileSync('components/planning/upcoming-page.tsx','utf8'),/const reminderGroup = reminders\.length > 0 && <ReminderGroup /,'no empty debt and maturity group');
- // Accounts keeps its operations behind a Recent activity tab; Cash flow adds expenses from the bar's own Add expense.
+ // Accounts keeps its operations behind a Recent activity tab; every screen adds money in, out or across from the bar's Add.
  assert.match(fs.readFileSync('components/planning/accounts-page.tsx','utf8'),/\{view==='activity'&&<AccountActivity /);
  assert.match(fs.readFileSync('components/planning/accounts/account-activity.tsx','utf8'),/<section className="panel account-activity">/);
  assert.doesNotMatch(fs.readFileSync('components/workspace/screens/cash-flow-screen.tsx','utf8'),/addCashFlow\('Other expense'\)/);

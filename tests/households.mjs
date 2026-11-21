@@ -186,7 +186,7 @@ test('the shell, top bar and screens show sharing only where it applies',()=>{
  assert.doesNotMatch(shell,/workspace-privacy-footer|Private records/,'no text under the pages');
  const top=fs.readFileSync('components/workspace/top-bar.tsx','utf8');
  assert.doesNotMatch(top,/topbar-household|Household of \{name\}/,'the open household shows in the drawer only');
- assert.match(top,/\{!readOnly && section === 'Income & expenses' && <Button size="sm" className="quick-expense"/);
+ assert.match(top,/\{!readOnly && <AddMenu /);
  const transactions=fs.readFileSync('components/workspace/screens/transactions-screen.tsx','utf8');
  // Owner filters and pickers appear only in a shared household.
  assert.match(transactions,/const owners = useMemo\(\(\) => homes && sharedWorkspace\(homes\) \? ownerChoices\(/);

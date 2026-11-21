@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { ThemeToggle } from '@/components/theme-provider';
 import { Segmented } from '@/components/presentation-foundation/segmented';
@@ -8,6 +8,7 @@ import { useTopBarSlot } from '@/components/presentation-foundation/top-bar-slot
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
+import { AddMenu } from '@/components/workspace/add-menu';
 import { openCommandMenu } from '@/lib/command-menu';
 import { sectionLabel } from '@/components/workspace/navigation';
 
@@ -47,11 +48,11 @@ export function DisplayPreferences() {
  return <div className="preferences"><ThemeToggle/></div>;
 }
 
-/** The sticky bar above every screen: where you are, the display currency switch and the quick expense shortcut. */
+/** The sticky bar above every screen: where you are, the display currency switch and Add. */
 /** `pendingSection` names a destination tapped in the drawer whose route is still loading. */
 export function TopBar({ pendingSection }: { pendingSection?: string | null }) {
  const { t } = useLanguage();
- const { section: current, currency, setCurrency, preferencesData, quickExpense, readOnly } = useWorkspace();
+ const { section: current, currency, setCurrency, preferencesData, quickExpense, addCashFlow, readOnly } = useWorkspace();
  // The drawer carries its own collapse button; the bar offers one only when the drawer is out of sight.
  const { state, isMobile } = useSidebar();
  const drawerHidden = isMobile || state === 'collapsed';
@@ -97,8 +98,8 @@ export function TopBar({ pendingSection }: { pendingSection?: string | null }) {
    {roomy && !crowded && <div className="topbar-page-actions" ref={slot?.actionsRef}/>}
    {/* With two preferred currencies, one tap switches the display currency; with one there is nothing to choose. */}
    {preferencesData.currencies.length > 1 && <Segmented className="header-currency-switch" label={t('Display currency')} options={preferencesData.currencies.map(code => ({ value: code, label: code }))} value={currency} onChange={setCurrency}/>}
-   {/* Adding an expense belongs to Cash flow; other pages carry their own main action. */}
-   {!readOnly && section === 'Income & expenses' && <Button size="sm" className="quick-expense" aria-label={t('Add expense')} onClick={quickExpense}><Plus size={16} aria-hidden="true"/><span>{t('Add expense')}</span></Button>}
+   {/* Adding money in, out or across is one tap away on every screen; each page keeps its own main action beside it. */}
+   {!readOnly && <AddMenu onExpense={quickExpense} onIncome={() => addCashFlow('Other income')}/>}
    {/* Every page, action and saved record, one search away (⌘K). */}
    <Button variant="outline" size="sm" className="command-search" aria-label={t('Search')} aria-keyshortcuts="Meta+K Control+K" onClick={openCommandMenu}><Search size={16} aria-hidden="true"/><span>{t('Search')}</span><kbd aria-hidden="true">{shortcut}</kbd></Button>
    <DisplayPreferences/>

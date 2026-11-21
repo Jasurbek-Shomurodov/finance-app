@@ -179,19 +179,6 @@
 .finance-month-picker{width:min(440px,calc(100vw - 24px));padding:16px}.month-selection-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.month-selection-grid .pos-day{height:auto;min-height:48px;padding:8px;text-align:center}
 
 .monthly-review-title{display:flex;align-items:center;gap:8px}
-.monthly-review-help{flex-shrink:0;color:var(--muted-foreground);border-radius:50%}
-.monthly-review-help:hover{color:var(--primary);background:var(--accent)}
-.monthly-review-help-dialog{border-radius:24px;padding:28px;gap:16px;max-height:calc(100dvh - 32px);overflow-y:auto}
-.monthly-review-help-icon{display:grid;place-items:center;width:52px;height:52px;border-radius:16px;background:var(--accent);color:var(--primary)}
-.monthly-review-help-dialog [data-slot="dialog-title"]{padding-inline-end:16px}
-.monthly-review-help-dialog [data-slot="dialog-description"]{line-height:1.6}
-.monthly-review-help-note{display:flex;align-items:flex-start;gap:12px;padding:16px;border:1px solid var(--border);border-radius:16px;background:var(--muted)}
-.monthly-review-help-note>svg{flex-shrink:0;margin-top:2px;color:var(--primary)}
-.monthly-review-help-note p{margin:0;font-size:var(--type-small);line-height:1.7}
-.monthly-review-help-close{position:absolute;top:16px;inset-inline-end:16px;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;color:var(--muted-foreground)}
-.monthly-review-help-close:hover{background:var(--accent);color:var(--foreground)}
-.monthly-review-help-close:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
-.monthly-review-help-done{justify-self:end;min-width:100px;border-radius:12px}
 
 .income-source-field { display: grid; gap: 8px; min-width: 0; }
 /* In a half-width column (Cash account beside Record date) a long choice shortens with an ellipsis, as a select's does. */

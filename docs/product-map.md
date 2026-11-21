@@ -57,14 +57,15 @@ other screens link to it.
 - **Investment benchmarks** are edited from the net worth chart they affect; Settings keeps a link.
 - **Age of Money** and **Spending watchlists** sit with the Budget they measure.
 
-## Open decisions (they reverse an earlier choice, so the owner decides)
+## Decisions taken (21 November 2026, on the owner's "decide and build")
 
-1. **Add on every screen.** Today Add expense is in the top bar only on Cash flow, by an earlier rule. Proposal: one
-   global Add (expense, income, transfer) on every screen, with ⌘Enter to save and add another.
-2. **Cash flow and Reports.** Proposal: keep both. Cash flow is this month and what is ahead; Reports is any period and
-   any business. Cash flow loses its period switch and long-range trend to Reports.
-3. **Net worth chart with no investments.** Today it shows "No investments yet". Proposal: draw the net worth line for
-   anyone with at least two days of history and invite the first investment below it.
+1. **Add on every screen.** The top bar's Add offers Expense, Income and Transfer everywhere; Transfer opens Accounts
+   with the dialog ready (`/accounts#transfer`, also in ⌘K). Still to do: ⌘Enter to save and add another.
+2. **Cash flow and Reports stay separate.** Cash flow is this month and what is ahead; Reports is any period and any
+   business. Cash flow's Overview no longer repeats the Budget card, mortgage payments, watchlists (all on Spending)
+   or recent transactions (Transactions). Still to do: move the period switch and long-range trend to Reports.
+3. **Net worth without investments.** With two days of history the net worth line is drawn alone and the invitation to
+   add an investment sits under it.
 
 ## System design
 
@@ -115,11 +116,12 @@ numbers; profit and loss by share.
 ## Build order
 
 1. **Net worth line always draws.** Done.
-2. **Entry:** global Add, save and add another, inline field errors, one payment dialog, investment stepper that can
+2. **Entry:** global Add (done), save and add another, inline field errors, one payment dialog, investment stepper that can
    pay from an account.
 3. **Dashboard:** safe to spend, where it is going, what to improve; every row opens its item.
 4. **Shimmers:** Cash flow tabs, Overview cards, Investments, Loans, Recently deleted; headers outside the skeleton.
-5. **De-duplicate:** the table above, then dead code (`/benchmarks`, unused transfer branch, unused styles).
+5. **De-duplicate:** the table above (Cash flow Overview done; `/benchmarks` and unused styles removed), then the
+   unused transfer branch.
 6. **Ownership and valuations:** migrations 166 and 167, asset page, share-aware profit and loss.
 7. **Net worth history:** historical prices, day rates, deletion dents, speed.
 8. **Close account:** `closed_on`, one deletion rule across surfaces.
