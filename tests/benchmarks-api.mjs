@@ -18,7 +18,9 @@ const {benchmarkFx}=loadTS('lib/benchmark-fx.ts',{'./service-role':{serviceDatab
 const afterResponse=work=>{void work();};
 // No service database in tests: every series is read from the stubbed feeds, as before migration 157.
 const {keptHistory}=loadTS('lib/price-history-cache.ts',{'./service-role':{serviceDatabase:()=>null}});
-const deps={benchmarkFx,afterResponse,keptHistory,isCurrency,portfolioAssets,portfolioAssetKey,diversifiedPortfolioSchema,benchmarkSelectionSchema,stockBenchmarks,...dates,signInAgain,tooManyAttempts,limits:{benchmarks:[]},rateLimited:async(req,name,limits,key)=>{counted.push([name,key]);return limited;},session:async()=>auth?{token:'owner',user:{id:'owner-id'}}:null,depositToday:()=> '2026-09-17'};
+// The feeds are the real ones, reading the fetch each test stubs.
+const feeds=loadTS('lib/price-feeds.ts',{'./deposit-interest':{depositToday:()=> '2026-09-17'}});
+const deps={stockHistory:feeds.stockHistory,cryptoHistory:feeds.cryptoHistory,benchmarkFx,afterResponse,keptHistory,isCurrency,portfolioAssets,portfolioAssetKey,diversifiedPortfolioSchema,benchmarkSelectionSchema,stockBenchmarks,...dates,signInAgain,tooManyAttempts,limits:{benchmarks:[]},rateLimited:async(req,name,limits,key)=>{counted.push([name,key]);return limited;},session:async()=>auth?{token:'owner',user:{id:'owner-id'}}:null,depositToday:()=> '2026-09-17'};
 const GET=new Function(...Object.keys(deps),source+';return GET;')(...Object.values(deps));
 const request=(params='start=2026-09-14&end=2026-09-17')=>new Request('https://local/api/benchmarks?'+params);
 test('rejects anonymous users, invalid dates, future or reversed periods, and arbitrary symbols',async()=>{
@@ -264,6 +266,8 @@ test('Tashkent midnight carries the latest completed UTC candle across a two-day
  class MidnightDate extends RealDate{constructor(...args){super(...(args.length?args:['2026-09-16T20:00:00Z']));}}
  const atMidnight=new Function(...Object.keys(deps),'Date',source+';return GET;')(...Object.values(deps),MidnightDate);
  try{
+  // The feeds read the clock too (lib/price-feeds.ts).
+  globalThis.Date=MidnightDate;
   globalThis.fetch=async raw=>{
    const url=new URL(raw);
    if(url.hostname==='api.exchange.coinbase.com')return Response.json([[dates.dateMillis('2026-09-15')/1000,0,0,0,50000,1]]);
@@ -273,7 +277,7 @@ test('Tashkent midnight carries the latest completed UTC candle across a two-day
   };
   const result=await(await atMidnight(request('start=2026-09-16&end=2026-09-17&benchmarks=BTC'))).json();
   assert.equal(result.errors.BTC,undefined);assert.equal(result.prices.BTC[0].date,'2026-09-15');
- }finally{globalThis.fetch=original;}
+ }finally{globalThis.fetch=original;globalThis.Date=RealDate;}
 });
 test('a day not kept uses the closest earlier kept day instead of failing the comparison, and no rate service is asked',async()=>{
  const original=globalThis.fetch,key=process.env.TWELVE_DATA_API_KEY,saved=keptRates;

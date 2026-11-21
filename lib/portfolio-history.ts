@@ -2,6 +2,7 @@ import { shiftDay } from './calendar-days';
 import { assets, income, liabilities, totalValue, valuedKinds, type Entry } from './finance';
 import type { HistoryEvent } from './investment-history';
 import { convertAmount } from './market';
+import type { PricePoint } from './benchmark-data';
 
 /** The income the Overview's income chart reads: the receipts among the cash flows, then the income schedules. The sample
  * workspace's history names its own `incomeRecords`, which are kept. */
@@ -40,10 +41,61 @@ function zeroOpenings(included: Entry[], sorted: HistoryEvent[], events: History
  }
  return balances;
 }
+/** How far each quoted holding's price has moved since its latest snapshot. A stock or coin is saved with the value it
+ * had when it was last edited; between two snapshots its quantity is unchanged (a purchase, a sale or an edit writes a
+ * snapshot), so its value on a day is that snapshot carried by the price: `close that day / close on the snapshot's day`.
+ * Days are asked in ascending order. A holding without closes, or with none by its snapshot's day, keeps its recorded value. */
+function priceScale(prices: ReadonlyMap<string, readonly PricePoint[]>) {
+ const cursor = new Map<string, number>(), anchors = new Map<string, number | null>();
+ const closeOn = (id: string, date: string) => {
+  const points = prices.get(id);
+  if (!points) return null;
+  let index = cursor.get(id) ?? -1;
+  while (index + 1 < points.length && points[index + 1].date <= date) index++;
+  cursor.set(id, index);
+  return index < 0 ? null : points[index].close;
+ };
+ return {
+  /** A snapshot taken on `date`: later days are measured from its close. */
+  anchor: (id: string, date: string) => { if (prices.has(id)) anchors.set(id, closeOn(id, date)); },
+  factor: (id: string, date: string) => {
+   const from = anchors.get(id), now = from ? closeOn(id, date) : null;
+   return from && now ? now / from : 1;
+  },
+ };
+}
+/** The days a quoted holding's price is known after its first snapshot: each is drawn, so its line follows the market. */
+function addPriceDays(byDay: Map<string, DayChanges>, sorted: HistoryEvent[], prices: ReadonlyMap<string, readonly PricePoint[]>, today: string) {
+ const first = new Map<string, string>();
+ for (const event of sorted) if (!first.has(event.record_id)) first.set(event.record_id, event.occurred_on);
+ const priced = new Set<string>();
+ for (const [id, points] of prices) {
+  const from = first.get(id);
+  if (!from) continue;
+  for (const point of points) if (point.date > from && point.date <= today) {
+   priced.add(point.date);
+   if (!byDay.has(point.date)) byDay.set(point.date, { events: [], shifts: [] });
+  }
+ }
+ return priced;
+}
+/** One day's assets, debts and net worth by kind, from each record's balance; `worth` gives a balance in the display currency. */
+function dayTotals(balances: ReadonlyMap<string, number>, recordOf: (id: string) => Entry, worth: (id: string, amount: number, currency: string) => number) {
+ let assetTotal = 0, debt = 0;
+ const parts: Record<string, number> = {};
+ for (const [id, amount] of balances) {
+  const record = recordOf(id), value = worth(id, amount, record.currency);
+  const asset = assets.includes(record.kind), part = asset ? record.kind : 'Debt';
+  parts[part] = (parts[part] ?? 0) + (asset ? value : -value);
+  if (asset) assetTotal += value;
+  else debt += value;
+ }
+ return { assetTotal, debt, parts };
+}
 // Require known balances; an explicit zero opening contributes nothing before it opens.
 // `moves` puts late-entered changes on their own day: from that day until the snapshot that includes them, the record's
 // balance carries the change, so a transaction typed a week late does not look like money that appeared a week late.
-export function portfolioHistory(records: Entry[], events: HistoryEvent[], currency: string, rates: number | Record<string, number> | undefined, today: string, includePartial = false, moves: readonly Move[] = []) {
+export function portfolioHistory(records: Entry[], events: HistoryEvent[], currency: string, rates: number | Record<string, number> | undefined, today: string, includePartial = false, moves: readonly Move[] = [], prices: ReadonlyMap<string, readonly PricePoint[]> = new Map()) {
  const eligible = records.filter(record => assets.includes(record.kind) || liabilities.includes(record.kind));
  const included = eligible.filter(record => convertAmount(1, record.currency, currency, rates) !== null);
  const byId = new Map(included.map(record => [record.id, record]));
@@ -53,6 +105,8 @@ export function portfolioHistory(records: Entry[], events: HistoryEvent[], curre
  // Balances are kept in each record's own currency; `shifted` is what late-entered changes add until their snapshot.
  const balances = zeroOpenings(included, sorted, events), shifted = new Map<string, number>();
  const byDay = changesByDay(sorted, moves, byId, today);
+ // Quoted holdings follow their price between snapshots (`priceScale`).
+ const priced = addPriceDays(byDay, sorted, prices, today), scale = priceScale(prices);
  for (const date of [...byDay.keys()].sort()) {
   const changes = byDay.get(date)!;
   let observed = false;
@@ -60,22 +114,14 @@ export function portfolioHistory(records: Entry[], events: HistoryEvent[], curre
    const balance = Number(event.balance) * Number(event.ownership_percentage) / 100;
    if (!Number.isFinite(balance)) continue;
    balances.set(event.record_id, balance);
+   scale.anchor(event.record_id, date);
    observed = true;
   }
   for (const [id, amount] of changes.shifts) shifted.set(id, (shifted.get(id) ?? 0) + amount);
   // A day that only moves a change within a record not yet known adds nothing to draw.
-  if (!observed && !changes.shifts.some(([id]) => balances.has(id))) continue;
+  if (!observed && !priced.has(date) && !changes.shifts.some(([id]) => balances.has(id))) continue;
   if (!includePartial && balances.size !== included.length) continue;
-  let assetTotal = 0, debt = 0;
-  const parts: Record<string, number> = {};
-  for (const [id, amount] of balances) {
-   const record = byId.get(id)!;
-   const value = convertAmount(amount + (shifted.get(id) ?? 0), record.currency, currency, rates) ?? 0;
-   const asset = assets.includes(record.kind), part = asset ? record.kind : 'Debt';
-   parts[part] = (parts[part] ?? 0) + (asset ? value : -value);
-   if (asset) assetTotal += value;
-   else debt += value;
-  }
+  const { assetTotal, debt, parts } = dayTotals(balances, id => byId.get(id)!, (id, amount, from) => convertAmount(amount * scale.factor(id, date) + (shifted.get(id) ?? 0), from, currency, rates) ?? 0);
   days.set(date, { date, assets: assetTotal, debt, net: assetTotal - debt, ...(balances.size !== included.length ? {partial:true} : {}), parts });
  }
  return { points: [...days.values()], missing: included.length - balances.size, excluded: eligible.length - included.length };

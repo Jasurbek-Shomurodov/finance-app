@@ -74,9 +74,10 @@ other screens link to it.
 
 Found, in order of harm:
 
-1. Stock and crypto history uses the stored value, and only today uses live prices, so the line is flat and jumps on
-   its last day. Fix: value quoted holdings on past days as quantity that day × that day's close, from the existing
-   price cache.
+1. Fixed 21 November 2026: stock and crypto history used the stored value and only today used live prices, so the
+   line was flat and jumped on its last day. Each quoted holding is now carried between its snapshots by its price
+   (`lib/holding-prices.ts`, `priceScale` in `lib/portfolio-history.ts`); the history read returns the closes from the
+   kept price cache. Metals and equity compensation still use stored values.
 2. Fixed 21 November 2026: the line disappeared whenever benchmark data was loading or unavailable. It now draws alone.
 3. Past days convert at today's exchange rate. Fix: each day at its own rate, as transactions already do.
 4. Deleting or editing an old transaction leaves a dent from its date until today. Fix: adjust the account's valuation
@@ -124,7 +125,7 @@ numbers; profit and loss by share.
 5. **De-duplicate:** the table above (Cash flow Overview done; `/benchmarks` and unused styles removed), then the
    unused transfer branch.
 6. **Ownership and valuations:** migrations 166 and 167, asset page, share-aware profit and loss.
-7. **Net worth history:** historical prices, day rates, deletion dents, speed.
+7. **Net worth history:** historical prices (done), day rates, deletion dents, speed.
 8. **Close account:** `closed_on`, one deletion rule across surfaces.
 9. **Motion:** one press scale and row tint, tab content transition, reduced-motion rules in one place.
 

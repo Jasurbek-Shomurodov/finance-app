@@ -8,7 +8,9 @@ import {loadTS} from './helpers/load-ts.mjs';
 const {trackedKinds,historyCashflowColumns}=await import('../lib/investment-history.ts');
 const {accountRepaymentEvents}=loadTS('lib/investment-benchmarks.ts');
 const {historyIncomeRecords}=loadTS('lib/portfolio-history.ts');
-const api=(session,supa)=>apiFunction('session','supa','historyCashflowColumns','trackedKinds','accountRepaymentEvents',source+';return GET;')(session,supa,historyCashflowColumns,trackedKinds,accountRepaymentEvents);
+const {holdingPrices}=loadTS('lib/holding-prices.ts');
+let closes=async()=>[];
+const api=(session,supa)=>apiFunction('session','supa','historyCashflowColumns','trackedKinds','accountRepaymentEvents','holdingPrices','keptSeries','depositToday',source+';return GET;')(session,supa,historyCashflowColumns,trackedKinds,accountRepaymentEvents,holdingPrices,(...args)=>closes(...args),()=>'2026-09-30');
 test('history and actual cash flows remain owner-scoped and cash-flow pagination is complete',async()=>{
  const calls=[];
  const GET=api(async()=>({token:'owner-token'}),async(path,init,token)=>{
@@ -108,4 +110,20 @@ test('the Overview reads its history as soon as the owner is known, with the cha
  fail=false;failed.retry();assert.equal(render('someone',false,2).error,false);await settle();
  assert.equal(render('someone',false,2).history.cashflows.length,2);
  const before=reads.length;render('someone',true,2);assert.equal(reads.length,before,'the sample workspace builds its own');
+});
+
+test('quoted holdings come with their past closes; a feed that fails leaves the history standing',async()=>{
+ const asked=[];
+ const GET=api(async()=>({token:'owner'}),async path=>{
+  if(path.includes('investment_history'))return Response.json([{record_id:'btc',occurred_on:'2026-03-01',balance:100},{record_id:'aapl',occurred_on:'2026-04-01',balance:50}]);
+  if(path.includes('kind=in.(')&&path.includes('Valuables'))return Response.json([{id:'btc',kind:'Crypto',name:'BTC',currency:'USD'},{id:'aapl',kind:'Stock',name:'AAPL',currency:'USD'}]);
+  return Response.json([]);
+ });
+ closes=async(series,start,end)=>{asked.push([series,start,end]);if(series==='stock:AAPL')throw Error('feed down');return [{date:'2026-03-01',close:60000}];};
+ try{
+  const result=await(await GET()).json();
+  assert.deepEqual(asked,[['crypto:BTC','2026-03-01','2026-09-30'],['stock:AAPL','2026-04-01','2026-09-30']]);
+  assert.deepEqual(result.prices,{'crypto:BTC':[{date:'2026-03-01',close:60000}]});
+  assert.equal(result.events.length,2);
+ }finally{closes=async()=>[];}
 });

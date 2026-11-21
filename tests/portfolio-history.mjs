@@ -123,3 +123,23 @@ test('today’s parts come from the live records: each asset kind, debts togethe
  assert.equal(Object.values(parts).reduce((sum,value)=>sum+value,0),2550);
  assert.deepEqual(currentParts([]),{},'nothing recorded names nothing');
 });
+
+test('a quoted holding follows its price between snapshots instead of staying flat', () => {
+ const closes = new Map([['btc', [{ date: '2026-01-01', close: 100 }, { date: '2026-01-05', close: 150 }, { date: '2026-01-10', close: 120 }, { date: '2026-01-20', close: 300 }, { date: '2027-01-01', close: 999 }]]]);
+ const result = portfolioHistory([record('btc', 'Crypto'), record('cash', 'Cash')], [event('btc', '2026-01-01', 1000), event('cash', '2026-01-01', 50), event('btc', '2026-01-10', 2400)], 'USD', undefined, '2026-01-31', false, [], closes);
+ assert.deepEqual(result.points.map(point => [point.date, point.net]), [
+  ['2026-01-01', 1050],
+  ['2026-01-05', 1550], // 1,000 carried by 150 / 100
+  ['2026-01-10', 2450], // the snapshot's own value on its day: a purchase doubled the holding
+  ['2026-01-20', 6050], // 2,400 carried by 300 / 120, from the new snapshot
+ ], 'cash is untouched, and a close after today is not drawn');
+ assert.deepEqual(result.points[1].parts, { Crypto: 1500, Cash: 50 });
+});
+
+test('a holding with no close by its snapshot keeps its recorded value, and closes before it add no days', () => {
+ const closes = new Map([['aapl', [{ date: '2026-02-01', close: 10 }, { date: '2026-02-05', close: 20 }]], ['gone', [{ date: '2026-01-02', close: 5 }]]]);
+ const result = portfolioHistory([record('aapl', 'Stock')], [event('aapl', '2026-01-15', 500)], 'USD', undefined, '2026-03-01', false, [], closes);
+ assert.deepEqual(result.points.map(point => [point.date, point.net]), [['2026-01-15', 500], ['2026-02-01', 500], ['2026-02-05', 500]]);
+ const early = portfolioHistory([record('aapl', 'Stock')], [event('aapl', '2026-02-03', 500)], 'USD', undefined, '2026-03-01', false, [], closes);
+ assert.deepEqual(early.points.map(point => [point.date, point.net]), [['2026-02-03', 500], ['2026-02-05', 1000]], 'measured from the last close on or before the snapshot');
+});

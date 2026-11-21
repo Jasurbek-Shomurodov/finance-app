@@ -5,6 +5,9 @@ import { session, supa } from '@/lib/supabase';
 import type { Entry } from '@/lib/finance';
 import { historyCashflowColumns, trackedKinds, type HistoryEvent } from '@/lib/investment-history';
 import type { AccountOperation } from '@/lib/net-worth-moves';
+import { depositToday } from '@/lib/deposit-interest';
+import { holdingPrices } from '@/lib/holding-prices';
+import { keptSeries } from '@/lib/holding-price-reader';
 
 function readAll<T>(path: string, token: string) { return readAllPages<T>(range => supa(pagePath(path, range), {}, token), 'History unavailable'); }
 export async function GET() {
@@ -29,7 +32,9 @@ export async function GET() {
   const operations: AccountOperation[] = activity.map(({ id, action, account_id, occurred_on, created_at, before_balance, after_balance }) => ({ id, action, account_id, occurred_on, created_at, before_balance, after_balance }));
   // Income receipts are already among the cash flows; the browser joins them to the schedules (`historyIncomeRecords`)
   // rather than receiving them twice.
-  return Response.json({ records, events, cashflows, recurringIncome, movements, operations }, { headers: { 'Cache-Control': 'no-store' } });
+  // Past closes for quoted holdings, so their value follows the market between edits (lib/holding-prices.ts).
+  const prices = await holdingPrices(records, events, depositToday(), keptSeries);
+  return Response.json({ records, events, cashflows, recurringIncome, movements, operations, prices }, { headers: { 'Cache-Control': 'no-store' } });
  } catch {
   return Response.json({ error: 'Could not load portfolio history.' }, { status: 503 });
  }

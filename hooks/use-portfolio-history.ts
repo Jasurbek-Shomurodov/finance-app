@@ -6,9 +6,10 @@ import type { BenchmarkMovement } from '@/lib/investment-benchmarks';
 import type { HistoryEvent } from '@/lib/investment-history';
 import { historyIncomeRecords } from '@/lib/portfolio-history';
 import type { AccountOperation } from '@/lib/net-worth-moves';
+import type { HoldingPrices } from '@/lib/holding-prices';
 import { ownerReadKey, sharedRead } from '@/hooks/use-owner-resource';
 
-export type PortfolioHistory = { movements?: BenchmarkMovement[]; records: Entry[]; events: HistoryEvent[]; cashflows?: Entry[]; incomeRecords?: Entry[]; operations?: AccountOperation[] };
+export type PortfolioHistory = { movements?: BenchmarkMovement[]; records: Entry[]; events: HistoryEvent[]; cashflows?: Entry[]; incomeRecords?: Entry[]; operations?: AccountOperation[]; /** Past closes for quoted holdings, by series. */prices?: HoldingPrices };
 type Read = { owner: string | null; history: PortfolioHistory | null; error: boolean };
 
 /** The Overview's history read, started as soon as the owner is known, beside the workspace reads rather than after
