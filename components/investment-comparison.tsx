@@ -24,6 +24,7 @@ import { type Entry } from '@/lib/finance';
 import { type MarketData } from '@/lib/market';
 import { type HistoryEvent } from '@/lib/investment-history';
 import { type BenchmarkData, type FxPoint } from '@/lib/benchmark-data';
+import { mergeFx } from '@/lib/history-rates';
 import { benchmarkColor,defaultBenchmarkColor,defaultComparisonPreferences,isInvestmentRecord,type ComparisonProfile } from '@/lib/comparison-profile';
 import Link from 'next/link';
 import { ChartNoAxesCombined } from 'lucide-react';
@@ -31,7 +32,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
 
 type History={movements?:BenchmarkMovement[];records:Entry[];events:HistoryEvent[];cashflows?:Entry[]};
-export function InvestmentComparison({allPoints,periodPick,onViewMove,history,today,currency,market,demo,windowStart,points,summary,profile,profileError,trackingStart,onTrackingStartChange,onGrowth,chartHeight}:{/** Net worth over the whole tracked history: in full screen the chart holds all of it and the period only sets its zoom. */allPoints?:{date:string;net:number}[];/** Changes each time a period is chosen, so choosing one again zooms back to it. */periodPick?:number;/** The person dragged or zoomed the full-screen chart away from the chosen period. */onViewMove?:()=>void;/** The chart's height when its card fills the window; the usual height otherwise. */chartHeight?:number;onGrowth?:(growth:PeriodGrowth|null)=>void;windowStart:string;points:{date:string;net:number}[];summary?:ReactNode|((fx:FxPoint[]|undefined,scope:FundingScope)=>ReactNode);history:History;today:string;currency:string;market:MarketData|null;demo:boolean;profile:ComparisonProfile|null;profileError:string;trackingStart:string|null;onTrackingStartChange:(date:string|null)=>Promise<void>}){
+export function InvestmentComparison({fx,allPoints,periodPick,onViewMove,history,today,currency,market,demo,windowStart,points,summary,profile,profileError,trackingStart,onTrackingStartChange,onGrowth,chartHeight}:{/** The rates the net worth line converts each day with; the comparison converts with the same ones. */fx?:FxPoint[];/** Net worth over the whole tracked history: in full screen the chart holds all of it and the period only sets its zoom. */allPoints?:{date:string;net:number}[];/** Changes each time a period is chosen, so choosing one again zooms back to it. */periodPick?:number;/** The person dragged or zoomed the full-screen chart away from the chosen period. */onViewMove?:()=>void;/** The chart's height when its card fills the window; the usual height otherwise. */chartHeight?:number;onGrowth?:(growth:PeriodGrowth|null)=>void;windowStart:string;points:{date:string;net:number}[];summary?:ReactNode|((fx:FxPoint[]|undefined,scope:FundingScope)=>ReactNode);history:History;today:string;currency:string;market:MarketData|null;demo:boolean;profile:ComparisonProfile|null;profileError:string;trackingStart:string|null;onTrackingStartChange:(date:string|null)=>Promise<void>}){
  const {t,locale}=useLanguage();
  const [data,setData]=useState<BenchmarkData|null>(null),[error,setError]=useState(''),[retry,setRetry]=useState(0),[loadedKey,setLoadedKey]=useState('');
  const [overviewSelection,setOverviewSelection]=useState<{owner:string;keys:string[]}|null>(null);
@@ -91,7 +92,9 @@ export function InvestmentComparison({allPoints,periodPick,onViewMove,history,to
   return()=>controller.abort();
  },[demo,requestKey,start,today,selectionKey,symbol,portfolioCrypto,portfolioStock,portfolioConfig,retry,canLoad]);
  const comparisonsLoading=!!requestKey&&((!demo&&!profile&&!profileError)||loadedKey!==requestKey);
- const ready=loadedKey===requestKey?data:null;
+ const loaded=loadedKey===requestKey?data:null;
+ // One basis: the comparison converts each day at the rates the net worth line used for it.
+ const ready=useMemo(()=>loaded?{...loaded,fx:mergeFx(loaded.fx,fx)}:null,[loaded,fx]);
  // The period summary converts with the same dated rates as the chart, so their funding totals agree.
  const summaryNode=typeof summary==='function'?summary(ready?.fx,scope):summary;
  const decision=useMemo(()=>ready?investmentDecisionComparison({records:history.records,events:history.events,cashflows:history.cashflows,movements:history.movements,market,currency,today,method},ready,activeDiversified):null,[ready,history,market,currency,today,method,activeDiversified]);

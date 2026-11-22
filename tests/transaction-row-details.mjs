@@ -27,6 +27,7 @@ const modules = {
  '@/components/workspace/workspace-provider': { useWorkspace: () => workspace },
  '@/hooks/use-owner-resource': { useOwnerResource: () => ({ data: { records: [], categories: [] }, initialLoading: false, error: '' }) },
  '@/hooks/use-transaction-rules': { useTransactionRules: () => ({ rules: [], save: async () => 0, remove: async () => {} }) },
+ '@/hooks/use-hash-request': { useHashRequest() {} },
  '@/hooks/use-location-search': { useLocationSearch: () => '', queryList: () => [] },
  '@/lib/feedback': { showAction() {}, showError() {}, showNotice() {} },
 };

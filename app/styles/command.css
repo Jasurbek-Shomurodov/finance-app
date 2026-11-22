@@ -28,9 +28,7 @@
 .command-line[data-selected=true] .command-line-icon:not(:has(.record-icon)) svg{color:inherit}
 .command-line[data-selected=true] .command-line-enter{opacity:.7;transform:none}
 [dir=rtl] .command-line[data-selected=true] .command-line-enter{transform:scaleX(-1)}
-.command-line:active{transform:scale(.99)}
 .command-menu-keys{display:flex;gap:16px;align-items:center;padding:10px 18px;border-top:1px solid var(--hairline);color:var(--muted-foreground);font-size:var(--type-caption)}
 .command-menu-keys>span{display:inline-flex;align-items:center;gap:6px}
 @media(pointer:coarse){.command-menu-keys{display:none}}
 @media(max-width:640px){[data-slot=dialog-content].command-menu{top:12px;max-height:calc(100dvh - 24px)}.command-menu [data-slot=command-list]{max-height:calc(100dvh - 140px)}}
-@media(prefers-reduced-motion:reduce){.command-line,.command-line-icon,.command-line-enter{transition:none}.command-line:active{transform:none}}

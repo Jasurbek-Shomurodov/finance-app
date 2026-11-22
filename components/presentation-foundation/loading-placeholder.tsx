@@ -1,4 +1,7 @@
+import type { ReactNode } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { dashboardColumns, defaultDashboardLayout } from '@/lib/dashboard-layout';
+import { PageHeadingSkeleton, pageHeadings } from './page-heading-skeleton';
 
 export function LoadingPlaceholder({ label, rows = 4 }: { label: string; rows?: number }) {
   return <div role="status" aria-busy="true" className="loading-placeholder">
@@ -26,33 +29,59 @@ export function PanelSkeleton({ label, rows = 3, className }: { label: string; r
   return <section className={className ? 'panel ' + className : 'panel'}><Skeleton aria-hidden="true" className="mb-4 h-5 w-1/3"/><LoadingPlaceholder label={label} rows={rows}/></section>;
 }
 
-/** The dashboard board's two columns of cards, in the person's saved order. */
+/** The dashboard board's two columns of cards, in the person's saved order; with nothing saved, the default layout
+ * itself, so the fallback can never drift from the board it stands in for. */
 type DashboardSkeletonColumns = { left: readonly string[]; right: readonly string[] };
-const defaultDashboardSkeleton: DashboardSkeletonColumns = { left: ['net_worth', 'spending'], right: ['upcoming', 'goals', 'transactions'] };
-const chartCards = new Set(['spending', 'allocation', 'income']);
+const defaultDashboardSkeleton: DashboardSkeletonColumns = dashboardColumns(defaultDashboardLayout);
 
-/** One dashboard card while the workspace loads: Net worth in its full shape, chart cards with a chart, the rest with rows. */
+/** A dashboard card's heading row: its title, and the "View all" link or figure at the end. */
+function CardHeading({ width = 150, aside = true }: { width?: number; aside?: boolean }) {
+  return <div className="panel-title-skeleton"><Skeleton className="h-7 max-w-full" style={{ width }}/>{aside && <Skeleton className="h-4 w-14"/>}</div>;
+}
+const bars = (count: number) => Array.from({ length: count }, (_, index) => index);
+
+/** Each card's body while the workspace loads, in the loaded card's own blocks and classes. */
+const dashboardCardBodies: Record<string, () => ReactNode> = {
+  // Where it is going: five ranked bars (name and share, bar, amount).
+  where: () => <><CardHeading width={230}/><div className="flow-bars where-bars">{bars(5).map(row => <div className="flow-bar-row" key={row}><span className="flow-bar-name"><Skeleton className="loading-icon"/><span><Skeleton className="h-4 w-24"/><Skeleton className="mt-1.5 h-3 w-16"/></span></span><Skeleton className="h-2.5 w-full"/><Skeleton className="h-4 w-16"/></div>)}</div></>,
+  // Spending pace: the chart and its legend.
+  spending: () => <><CardHeading width={210}/><ChartSkeleton height={220}/><div className="spending-pace-legend">{bars(3).map(key => <Skeleton key={key} className="h-4 w-20"/>)}</div></>,
+  // Budget: how much of the plan is used and its bar, then the three categories closest to their limit.
+  budget: () => <><CardHeading width={200}/><div className="dashboard-budget-total"><Skeleton className="h-8 w-40"/></div><Skeleton className="h-2 w-full"/><div className="dashboard-budget-list"><SkeletonRows rows={3}/></div></>,
+  income: () => <><CardHeading width={190} aside={false}/><ChartSkeleton height={260} bars/></>,
+  // Monthly commitments: three lines and the surplus at the foot.
+  commitments: () => <><CardHeading width={220} aside={false}/><SkeletonRows rows={3}/><div className="cash-footer"><Skeleton className="h-5 w-44"/><Skeleton className="h-5 w-20"/></div></>,
+  upcoming: () => <><CardHeading width={230}/><SkeletonRows rows={4}/></>,
+  goals: () => <><CardHeading width={90}/><div className="dashboard-goal-list">{bars(2).map(goal => <div className="dashboard-goal-row" key={goal}><Skeleton className="size-10 rounded-[10px]"/><div><Skeleton className="h-4 w-full"/><Skeleton className="mt-2 h-2 w-full"/><Skeleton className="mt-2 h-3 w-32"/></div></div>)}</div></>,
+  transactions: () => <><CardHeading width={150}/><SkeletonRows rows={5}/></>,
+  // Asset allocation: the donut beside its list.
+  allocation: () => <><CardHeading width={240}/><div className="dashboard-allocation"><Skeleton className="allocation-donut rounded-full"/><div className="overview-list"><SkeletonRows rows={4}/></div></div></>,
+};
+const dashboardCardClass: Record<string, string> = { where: ' dashboard-where', spending: ' spending-pace', budget: ' dashboard-budget', goals: ' dashboard-goals', transactions: ' dashboard-transactions' };
+
+/** One dashboard card while the workspace loads: Net worth in its full shape, every other card in its own. */
 function DashboardCardSkeleton({ card }: { card: string }) {
   if (card === 'net_worth') return <section className="panel overview-hero"><div className="overview-hero-head"><div className="overview-hero-value"><Skeleton className="h-8 w-56 max-w-full"/></div><Skeleton className="h-11 w-96 max-w-full rounded-xl"/></div><NetWorthBodySkeleton/></section>;
-  return <section className="panel overview-panel"><Skeleton className="mb-6 h-8 w-1/3"/>{chartCards.has(card) ? <Skeleton className="h-52 w-full"/> : <SkeletonRows rows={3}/>}</section>;
+  return <section className={'panel overview-panel' + (dashboardCardClass[card] ?? '')} data-card={card}>{(dashboardCardBodies[card] ?? dashboardCardBodies.upcoming)()}</section>;
 }
 
-/** The dashboard while the workspace loads: its headline tiles over the board's two columns. */
+/** The dashboard while the workspace loads, block for block: its four key figures over the board's two columns, with
+ * every shown card in its place and shape, so nothing appears from nowhere when the records arrive. */
 export function WorkspaceSkeleton({ label, columns = defaultDashboardSkeleton }: { label: string; columns?: DashboardSkeletonColumns }) {
-  // The first few cards of each column fill the screen; drawing every card would only make the page longer than it loads.
   const beside = columns.left.includes('net_worth') ? 1 : columns.right.includes('net_worth') ? 0 : -1;
   return <div role="status" aria-busy="true" className="overview-content-loading">
     <span className="sr-only">{label}</span>
     {/* The key figures, as the loaded page places them: atop the column beside Net worth over time, or above the board. */}
     <div className="dashboard-headline" data-beside={beside >= 0 || undefined}><StatTilesSkeleton columns={beside >= 0 ? 2 : 4} count={4}/></div>
-    <div aria-hidden="true" className="dashboard-grid">{[columns.left, columns.right].map((cards, index) => <div className="dashboard-column" key={index}>{index === beside && <div className="dashboard-lead"><StatTilesSkeleton columns={2} count={4}/></div>}{cards.slice(0, 3).map(card => <DashboardCardSkeleton card={card} key={card}/>)}</div>)}</div>
+    <div aria-hidden="true" className="dashboard-grid">{[columns.left, columns.right].map((cards, index) => <div className="dashboard-column" key={index}>{index === beside && <div className="dashboard-lead"><StatTilesSkeleton columns={2} count={4}/></div>}{cards.map(card => <DashboardCardSkeleton card={card} key={card}/>)}</div>)}</div>
   </div>;
 }
 
-/** Accounts while records load, in the loaded page's shape: the Total tile, one account group with its cards, and the selected account's card beside it. */
+/** Accounts while records load, in the loaded page's shape: on a phone the tabs and actions the page opens with (its `PageHeader` loads with the page), the Total tile, one account group with its cards, and the selected account's card beside it. */
 export function AccountsSkeleton({ label, filters = false }: { label: string; filters?: boolean }) {
   return <div role="status" aria-busy="true" className="overview-content-loading">
     <span className="sr-only">{label}</span>
+    <div aria-hidden="true" className="contents"><PageHeadingSkeleton {...pageHeadings['/accounts']}/></div>
     <div aria-hidden="true" className="accounts-hero"><div className="accounts-hero-figure"><Skeleton className="h-5 w-44"/><Skeleton className="h-10 w-52 max-w-full"/></div>
       {filters && <div className="accounts-hero-tools"><Skeleton className="h-11 w-44 rounded-xl"/><Skeleton className="h-11 w-36 rounded-xl"/></div>}</div>
     <div aria-hidden="true" className="panel accounts-mix"><Skeleton className="h-2.5 w-full"/><Skeleton className="mt-3 h-5 w-64 max-w-full"/></div>
@@ -79,10 +108,13 @@ function PreviewHeading({ width }: { width: number }) {
   return <div className="panel-title-skeleton"><Skeleton className="h-6 max-w-full" style={{ width }}/><Skeleton className="h-4 w-14"/></div>;
 }
 
-/** Cash flow's lower half while its records load, block for block: Income this month's source table beside Still to come. */
+/** Cash flow's lower half while its records load, block for block: Income this month's five-column table (Source, Status, Expected, Received, Progress) beside Still to come. */
 export function CashflowPreviewSkeleton({ label }: { label?: string }) {
   const grid = <div aria-hidden="true" className="cashflow-preview-grid">
-    <section className="panel cashflow-income-preview"><PreviewHeading width={240}/><SkeletonRows rows={5}/><footer><Skeleton className="h-5 w-36"/></footer></section>
+    <section className="panel cashflow-income-preview"><PreviewHeading width={240}/><div className="table-scroll"><table className="stack-table">
+      <thead><tr>{[56, 48, 64, 64, 60].map((width, column) => <th key={column}><Skeleton className="h-3 max-w-full" style={{ width }}/></th>)}</tr></thead>
+      <tbody>{lines(5).map(row => <tr key={row}><td><div className="record-name"><Skeleton className="size-9 shrink-0 rounded-[10px]"/><div className="grid gap-1.5"><Skeleton className="h-4 max-w-full" style={{ width: 110 + (row % 3) * 30 }}/><Skeleton className="h-3 w-20"/></div></div></td><td><Skeleton className="h-6 w-20 rounded-full"/></td><td><Skeleton className="h-4 w-20"/></td><td><Skeleton className="h-4 w-20"/></td><td><Skeleton className="h-1.5 w-full rounded-full"/></td></tr>)}</tbody>
+    </table></div><footer><Skeleton className="h-5 w-36"/></footer></section>
     <div className="cashflow-spending-preview">
       <section className="panel cashflow-still-to-come"><PreviewHeading width={180}/><div className="grid gap-3">{lines(4).map(line => <div key={line} className="flex items-center justify-between gap-3"><Skeleton className="h-4 w-36"/><Skeleton className="h-4 w-16"/></div>)}</div></section>
     </div>
@@ -90,12 +122,11 @@ export function CashflowPreviewSkeleton({ label }: { label?: string }) {
   return label ? <div role="status" aria-busy="true"><span className="sr-only">{label}</span>{grid}</div> : grid;
 }
 
-/** Cash flow's report while its records load: the Period switch, then the bars by month beside Where the month went. */
+/** Cash flow's report while its records load: the recent months' bars beside Where the month went. */
 export function CashFlowReportSkeleton({ label }: { label?: string }) {
   const report = <div aria-hidden="true" className="cash-flow-report">
-    <div className="cash-flow-report-tools"><Skeleton className="h-10 w-52 rounded-xl"/></div>
     <div className="cash-flow-report-grid">
-      <section className="panel cash-flow-trend"><Skeleton className="mb-3 h-7 w-72 max-w-full"/><Skeleton className="mb-3 h-4 w-48"/><ChartSkeleton bars height={260}/><div className="cash-flow-totals">{lines(3).map(total => <Skeleton key={total} className="h-4 w-36"/>)}</div></section>
+      <section className="panel cash-flow-trend"><Skeleton className="mb-3 h-7 w-72 max-w-full"/><Skeleton className="mb-3 h-4 w-48"/><ChartSkeleton bars height={220}/><div className="cash-flow-totals"><Skeleton className="h-4 w-48"/></div></section>
       <section className="panel cash-flow-where"><Skeleton className="mb-3 h-7 w-60 max-w-full"/><div className="mb-4 flex flex-wrap gap-2"><Skeleton className="h-10 w-44 rounded-xl"/><Skeleton className="h-10 w-36 rounded-xl"/></div><SkeletonRows rows={5}/></section>
     </div>
   </div>;

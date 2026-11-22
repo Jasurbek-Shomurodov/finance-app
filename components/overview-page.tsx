@@ -18,11 +18,10 @@ import { useDisplayMoney } from '@/components/display-money';
 import { categoryColor } from '@/lib/category-colors';
 import { estimatedCashFlow, financialTotals, type Entry } from '@/lib/finance';
 import { formatDate, formatMoney, formatNumber, formatPercent } from '@/lib/format';
-import { allocationRows, assetAllocation, collectedDue, dueCounts, incomingDue, nextPayments } from '@/lib/overview';
+import { allocationHref, allocationRows, assetAllocation, collectedDue, dueCounts, incomingDue, nextPayments } from '@/lib/overview';
 import { otherShareKey } from '@/lib/cash-flow-report';
 import { upcomingPayments, type PlanningData } from '@/lib/planning';
 import { payLink } from '@/lib/recurring';
-import { openProps } from '@/lib/row-open';
 
 /** `firstVisit` greets a brand-new account with "Welcome" instead of "Welcome back". */
 export function OverviewHeading({ name, firstVisit = false, children }: { name?: string; firstVisit?: boolean; children?: ReactNode }) {
@@ -32,18 +31,15 @@ export function OverviewHeading({ name, firstVisit = false, children }: { name?:
 }
 
 type Props = { entries: Entry[]; currency: string; excludedCurrencies: string[]; forecast: ReturnType<typeof estimatedCashFlow>; forecastReady: boolean; planning: PlanningData | null; /** The planning read failed: `planning` is null and is not coming. */ planningError?: string; onPlanningRetry?: () => void };
-/** An upcoming payment opens its Sankey for its month, by click, Enter or Space, unless the tap was on its link. */
-
 export function useOverviewCards({ entries, currency, excludedCurrencies, forecast, forecastReady, planning, planningError, onPlanningRetry }: Props) {
  const { t, locale } = useLanguage();
  const { entered } = useDisplayMoney();
- // An upcoming payment opens Recurring, where its payments are listed, unless the tap was on its link.
- const router = useRouter(), openRecurring = () => router.push('/upcoming');
+ const router = useRouter();
  const money = (amount: number) => formatMoney(amount, currency, locale);
  const percent = (value: number | null) => formatPercent(value ?? NaN, locale, 1, 1);
  const { totalAssets, totalDebt } = financialTotals(entries);
  const allocation = assetAllocation(entries);
- const rows = allocationRows(allocation), openAssets = () => router.push('/assets');
+ const rows = allocationRows(allocation);
  const rowColor = (kind: string) => kind === otherShareKey ? 'var(--muted-foreground)' : categoryColor(kind);
  const rowLabel = (kind: string) => kind === otherShareKey ? t('Other') : t(kind);
  const upcomingItems = planning ? upcomingPayments(planning.records, planning.occurrences, undefined, undefined, planning.debtPayments) : [];
@@ -55,33 +51,36 @@ export function useOverviewCards({ entries, currency, excludedCurrencies, foreca
  // Every commitment figure waits for the forecast, as Expenses does: a partial forecast never prints as a total (MONEY-008).
  const ready = (amount: number) => forecastReady ? money(amount) : '—';
  const commitments = <section className="panel overview-panel" key="commitments">
-  <PanelTitle title={<>{t("Monthly commitments")} {forecastReady && figure(t('{amount} left', { amount: money(forecast.forecast) }))}</>} hint={<>
+  <PanelTitle title={t("Monthly commitments")} hint={<>
    <p>{t('Estimated asset income: {amount}', { amount: ready(forecast.estimatedIncome) })}</p>
    <p>{t('Other recurring income: {amount}', { amount: ready(forecast.otherIncome) })}</p>
    <p>{t("Yearly records are divided by 12. A category's budget counts when it is more than the bills in that category. One-time records are excluded.")}</p>
   </>}/>
   <ul className="overview-list overview-commitments">
-   <li><CategoryIcon kind="Salary"/><span>{t("Income")}</span><strong className={forecastReady ? 'positive' : undefined}>{ready(forecast.plannedIncome)}</strong></li>
-   <li><CategoryIcon kind="Living expense"/><span>{t("Expenses")}</span><strong>{ready(forecast.monthlyExpenses)}</strong></li>
-   <li><CategoryIcon kind="Mortgage"/><span>{t("Estimated mortgage payments")}</span><strong>{ready(forecast.mortgagePayments)}</strong></li>
-   {forecast.loanPayments > 0 && <li><CategoryIcon kind="Loan"/><span>{t("Estimated loan payments")}</span><strong>{ready(forecast.loanPayments)}</strong></li>}
+   {/* Each line opens the page its figure comes from. */}
+   <li><DrawerLink href="/income-expenses" className="overview-row"><CategoryIcon kind="Salary"/><span>{t("Income")}</span><strong className={forecastReady ? 'positive' : undefined}>{ready(forecast.plannedIncome)}</strong></DrawerLink></li>
+   <li><DrawerLink href="/budget" className="overview-row"><CategoryIcon kind="Living expense"/><span>{t("Expenses")}</span><strong>{ready(forecast.monthlyExpenses)}</strong></DrawerLink></li>
+   <li><DrawerLink href="/loans-debts" className="overview-row"><CategoryIcon kind="Mortgage"/><span>{t("Estimated mortgage payments")}</span><strong>{ready(forecast.mortgagePayments)}</strong></DrawerLink></li>
+   {forecast.loanPayments > 0 && <li><DrawerLink href="/loans-debts" className="overview-row"><CategoryIcon kind="Loan"/><span>{t("Estimated loan payments")}</span><strong>{ready(forecast.loanPayments)}</strong></DrawerLink></li>}
   </ul>
-  <div className="cash-footer"><span>{t("Left after expenses")}</span><strong className={forecastReady ? signTone(forecast.forecast, true) : undefined}><SurplusButton parts={forecastReady ? forecast : null} currency={currency} className="surplus-link">{forecastReady ? money(forecast.forecast) : '—'}</SurplusButton></strong></div>
+  <div className="cash-footer"><span>{t("Estimated monthly surplus")}</span><strong className={forecastReady ? signTone(forecast.forecast, true) : undefined}><SurplusButton parts={forecastReady ? forecast : null} currency={currency} className="surplus-link">{forecastReady ? money(forecast.forecast) : '—'}</SurplusButton></strong></div>
  </section>;
  const allocationCard = <section className="panel overview-panel" key="allocation">
   <PanelTitle title={<>{t("Asset allocation")} {figure(money(totalAssets))}</>} hint={totalDebt > 0 ? <p>{t('Outstanding debt')}: {money(totalDebt)}</p> : undefined}><DrawerLink href="/assets">{t('View all')}</DrawerLink></PanelTitle>
   <PartialTotal currencies={excludedCurrencies}/>
   {allocation.length ? <div className="dashboard-allocation">
-   {/* The donut and the list share one set of rows and colours; a slice opens Investments, as View all does. */}
-   <AllocationDonut slices={rows.map(item => ({ kind: item.kind, amount: item.total, color: rowColor(item.kind), label: rowLabel(item.kind) }))} total={totalAssets} currency={currency} onSelect={openAssets}/>
-   <ul className="overview-list">{rows.map(item => <li key={item.kind}><i style={{ background: rowColor(item.kind) }}/><span>{rowLabel(item.kind)}</span><strong>{money(item.total)}</strong><small>{percent(item.share)}</small></li>)}</ul>
+   {/* The donut and the list share one set of rows and colours; a slice or a row opens where that kind is kept. */}
+   <AllocationDonut slices={rows.map(item => ({ kind: item.kind, amount: item.total, color: rowColor(item.kind), label: rowLabel(item.kind) }))} total={totalAssets} currency={currency} onSelect={kind => router.push(allocationHref(kind))}/>
+   <ul className="overview-list">{rows.map(item => <li key={item.kind}><DrawerLink href={allocationHref(item.kind)} className="overview-row"><i style={{ background: rowColor(item.kind) }}/><span>{rowLabel(item.kind)}</span><strong>{money(item.total)}</strong><small>{percent(item.share)}</small></DrawerLink></li>)}</ul>
   </div> : <EmptyState icon={<Landmark/>} description={t("Add your first asset to see its allocation.")}/>}
  </section>;
  const upcoming = <section className="panel overview-panel" key="upcoming">
   <PanelTitle title={<>{t('Upcoming payments')} {counts.overdue > 0 ? <span className="panel-figure negative">{t('{count} overdue', { count: formatNumber(counts.overdue, locale, 0) })}</span> : counts.dueSoon > 0 && figure(t('{count} due soon', { count: formatNumber(counts.dueSoon, locale, 0) }))}</>}><DrawerLink href="/upcoming">{t('View all')}</DrawerLink></PanelTitle>
   {due.length ? <ul className="overview-list overview-due">{due.map(item => {
    const incoming = incomingDue(item);
-   return <li key={item.key} {...openProps(openRecurring, t('Open {name}', { name: item.record.name }))}><CategoryIcon kind={item.record.kind}/><span>{item.record.name}<small className={item.overdue ? 'negative' : undefined}>{item.overdue ? t('Overdue') + ' · ' : ''}{formatDate(item.date, locale)}</small>{!collectedDue(item) && <DrawerLink href={payLink(item.record.id, item.date)} className="overview-due-pay" aria-label={`${t('Record payment')}: ${item.record.name}`}>{t('Record payment')}</DrawerLink>}</span><strong className={incoming ? 'positive' : undefined}>{incoming ? '+' : ''}{entered(item.amount, item.record.currency)}</strong></li>;
+   // The whole row opens this payment on Recurring: its Record payment form, or for money that arrives by itself its month.
+   const payable = !collectedDue(item);
+   return <li key={item.key}><DrawerLink href={payLink(item.record.id, item.date)} className="overview-row" aria-label={payable ? `${t('Record payment')}: ${item.record.name}` : t('Open {name}', { name: item.record.name })}><CategoryIcon kind={item.record.kind}/><span>{item.record.name}<small className={item.overdue ? 'negative' : undefined}>{item.overdue ? t('Overdue') + ' · ' : ''}{formatDate(item.date, locale)}</small>{payable && <span className="overview-due-pay">{t('Record payment')}</span>}</span><strong className={incoming ? 'positive' : undefined}>{incoming ? '+' : ''}{entered(item.amount, item.record.currency)}</strong></DrawerLink></li>;
   })}</ul> : planning ? <EmptyState icon={<CalendarClock/>} description={t('Nothing is due in the next 31 days.')}/> : planningError ? <InlineError message={t(planningError)} onRetry={onPlanningRetry}/> : <LoadingPlaceholder label={t('Loading records…')} rows={3}/>}
  </section>;
  return { commitments, allocation: allocationCard, upcoming };

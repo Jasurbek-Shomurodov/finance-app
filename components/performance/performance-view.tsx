@@ -4,21 +4,16 @@ import { LineChart } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
-import { PanelSkeleton } from '@/components/presentation-foundation/loading-placeholder';
-import { BitcoinPanel } from '@/components/performance/bitcoin-panel';
-import { PayoutCalendar } from '@/components/performance/payout-calendar';
+import { PerformanceSkeleton } from '@/components/presentation-foundation/screen-skeletons';
 import { PerformanceBreakdown } from '@/components/performance/performance-breakdown';
 import { PerformanceCharts } from '@/components/performance/performance-charts-lazy';
 import { PerformanceSummary } from '@/components/performance/performance-summary';
-import { PriceAlerts } from '@/components/performance/price-alerts';
 import { PropertyYields } from '@/components/performance/property-yields';
 import { RealizedGains } from '@/components/performance/realized-gains';
 import type { PortfolioHistory } from '@/hooks/use-portfolio-history';
-import type { PreferenceResource } from '@/hooks/use-workspace-preferences';
-import { addMonths } from '@/lib/calendar-days';
 import { depositToday } from '@/lib/deposit-interest';
 import type { HoldingAccount } from '@/lib/holding-accounts';
-import { expectedPayouts, isBitcoin, propertyYields } from '@/lib/investment-insights';
+import { propertyYields } from '@/lib/investment-insights';
 import { historyPnl, pnlPeriodStart, pnlPeriods, type DatedRate, type PnlPeriod } from '@/lib/investment-pnl';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { investmentReturns, monthlyResults, runningTotal } from '@/lib/investment-returns';
@@ -31,11 +26,12 @@ const periodLabels: Record<PnlPeriod, string> = { year: 'This year', months: 'La
 type Props = {
  history: PortfolioHistory | null; error: boolean; onRetry: () => void;
  /** Each past day's rate, once loaded; amounts convert at today's rate until then. */ rate?: DatedRate;
- currency: string; market: MarketData | null; accounts: readonly HoldingAccount[]; preferences: PreferenceResource; demo: boolean;
+ currency: string; market: MarketData | null; accounts: readonly HoldingAccount[];
 };
 
-/** Investments › Profit & loss: what the holdings earned and how, read from the same history as the Overview chart. */
-export function PerformanceView({ history, error, onRetry, rate, currency, market, accounts, preferences, demo }: Props) {
+/** Investments › Profit & loss: what the holdings earned and how, read from the same history as the Overview chart.
+ * What they are expected to pay next, and the price alerts, are the Payouts & alerts tab (`PayoutsAlertsView`). */
+export function PerformanceView({ history, error, onRetry, rate, currency, market, accounts }: Props) {
  const { t } = useLanguage();
  const today = depositToday();
  const [period, setPeriod] = useState<PnlPeriod>('all');
@@ -47,12 +43,10 @@ export function PerformanceView({ history, error, onRetry, rate, currency, marke
   const rates = marketRates(market);
   return investmentReturns(pnl, today, (from, date) => from === currency ? 1 : rate?.(from, currency, date) ?? convertAmount(1, from, currency, rates));
  }, [pnl, market, currency, today, rate]);
- const payouts = useMemo(() => history ? expectedPayouts(history.records, history.events, today, addMonths(today, 12)) : [], [history, today]);
  if (error) return <section className="panel"><InlineError message={t('Could not load portfolio history.')} onRetry={onRetry}/></section>;
- if (!history || !pnl || !whole || !returns) return <PanelSkeleton label={t('Loading history…')}/>;
+ if (!history || !pnl || !whole || !returns) return <PerformanceSkeleton label={t('Loading history…')}/>;
  if (!pnl.holdings.length) return <section className="panel"><EmptyState icon={<LineChart size={26}/>} title={t('No performance yet')} description={t('Add an investment to see what it earns.')}/></section>;
  const yields = propertyYields(whole.holdings, whole.flows, today);
- const bitcoin = history.records.filter(isBitcoin);
  return <div className="performance">
   <PerformanceSummary totals={pnl.totals} returns={returns} missing={pnl.missing} dated={!!rate} currency={currency}><Segmented label={t('Period')} options={pnlPeriods.map(value => ({ value, label: t(periodLabels[value]) }))} value={period} onChange={setPeriod}/></PerformanceSummary>
   <div className="performance-columns">
@@ -61,12 +55,7 @@ export function PerformanceView({ history, error, onRetry, rate, currency, marke
   </div>
   <PerformanceCharts months={monthlyResults(returns.days, today)} days={returns.days} currency={currency}/>
   <PerformanceBreakdown holdings={pnl.holdings} records={history.records} accounts={accounts} currency={currency}/>
-  <div className="performance-columns">
-   <RealizedGains sales={whole.sales} currency={currency}/>
-   <PayoutCalendar payouts={payouts} currency={currency} market={market}/>
-  </div>
+  <RealizedGains sales={whole.sales} currency={currency}/>
   {yields.length > 0 && <PropertyYields yields={yields} currency={currency}/>}
-  {bitcoin.map(record => <BitcoinPanel key={record.id} record={record} movements={history.movements ?? []} market={market}/>)}
-  <PriceAlerts records={history.records} market={market} preferences={preferences} demo={demo}/>
  </div>;
 }

@@ -28,7 +28,7 @@ test('demo has a year of funded history, receipts and expenses in all chart wind
  assert.ok(chart.at(-1).actual > 0);
  assert.equal(chart[0].date, shiftDay(today, -365));
  assert.equal(chart.at(-1).date, today);
- const netWorth = portfolioHistory(history.records, history.events, 'USD', demoMarket.rates, today, true);
+ const netWorth = portfolioHistory(history.records, history.events, { currency: 'USD', rates: demoMarket.rates, today, includePartial: true });
  assert.equal(netWorth.points[0].date, shiftDay(today, -365));
  for (const days of [30, 90, 365, null]) {
   assert.ok(portfolioWindow(netWorth.points, days, today).length > 1);
@@ -122,7 +122,7 @@ test('sample history shows homes appreciating and the mortgage shrinking', () =>
  assert.ok(balances('demo-studio').at(-1) < balances('demo-studio')[0], 'not every property rises');
  assert.ok(balances('demo-mortgage').at(-1) < balances('demo-mortgage')[0]);
  assert.ok(history.events.filter(event => event.record_id === 'demo-mortgage').every(event => event.event_type === 'valuation' && event.amount === 0), 'debts are not investments');
- const net = portfolioHistory(history.records, history.events, 'USD', demoMarket.rates, today, true).points;
+ const net = portfolioHistory(history.records, history.events, { currency: 'USD', rates: demoMarket.rates, today, includePartial: true }).points;
  const { netWorth } = financialTotals(records);
  assert.ok(Math.abs(net.at(-1).net - netWorth) < 1, 'the chart ends at today\'s net worth');
  assert.ok(net[0].net < net.at(-1).net);

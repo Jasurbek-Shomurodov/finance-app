@@ -12,8 +12,7 @@ import { useLanguage } from '@/components/language-provider';
 import { ErrorPopup } from '@/components/presentation-foundation/error-popup';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
 import { TodayButton } from '@/components/presentation-foundation/today-button';
-import { PanelSkeleton } from '@/components/presentation-foundation/loading-placeholder';
-import { BudgetSkeleton } from '@/components/presentation-foundation/screen-skeletons';
+import { BudgetSkeleton, BudgetYearSkeleton } from '@/components/presentation-foundation/screen-skeletons';
 import { PageHeader } from '@/components/presentation-foundation/page-header';
 import { RowMenu } from '@/components/presentation-foundation/row-menu';
 import { Segmented } from '@/components/presentation-foundation/segmented';
@@ -29,7 +28,9 @@ import { depositMonth, depositToday } from '@/lib/deposit-interest';
 import { normalizeEntry, type Entry } from '@/lib/finance';
 import { showError } from '@/lib/feedback';
 import { formatMonthYear, formatYear } from '@/lib/format';
-import { periodMonths } from '@/lib/cash-flow-report';
+import { DrawerLink } from '@/components/presentation-foundation/drawer-link';
+import { SpendingWatchlists } from '@/components/spending-watchlists';
+import { flowLink, reportFlowLink } from '@/lib/add-links';
 import { convertAmount, marketRates } from '@/lib/market';
 import { emptyPlanning } from '@/lib/planning';
 
@@ -37,7 +38,7 @@ export function BudgetScreen() {
  const { t, locale } = useLanguage();
  const name = useCategoryName();
  // The workspace's one Budget: a change here reaches the forecasts on Overview, Cash flow and Goals at once.
- const { user, demo, reload, refreshRecords, currency, market, planning, transactionTools, workspacePreferences, workspaceLoading, budget, addCashFlow, editRecord, archiveSchedule, readOnly, setSankey } = useWorkspace();
+ const { user, demo, reload, refreshRecords, currency, market, planning, transactionTools, workspacePreferences, workspaceLoading, budget, addCashFlow, editRecord, archiveSchedule, readOnly, preferencesData, forecastMonth, setForecastMonth } = useWorkspace();
  const today = depositToday(), thisMonth = depositMonth();
  const [month, setMonth] = useState(thisMonth);
  const [view, setView] = useState<'month' | 'year'>('month');
@@ -126,15 +127,17 @@ export function BudgetScreen() {
     <Button variant="outline" size="icon" aria-label={t(view === 'year' ? 'Next year' : 'Next month')} onClick={() => setMonth(shiftMonth(month, view === 'year' ? 12 : 1))}><ChevronRight size={16}/></Button>
     <TodayButton current={month === thisMonth} onClick={() => setMonth(thisMonth)}/>
    </div>
-   {/* The period's money as a Sankey: income by category into what was spent and what is left. */}
-   <Button variant="outline" onClick={() => setSankey({ target: { side: 'cashflow' }, title: t('Money flow'), month, months: view === 'year' ? periodMonths(month, 'year') : undefined, period: view === 'year' ? formatYear(Number(month.slice(0, 4)), locale) : undefined })}><Workflow size={16} aria-hidden="true"/>{t('Money flow')}</Button>
+   {/* The money flow diagram has one home: Cash flow for a month (opened on this one when it has begun), Reports for a year. */}
+   <Button asChild variant="outline"><DrawerLink href={view === 'year' ? reportFlowLink : flowLink} onClick={() => { if (view === 'month' && month <= thisMonth) setForecastMonth(month); }}><Workflow size={16} aria-hidden="true"/>{t('Money flow')}</DrawerLink></Button>
    <Button variant="outline" onClick={() => setSettingsOpen(true)}><Settings size={16} aria-hidden="true"/>{t('Settings')}</Button>
   </PageHeader>
   {view === 'month' && <BudgetRateNotice planned={left.missing} actual={history.get(month)?.missing ?? 0}/>}
-  {error ? <InlineError message={t(error)} onRetry={refreshRecords}/> : loading ? (view === 'year' ? <PanelSkeleton label={t('Loading records…')} rows={6}/> : <BudgetSkeleton label={t('Loading records…')}/>) : view === 'year' ? <BudgetYear rows={categories} mode={budget.state.mode} month={month} history={history} amounts={budget.state.amounts} schedules={planning.data.records} currency={currency} rates={rates} today={today}/> : <BudgetMonth month={month} today={today} currency={currency} rates={rates} data={data} splits={splits} rows={rows} groups={groups} left={left} bucket={bucketCard}
+  {error ? <InlineError message={t(error)} onRetry={refreshRecords}/> : loading ? (view === 'year' ? <BudgetYearSkeleton label={t('Loading records…')}/> : <BudgetSkeleton label={t('Loading records…')}/>) : view === 'year' ? <BudgetYear rows={categories} mode={budget.state.mode} month={month} history={history} amounts={budget.state.amounts} schedules={planning.data.records} currency={currency} rates={rates} today={today}/> : <BudgetMonth month={month} today={today} currency={currency} rates={rates} data={data} splits={splits} rows={rows} groups={groups} left={left} bucket={bucketCard}
    goals={goals} contributionOf={contributionOf} contributions={contributions} averageOf={key => historyOf(key).average}
    tools={{ renderPlanned: planned, rowMenu, onOpen: setViewing, onMove: (id, target, visible) => void order.reorder(id, target, visible), moveDisabled: readOnly || order.disabled }}
    side={<AgeOfMoneyTile records={ageHistory.records} accounts={planning.data.records} currency={currency} today={today} rates={rates}/>}/>}
+  {/* Watchlists measure this month's spending against targets of their own, beside the budget they refine. */}
+  {view === 'month' && ready && !workspacePreferences.error && <div id="watchlists"><SpendingWatchlists data={planning.data} owner={user} demo={demo} revision={reload} month={forecastMonth} splits={splits} today={today} currency={currency} currencies={preferencesData.currencies} market={market} preferences={workspacePreferences}/></div>}
   <ErrorPopup message={order.error}/>
   {editing && <CategorySettingsDialog category={editing.category} figures={editing.figures} month={month} currency={currency} onSave={budget.saveCategory} onClose={() => setEditing(null)}/>}
   {viewing && <CategoryDetailsDialog row={rows.find(row => row.key === viewing.key) ?? viewing} history={historyOf(viewing.key)} data={data} splits={splits} bills={viewing.direction === 'expense' ? billsOf(viewing) : []} month={month} today={today} currency={currency} rates={rates} onEditBill={readOnly ? undefined : bill => { setViewing(null); editRecord(bill); }} onClose={() => setViewing(null)}/>}

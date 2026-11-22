@@ -617,7 +617,7 @@ test('a failed or unfinished read stops the Budget page, and Recalculate saves n
  const saves=[];
  const read=(extra={})=>({data:{splits:[]},loading:false,error:'',retry(){},...extra});
  const workspace={user:'me',demo:false,reload:0,refreshRecords(){workspace.refreshed=true;},currency:'USD',market:null,planning:{data:{...emptyPlanning,removedKinds:[]},loading:false,error:''},transactionTools:read(),workspaceLoading:false,
-  budget:{state:{mode:'flex',applyForward:false,categories:[],amounts:[]},loading:false,error:'',retry(){},saveAmounts:async(...call)=>saves.push(call)},addCashFlow(){},editRecord(){},archiveSchedule:async()=>{},readOnly:false,setSankey(){}};
+  budget:{state:{mode:'flex',applyForward:false,categories:[],amounts:[]},loading:false,error:'',retry(){},saveAmounts:async(...call)=>saves.push(call)},addCashFlow(){},editRecord(){},archiveSchedule:async()=>{},readOnly:false,workspacePreferences:{data:{preferences:{}},error:''},preferencesData:{currencies:['USD']},forecastMonth:'2026-11',setForecastMonth(){}};
  let remote={data:emptyPlanning,loading:false,initialLoading:false,error:'',retry(){}};
  const {BudgetScreen}=loadTS('components/workspace/screens/budget-screen.tsx',{...overrides,
   '@/components/workspace/workspace-provider':{useWorkspace:()=>workspace},
@@ -625,18 +625,21 @@ test('a failed or unfinished read stops the Budget page, and Recalculate saves n
   '@/hooks/use-subscriptions':{useInsightHistory:()=>({records:[]})},
   '@/components/display-money':{useDisplayMoney:()=>({show:value=>String(value)})},
   '@/components/presentation-foundation/tone':{signTone:()=>undefined},
-  '@/components/budget/budget-lazy':{BudgetSettingsDialog:host('settings'),CategoryDetailsDialog:host('details'),CategorySettingsDialog:host('category'),PlanUnplannedDialog:host('plan-unplanned'),SpendingPaceCard:host('pace')},
+  '@/components/budget/budget-lazy':{BudgetSettingsDialog:host('settings'),CategoryDetailsDialog:host('details'),CategorySettingsDialog:host('category'),PlanUnplannedDialog:host('plan-unplanned')},
+  '@/components/spending-pace-card':{SpendingPaceCard:host('pace')},'@/components/spending-watchlists':{SpendingWatchlists:host('watchlists')},
   ...Object.fromEntries([['inline-error','InlineError'],['today-button','TodayButton'],['page-header','PageHeader'],['row-menu','RowMenu']].map(([file,name])=>[`@/components/presentation-foundation/${file}`,{[name]:host(file)}])),
   '@/components/presentation-foundation/loading-placeholder':{PanelSkeleton:host('panel-skeleton'),LoadingPlaceholder:host('loading-placeholder')},
-  '@/components/presentation-foundation/screen-skeletons':{BudgetSkeleton:host('budget-skeleton')},
+  '@/components/presentation-foundation/screen-skeletons':{BudgetSkeleton:host('budget-skeleton'),BudgetYearSkeleton:host('budget-year-skeleton')},
   '@/components/presentation-foundation/stat-tile':{StatTile:host('stat-tile'),StatTiles:host('stat-tiles')},
  });
  const open=()=>{const view=mount(React.createElement(BudgetScreen));nodes(one(view,'x-page-header'),node=>node.props?.onClick&&text(node).includes('T:Settings'))[0].props.onClick();view.render();return view;};
  const settings=open();
  assert.equal(one(settings,'x-settings').props.canRecalculate,true,'everything read');
+ assert.equal(one(settings,'x-watchlists').props.month,'2026-11','the watchlists sit beside the month they refine');
  workspace.planning={...workspace.planning,error:'Could not load planning data.'};
  let view=open();
  assert.equal(one(view,'x-inline-error').props.message,'T:Could not load planning data.');
+ assert.equal(all(view,'x-watchlists').length,0,'a failed read shows no watchlists');
  view=open();
  one(view,'x-inline-error').props.onRetry();
  assert.equal(workspace.refreshed,true,'Try again reads the workspace again');
@@ -671,7 +674,7 @@ test('Make recurring presets the bill from its row: a custom row with history st
  const calls=[];
  const budget={state:{mode:'category',applyForward:false,categories:[],amounts:[{category_key:'c1',month,amount:120,currency:'USD',applies_forward:true}]},loading:false,error:'',retry(){},saveAmount:async()=>{},saveRepeat:async()=>{},saveAmounts:async()=>{},saveCategory:async()=>{},saveSettings:async()=>{}};
  const workspace={user:null,demo:true,reload:0,currency:'USD',market:null,planning:{data:{...emptyPlanning,records,categories,removedKinds:[]},loading:false,error:''},transactionTools:{data:{splits:[]}},workspaceLoading:false,budget,
-  addCashFlow:(kind,frequency,preset)=>calls.push({kind,frequency,preset}),editRecord(){},archiveSchedule:async()=>{},readOnly:false};
+  addCashFlow:(kind,frequency,preset)=>calls.push({kind,frequency,preset}),editRecord(){},archiveSchedule:async()=>{},readOnly:false,workspacePreferences:{data:{preferences:{}},error:''},preferencesData:{currencies:['USD']},forecastMonth:'2026-11',setForecastMonth(){}};
  const screenOverrides={...overrides,
   '@/components/workspace/workspace-provider':{useWorkspace:()=>workspace},
   '@/hooks/use-owner-resource':{useOwnerResource:()=>({data:emptyPlanning,loading:false,initialLoading:false,error:'',retry(){}})},
@@ -680,6 +683,7 @@ test('Make recurring presets the bill from its row: a custom row with history st
   ...Object.fromEntries([['inline-error','InlineError'],['today-button','TodayButton'],['page-header','PageHeader'],['row-menu','RowMenu'],['stat-tile','StatTile'],['history-chart','HistoryChart'],['empty-state','EmptyState']].map(([file,name])=>[`@/components/presentation-foundation/${file}`,{[name]:host(file)}])),
   '@/components/presentation-foundation/loading-placeholder':{PanelSkeleton:host('panel-skeleton'),LoadingPlaceholder:host('loading-placeholder')},
   '@/components/presentation-foundation/stat-tile':{StatTile:host('stat-tile'),StatTiles:host('stat-tiles')},
+  '@/components/spending-pace-card':{SpendingPaceCard:host('pace')},'@/components/spending-watchlists':{SpendingWatchlists:host('watchlists')},
  };
  const {BudgetScreen}=loadTS('components/workspace/screens/budget-screen.tsx',screenOverrides);
  const view=mount(React.createElement(BudgetScreen));
@@ -740,7 +744,7 @@ test('Year view in flex mode: a Flexible line carries the bucket’s plan, flexi
  const records=[payment('g3',120,'c1'),payment('r1',300,null,'Rent expense')];
  const amounts=[{category_key:'c1',month,amount:120,currency:'USD',applies_forward:true},{category_key:'Rent expense',month,amount:300,currency:'USD',applies_forward:true},{category_key:'flex:flexible',month,amount:400,currency:'USD',applies_forward:true}];
  const budget={state:{mode:'flex',applyForward:false,categories:[],amounts},loading:false,error:'',retry(){},saveAmount:async()=>{},saveRepeat:async()=>{},saveAmounts:async()=>{},saveCategory:async()=>{},saveSettings:async()=>{}};
- const workspace={user:null,demo:true,reload:0,currency:'USD',market:null,planning:{data:{...emptyPlanning,records,categories:[{id:'c1',name:'Gym',direction:'expense'}],removedKinds:[]},loading:false,error:''},transactionTools:{data:{splits:[]}},workspaceLoading:false,budget,addCashFlow(){},editRecord(){},archiveSchedule:async()=>{},readOnly:false,setSankey(){}};
+ const workspace={user:null,demo:true,reload:0,currency:'USD',market:null,planning:{data:{...emptyPlanning,records,categories:[{id:'c1',name:'Gym',direction:'expense'}],removedKinds:[]},loading:false,error:''},transactionTools:{data:{splits:[]}},workspaceLoading:false,budget,addCashFlow(){},editRecord(){},archiveSchedule:async()=>{},readOnly:false,workspacePreferences:{data:{preferences:{}},error:''},preferencesData:{currencies:['USD']},forecastMonth:'2026-11',setForecastMonth(){}};
  const screenOverrides={...overrides,
   '@/components/workspace/workspace-provider':{useWorkspace:()=>workspace},
   '@/hooks/use-owner-resource':{useOwnerResource:()=>({data:emptyPlanning,loading:false,initialLoading:false,error:'',retry(){}})},
@@ -748,6 +752,7 @@ test('Year view in flex mode: a Flexible line carries the bucket’s plan, flexi
   ...Object.fromEntries([['inline-error','InlineError'],['today-button','TodayButton'],['page-header','PageHeader'],['row-menu','RowMenu'],['history-chart','HistoryChart'],['empty-state','EmptyState']].map(([file,name])=>[`@/components/presentation-foundation/${file}`,{[name]:host(file)}])),
   '@/components/presentation-foundation/loading-placeholder':{PanelSkeleton:host('panel-skeleton'),LoadingPlaceholder:host('loading-placeholder')},
   '@/components/presentation-foundation/stat-tile':{StatTile:host('stat-tile'),StatTiles:host('stat-tiles')},
+  '@/components/spending-pace-card':{SpendingPaceCard:host('pace')},'@/components/spending-watchlists':{SpendingWatchlists:host('watchlists')},
  };
  const {BudgetScreen}=loadTS('components/workspace/screens/budget-screen.tsx',screenOverrides);
  const view=mount(React.createElement(BudgetScreen));
@@ -761,24 +766,40 @@ test('Year view in flex mode: a Flexible line carries the bucket’s plan, flexi
  assert.equal(cell(rowsByName['T:Total expenses']),`${money(420)}T:of ${money(700)}`,'the total plans Rent 300 plus the bucket 400, never Gym’s own 120');
 });
 
-test('SpendingPaceCard draws the month so far beside the even pace, with its status, the plan and the day of the month',()=>{
- const chart=Object.fromEntries(['CartesianGrid','ComposedChart','Line','ReferenceDot','ResponsiveContainer','Tooltip','XAxis','YAxis'].map(name=>[name,host(name)]));
- const {SpendingPaceCard}=loadTS('components/budget/spending-pace-card.tsx',{...overrides,recharts:chart});
- const points=[{date:'2026-11-01',spent:0,pace:20},{date:'2026-11-02',spent:150.4,pace:40},{date:'2026-11-03',spent:null,pace:60}];
- const view=mount(React.createElement(SpendingPaceCard,{pace:{points,spent:150.4,day:2,days:30,status:'above_pace'},plan:600,currency:'USD'}));
- const title=one(view,'x-panel-title');assert.equal(title.props.title,'T:Spending pace');assert.equal(text(title),'T:Above pace');
+test('SpendingPaceCard, shared by Budget and the Dashboard: the month so far beside last month and the even pace, with its status, the plan and the day of the month',()=>{
+ const charts={SpendingPaceChart:host('pace-chart')};
+ const {SpendingPaceCard}=loadTS('components/spending-pace-card.tsx',{...overrides,'@/components/charts-lazy':charts,'@/hooks/use-owner-resource':{useOwnerResource:()=>({})},
+  '@/components/presentation-foundation/empty-state':{EmptyState:host('empty-state')},'@/components/presentation-foundation/inline-error':{InlineError:host('inline-error')},'@/components/presentation-foundation/loading-placeholder':{ChartSkeleton:host('chart-skeleton')}});
+ const points=[{day:1,current:0,previous:10,pace:20},{day:2,current:150.4,previous:30,pace:40},{day:3,current:null,previous:50,pace:60}];
+ const pace={month:'2026-11',previousMonth:'2026-10',running:true,points,spent:150.4,previousToDate:30,missing:false,empty:false,day:2,days:30,plan:600,status:'above_pace'};
+ const data={records:[],investmentLinks:[]};
+ // Budget's side panel (compact): the figure, the plan and the day head a short chart, with the month's first and last day under it.
+ const view=mount(React.createElement(SpendingPaceCard,{compact:true,pace,data,rates:{USD:1},currency:'USD'}));
+ assert.equal(nodes(view.tree,node=>node.type==='section')[0].props.className,'panel budget-pace');
+ const title=one(view,'x-panel-title');assert.equal(text(expand(title.props.title,'title')),'T:Spending pace','the day stands in the figure, not the title');assert.equal(text(title),'T:Above pace');
  assert.equal(nodes(title,node=>node.type==='span')[0].props.className,'status-badge is-caution');
  assert.equal(text(byClass(view,'budget-pace-figure')[0]),`${money(150.4)}T:${money(600)} plannedT:Day 2 of 30`);
- assert.deepEqual(all(view,'x-Line').map(line=>line.props.dataKey),['pace','spent']);
- const dot=one(view,'x-ReferenceDot');assert.deepEqual([dot.props.x,dot.props.y],['2026-11-02',150.4],'the dot marks the last day reached');
- const tip=one(view,'x-Tooltip');
- assert.equal(tip.props.labelFormatter('2026-11-02'),'2 November 2026');
- assert.deepEqual(tip.props.formatter(150.4,'spent'),[money(150.4),'T:Spent']);assert.deepEqual(tip.props.formatter(40,'pace'),[money(40),'T:Even pace']);
- assert.equal(text(byClass(view,'budget-pace-axis')[0]),'1 November 20263 November 2026','dates go through the date formatter');
- assert.equal(text(byClass(view,'budget-pace-legend')[0]),'T:SpentT:Even pace');
- // Without a usable rate there is no plan: the spending line stands alone, and a month not reached has no day or status.
- const bare=mount(React.createElement(SpendingPaceCard,{pace:{points:[{date:'2026-12-01',spent:null,pace:null}],spent:0,day:0,days:31,status:null},plan:null,currency:'USD'}));
- assert.equal(text(byClass(bare,'budget-pace-figure')[0]),money(0));assert.equal(text(one(bare,'x-panel-title')),'');
- assert.equal(all(bare,'x-ReferenceDot').length,0);assert.equal(text(byClass(bare,'budget-pace-legend')[0]),'T:Spent');
- for(const [status,name] of [['on_pace','status-badge is-paid'],['over_plan','status-badge is-overdue']])assert.equal(nodes(one(mount(React.createElement(SpendingPaceCard,{pace:{points,spent:1,day:2,days:30,status},plan:600,currency:'USD'})),'x-panel-title'),node=>node.type==='span')[0].props.className,name);
+ const chart=one(view,'x-pace-chart');assert.deepEqual([chart.props.pace,chart.props.data,chart.props.compact,chart.props.currency],[pace,data,true,'USD'],'the chart draws the same pace');
+ assert.equal(text(byClass(view,'budget-pace-axis')[0]),'1 November 202630 November 2026','dates go through the date formatter');
+ assert.equal(text(byClass(view,'spending-pace-legend')[0]),'T:This monthT:Last monthT:Even pace');
+ assert.equal(byClass(view,'partial-total').length,0);
+ // Another month Budget shows is named; without a usable rate there is no plan, no even pace and no status, and it says so.
+ const bare=mount(React.createElement(SpendingPaceCard,{compact:true,pace:{...pace,month:'2026-08',previousMonth:'2026-07',running:false,spent:0,day:31,days:31,plan:null,status:null,missing:true},data,currency:'USD'}));
+ assert.equal(text(byClass(bare,'budget-pace-figure')[0]),`${money(0)}T:Day 31 of 31`);assert.equal(text(one(bare,'x-panel-title')),'');
+ assert.equal(text(byClass(bare,'spending-pace-legend')[0]),'August 2026July 2026');
+ assert.equal(text(byClass(bare,'partial-total')[0]),'T:Exchange rate unavailable.');
+ for(const [status,name] of [['on_pace','status-badge is-paid'],['over_plan','status-badge is-overdue']])assert.equal(nodes(one(mount(React.createElement(SpendingPaceCard,{compact:true,pace:{...pace,status},data,currency:'USD'})),'x-panel-title'),node=>node.type==='span')[0].props.className,name);
+ // The Dashboard's card: the day in the title, View all to the month's spending, no figure of its own (the Spent tile has it).
+ const full=mount(React.createElement(SpendingPaceCard,{pace,data,currency:'USD',href:'/transactions?direction=expense'}));
+ assert.equal(nodes(full.tree,node=>node.type==='section')[0].props.className,'panel overview-panel spending-pace');
+ assert.equal(text(expand(one(full,'x-panel-title').props.title,'title')),'T:Spending pace T:Day 2 of 30');
+ assert.equal(one(full,'x-drawer-link').props.href,'/transactions?direction=expense');
+ assert.equal(byClass(full,'budget-pace-figure').length,0);assert.equal(one(full,'x-pace-chart').props.compact,false);
+ assert.equal(one(mount(React.createElement(SpendingPaceCard,{pace:{...pace,empty:true},data,currency:'USD'})),'x-empty-state').props.description,'T:No spending recorded this month or last.');
+ // While its read loads or after it fails, the card says so and shows no status.
+ const loading=mount(React.createElement(SpendingPaceCard,{pace,data,currency:'USD',loading:true}));
+ assert.equal(one(loading,'x-chart-skeleton').props.label,'T:Loading records…');assert.equal(text(one(loading,'x-panel-title')),'');
+ let retried=0;
+ const failed=mount(React.createElement(SpendingPaceCard,{pace,data,currency:'USD',error:'Could not load records.',onRetry:()=>retried++}));
+ one(failed,'x-inline-error').props.onRetry();assert.deepEqual([one(failed,'x-inline-error').props.message,retried],['T:Could not load records.',1]);
 });

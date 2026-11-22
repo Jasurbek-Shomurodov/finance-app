@@ -79,6 +79,15 @@
 .stat-tile-bar>i{display:block;height:100%;border-radius:inherit;background:var(--primary)}
 .stat-tile-bar.negative>i{background:var(--negative)}
 .stat-tile-bar.positive>i{background:var(--positive)}
+/* A tile that is one link and still carries an ⓘ (Safe to spend): the label's link covers the whole tile, and the ⓘ sits
+   above it, so a tap on it explains the figure instead of following the link. */
+.stat-tile-covered{position:relative}
+.stat-tile-covered>h3{display:flex;align-items:center;gap:4px}
+.stat-tile-cover{color:inherit}
+.stat-tile-cover::before{content:"";position:absolute;inset:0;border-radius:inherit}
+.stat-tile-cover:focus-visible{outline:none}
+.stat-tile-cover:focus-visible::before{outline:2px solid var(--ring);outline-offset:2px}
+.stat-tile-covered .info-hint{position:relative;z-index:1}
 /* Under the figures, across both columns: the monthly surplus no goal has yet, and the way to Plan funding. */
 .surplus-nudge{grid-column:1/-1;flex-direction:row;flex-wrap:wrap;align-items:center;gap:12px 16px}
 .surplus-nudge>div{display:grid;gap:2px;flex:1 1 9rem;min-width:0}
@@ -95,8 +104,9 @@
 .dashboard-column{display:flex;flex-direction:column;gap:16px;min-width:0;min-height:80px}
 @container content (max-width:900px){.dashboard-grid{grid-template-columns:minmax(0,1fr)}}
 .dashboard-goal-list{display:flex;flex-direction:column;gap:16px;margin:0;padding:0;list-style:none}
-.dashboard-goal-list li{display:flex;gap:12px;align-items:flex-start}
-.dashboard-goal-list li>div{flex:1;min-width:0}
+/* A goal's row is one link to that goal. */
+.dashboard-goal-row{display:flex;gap:12px;align-items:flex-start;min-height:44px;margin:-6px -8px;padding:6px 8px;border-radius:var(--radius-control);color:inherit}
+.dashboard-goal-row>div{flex:1;min-width:0}
 .dashboard-goal-list p{display:flex;justify-content:space-between;gap:12px;margin:0 0 6px;font-size:var(--type-small);font-weight:500}
 .dashboard-goal-list p span{min-width:0;overflow-wrap:anywhere}
 .dashboard-goal-list small{display:block;margin-top:6px;font-size:var(--type-caption);color:var(--muted-foreground)}
@@ -115,14 +125,15 @@
 .workspace .content .overview-panel .panel-title{margin-bottom:20px;align-items:baseline}
 .overview-panel .panel-title a{font-size:var(--type-caption);font-weight:500;color:var(--primary);white-space:nowrap}
 .overview-panel .panel-title a:hover{text-decoration:underline;text-underline-offset:3px}
-/* A card's headline figure sits in its title: "Spending $3,960 this month". */
+/* A card's short live figure sits in its title: "Spending pace · Day 21 of 30". */
 .panel-title h2 .panel-figure{font-family:var(--font-ui);font-size:var(--type-compact);font-weight:500;letter-spacing:0;color:var(--muted-foreground)}
-.spending-pace-delta{margin:-12px 0 12px;font-size:var(--type-caption);color:var(--muted-foreground)}
 .spending-pace-chart{min-width:0}
-.spending-pace-legend{display:flex;gap:16px;margin:8px 0 0;padding:0;list-style:none;font-size:var(--type-caption);color:var(--muted-foreground)}
+.spending-pace-legend{display:flex;flex-wrap:wrap;gap:4px 16px;margin:8px 0 0;padding:0;list-style:none;font-size:var(--type-caption);color:var(--muted-foreground)}
 .spending-pace-legend li{display:flex;align-items:center;gap:6px}
 .spending-pace-legend i{width:14px;height:3px;border-radius:2px;background:var(--primary)}
 .spending-pace-legend i.previous{background:var(--muted-foreground);opacity:.55}
+/* The even pace toward the plan is the dashed guide line. */
+.spending-pace-legend i.pace,.spending-pace-tooltip header .portfolio-tooltip-row>i.pace{height:0;border-top:2px dashed var(--muted-foreground);border-radius:0;background:none}
 .spending-pace-tooltip header .portfolio-tooltip-row{grid-column:1 / -1;margin-top:6px}
 .spending-pace-tooltip header .portfolio-tooltip-row>i.current{background:var(--primary)}
 .spending-pace-tooltip header .portfolio-tooltip-row>i.previous{background:var(--muted-foreground);opacity:.55}
@@ -144,15 +155,35 @@
 .overview-list small{min-width:48px;text-align:end;font-size:var(--type-caption);color:var(--muted-foreground);font-variant-numeric:tabular-nums}
 .overview-list small.negative{color:var(--negative)}
 .overview-list:is(.overview-due,.overview-commitments) li{grid-template-columns:auto minmax(0,1fr) auto}
-.overview-due li>span:nth-child(2){display:grid;min-width:0;overflow-wrap:anywhere}
+.overview-due :is(li,.overview-row)>span:nth-child(2){display:grid;min-width:0;overflow-wrap:anywhere}
 .overview-due small{min-width:0;text-align:start}
 /* A recent transaction on the dashboard opens its Sankey. */
 .dashboard-transactions li[role=button]{cursor:pointer;border-radius:var(--radius-control)}
 .dashboard-transactions li[role=button]:hover{background:color-mix(in srgb,var(--foreground) 4%,transparent)}
 .dashboard-transactions li[role=button]:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
-.overview-due-pay{justify-self:start;min-height:24px;display:inline-flex;align-items:center;font-size:var(--type-caption);font-weight:500;color:var(--primary)}
-.overview-due-pay:hover{text-decoration:underline;text-underline-offset:3px}
-@media(pointer:coarse){.overview-due-pay{min-height:44px}}
+/* What a tap on an upcoming payment does, said on the row: the whole row is the link. */
+.overview-due-pay{justify-self:start;font-size:var(--type-caption);font-weight:500;color:var(--primary)}
+/* A row that opens its item is one link across the whole row: at least 44px tall, tinted under the pointer, giving when
+   pressed and ringed on keyboard focus. It keeps the list's columns (subgrid), so amounts stay aligned. */
+.overview-list li:has(>.overview-row){padding:0}
+.overview-row{display:grid;grid-column:1/-1;grid-template-columns:subgrid;align-items:center;min-height:44px;margin-inline:-8px;padding:11px 8px;border-radius:var(--radius-control);color:inherit}
+:is(.overview-row,.dashboard-goal-row,.improve-row,.where-bars a.flow-bar-row){transition:transform var(--motion-quick) var(--ease-out)}
+@media(hover:hover){:is(.overview-row,.dashboard-goal-row,.improve-row,.where-bars a.flow-bar-row):hover{background:color-mix(in srgb,var(--foreground) 4%,transparent)}}
+:is(.overview-row,.dashboard-goal-row,.improve-row,.where-bars a.flow-bar-row):active{transform:scale(var(--press-wide))}
+:is(.overview-row,.dashboard-goal-row,.improve-row,.where-bars a.flow-bar-row):focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
+/* Where it is going: the Cash flow bars (.flow-bars) as links, each with its share and its change under the name. */
+.where-bars .flow-bar-row{min-height:44px}
+.where-bars .flow-bar-name small{display:flex;flex-wrap:wrap;align-items:center;gap:2px 4px;font-size:var(--type-caption);color:var(--muted-foreground);font-variant-numeric:tabular-nums}
+.where-bars .flow-bar-name .status-badge{margin-inline-start:4px}
+/* What to improve sits under the bars, set apart by space and a hairline rather than a card of its own. */
+.dashboard-improve{margin-top:20px;padding-top:16px;border-top:1px solid var(--hairline)}
+.dashboard-improve>h3{margin:0 0 4px;font-size:var(--type-caption);font-weight:500;color:var(--muted-foreground)}
+.dashboard-improve>ul{margin:0;padding:0;list-style:none}
+.improve-row{display:flex;align-items:center;gap:12px;min-height:44px;margin-inline:-8px;padding:6px 8px;border-radius:var(--radius-control);color:inherit;font-size:var(--type-small)}
+.improve-row>svg{flex-shrink:0;width:18px;height:18px;color:var(--muted-foreground)}
+.improve-row>span{flex:1;min-width:0;overflow-wrap:anywhere}
+.improve-row>.improve-row-go{width:16px;height:16px}
+[dir=rtl] .improve-row-go{scale:-1 1}
 .overview-panel .cash-footer{margin-top:0;padding-top:16px;font-size:var(--type-small);font-weight:600}
 .overview-panel .cash-footer strong{font-variant-numeric:tabular-nums}
 .overview-panel .empty{padding:24px 8px;font-size:var(--type-small)}
@@ -279,12 +310,8 @@ button.budget-category-name:hover>span:not(.category-icon){text-decoration:under
 .budget-pace{display:flex;flex-direction:column;gap:10px;padding:16px}
 .budget-pace-figure{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;margin:0;color:var(--muted-foreground);font-size:var(--type-caption)}
 .budget-pace-figure>strong{color:var(--foreground);font-size:var(--type-title);font-weight:500;font-variant-numeric:tabular-nums}
-.budget-pace-chart{height:110px}
-.budget-pace-axis,.budget-pace-legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:0;color:var(--muted-foreground);font-size:var(--type-caption)}
+.budget-pace-axis{display:flex;flex-wrap:wrap;gap:4px 14px;margin:0;color:var(--muted-foreground);font-size:var(--type-caption)}
 .budget-pace-axis{justify-content:space-between}
-.budget-pace-legend>span{display:inline-flex;align-items:center;gap:6px}
-.budget-pace-legend>span::before{content:"";width:12px;border-top:2px solid var(--primary)}
-.budget-pace-legend>[data-key=pace]::before{border-top:2px dashed var(--muted-foreground)}
 .budget-left-tabs{display:flex;width:100%;flex-wrap:wrap;overflow:visible}
 .budget-left-tabs>button{flex:1 1 auto;padding-inline:10px}
 .budget-left-summary{display:flex;flex-direction:column;gap:8px;margin:0;font-size:var(--type-small)}

@@ -13,7 +13,7 @@ const event = (id, record_id, event_type, amount, occurred_on, balance = null) =
 const r = createRenderer(), ui = stubs();
 const errors = [], reads = [];
 let rate, fetched = { ok: true, fx: [{ date: ago(500), rates: { UZS: 10000 } }] };
-const foundation = Object.fromEntries(['empty-state', 'inline-error', 'loading-placeholder', 'panel-title', 'stat-tile', 'segmented', 'count', 'category-icon', 'record-icon', 'delete-button', 'drawer-link'].map(name => ['@/components/presentation-foundation/' + name, hostModule()]));
+const foundation = Object.fromEntries(['empty-state', 'inline-error', 'loading-placeholder', 'panel-title', 'stat-tile', 'segmented', 'count', 'category-icon', 'record-icon', 'delete-button', 'drawer-link', 'screen-skeletons'].map(name => ['@/components/presentation-foundation/' + name, hostModule()]));
 const base = {
  ...ui.modules, ...foundation, 'lucide-react': hostModule(), recharts: hostModule(),
  '@/components/presentation-foundation/chart': hostModule({ chartHeight: { compact: 220 }, chartColors: { income: 'green', loss: 'red' }, leadArea: id => ({ fill: id }), moneyTick: () => value => 'M' + value, monthTick: () => month => 'T' + month, monthLabel: () => month => 'L' + month }),
@@ -26,6 +26,7 @@ const base = {
 const lazy = r.load('components/performance/performance-charts-lazy.tsx', base);
 const charts = r.load('components/performance/performance-charts.tsx', base);
 const { PerformanceView } = r.load('components/performance/performance-view.tsx', { ...base, '@/components/performance/performance-charts-lazy': charts, '@/hooks/use-rate-history': { useRateHistory: () => rate } });
+const { PayoutsAlertsView } = r.load('components/performance/payouts-alerts-view.tsx', base);
 
 const market = { rates: { USD: 1, UZS: 12000 }, quotes: { 'Crypto:BTC': { usd: 50000, source: 'test', fetchedAt: today } }, errors: {}, fx: null, stocksConfigured: false };
 const records = [
@@ -42,19 +43,27 @@ const movements = [{ id: 'm1', kind: 'buy', source_id: 'cash', target_id: 'BTC',
 const saved = [];
 const preferences = (items, fail) => ({ data: { preferences: items ? [{ key: 'price_alerts', data: { items } }] : [] }, save: async preference => { if (fail) throw fail === true ? 'no' : Error(fail); saved.push(preference); } });
 const history = { records, events, movements, cashflows: [] };
-const open = (props = {}) => r.mount(React.createElement(PerformanceView, { history, rate, error: false, onRetry() {}, currency: 'USD', market, accounts: [{ id: 'wallet', name: 'Cold wallet', kind: 'Crypto', currency: 'USD' }], preferences: preferences(), demo: false, ...props }));
+const open = (props = {}) => r.mount(React.createElement(PerformanceView, { history, rate, error: false, onRetry() {}, currency: 'USD', market, accounts: [{ id: 'wallet', name: 'Cold wallet', kind: 'Crypto', currency: 'USD' }], ...props }));
+// Investments › Payouts & alerts: expected payouts, price alerts and the Bitcoin ladder, read from the same history.
+const openPayouts = (props = {}) => r.mount(React.createElement(PayoutsAlertsView, { history, error: false, onRetry() {}, currency: 'USD', market, preferences: preferences(), demo: false, ...props }));
 const panel = title => r.find(node => node.type === 'section' && text(r.all(byType('PanelTitle'), node)[0]?.props.title ?? '').includes(title));
 const named = name => node => node.type?.displayName === name;
 const tile = label => r.find(node => node.type === 'StatTile' && node.props.label === label).props;
 
 test('the view waits for history, reports a failed read, and says when nothing is held', () => {
  open({ history: null });
- assert.equal(r.find(byType('PanelSkeleton')).props.label, 'Loading history…');
+ assert.equal(r.find(byType('PerformanceSkeleton')).props.label, 'Loading history…');
  let retried = false;
  open({ history: null, error: true, onRetry: () => { retried = true; } });
  r.find(byType('InlineError')).props.onRetry();assert.ok(retried);
  open({ history: { records: [], events: [] } });
  assert.equal(r.find(byType('EmptyState')).props.title, 'No performance yet');
+ // Payouts & alerts waits for and retries the same history read.
+ openPayouts({ history: null });
+ assert.equal(r.find(byType('PanelSkeleton')).props.label, 'Loading history…');
+ retried = false;
+ openPayouts({ history: null, error: true, onRetry: () => { retried = true; } });
+ r.find(byType('InlineError')).props.onRetry();assert.ok(retried);
 });
 
 test('the headline adds up its lines, and the currency line shows only with dated rates', () => {
@@ -100,19 +109,21 @@ test('realized gains show a year, switch years and download that year\'s rows', 
 });
 
 test('payouts are grouped by month in the display currency, or explain how to get them', () => {
- open();
+ openPayouts();
  const section = panel('Expected payouts');
  assert.match(text(section), /KO/);assert.match(text(section), /\+\$12/);
  assert.equal(r.find(byType('DrawerLink'), section).props.href, '/income-expenses');
- open({ history: { ...history, records: records.map(item => item.id === 'KO' ? { ...item, currency: 'TRY' } : item) } });
+ openPayouts({ history: { ...history, records: records.map(item => item.id === 'KO' ? { ...item, currency: 'TRY' } : item) } });
  assert.match(text(r.find(byType('PanelTitle'), panel('Expected payouts')).props.title), /Expected payouts —/);
- open({ history: { ...history, events: events.filter(item => item.event_type !== 'income') } });
+ openPayouts({ history: { ...history, events: events.filter(item => item.event_type !== 'income') } });
  assert.match(r.find(byType('EmptyState'), panel('Expected payouts')).props.description, /No payouts expected yet/);
 });
 
 test('a property shows its yield and cap rate, and Bitcoin its ladder and a DCA plan', () => {
  open();
  assert.match(text(panel('Rental yield')), /Gross yield5%Cap rate3%/);
+ assert.equal(r.all(node => node.props?.className === 'ladder-lot').length, 0, 'Bitcoin lives on Payouts & alerts, not Profit & loss');
+ openPayouts();
  const bitcoin = panel('Bitcoin');
  assert.equal(r.all(node => node.props?.className === 'ladder-lot', bitcoin).length, 2);
  assert.match(text(bitcoin), /Earlier purchases/);assert.match(text(bitcoin), /New average buy price/);
@@ -122,13 +133,13 @@ test('a property shows its yield and cap rate, and Bitcoin its ladder and a DCA 
  r.fire(r.all(named('FormattedNumberInput'), panel('Bitcoin'))[0], 'onValueChange', 500);r.fire(r.all(named('FormattedNumberInput'), panel('Bitcoin'))[1], 'onValueChange', 3.7);r.fire(r.all(named('FormattedNumberInput'), panel('Bitcoin'))[2], 'onValueChange', 5);
  assert.equal(r.all(named('FormattedNumberInput'), panel('Bitcoin'))[1].props.value, 3);
  // No units or no price: nothing to draw.
- open({ history: { ...history, records: records.map(item => item.id === 'BTC' ? { ...item, cost: 0 } : item) } });
+ openPayouts({ history: { ...history, records: records.map(item => item.id === 'BTC' ? { ...item, cost: 0 } : item) } });
  assert.equal(r.all(node => node.props?.className === 'ladder-track').length, 0);
 });
 
 test('price alerts are added, shown against the live price and deleted; the sample workspace keeps them on screen', async () => {
  const alert = { id: 'a1', record_id: 'BTC', direction: 'above', price: 45000, reached_on: null };
- open({ preferences: preferences([alert, { ...alert, id: 'a2', direction: 'below', price: 1 }, { ...alert, id: 'a3', record_id: 'gone' }]) });
+ openPayouts({ preferences: preferences([alert, { ...alert, id: 'a2', direction: 'below', price: 1 }, { ...alert, id: 'a3', record_id: 'gone' }]) });
  const section = () => panel('Price alerts');
  assert.match(text(section()), /Rises to \$45,000 · now \$50,000/);assert.match(text(section()), /Reached/);assert.match(text(section()), /Falls to \$1/);assert.match(text(section()), /Waiting/);
  await r.fireAsync(r.all(byType('DeleteButton'), section())[0], 'onClick');
@@ -144,17 +155,17 @@ test('price alerts are added, shown against the live price and deleted; the samp
  // A price of zero adds nothing; a refused save says so.
  const count = saved.length;
  await r.fireAsync(form(), 'onSubmit', { preventDefault() {} });assert.equal(saved.length, count);
- open({ preferences: preferences([alert], 'Load saved preferences before making changes.') });
+ openPayouts({ preferences: preferences([alert], 'Load saved preferences before making changes.') });
  await r.fireAsync(r.find(byType('DeleteButton'), section()), 'onClick');
- open({ preferences: preferences([alert], true) });
+ openPayouts({ preferences: preferences([alert], true) });
  await r.fireAsync(r.find(byType('DeleteButton'), section()), 'onClick');
  assert.deepEqual(errors, ['Load saved preferences before making changes.', 'Could not save changes.']);
- open({ demo: true });
+ openPayouts({ demo: true });
  assert.equal(r.find(byType('EmptyState'), section()).props.description, 'No alerts yet.');
  r.fire(r.find(named('FormattedNumberInput'), form()), 'onValueChange', 70000);
  await r.fireAsync(form(), 'onSubmit', { preventDefault() {} });
  assert.match(text(section()), /Rises to \$70,000/);
- open({ history: { ...history, records: records.filter(item => !['BTC', 'KO'].includes(item.id)) } });
+ openPayouts({ history: { ...history, records: records.filter(item => !['BTC', 'KO'].includes(item.id)) } });
  assert.equal(r.all(node => node.type === 'section' && text(node).includes('Price alerts')).length, 0);
 });
 

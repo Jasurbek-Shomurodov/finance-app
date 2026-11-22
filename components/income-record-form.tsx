@@ -4,7 +4,11 @@ import {MonthDayField} from '@/components/presentation-foundation/month-day-fiel
 import { ErrorPopup } from '@/components/presentation-foundation/error-popup';
 import { ScheduledPaymentField } from '@/components/presentation-foundation/scheduled-payment-field';
 import { openPaymentSchedules } from '@/lib/planning';
-import { changedFields, scheduleChoice } from '@/lib/form-suggestions';
+import { changedFields, nameSuggestion, scheduleChoice } from '@/lib/form-suggestions';
+import { entryFieldProblems } from '@/lib/record-save';
+import { isStandInName } from '@/lib/record-names';
+import { useEntrySubmit } from '@/components/record-dialog/entry-submit';
+import { FieldError } from '@/components/presentation-foundation/field-error';
 import { FormFooter } from '@/components/presentation-foundation/form-footer';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
 import {frequencyLabels} from '@/lib/finance';
@@ -12,7 +16,7 @@ import { selectTransactionCategory } from '@/lib/transaction-categories';
 import { IncomeSourcePicker } from '@/components/income-source-picker';
 import Link from 'next/link';
 import { CalendarDays } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { useLanguage } from '@/components/language-provider';
 import { Button } from '@/components/ui/button';
 import { NativeSelect } from '@/components/ui/native-select';
@@ -52,6 +56,39 @@ function DueDateField({label,date,choices,disabled,onChoose}:{label:string;date:
  </NativeSelect></label>;
 }
 
+/** The income's name. A one-time income may be named; left blank it stands in with its category, as an expense does,
+ * and a name used before brings its category and last amount. A salary plan or a schedule must be named. */
+const incomeNameRequired=(editing:Entry,salaryPlan:boolean)=>salaryPlan||editing.frequency!=='Once';
+function IncomeName({editing,setEditing,planning,original,salaryPlan,error}:Pick<RecordDialogProps,'setEditing'|'planning'|'original'>&{editing:Entry;salaryPlan:boolean;error?:string}){
+ const {t}=useLanguage();
+ const rename=(name:string)=>setEditing({...editing,name});
+ if(incomeNameRequired(editing,salaryPlan))return <RecordNameInput label={t(salaryPlan?'Salary plan name':'Name')} entry={editing} rows={planning.data.records} original={original} placeholder={t(salaryPlan?'e.g. Monthly salary':'e.g. Freelance payment')} error={error} onChange={rename}/>;
+ const categoryName=planning.data.categories.find(category=>category.id===editing.custom_category_id)?.name;
+ const kinds=offeredKinds('income',planning.data.removedKinds??[],editing.kind);
+ return <RecordNameInput optional label={t('Name (optional)')} entry={isStandInName(editing,categoryName)?{...editing,name:''}:editing} rows={planning.data.records} original={original} placeholder={t('e.g. Freelance payment')} onPick={match=>setEditing(nameSuggestion(editing,match,planning.data.categories,'income',kinds))} onChange={rename}/>;
+}
+
+/** Notes fold away unless the income already has some. */
+function IncomeNotes({notes,onChange}:{notes:string;onChange:(notes:string)=>void}){
+ const {t}=useLanguage();
+ const [open]=useState(()=>!!notes);
+ return <details className="record-optional-details" open={open}><summary>{t('Optional details')}</summary><div className="record-optional-fields">
+  <label>{t('Notes (optional)')}<Textarea value={notes} maxLength={2000} rows={2} onChange={event=>onChange(event.target.value)}/></label>
+ </div></details>;
+}
+
+/** What Save is waiting for, as an English key or the load's own error; empty when it can be pressed. */
+function incomeWaiting(editing:Entry,named:boolean,planning:{loading:boolean;error:string},earningSources?:{loading:boolean;error:string}){
+ if(!named&&planning.loading)return 'Loading records…';
+ if(!named&&planning.error)return planning.error;
+ if(editing.earning_source_id&&earningSources?.loading)return 'Loading income sources…';
+ if(editing.earning_source_id&&earningSources?.error)return earningSources.error;
+ return '';
+}
+
+const linkedSourceLabel=(kind:string)=>kind==='Salary'?'Linked salary':kind==='Rent income'?'Linked rental':'Linked business';
+const linkedSourcePlaceholder=(kind:string)=>kind==='Salary'?'Choose a salary plan':kind==='Rent income'?'Choose a rental':'Choose a business';
+
 export function IncomeRecordForm({onSuggest,editing,setEditing,busy,save,currencies,planning,error,demo,earningSources,onLeave,original}:RecordDialogProps){
  const {t,locale}=useLanguage();
  const removed=planning.data.removedKinds??[];
@@ -72,10 +109,10 @@ export function IncomeRecordForm({onSuggest,editing,setEditing,busy,save,currenc
  const openDue=!duePlan||!editing?null:picked&&picked.schedule===dueSchedule&&dueChoices.includes(picked.date)?picked.date:openScheduleDue(duePlan,editing.date,settled);
  useEffect(()=>{if(openDue)setEditing(current=>current&&(dueField==='earning_due_on'?current.earning_source_id:current.income_source_id)&&current[dueField]!==openDue?{...current,[dueField]:openDue}:current);},[openDue,dueField,editing?.[dueField],setEditing]);
  const chooseDue=(date:string)=>dueSchedule&&setPicked({schedule:dueSchedule,date});
- // Notes fold away unless the income already has some.
- const [detailsOpen]=useState(()=>!!editing?.notes);
  // A currency the person picked stays when they then link a schedule in another one.
  const [currencyChosen,setCurrencyChosen]=useState(false);
+ const entry=useEntrySubmit(save);
+ const sourceErrorId=useId();
  if(!editing)return null;
  const update=(patch:Partial<Entry>)=>setEditing({...editing,...patch});
  const sources=incomeSources(editing.kind,planning.data.records,editing.id);
@@ -87,6 +124,10 @@ export function IncomeRecordForm({onSuggest,editing,setEditing,busy,save,currenc
  const named=!reusable&&(editing.kind==='Other income'||salaryPlan);
  const legacy=!!original&&!original.income_source_id&&!original.business_id&&original.kind===editing.kind&&!sourceId;
  const missing=editing.earning_source_id?!reusable:!named&&!source&&!legacy;
+ // A source still to choose or a missing amount is said under its field when Save is pressed; Save itself only waits for a load.
+ const problems=entryFieldProblems(editing,{source:missing,name:named&&incomeNameRequired(editing,salaryPlan)});
+ const errors=entry.shown(problems);
+ const waiting=incomeWaiting(editing,named,planning,earningSources);
  // The due date follows the record date; the effect above moves it to the earliest open one.
  const changeDate=(date:string)=>update({date,...(!original&&reusable&&editing.earning_due_on?{earning_due_on:selectEarningSource({...editing,date},reusable).earning_due_on}:{}),...(!original&&editing.kind==='Salary'&&source&&editing.income_due_on?{income_due_on:salaryDueDate(source,date)}:{})});
  const actual=editing.frequency==='Once'&&!salaryPlan;
@@ -94,15 +135,13 @@ export function IncomeRecordForm({onSuggest,editing,setEditing,busy,save,currenc
  // A new one-time income may pay a recurring income by id; schedules of income sources and salary plans are offered by their own pickers instead.
  // A one-time income may name the schedule it pays, a saved one too while it names none; a source receipt or a salary with a plan already does.
  const schedules=actual&&!reusable&&!(editing.kind==='Salary'&&editing.income_source_id)&&!original?.occurrence_record_id?openPaymentSchedules(planning.data.records,planning.data.occurrences??[],editing):[];
- const sourceLabel=editing.kind==='Salary'?'Linked salary':editing.kind==='Rent income'?'Linked rental':'Linked business';
- const sourcePlaceholder=editing.kind==='Salary'?'Choose a salary plan':editing.kind==='Rent income'?'Choose a rental':'Choose a business';
  // Leaving for another page closes the form through the dialog's guard, never while saving.
  const leaveTo=(href:string)=>(event:{preventDefault:()=>void})=>{if(busy){event.preventDefault();return;}if(onLeave)onLeave(event,href);else setEditing(null);};
  const categoriesLink=<Link className="panel-link" href="/settings#categories" onNavigate={leaveTo('/settings#categories')}>{t('Manage categories in Settings')}</Link>;
- const cashAccount=<CashAccountField entry={editing} records={planning.data.records} loading={planning.loading} error={planning.error} busy={busy} onSuggest={onSuggest&&!original?account_id=>onSuggest(changedFields(editing,withAccount(editing,account_id,planning.data.records))):undefined} onChange={account_id=>setEditing(withAccount(editing,account_id,planning.data.records))}/>;
- return <form className="record-form income-form" onSubmit={save}>
-  <AmountCurrencyFields prominent amountPlaceholder={reusable?.mode==='fixed'&&editing.payment_type!=='bonus'&&reusable.currency===editing.currency&&reusable.amount!==null?formatNumber(reusable.amount,locale,0):undefined} amount={editing.amount} currency={editing.currency} currencies={currencies} savedCurrency={original?.currency} disabled={busy} label={t(salaryPlan?'Amount per occurrence':'Amount')} onAmountChange={amount=>update({amount})} onCurrencyChange={currency=>{setCurrencyChosen(true);update({currency,account_exchange_rate:null,account_rate_date:null,account_currency:null});}}/>
-  {simple&&earningSources&&<div className="field-with-links"><IncomeSourcePicker value={editing.custom_category_id??editing.earning_source_id??(retained?'saved':editing.kind==='Other income'?'':'choose')} disabled={busy||earningSources.loading||!!earningSources.error||planning.loading||!!planning.error} options={[
+ const cashAccount=<CashAccountField entry={editing} records={planning.data.records} loading={planning.loading} error={planning.error} busy={busy} problem={errors.account} onSuggest={onSuggest&&!original?account_id=>onSuggest(changedFields(editing,withAccount(editing,account_id,planning.data.records))):undefined} onChange={account_id=>setEditing(withAccount(editing,account_id,planning.data.records))}/>;
+ return <form className="record-form income-form" noValidate onKeyDown={entry.shortcut} onSubmit={event=>entry.submit(event,problems)}>
+  <AmountCurrencyFields prominent amountPlaceholder={reusable?.mode==='fixed'&&editing.payment_type!=='bonus'&&reusable.currency===editing.currency&&reusable.amount!==null?formatNumber(reusable.amount,locale,0):undefined} amount={editing.amount} currency={editing.currency} currencies={currencies} savedCurrency={original?.currency} disabled={busy} error={errors.amount} label={t(salaryPlan?'Amount per occurrence':'Amount')} onAmountChange={amount=>update({amount})} onCurrencyChange={currency=>{setCurrencyChosen(true);update({currency,account_exchange_rate:null,account_rate_date:null,account_currency:null});}}/>
+  {simple&&earningSources&&<div className="field-with-links" data-field="source"><IncomeSourcePicker error={errors.source} value={editing.custom_category_id??editing.earning_source_id??(retained?'saved':editing.kind==='Other income'?'':'choose')} disabled={busy||earningSources.loading||!!earningSources.error||planning.loading||!!planning.error} options={[
    ...(offeredKinds('income',removed,editing.custom_category_id?undefined:editing.kind).includes('Other income')?[{id:'',name:t('Other income'),kind:'Other income'}]:[]),
    ...planning.data.categories.filter(category=>category.direction==='income').map(category=>({id:category.id,name:category.name,kind:category.id,categoryLabel:category.name})),
    ...(original&&!original.earning_source_id&&original.kind!=='Other income'?[{id:'saved',name:original.name,kind:original.kind}]:[]),
@@ -125,7 +164,7 @@ export function IncomeRecordForm({onSuggest,editing,setEditing,busy,save,currenc
   {salaryPlan&&<p className="muted">{t('Set up the recurring salary plan you will select when recording payments.')}</p>}
   {!simple&&<label>{t('Category')}<NativeSelect value={editing.custom_category_id??editing.kind} disabled={busy||!!reusable||planning.loading||!!planning.error} leadingIcon={<RecordIcon record={editing}/>} onChange={event=>{setSalaryPlan(false);const selected=selectTransactionCategory(editing,event.target.value,planning.data.categories,'income');setEditing({...changeIncomeKind(editing,selected.kind),custom_category_id:selected.custom_category_id});}}>{offeredKinds('income',removed,editing.kind).map(kind=><option key={kind} value={kind}>{t(kind)}</option>)}{planning.data.categories.filter(category=>category.direction==='income').map(category=><option key={category.id} value={category.id}>{category.name}</option>)}</NativeSelect></label>}
   {!simple&&<div className="field-links">{categoriesLink}</div>}
-  {!reusable&&(named?<RecordNameInput label={salaryPlan?t('Salary plan name'):t('Name')} entry={editing} rows={planning.data.records} original={original} placeholder={t(salaryPlan?'e.g. Monthly salary':'e.g. Freelance payment')} onChange={name=>update({name})}/>:!simple&&<div><label>{t(sourceLabel)}<NativeSelect required={!legacy} value={sourceId??''} disabled={busy||planning.loading||!!planning.error} onChange={event=>{const selected=sources.find(row=>row.id===event.target.value);if(selected)update(selectIncomeSource(editing,selected));else update({name:'',business_id:null,income_source_id:null});}}><option value="">{legacy?original.name:t(sourcePlaceholder)}</option>{sourceId&&!source&&original&&<option value={sourceId} disabled>{`${original.name} (${t('Paused or no longer available')})`}</option>}{sources.map(row=><option key={row.id} value={row.id}>{row.name}</option>)}</NativeSelect></label>
+  {!reusable&&(named?<IncomeName editing={editing} setEditing={setEditing} planning={planning} original={original} salaryPlan={salaryPlan} error={errors.name}/>:!simple&&<div data-field="source"><label>{t(linkedSourceLabel(editing.kind))}<NativeSelect required={!legacy} aria-invalid={errors.source?true:undefined} aria-describedby={errors.source?sourceErrorId:undefined} value={sourceId??''} disabled={busy||planning.loading||!!planning.error} onChange={event=>{const selected=sources.find(row=>row.id===event.target.value);if(selected)update(selectIncomeSource(editing,selected));else update({name:'',business_id:null,income_source_id:null});}}><option value="">{legacy?original.name:t(linkedSourcePlaceholder(editing.kind))}</option>{sourceId&&!source&&original&&<option value={sourceId} disabled>{`${original.name} (${t('Paused or no longer available')})`}</option>}{sources.map(row=><option key={row.id} value={row.id}>{row.name}</option>)}</NativeSelect><FieldError id={sourceErrorId} message={errors.source}/></label>
    {!planning.loading&&!planning.error&&!sources.length&&!sourceId&&<p className="muted">{t(editing.kind==='Salary'?'Add a salary plan before recording its income.':editing.kind==='Rent income'?'Add a property in Assets & investments first.':'Add a business in Assets & investments first.')}</p>}
    {editing.kind==='Salary'?<Link href="/income-expenses#income-sources">{t('Add income source')}</Link>:<Link href="/assets">{t('Assets & investments')}</Link>}
   </div>)}
@@ -138,10 +177,8 @@ export function IncomeRecordForm({onSuggest,editing,setEditing,busy,save,currenc
   {schedule&&!salaryPlan&&cashAccount}
   <ScheduledPaymentField schedules={schedules} value={editing.occurrence_record_id} saved={!!original?.occurrence_record_id} disabled={busy||planning.loading} onChange={schedule=>update(scheduleChoice(editing,schedule,currencies,currencyChosen))}/>
   {planning.error&&<InlineError message={t(planning.error)}/>}
-  <details className="record-optional-details" open={detailsOpen}><summary>{t('Optional details')}</summary><div className="record-optional-fields">
-   <label>{t('Notes (optional)')}<Textarea value={editing.notes} maxLength={2000} rows={2} onChange={event=>update({notes:event.target.value})}/></label>
-  </div></details>
+  <IncomeNotes notes={editing.notes} onChange={notes=>update({notes})}/>
   <ErrorPopup message={error}/>
-  <FormFooter busy={busy} onCancel={()=>setEditing(null)}><Button className="primary" disabled={busy||missing||(!named&&(planning.loading||!!planning.error))|| (!!editing.earning_source_id&&(earningSources?.loading||!!earningSources?.error))}>{t(busy?'Saving…':salaryPlan?'Save salary plan':demo?'Save in demo':'Save income')}</Button></FormFooter>
+  <FormFooter busy={busy} blocked={waiting?t(waiting):undefined} onCancel={()=>setEditing(null)}><Button className="primary" disabled={busy||!!waiting}>{t(busy?'Saving…':salaryPlan?'Save salary plan':demo?'Save in demo':'Save income')}</Button>{/* After the main button in the form, so Enter still saves and closes; the styles draw it before. */}{!original&&!editing.revision&&editing.frequency==='Once'&&!salaryPlan&&<Button type="submit" variant="outline" name="another" value="1" disabled={busy||!!waiting}>{t('Save and add another')}</Button>}</FormFooter>
  </form>;
 }

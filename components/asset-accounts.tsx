@@ -3,7 +3,7 @@ import Link from 'next/link';
 import type { ReactNode, Ref } from 'react';
 import { AssetCard } from '@/components/presentation-foundation/asset-card';
 import { Button } from '@/components/ui/button';
-import { LoadingPlaceholder } from '@/components/presentation-foundation/loading-placeholder';
+import { AssetCardsSkeleton } from '@/components/presentation-foundation/screen-skeletons';
 import { Count } from '@/components/presentation-foundation/count';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
 import { useLanguage } from '@/components/language-provider';
@@ -25,7 +25,7 @@ export function AssetAccounts({ref,pnl=null,accounts,records,market,loading,erro
  const {t,locale}=useLanguage();
  return <section ref={ref} className="asset-account-section">
   <div className="asset-holdings-heading"><h2>{t('Accounts')}<Count value={accounts.length+accountCount} label={t('{count} accounts',{count:formatNumber(accounts.length+accountCount,locale,0)})}/></h2><Link className="panel-link" href="/accounts">{t('Manage accounts')}</Link></div>
-  {error ? <InlineError message={t(error)} onRetry={onRetry}/> : loading ? <LoadingPlaceholder label={t('Loading records…')}/> : !accounts.length&&!accountCount ? <p className="muted">{t('No accounts yet.')}</p> : <div className="asset-card-grid">{children}{accounts.map(account=>{
+  {error ? <InlineError message={t(error)} onRetry={onRetry}/> : loading ? <AssetCardsSkeleton label={t('Loading records…')}/> : !accounts.length&&!accountCount ? <p className="muted">{t('No accounts yet.')}</p> : <div className="asset-card-grid">{children}{accounts.map(account=>{
    const {holdings,total}=holdingAccountValue(account,records,market);
    const converted=total===null?null:convertAmount(total,account.currency,currency,marketRates(market));
    // Each holding in the display currency too; one without a rate reads "—", never its own currency.

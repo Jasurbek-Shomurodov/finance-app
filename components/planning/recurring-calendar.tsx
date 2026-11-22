@@ -12,7 +12,7 @@ import { calendarWeeks } from '@/lib/recurring';
 import { ofTone, type DayEntry, type DayGroup, type DayTone } from '@/lib/recurring-days';
 
 const tones: readonly DayTone[] = ['income', 'bill', 'debt'];
-export const toneLabels: Record<DayTone, string> = { income: 'Income', bill: 'Bills', debt: 'Debt payments' };
+const toneLabels: Record<DayTone, string> = { income: 'Income', bill: 'Bills', debt: 'Debt payments' };
 
 /** A day's total for one tone: one payment reads as it was entered, several are added in the display currency (— when one
  * cannot be converted). Money in carries its plus. */

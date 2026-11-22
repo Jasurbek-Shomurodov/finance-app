@@ -206,6 +206,8 @@ function overview({ demo = false, records = [card], preferences = [], loading = 
   '@/components/workspace/workspace-provider': { useWorkspace: () => workspace },
   '@/components/debt-summary': { DebtSummary: keep('summary') }, '@/components/loans/loans-list': { LoansList: keep('list') },
   '@/components/loans/loans-side': { OwedBreakdown: keep('owed'), PayoffPlanCard: keep('plan') },
+  '@/components/presentation-foundation/screen-skeletons': { PayoffPlanCardSkeleton: keep('planSkeleton') },
+  '@/components/language-provider': { useLanguage: () => ({ t: text => text, locale: 'en-US' }) },
   '@/hooks/use-portfolio-history': { usePortfolioHistory: (user, isDemo, reload) => ({ history: { events: [{ saved: [user.id, isDemo, reload] }] } }) },
   '@/lib/demo-finance': { demoHistory: (rows, today) => ({ events: [{ sample: [rows, today] }] }) },
   '@/lib/deposit-interest': { depositToday: () => '2026-11-14' },
@@ -232,11 +234,13 @@ test('the loans overview reads the saved history, or the sample one, and plans w
  assert.equal(overview({ preferences: [{ key: 'debt_plan', data: { ...plan, currency: 'EUR' } }] }).seen.plan.plan.extra, 0);
 });
 
-test('the loans overview leaves out the side panel without debts and the plan card while planning loads', () => {
+test('the loans overview leaves out the side panel without debts, and holds the plan card\'s place while planning loads', () => {
  const none = overview({ records: [ali] });
- assert.ok(!none.seen.owed && !none.seen.plan);
+ assert.ok(!none.seen.owed && !none.seen.plan && !none.seen.planSkeleton);
  assert.equal(none.seen.summary.debtFree.ready, false);
  assert.doesNotMatch(none.r.html(), /loans-side/);
  const loading = overview({ loading: true });
  assert.ok(loading.seen.owed && !loading.seen.plan);
+ assert.deepEqual(loading.seen.planSkeleton, { label: 'Loading records…' }, 'its shimmer stands where the plan will, so it never drops in');
+ assert.ok(!overview().seen.planSkeleton, 'gone once the plan is drawn');
 });

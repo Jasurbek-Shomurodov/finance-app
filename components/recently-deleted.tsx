@@ -10,7 +10,7 @@ import { ArchiveRestore, Search } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { RecoveryRowsSkeleton } from '@/components/presentation-foundation/screen-skeletons';
+import { RecoveryDetailSkeleton, RecoveryRowsSkeleton } from '@/components/presentation-foundation/screen-skeletons';
 import { Pagination } from '@/components/presentation-foundation/pagination';
 import { formatNumber } from '@/lib/format';
 import { requestJson } from '@/lib/api-client';
@@ -92,6 +92,8 @@ export function RecentlyDeleted({demo,demoItems,onRestore,onDelete,onSaved,conte
   :<div className="recovery-list">{deletedDays(visible).map(({day,items:list})=><DeletedDay key={day} day={day} today={today}>{list.map(item=><DeletedRow key={item.id} item={item} names={names} selected={item.id===selected?.id} busy={busy} onSelect={()=>choose(item)} onRestore={()=>act(item,false)} onDiscard={()=>{setError('');setPermanent(item);}}/>)}</DeletedDay>)}</div>}
  <Pagination label={t('Record pages')} summary={t('Page {page}',{page:formatNumber(page,locale,0)})} page={page} hasNext={bin.hasNext} disabled={loading||busy} onPage={setPage}/>
  </section>
+ {/* While a page loads, the chosen item's card keeps its column beside the rows, as the drawer's shimmer draws it. */}
+ {loading&&!loadError&&<div className="recovery-side"><RecoveryDetailSkeleton/></div>}
  {selected&&!loading&&<div ref={panel} className="recovery-side"><RestorePanel item={selected} names={names} preview={names.preview(selected)} busy={busy} onRestore={()=>act(selected,false)} onDiscard={()=>{setError('');setPermanent(selected);}}/></div>}
  </div>
  <ConfirmDialog open={!!permanent} onClose={()=>{setPermanent(null);setError('');}} busy={busy} deletes error={error} title={t('Permanently delete {name}?',{name:permanent?deletedName(permanent,t):''})} description={t('This permanently removes the saved item and its recovery data from the database. This cannot be undone.')} confirmLabel={t(busy?'Saving…':'Delete permanently')} onConfirm={async()=>{if(permanent)await act(permanent,true);}}/></>;

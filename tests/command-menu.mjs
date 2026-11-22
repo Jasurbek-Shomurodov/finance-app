@@ -150,6 +150,9 @@ test('the shell holds one command menu, the top bar its search button, and the s
  assert.ok(!/from '@\/components\/workspace\/command-menu'/.test(bar),'the bar opens the menu by event, without importing it');
  assert.match(css,/\[data-slot=dialog-content\]\.command-menu\{[^}]*backdrop-filter/);
  assert.match(css,/@container topbar \(max-width:900px\)\{\.command-search\{width:38px/);
- assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\.command-line,\.command-line-icon,\.command-line-enter\{transition:none\}/);
+ // A line gives on press with the other tappable rows, and reduced motion stills it with them in one place (motion.css).
+ assert.match(css,/:is\([^)]*\.command-line[,)][^{]*:active[^{]*\{transform:scale\(var\(--press-wide\)\)\}/);
+ assert.doesNotMatch(css,/\.command-line:active\{transform:scale\(/,'no press of its own that reduced motion would miss');
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{[^@]*:root\{--press:1;--press-wide:1\}\s*\*,\*::before,\*::after\{transition:none!important\}/);
  assert.match(fs.readFileSync('app/globals.css','utf8'),/interaction\.css";\n@import "\.\/styles\/command\.css";/);
 });

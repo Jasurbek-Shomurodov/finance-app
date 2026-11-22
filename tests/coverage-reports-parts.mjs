@@ -15,8 +15,9 @@ test('a Reports link picks a tab, businesses and a cash flow view, and ignores w
  assert.deepEqual(view.reportLink('?tab=income&business=b1,b2&business=b3&view=pnl'), { tab: 'income', businesses: ['b1', 'b2', 'b3'], view: 'pnl', mode: 'breakdown' });
  assert.deepEqual(view.reportLink('?view=trends'), { mode: 'trends' });
  assert.deepEqual(view.reportLink('?tab=nope&view=pie'), {});
- assert.deepEqual(view.reportTabsFor(false), ['cash_flow', 'spending', 'income']);
- assert.deepEqual(view.reportTabsFor(true), ['cash_flow', 'spending', 'income', 'tax']);
+ // Every report is always listed; tax prep without a business invites adding one (docs/product-map.md).
+ assert.deepEqual(view.reportTabs, ['cash_flow', 'spending', 'income', 'tax']);
+ assert.deepEqual(view.reportLink('?tab=tax'), { tab: 'tax' });
  const lines = [{ id: 'a', direction: 'income' }, { id: 'b', direction: 'expense' }];
  assert.deepEqual(['cash_flow', 'spending', 'income'].map(tab => view.tabLines(tab, lines).map(line => line.id)), [['a', 'b'], ['b'], ['a']]);
 });
@@ -41,14 +42,15 @@ test('report names translate built-in categories, keep custom names, and call no
 const r = createRenderer();
 const ui = stubs();
 const sankeys = [];
-const workspace = { user: { id: 'me' }, demo: true, reload() {}, currency: 'USD', market: null, transactionTools: { data: { splits: [] }, retry() {} }, businessList: [], workspacePreferences: { data: { preferences: [] }, save: async preference => saved.push(preference) }, setViewing: record => viewed.push(record.id), setSankey: request => sankeys.push(request.title), storedRecord: record => record, household: { state: null }, planning: { data: null, loading: false, error: '' }, budget: { state: { categories: [] } } };
+const workspace = { user: { id: 'me' }, demo: true, reload() {}, currency: 'USD', market: null, transactionTools: { data: { splits: [] }, retry() {} }, businessList: [], workspacePreferences: { data: { preferences: [] }, save: async preference => saved.push(preference) }, setViewing: record => viewed.push(record.id), setSankey: request => sankeys.push(request.title), storedRecord: record => record, household: { state: null }, planning: { data: null, loading: false, error: '' }, budget: { state: { categories: [] } }, readOnly: false, setSettingUpBusinesses: () => setups.push(true) };
+const setups = [];
 const saved = [], viewed = [];
 let search = '', range = { data: null, loading: false, error: '', retry() { range.retried = true; } };
 const charts = hostModule({ attributeColor: (attribute, key) => attribute + ':' + key });
 const modules = {
  ...ui.modules,
- 'lucide-react': hostModule(), '@/components/business-reports': charts, '@/components/cash-flow-report': hostModule(), '@/components/tax-prep-sheet': hostModule(), './business-sankey': hostModule(), './profit-loss-table': hostModule(),
- ...Object.fromEntries(['page-header', 'segmented', 'panel-title', 'stat-tile', 'business-filter', 'owner-filter', 'inline-error', 'loading-placeholder', 'screen-skeletons', 'today-button'].map(name => ['@/components/presentation-foundation/' + name, hostModule()])),
+ 'lucide-react': hostModule(), '@/components/business-reports': charts, '@/components/cash-flow-report': hostModule(), '@/components/tax-prep-sheet': hostModule(), './business-sankey': hostModule(), './profit-loss-table': hostModule(), '@/components/cash-flow/flow-bars': hostModule(),
+ ...Object.fromEntries(['page-header', 'segmented', 'panel-title', 'stat-tile', 'business-filter', 'owner-filter', 'inline-error', 'loading-placeholder', 'screen-skeletons', 'today-button', 'empty-state'].map(name => ['@/components/presentation-foundation/' + name, hostModule()])),
  '@/components/presentation-foundation/chart': hostModule({ intervalLabel: interval => key => `${interval}:${key}` }),
  '@/components/presentation-foundation/tone': { signTone: value => value > 0 ? 'positive' : value < 0 ? 'negative' : undefined },
  '@/components/workspace/workspace-provider': { useWorkspace: () => workspace },
@@ -152,8 +154,17 @@ test('a link opens a tab, a business and a view; tax prep needs a business', () 
  assert.equal(r.find(byType('BusinessFilter')).props.value[0], 'b1');
  assert.ok(r.find(byType('TrendChart')));
  open({ link: '?tab=tax', businesses: [] });
- assert.equal(header().props.tabs.props.value, 'cash_flow');
+ assert.equal(header().props.tabs.props.value, 'tax', 'tax prep is always listed');
+ assert.deepEqual(header().props.tabs.props.options.map(option => option.value), ['cash_flow', 'spending', 'income', 'tax']);
  assert.equal(r.all(byType('BusinessFilter')).length, 0);
+ assert.equal(r.all(byType('TaxPrepSheet')).length, 0, 'no business, no tax sheet');
+ const invite = r.find(byType('EmptyState'));
+ assert.equal(invite.props.title, 'No businesses yet.');
+ r.fire(r.find(node => node.type === ui.Button, [invite]), 'onClick');
+ assert.deepEqual(setups, [true], 'the invitation opens business setup');
+ workspace.readOnly = true;r.update();
+ assert.equal(r.all(node => node.type === ui.Button, [r.find(byType('EmptyState'))]).length, 0, 'a read-only member is not offered setup');
+ workspace.readOnly = false;
 });
 
 test('the period is a month, quarter or year the arrows move, and loading or failed reads show their state', () => {
@@ -231,7 +242,7 @@ test('tax prep reads its own year for one business and keeps sample settings in 
  r.fire(r.find(byType('TaxPrepSheet')), 'onYear', Number(year) - 1);r.fire(r.find(byType('TaxPrepSheet')), 'onPeriod', 'q1');
  assert.deepEqual(sheet().lines, []);
  range = { ...range, loading: true };r.update();
- assert.ok(r.find(byType('PanelSkeleton')));
+ assert.ok(r.find(byType('TaxPrepSkeleton')));
  range = { ...range, loading: false, error: 'Could not load records.' };r.update();
  assert.ok(r.find(byType('InlineError')));
  range = { ...range, error: '' };

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/components/language-provider';
 import { formatNumber } from '@/lib/format';
+import { FieldError } from '@/components/presentation-foundation/field-error';
 
 /** One choice: its name, the group it is listed under, and anything shown beside or under the name. */
 export type PickerItem = { id: string; name: string; group: string; disabled?: boolean; badge?: ReactNode; details?: ReactNode };
@@ -14,14 +15,16 @@ type Props = {
  /** The groups in the order the side column lists them; a group with nothing matching the search is left out. */
  groups: readonly string[]; groupLabel: (group: string) => string;
  items: PickerItem[]; value: string; disabled?: boolean; onChange: (id: string) => void;
+ /** Why the choice cannot be saved, as an English key: shown under the field. */
+ error?: string;
 };
 
 /** A choice from a searchable popover: groups down the side, the matching items beside them, and arrow keys between them.
  * Income source and an expense's Linked to are both this picker. */
-export function GroupedPicker({ label, placeholder, searchLabel, allLabel, emptyText, groups, groupLabel, items, value, disabled, onChange }: Props) {
+export function GroupedPicker({ label, placeholder, searchLabel, allLabel, emptyText, groups, groupLabel, items, value, disabled, onChange, error }: Props) {
  const { locale } = useLanguage();
  const [open, setOpen] = useState(false), [search, setSearch] = useState(''), [group, setGroup] = useState('all');
- const labelId = useId(), resultsId = useId();
+ const labelId = useId(), resultsId = useId(), errorId = useId();
  const results = useRef<HTMLDivElement>(null);
  const query = search.trim().toLocaleLowerCase(locale);
  const matching = items.filter(item => `${item.name} ${groupLabel(item.group)}`.toLocaleLowerCase(locale).includes(query));
@@ -32,7 +35,7 @@ export function GroupedPicker({ label, placeholder, searchLabel, allLabel, empty
  const choose = (id: string) => { onChange(id); setOpen(false); };
  const firstResult = () => results.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
  return <div className="income-source-field"><span id={labelId}>{label}</span><Popover modal open={open} onOpenChange={next => { setOpen(next); if (next) { setSearch(''); setGroup('all'); } }}>
-  <PopoverTrigger asChild><Button type="button" variant="outline" className="income-source-trigger" disabled={disabled} aria-labelledby={labelId}>
+  <PopoverTrigger asChild><Button type="button" variant="outline" className="income-source-trigger" disabled={disabled} aria-labelledby={labelId} aria-invalid={error ? true : undefined} aria-describedby={error ? errorId : undefined}>
    <span>{selected?.name ?? placeholder}</span><ChevronDown size={16}/>
   </Button></PopoverTrigger>
   <PopoverContent align="start" collisionPadding={16} className="income-source-popover" aria-labelledby={labelId}>
@@ -52,5 +55,5 @@ export function GroupedPicker({ label, placeholder, searchLabel, allLabel, empty
     {!visible.length && <p role="status" className="muted">{emptyText}</p>}
    </div></div>
   </PopoverContent>
- </Popover></div>;
+ </Popover><FieldError id={errorId} message={error}/></div>;
 }

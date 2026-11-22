@@ -1,15 +1,9 @@
-import { monthEnd } from './calendar-days';
-import { budgetKey, type Entry } from './finance';
+import { budgetKey } from './finance';
 import type { BudgetRow, LeftToBudget } from './budget';
-import { convertAmount } from './market';
-import type { DueItem, PlanningData } from './planning';
-import { cashFlowItems } from './spending';
-import { ratesOf } from './transaction-rates';
-import type { TransactionSplit } from './transaction-tools';
+import type { DueItem } from './planning';
 
 // What the Budget page reads off its rows: which spending has no plan, each row's live state, how income splits into
-// spending, goals and what is left, and the month's spending against an even pace.
-type Rates = number | Record<string, number> | undefined;
+// spending, goals and what is left. The month's spending pace is lib/spending-pace.ts, shared with the Dashboard.
 
 /** Spending with no plan: money went out of a category that has no budget, no bill and no fund behind it. It is listed
  * apart as Unplanned, in ink: nothing was exceeded. A flexible category in flex mode is planned by its bucket, never here. */
@@ -62,41 +56,3 @@ export function leftShares(left: Pick<LeftToBudget, 'income' | 'expenses' | 'con
  if (whole <= 0) return null;
  return { spending: spending / whole * 100, goals: goals / whole * 100, left: rest / whole * 100 };
 }
-
-export type PacePoint = { date: string; spent: number | null; pace: number | null };
-export type PaceStatus = 'on_pace' | 'above_pace' | 'over_plan';
-export type SpendingPace = { points: PacePoint[]; spent: number; day: number; days: number; status: PaceStatus | null };
-
-type PaceRead = { currency: string; today: string; rates: Rates; excluded?: ReadonlySet<string> };
-/** What was spent on each day from `from` to `to`, in `currency`: the walk Budget's actuals take (`cashFlowItems`),
- * without `excluded` categories and without amounts no rate converts. */
-function spendingByDay(data: Pick<PlanningData, 'records' | 'investmentLinks'>, splits: TransactionSplit[], from: string, to: string, { currency, rates, excluded }: PaceRead) {
- const byDay = new Map<string, number>();
- for (const item of cashFlowItems(data.records as Entry[], from, to, { splits, investmentLinks: data.investmentLinks ?? [] })) {
-  if (item.income || item.currency === null) continue;
-  for (const part of item.parts) {
-   const value = excluded?.has(part.category) ? null : convertAmount(part.amount, item.currency, currency, ratesOf(item.dated, rates));
-   if (value !== null && Number.isFinite(value)) byDay.set(item.date, (byDay.get(item.date) ?? 0) + value);
-  }
- }
- return byDay;
-}
-
-/** The month's spending day by day beside an even pace toward `plan`: the plan spread equally over the month's days.
- * Days after `today` carry no spending yet. `status` compares today's total with the even pace, and is null outside the
- * current month or without a plan. */
-export function spendingPace(data: Pick<PlanningData, 'records' | 'investmentLinks'>, splits: TransactionSplit[], month: string, plan: number | null, read: PaceRead): SpendingPace {
- const { today } = read;
- const end = monthEnd(month), days = Number(end.slice(8));
- const byDay = spendingByDay(data, splits, month + '-01', today < end ? today : end, read);
- let spent = 0;
- const points: PacePoint[] = [];
- for (let day = 1; day <= days; day++) {
-  const date = `${month}-${String(day).padStart(2, '0')}`, reached = date <= today;
-  if (reached) spent += byDay.get(date) ?? 0;
-  points.push({ date, spent: reached ? spent : null, pace: plan === null ? null : plan * day / days });
- }
- const current = today.slice(0, 7) === month, day = today < month + '-01' ? 0 : current ? Number(today.slice(8)) : days;
- return { points, spent, day, days, status: current && plan !== null && plan > 0 ? paceStatus(spent, plan, day / days) : null };
-}
-const paceStatus = (spent: number, plan: number, share: number): PaceStatus => spent > plan + 0.005 ? 'over_plan' : spent > plan * share + 0.005 ? 'above_pace' : 'on_pace';

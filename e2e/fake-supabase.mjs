@@ -156,7 +156,7 @@ function order(value, alias) {
   }).join(', ');
 }
 
-/** `*`, columns, `alias:column`, and one level of embedding: `name(columns)`, `alias:name!fk_column(columns)` and
+/** `*`, columns, `alias:column`, `alias:column->key`, and one level of embedding: `name(columns)`, `alias:name!fk_column(columns)` and
  * `name!inner(columns)`, whose filters (`name.column=…`, `name.and=(…)`) narrow the embedded rows, and with `!inner`
  * the base rows too. Returns the select list and the conditions `!inner` adds. */
 async function projection(tx, search, table, alias, schema, params) {
@@ -172,7 +172,13 @@ async function projection(tx, search, table, alias, schema, params) {
         : `(SELECT ${body} FROM public.${identifier(other)} ${sub} WHERE ${conditions.join(' AND ')}) AS ${identifier(label ?? other)}`);
       if (isInner) inner.push(`EXISTS (SELECT 1 FROM public.${identifier(other)} ${sub} WHERE ${conditions.join(' AND ')})`);
     } else if (part === '*') out.push(`${alias}.*`);
-    else { const [label, column] = part.includes(':') ? part.split(':') : [part, part]; out.push(`${alias}.${identifier(column)} AS ${identifier(label)}`); }
+    else {
+      const [label, column] = part.includes(':') ? part.split(':') : [part, part];
+      // `alias:column->key`: one key of a JSON column (the net worth history reads a day's rates by currency).
+      const [base, key] = column.split('->');
+      if (key !== undefined) { identifier(key); out.push(`${alias}.${identifier(base)}->'${key}' AS ${identifier(label)}`); }
+      else out.push(`${alias}.${identifier(column)} AS ${identifier(label)}`);
+    }
   }
   return { select: out.join(', '), inner };
 }

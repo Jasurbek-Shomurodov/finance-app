@@ -211,5 +211,10 @@ test('row actions show for the hovered or focused row only where a pointer hover
  assert.match(css, /@media\(hover:hover\) and \(pointer:fine\)\{\.recurring-list \[data-layout=columns\]>\.recurring-row:not\(:hover,:focus-within\)>\.row-actions:not\(:has\(\[aria-expanded=true\]\)\)\{opacity:0\}\}/, 'hidden only without hover, focus or an open menu');
  assert.doesNotMatch(css, /\.recurring-row[^{]*\.row-actions[^{]*\{[^}]*display:none/, 'never removed: a keyboard reaches them');
  assert.match(css, /\.recurring-list \[data-layout=columns\]>\.recurring-row>\.transaction-amount\{grid-area:1\/4\}/, 'the amount ends the row, so hidden actions leave no hole after it');
- assert.match(css, /@media\(prefers-reduced-motion:reduce\)\{\.recurring-bar:active,\.recurring-coming-row:active\{transform:none\}\}/);
+ // The summary bars and coming rows give on press with every tappable row (interaction.css), through the press token
+ // that reduced motion sets to 1 (motion.css), so neither keeps a press of its own.
+ const all = (await import('./helpers/stylesheet.mjs')).stylesheet();
+ assert.doesNotMatch(css, /\.recurring-(?:bar|coming-row):active\{transform:scale\(/);
+ assert.match(all, /:is\([^)]*\.recurring-coming-row,[^)]*\.recurring-bar,[^{]*:active[^{]*\{transform:scale\(var\(--press-wide\)\)\}/);
+ assert.match(all, /@media\(prefers-reduced-motion:reduce\)\{[^@]*:root\{--press:1;--press-wide:1\}/);
 });

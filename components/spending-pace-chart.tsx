@@ -1,11 +1,11 @@
 "use client";
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useLanguage } from '@/components/language-provider';
-import { ChartGradient, chartAxis, chartColors, chartGrid, chartHeight, chartLine, chartMargin, chartTooltip, chartValueAxis, leadArea, moneyTick } from '@/components/presentation-foundation/chart';
+import { ChartGradient, chartAxis, chartColors, chartGrid, chartHeight, chartLine, chartMargin, chartTooltip, chartValueAxis, guideLine, leadArea, moneyTick } from '@/components/presentation-foundation/chart';
 import { CategoryIcon } from '@/components/presentation-foundation/category-icon';
 import { monthDays } from '@/lib/calendar-days';
 import { niceAxis } from '@/lib/chart-scale';
-import { formatDate, formatMoney, formatNumber } from '@/lib/format';
+import { formatDate, formatMoney, formatMonthYear, formatNumber } from '@/lib/format';
 import type { PlanningData } from '@/lib/planning';
 import { spendingOnDay, type SpendingItem, type SpendingPace, type SpendingPacePoint } from '@/lib/spending-pace';
 
@@ -15,19 +15,26 @@ function SpentOn({ title, items }: { title: string; items: SpendingItem[] }) {
  return <section><h4>{title}</h4>{items.length ? items.slice(0, 5).map(item => <div className="portfolio-tooltip-row" key={item.id}><CategoryIcon kind={item.kind} size="sm"/><div><strong>{item.name}</strong><span>{t(item.kind)}</span></div><b>{formatMoney(item.entered.amount, item.entered.currency, locale)}</b></div>) : <p className="portfolio-tooltip-note">{t('Nothing spent on this day.')}</p>}{items.length > 5 && <p className="portfolio-tooltip-note">{t('{count} more', { count: formatNumber(items.length - 5, locale, 0) })}</p>}</section>;
 }
 
-/** The Spending card's chart: this month's running total over last month's, with where the money went on each day.
+type Props = { pace: SpendingPace; data: Pick<PlanningData, 'records' | 'investmentLinks'>; currency: string; rates?: number | Record<string, number>;
+ /** A short chart without axes, for a side panel (Budget). */ compact?: boolean };
+
+/** The Spending pace chart, the one the Dashboard and Budget share: the month's running total over last month's, beside
+ * an even pace toward the plan when there is one, with where the money went on each day.
  * Its own module, loaded through components/charts-lazy.tsx, so the Overview route and the landing page at `/` load
  * without the chart library. */
-export function SpendingPaceChart({ pace, data, currency, rates }: { pace: SpendingPace; data: Pick<PlanningData, 'records' | 'investmentLinks'>; currency: string; rates?: number | Record<string, number> }) {
+export function SpendingPaceChart({ pace, data, currency, rates, compact = false }: Props) {
  const { t, locale } = useLanguage();
  const money = (amount: number) => formatMoney(amount, currency, locale);
- const axis = niceAxis(pace.points.flatMap(point => [point.current ?? 0, point.previous ?? 0]));
- return <div className="spending-pace-chart"><ResponsiveContainer width="100%" height={chartHeight.compact}>
+ const planned = pace.plan !== null;
+ // The running month reads as This month and Last month; any other month Budget shows is named.
+ const names = pace.running ? [t('This month'), t('Last month')] : [formatMonthYear(pace.month, locale), formatMonthYear(pace.previousMonth, locale)];
+ const axis = niceAxis(pace.points.flatMap(point => [point.current ?? 0, point.previous ?? 0, planned ? point.pace ?? 0 : 0]));
+ return <div className="spending-pace-chart"><ResponsiveContainer width="100%" height={compact ? chartHeight.slim : chartHeight.compact}>
   <ComposedChart data={pace.points} margin={chartMargin} accessibilityLayer>
    <ChartGradient id="spending-pace-fill"/>
    <CartesianGrid {...chartGrid}/>
-   <XAxis dataKey="day" tickFormatter={day => t('Day {day}', { day: formatNumber(Number(day), locale, 0) })} interval="preserveStartEnd" minTickGap={40} {...chartAxis}/>
-   <YAxis domain={axis.domain} ticks={axis.ticks} tickFormatter={moneyTick(currency, locale)} {...chartValueAxis}/>
+   <XAxis dataKey="day" hide={compact} tickFormatter={day => t('Day {day}', { day: formatNumber(Number(day), locale, 0) })} interval="preserveStartEnd" minTickGap={40} {...chartAxis}/>
+   <YAxis hide={compact} domain={axis.domain} ticks={axis.ticks} tickFormatter={moneyTick(currency, locale)} {...chartValueAxis}/>
    <Tooltip {...chartTooltip} wrapperStyle={{ zIndex: 5 }} content={({ active, payload }) => {
     const point = payload?.[0]?.payload as SpendingPacePoint | undefined;
     if (!active || !point) return null;
@@ -36,8 +43,9 @@ export function SpendingPaceChart({ pace, data, currency, rates }: { pace: Spend
     const items = (month: string) => point.day > monthDays(month) ? [] : spendingOnDay(data.records, day(month), currency, rates, data.investmentLinks);
     return <div className="portfolio-tooltip spending-pace-tooltip">
      <header><span>{t('Day {day}', { day: formatNumber(point.day, locale, 0) })}</span>
-      {point.current !== null && <div className="portfolio-tooltip-row"><i className="current"/><div><strong>{t('This month')}</strong></div><b>{money(point.current)}</b></div>}
-      <div className="portfolio-tooltip-row"><i className="previous"/><div><strong>{t('Last month')}</strong></div><b>{money(point.previous ?? 0)}</b></div>
+      {point.current !== null && <div className="portfolio-tooltip-row"><i className="current"/><div><strong>{names[0]}</strong></div><b>{money(point.current)}</b></div>}
+      <div className="portfolio-tooltip-row"><i className="previous"/><div><strong>{names[1]}</strong></div><b>{money(point.previous ?? 0)}</b></div>
+      {planned && point.pace !== null && <div className="portfolio-tooltip-row"><i className="pace"/><div><strong>{t('Even pace')}</strong></div><b>{money(point.pace)}</b></div>}
      </header>
      <div className="portfolio-tooltip-body">
       {point.current !== null && <SpentOn title={formatDate(day(pace.month), locale)} items={items(pace.month)}/>}
@@ -45,6 +53,7 @@ export function SpendingPaceChart({ pace, data, currency, rates }: { pace: Spend
      </div>
     </div>;
    }}/>
+   {planned && <Line type="linear" dataKey="pace" name="pace" {...guideLine} connectNulls={false}/>}
    <Line type="monotone" dataKey="previous" name="previous" {...chartLine} stroke={chartColors.other} strokeOpacity={.55}/>
    <Area type="monotone" dataKey="current" name="current" {...leadArea('spending-pace-fill')} connectNulls={false}/>
   </ComposedChart>

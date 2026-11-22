@@ -3,11 +3,11 @@ import { useMemo, type KeyboardEvent } from 'react';
 import { ChartPie, Goal as GoalIcon, ReceiptText } from 'lucide-react';
 import { BudgetProgress } from '@/components/budget/budget-rows';
 import type { WorkspaceBudget } from '@/hooks/use-budget';
-import { budgetCategories, budgetReadRange, budgetRows, budgetRowsForMode, leftToBudget, monthActuals, monthsBetween, remainingTone } from '@/lib/budget';
+import { budgetAmountFor, budgetCategories, budgetReadRange, budgetRows, budgetRowsForMode, flexBucketKey, leftToBudget, monthActuals, monthsBetween } from '@/lib/budget';
 import { flexPlan } from '@/lib/budget-schedules';
 import { marketRates, type MarketData } from '@/lib/market';
 import { namesCategory } from '@/lib/overview';
-import { signedAmount } from '@/lib/transaction-list';
+import { signedAmount, transactionsHref } from '@/lib/transaction-list';
 import type { TransactionSplit } from '@/lib/transaction-tools';
 import { useLanguage } from '@/components/language-provider';
 import { useDisplayMoney } from '@/components/display-money';
@@ -59,6 +59,10 @@ export function topGoals(goals: Goal[], order: readonly string[] = [], limit = 2
  return orderedGoals(goals.filter(goal => !goal.archived && !goal.completed_on), order).slice(0, limit);
 }
 
+/** Where a goal's row goes: a savings goal opens its own history on Goals (`?view=history&goal=…`), which Goals reads; a
+ * net-worth or investment goal keeps no history of its own, so it opens Goals. */
+export const goalHref = (goal: Pick<Goal, 'id' | 'kind'>) => goal.kind === 'savings' ? `/goals?view=history&goal=${encodeURIComponent(goal.id)}` : '/goals';
+
 /** `netWorth` gives the current net worth in a currency, or null when it cannot be converted. */
 export function GoalsCard({ goals, order, data, currency, netWorth }: { goals: Goal[]; order: readonly string[]; data: Pick<PlanningData, 'records' | 'holdingAccounts'>; currency: string; netWorth: (currency: string) => number | null }) {
  const { t, locale } = useLanguage();
@@ -73,24 +77,26 @@ export function GoalsCard({ goals, order, data, currency, netWorth }: { goals: G
    const amount = investment ? (percent === null ? '—' : formatPercent(percent, locale, 0)) : value === null ? '—' : show(value, unit);
    const target = investment ? null : t('{amount} target', { amount: show(goal.target, unit) });
    const date = goal.target_date ? formatDate(goal.target_date, locale) : null;
-   return <li key={goal.id}><span className="dashboard-goal-cover" aria-hidden="true">{goalEmoji(goal)}</span><div><p><span>{goal.name}</span><strong>{amount}</strong></p><div className="progress-track"><div style={{ width: `${percent ?? 0}%` }}/></div><small>{[target, date].filter(Boolean).join(' · ') || t('No target date')}</small></div></li>;
+   return <li key={goal.id}><DrawerLink href={goalHref(goal)} className="dashboard-goal-row"><span className="dashboard-goal-cover" aria-hidden="true">{goalEmoji(goal)}</span><div><p><span>{goal.name}</span><strong>{amount}</strong></p><div className="progress-track"><div style={{ width: `${percent ?? 0}%` }}/></div><small>{[target, date].filter(Boolean).join(' · ') || t('No target date')}</small></div></DrawerLink></li>;
   })}</ul> : <EmptyState icon={<GoalIcon/>} description={t('Set a goal to watch your savings grow.')}><DrawerLink href="/goals">{t('Add goal')}</DrawerLink></EmptyState>}
  </section>;
 }
 
-/** Spent against planned. A plan no rate converts, or spending with an amount no rate converts, is unknown: it reads — with the note, rather than leaving that amount out. */
+/** How much of the plan is used: one share and its bar. What was spent and what may still be spent are the headline's
+ * figures (Spent this month, Safe to spend), so the card does not repeat them. A plan no rate converts, or spending with
+ * an amount no rate converts, is unknown: it reads — with the note, rather than leaving that amount out. */
 function BudgetCardTotal({ plan, spent, missing, currency }: { plan: number | null; spent: number; missing: number; currency: string }) {
  const { t, locale } = useLanguage();
- const money = (amount: number) => formatMoney(amount, currency, locale);
- if (plan === null || missing) return <div className="dashboard-budget-total"><p><strong>{missing ? '—' : money(spent)}</strong><span>{t('of {amount}', { amount: plan === null ? '—' : money(plan) })}</span></p><small>{t('Exchange rate unavailable.')}</small></div>;
+ const of = (amount: number | null) => <span>{t('of {amount}', { amount: amount === null ? '—' : formatMoney(amount, currency, locale) })}</span>;
+ if (plan === null || missing) return <div className="dashboard-budget-total"><p><strong>—</strong>{of(plan)}</p><small>{t('Exchange rate unavailable.')}</small></div>;
  return <>
-  <div className="dashboard-budget-total"><p><strong>{money(spent)}</strong><span>{t('of {amount}', { amount: money(plan) })}</span></p><small data-tone={remainingTone(plan - spent)}>{t(plan - spent < 0 ? '{amount} over' : '{amount} remaining', { amount: money(Math.abs(plan - spent)) })}</small></div>
+  <div className="dashboard-budget-total"><p><strong>{t('{percent} used', { percent: formatPercent(spent / plan * 100, locale, 0) })}</strong>{of(plan)}</p></div>
   <BudgetProgress row={{ progress: spent / plan, direction: 'expense', remaining: plan - spent }}/>
  </>;
 }
 
-/** This month's budget for spending, as Budget counts it: what was spent, the plan, and the categories closest to their
- * limit. The dashboard works it out once for its Budget card and its headline row. `budget` is the workspace's one
+/** This month's budget for spending, as Budget counts it: what was spent, the plan, the categories closest to their
+ * limit (each opens its spending this month in Transactions), those over it and those whose plan holds their bills. The dashboard works it out once for its Budget card and its headline row. `budget` is the workspace's one
  * Budget (`useWorkspace().budget`), so an edit on Budget shows here at once. Everything but the removed kinds comes from
  * this read, which carries the schedules and categories too, so no figure waits on, or goes wrong with, the planning read.
  * `error` is a read that failed, `missing` the month's amounts no rate converts: either way the totals are unknown. */
@@ -111,10 +117,18 @@ export function useMonthBudget({ owner = null, demo = false, revision = 0, budge
  const flexible = budget.state.mode === 'flex' ? { budget: flexPlan({ amounts: budget.state.amounts, schedules: data.records }, categories, month, currency, rates), rollover: 0 } : null;
  const plan = leftToBudget(rows, budget.state.mode, flexible, 0).expenses, spent = rows.reduce((sum, row) => sum + row.actual, 0);
  // In flex mode flexible categories share one bucket, so only fixed categories keep a budget of their own here, as on the Budget page.
- const watched = budgetRowsForMode(rows, budget.state.mode).filter(row => row.budget).sort((a, b) => b.progress - a.progress).slice(0, 3);
+ const own = budgetRowsForMode(rows, budget.state.mode);
+ const watched = own.filter(row => row.budget).sort((a, b) => b.progress - a.progress).slice(0, 3);
+ // Categories that spent more than the plan they have (what to improve). Spending with no plan exceeded nothing.
+ const over = own.filter(row => row.remaining !== null && row.remaining < -0.005 && (row.budget ?? 0) + row.rolloverIn > 0).map(row => ({ key: row.key, name: row.name, custom: row.custom, amount: -row.remaining! }));
+ // The categories whose plan already holds their bills (`plannedIn`): one with a plan, and in flex mode every flexible
+ // one, which the bucket plans. Safe to spend takes a payment due off only when its category is not among them.
+ const covered = new Set(rows.filter(row => (row.budget ?? 0) > 0 || (budget.state.mode === 'flex' && row.type === 'flexible')).map(row => row.key));
+ // A budget is set once an amount was saved for spending this month; bills alone plan themselves and are no budget.
+ const budgeted = [...rows.map(row => row.key), flexBucketKey].some(key => (budgetAmountFor(budget.state.amounts, key, month)?.amount ?? 0) > 0);
  const loading = !!((live && remote.loading) || budget.loading);
  const error = budget.error || (live ? remote.error : '');
- return { month, rows, plan, spent, watched, loading, error, missing: history.get(month)?.missing ?? 0, retry: () => { budget.retry(); remote.retry(); } };
+ return { month, rows, plan, spent, watched, over, covered, budgeted, loading, error, missing: history.get(month)?.missing ?? 0, retry: () => { budget.retry(); remote.retry(); } };
 }
 type MonthBudget = ReturnType<typeof useMonthBudget>;
 
@@ -126,7 +140,7 @@ function BudgetCardView({ figures, currency }: { figures: MonthBudget; currency:
   <PanelTitle title={<>{t('Budget')} <span className="panel-figure">{formatMonthYear(month, locale)}</span></>}><DrawerLink href="/budget">{t('View all')}</DrawerLink></PanelTitle>
   {loading ? <LoadingPlaceholder label={t('Loading records…')} rows={3}/> : error ? <InlineError message={t(error)} onRetry={retry}/> : plan === null || plan > 0 ? <>
    <BudgetCardTotal plan={plan} spent={spent} missing={missing} currency={currency}/>
-   <ul className="overview-list dashboard-budget-list">{watched.map(row => <li key={row.key}><CategoryIcon kind={row.custom ? row.name : row.key} size="sm"/><span>{row.custom ? row.name : t(row.name)}<BudgetProgress row={row}/></span><strong data-tone={row.remaining !== null && row.remaining < 0 ? 'negative' : undefined}>{row.remaining === null ? '—' : t(row.remaining < 0 ? '{amount} over' : '{amount} left', { amount: money(Math.abs(row.remaining)) })}</strong></li>)}</ul>
+   <ul className="overview-list dashboard-budget-list">{watched.map(row => <li key={row.key}><DrawerLink href={transactionsHref({ direction: 'expense', category: row.key, period: 'this_month' })} className="overview-row"><CategoryIcon kind={row.custom ? row.name : row.key} size="sm"/><span>{row.custom ? row.name : t(row.name)}<BudgetProgress row={row}/></span><strong data-tone={row.remaining !== null && row.remaining < 0 ? 'negative' : undefined}>{row.remaining === null ? '—' : t(row.remaining < 0 ? '{amount} over' : '{amount} left', { amount: money(Math.abs(row.remaining)) })}</strong></DrawerLink></li>)}</ul>
   </> : <EmptyState icon={<ChartPie/>} description={t('Plan this month’s spending to track it here.')}><DrawerLink href="/budget">{t('Set up a budget')}</DrawerLink></EmptyState>}
  </section>;
 }

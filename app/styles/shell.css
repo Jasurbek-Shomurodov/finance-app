@@ -109,7 +109,6 @@ h2:has(>.info-hint){display:flex;align-items:center;gap:6px}
 .stat-tile-link{color:inherit;transition:border-color .15s,background .15s}
 .stat-tile-link:hover{border-color:color-mix(in srgb,var(--primary) 45%,var(--border))}
 .stat-tile-link:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
-@media(prefers-reduced-motion:reduce){.stat-tile-link{transition:none}}
 .stat-tile-head{display:flex;align-items:baseline;justify-content:space-between;gap:4px 10px;flex-wrap:wrap}
 .stat-tile-head>span{font-size:var(--type-caption);line-height:1.4;color:var(--muted-foreground);white-space:nowrap}
 .stat-tile>p{margin-top:auto;font-size:var(--type-caption);line-height:1.5;color:var(--muted-foreground)}

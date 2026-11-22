@@ -19,6 +19,10 @@ export function allocationRows(items: ReturnType<typeof assetAllocation>, limit 
  return topShares(items.map(item => ({ key: item.kind as string, amount: item.total, share: item.share })), items.length === limit + 1 ? items.length : limit).map(share => ({ kind: share.key, total: share.amount, share: share.share }));
 }
 
+/** Where a kind of asset is kept: cash and deposits on Accounts, everything else on Investments. An allocation row or
+ * slice opens it. */
+export const allocationHref = (kind: string) => kind === 'Cash' || kind === 'Deposit' ? '/accounts' : '/assets';
+
 /** Which rows of a dated list name their category: the first, and any whose category differs from the row above it.
  * The icon tile carries the category on every row, so a run of one category does not repeat its name. */
 export const namesCategory = (rows: readonly { kind: string }[]) => rows.map((row, index) => index === 0 || row.kind !== rows[index - 1].kind);

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadTS } from './helpers/load-ts.mjs';
-const { isUnplanned, splitUnplanned, unplannedSuggestion, dueByCategory, rowState, leftShares, spendingPace } = loadTS('lib/budget-view.ts');
+const { isUnplanned, splitUnplanned, unplannedSuggestion, dueByCategory, rowState, leftShares } = loadTS('lib/budget-view.ts');
 
 const row = (extra = {}) => ({ key: 'groceries', name: 'Groceries', custom: false, direction: 'expense', type: 'flexible', excluded: false, budget: 500, actual: 200, rolloverIn: 0, remaining: 300, progress: .4, missing: false, ...extra });
 const record = (id, kind, amount, date, extra = {}) => ({ id, name: id, kind, currency: 'USD', amount, quantity: 1, cost: 0, rate: 0, date, frequency: 'Once', notes: '', ...extra });
@@ -62,29 +62,3 @@ test('planned income splits into spending, goals and what is left; an unknown fi
  assert.equal(leftShares({ income: 0, expenses: 0, contributions: 0, left: 0 }), null, 'nothing planned');
 });
 
-test('spending pace: the month so far day by day beside the plan spread evenly, without excluded categories', () => {
- const records = [record('a', 'Living expense', 100, '2026-11-02'), record('b', 'Other expense', 50, '2026-11-02', { custom_category_id: 'gym' }), record('c', 'Living expense', 30, '2026-11-10'), record('pay', 'Salary', 5000, '2026-11-05'),
-  record('late', 'Living expense', 999, '2026-11-20'), record('old', 'Living expense', 999, '2026-10-31'), record('bill', 'Living expense', 400, '2026-11-01', { frequency: 'Monthly' }), record('som', 'Living expense', 125000, '2026-11-03', { currency: 'UZS' }), record('odd', 'Living expense', 7, '2026-11-04', { currency: 'XYZ' })];
- const read = { currency: 'USD', today: '2026-11-14', rates: { USD: 1, UZS: 12500 } };
- const pace = spendingPace({ records }, [], '2026-11', 600, read);
- assert.equal(pace.points.length, 30);assert.equal(pace.days, 30);assert.equal(pace.day, 14);
- assert.deepEqual(pace.points[0], { date: '2026-11-01', spent: 0, pace: 20 });
- assert.equal(pace.points[1].spent, 150);
- assert.equal(pace.points[2].spent, 160, 'another currency counts at its rate');
- assert.equal(pace.points[3].spent, 160, 'an amount no rate converts is left out, never added as it stands');
- assert.equal(pace.points[13].spent, 190);assert.equal(pace.points[13].pace, 280);
- assert.equal(pace.points[14].spent, null, 'days not reached carry no spending');
- assert.equal(pace.points[29].pace, 600, 'the even pace ends on the plan');
- assert.equal(pace.spent, 190, 'income, schedules, other months and later days are not spending so far');
- assert.equal(pace.status, 'on_pace');
- assert.equal(spendingPace({ records }, [], '2026-11', 300, read).status, 'above_pace', '190 spent against 140 by day 14');
- assert.equal(spendingPace({ records }, [], '2026-11', 150, read).status, 'over_plan');
- assert.equal(spendingPace({ records }, [], '2026-11', 0, read).status, null, 'no plan, no pace');
- const unknown = spendingPace({ records }, [], '2026-11', null, read);
- assert.equal(unknown.status, null);assert.equal(unknown.points[0].pace, null);
- assert.equal(spendingPace({ records }, [], '2026-11', 600, { ...read, excluded: new Set(['gym']) }).spent, 140, 'an excluded category is left out, as in the budget totals');
- // A past month is whole and has no status; a split counts in its parts.
- const past = spendingPace({ records }, [{ record_id: 'old', category_id: 'gym', amount: 99 }, { record_id: 'old', category_id: 'Living expense', amount: 900 }], '2026-10', 600, { ...read, excluded: new Set(['gym']) });
- assert.equal(past.day, 31);assert.equal(past.status, null);assert.equal(past.points[30].spent, 900);
- assert.equal(spendingPace({ records }, [], '2026-12', 600, read).day, 0);
-});

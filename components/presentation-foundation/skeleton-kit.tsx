@@ -1,12 +1,15 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PageHeadingSkeleton, pageHeadings } from './page-heading-skeleton';
 
 // The parts every screen's shimmer is built from. Each part carries the class of the loaded block it stands for, so the
 // stylesheet lays the shimmer out exactly as it lays out the page (docs/agents/interface.md, Shimmer follows the screen).
 
-/** A screen region still loading: announced once, its blocks spaced like the page's own `.content`. */
-export function Loading({ label, children }: { label: string; children: ReactNode }) {
-  return <div role="status" aria-busy="true" className="screen-skeleton-region"><span className="sr-only">{label}</span><div aria-hidden="true" className="screen-skeleton">{children}</div></div>;
+/** A screen region still loading: announced once, its blocks spaced like the page's own `.content`. `heading` names the
+ * route whose `PageHeader` is not on screen yet (the drawer's shimmer, or a page that draws its own header): where that
+ * header would open the page (phones), its tabs and actions are reserved first. */
+export function Loading({ label, heading, children }: { label: string; heading?: string; children: ReactNode }) {
+  return <div role="status" aria-busy="true" className="screen-skeleton-region"><span className="sr-only">{label}</span><div aria-hidden="true" className="screen-skeleton">{heading && <PageHeadingSkeleton {...pageHeadings[heading]}/>}{children}</div></div>;
 }
 
 export const times = (count: number) => Array.from({ length: count }, (_, index) => index);

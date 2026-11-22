@@ -10,7 +10,7 @@ const at=day=>day+'T07:00:00Z';
 const event=(id,record_id,date,event_type,amount,balance,extra={})=>({id,record_id,occurred_on:date,created_at:at(date),event_type,amount,balance,ownership_percentage:100,principal:0,interest:0,notes:'',...extra});
 const flow=(id,kind,amount,date,entered,extra={})=>({id,name:id,kind,amount,currency:'USD',date,frequency:'Once',account_id:'wallet',created_at:at(entered),...extra});
 const today='2026-11-14';
-const nets=(records,events,moves)=>Object.fromEntries(portfolioHistory(records,events,'USD',{USD:1,UZS:12000},today,true,moves).points.map(point=>[point.date,Math.round(point.net*100)/100]));
+const nets=(records,events,moves)=>Object.fromEntries(portfolioHistory(records,events,{currency:'USD',rates:{USD:1,UZS:12000},today,includePartial:true,moves}).points.map(point=>[point.date,Math.round(point.net*100)/100]));
 
 test('a transaction entered late changes the account on its own day, not the day it was typed',()=>{
  const records=[record('wallet','Cash')];
@@ -100,8 +100,8 @@ test('a moved change counts only once its record has a balance, and never past t
  const records=[record('wallet','Cash'),record('home','Property')];
  const events=[event('home','home','2026-09-01','baseline',0,100000),event('open','wallet','2026-09-10','baseline',0,500),event('v','wallet','2026-09-20','valuation',0,800)];
  const moves=[{record_id:'wallet',date:'2026-09-05',entered:'2026-09-20',amount:300},{record_id:'gone',date:'2026-09-05',entered:'2026-09-20',amount:999},{record_id:'wallet',date:'2026-09-12',entered:'2026-12-01',amount:50},{record_id:'wallet',date:'2026-09-20',entered:'2026-09-12',amount:50},{record_id:'wallet',date:'2026-09-12',entered:'2026-09-20',amount:NaN}];
- const result=portfolioHistory(records,events,'USD',undefined,today,true,moves);
+ const result=portfolioHistory(records,events,{currency:'USD',rates:undefined,today,includePartial:true,moves});
  // 5 September only moves a change inside an account not opened yet: nothing to draw that day.
  assert.deepEqual(result.points.map(point=>[point.date,point.net,!!point.partial]),[['2026-09-01',100000,true],['2026-09-10',100800,false],['2026-09-20',100800,false]]);
- assert.deepEqual(portfolioHistory(records,events,'USD',undefined,today,false,moves).points.map(point=>point.date),['2026-09-10','2026-09-20']);
+ assert.deepEqual(portfolioHistory(records,events,{currency:'USD',rates:undefined,today,moves}).points.map(point=>point.date),['2026-09-10','2026-09-20']);
 });

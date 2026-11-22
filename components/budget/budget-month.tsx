@@ -2,17 +2,19 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { BudgetGroupCard, BudgetSection, BudgetTotalRow, type BudgetRowTools } from '@/components/budget/budget-rows';
 import { ContributionSection } from '@/components/budget/contribution-rows';
-import { PlanUnplannedDialog, SpendingPaceCard } from '@/components/budget/budget-lazy';
+import { PlanUnplannedDialog } from '@/components/budget/budget-lazy';
 import { LeftToBudgetCard, type BudgetFocus } from '@/components/budget/left-to-budget-card';
 import type { BudgetFigures } from '@/components/budget/settings-dialogs';
 import { useLanguage } from '@/components/language-provider';
 import { ErrorPopup } from '@/components/presentation-foundation/error-popup';
+import { SpendingPaceCard } from '@/components/spending-pace-card';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
 import { useGoalOrder } from '@/hooks/use-goal-order';
 import type { BudgetGroup, BudgetRow, LeftToBudget } from '@/lib/budget';
-import { dueByCategory, spendingPace, unplannedSuggestion } from '@/lib/budget-view';
+import { dueByCategory, unplannedSuggestion } from '@/lib/budget-view';
 import { monthEnd } from '@/lib/calendar-days';
 import { formatMoney } from '@/lib/format';
+import { spendingPace } from '@/lib/spending-pace';
 import { upcomingPayments, type Goal, type PlanningData } from '@/lib/planning';
 import type { TransactionSplit } from '@/lib/transaction-tools';
 
@@ -29,7 +31,7 @@ const sum = (list: BudgetGroup[], key: 'budget' | 'actual') => list.reduce((tota
 const toggled = (set: Set<string>, id: string) => { const next = new Set(set); if (next.has(id)) next.delete(id); else next.add(id); return next; };
 
 /** One month of the budget: Income, Expenses and Goal contributions as cards of rows, with Left to budget, the spending
- * pace and `side` beside them. Summary shows every section; Income or Expenses in the Left to budget card narrows the list. */
+ * pace (the card the Dashboard shows too) and `side` beside them. Summary shows every section; Income or Expenses in the Left to budget card narrows the list. */
 export function BudgetMonth({ month, today, currency, rates, data, splits, rows, groups, left, bucket, goals, contributionOf, contributions, tools, averageOf, side }: Props) {
  const { t, locale } = useLanguage();
  const { user, demo, readOnly, planning, netWorth, workspacePreferences, budget } = useWorkspace();
@@ -46,7 +48,7 @@ export function BudgetMonth({ month, today, currency, rates, data, splits, rows,
  const goalOrder = useGoalOrder(data.goals, workspacePreferences, demo ? null : user, demo);
  const shown = new Set(goals.map(goal => goal.id)), orderedGoals = goalOrder.goals.filter(goal => shown.has(goal.id));
  const excluded = useMemo(() => new Set(rows.filter(row => row.excluded).map(row => row.key)), [rows]);
- const pace = useMemo(() => month.slice(0, 7) > today.slice(0, 7) ? null : spendingPace(data, splits, month, left.expenses, { currency, today, rates, excluded }), [data, splits, month, left.expenses, currency, today, rates, excluded]);
+ const pace = useMemo(() => month.slice(0, 7) > today.slice(0, 7) ? null : spendingPace({ records: data.records, splits, investmentLinks: data.investmentLinks }, today, currency, rates, { month: month.slice(0, 7), plan: left.expenses, excluded }), [data, splits, month, left.expenses, currency, today, rates, excluded]);
 
  const card = (group: BudgetGroup) => {
   const id = group.direction + ':' + group.name;
@@ -80,7 +82,7 @@ export function BudgetMonth({ month, today, currency, rates, data, splits, rows,
   </div>
   <div className="budget-side">
    <LeftToBudgetCard left={left} rows={rows} mode={budget.state.mode} currency={currency} tab={focus} onTab={setFocus}/>
-   {pace && <SpendingPaceCard pace={pace} plan={left.expenses} currency={currency}/>}
+   {pace && <SpendingPaceCard compact pace={pace} data={data} rates={rates} currency={currency}/>}
    {side}
   </div>
   <ErrorPopup message={goalOrder.error}/>

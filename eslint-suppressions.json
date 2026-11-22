@@ -325,11 +325,6 @@
       "count": 1
     }
   },
-  "lib/portfolio-history.ts": {
-    "max-params": {
-      "count": 1
-    }
-  },
   "lib/record-kind.ts": {
     "complexity": {
       "count": 1

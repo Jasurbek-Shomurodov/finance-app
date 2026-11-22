@@ -24,20 +24,32 @@ export function shownName(record: Named, translate: (key: string) => string, cat
   return categoryKeys.has(name) || (generatedNames.has(name) && !!(record.movement_id || record.operation_id)) ? translate(name) : record.name;
 }
 const normalizeName = (name: string) => name.trim().replace(/\s+/g, ' ').toLowerCase();
-export function matchingNames(rows: Entry[], entry: Pick<Entry, 'id' | 'kind' | 'name'>, original?: Entry) {
+/** A name used before: how many records carry it and the latest single one, which a chosen suggestion fills from. */
+export type NameMatch = { name: string; count: number; exact: boolean; last?: Entry };
+/** How many records a row stands for, leaving out the one being edited (a summary row counts it among its own). */
+function otherRecords(row: Entry, entry: Pick<Entry, 'id'>, original?: Entry) {
+  const containsCurrent = row.record_count === undefined ? row.id === entry.id : !!original && row.kind === original.kind && row.currency === original.currency && row.frequency === original.frequency && normalizeName(row.name) === normalizeName(original.name);
+  return (row.record_count ?? 1) - (containsCurrent ? 1 : 0);
+}
+/** The later of two records; a summary row adds several records up, so it has no last amount to offer. */
+function laterRecord(last: Entry | undefined, row: Entry) {
+  if ((row.record_count ?? 1) !== 1) return last;
+  return !last || (row.date ?? '') > (last.date ?? '') ? row : last;
+}
+/** Past names containing what was typed, an exact match first. `kinds` widens the search beyond the record's own kind:
+ * the expense form looks through every expense category, so a name finds its category. */
+export function matchingNames(rows: Entry[], entry: Pick<Entry, 'id' | 'kind' | 'name'>, original?: Entry, kinds: readonly string[] = [entry.kind]): NameMatch[] {
   const query = normalizeName(entry.name);
   if (!query) return [];
-  const groups = new Map<string, { name: string; count: number; exact: boolean }>();
+  const groups = new Map<string, NameMatch>();
   for (const row of rows) {
-    if (row.kind !== entry.kind) continue;
-    const containsCurrent = row.record_count === undefined ? row.id === entry.id : !!original && row.kind === original.kind && row.currency === original.currency && row.frequency === original.frequency && normalizeName(row.name) === normalizeName(original.name);
-    const count = (row.record_count ?? 1) - (containsCurrent ? 1 : 0);
-    if (count <= 0) continue;
+    // A category standing in for a name nobody typed is not a name to offer.
+    if (!kinds.includes(row.kind) || categoryKeys.has(row.name.trim())) continue;
+    const count = otherRecords(row, entry, original);
     const key = normalizeName(row.name);
-    if (!key.includes(query)) continue;
-    const group = groups.get(key);
-    if (group) group.count += count;
-    else groups.set(key, { name: row.name.trim().replace(/\s+/g, ' '), count, exact: key === query });
+    if (count <= 0 || !key.includes(query)) continue;
+    const group = groups.get(key) ?? { name: row.name.trim().replace(/\s+/g, ' '), count: 0, exact: key === query };
+    groups.set(key, { ...group, count: group.count + count, last: laterRecord(group.last, row) });
   }
   return [...groups.values()].sort((a,b) => Number(b.exact) - Number(a.exact) || a.name.localeCompare(b.name));
 }

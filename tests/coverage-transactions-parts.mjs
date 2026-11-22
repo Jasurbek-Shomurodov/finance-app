@@ -592,16 +592,16 @@ test('RulesDialog lists rules in words, edits, adds and deletes after confirmati
  assert.equal(confirmSlow().props.busy,false);
 });
 
-test('RulesPanel shows the count, an empty message and the same list',()=>{
+// Rules have one home, Transactions (docs/product-map.md): Settings links there, so the dialog is the only list.
+test('RulesDialog shows an empty message, adds from it, and lists a single rule',()=>{
  const calls=[];
- let tree=mount(h(page.RulesPanel,{rules:[],categories,onEdit(){},onAdd:()=>calls.push('add'),onRemove:async()=>{}}))();
- assert.equal(text(findAll(tree,n=>n.type==='Count')[0]),'0');
+ let tree=mount(h(page.RulesDialog,{rules:[],categories,onEdit(){},onAdd:()=>calls.push('add'),onRemove:async()=>{},onClose(){}}))();
  assert.match(text(tree),/No rules yet\. Change a transaction’s category or business and choose Create rule, or add one here\./);
- assert.match(findAll(tree,n=>n.type==='PanelTitle')[0].props.hint,/A rule sets the category/);
+ assert.equal(findAll(tree,n=>n.type==='li').length,0);
  button(tree,'Add rule').props.onClick();
  assert.deepEqual(calls,['add']);
- tree=mount(h(page.RulesPanel,{rules:[rule({id:'p',pattern:'Rent',kind:'Rent expense'})],categories,onEdit(){},onAdd(){},onRemove:async()=>{}}))();
- assert.equal(text(findAll(tree,n=>n.type==='Count')[0]),'1');
+ tree=mount(h(page.RulesDialog,{rules:[rule({id:'p',pattern:'Rent',kind:'Rent expense'})],categories,onEdit(){},onAdd(){},onRemove:async()=>{},onClose(){}}))();
+ assert.doesNotMatch(text(tree),/No rules yet/);
  assert.deepEqual(findAll(tree,n=>n.type==='li').map(text),['Name contains “Rent”→Rent expense']);
 });
 
@@ -622,11 +622,11 @@ test('Rule suggestions start from the transaction name without its reference num
 
 test('A failed or unfinished rules read is never "no rules yet", and the failure can be retried',()=>{
  let retried=0;
- const base={rules:[],categories,onEdit(){},onAdd(){},onRemove:async()=>{}};
- const failed=mount(h(page.RulesPanel,{...base,error:'Offline',onRetry:()=>retried++}))();
+ const base={rules:[],categories,onEdit(){},onAdd(){},onRemove:async()=>{},onClose(){}};
+ const failed=mount(h(page.RulesDialog,{...base,error:'Offline',onRetry:()=>retried++}))();
  assert.doesNotMatch(text(failed),/No rules yet/);
  const alert=findAll(failed,n=>n.type==='InlineError')[0];assert.equal(alert.props.message,'Offline');alert.props.onRetry();assert.equal(retried,1);
- assert.doesNotMatch(text(mount(h(page.RulesPanel,{...base,loading:true}))()),/No rules yet/);
+ assert.doesNotMatch(text(mount(h(page.RulesDialog,{...base,loading:true}))()),/No rules yet/);
 });
 
 test('RuleDialog without the transactions says the database counts, and how far a rule reaches',()=>{

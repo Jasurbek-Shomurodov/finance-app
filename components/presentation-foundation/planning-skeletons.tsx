@@ -1,6 +1,7 @@
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChartSkeleton, SkeletonRows } from './loading-placeholder';
 import { Bar, Figures, Heading, Loading, Tiles, Track, times } from './skeleton-kit';
+import { AssetCardsSkeleton } from './tab-skeletons';
 
 // The planning and net-worth screens' loading shapes, block for block as each loaded page draws them. Change a screen,
 // change its shape here with it (docs/agents/interface.md, Shimmer follows the screen).
@@ -12,10 +13,10 @@ function GoalRow() {
   </div><Skeleton className="size-9 shrink-0 rounded-lg"/></li>;
 }
 
-/** Goals: the goal list with its view switch, the chosen goal (figure, projection, four figures, when it is reached and
+/** Goals: on a phone the tabs and Add goal the page opens with (its `PageHeader` loads with the page); the goal list with its view switch, the chosen goal (figure, projection, four figures, when it is reached and
  * its action), and what is available for goals under the list. */
 export function GoalsSkeleton({ label }: { label: string }) {
-  return <Loading label={label}>
+  return <Loading label={label} heading="/goals">
     <div className="goals-split">
       <section className="panel goals-list"><Heading width={110} aside={168}/><ul className="goal-rows">{times(3).map(row => <GoalRow key={row}/>)}</ul></section>
       <section className="panel goal-detail">
@@ -31,19 +32,10 @@ export function GoalsSkeleton({ label }: { label: string }) {
   </Loading>;
 }
 
-/** An account or holding card: icon, name and line, menu; its worth, a fact, the share line and the details row. */
-function AssetCard() {
-  return <article className="panel asset-card asset-card-skeleton">
-    <header className="asset-card-header"><Skeleton className="size-10 shrink-0 rounded-xl"/><div className="grid flex-1 gap-1.5"><Skeleton className="h-4 w-32"/><Skeleton className="h-3 w-24"/></div><Skeleton className="size-8 rounded-lg"/></header>
-    <Skeleton className="h-8 w-36"/><Skeleton className="h-4 w-48 max-w-full"/><Skeleton className="h-1 w-full rounded-full"/>
-    <div className="asset-card-details"><Skeleton className="h-10 w-full rounded-lg"/><Figures rows={3}/></div>
-  </article>;
-}
-
-/** Investments' Holdings: the total with its three figures and profit and loss beside the allocation donut, the accounts,
+/** Investments' Holdings (`heading`: the drawer's shimmer also reserves the phone's tabs and Add asset): the total with its three figures and profit and loss beside the allocation donut, the accounts,
  * then the holdings with their layout switch and category filter. */
-export function InvestmentsSkeleton({ label }: { label: string }) {
-  return <Loading label={label}>
+export function InvestmentsSkeleton({ label, heading = false }: { label: string; heading?: boolean }) {
+  return <Loading label={label} heading={heading ? '/assets' : undefined}>
     <div className="asset-dashboard">
       <section className="portfolio-summary">
         <div className="portfolio-summary-main"><div className="portfolio-summary-total"><Skeleton className="h-4 w-32"/><Skeleton className="mt-2 h-10 w-44 max-w-full"/></div>
@@ -51,10 +43,10 @@ export function InvestmentsSkeleton({ label }: { label: string }) {
         <div className="portfolio-summary-allocation"><Skeleton className="mb-4 h-6 w-40"/><div className="portfolio-allocation-body"><Skeleton className="size-48 justify-self-center rounded-full"/><SkeletonRows rows={5}/></div></div>
       </section>
       <section className="asset-account-section"><div className="asset-holdings-heading"><Skeleton className="h-8 w-32"/><Skeleton className="h-5 w-28"/></div>
-        <div className="asset-card-grid">{times(3).map(card => <AssetCard key={card}/>)}</div></section>
+        <AssetCardsSkeleton/></section>
       <section className="asset-holdings"><div className="asset-holdings-heading"><Skeleton className="h-8 w-36"/><Skeleton className="h-9 w-20 rounded-lg"/></div>
         <Skeleton className="h-11 w-80 max-w-full rounded-xl"/>
-        <div className="asset-card-grid">{times(3).map(card => <AssetCard key={card}/>)}</div></section>
+        <AssetCardsSkeleton layout="grid"/></section>
     </div>
   </Loading>;
 }
@@ -69,10 +61,17 @@ function LoanRow({ row }: { row: number }) {
   </li>;
 }
 
-/** Loans & debts: the four lending figures, then the list with its view switch, search, column names and groups, beside
- * what is owed and the payoff plan. */
-export function LoansSkeleton({ label }: { label: string }) {
-  return <Loading label={label}>
+/** The payoff plan card beside the loans: its method, the balance chart, two facts and the link to the planner. */
+export function PayoffPlanCardSkeleton({ label }: { label?: string }) {
+  const card = <section aria-hidden="true" className="panel payoff-plan-card"><Heading width={150}/><Skeleton className="h-6 w-36 rounded-full"/><ChartSkeleton height={110}/><Figures rows={2} className="payoff-plan-facts"/><Skeleton className="h-10 w-full rounded-lg"/></section>;
+  return label ? <div role="status" aria-busy="true"><span className="sr-only">{label}</span>{card}</div> : card;
+}
+
+/** Loans & debts: the four lending figures, then the list with its view switch, search, column names and groups. With
+ * `side` (there are debts) what is owed stands beside it, and with `plan` (a payoff plan is worked out) the plan card
+ * under that, as the loaded page shows them; without debts the list takes the whole width. */
+export function LoansSkeleton({ label, side = true, plan = side, heading = false }: { label: string; side?: boolean; plan?: boolean; heading?: boolean }) {
+  return <Loading label={label} heading={heading ? '/loans-debts' : undefined}>
     <Tiles count={4} note/>
     <div className="loans-layout">
       <section className="panel loans-list">
@@ -86,22 +85,24 @@ export function LoansSkeleton({ label }: { label: string }) {
           ])}
         </ul>
       </section>
-      <div className="loans-side">
+      {side && <div className="loans-side">
         <section className="panel owed-breakdown"><Heading width={140}/><div className="owed-breakdown-lead"><Skeleton className="size-32 rounded-full"/><div className="grid gap-2"><Skeleton className="h-4 w-20"/><Skeleton className="h-8 w-28"/></div></div><Figures rows={3} className="owed-breakdown-list"/></section>
-        <section className="panel payoff-plan-card"><Heading width={150}/><Skeleton className="h-6 w-36 rounded-full"/><ChartSkeleton height={110}/><Figures rows={2} className="payoff-plan-facts"/><Skeleton className="h-10 w-full rounded-lg"/></section>
-      </div>
+        {plan && <PayoffPlanCardSkeleton/>}
+      </div>}
     </div>
   </Loading>;
 }
 
-/** The Assistant's panel in its column: the opening message, the question box and the note under it. */
+/** The Assistant before the first question: the opening message in the conversation's own height, the question box and
+ * the note under it, beside Try asking. */
 export function AssistantSkeleton({ label }: { label: string }) {
   return <Loading label={label}>
     <div className="assistant-layout"><section className="panel assistant-panel">
-      <div className="assistant-log is-unavailable"><div className="empty"><Skeleton className="size-12 rounded-xl"/><Skeleton className="h-6 w-56 max-w-full"/>{[420, 380, 300].map(width => <Bar key={width} width={width}/>)}</div></div>
-      <div className="assistant-form"><Skeleton className="h-[77px] flex-1 rounded-xl"/><Skeleton className="size-10 self-center rounded-xl"/></div>
-      <Skeleton className="h-4 w-80 max-w-full"/>
-    </section></div>
+      <div className="assistant-log"><div className="empty"><Skeleton className="size-12 rounded-xl"/><Skeleton className="h-6 w-56 max-w-full"/></div></div>
+      <div className="assistant-form"><Skeleton className="h-[77px] flex-1 rounded-xl"/><Skeleton className="size-10 rounded-xl"/></div>
+      <Skeleton className="mx-auto h-4 w-80 max-w-full"/>
+    </section>
+    <aside className="panel assistant-prompts"><Heading width={110}/><ul>{times(5).map(row => <li key={row}><div className="assistant-prompt-skeleton"><Bar width={170 + (row % 3) * 40}/><Skeleton className="size-4 rounded"/></div></li>)}</ul></aside></div>
   </Loading>;
 }
 
@@ -116,10 +117,16 @@ export function RecoveryRowsSkeleton({ label, rows = 4 }: { label?: string; rows
   return label ? <div role="status" aria-busy="true"><span className="sr-only">{label}</span>{list}</div> : list;
 }
 
-/** Recently deleted: the search over the day groups, beside the chosen item's details. */
+/** The chosen deleted item beside the list: its icon, name and amount, its facts, and Delete and Restore. */
+export function RecoveryDetailSkeleton() {
+  return <aside aria-hidden="true" className="panel recovery-detail"><header className="recovery-detail-head"><Skeleton className="size-9 shrink-0 rounded-[10px]"/><div className="grid flex-1 gap-1.5"><Skeleton className="h-5 w-40"/><Skeleton className="h-4 w-28"/></div><Skeleton className="h-6 w-16"/></header><Figures rows={3} className="recovery-facts"/><div className="recovery-detail-actions"><Skeleton className="size-10 rounded-lg"/><Skeleton className="h-10 flex-1 rounded-lg"/></div></aside>;
+}
+
+/** Recently deleted: the search over the day groups, beside the first item's details (the loaded page
+ * opens with its first item chosen, so the list never starts at full width and then narrows). */
 export function RecentlyDeletedSkeleton({ label }: { label: string }) {
-  return <Loading label={label}><div className="recovery-layout"><section className="panel records recovery-panel"><div className="recovery-tools"><Skeleton className="h-11 w-full rounded-xl"/></div><RecoveryRowsSkeleton rows={6}/></section>
-    <div className="recovery-side"><aside className="panel recovery-detail"><header className="recovery-detail-head"><Skeleton className="size-9 shrink-0 rounded-[10px]"/><div className="grid flex-1 gap-1.5"><Skeleton className="h-5 w-40"/><Skeleton className="h-4 w-28"/></div><Skeleton className="h-6 w-16"/></header><Figures rows={3} className="recovery-facts"/><div className="recovery-detail-actions"><Skeleton className="size-10 rounded-lg"/><Skeleton className="h-10 flex-1 rounded-lg"/></div></aside></div>
+  return <Loading label={label} heading="/recently-deleted"><div className="recovery-layout"><section className="panel records recovery-panel"><div className="recovery-tools"><Skeleton className="h-11 w-full rounded-xl"/></div><RecoveryRowsSkeleton rows={6}/></section>
+    <div className="recovery-side"><RecoveryDetailSkeleton/></div>
   </div></Loading>;
 }
 

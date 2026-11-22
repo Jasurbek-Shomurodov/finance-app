@@ -7,7 +7,7 @@ import { formatNumber, formatPercent } from '@/lib/format';
 
 export type AllocationGroup = { kind: string; amount: number };
 /** A kind holding less than this share of the total counts as part of the long tail. */
-export const allocationFoldPercent = 2;
+const allocationFoldPercent = 2;
 
 /** The kinds that lead the list and the long tail that folds into "Other kinds": kinds under 2% of the total, once
  * there are three of them. Fewer stay in the list, since a fold of one or two rows saves nothing. */

@@ -50,6 +50,7 @@ import { fundingRoom, goalBalanceHistory, unassignedSurplus, type GoalEvent } fr
 import {GoalScenarios} from './goal-scenarios';
 import type {PreferenceResource} from '@/hooks/use-workspace-preferences';
 import type { EarningSource } from '@/lib/earning-sources';
+import { scrollBehavior } from '@/hooks/scroll-behavior';
 
 const noActivity={events:[] as GoalEvent[]};
 /** A savings or net-worth goal's progress and status pill. */
@@ -98,7 +99,7 @@ export function GoalsPage({preferences,owner,demo,revision,onSaved,data,save,cur
  // the planner and the cash moved in and out of goals are their own views.
  const plannerFor=(id:string)=>{setSelected(id);setView('planner');};
  // Picking a goal shows it in the panel beside the list (under it on a narrow screen).
- const pick=(goal:Goal)=>{setSelected(goal.id);globalThis.requestAnimationFrame?.(()=>document.querySelector('.goal-detail')?.scrollIntoView({block:'nearest',behavior:'smooth'}));};
+ const pick=(goal:Goal)=>{setSelected(goal.id);globalThis.requestAnimationFrame?.(()=>document.querySelector('.goal-detail')?.scrollIntoView({block:'nearest',behavior:scrollBehavior()}));};
  return <>
   <PageHeader title={t('Goals')} tabs={<Segmented className="page-tabs" as="nav" label={t('Goals')} options={[{value:'overview',label:t('Overview')},{value:'planner',label:t('Goal planner')},{value:'history',label:t('History')}]} value={view} onChange={setView}/>}><Button onClick={()=>setSetup(true)}><Plus size={17} aria-hidden="true"/>{t('Add goal')}</Button></PageHeader>
   <ErrorPopup message={order.error}/>

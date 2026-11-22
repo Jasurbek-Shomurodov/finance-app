@@ -7,9 +7,10 @@ import type { HistoryEvent } from '@/lib/investment-history';
 import { historyIncomeRecords } from '@/lib/portfolio-history';
 import type { AccountOperation } from '@/lib/net-worth-moves';
 import type { HoldingPrices } from '@/lib/holding-prices';
+import type { FxPoint } from '@/lib/benchmark-data';
 import { ownerReadKey, sharedRead } from '@/hooks/use-owner-resource';
 
-export type PortfolioHistory = { movements?: BenchmarkMovement[]; records: Entry[]; events: HistoryEvent[]; cashflows?: Entry[]; incomeRecords?: Entry[]; operations?: AccountOperation[]; /** Past closes for quoted holdings, by series. */prices?: HoldingPrices };
+export type PortfolioHistory = { movements?: BenchmarkMovement[]; records: Entry[]; events: HistoryEvent[]; cashflows?: Entry[]; incomeRecords?: Entry[]; operations?: AccountOperation[]; /** Past closes for quoted holdings, by series. */prices?: HoldingPrices; /** The official rates of each past day, in the currencies the history is kept or shown in. */fx?: FxPoint[]; /** The day the history was read on. */today?: string };
 type Read = { owner: string | null; history: PortfolioHistory | null; error: boolean };
 
 /** The Overview's history read, started as soon as the owner is known, beside the workspace reads rather than after

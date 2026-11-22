@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { attributeColor, BreakdownDonut, TrendChart } from '@/components/business-reports';
 import { useCategoryHue } from '@/components/category-icons-context';
-import { ShareBars } from '@/components/cash-flow-report';
+import { ShareBars } from '@/components/cash-flow/flow-bars';
 import { useLanguage } from '@/components/language-provider';
 import { PanelTitle } from '@/components/presentation-foundation/panel-title';
 import { Segmented } from '@/components/presentation-foundation/segmented';

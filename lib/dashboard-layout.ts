@@ -1,9 +1,10 @@
 /** Dashboard cards and where they start: two columns. Any card can be dragged to either column or hidden. */
 const dashboardCards = {
- // What the first screen should answer, top down. Wide column: net worth, then whether this month is on track, then
- // income and the plan. Narrow column, under the key figures: what needs doing now (overdue and due payments), then
- // goals and recent activity, and the allocation, which changes slowest, last.
- left: ['net_worth', 'spending', 'budget', 'income', 'commitments'],
+ // What the first screen should answer, top down. Wide column: net worth, then where this month's money is going and
+ // what to improve, whether its pace and budget are on track, then income and the plan. Narrow column, under the key
+ // figures (safe to spend first): what needs doing now (overdue and due payments), then goals and recent activity, and
+ // the allocation, which changes slowest, last.
+ left: ['net_worth', 'where', 'spending', 'budget', 'income', 'commitments'],
  right: ['upcoming', 'goals', 'transactions', 'allocation'],
 } as const;
 export type DashboardCard = (typeof dashboardCards)[keyof typeof dashboardCards][number];
@@ -14,7 +15,7 @@ export const dashboardCardIds: readonly DashboardCard[] = [...dashboardCards.lef
  * became a figure in the headline beside Net worth over time; Business tracking lives on in Reports. */
 export const retiredDashboardCards = ['recap', 'forecast', 'business'] as const;
 export const dashboardCardLabels: Record<DashboardCard, string> = {
- net_worth: 'Net worth', spending: 'Spending', budget: 'Budget', commitments: 'Monthly commitments', allocation: 'Asset allocation',
+ net_worth: 'Net worth', where: 'Where it is going', spending: 'Spending pace', budget: 'Budget', commitments: 'Monthly commitments', allocation: 'Asset allocation',
  goals: 'Goals', transactions: 'Transactions', upcoming: 'Upcoming payments', income: 'Income over time',
 };
 export type DashboardLayout = { columns: Record<DashboardColumn, DashboardCard[]>; hidden: DashboardCard[] };
@@ -24,7 +25,8 @@ export const defaultDashboardLayout: DashboardLayout = { columns: { left: [...da
 const defaultColumn = (card: DashboardCard): DashboardColumn => (dashboardCards.left as readonly string[]).includes(card) ? 'left' : 'right';
 const isCard = (id: unknown): id is DashboardCard => (dashboardCardIds as readonly unknown[]).includes(id);
 
-/** A saved layout made whole: unknown or repeated ids dropped, new cards appended to their default column.
+/** A saved layout made whole: unknown or repeated ids dropped, new cards put where the default layout has them in
+ * their column (Where it is going under Net worth, not at the foot of a column its owner arranged before it existed).
  * Older saves kept one `order` list with fixed columns; they are read into the same columns. */
 export function normalizeLayout(saved: unknown): DashboardLayout {
  const value = (saved ?? {}) as { columns?: Partial<Record<DashboardColumn, unknown[]>>; order?: unknown[]; hidden?: unknown[] };
@@ -33,7 +35,10 @@ export function normalizeLayout(saved: unknown): DashboardLayout {
  const columns: Record<DashboardColumn, DashboardCard[]> = value.columns
   ? { left: take(value.columns.left), right: take(value.columns.right) }
   : (() => { const order = take(value.order); return { left: order.filter(card => defaultColumn(card) === 'left'), right: order.filter(card => defaultColumn(card) === 'right') }; })();
- for (const card of dashboardCardIds) if (!seen.has(card)) columns[defaultColumn(card)].push(card);
+ for (const card of dashboardCardIds) if (!seen.has(card)) {
+  const column = defaultColumn(card);
+  columns[column].splice(Math.min(dashboardCards[column].findIndex(item => item === card), columns[column].length), 0, card);
+ }
  // Nothing saved yet starts with the default hidden cards; a saved layout keeps exactly what its owner hid.
  return { columns, hidden: value.hidden ? [...new Set(value.hidden.filter(isCard))] : [...defaultDashboardLayout.hidden] };
 }

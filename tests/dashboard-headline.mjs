@@ -8,23 +8,32 @@ import {loadTS} from './helpers/load-ts.mjs';
 const {depositToday}=loadTS('lib/deposit-interest.ts');
 const {shiftDay}=loadTS('lib/calendar-days.ts');
 const today=depositToday();
+const {monthlyIncomeCards}=loadTS('lib/monthly-income-cards.ts');
+const {incomeStillExpected}=loadTS('lib/cash-flow-outlook.ts');
 const tile=({label,value,tone,href,aside,children})=>React.createElement('a',{href,'data-tone':tone},label,'=',value,aside&&React.createElement('small',null,aside),children);
 const {DashboardHeadline,useHeadlineFigures}=loadTS('components/dashboard-headline.tsx',{
  '@/components/language-provider':{useLanguage:()=>({locale:'en-US',t:(text,values={})=>text.replace(/\{(\w+)\}/g,(_,key)=>values[key]??key)})},
  '@/components/presentation-foundation/stat-tile':{StatTiles:({children,columns})=>React.createElement('div',{'data-columns':columns},children),StatTile:tile},
- '@/components/spending-pace-card':{paceDifference:state=>state.difference},
+ // As the real one: null when there is nothing to compare, never undefined.
+ '@/components/spending-pace-card':{paceDifference:state=>state.difference??null},
+ '@/components/presentation-foundation/info-hint':{InfoHint:({children})=>React.createElement('i',{'data-hint':true},children)},
+ '@/components/presentation-foundation/rolling-text':{RollingText:({text})=>text},
 });
+// This month as the Monthly review totals it, which the spending read carries beside the pace.
+const review={received:5000,spent:3824,missing:0,categories:[]};
+const plan=(extra={})=>({month:today.slice(0,7),rows:[],plan:6200,spent:3824,watched:[],over:[],covered:new Set(['Living expense']),budgeted:true,loading:false,...extra});
 const bill=(id,amount,extra={})=>({id,name:id,kind:'Living expense',amount,currency:'USD',frequency:'Monthly',date:today,notes:'',quantity:1,cost:0,rate:0,...extra});
 const data={records:[bill('gym',60),bill('pay',5000,{kind:'Salary'})],occurrences:[],debtPayments:[],categories:[],goals:[],activity:[]};
 const Headline=props=>React.createElement(DashboardHeadline,{...props,figures:useHeadlineFigures(props)});
-const render=props=>renderToStaticMarkup(React.createElement(Headline,{netWorth:1484820,budget:{month:today.slice(0,7),rows:[],plan:6200,spent:3824,watched:[],loading:false},data,currency:'USD',market:null,...props}));
+const render=props=>renderToStaticMarkup(React.createElement(Headline,{netWorth:1484820,budget:plan(),spending:{month:review,loading:false},data,currency:'USD',market:null,...props}));
 
-test('the key figures link this month, the budget, what is due within a week and the lowest cash ahead to their pages',()=>{
+test('the key figures link what is safe to spend, this month, what is due within a week and the lowest cash ahead to their pages',()=>{
  const html=render({});
  assert.match(html,/^<div data-columns="2">/,'a 2×2 beside the Net worth over time card');
  assert.doesNotMatch(html,/Net worth=/,'the card beside the figures leads with net worth');
+ assert.match(html,/^<div data-columns="2"><article class="stat-tile stat-tile-link stat-tile-covered"><h3><a class="stat-tile-cover" href="\/budget">Safe to spend<\/a><i data-hint="true">This month’s budget, minus what you have spent and the payments still due this month that no budget category covers\.<\/i><\/h3><strong class="positive">\$2,376<\/strong><div class="stat-tile-bar"><i style="width:61\.67[0-9]*%"><\/i><\/div><p>\$6,200 planned<\/p><\/article>/,'it leads the figures: 6,200 planned − 3,824 spent, and the gym bill is inside its category’s plan');
  assert.match(html,/<a href="\/transactions\?type=expense&amp;period=this_month">Spent this month=\$3,824<\/a>/);
- assert.match(html,/<a href="\/budget" data-tone="positive">Budget left=\$2,376<div class="stat-tile-bar"><i style="width:61\.67[0-9]*%"><\/i><\/div><p>\$3,824 of \$6,200 spent<\/p><\/a>/,'6,200 planned − 3,824 spent');
+ assert.doesNotMatch(html,/Budget left|Over budget/,'one figure says what is left');
  assert.match(html,/<a href="\/upcoming">Due in 7 days=\$60<p class="stat-tile-line"><span class="status-badge is-caution">1 due soon<\/span><span>Next: gym · Today<\/span><\/p><\/a>/,'the gym bill; the salary coming in is not due');
  assert.match(html,/<a href="\/income-expenses#forecast">Lowest balance ahead=/);
 });
@@ -34,35 +43,53 @@ test('with the net worth card hidden, net worth joins the figures as a tile of i
  assert.match(html,/^<div data-columns="auto"><a href="\/assets">Net worth=\$1,484,820<\/a>/);
 });
 
-test('the headline says over, or nothing, rather than a wrong budget figure',()=>{
- assert.match(render({budget:{plan:3000,spent:3824,loading:false}}),/data-tone="negative">Over budget=\$824<div class="stat-tile-bar negative"><i style="width:100%">/);
- assert.match(render({budget:{plan:0,spent:10,loading:false}}),/Budget left=—<\/a>/,'no plan, no remainder and no bar');
- assert.match(render({budget:{plan:6200,spent:0,loading:true}}),/Spent this month=—.*Budget left=—/,'still loading');
+const safe=html=>html.match(/<article class="stat-tile stat-tile-link stat-tile-covered">.*?<\/article>/)[0].replace(/<i data-hint.*?<\/i>/,'');
+test('safe to spend takes off what no budget category covers, says Over by, and falls back to income without a budget',()=>{
+ // The gym bill (60, due today) is outside the plan once its category has none: it comes off, and the tile says so.
+ assert.match(safe(render({budget:plan({covered:new Set()})})),/Safe to spend<\/a><\/h3><strong class="positive">\$2,316<\/strong>.*<p>\$6,200 planned · \$60 still due this month<\/p>/,'6,200 − 3,824 − 60');
+ assert.match(safe(render({budget:plan({plan:3000,spent:3824,loading:false})})),/href="\/budget">Over by<\/a><\/h3><strong class="negative">\$824<\/strong><div class="stat-tile-bar negative"><i style="width:100%">/,'over is said by the label, not by colour alone');
+ // No saved budget: expected income (received and still expected) − spent − everything still due.
+ const expected=incomeStillExpected(monthlyIncomeCards(data.records,today.slice(0,7),[],today,undefined),amount=>amount);
+ const none=render({budget:plan({budgeted:false,plan:60,covered:new Set(['Living expense'])})});
+ const left=5000+expected-3824-60;
+ assert.ok(none.includes('With no budget set: the income expected this month, minus what you have spent and everything still due this month.'),'the hint says which sum it is');
+ assert.ok(safe(none).includes(`<strong class="positive">$${left.toLocaleString('en-US')}</strong>`),'bills alone are no budget: '+safe(none));
+ assert.match(safe(none),/of \$[\d,]+ expected · \$60 still due this month<\/p>/);
+});
+
+test('safe to spend shows no figure while a read is loading, failed or holds an amount no rate converts',()=>{
+ assert.match(safe(render({budget:plan({plan:6200,spent:0,loading:true})})),/Safe to spend<\/a><\/h3><strong>—<\/strong><\/article>/,'still loading: no figure and no note');
+ assert.match(safe(render({spending:undefined})),/<strong>—<\/strong><\/article>/);
+ assert.match(safe(render({budget:plan({error:'Could not load data.'})})),/<strong>—<\/strong><\/article>/,'a failed read never reads as the whole plan left');
+ assert.match(safe(render({budget:plan({missing:1})})),/<strong>—<\/strong><p>Exchange rate unavailable\.<\/p><\/article>/,'one amount left out would overstate what is left');
+ const euro={...data,records:[bill('car',300,{kind:'Loan',currency:'EUR',frequency:'Once',date:shiftDay(today,2)})]};
+ assert.match(safe(render({data:euro})),/<strong>—<\/strong><p>Exchange rate unavailable\.<\/p><\/article>/,'a payment due that no rate converts');
+ assert.match(safe(render({budget:plan({budgeted:false}),spending:{month:{...review,missing:1},loading:false}})),/<strong>—<\/strong><p>Exchange rate unavailable\.<\/p>/,'without a budget the month’s own totals must be whole');
+ assert.match(safe(render({budget:plan({budgeted:false}),spending:{month:review,loading:false,error:'Could not load data.'}})),/<strong>—<\/strong><\/article>/);
+});
+
+test('the headline says nothing rather than a wrong figure',()=>{
+ assert.match(render({budget:plan({plan:6200,spent:0,loading:true}),spending:undefined}),/Spent this month=—/,'still loading');
  assert.match(render({data:null}),/<a href="\/upcoming">Due in 7 days=—<\/a>.*Lowest balance ahead=—/,'what is due and the cash ahead wait for the planning read');
 });
 
 test('spending says how far ahead of or behind last month it is by this day',()=>{
- assert.match(render({spending:{difference:-1637}}),/Spent this month=\$3,824<p class="stat-tile-trend"><svg[^>]*class="lucide lucide-trending-down positive"[^>]*>.*<span>\$1,637 less than last month by this day<\/span>/);
+ assert.match(render({spending:{month:review,difference:-1637}}),/Spent this month=\$3,824<p class="stat-tile-trend"><svg[^>]*class="lucide lucide-trending-down positive"[^>]*>.*<span>\$1,637 less than last month by this day<\/span>/);
  // The tile shows the Spending card's own figure (monthlyReview.spent, every category), not the Budget card's, which drops excluded categories (DRY-001).
- assert.match(render({spending:{difference:-1637,loading:false,pace:{spent:4100}}}),/Spent this month=\$4,100<p class="stat-tile-trend">/,'the tile, its trend and the Spending card agree');
- assert.match(render({spending:{difference:null,loading:true,pace:{spent:0}}}),/Spent this month=—/,'while the pace loads the tile waits rather than showing a different figure');
- assert.match(render({spending:{difference:null,loading:false,pace:{spent:0}},budget:{plan:6200,spent:3824,loading:true}}),/Spent this month=\$0/,'the pace is the figure even while the Budget card still loads');
- assert.match(render({spending:{difference:29}}),/<span>\$29 more than last month by this day<\/span>/);
- assert.match(render({spending:{difference:0}}),/<p class="stat-tile-trend"><span>Same as last month by this day<\/span>/,'no arrow when it is the same');
- assert.doesNotMatch(render({spending:{difference:null}}),/stat-tile-trend/,'nothing to compare');
+ assert.match(render({spending:{month:review,difference:-1637,loading:false,pace:{spent:4100}}}),/Spent this month=\$4,100<p class="stat-tile-trend">/,'the tile, its trend and the Spending card agree');
+ assert.match(render({spending:{month:review,difference:null,loading:true,pace:{spent:0}}}),/Spent this month=—/,'while the pace loads the tile waits rather than showing a different figure');
+ assert.match(render({spending:{month:review,difference:null,loading:false,pace:{spent:0}},budget:plan({plan:6200,spent:3824,loading:true})}),/Spent this month=\$0/,'the pace is the figure even while the Budget card still loads');
+ assert.match(render({spending:{month:review,difference:29}}),/<span>\$29 more than last month by this day<\/span>/);
+ assert.match(render({spending:{month:review,difference:0}}),/<p class="stat-tile-trend"><span>Same as last month by this day<\/span>/,'no arrow when it is the same');
+ assert.doesNotMatch(render({spending:{month:review,difference:null}}),/stat-tile-trend/,'nothing to compare');
 });
 
 test('spending with an amount no rate converts, or a read that failed, is unknown rather than a partial figure',()=>{
- const missing=render({spending:{difference:null,loading:false,error:'',pace:{spent:400,missing:true}}});
+ const missing=render({spending:{month:review,difference:null,loading:false,error:'',pace:{spent:400,missing:true}}});
  assert.match(missing,/Spent this month=—<p>Exchange rate unavailable\.<\/p>/,'never the $400 that could be converted');
- assert.match(render({spending:{difference:null,loading:false,error:'Could not load data.',pace:{spent:0,missing:false}}}),/Spent this month=—<\/a>/,'a failed read is not $0');
- assert.match(render({spending:undefined,budget:{plan:6200,spent:3824,loading:false,missing:2}}),/Spent this month=—<p>Exchange rate unavailable\.<\/p>/);
- assert.match(render({spending:undefined,budget:{plan:6200,spent:0,loading:false,error:'Could not load data.'}}),/Spent this month=—<\/a>/);
-});
-
-test('the budget tile has no remainder while the month is unknown',()=>{
- assert.match(render({budget:{plan:6200,spent:3824,loading:false,missing:1}}),/Budget left=—<p>Exchange rate unavailable\.<\/p><\/a>/,'one amount left out would overstate what is left');
- assert.match(render({budget:{plan:6200,spent:0,loading:false,error:'Could not load data.'}}),/Budget left=—<\/a>/,'a failed read never reads as the whole plan left');
+ assert.match(render({spending:{month:review,difference:null,loading:false,error:'Could not load data.',pace:{spent:0,missing:false}}}),/Spent this month=—<\/a>/,'a failed read is not $0');
+ assert.match(render({spending:undefined,budget:plan({plan:6200,spent:3824,loading:false,missing:2})}),/Spent this month=—<p>Exchange rate unavailable\.<\/p>/);
+ assert.match(render({spending:undefined,budget:plan({plan:6200,spent:0,loading:false,error:'Could not load data.'})}),/Spent this month=—<\/a>/);
 });
 
 test('the Due tile says overdue when that is what is left',()=>{

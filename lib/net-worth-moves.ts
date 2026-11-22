@@ -10,8 +10,8 @@ import { accountAmount } from './record-balance';
 export type BalanceMove = { record_id: string; date: string; entered: string; amount: number };
 /** An account operation as the history read returns it: a mortgage payment or a repayment, with the paying account's
  * balance before and after. */
-export type AccountOperation = { id: string; action: string; account_id: string; occurred_on: string; created_at?: string | null; before_balance: number | string; after_balance: number | string };
-type MovesInput = { records: readonly Entry[]; events: readonly HistoryEvent[]; cashflows?: readonly Entry[]; operations?: readonly AccountOperation[] };
+export type AccountOperation = { id: string; action: string; account_id: string; /** A transfer's other account, which received `received`. */target_id?: string | null; received?: number | string | null; occurred_on: string; created_at?: string | null; before_balance: number | string; after_balance: number | string };
+export type MovesInput = { records: readonly Entry[]; events: readonly HistoryEvent[]; cashflows?: readonly Entry[]; operations?: readonly AccountOperation[] };
 
 /** The calendar day a row was saved on, on the calendar the database dates balance snapshots by. */
 function enteredDay(createdAt: unknown): string | null {
@@ -23,7 +23,7 @@ const close = (a: number, b: number) => Math.abs(a - b) <= Math.max(.005, Math.a
 
 /** What a one-time transaction did to its cash account, in the account's currency; null when it did not move one.
  * Copies of a Tracker update, a mortgage payment, an operation's fee or a movement move cash through their source. */
-function transactionChange(row: Entry, account: Entry | undefined): number | null {
+export function transactionChange(row: Entry, account: Entry | undefined): number | null {
  if (!account || row.frequency !== 'Once' || !row.date || row.history_event_id || row.mortgage_payment_id || row.operation_id || row.movement_id) return null;
  const sign = income.includes(row.kind) ? 1 : expenses.includes(row.kind) ? -1 : 0;
  if (!sign || (row.currency !== account.currency && row.account_exchange_rate == null)) return null;
@@ -36,11 +36,17 @@ function transactionChange(row: Entry, account: Entry | undefined): number | nul
 function collector(events: readonly HistoryEvent[], today: string) {
  const snapshots = new Set<string>(), used = new Set<string>(), moves: BalanceMove[] = [];
  for (const event of events) if (event.balance !== null) snapshots.add(event.record_id + ':' + event.occurred_on);
+ // An account's own dated movements, by account, day and direction: each one answers for one change.
+ const own = new Map<string, HistoryEvent[]>();
+ for (const event of events) {
+  if (event.balance === null || (event.event_type !== 'withdrawal' && event.event_type !== 'contribution')) continue;
+  const key = event.record_id + ':' + event.occurred_on + ':' + event.event_type, list = own.get(key);
+  if (list) list.push(event); else own.set(key, [event]);
+ }
  const shownOnItsDay = (accountId: string, date: string, amount: number) => {
-  const own = events.find(event => !used.has(event.id) && event.record_id === accountId && event.occurred_on === date && event.balance !== null
-   && event.event_type === (amount < 0 ? 'withdrawal' : 'contribution') && close(Number(event.amount), Math.abs(amount)));
-  if (own) used.add(own.id);
-  return !!own;
+  const match = own.get(accountId + ':' + date + ':' + (amount < 0 ? 'withdrawal' : 'contribution'))?.find(event => !used.has(event.id) && close(Number(event.amount), Math.abs(amount)));
+  if (match) used.add(match.id);
+  return !!match;
  };
  const add = (recordId: string, date: string, createdAt: unknown, amount: number, ownMovement = false) => {
   const entered = enteredDay(createdAt);
@@ -55,9 +61,10 @@ function collector(events: readonly HistoryEvent[], today: string) {
  * of the day it was typed. Only changes whose late snapshot is on record are listed: the record must have a balance
  * written on the entry day, and an operation that already wrote the balance on its own date is left alone. A change
  * dated after its entry (a transaction saved for a coming day) stays where its snapshot is. */
-export function balanceMoves(input: MovesInput, today: string): BalanceMove[] {
+export function balanceMoves(input: MovesInput, today: string, rebuilt: ReadonlySet<string> = new Set()): BalanceMove[] {
  const byId = new Map(input.records.map(record => [record.id, record]));
- const cash = (id: string | null | undefined) => { const record = id ? byId.get(id) : undefined; return record?.kind === 'Cash' ? record : undefined; };
+ // An account whose history is rebuilt from its ledger (lib/cash-ledger.ts) already has every change on its own day.
+ const cash = (id: string | null | undefined) => { const record = id && !rebuilt.has(id) ? byId.get(id) : undefined; return record?.kind === 'Cash' ? record : undefined; };
  const { moves, add } = collector(input.events, today);
  for (const row of input.cashflows ?? []) {
   const account = cash(row.account_id), amount = transactionChange(row, account);

@@ -41,8 +41,7 @@
 .account-group>summary:focus-visible{outline:2px solid var(--ring);outline-offset:-3px}
 .account-group>.muted{padding:0 20px 12px;font-size:var(--type-small)}
 .account-rows{display:grid}
-.account-list-row{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;width:100%;min-height:64px;padding:10px 20px;padding-inline-start:38px;font-size:var(--type-small);text-align:start;cursor:pointer;transition:background .15s,transform var(--motion-quick) var(--ease-out)}
-.account-list-row:hover{background:color-mix(in srgb,var(--accent) 35%,transparent)}
+.account-list-row{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;width:100%;min-height:64px;padding:10px 20px;padding-inline-start:38px;font-size:var(--type-small);text-align:start;cursor:pointer}
 .account-list-row[aria-pressed=true]{background:color-mix(in srgb,var(--accent) 70%,transparent)}
 .account-list-row:focus-visible{outline:2px solid var(--ring);outline-offset:-3px}
 .account-list-amount{display:grid;justify-items:end;margin-inline-start:auto;max-width:100%;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -125,7 +124,6 @@
 .settings-layout .preferences-card .choice-card:hover{border-color:color-mix(in srgb,var(--primary) 45%,var(--border))}
 .settings-layout .preferences-card .choice-card[data-checked]{border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary);background:color-mix(in srgb,var(--primary) 8%,var(--card))}
 .choice-card:has(input:focus-visible){outline:2px solid var(--ring);outline-offset:2px}
-.choice-card:active{transform:scale(.985)}
 .choice-card-title{display:flex;align-items:center;gap:8px;font-size:var(--type-caption);font-weight:600}
 .workspace .content .preferences-card .choice-card-title input{appearance:none;flex:none;width:16px;height:16px;min-height:16px!important;margin:0;padding:0;border:1.5px solid var(--input);border-radius:50%;background:var(--card)!important;cursor:pointer}
 .workspace .content .preferences-card .choice-card-title input:checked{border:5px solid var(--primary)}
@@ -141,7 +139,6 @@
 .theme-preview[data-preview=dark]{--preview-page:#101412;--preview-rail:#242d27;--preview-card:#181e1b;--preview-line:#2c3630}
 .theme-preview[data-preview=system]{--preview-page:linear-gradient(90deg,#f6f5f3 50%,#101412 50%);--preview-rail:#e7e4e0;--preview-card:linear-gradient(90deg,#ffffff 50%,#181e1b 50%);--preview-line:#9aa39f}
 [dir=rtl] .theme-preview[data-preview=system]{--preview-page:linear-gradient(270deg,#f6f5f3 50%,#101412 50%);--preview-card:linear-gradient(270deg,#ffffff 50%,#181e1b 50%)}
-@media(prefers-reduced-motion:reduce){.settings-layout .preferences-card .choice-card{transition:none}.choice-card:active{transform:none}}
 .telegram-panel p{margin:0 0 12px;font-size:var(--type-small);line-height:1.5}
 .settings-layout .telegram-panel .telegram-option{display:flex;flex-direction:row;align-items:center;gap:10px;margin:0 0 10px;font-size:var(--type-small);cursor:pointer}
 .workspace .content .telegram-panel .telegram-option input{width:18px;height:18px;min-height:0;margin:0;accent-color:var(--primary)}
@@ -165,7 +162,7 @@
 .cash-flow-report-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px;align-items:stretch}
 .cash-flow-report-grid[data-view=sankey]{grid-template-columns:minmax(0,1fr)}
 .cash-flow-trend{display:flex;flex-direction:column}
-.cash-flow-trend>.cash-flow-chart{flex:1 1 auto;min-height:260px}
+.cash-flow-trend>.cash-flow-chart{flex:1 1 auto;min-height:220px}
 .cash-flow-key{display:flex;flex-wrap:wrap;gap:6px 14px;margin-bottom:8px;font-size:var(--type-caption);color:var(--muted-foreground)}
 .cash-flow-key>span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .cash-flow-key i{flex-shrink:0;width:9px;height:9px;border-radius:50%}
@@ -181,7 +178,6 @@
 .flow-bar-row{align-items:center;column-gap:12px;min-height:34px;padding:3px 6px;border-radius:8px;color:inherit;font:inherit;text-align:start}
 button.flow-bar-row{cursor:pointer}
 @media(hover:hover){button.flow-bar-row:hover{background:var(--muted)}}
-button.flow-bar-row:active{transform:scale(.985)}
 button.flow-bar-row:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
 .flow-bars>li[data-side=income]+li[data-side=expense],.flow-bars>li+li[data-side=left]{margin-top:8px;padding-top:8px;border-top:1px solid var(--hairline)}
 .flow-bar-name{display:flex;align-items:center;gap:10px;min-width:0}
@@ -191,6 +187,8 @@ button.flow-bar-row:focus-visible{outline:2px solid var(--ring);outline-offset:-
 .flow-bar-track{height:10px;border-radius:4px;background:var(--muted);overflow:hidden}
 .flow-bar-track>i{display:block;height:100%;border-radius:4px;background:color-mix(in srgb,var(--foreground) 55%,transparent)}
 .flow-bar-row>strong{font-weight:600;font-variant-numeric:tabular-nums;text-align:end;white-space:nowrap}
+/* A breakdown row (Reports) adds its share of the total after the amount, in a column of its own width so the amounts line up. */
+.flow-bar-row>strong>small{display:inline-block;min-width:3.25rem;margin-inline-start:8px;color:var(--muted-foreground);font-size:inherit;font-weight:400;text-align:end}
 .flow-bars>li[data-side=income] :is(.flow-bar-dot,.flow-bar-track>i){background:var(--positive)}
 .flow-bars>li[data-side=income] strong,.flow-bars>li[data-side=left] strong{color:var(--positive)}
 .flow-bars>li[data-side=left] .flow-bar-track>i{background:var(--primary)}
@@ -201,12 +199,15 @@ button.flow-bar-row:focus-visible{outline:2px solid var(--ring);outline-offset:-
  .flow-bar-row{row-gap:4px}
  .flow-bar-track{grid-column:1/-1;grid-row:2}
 }
-@media(prefers-reduced-motion:reduce){button.flow-bar-row:active{transform:none}}
 /* The closing card: what the month still expects, added up. */
 .cashflow-still-to-come dl{display:grid;gap:12px;margin:0}
 .cashflow-still-to-come dl>div{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:var(--type-small)}
 .cashflow-still-to-come dt{display:flex;align-items:center;gap:10px;min-width:0;color:var(--muted-foreground)}
-.cashflow-still-to-come dt>svg{flex-shrink:0;box-sizing:content-box;padding:6px;border-radius:8px;background:var(--muted)}
+.cashflow-still-to-come dt svg{flex-shrink:0;box-sizing:content-box;padding:6px;border-radius:8px;background:var(--muted)}
+/* A line opens the list it adds up: the income sources, Recurring's bills, the Budget. */
+.cashflow-still-link{display:flex;align-items:center;gap:10px;min-width:0;padding:0;border-radius:8px;color:inherit;font:inherit;text-align:start;cursor:pointer}
+@media(hover:hover){.cashflow-still-link:hover{color:var(--foreground)}}
+.cashflow-still-link:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 .cashflow-still-to-come dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
 .cashflow-still-to-come .cashflow-still-total{padding-top:12px;border-top:1px solid var(--hairline)}
 .cashflow-still-total dt{color:var(--foreground);font-weight:600}
@@ -222,6 +223,10 @@ button.flow-bar-row:focus-visible{outline:2px solid var(--ring);outline-offset:-
 /* Sentence-case column headings on every Cash flow table. */
 :is(.cashflow-preview-grid,.monthly-mortgage-payments,.records) th{font-size:var(--type-caption);font-weight:500;letter-spacing:normal;text-transform:none;vertical-align:bottom}
 .cashflow-income-preview .progress-line{min-width:5.5rem}
+/* A source's row opens the source, schedule or payment behind it. */
+.cashflow-income-preview tr[data-clickable]{cursor:pointer}
+@media(hover:hover){.cashflow-income-preview tr[data-clickable]:hover{background:color-mix(in srgb,var(--foreground) 4%,transparent)}}
+.cashflow-income-preview tr[data-clickable]:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
 .cashflow-preview-grid .row-actions{flex-wrap:wrap}
 .cashflow-preview-grid td:last-child,.cashflow-preview-grid th:last-child{text-align:end}
 .cashflow-preview-grid td{font-variant-numeric:tabular-nums}

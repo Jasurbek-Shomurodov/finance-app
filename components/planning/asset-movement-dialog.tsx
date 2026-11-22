@@ -43,7 +43,7 @@ export function AssetMovementDialog({initial,records,accounts=[],save,onClose}:{
  if(interest){sourceValue=0;targetValue=received;}
  const available=source?(isHolding(source)?source.quantity:source.amount):0;
  const valid=!!source&&!!target&&(interest||(source.id!==target.id&&draft.sent>0&&draft.sent<=available&&sourceValue>0))&&received>0&&targetValue>0&&!!draft.date&&draft.date<=depositToday()&&(draft.kind!=='transfer'||draft.fee<draft.sent);
- // Say why Save is unavailable rather than leaving an oversized fee unexplained.
+ // Say why Save is unavailable, in words beside it, rather than leaving it switched off unexplained.
  const feeTooHigh=draft.kind==='transfer'&&draft.fee>0&&draft.sent>0&&draft.fee>=draft.sent;
  const blocked=valid||submitted?undefined:movementBlocker({draft,source,target,available,amounts:interest?[received,targetValue]:[sourceValue,received,targetValue],rateIssue:crossTransfer&&!rate?(fx.error?'Check the dated exchange rate.':'Loading exchange rate for the selected date…'):undefined});
  const title={transfer:'Transfer money',buy:'Buy holding',sell:'Sell / convert holding',interest:'Record capitalized interest'}[draft.kind];
@@ -58,7 +58,7 @@ export function AssetMovementDialog({initial,records,accounts=[],save,onClose}:{
  const swap=()=>setDraft({...draft,source_id:draft.target_id,target_id:draft.source_id,sent:0,received:0,source_value:0,target_value:0,fee:0});
  const [initialDraft]=useState(()=>JSON.stringify(draft));
  const guard=useDiscardChanges(JSON.stringify(draft)!==initialDraft,onClose,busy);
- return <><Dialog open onOpenChange={open=>{if(!open&&!busy)guard.close();}}><DialogContent className="record-dialog" showCloseButton={!busy}>
+ return <><Dialog open onOpenChange={open=>{if(!open&&!busy)guard.close();}}><DialogContent className="record-dialog" showCloseButton={!busy} onOpenAutoFocus={focusAmount}>
   <DialogTitle>{t(title)}</DialogTitle><DialogDescription className="sr-only">{t(interest?'Record interest your bank has added to this deposit. It will earn interest from this date.':'Both sides are saved together. Enter the actual amounts from your transaction.')}</DialogDescription>
   <form className="record-form" onSubmit={async event=>{
    event.preventDefault();if((!valid&&!submitted)||busy)return;setBusy(true);setSubmitted(true);setError('');
@@ -88,9 +88,17 @@ export function AssetMovementDialog({initial,records,accounts=[],save,onClose}:{
    {source&&target&&valid&&<div className="ownership-summary">{!interest&&<p>{source.name}: {units(source,available-draft.sent)}</p>}<p>{target.name}: {units(target,(isHolding(target)?target.quantity:target.amount)+received)}</p><small>{t('Balances after this transaction')}</small></div>}
    {!interest&&(!movementSources(draft.kind,records).length||!movementTargets(draft.kind,source,records).length)&&<p className="muted">{t('Add the source and destination first. For a new holding or proceeds balance, start at zero.')}</p>}
    <ErrorPopup message={error}/>
-   <FormFooter busy={busy} onCancel={guard.close}><span title={busy?undefined:blockedReason}><Button disabled={busy||(!valid&&!submitted)}>{t(busy?'Saving…':submitted?'Retry':'Save')}</Button></span></FormFooter>
+   <FormFooter busy={busy} blocked={blockedReason} onCancel={guard.close}><Button disabled={busy||(!valid&&!submitted)}>{t(busy?'Saving…':submitted?'Retry':'Save')}</Button></FormFooter>
   </form>
  </DialogContent></Dialog>{guard.confirmation}</>;
+}
+
+/** Opening the dialog starts in the amount when the accounts are already chosen (a transfer from an account's row);
+ * otherwise focus goes to the first field as usual. */
+function focusAmount(event:Event){
+ const amount=(event.currentTarget as HTMLElement).querySelector<HTMLElement>('.tracker-fields input[inputmode="decimal"]:not([disabled])');
+ if(!amount)return;
+ event.preventDefault();amount.focus();
 }
 
 type MovementState = { draft:{kind:MovementKind;sent:number;fee:number}; source?:Entry; target?:Entry; available:number; amounts:number[]; rateIssue?:string };

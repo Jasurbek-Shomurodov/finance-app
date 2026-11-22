@@ -88,6 +88,9 @@ label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 [data-slot=dialog-content] .record-form-footer button{min-height:44px;border-radius:10px;padding-inline:22px}
 [data-slot=dialog-content] .record-form-footer .primary{min-width:160px}
 [data-slot=dialog-content] .record-form-footer{flex-wrap:wrap}[data-slot=dialog-content] .record-form-footer .primary{order:1}
+/* Why a field stops the save, under that field; and why Save is switched off, on its own line above the buttons. */
+.field-error{display:block;font-size:var(--type-caption);font-weight:400;line-height:1.4;color:var(--negative)}
+.record-form-footer .form-blocked-reason{order:-2;flex-basis:100%;margin:0;text-align:end;font-size:var(--type-small);line-height:1.4;color:var(--muted-foreground)}
 /* The Close × sits at the end edge in either direction (the primitive pins it right, the start side in Arabic). On touch it is 44px
  * square (it was 16×44), with its icon where it was: 16px from the top and the end edge. */
 [data-slot=dialog-content]>[data-slot=dialog-close]{right:auto;inset-inline-end:16px}
@@ -111,11 +114,9 @@ label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 .transaction-details-cards>button>svg{flex:none;color:var(--muted-foreground)}
 .transaction-details-cards>button:hover{border-color:var(--ring);background:var(--muted)}
 .transaction-details-cards>button:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
-.transaction-details-cards>button:active{transform:scale(.985)}
 [dir=rtl] .transaction-details-cards>button>svg:last-child{transform:scaleX(-1)}
 .transaction-details-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:16px;border-top:1px solid var(--hairline)}
 .transaction-details-actions>.delete-button{margin-inline-end:auto}
-@media(prefers-reduced-motion:reduce){.transaction-details-cards>button{transition:none}}
 @media(max-width:480px){.transaction-details-fields{grid-template-columns:minmax(0,1fr)}}
 /* Every delete is a bin (DeleteButton); in a form footer it stands apart at the start. */
 .delete-button:not(:disabled){color:var(--negative)}
@@ -189,7 +190,6 @@ label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 .tracker-history span,.tracker-history small{display:block;color:var(--muted-foreground);font-size:var(--type-small);margin-top:4px}
 .tracker-history p{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:6px;color:var(--muted-foreground)}
 .tracker-history li.tracker-event-open{cursor:pointer}
-.tracker-history li.tracker-event-open:hover{background:color-mix(in srgb,var(--foreground) 4%,transparent)}
 .tracker-history li.tracker-event-open:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
 @media(max-width:600px){.tracker-history ul{grid-template-columns:auto minmax(0,1fr) auto}.tracker-history li>.record-icon{grid-column:1;grid-row:1/span 2}.tracker-event-main,.tracker-event-amount{grid-column:2}.tracker-event-amount{text-align:start;margin-top:6px}.tracker-history li .delete-button{grid-column:3;grid-row:1/span 2}}
 
@@ -224,6 +224,14 @@ label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 /* A screen's loading shape (screen-skeletons.tsx): its blocks spaced like .content, and nothing in it answers a click. */
 .screen-skeleton-region{min-width:0}
 .screen-skeleton{display:flex;flex-direction:column;gap:var(--space-page);min-width:0;pointer-events:none}
+/* On a phone the page's own blocks sit 16px apart (tables.css), so its shimmer does too. */
+@media(max-width:640px){.screen-skeleton,.overview-content-loading{gap:16px}.entry-actions>.page-action-skeleton{flex:1}}
+/* The page's tabs and actions where the top bar has no room for them (`PageHeadingSkeleton`): a tab's label on the
+   tab's own line height, an action at the button's height. */
+.page-tab-skeleton{display:flex;align-items:center;min-height:39px;padding-inline:4px}
+@media(pointer:coarse){.page-tab-skeleton{min-height:44px}}
+.page-action-skeleton{height:42px;max-width:100%}
+.assistant-prompt-skeleton{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding:12px 4px}
 .panel-title-skeleton{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
 .goal-row-skeleton-body>div{display:flex;justify-content:space-between;gap:12px}
 .goal-row-skeleton{gap:12px;padding:12px 16px}

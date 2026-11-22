@@ -1,5 +1,7 @@
 import { budgetKey, income, expenses, type Entry } from './finance';
-import { chooseSchedule } from './planning';
+import { chooseSchedule, type Category } from './planning';
+import type { NameMatch } from './record-names';
+import { selectTransactionCategory } from './transaction-categories';
 
 /** What the income and expense forms fill in for someone from what they recorded before. Suggestions only fill blanks:
  * they never change a value the person chose, and never a saved record. */
@@ -42,6 +44,17 @@ export function scheduleChoice(payment: Entry, schedule: Entry | null, currencie
  const switchCurrency = !!schedule && !keepCurrency && !(payment.amount > 0) && payment.currency !== schedule.currency && currencies.includes(schedule.currency);
  const base = switchCurrency ? { ...payment, currency: schedule.currency } : payment;
  return { ...(switchCurrency ? { currency: schedule.currency, account_exchange_rate: null, account_rate_date: null, account_currency: null } : {}), ...chooseSchedule(base, schedule) };
+}
+
+/** Choosing a name used before fills in what that record had: its category (one still on offer: a built-in kind in
+ * `kinds`, or an added category) and, while the amount is still empty and the currency is the same, its last amount.
+ * An amount already typed is never replaced, and an amount in another currency is never shown under this one. */
+export function nameSuggestion(entry: Entry, match: NameMatch, categories: Category[], direction: Direction, kinds: readonly string[]): Entry {
+ const last = match.last;
+ if (!last) return { ...entry, name: match.name };
+ const key = last.custom_category_id ?? (kinds.includes(last.kind) ? last.kind : null);
+ const moved = key ? selectTransactionCategory(entry, key, categories, direction) : entry;
+ return { ...moved, name: match.name, amount: !(entry.amount > 0) && last.amount > 0 && last.currency === entry.currency ? last.amount : entry.amount };
 }
 
 /** The fields `after` changed from `before`: what a suggestion adds to the draft. */

@@ -94,7 +94,9 @@ test('loading skeletons keep the shape of the content they replace, so the page 
  const custom=render(WorkspaceSkeleton,{label:'Loading',columns:{left:['goals'],right:['net_worth','a','b','c']}});
  const [left,right]=custom.split('class="dashboard-column"').slice(1);
  assert.ok(!left.includes('overview-hero')&&right.includes('overview-hero'),'follows the saved layout');
- assert.equal(right.match(/<section/g).length,3,'at most three cards a column');
+ // Every shown card stands in its place (the loaded board draws them all), so nothing appears from nowhere.
+ assert.equal(right.match(/<section/g).length,4,'every card in the column');
+ assert.ok(right.indexOf('overview-hero')<right.indexOf('data-card="a"')&&right.indexOf('data-card="a"')<right.indexOf('data-card="b"')&&right.indexOf('data-card="b"')<right.indexOf('data-card="c"'),'in the saved order');
  const {AccountsSkeleton}=load('loading-placeholder.tsx',{'@/components/ui/skeleton':{Skeleton:element('span')}});
  const accounts=render(AccountsSkeleton,{label:'Loading records…'});
  assert.match(accounts,/^<div role="status" aria-busy="true" class="overview-content-loading"><span class="sr-only">Loading records…<\/span>/);
@@ -105,7 +107,10 @@ test('loading skeletons keep the shape of the content they replace, so the page 
 });
 
 test('every drawer destination shimmers in its own layout',()=>{
- const skeleton={'@/components/ui/skeleton':{Skeleton:element('span')}};
+ // A phone's top bar has no room for a page's actions, so PageHeader opens the page with them; the shimmer reserves
+ // that row there (page-heading-skeleton.tsx), and draws nothing for it where the bar holds them.
+ let slot={title:{},actions:null,tabsInBar:false};
+ const skeleton={'@/components/ui/skeleton':{Skeleton:element('span')},'./top-bar-slot':{useTopBarSlot:()=>slot}};
  const {screenSkeletons,NavigationShimmer,TransactionsSkeleton,ReportsSkeleton,RecoveryRowsSkeleton,PreferencesSkeleton}=load('screen-skeletons.tsx',{...skeleton,'./loading-placeholder':load('loading-placeholder.tsx',skeleton)});
  const paths=[...fs.readFileSync('components/workspace/navigation.ts','utf8').matchAll(/path: '([^']+)'/g)].map(match=>match[1]);
  assert.deepEqual(Object.keys(screenSkeletons).sort(),[...paths].sort(),'one skeleton per destination');
@@ -115,7 +120,7 @@ test('every drawer destination shimmers in its own layout',()=>{
  const shapes={'/':['stat-tiles','dashboard-grid','dashboard-column','overview-hero','dashboard-lead'],'/assistant':['assistant-layout','assistant-panel','assistant-log','assistant-form'],
   '/accounts':['accounts-hero','accounts-mix','accounts-master-detail','account-directory','account-selected-panel'],
   '/transactions':['transactions-tools','transactions-layout','transaction-columns-heading','transaction-day-heading','transaction-row','transaction-columns','records-pagination','transactions-aside','transactions-summary','transactions-net','transactions-flow','transactions-top','tools-panel'],
-  '/income-expenses':['cashflow-month-bar','cashflow-summary','cash-flow-report-tools','cash-flow-report-grid','cash-flow-trend','cash-flow-where','cashflow-income-preview','cashflow-still-to-come'],
+  '/income-expenses':['cashflow-month-bar','cashflow-summary','cash-flow-report-grid','cash-flow-trend','cash-flow-where','cashflow-income-preview','cashflow-still-to-come'],
   '/reports':['page-heading-actions','data-columns="4"','sankey-skeleton','report-transactions','transactions-summary'],
   '/budget':['budget-layout','budget-section','panel-title','budget-section-header','budget-category-row','budget-total-row','budget-side','budget-left','budget-left-figure','budget-pace','stat-tile'],
   '/upcoming':['recurring-summary','recurring-bar','recurring-left','recurring-layout','recurring-main','recurring-list-tools','transaction-day-heading','recurring-row','row-actions','recurring-side','recurring-coming'],
@@ -130,6 +135,10 @@ test('every drawer destination shimmers in its own layout',()=>{
   let at=-1;for(const name of shapes[path]){const next=html.indexOf(name,at+1);assert.ok(next>at,`${path}: ${name} in order`);at=next;}
  }
  assert.equal(render(NavigationShimmer,{label:'L',path:'/nowhere'}),render(NavigationShimmer,{label:'L',path:'/'}),'an unknown path shimmers as the dashboard');
+ slot={title:{},actions:{},tabsInBar:true};
+ assert.ok(!render(NavigationShimmer,{label:'L',path:'/reports'}).includes('page-heading'),'with room in the bar the heading row is not reserved');
+ slot=null;
+ assert.ok(!render(NavigationShimmer,{label:'L',path:'/reports'}).includes('page-heading'),'nor outside a workspace');
  // A screen that already drew its filters asks for the rest; the drawer draws them too.
  assert.ok(!render(TransactionsSkeleton,{label:'L',tools:false}).includes('transactions-tools'));
  const donut=render(ReportsSkeleton,{label:'L',donut:true});

@@ -8,8 +8,6 @@ import { BusinessMark } from '@/components/presentation-foundation/business-mark
 import type { BusinessOption } from '@/components/presentation-foundation/business-filter';
 import { TagChip } from '@/components/presentation-foundation/tag-chip';
 import { ConfirmDialog } from '@/components/presentation-foundation/confirm-dialog';
-import { Count } from '@/components/presentation-foundation/count';
-import { PanelTitle } from '@/components/presentation-foundation/panel-title';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
@@ -84,15 +82,4 @@ export function RulesDialog({ onClose, ...props }: RulesProps & { onClose: () =>
   </DialogContent>
  </Dialog>
  {removal.dialog}</>;
-}
-
-/** Settings › Rules: the same list as a panel. */
-export function RulesPanel(props: RulesProps) {
- const { t } = useLanguage();
- const removal = useRuleRemoval(props.onRemove);
- return <section className="panel tools-panel">
-  <PanelTitle title={t('Rules')} count={<Count value={props.rules.length}/>} hint={t('A rule sets the category, business or tags of transactions whose name contains its words. New bank statement imports follow your rules too.')}><Button onClick={props.onAdd}><Plus size={16} aria-hidden="true"/>{t('Add rule')}</Button></PanelTitle>
-  {ruleList(props, t, removal.criteria, removal.ask)}
-  {removal.dialog}
- </section>;
 }

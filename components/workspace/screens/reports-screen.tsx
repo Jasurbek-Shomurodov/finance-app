@@ -18,7 +18,10 @@ import { HOUSEHOLD } from '@/lib/business';
 import { drillMatches, filterLines, periodOf, reportLedger, shiftPeriod, trendWindow, unconvertedCount, type Drill, type Interval, type LedgerLine, type UnconvertedLine } from '@/lib/business-report';
 import { depositToday } from '@/lib/deposit-interest';
 import { inOwnerFilter, ownerOf, SHARED, workspaceOwners } from '@/lib/household';
-import { describeDrill, groupFinder, reportNames, reportTabsFor, reportTransactionsLink, tabLines, type ReportTab } from '@/lib/report-view';
+import { describeDrill, groupFinder, reportNames, reportTabs, reportTransactionsLink, tabLines, type ReportTab } from '@/lib/report-view';
+import { Briefcase, Plus } from 'lucide-react';
+import { EmptyState } from '@/components/presentation-foundation/empty-state';
+import { Button } from '@/components/ui/button';
 import { transactionsHref } from '@/lib/transaction-list';
 import { marketRates } from '@/lib/market';
 
@@ -28,7 +31,7 @@ const tabLabels: Record<ReportTab, string> = { cash_flow: 'Cash flow', spending:
  * profit and loss table, and business tax prep. Every chart narrows the transactions below it. */
 export function ReportsScreen() {
  const { t } = useLanguage();
- const { currency, market, budget, transactionTools, businessList, workspacePreferences, setViewing, storedRecord, household } = useWorkspace();
+ const { currency, market, budget, transactionTools, businessList, workspacePreferences, setViewing, storedRecord, household, setSettingUpBusinesses, readOnly } = useWorkspace();
  // In a shared household, reports narrow to what one person owns or to what is shared.
  const homes = household.state;
  const owners = workspaceOwners(homes, { shared: t('Shared'), unnamed: t('Partner') });
@@ -39,8 +42,8 @@ export function ReportsScreen() {
  const [interval, setInterval] = useState<Interval>('month');
  const [anchor, setAnchor] = useState(today);
  const period = periodOf(interval, anchor, today), trendRange = trendWindow(period, interval);
- const visibleTabs = reportTabsFor(businessList.length > 0);
- const shownTab = visibleTabs.includes(tab) ? tab : 'cash_flow';
+ // Every report is always listed; tax prep without a business invites adding one.
+ const shownTab = tab;
  // Tax prep reads its own tax year.
  const range = useRangeData(trendRange, shownTab !== 'tax');
  const { data } = range;
@@ -70,10 +73,11 @@ export function ReportsScreen() {
  const tabProps = { period, trendLines, trendRange, interval, names, groupOf, currency, onDrill: narrow, missing: unconvertedCount(tabLines(shownTab, unconverted)), trendMissing: unconvertedCount(tabLines(shownTab, trendUnconverted)) };
 
  return <div data-page="Reports" className="content reports-content">
-  <PageHeader title={t('Reports')} tabs={<Segmented as="nav" className="page-tabs" label={t('Reports')} options={visibleTabs.map(value => ({ value, label: t(tabLabels[value]) }))} value={shownTab} onChange={reset(setTab)}/>} hint={t('Cash flow, spending and income for your household and each business. Click any part of a chart or table to see its transactions.')}>
+  <PageHeader title={t('Reports')} tabs={<Segmented as="nav" className="page-tabs" label={t('Reports')} options={reportTabs.map(value => ({ value, label: t(tabLabels[value]) }))} value={shownTab} onChange={reset(setTab)}/>} hint={t('Cash flow, spending and income for your household and each business. Click any part of a chart or table to see its transactions.')}>
    {shownTab !== 'tax' && <ReportFilters businesses={businessList} business={businesses} onBusiness={reset(setBusinesses)} owners={owners} owner={ownerFilter} onOwner={reset(setOwnerFilter)} interval={interval} onInterval={reset(setInterval)} period={period} today={today} onStep={reset((steps: number) => setAnchor(shiftPeriod(period.from, interval, steps)))} onToday={() => reset(setAnchor)(today)}/>}
   </PageHeader>
-  {shownTab === 'tax' ? <TaxTab preferences={workspacePreferences.data.preferences} save={workspacePreferences.save} saving={workspacePreferences.loading} onOpen={open}/>
+  {shownTab === 'tax' ? (businessList.length ? <TaxTab preferences={workspacePreferences.data.preferences} save={workspacePreferences.save} saving={workspacePreferences.loading} onOpen={open}/>
+    : <section className="panel"><EmptyState icon={<Briefcase/>} title={t('No businesses yet.')} description={t('Add a business to prepare its tax figures here.')}>{!readOnly && <Button onClick={() => setSettingUpBusinesses(true)}><Plus size={16} aria-hidden="true"/>{t('Set up business tracking')}</Button>}</EmptyState></section>)
    : error ? <InlineError message={t(error)} onRetry={retry}/> : loading ? <ReportsSkeleton label={t('Loading records…')} donut={shownTab !== 'cash_flow'}/> : <ReportBody tab={shownTab} lines={lines} names={names} currency={currency} drill={drill} onClear={() => setDrill(null)} unconverted={unconverted} fileName={`${shownTab.replace('_', '-')}-${period.from}-${period.to}`} href={transactionsHref(reportTransactionsLink(shownTab, drill?.drill ?? null, period, businesses))} onOpen={open}>
     {shownTab === 'cash_flow' ? <CashFlowTab {...tabProps} lines={lines} includeHousehold={!businesses.length || businesses.includes(HOUSEHOLD)} businessIds={businessList.map(item => item.id).filter(id => businesses.includes(id) || (!businesses.length && (cashMode === 'trends' ? trendLines : lines).some(line => line.business === id)))} view={cashView} onView={setCashView} mode={cashMode} onMode={setCashMode}/>
      : <AttributeTab {...tabProps} key={shownTab} direction={shownTab === 'spending' ? 'expense' : 'income'} lines={tabLines(shownTab, lines)} trendLines={tabLines(shownTab, trendLines)} hasBusinesses={businessList.length > 0}/>}

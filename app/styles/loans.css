@@ -17,9 +17,6 @@
 .loan-group[data-level=borrower]{margin-top:4px;padding-block:6px;background:transparent;font-size:var(--type-small)}
 .loan-row{padding:14px 12px;border-radius:var(--radius-control);cursor:pointer}
 .loan-row+.loan-row{border-top:1px solid var(--hairline)}
-.loan-row:hover{background:color-mix(in srgb,var(--accent) 35%,transparent)}
-.loan-row:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
-.loan-row:active{background:color-mix(in srgb,var(--accent) 60%,transparent)}
 .loan-row-name{display:flex;align-items:center;gap:14px;min-width:0}
 .loan-row-name>div{display:grid;gap:3px;min-width:0}
 .loan-row-name strong{font-size:var(--type-compact);font-weight:600;overflow-wrap:anywhere}
@@ -90,7 +87,6 @@
 .payoff-methods>button{display:flex;flex-direction:column;gap:6px;min-width:0;padding:14px;border:1px solid var(--border);border-radius:var(--radius-card);background:none;color:inherit;font:inherit;text-align:start;cursor:pointer;transition:border-color var(--motion-quick),box-shadow var(--motion-quick),transform var(--motion-quick)}
 .payoff-methods>button:hover{border-color:color-mix(in srgb,var(--primary) 45%,var(--border))}
 .payoff-methods>button:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
-.payoff-methods>button:active{transform:scale(.985)}
 .payoff-methods>button[aria-pressed=true]{border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 14%,transparent)}
 .payoff-methods>button>span{display:flex;align-items:center;gap:6px;font-size:var(--type-caption);font-weight:600}
 .payoff-methods>button>strong{font-size:var(--type-body);font-weight:600}
@@ -101,4 +97,3 @@
 .payoff-payments>label:first-child{padding-bottom:16px;border-bottom:1px solid var(--hairline)}
 .payoff-payments>.payoff-payment{grid-template-columns:minmax(0,1fr) minmax(7rem,9rem);align-items:center;gap:12px}
 .payoff-payment>span{display:flex;align-items:center;gap:10px;min-width:0;overflow-wrap:anywhere}
-@media(prefers-reduced-motion:reduce){.payoff-methods>button{transition:none}.payoff-methods>button:active{transform:none}}

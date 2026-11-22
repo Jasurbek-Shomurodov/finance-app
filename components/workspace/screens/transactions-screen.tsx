@@ -40,15 +40,17 @@ import { emptyPlanning } from '@/lib/planning';
 import { ratesOf } from '@/lib/transaction-rates';
 import { bulkEditPlan, chunks, dailyAverage, emptyTransactionFilter, filtersTransactions, groupPageByDay, earliestTransactionDay, periodDays, signedAmount, summarizeTransactions, topSpendingCategories, transactionPeriodLabels, transactionPeriods, transactionsIn, transactionsQuery, type TransactionPeriod } from '@/lib/transaction-list';
 import { canRecategorize, categoryChoices, choiceKey, newRule, ruleFromBusiness, ruleFromChange, type CategoryChoice, type TransactionRule } from '@/lib/transaction-rules';
-import { TransactionInsights } from '@/components/transaction-insights';
+import { useHashRequest } from '@/hooks/use-hash-request';
+import { rulesHash } from '@/lib/add-links';
 import { shownName } from '@/lib/record-names';
+import { scrollBehavior } from '@/hooks/scroll-behavior';
 
 const transactionsPerPage = 20;
 
 export function TransactionsScreen() {
  const { t, locale } = useLanguage();
  const { enteredSigned } = useDisplayMoney();
- const { user, demo, reload, currency, market, planning, transactionTools, workspaceLoading, addCashFlow, setViewing, storedRecord, categorize, assignTransactionsBusiness, businessList, tags, attachments, refreshRecords, household, readOnly, assignRecordOwner, removedCategories, reviewRecurring } = useWorkspace();
+ const { user, demo, reload, currency, market, planning, transactionTools, workspaceLoading, addCashFlow, setViewing, storedRecord, categorize, assignTransactionsBusiness, businessList, tags, attachments, refreshRecords, household, readOnly, assignRecordOwner, removedCategories } = useWorkspace();
  // In a shared household: whose transactions to show, and who each one belongs to.
  const homes = household.state;
  const owners = useMemo(() => homes && sharedWorkspace(homes) ? ownerChoices(homes, { shared: t('Shared'), unnamed: t('Partner') }) : [], [homes, t]);
@@ -70,6 +72,8 @@ export function TransactionsScreen() {
  const [selected, setSelected] = useState<Set<string>>(new Set());
  const [rule, setRule] = useState<TransactionRule | null>(null);
  const [rulesOpen, setRulesOpen] = useState(false);
+ // Rules live here; Settings, the command menu and the business guide open them with /transactions#rules.
+ useHashRequest(rulesHash, () => setRulesOpen(true));
  const live = !!user && !demo;
  const range = period === 'custom' ? custom : periodDays(period, today);
  const remote = useOwnerResource(`/api/planning?scope=budget&month=${range.to.slice(0, 7)}&from=${range.from.slice(0, 7)}`, user, live, reload, emptyPlanning);
@@ -194,11 +198,10 @@ export function TransactionsScreen() {
       </li>;
      })}
     </DayGroup>) : <EmptyState icon={<ReceiptText/>} title={t('No transactions')} description={t(filtersTransactions(filter) || ownerFilter.length ? 'Nothing matches these filters in this period.' : 'Income and spending you record appear here, grouped by day.')}><AddTransactionMenu onAdd={addCashFlow}/></EmptyState>}
-    <Pagination label={t('Transaction pages')} summary={t('Page {page} of {pages} · {count} transactions', { page: formatNumber(page, locale, 0), pages: formatNumber(pageCount, locale, 0), count: formatNumber(records.length, locale, 0) })} page={page} pageCount={pageCount} hasNext={page < pageCount} onPage={next => { setPaging({ key: listKey, page: next }); document.querySelector('.transactions-list')?.scrollIntoView({ block: 'start', behavior: 'smooth' }); }}/>
+    <Pagination label={t('Transaction pages')} summary={t('Page {page} of {pages} · {count} transactions', { page: formatNumber(page, locale, 0), pages: formatNumber(pageCount, locale, 0), count: formatNumber(records.length, locale, 0) })} page={page} pageCount={pageCount} hasNext={page < pageCount} onPage={next => { setPaging({ key: listKey, page: next }); document.querySelector('.transactions-list')?.scrollIntoView({ block: 'start', behavior: scrollBehavior() }); }}/>
    </section>
    <TransactionsSummary title={period === 'custom' ? t('Summary') : t(transactionPeriodLabels[period])} summary={summary} average={dailyAverage(summary.spent, range)} top={top} currency={currency}/>
   </div>}
-  {!loading && !error && <TransactionInsights owner={user} demo={demo} revision={reload} records={planning.data.records} today={today} onReview={reviewRecurring}/>}
   {editingMany && <BulkEditSheet records={chosen} categories={data.categories} removed={removedCategories.kinds} businesses={businessList} owners={owners} tags={tags.data.tags} tagsOf={tagsOf} onCreateTag={createTag} onSave={editMany} onClose={() => setEditingMany(false)}/>}
   {rule && <RuleDialog key={rule.id} rule={rule} records={demo ? data.records : undefined} categories={data.categories} removed={removedCategories.kinds} businesses={businessList} accounts={[...accounts].map(([id, name]) => ({ id, name }))} tags={tags.data.tags} tagsOf={tagsOf} onCreateTag={createTag} splits={splits} onSave={async (next, apply) => { const changed = await rules.save(next, apply); if (apply) showNotice(t('{changed} updated', { changed: formatNumber(changed, locale, 0) })); return changed; }} onClose={() => setRule(null)}/>}
   {rulesOpen && !rule && <RulesDialog rules={rules.rules} loading={rules.loading} error={rules.error} onRetry={rules.retry} categories={data.categories} businesses={businessList} tags={tags.data.tags} onEdit={setRule} onAdd={() => setRule(newRule())} onRemove={item => rules.remove(item.id)} onClose={() => setRulesOpen(false)}/>}

@@ -103,10 +103,10 @@ export function setupGuide(trackedBefore: boolean | null, hasTags: boolean): Arr
  return trackedBefore ? [
   { emoji: '🏷️', title: 'Keep your categories', detail: 'Any category works for business transactions. Nothing needs recategorizing.', action: 'Review transactions', href: '/transactions' },
   tags,
-  { emoji: '⚙️', title: 'Update your rules', detail: 'Rules that tagged a business can now set the business itself.', action: 'Set up rules', href: '/settings#rules' },
+  { emoji: '⚙️', title: 'Update your rules', detail: 'Rules that tagged a business can now set the business itself.', action: 'Set up rules', href: '/transactions#rules' },
  ] : [
   { emoji: '🧾', title: 'Assign personal-account spending', detail: 'On Transactions, set the business of anything paid from a personal account.', action: 'Review transactions', href: '/transactions?business=household' },
-  { emoji: '⚙️', title: 'Create rules', detail: 'A rule can send every purchase from a merchant to a business automatically.', action: 'Set up rules', href: '/settings#rules' },
+  { emoji: '⚙️', title: 'Create rules', detail: 'A rule can send every purchase from a merchant to a business automatically.', action: 'Set up rules', href: '/transactions#rules' },
   { emoji: '📊', title: 'Watch each business', detail: 'Reports show each business’s profit and loss; tax prep is ready when you need it.', action: 'Explore business tax tools', href: '/reports?tab=tax' },
   ...(trackedBefore === null && hasTags ? [tags] : []),
  ];

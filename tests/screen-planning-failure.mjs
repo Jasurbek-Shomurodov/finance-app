@@ -9,7 +9,7 @@ const part = name => () => h('div', { 'data-part': name });
 const Segmented = ({ onChange, options }) => h('nav', null, options.map(option => h('button', { key: option.value, 'data-tab': option.value, onClick: () => onChange(option.value) }, option.label)));
 function screen(file, name, tab, planning) {
  const r = createRenderer(), retries = { count: 0 };
- const workspace = { user: 'me', demo: false, rows: [], summary: [], current: [], currency: 'USD', market: null, preferencesData: { currencies: ['USD'] }, excludedCurrencies: [], workspacePreferences: {}, reload: 0, workspaceLoading: false, tableLoading: false, error: '', refreshRecords: () => retries.count++, planning };
+ const workspace = { user: 'me', demo: false, rows: [], summary: [], current: [], currency: 'USD', market: null, preferencesData: { currencies: ['USD'] }, excludedCurrencies: [], workspacePreferences: {}, reload: 0, workspaceLoading: false, tableLoading: false, error: '', refreshRecords: () => retries.count++, planning, businessList: [], readOnly: false, setSettingUpBusinesses() {} };
  const { [name]: Screen } = r.load(file, {
   ...ui.modules,
   '@/components/workspace/workspace-provider': { useWorkspace: () => workspace },
@@ -17,7 +17,7 @@ function screen(file, name, tab, planning) {
   '@/components/presentation-foundation/page-header': { PageHeader: ({ children, tabs }) => h('header', null, tabs, children) },
   '@/components/presentation-foundation/inline-error': { InlineError: ({ message, onRetry }) => h('p', { role: 'alert', 'data-retry': !!onRetry }, message) },
   '@/components/presentation-foundation/loading-placeholder': { PanelSkeleton: part('skeleton') },
-  '@/components/presentation-foundation/screen-skeletons': { InvestmentsSkeleton: part('skeleton'), LoansSkeleton: part('skeleton') },
+  '@/components/presentation-foundation/screen-skeletons': { InvestmentsSkeleton: part('skeleton'), LoansSkeleton: part('skeleton'), AllocationSkeleton: part('skeleton'), PerformanceSkeleton: part('skeleton') },
   '@/components/asset-dashboard': { AssetDashboard: part('dashboard') },
   '@/components/planning/add-asset-dialog': { AddAssetDialog: () => null },
   '@/components/portfolio-allocation-plan': { PortfolioAllocationPlan: part('plan') },

@@ -12,6 +12,22 @@ export async function readAllPages<T>(page:(range:string)=>Promise<Response|T[]>
   rows.push(...batch);if(batch.length<pageSize)return rows;
  }
 }
+/** `readAllPages` for a query whose order is total (it ends in a unique column): after the first page, the next `width`
+ * pages are asked for together, each at its own bounded offset, until one comes back short. A table that fits one page
+ * costs one request, and a long one costs a few round trips instead of one per page. A failed page throws `error`. */
+export async function readPagesTogether<T>(page:(range:string)=>Promise<Response|T[]>,error='Database request failed.',width=4):Promise<T[]>{
+ const one=async(offset:number)=>{
+  const result=await page(`limit=${pageSize}&offset=${offset}`);
+  if(result instanceof Response&&!result.ok)throw Error(error);
+  return result instanceof Response?await result.json() as T[]:result;
+ };
+ const rows=[...await one(0)];
+ for(let offset=pageSize,full=rows.length===pageSize;full;offset+=width*pageSize){
+  const batches=await Promise.all(Array.from({length:width},(_,index)=>one(offset+index*pageSize)));
+  for(const batch of batches){rows.push(...batch);if(batch.length<pageSize){full=false;break;}}
+ }
+ return rows;
+}
 /** Every row of an `order=id.asc` query. Each page asks for the rows after the last id it has (`id=gt.…`), so a page is
  * one index range of (user_id,id) rather than an offset the database counts past again; a failed page throws `error`. */
 export async function readIdPages<T extends {id:string}>(page:(range:string)=>Promise<Response|T[]>,error='Database request failed.'):Promise<T[]>{

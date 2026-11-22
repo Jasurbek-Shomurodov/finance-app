@@ -52,11 +52,15 @@ test('the closing card and the month bar read whole amounts, written dates and a
  const card = renderToStaticMarkup(React.createElement(StillToCome, { outlook, month: '2026-11', currency: 'USD' }));
  assert.match(card, /Still to come <span class="panel-figure">November 2026<\/span>/);
  assert.match(card, /Income expected<\/dt><dd class="positive">\+\$6,000</);
- assert.match(card, /Bills due<\/dt><dd>\$500</);
+ assert.match(card, /<a class="cashflow-still-link" href="\/upcoming">.*?Bills due<\/a><\/dt><dd>\$500</, 'the bills open Recurring');
+ assert.match(card, /<a class="cashflow-still-link" href="\/budget">.*?Other expected spending<\/a><\/dt><dd>\$1,500</, 'the rest of the spending opens the Budget');
+ assert.doesNotMatch(card, /<button[^>]*cashflow-still-link/, 'without onIncome the income line stays plain');
+ const linked = renderToStaticMarkup(React.createElement(StillToCome, { outlook, month: '2026-11', currency: 'USD', onIncome() {} }));
+ assert.match(linked, /<button type="button" class="cashflow-still-link">.*?Income expected<\/button><\/dt><dd class="positive">\+\$6,000</, 'with onIncome the income line opens the income sources');
  assert.match(card, /Projected net cash flow<\/dt><dd class="positive">\+\$5,000</);
  assert.doesNotMatch(card, /\$[\d,]+\.\d/, 'no decimal tails');
  const unknown = renderToStaticMarkup(React.createElement(StillToCome, { outlook: { ...outlook, other: null, surplus: null }, month: '2026-11', currency: 'USD' }));
- assert.match(unknown, /Other expected spending<\/dt><dd>—</);
+ assert.match(unknown, /Other expected spending<\/a><\/dt><dd>—</);
  assert.match(unknown, /Projected net cash flow<\/dt><dd>—</);
  const { CashFlowMonthBar } = loadTS('components/cash-flow/month-bar.tsx', modules);
  const bar = (month, shown) => renderToStaticMarkup(React.createElement(CashFlowMonthBar, { month, onChange() {}, outlook: shown, currency: 'USD' }));

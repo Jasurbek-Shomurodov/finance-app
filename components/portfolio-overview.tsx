@@ -4,7 +4,6 @@ import { Segmented } from '@/components/presentation-foundation/segmented';
 import { demoHistory } from '@/lib/demo-finance';
 import { InvestmentPeriodSummary, type PeriodOpener } from '@/components/investment-period-summary';
 import { InvestmentComparison } from '@/components/investment-comparison';
-import { investmentValueChange } from '@/lib/investment-portfolio';
 import { PartialTotal } from '@/components/presentation-foundation/partial-total';
 import { IncomeHistoryChart } from '@/components/charts-lazy';
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
@@ -19,12 +18,13 @@ import { changePercent } from '@/lib/overview';
 import { useLanguage } from '@/components/language-provider';
 import { NetWorthBodySkeleton } from '@/components/presentation-foundation/loading-placeholder';
 import { financialTotals, type Entry } from '@/lib/finance';
-import { formatMoney, formatNumber, formatPercent, formatSignedMoney } from '@/lib/format';
+import { formatDate, formatMoney, formatNumber, formatPercent, formatSignedMoney } from '@/lib/format';
 import { depositToday } from '@/lib/deposit-interest';
 import { mergePortfolioPoints } from '@/lib/portfolio-snapshots';
-import { currentParts, portfolioHistory, portfolioWindow, trackingWindowStart } from '@/lib/portfolio-history';
+import { chartDay, currentParts, periodChange, portfolioHistory, portfolioWindow, trackingWindowStart } from '@/lib/portfolio-history';
 import { pricesByRecord } from '@/lib/holding-prices';
-import { balanceMoves } from '@/lib/net-worth-moves';
+import { netWorthBalances } from '@/lib/cash-ledger';
+import { historyFx } from '@/lib/history-rates';
 import { useComparisonProfile } from '@/hooks/use-comparison-profile';
 import { type MarketData, marketRates } from '@/lib/market';
 import type { PortfolioHistory } from '@/hooks/use-portfolio-history';
@@ -45,22 +45,27 @@ export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecord
  const comparison = useComparisonProfile(demo);
  const { ref: cardRef, open: filling, toggle: toggleFullscreen, chartHeight } = useFullscreenCard<HTMLElement>();
  const shownRange = filling && movedAway ? -1 : range;
- const today = depositToday();
+ // The read names its day; the chart ends on that day unless the browser is already on a later one (`chartDay`).
+ const today = chartDay(depositToday(), demo ? null : savedHistory?.today);
  const history: PortfolioHistory | null = useMemo(() => demo ? demoHistory(demoRecords ?? [], today) : savedHistory, [demo, demoRecords, today, savedHistory]);
  const money = (amount: number) => formatMoney(amount, currency, locale);
  const {totalAssets:assetTotal,totalDebt:debt}=financialTotals(entries);
  const rates = marketRates(market);
- // Each day shows what had happened by then: a transaction or payment entered late counts from its own date.
- const moves = useMemo(() => balanceMoves(history ?? noHistory, today), [history, today]);
- const recorded = useMemo(() => portfolioHistory(history?.records ?? noHistory.records, history?.events ?? noHistory.events, currency, rates, today, true, moves, pricesByRecord(history?.records ?? noHistory.records, history?.prices)), [history, currency, rates, today, moves]);
+ // Each day shows what had happened by then: a cash account is its balance today walked back through its dated
+ // changes, and any other change entered late counts from its own date.
+ const balances = useMemo(() => netWorthBalances(history ?? noHistory, today), [history, today]);
+ // Each past day converts at its own day's rates and today at the live ones; the comparison reads the same series.
+ const fx = useMemo(() => historyFx(history?.fx, rates, today), [history, rates, today]);
+ const recorded = useMemo(() => portfolioHistory(history?.records ?? noHistory.records, balances.events, { currency, rates, today, includePartial: true, moves: balances.moves, prices: pricesByRecord(history?.records ?? noHistory.records, history?.prices), fx }), [history, balances, currency, rates, today, fx]);
  const portfolioValue = assetTotal - debt;
  // Today's point carries its own breakdown by kind, so the chart can say what moved net worth since the last recorded day.
  const points = useMemo(() => mergePortfolioPoints(recorded.points, [], {date:today,assets:assetTotal,debt,net:portfolioValue,parts:currentParts(entries)}), [recorded.points, today, assetTotal, debt, portfolioValue, entries]);
  const windowStart = trackingWindowStart(range, today, comparison.trackingStart);
  const visible = portfolioWindow(points, range, today, comparison.trackingStart);
  const tracked = useMemo(() => portfolioWindow(points, null, today, comparison.trackingStart), [points, today, comparison.trackingStart]);
- const partialHistory = visible.some(point=>point.partial);
- const change = partialHistory ? null : investmentValueChange(visible.map(point=>point.net));
+ // A holding whose history begins inside the period leaves its earlier days incomplete: the change is then measured
+ // from the first day that counts everything, and the headline says since when.
+ const { change, from: coveredFrom } = periodChange(visible);
  const loading = !demo && !history && !error;
  const percent = changePercent(portfolioValue, change);
  const Trend = change !== null && change < 0 ? TrendingDown : TrendingUp;
@@ -71,9 +76,9 @@ export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecord
      <h2 id="overview-net-worth">{t('Net worth over time')}</h2>
      {/* Today's figure leads the card; the tiles beside it are this month's. */}
      <strong className="overview-hero-figure"><RollingText text={money(portfolioValue)}/></strong>
-     {!loading && !error && change !== null && <p><span className={change >= 0 ? 'overview-delta positive' : 'overview-delta negative'}><Trend size={15} aria-hidden="true"/>{change > 0 ? '+' : ''}{money(change)}{percent !== null && <> · {percent > 0 ? '+' : ''}{formatPercent(percent, locale)}</>}</span><span>{t('Change in selected period')}</span></p>}
+     {!loading && !error && change !== null && <p><span className={change >= 0 ? 'overview-delta positive' : 'overview-delta negative'}><Trend size={15} aria-hidden="true"/>{change > 0 ? '+' : ''}{money(change)}{percent !== null && <> · {percent > 0 ? '+' : ''}{formatPercent(percent, locale)}</>}</span><span>{coveredFrom ? t('Tracking since {date}', { date: formatDate(coveredFrom, locale) }) : t('Change in selected period')}</span></p>}
      {/* The change in two parts: what the investments earned, and the rest, which came from the person's own money. */}
-     {!loading && !error && change !== null && growth && <p className="overview-change-split"><span><i className="returns" aria-hidden="true"/>{t('Investment returns')} <b className={signTone(growth.returns)}>{formatSignedMoney(growth.returns, currency, locale)}</b></span><span><i aria-hidden="true"/>{t('Your own money')} <b className={signTone(change - growth.returns)}>{formatSignedMoney(change - growth.returns, currency, locale)}</b></span><InfoHint>{t('Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.', { amount: money(Math.max(0, growth.invested)) })}</InfoHint></p>}
+     {!loading && !error && change !== null && !coveredFrom && growth && <p className="overview-change-split"><span><i className="returns" aria-hidden="true"/>{t('Investment returns')} <b className={signTone(growth.returns)}>{formatSignedMoney(growth.returns, currency, locale)}</b></span><span><i aria-hidden="true"/>{t('Your own money')} <b className={signTone(change - growth.returns)}>{formatSignedMoney(change - growth.returns, currency, locale)}</b></span><InfoHint>{t('Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.', { amount: money(Math.max(0, growth.invested)) })}</InfoHint></p>}
      <PartialTotal currencies={excludedCurrencies}/>
     </div>
     <div className="overview-hero-tools">
@@ -83,7 +88,7 @@ export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecord
     </div>
    </header>
    {loading ? <NetWorthBodySkeleton label={t('Loading history…')}/> : error ? <InlineError message={t('Could not load portfolio history.')} onRetry={onHistoryRetry}/> : <>
-    <InvestmentComparison allPoints={tracked} periodPick={periodPick} onViewMove={markMoved} chartHeight={chartHeight} history={history??noHistory} today={today} currency={currency} market={market} demo={demo} windowStart={windowStart} points={visible} profile={comparison.profile} profileError={comparison.error} trackingStart={comparison.trackingStart} onTrackingStartChange={comparison.saveTrackingStart} onGrowth={setGrowth} summary={(fx,scope)=><InvestmentPeriodSummary scope={scope} opener={opener} input={{records:history?.records??noHistory.records,events:history?.events??noHistory.events,cashflows:history?.cashflows,movements:history?.movements,market,currency,today,fx,categories,holdings,businesses}} start={windowStart}/>}/>
+    <InvestmentComparison fx={fx} allPoints={tracked} periodPick={periodPick} onViewMove={markMoved} chartHeight={chartHeight} history={history??noHistory} today={today} currency={currency} market={market} demo={demo} windowStart={windowStart} points={visible} profile={comparison.profile} profileError={comparison.error} trackingStart={comparison.trackingStart} onTrackingStartChange={comparison.saveTrackingStart} onGrowth={setGrowth} summary={(fx,scope)=><InvestmentPeriodSummary scope={scope} opener={opener} input={{records:history?.records??noHistory.records,events:history?.events??noHistory.events,cashflows:history?.cashflows,movements:history?.movements,market,currency,today,fx,categories,holdings,businesses}} start={windowStart}/>}/>
     {recorded.missing > 0 && <p className="muted overview-hero-note">{t('Some holdings have no recorded history yet.')}</p>}
     {excludedCurrencies.length > 0 && <p className="muted overview-hero-note">{t('Some currencies could not be converted and are excluded from totals.')}</p>}
    </>}

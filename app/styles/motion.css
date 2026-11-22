@@ -17,6 +17,12 @@
 /* Only the first thing a page shows rises in: what replaces it on the same page (a skeleton swapped for content) is
    marked settled by `useArrivalMarks` and appears in place. It must beat every entrance rule, reduced motion's too. */
 .workspace [data-settled]{animation:none!important}
+/* A page tab swaps its view in place: the blocks the tab brought in (`data-swapped`, set by `useArrivalMarks` for the
+   first thing shown after a press on a page tab) fade up a few pixels while the tab's marker slides, so the change
+   reads as one movement instead of a cut. Shorter than an arrival, opacity and transform only; what loads into the
+   view afterwards (its skeleton swapped for content) still appears in place. */
+@keyframes tab-in{from{opacity:0;transform:translateY(4px)}}
+.workspace [data-settled][data-swapped]{animation:tab-in var(--motion-swap) var(--ease-out) backwards!important}
 @media(hover:hover){
  .stat-tile-link{transition:border-color var(--motion-quick),background var(--motion-quick),transform .2s var(--ease-out),box-shadow .2s}
  .stat-tile-link:hover{transform:translateY(-2px);box-shadow:0 10px 24px -14px color-mix(in srgb,var(--mark-bg) 50%,transparent),var(--shadow-card)}
@@ -64,7 +70,16 @@ html[data-theme-switch]::view-transition-new(root){animation:theme-reveal .52s v
 /* Under reduced motion nothing travels, grows or lifts, but a change is not silent either: arrivals become a short
    fade, so it still shows that something appeared, and overlays only fade in and out. */
 @media(prefers-reduced-motion:reduce){
+ /* One place stills every press and every transition in the app (21 November 2026): the press scales become 1, and no
+    hover, colour, chevron, switch or drag eases, so a stylesheet never needs its own `transition:none` or
+    `:active{transform:none}`. Animations are different: each keeps its own rule below or beside it, because some
+    become a fade instead of stopping. */
+ :root{--press:1;--press-wide:1}
+ *,*::before,*::after{transition:none!important}
+ /* `*` reaches elements and ::before/::after only; a vendor pseudo-element that eases is listed here by name. */
+ .goal-target-progress::-webkit-progress-value{transition:none!important}
  .workspace .content>*,.stat-tiles>.stat-tile,.dashboard-grid>*,[data-arrived]{animation:fade-only .15s linear backwards;transition:none}
+ .workspace [data-settled][data-swapped]{animation:fade-only .12s linear backwards!important}
  .stat-tile-bar>i,.progress-track>*,.budget-progress>div,.asset-card-share i,.allocation-share>span,.stat-tile-link{animation:none;transition:none}
  .stat-tile-link:hover{transform:none}
  html[data-theme-switch]::view-transition-new(root){animation:none}

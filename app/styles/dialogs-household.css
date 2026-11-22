@@ -21,9 +21,6 @@
 .record-dialog.cash-flow-drill-dialog{max-width:min(960px,calc(100vw - 32px))!important}
 .cash-flow-drill-back{justify-self:start;margin-inline-start:-8px}
 .cash-flow-drill-details{justify-self:start}
-.share-bar-button{display:flex;min-width:0;padding:0;border-radius:6px;text-align:start}
-.share-bar-button:hover .share-bar{filter:brightness(.96)}
-.share-bar-button:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 .trend-legend[data-hidden]{opacity:.4;text-decoration:line-through}
 .breakdown-donut{display:grid;grid-template-columns:minmax(0,240px) minmax(0,1fr);align-items:center;gap:24px}
 .donut-slice{cursor:pointer;outline:none}
@@ -46,7 +43,6 @@
 .pnl-toggle>svg{transition:transform .15s}
 .pnl-toggle[aria-expanded=false]>svg{transform:rotate(-90deg)}
 [dir=rtl] .pnl-toggle[aria-expanded=false]>svg{transform:rotate(90deg)}
-@media (prefers-reduced-motion:reduce){.pnl-toggle>svg{transition:none}}
 .pnl-drill{position:relative;display:inline-grid;place-items:center;width:24px;height:24px;margin-inline-start:6px;border-radius:6px;color:var(--muted-foreground);opacity:0}
 .pnl-table tr:hover .pnl-drill,.pnl-drill:focus-visible{opacity:1}
 .pnl-drill:hover{background:var(--muted);color:var(--foreground)}
@@ -58,7 +54,7 @@
 .report-transactions .records-pagination{padding:12px 0 0}
 .report-transaction-list{display:flex;flex-direction:column;margin:0;padding:0;list-style:none}
 .report-transaction-list>li>*{display:grid;grid-template-columns:auto minmax(0,1.4fr) minmax(0,1fr) minmax(max-content,.45fr);align-items:center;gap:12px;width:100%;padding:9px 0;font-size:var(--type-small);text-align:start}
-.report-transaction-list>li>button:hover,.report-transaction-list>li>button:focus-visible{background:color-mix(in srgb,var(--muted) 60%,transparent)}
+.report-transaction-list>li>button:focus-visible{background:var(--row-hover)}
 .report-transaction-list>li+li{border-top:1px solid var(--hairline)}
 .report-transaction-list>li>*>span:nth-child(2){display:flex;flex-direction:column;min-width:0}
 /* Name and date stay on one line each; a long one ends in an ellipsis instead of wrapping word by word. */
@@ -127,12 +123,10 @@ summary.tax-line-heading>svg{flex-shrink:0;color:var(--muted-foreground);transit
 .tax-transactions>ul{margin:6px 0 0;padding:0;list-style:none}
 .tax-transactions li+li{border-top:1px solid var(--hairline)}
 .tax-transactions li>button{display:grid;grid-template-columns:minmax(0,1fr) minmax(max-content,.4fr) minmax(max-content,.35fr);align-items:center;gap:12px;width:100%;padding:7px 0;font-size:var(--type-caption);text-align:start}
-.tax-transactions li>button:not(:disabled):hover{background:color-mix(in srgb,var(--muted) 60%,transparent)}
 .tax-transactions li>button>strong{font-weight:500;font-variant-numeric:tabular-nums;text-align:end}
 .tax-net{display:flex;flex-wrap:wrap;align-items:center;gap:12px;font-size:var(--type-small)}
 .tax-net>strong{margin-inline-start:auto;font-size:var(--type-title);font-weight:600;font-variant-numeric:tabular-nums}
 .tax-export-dialog .pnl-table{margin-block-end:8px}
-@media (prefers-reduced-motion:reduce){summary.tax-line-heading>svg{transition:none}}
 @container content (max-width:640px){.tax-category{grid-template-columns:minmax(0,1fr) auto}.tax-move{grid-column:1/-1}.tax-prep .tax-export{margin-inline-start:0}}
 .tax-move{display:block;min-width:0;margin:0}
 .tax-move [data-slot=native-select-wrapper],.tax-move select{width:100%}
@@ -172,7 +166,6 @@ summary.tax-line-heading>svg{flex-shrink:0;color:var(--muted-foreground);transit
 @container content (max-width:520px){.household-people>li{flex-wrap:wrap}.household-people>li>small{flex-basis:100%;padding-inline-start:44px}}
 
 /* Reduced motion for transitions defined across the stylesheets (MOT-008). Last in the cascade, so it wins over each rule it switches off. */
-@media(prefers-reduced-motion:reduce){.sankey-link,.switch,.switch-thumb,.goal-method summary>svg:last-child,.goal-row>.drag-handle,.account-sortable-row>.drag-handle,.pos-day,.account-type-options>button,.asset-type-options>button,.goal-target-progress::-webkit-progress-value{transition:none}}
 
 /* A scheduled income or bill at a glance (Recurring: tap a row). */
 .recurring-details{gap:20px}
@@ -210,14 +203,12 @@ summary.tax-line-heading>svg{flex-shrink:0;color:var(--muted-foreground);transit
 .drill-transactions h3{font-size:var(--type-small);font-weight:500;margin-block-end:6px}
 .drill-transactions ul{display:grid;max-height:min(40svh,320px);overflow-y:auto;border-block-start:1px solid var(--hairline)}
 .drill-transactions button{display:flex;width:100%;align-items:center;justify-content:space-between;gap:12px;padding:8px 4px;border-block-end:1px solid var(--hairline);text-align:start;font-variant-numeric:tabular-nums}
-.drill-transactions button:hover{background:color-mix(in srgb,var(--foreground) 4%,transparent)}
 .drill-transactions button:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
 .drill-transactions button>span:first-child{display:grid;min-width:0}
 .drill-transactions small{color:var(--muted-foreground);font-size:var(--type-caption)}
 /* A transfer or repayment opened from an account's Sankey: label and value pairs under its two-account Sankey. */
 .drill-operation{display:grid;border-block-start:1px solid var(--hairline);font-size:var(--type-small)}
 .drill-operation button{display:grid;grid-template-columns:minmax(0,10rem) minmax(0,1fr);gap:16px;width:100%;padding:8px 4px;border-block-end:1px solid var(--hairline);text-align:start}
-.drill-operation button:hover{background:color-mix(in srgb,var(--foreground) 4%,transparent)}
 .drill-operation button:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
 .drill-operation span{color:var(--muted-foreground)}
 .drill-operation strong{font-weight:500;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}

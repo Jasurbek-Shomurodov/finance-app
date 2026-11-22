@@ -40,31 +40,60 @@ export function readBenchmarkScope(storage:Pick<Storage,'getItem'>,owner:string)
  }catch{return null;}
 }
 
-// One classification of investment money, shared by the chart and the summary figures.
-// Only an explicit investment source proves reuse. A shared cash account does
-// not establish which earlier receipt funded a later purchase or repayment.
-export function investmentActivity(records:Records,allEvents:InvestmentPortfolioInput['events'],allMovements:BenchmarkMovement[]|undefined,today:string){
- const byId=new Map(records.map(row=>[row.id,row]));
- const events=allEvents.filter(e=>e.occurred_on<=today).sort((a,b)=>a.occurred_on.localeCompare(b.occurred_on)||a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id));
- const movements=(allMovements??[]).filter(row=>row.occurred_on<=today);
+const eventOrder=(a:HistoryEvent,b:HistoryEvent)=>a.occurred_on.localeCompare(b.occurred_on)||a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id);
+/** `events` grouped under `key`, each group in the events' own order; an event `key` returns null for is left out. */
+function grouped(events:readonly HistoryEvent[],key:(event:HistoryEvent)=>string|null){
+ const groups=new Map<string,HistoryEvent[]>();
+ for(const event of events){
+  const name=key(event);if(name===null)continue;
+  const list=groups.get(name);if(list)list.push(event);else groups.set(name,[event]);
+ }
+ return groups;
+}
+const legKey=(recordId:string,type:string,date:string,amount:unknown,notes:string)=>[recordId,type,date,Number(amount),notes].join('\u0001');
+/** The events a movement or a security transfer already accounts for. Older movement rows predate an explicit event
+ * link: each leg is matched once by its complete financial identity (matching identical legs is interchangeable), and a
+ * leg with no event is `missing`. The same security moved between two of the owner's holdings is still one position:
+ * neither sale proceeds nor a fresh purchase. Events are indexed once, so a long history is not searched per movement. */
+function pairedEvents(events:readonly HistoryEvent[],movements:readonly BenchmarkMovement[],byId:ReadonlyMap<string,Records[number]>){
  const paired=new Set<string>();let missing=false;
- // Older movement rows predate an explicit event link. Match each leg once by
- // its complete financial identity; matching identical legs is interchangeable.
+ const legs=grouped(events,e=>legKey(e.record_id,e.event_type,e.occurred_on,e.amount,e.notes));
  for(const row of movements){
   for(const [id,type,amount] of [[row.source_id,'withdrawal',row.source_value],[row.target_id,row.kind==='interest'?'income':'contribution',row.target_value]] as const){
    if(row.kind==='interest'&&type==='withdrawal')continue;
-   const match=events.find(e=>!paired.has(e.id)&&e.record_id===id&&e.event_type===type&&e.occurred_on===row.occurred_on&&Number(e.amount)===Number(amount)&&e.notes===row.notes);
+   const match=legs.get(legKey(id,type,row.occurred_on,amount,row.notes))?.find(e=>!paired.has(e.id));
    if(match)paired.add(match.id);else missing=true;
   }
  }
- // The same security moved between two of the owner's holdings is still one
- // position: neither sale proceeds nor a fresh purchase.
+ const position=(e:HistoryEvent)=>{const r=byId.get(e.record_id);return r?[e.occurred_on,Number(e.amount),e.notes,r.kind,r.name,r.currency].join('\u0001'):null;};
+ const arrivals=grouped(events,e=>e.event_type==='contribution'&&!e.account_link?position(e):null);
  for(const out of events){
   const from=byId.get(out.record_id);
   if(!from||paired.has(out.id)||out.event_type!=='withdrawal'||out.account_link||!out.notes.startsWith('Security transfer. ')||!['Stock','Crypto'].includes(from.kind))continue;
-  const match=events.find(e=>{const to=byId.get(e.record_id);return !paired.has(e.id)&&e.event_type==='contribution'&&!e.account_link&&e.record_id!==out.record_id&&e.occurred_on===out.occurred_on&&Number(e.amount)===Number(out.amount)&&e.notes===out.notes&&to?.kind===from.kind&&to.name===from.name&&to.currency===from.currency;});
+  const match=arrivals.get(position(out)!)?.find(e=>!paired.has(e.id)&&e.record_id!==out.record_id);
   if(match){paired.add(out.id);paired.add(match.id);}
  }
+ return {paired,missing};
+}
+type Activity={items:ActivityItem[];events:HistoryEvent[];byId:Map<string,Records[number]>;missing:boolean};
+// The chart, its start day and the period summary each ask for the same history's activity: the last answer is kept.
+// A list that grew in place is not the same history, so the sizes are part of the question.
+let lastActivity:{records:Records;events:InvestmentPortfolioInput['events'];movements:BenchmarkMovement[]|undefined;today:string;sizes:string;activity:Activity}|null=null;
+// One classification of investment money, shared by the chart and the summary figures.
+// Only an explicit investment source proves reuse. A shared cash account does
+// not establish which earlier receipt funded a later purchase or repayment.
+export function investmentActivity(records:Records,allEvents:InvestmentPortfolioInput['events'],allMovements:BenchmarkMovement[]|undefined,today:string):Activity{
+ const sizes=records.length+':'+allEvents.length+':'+(allMovements?.length??-1);
+ if(lastActivity&&lastActivity.records===records&&lastActivity.events===allEvents&&lastActivity.movements===allMovements&&lastActivity.today===today&&lastActivity.sizes===sizes)return lastActivity.activity;
+ const activity=classifyActivity(records,allEvents,allMovements,today);
+ lastActivity={records,events:allEvents,movements:allMovements,today,sizes,activity};
+ return activity;
+}
+function classifyActivity(records:Records,allEvents:InvestmentPortfolioInput['events'],allMovements:BenchmarkMovement[]|undefined,today:string):Activity{
+ const byId=new Map(records.map(row=>[row.id,row]));
+ const events=allEvents.filter(e=>e.occurred_on<=today).sort(eventOrder);
+ const movements=(allMovements??[]).filter(row=>row.occurred_on<=today);
+ const pairs=pairedEvents(events,movements,byId),paired=pairs.paired;let missing=pairs.missing;
  const timeline=[
   ...events.filter(row=>!paired.has(row.id)).map(row=>({type:'event' as const,date:row.occurred_on,time:row.created_at,id:row.id,row})),
   ...movements.map(row=>({type:'movement' as const,date:row.occurred_on,time:row.created_at??row.occurred_on,id:row.id,row})),
@@ -95,19 +124,26 @@ export function investmentActivity(records:Records,allEvents:InvestmentPortfolio
 // still support a clearly labeled valuation-based comparison.
 export function investmentComparisonCoverage(records:Records,events:InvestmentPortfolioInput['events'],today:string){
  const missing:string[]=[];const dates:string[]=[];
- for(const record of records.filter(benchmarkInvestment)){
-  const rows=events.filter(e=>e.record_id===record.id&&e.occurred_on<=today).sort((a,b)=>a.occurred_on.localeCompare(b.occurred_on)||a.created_at.localeCompare(b.created_at));
-  const purchase=rows.find(e=>e.event_type==='contribution');
-  if(!rows.some(e=>e.balance!==null)){missing.push(record.name);dates.push(today);continue;}
+ const held=new Map(records.filter(benchmarkInvestment).map(record=>[record.id,record]));
+ // Each holding's events, read once: its first purchase, whether any balance is recorded, its first positive value.
+ const seen=new Map<string,{purchase?:string;valued:boolean;observed?:string}>();
+ let earliest:string|undefined;
+ for(const e of events.filter(e=>e.occurred_on<=today&&held.has(e.record_id)).sort((a,b)=>a.occurred_on.localeCompare(b.occurred_on)||a.created_at.localeCompare(b.created_at))){
+  earliest??=e.occurred_on;
+  let facts=seen.get(e.record_id);if(!facts)seen.set(e.record_id,facts={valued:false});
+  if(e.event_type==='contribution')facts.purchase??=e.occurred_on;
+  if(e.balance!==null){facts.valued=true;if(Number(e.balance)>0)facts.observed??=e.occurred_on;}
+ }
+ for(const record of held.values()){
+  const facts=seen.get(record.id);
+  if(!facts?.valued){missing.push(record.name);dates.push(today);continue;}
   // Value that appears without a purchase is an observation, including the
   // first value entered for a holding that was created empty.
-  const observed=rows.find(e=>e.balance!==null&&Number(e.balance)>0);
-  if(observed&&(!purchase||purchase.occurred_on>observed.occurred_on)){
-   missing.push(record.name);dates.push(observed.occurred_on);
+  if(facts.observed&&(!facts.purchase||facts.purchase>facts.observed)){
+   missing.push(record.name);dates.push(facts.observed);
   }
  }
- const earliest=events.filter(e=>e.occurred_on<=today&&records.some(r=>r.id===e.record_id&&benchmarkInvestment(r))).map(e=>e.occurred_on).sort()[0]??today;
- return {missing:[...new Set(missing)],start:dates.sort().at(-1)??earliest};
+ return {missing:[...new Set(missing)],start:dates.sort().at(-1)??earliest??today};
 }
 
 // From original purchases, the comparison opens on the first day investment money moved:

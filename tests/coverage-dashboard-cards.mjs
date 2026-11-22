@@ -97,14 +97,22 @@ test('Budget compares this month’s spending with the plan and lists the catego
  assert.match(html,/aria-label="Budget"/);
  assert.match(text,new RegExp(`Budget ${formatMonthYear(month,'en-US')}`));
  assert.equal(formatMonthYear(month,'en-US'),'October 2026');
- assert.match(text,/\$1,685 of \$1,590/,'income budgets are left out');
- assert.ok(html.includes(`data-tone="negative">${formatMoney(95,'USD','en-US')} over`));
+ // The card shows the share used ($1,685 of $1,590); what was spent and what is left are the headline's figures.
+ assert.match(text,/106% used of \$1,590/,'income budgets are left out');
+ assert.doesNotMatch(text,/\$1,685|\$4,000|remaining/);
+ let figures;
+ const Probe=()=>{figures=cards.useMonthBudget({budget,data:planning(records,{categories:[{id:'pets',name:'Pets',direction:'expense'}]}),currency:'USD',market:null,splits:[]});return null;};
+ renderToStaticMarkup(React.createElement(Probe));
+ assert.deepEqual([figures.spent,figures.plan],[1685,1590],'the Salary budget and the pay are left out of both');
+ assert.deepEqual(figures.over.map(row=>[row.key,row.amount]),[['Living expense',120],['pets',15]],'what spent past its plan, and by how much');
+ assert.equal(figures.budgeted,true);
  // Three categories, the most used first: Pets (138%), Living expense (124%), Rent (100%); Charity is left out.
  const list=html.slice(html.indexOf('dashboard-budget-list'));
  assert.ok(list.indexOf('Pets')<list.indexOf('Living expense')&&list.indexOf('Living expense')<list.indexOf('Rent expense'));
  assert.doesNotMatch(list,/Charity/,'three at most');
  assert.ok(list.includes(`data-tone="negative">${formatMoney(120,'USD','en-US')} over</strong>`),'an overspent category says how far over');
  assert.ok(list.includes(`<strong>${formatMoney(0,'USD','en-US')} left</strong>`),'a category spent exactly to its limit');
+ assert.ok(list.includes('href="/transactions?type=expense&amp;category=pets&amp;period=this_month"'),'a category opens its spending this month');
  assert.doesNotMatch(list,/data-tone="(positive|neutral)"/,'only an overspent category is coloured; what is left reads in ink');
  // Six months of history are read for the averages.
  assert.equal(resources[0].url,'/api/planning?scope=budget&month=2026-10&from=2026-04');
@@ -114,12 +122,12 @@ test('Budget in flex mode shares one bucket among flexible categories and lists 
  budget={state:{mode:'flex',applyForward:false,categories:[],amounts:[amount('flex:flexible',100),amount('Rent expense',300)]},loading:false};
  const data=planning([entry('Rent','Rent expense',300,'2026-10-01'),entry('Food','Living expense',150,'2026-10-02')]);
  const html=render(cards.BudgetCard,{budget,data,currency:'USD',market:{rates:{USD:1}},splits:[]});
- assert.match(plain(html),/\$450 of \$400 \$50 over/);
+ assert.match(plain(html),/113% used of \$400/,'$450 of the $400 bucket and fixed plans');
  const list=html.slice(html.indexOf('dashboard-budget-list'));
  assert.match(list,/Rent expense/);
  assert.doesNotMatch(list,/Living expense/,'flexible categories share the bucket in flex mode');
  budget={state:{mode:'flex',applyForward:false,categories:[],amounts:[amount('Rent expense',300)]},loading:false};
- assert.match(plain(render(cards.BudgetCard,{budget,data,currency:'USD',market:null,splits:[]})),/\$450 of \$300/,'no flexible bucket counts as zero');
+ assert.match(plain(render(cards.BudgetCard,{budget,data,currency:'USD',market:null,splits:[]})),/150% used of \$300/,'no flexible bucket counts as zero');
 });
 
 test('Budget waits for loading, falls back to the market rate and invites a plan when empty',()=>{
@@ -131,7 +139,7 @@ test('Budget waits for loading, falls back to the market rate and invites a plan
  remote={data:planning([{...entry('Food','Living expense','30','2026-10-02'),quantity:'1',cost:'0',rate:'0'}]),loading:false};
  budget={state:{mode:'category',applyForward:false,categories:[],amounts:[amount('Living expense',100)]},loading:false};
  const html=render(cards.BudgetCard,{budget,owner:'me',data:planning(),currency:'USD',market:{fx:{rate:{USD:1}}},splits:[]});
- assert.match(plain(html),/\$30 of \$100/,'a signed-in owner reads spending from the server');
+ assert.match(plain(html),/30% used of \$100/,'a signed-in owner reads spending from the server');
  remote={data:null,loading:false};
  budget={state:{mode:'category',applyForward:false,categories:[],amounts:[]},loading:false};
  const empty=plain(render(cards.BudgetCard,{budget,data:planning(),currency:'USD',market:null,splits:[]}));
@@ -144,7 +152,7 @@ test('a failed read says so: never an empty list, no spending or an invitation t
  assert.match(recent,/Could not load data\./);assert.doesNotMatch(recent,/No transactions recorded/);
  budget={state:{mode:'category',applyForward:false,categories:[],amounts:[amount('Living expense',100)]},loading:false};
  const card=plain(render(cards.BudgetCard,{budget,owner:'me',data:planning(),currency:'USD',market:null,splits:[]}));
- assert.match(card,/Could not load data\./);assert.doesNotMatch(card,/\$0 of \$100|remaining/,'not the whole plan left');
+ assert.match(card,/Could not load data\./);assert.doesNotMatch(card,/% used|remaining/,'not the whole plan left');
  remote={data:null,loading:false};
  budget={state:{mode:'category',applyForward:false,categories:[],amounts:[]},loading:false,error:'Could not load the budget.'};
  const saved=plain(render(cards.BudgetCard,{budget,data:planning(),currency:'USD',market:null,splits:[]}));
@@ -156,7 +164,7 @@ test('spending no rate converts leaves the Budget card unknown, with the note',(
  budget={state:{mode:'category',applyForward:false,categories:[],amounts:[amount('Living expense',100)]},loading:false};
  const data=planning([entry('Food','Living expense',30,'2026-10-02'),entry('Gift','Living expense',9,'2026-10-03',{currency:'EUR'})]);
  const text=plain(render(cards.BudgetCard,{budget,data,currency:'USD',market:{rates:{USD:1}},splits:[]}));
- assert.match(text,/— of \$100 Exchange rate unavailable\./);assert.doesNotMatch(text,/\$30|remaining/);
+ assert.match(text,/— of \$100 Exchange rate unavailable\./);assert.doesNotMatch(text,/\$30|% used|remaining/);
 });
 
 test('the month’s budget stands on its own read: schedules and range never wait on planning, and it starts once',()=>{
@@ -178,5 +186,5 @@ test('the month’s budget stands on its own read: schedules and range never wai
 test('figures worked out by the caller are shown without a read of their own',()=>{
  resources.length=0;
  const html=render(cards.BudgetCard,{currency:'USD',figures:{month,plan:100,spent:30,missing:0,watched:[],loading:false,error:''}});
- assert.match(plain(html),/\$30 of \$100/);assert.equal(resources.length,0);
+ assert.match(plain(html),/30% used of \$100/);assert.equal(resources.length,0);
 });

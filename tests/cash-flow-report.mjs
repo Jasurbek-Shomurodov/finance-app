@@ -98,68 +98,77 @@ test('the last quarter or year bar is "to date" while it is not over, so it is n
  assert.equal(partialBar('2026-09', 'month', '2026-10-09'), null);
 });
 
-test('Cash flow adds its four tiles for a quarter or a year (a month has the page\'s own), and a dash with the shared note where an amount could not be converted', () => {
+test('Cash flow shows the month only, with no tiles of its own (a quarter or a year is on Reports), and a dash with the shared note where an amount could not be converted', () => {
  const r = createRenderer();
  const modules = {
   'recharts': hostModule(), '@/components/language-provider': language('en-US'),
-  ...Object.fromEntries(['stat-tile', 'segmented', 'panel-title', 'inline-error', 'loading-placeholder', 'category-icon'].map(name => ['@/components/presentation-foundation/' + name, hostModule()])),
+  ...Object.fromEntries(['stat-tile', 'segmented', 'panel-title', 'inline-error', 'loading-placeholder', 'category-icon', 'drawer-link'].map(name => ['@/components/presentation-foundation/' + name, hostModule()])),
   '@/hooks/use-owner-resource': { useOwnerResource: () => ({ data: { records: [] } }) },
   '@/lib/sankey-labels': { measureLabel: () => 0, sankeyLabelMargins: () => ({ left: 0, right: 0 }), sankeyMinWidth: () => 0 },
   '@/hooks/use-location-search': { useLocationSearch: () => '' },
  };
  const { CashFlowReport } = r.load('components/cash-flow-report.tsx', modules);
  const { depositToday } = loadTS('lib/deposit-interest.ts');
+ const { allPeriodsLink } = loadTS('lib/add-links.ts');
  const month = depositToday().slice(0, 7);
- const open = (records, market) => r.mount(React.createElement(CashFlowReport, { owner: null, demo: true, revision: 0, data: { categories: [], activity: [], investmentLinks: [], records }, splits: [], month, currency: 'USD', market }));
- const tiles = () => r.all(node => node.type === 'StatTile').map(node => [node.props.label, node.props.value]);
+ const views = [];
+ const mount = (records, extra = {}) => r.mount(React.createElement(CashFlowReport, { owner: null, demo: true, revision: 0, data: { categories: [], activity: [], investmentLinks: [], records }, splits: [], month, currency: 'USD', market: { rates: { USD: 1 }, quotes: {} }, view: 'bars', onView: view => views.push(view), ...extra }));
+ const tiles = () => r.all(node => node.type === 'StatTile');
  const note = () => r.all(node => node.type === 'p' && node.props.className === 'partial-total');
- open([record('a', 'Pay', 'Salary', 1000, month + '-01'), record('b', 'Shop', 'Living expense', 250, month + '-01')], { rates: { USD: 1 }, quotes: {} });
+ mount([record('a', 'Pay', 'Salary', 1000, month + '-01'), record('b', 'Shop', 'Living expense', 250, month + '-01')]);
  // A month's income, spending, net and savings rate are the page's headline tiles, so the report adds none (the user's
- // choice, 20 October 2026, replacing d8226de); a quarter or a year shows its own.
- const period = value => { r.update(); r.find(node => node.type === 'Segmented' && node.props.label === 'Period').props.onChange(value); r.update(); };
- assert.deepEqual(tiles(), []);
+ // choice, 20 October 2026); a quarter, a year or a business is a report, one link away on Reports.
+ assert.equal(tiles().length, 0);
+ assert.equal(r.all(node => node.type === 'Segmented' && node.props.label === 'Period').length, 0, 'no period switch: Reports has every period');
+ assert.equal(r.find(node => node.type === 'DrawerLink' && text(node) === 'See all periods').props.href, allPeriodsLink);
+ assert.equal(allPeriodsLink, '/reports?tab=cash_flow&view=trends');
  const tooltip = r.find(node => node.type === 'Tooltip' && node.props.labelFormatter);
  assert.equal(tooltip.props.labelFormatter(month), formatMonthYear(month, 'en-US') + ' to date', 'the running month is to date');
  assert.equal(tooltip.props.formatter(null, 'income')[0], '—');
  assert.deepEqual(tooltip.props.formatter(1000, 'income'), ['$1,000', 'Income']);
+ assert.deepEqual(tooltip.props.formatter(750, 'net'), ['+$750', 'Net'], 'the net line is signed');
  // The 2026 redesign: ranked bars first (income, spending, then what was left over), whole amounts, the Sankey one tap away.
  const rows = () => r.all(node => node.type === 'li' && node.props['data-side']).map(node => [node.props['data-side'], text(node)]);
  assert.deepEqual(rows(), [['income', 'Salary+$1,000'], ['expense', 'Living expense$250'], ['left', 'Left over+$750']]);
  assert.equal(r.all(node => node.type === 'FlowSankey' || node.type === 'Sankey').length, 0);
- // The totals of the months on screen sit under the chart.
- assert.deepEqual(r.all(node => node.type === 'dd').map(text), ['$1,000', '$250', '+$63'], 'twelve months: $750 over 12 is $63 a month');
- assert.deepEqual(r.all(node => node.type === 'dt').map(text), ['12-month income', '12-month spending', 'Average monthly surplus']);
+ // The screen keeps the chart type, so a link (#flow) can open the diagram.
+ r.find(node => node.type === 'Segmented' && node.props.label === 'Chart type').props.onChange('sankey');
+ assert.deepEqual(views, ['sankey']);
+ mount([record('a', 'Pay', 'Salary', 1000, month + '-01'), record('b', 'Shop', 'Living expense', 250, month + '-01')], { view: 'sankey' });
+ assert.equal(rows().length, 0, 'the diagram replaces the bars');
+ assert.equal(r.all(node => node.type === 'Sankey').length, 1);
+ mount([record('a', 'Pay', 'Salary', 1000, month + '-01'), record('b', 'Shop', 'Living expense', 250, month + '-01')]);
+ // Six recent months of bars, each month's net as a line and the average net as a guide, and that average under the chart.
+ const chart = () => r.find(node => node.type === 'ComposedChart').props.data;
+ assert.equal(chart().length, 6, 'the recent six months');
+ assert.deepEqual([chart().at(-1).net, chart().at(-2).net], [750, 0]);
+ assert.deepEqual(r.all(node => node.type === 'dd').map(text), ['+$125'], 'six months: $750 over 6 is $125 a month');
+ assert.deepEqual(r.all(node => node.type === 'dt').map(text), ['Average monthly surplus']);
+ assert.equal(r.find(node => node.type === 'ReferenceLine').props.y, 125);
+ assert.equal(r.find(node => node.type === 'Line').props.dataKey, 'net');
  // Without an outlook the running month has no outline; with one, what is still expected stacks on its bars only.
  assert.equal(r.all(node => node.type === 'Bar').length, 2);
- r.mount(React.createElement(CashFlowReport, { owner: null, demo: true, revision: 0, data: { categories: [], activity: [], investmentLinks: [], records: [record('a', 'Pay', 'Salary', 1000, month + '-01')] }, splits: [], month, currency: 'USD', market: { rates: { USD: 1 }, quotes: {} }, expected: { income: 400, spending: 90 } }));
+ mount([record('a', 'Pay', 'Salary', 1000, month + '-01')], { expected: { income: 400, spending: 90 } });
  r.update();
  assert.deepEqual(r.all(node => node.type === 'Bar').map(node => [node.props.dataKey, node.props.stackId, node.props.strokeDasharray]), [['income', 'income', undefined], ['expectedIncome', 'income', '4 3'], ['expenses', 'expenses', undefined], ['expectedExpenses', 'expenses', '4 3']]);
- const bars = r.find(node => node.type === 'BarChart').props.data;
+ const bars = chart();
  assert.deepEqual([bars.at(-1).expectedIncome, bars.at(-1).expectedExpenses, bars.at(-2).expectedIncome], [400, 90, undefined]);
  const tip = r.find(node => node.type === 'Tooltip' && node.props.labelFormatter).props.formatter;
  assert.deepEqual(tip(400, 'expectedIncome'), ['$400', 'Income still expected']);
  assert.equal(tip(undefined, 'expectedExpenses'), null, 'a month that expects nothing more leaves the line out');
  assert.ok(r.find(node => node.type === 'i' && node.props.className === 'chart-planned-key'), 'the legend names the outline');
- open([record('a', 'Pay', 'Salary', 1000, month + '-01'), record('b', 'Shop', 'Living expense', 250, month + '-01')], { rates: { USD: 1 }, quotes: {} });
- period('quarter');
- assert.deepEqual(tiles(), [['Income', '$1,000'], ['Expenses', '$250'], ['Total savings', '$750'], ['Savings rate', '75%']]);
- assert.equal(note().length, 0);
- open([record('a', 'Pay', 'Salary', 1000, month + '-01'), record('x', 'Bonus', 'Salary', 5, month + '-01', { currency: 'EUR' })], { rates: { USD: 1 }, quotes: {} });
- period('year');
- assert.deepEqual(tiles(), [['Income', '—'], ['Expenses', '—'], ['Total savings', '—'], ['Savings rate', '—']], 'never $1,000 as if complete');
- assert.equal(text(note()), 'Some transactions could not be converted. Current or previous month totals are incomplete.');
- assert.deepEqual(r.find(node => node.type === 'BarChart').props.data.at(-1).income, null, 'the bar is missing, not too low');
- // Review S2: Cash flow › Month showed the note twice, in the compact Monthly review and again here; with the review
- // above, the month leaves the note to it, while a quarter or a year still reports its own amounts.
+ // An amount no rate converts: the bar, its net and the average are missing, never too low, and the note says so.
  const mixed = [record('a', 'Pay', 'Salary', 1000, month + '-01'), record('x', 'Bonus', 'Salary', 5, month + '-01', { currency: 'EUR' })];
- open(mixed, { rates: { USD: 1 }, quotes: {} });
- period('month');
- assert.equal(note().length, 1, 'alone, the report says so for the month');
- r.mount(React.createElement(CashFlowReport, { owner: null, demo: true, revision: 0, data: { categories: [], activity: [], investmentLinks: [], records: mixed }, splits: [], month, currency: 'USD', market: { rates: { USD: 1 }, quotes: {} }, monthReviewAbove: true }));
- period('month');
+ mount(mixed);
+ assert.equal(text(note()), 'Some transactions could not be converted. Current or previous month totals are incomplete.');
+ assert.deepEqual([chart().at(-1).income, chart().at(-1).net], [null, null], 'the bar is missing, not too low');
+ assert.deepEqual(r.all(node => node.type === 'dd').map(text), ['—'], 'never an average as if complete');
+ assert.equal(r.all(node => node.type === 'ReferenceLine').length, 0);
+ assert.equal(rows().at(-1)[1], 'Left over—');
+ // Review S2: Cash flow showed the note twice, in the compact Monthly review and again here; with the review above,
+ // the report leaves the note to it.
+ mount(mixed, { monthReviewAbove: true });
  assert.equal(note().length, 0, 'the review above already shows it');
- period('year');
- assert.equal(note().length, 1, 'a year has its own amounts to report');
 });
 
 test('the PDF budget actual follows Budget: a split counts in its own categories, a mortgage payment its interest', () => {

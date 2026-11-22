@@ -28,22 +28,28 @@ function cards(props){
 }
 const plain=html=>html.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ');
 
-test('monthly commitments show whole amounts, the left-over figure and its sign',()=>{
+test('monthly commitments show whole amounts, the surplus figure and its sign',()=>{
  const ready=cards({});
- assert.match(plain(ready.commitments),new RegExp(`Monthly commitments \\${money(1234.6)} left`));
+ // The title carries no figure of its own: the surplus is the footer's, and the headline has what is safe to spend.
+ assert.match(plain(ready.commitments),/^ Monthly commitments 💰 Income/);
  assert.equal(money(1234.6),'$1,235');
  assert.match(ready.commitments,/<strong class="positive">\$2,800<\/strong>/,'income is green');
+ // Each line opens the page its figure comes from.
+ assert.match(ready.commitments,/<a href="\/income-expenses" class="overview-row">.*?Income<\/span>/);
+ assert.match(ready.commitments,/<a href="\/budget" class="overview-row">.*?Expenses<\/span>/);
+ assert.match(ready.commitments,/<a href="\/loans-debts" class="overview-row">.*?Estimated mortgage payments<\/span>/);
  assert.match(plain(ready.commitments),/Expenses \$1,566/);
  assert.match(plain(ready.commitments),/Estimated mortgage payments \$0/);
  assert.doesNotMatch(ready.commitments,/Estimated loan payments/,'no loan row without loan payments');
- assert.match(ready.commitments,/Left after expenses<\/span><strong><button type="button" class="surplus-button surplus-link" title="How is this calculated\?">\$1,235<\/button><\/strong><\/div>/,'a surplus is not coloured, and a tap shows how it is worked out');
+ assert.match(ready.commitments,/Estimated monthly surplus<\/span><strong><button type="button" class="surplus-button surplus-link" title="How is this calculated\?">\$1,235<\/button><\/strong><\/div>/,'a surplus is not coloured, and a tap shows how it is worked out');
  const loans=cards({forecast:{...forecast,forecast:-420,loanPayments:510.2}});
  assert.match(plain(loans.commitments),/Estimated loan payments \$510/);
+ assert.match(loans.commitments,/<a href="\/loans-debts" class="overview-row">.*?Estimated loan payments<\/span>/);
  assert.ok(loans.commitments.includes(`class="negative"><button type="button" class="surplus-button surplus-link" title="How is this calculated?">${formatMoney(-420,'USD','en-US')}</button></strong>`),'a shortfall is red');
  const waiting=cards({forecastReady:false});
- assert.doesNotMatch(plain(waiting.commitments),/ left/,'no headline figure before the forecast is ready');
+ assert.doesNotMatch(plain(waiting.commitments),/\$/,'no figure before the forecast is ready');
  assert.match(plain(waiting.commitments),/Expenses — /);
- assert.match(plain(waiting.commitments),/Left after expenses —/);
+ assert.match(plain(waiting.commitments),/Estimated monthly surplus —/);
  // Income and the mortgage and loan estimates wait too: a partial forecast never prints as a total (MONEY-008).
  const partial=cards({forecastReady:false,forecast:{...forecast,loanPayments:510.2}});
  assert.match(plain(partial.commitments),/Income — /);assert.match(plain(partial.commitments),/Estimated mortgage payments — /);assert.match(plain(partial.commitments),/Estimated loan payments — /);
@@ -105,7 +111,9 @@ test('upcoming payments put overdue ones first, show formatted dates and colour 
  ];
  const {upcoming}=cards({planning:{records,occurrences:[],categories:[],goals:[],activity:[],debtPayments:[]}});
  const text=plain(upcoming);
- assert.match(upcoming,/<li tabindex="0" aria-label="Open Car loan" data-clickable="true">/,'a payment opens Recurring, where its history is');
+ // The whole row opens this payment on Recurring: its Record payment form, or for money that arrives by itself its month.
+ assert.match(upcoming,new RegExp(`<li><a href="/upcoming#pay=Car%20loan:${soon}" class="overview-row" aria-label="Record payment: Car loan">`),'a payment opens Recurring, where its history is');
+ assert.doesNotMatch(upcoming,/tabindex|data-clickable/,'a link, not a scripted row');
  assert.match(text,/Upcoming payments 1 overdue/,'an overdue item is counted as overdue, never as due soon');
  // Live QA, 6 October 2026: "5 due soon" with 101 overdue items; the pill counted only the five rows shown.
  const backlog=Array.from({length:7},(_,i)=>entry('Debt '+i,'Debt',10,{date:shiftDay(today,-(i+1))}));
@@ -120,8 +128,8 @@ test('upcoming payments put overdue ones first, show formatted dates and colour 
  assert.match(plain(lateIncome.upcoming),/Upcoming payments 1 due soon/,'a late income is not an overdue payment');
  assert.ok(upcoming.indexOf('Old debt')<upcoming.indexOf('Car loan'),'overdue first');
  assert.match(upcoming,new RegExp(`<small class="negative">Overdue · ${formatDate(late,'en-US')}</small>`));
- // Each due payment links to Recurring's Record payment for that date.
- assert.match(upcoming,new RegExp(`<small>${formatDate(soon,'en-US')}</small><a href="/upcoming#pay=Car%20loan:${soon}" class="overview-due-pay" aria-label="Record payment: Car loan">Record payment</a><\\/span><strong>\\$321</strong>`));
+ // Each due payment links to Recurring's Record payment for that date; the label inside is not a link of its own.
+ assert.match(upcoming,new RegExp(`<small>${formatDate(soon,'en-US')}</small><span class="overview-due-pay">Record payment</span><\\/span><strong>\\$321</strong></a>`));
  assert.match(upcoming,/<strong class="positive">\+\$3,000<\/strong>/,'income is green with a plus');
  assert.match(upcoming,/href="\/upcoming"/);
  const none=cards({planning:{records:[],occurrences:[],categories:[],goals:[],activity:[]}});

@@ -2,7 +2,8 @@ import { shiftDay } from './calendar-days';
 import { assets, income, liabilities, totalValue, valuedKinds, type Entry } from './finance';
 import type { HistoryEvent } from './investment-history';
 import { convertAmount } from './market';
-import type { PricePoint } from './benchmark-data';
+import type { FxPoint, PricePoint } from './benchmark-data';
+import { dayRates } from './history-rates';
 
 /** The income the Overview's income chart reads: the receipts among the cash flows, then the income schedules. The sample
  * workspace's history names its own `incomeRecords`, which are kept. */
@@ -30,16 +31,28 @@ function changesByDay(sorted: HistoryEvent[], moves: readonly Move[], known: Rea
 // A newly opened empty holding must not erase the history of existing holdings.
 // Only an explicit, dated zero baseline establishes this; positive observations
 // and records with unknown opening dates still require full historical coverage.
-function zeroOpenings(included: Entry[], sorted: HistoryEvent[], events: HistoryEvent[]) {
- const balances = new Map<string, number>(), firstBalances = new Map<string, HistoryEvent>();
- for (const event of sorted) if (!firstBalances.has(event.record_id)) firstBalances.set(event.record_id, event);
+function zeroOpenings(included: Entry[], firstBalances: ReadonlyMap<string, HistoryEvent>, events: readonly HistoryEvent[]) {
+ const balances = new Map<string, number>(), earliest = new Map<string, string>();
+ for (const event of events) if (!(earliest.get(event.record_id)! <= event.occurred_on)) earliest.set(event.record_id, event.occurred_on);
  for (const record of included) {
   const first = firstBalances.get(record.id);
   const openedOn = record.opened_on || (valuedKinds.includes(record.kind) ? record.date : undefined);
   if (first?.event_type === 'baseline' && Number(first.balance) === 0 && openedOn === first.occurred_on
-   && !events.some(event => event.record_id === record.id && event.occurred_on < openedOn)) balances.set(record.id, 0);
+   && !(earliest.get(record.id)! < openedOn)) balances.set(record.id, 0);
  }
  return balances;
+}
+/** A record that says when it was opened (`opened_on`: an account's opening day, a purchase date, the day a debt began)
+ * is part of net worth from that day, at its first recorded balance, even when that balance was written later: without
+ * this, a debt entered today with last year's start date would leave every earlier day incomplete and step in today.
+ * It joins the days other records already have and adds none of its own. A quoted holding is left alone: its first
+ * value is a price on its own day, not on an earlier one. Oldest opening first. */
+function earlyOpenings(included: Entry[], firstBalances: ReadonlyMap<string, HistoryEvent>, prices: ReadonlyMap<string, unknown>) {
+ return included.flatMap(record => {
+  const first = firstBalances.get(record.id), openedOn = record.opened_on, balance = first ? Number(first.balance) * Number(first.ownership_percentage) / 100 : NaN;
+  if (!first || !openedOn || !/^\d{4}-\d{2}-\d{2}$/.test(openedOn) || !(openedOn < first.occurred_on) || !Number.isFinite(balance) || prices.has(record.id)) return [];
+  return [{ id: record.id, openedOn, balance }];
+ }).sort((a, b) => a.openedOn.localeCompare(b.openedOn));
 }
 /** How far each quoted holding's price has moved since its latest snapshot. A stock or coin is saved with the value it
  * had when it was last edited; between two snapshots its quantity is unchanged (a purchase, a sale or an edit writes a
@@ -92,39 +105,94 @@ function dayTotals(balances: ReadonlyMap<string, number>, recordOf: (id: string)
  }
  return { assetTotal, debt, parts };
 }
+/** The days the exchange rate is known after the first recorded balance: each is drawn when a record is kept in another
+ * currency than the one shown, so its value follows the rate between its own changes instead of stepping at the next one. */
+function addRateDays(byDay: Map<string, DayChanges>, fx: readonly FxPoint[], from: string | undefined, today: string) {
+ const rated = new Set<string>();
+ if (!from) return rated;
+ for (const point of fx) if (point.date > from && point.date <= today) {
+  rated.add(point.date);
+  if (!byDay.has(point.date)) byDay.set(point.date, { events: [], shifts: [] });
+ }
+ return rated;
+}
+/** How a history is read: the currency it is shown in, today's rates (which also decide the currencies that can be
+ * shown at all), and the day it ends. `fx` is the rate of each past day (`historyFx`); without it every day converts at
+ * `rates`. `moves` puts late-entered changes on their own day, `prices` carries quoted holdings between snapshots. */
+export type HistoryView = { currency: string; rates: number | Record<string, number> | undefined; today: string; includePartial?: boolean; moves?: readonly Move[]; prices?: ReadonlyMap<string, readonly PricePoint[]>; fx?: readonly FxPoint[] };
+const inOrder = (a: HistoryEvent, b: HistoryEvent) => a.occurred_on.localeCompare(b.occurred_on) || a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id);
+/** Whether a day with no new balance still changes what is drawn: a price or rate of its own, or a late change to a known record. */
+function movesDay(date: string, shifts: readonly (readonly [string, number])[], balances: ReadonlyMap<string, number>, priced: ReadonlySet<string>, rated: ReadonlySet<string>) {
+ return priced.has(date) || (rated.has(date) && balances.size > 0) || shifts.some(([id]) => balances.has(id));
+}
+/** Sets each event's owned balance; true when any of them was a usable figure. */
+function applyBalances(events: readonly HistoryEvent[], balances: Map<string, number>, anchor: (id: string) => void) {
+ let observed = false;
+ for (const event of events) {
+  const balance = Number(event.balance) * Number(event.ownership_percentage) / 100;
+  if (!Number.isFinite(balance)) continue;
+  balances.set(event.record_id, balance);
+  anchor(event.record_id);
+  observed = true;
+ }
+ return observed;
+}
 // Require known balances; an explicit zero opening contributes nothing before it opens.
 // `moves` puts late-entered changes on their own day: from that day until the snapshot that includes them, the record's
 // balance carries the change, so a transaction typed a week late does not look like money that appeared a week late.
-export function portfolioHistory(records: Entry[], events: HistoryEvent[], currency: string, rates: number | Record<string, number> | undefined, today: string, includePartial = false, moves: readonly Move[] = [], prices: ReadonlyMap<string, readonly PricePoint[]> = new Map()) {
+// Each day converts at its own day's rates, so a past day is not restated at today's exchange rate.
+export function portfolioHistory(records: Entry[], events: HistoryEvent[], view: HistoryView) {
+ const { currency, rates, today, includePartial = false, moves = [], prices = new Map<string, readonly PricePoint[]>(), fx = [] } = view;
  const eligible = records.filter(record => assets.includes(record.kind) || liabilities.includes(record.kind));
  const included = eligible.filter(record => convertAmount(1, record.currency, currency, rates) !== null);
  const byId = new Map(included.map(record => [record.id, record]));
  const days = new Map<string, PortfolioPoint>();
- const sorted = events.filter(event => byId.has(event.record_id) && event.balance !== null && event.occurred_on <= today)
-  .sort((a,b) => a.occurred_on.localeCompare(b.occurred_on) || a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));
+ const recorded = events.filter(event => byId.has(event.record_id) && event.balance !== null && event.occurred_on <= today).sort(inOrder);
+ const firstBalances = new Map<string, HistoryEvent>();
+ for (const event of recorded) if (!firstBalances.has(event.record_id)) firstBalances.set(event.record_id, event);
+ const sorted = recorded, openings = earlyOpenings(included, firstBalances, prices);
  // Balances are kept in each record's own currency; `shifted` is what late-entered changes add until their snapshot.
- const balances = zeroOpenings(included, sorted, events), shifted = new Map<string, number>();
+ const balances = zeroOpenings(included, firstBalances, events), shifted = new Map<string, number>();
  const byDay = changesByDay(sorted, moves, byId, today);
  // Quoted holdings follow their price between snapshots (`priceScale`).
  const priced = addPriceDays(byDay, sorted, prices, today), scale = priceScale(prices);
+ const rated = included.some(record => record.currency !== currency) ? addRateDays(byDay, fx, sorted[0]?.occurred_on, today) : new Set<string>();
+ const ratesOn = dayRates(fx, rates);
+ let nextOpening = 0;
  for (const date of [...byDay.keys()].sort()) {
   const changes = byDay.get(date)!;
-  let observed = false;
-  for (const event of changes.events) {
-   const balance = Number(event.balance) * Number(event.ownership_percentage) / 100;
-   if (!Number.isFinite(balance)) continue;
-   balances.set(event.record_id, balance);
-   scale.anchor(event.record_id, date);
-   observed = true;
+  // A record opened by this day counts from it, at its first recorded balance.
+  while (nextOpening < openings.length && openings[nextOpening].openedOn <= date) {
+   const opening = openings[nextOpening++];
+   if (!balances.has(opening.id)) balances.set(opening.id, opening.balance);
   }
+  const observed = applyBalances(changes.events, balances, id => scale.anchor(id, date));
   for (const [id, amount] of changes.shifts) shifted.set(id, (shifted.get(id) ?? 0) + amount);
   // A day that only moves a change within a record not yet known adds nothing to draw.
-  if (!observed && !priced.has(date) && !changes.shifts.some(([id]) => balances.has(id))) continue;
+  if (!observed && !movesDay(date, changes.shifts, balances, priced, rated)) continue;
   if (!includePartial && balances.size !== included.length) continue;
-  const { assetTotal, debt, parts } = dayTotals(balances, id => byId.get(id)!, (id, amount, from) => convertAmount(amount * scale.factor(id, date) + (shifted.get(id) ?? 0), from, currency, rates) ?? 0);
+  const table = ratesOn(date);
+  const { assetTotal, debt, parts } = dayTotals(balances, id => byId.get(id)!, (id, amount, from) => convertAmount(amount * scale.factor(id, date) + (shifted.get(id) ?? 0), from, currency, table) ?? 0);
   days.set(date, { date, assets: assetTotal, debt, net: assetTotal - debt, ...(balances.size !== included.length ? {partial:true} : {}), parts });
  }
  return { points: [...days.values()], missing: included.length - balances.size, excluded: eligible.length - included.length };
+}
+
+/** A period's change in net worth. When a holding's history begins inside the period, the earlier days do not count
+ * everything owned (`partial`), so the change is measured over the days that do: `from` names the first of them. With
+ * fewer than two such days there is no change to show. */
+export function periodChange(points: readonly Pick<PortfolioPoint, 'date' | 'net' | 'partial'>[]): { change: number | null; from: string | null } {
+ const lastPartial = points.findLastIndex(point => point.partial);
+ const covered = lastPartial < 0 ? points : points.slice(lastPartial + 1);
+ const change = covered.length < 2 ? null : covered.at(-1)!.net - covered[0].net;
+ return { change, from: lastPartial < 0 || change === null ? null : covered[0].date };
+}
+
+/** The day the chart ends on. The history read names the day it was read on; the browser's own day is the same one
+ * unless its clock is off or midnight passed in between, and then the later day wins so that no recorded day is cut
+ * off and today's live figure is never drawn before a recorded one. */
+export function chartDay(browserDay: string, readDay?: string | null) {
+ return readDay && /^\d{4}-\d{2}-\d{2}$/.test(readDay) && readDay > browserDay ? readDay : browserDay;
 }
 
 /** Today's net worth by kind, from the live records (already in the display currency): the same `parts` the history

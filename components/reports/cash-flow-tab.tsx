@@ -8,8 +8,8 @@ import { Segmented } from '@/components/presentation-foundation/segmented';
 import { StatTile, StatTiles } from '@/components/presentation-foundation/stat-tile';
 import { signTone } from '@/components/presentation-foundation/tone';
 import { HOUSEHOLD } from '@/lib/business';
-import { businessKey, businessSankey, cashFlowTrend, intervalOf, largestLoss, linesIn, netTrendBy, previousPeriod, profitAndLoss, yearToDate, type BusinessPnl, type LedgerLine } from '@/lib/business-report';
-import { formatMoney, formatPercent } from '@/lib/format';
+import { businessKey, businessSankey, cashFlowTrend, intervalOf, largestLoss, linesIn, netTrendBy, previousPeriod, profitAndLoss, rangeMonths, yearToDate, type BusinessPnl, type LedgerLine } from '@/lib/business-report';
+import { formatMoney, formatPercent, formatSignedMoney } from '@/lib/format';
 import { BusinessSankeyChart } from './business-sankey';
 import { ProfitLossTable, type PnlColumn } from './profit-loss-table';
 import { rangeText, type TabProps } from './report-labels';
@@ -37,6 +37,23 @@ function CashFlowTotals({ totals, loss, lossName, missing, currency }: { totals:
 }
 
 type View = 'flow' | 'pnl' | 'trends';
+
+/** Under the trend's bars: with `totals` (income and expenses, not net by business) the months added up, as income,
+ * spending and the average left over a month, then the note about amounts no rate converts. Those leave the totals
+ * unknown (—), never too low. */
+function TrendFoot({ rows, months, missing, totals, currency }: { rows: ReadonlyArray<{ income: number; expenses: number }>; months: number; missing: number; totals: boolean; currency: string }) {
+ const { t, locale } = useLanguage();
+ const income = rows.reduce((sum, row) => sum + row.income, 0), expenses = rows.reduce((sum, row) => sum + row.expenses, 0), average = months ? (income - expenses) / months : 0;
+ const money = (amount: number) => missing ? '—' : formatMoney(amount, currency, locale);
+ return <>
+  {totals && <dl className="cash-flow-totals">
+   <div><dt>{t('{count}-month income', { count: months })}</dt><dd>{money(income)}</dd></div>
+   <div><dt>{t('{count}-month spending', { count: months })}</dt><dd>{money(expenses)}</dd></div>
+   <div><dt>{t('Average monthly surplus')}</dt><dd className={missing ? undefined : signTone(average)}>{missing ? '—' : formatSignedMoney(average, currency, locale)}</dd></div>
+  </dl>}
+  <TrendRateNote count={missing}/>
+ </>;
+}
 
 type Rows = 'category' | 'group' | 'both';
 /** The panel's view (flow, profit and loss or trends) and that view's own switches. `series` is null without businesses. */
@@ -85,10 +102,10 @@ export function CashFlowTab({ period, lines, trendLines, trendRange, interval, i
     <CashFlowSwitches shown={shown} onShown={choose} stacked={stacked} onStacked={setStacked} series={businessIds.length ? series : null} onSeries={setSeries} breakdown={breakdown} onBreakdown={setBreakdown}/>
    </PanelTitle>
    {shown === 'trends' && byBusiness ? <TrendChart key="business" rows={netTrendBy(trendLines, trendRange, interval, businessKey, netKeys)} interval={interval} currency={currency} stacked={stacked} series={netKeys.map(key => ({ key, label: names.business(key), color: attributeColor('business', key, names) }))}/>
-    : shown === 'trends' ? <TrendChart key="totals" rows={stacked ? trend.map(row => ({ period: row.period, income: row.income, expenses: -row.expenses })) : trend} interval={interval} currency={currency} stacked={stacked} series={[{ key: 'income', label: t('Income'), color: 'var(--positive)' }, { key: 'expenses', label: t('Expenses'), color: 'color-mix(in srgb, var(--foreground) 55%, transparent)' }]}/>
+    : shown === 'trends' ? <TrendChart key="totals" rows={stacked ? trend.map(row => ({ period: row.period, income: row.income, expenses: -row.expenses, net: row.net })) : trend} interval={interval} currency={currency} stacked={stacked} line={{ key: 'net', label: t('Net') }} series={[{ key: 'income', label: t('Income'), color: 'var(--positive)' }, { key: 'expenses', label: t('Expenses'), color: 'color-mix(in srgb, var(--foreground) 55%, transparent)' }]}/>
     : shown === 'flow' ? <BusinessSankeyChart data={sankey} pnl={pnl} names={names} currency={currency} onDrill={onDrill}/>
     : <ProfitLossTable columns={columns} breakdown={breakdown} names={names} groupOf={groupOf} currency={currency} onDrill={onDrill}/>}
-   {shown === 'trends' && <TrendRateNote count={trendMissing}/>}
+   {shown === 'trends' && <TrendFoot rows={trend} months={rangeMonths(trendRange).length} missing={trendMissing} totals={!byBusiness} currency={currency}/>}
   </section>
  </>;
 }

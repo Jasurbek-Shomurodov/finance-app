@@ -13,7 +13,8 @@ import { Button } from '@/components/ui/button';
 import { AssetAccounts } from '@/components/asset-accounts';
 import { AssetAllocationList } from '@/components/asset-allocation-list';
 import type { HoldingAccount } from '@/lib/holding-accounts';
-import { LoadingPlaceholder } from '@/components/presentation-foundation/loading-placeholder';
+import { AssetCardsSkeleton } from '@/components/presentation-foundation/screen-skeletons';
+import { Skeleton } from '@/components/ui/skeleton';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useLanguage } from '@/components/language-provider';
 import { categoryColor } from '@/lib/category-colors';
@@ -29,6 +30,7 @@ import { holdingGain, monthlyAssetIncome, type HoldingSum } from '@/lib/holding-
 import { depositToday } from '@/lib/deposit-interest';
 import { pnlOf, type InvestmentPnl, type PnlTotals } from '@/lib/investment-pnl';
 import { PortfolioPnl, pnlFact } from '@/components/investment-pnl/pnl-figure';
+import { scrollBehavior } from '@/hooks/scroll-behavior';
 
 type Props = {
  excludedCurrencies?:string[];
@@ -58,12 +60,15 @@ function PropertyYear({ totals, money }: { totals?: PropertyTotals; money: (amou
   <div><dt>{t('Net this year')}</dt><dd className={totals && !totals.missing ? signTone(net) : undefined}>{totals?.missing ? t('Exchange rate unavailable.') : shown(net)}</dd></div></>;
 }
 
+/** A summary figure still loading: a bar where the amount will stand, never a dash that reads as "nothing". */
+const figureLoading = <Skeleton className="h-7 w-28 max-w-full"/>;
+
 /** What the rentals, businesses and interest-bearing holdings bring in a month; "—" with a note when one has no rate. */
 function AssetIncome({ income, currency, loading }: { income: HoldingSum; currency: string; loading: boolean }) {
  const { t } = useLanguage();
  if (!income.count) return null;
  const missing = !loading && income.amount === null;
- return <div><span>{t('Monthly income from assets')}</span><strong>{loading || income.amount === null ? '—' : <AnimatedMoney value={income.amount} currency={currency}/>}</strong>{missing && <small>{t('Exchange rate unavailable.')}</small>}</div>;
+ return <div><span>{t('Monthly income from assets')}</span><strong>{loading ? figureLoading : income.amount === null ? '—' : <AnimatedMoney value={income.amount} currency={currency}/>}</strong>{missing && <small>{t('Exchange rate unavailable.')}</small>}</div>;
 }
 
 type Translate = (key: string, values?: Record<string, string>) => string;
@@ -107,7 +112,7 @@ export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoadin
  const counted = (key: string, count: number) => t(key, { count: formatNumber(count, locale, 0) });
  const income = monthlyAssetIncome(holdings, depositToday().slice(0, 7));
  const selectCategory = (kind: string) => { setCategory(kind); setAssetPage(1); };
- const scrollTo = (target: HTMLElement | null) => target?.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+ const scrollTo = (target: HTMLElement | null) => target?.scrollIntoView({ block: 'start', behavior: scrollBehavior() });
  // Tapping a row in the allocation list moves the reader down to the filtered assets it now shows. A kind held only in
  // accounts (Cash, Deposit, holdings grouped under an account) has no card in that filter, so it moves to the accounts.
  const showCategory = (kind: string) => { if (otherCategories.some(group => group.kind === kind)) { selectCategory(kind); scrollTo(holdingsRef.current); } else scrollTo(accountsRef.current); };
@@ -140,10 +145,10 @@ export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoadin
    <div className="portfolio-summary-main">
     <div className="portfolio-summary-total">
      <h2>{t('Your holdings')}<Count value={holdings.length} label={counted('{count} holdings', holdings.length)}/></h2>
-     <strong className="portfolio-summary-value">{loading ? '—' : <AnimatedMoney value={total} currency={currency}/>}</strong>
+     <strong className="portfolio-summary-value">{loading ? <Skeleton className="h-10 w-44 max-w-full"/> : <AnimatedMoney value={total} currency={currency}/>}</strong>
      <PartialTotal currencies={excludedCurrencies}/>
     </div>
-    <div className="portfolio-summary-metrics"><div><span>{t('Net worth')}</span><strong>{loading ? '—' : <AnimatedMoney value={netWorth} currency={currency}/>}</strong></div><div><span>{t('Outstanding debt')}</span><strong>{loading ? '—' : <AnimatedMoney value={debt} currency={currency}/>}</strong></div>
+    <div className="portfolio-summary-metrics"><div><span>{t('Net worth')}</span><strong>{loading ? figureLoading : <AnimatedMoney value={netWorth} currency={currency}/>}</strong></div><div><span>{t('Outstanding debt')}</span><strong>{loading ? figureLoading : <AnimatedMoney value={debt} currency={currency}/>}</strong></div>
     <AssetIncome income={income} currency={currency} loading={loading}/>{onShowPnl && <PortfolioPnl pnl={loading ? null : pnl} error={pnlError} currency={currency} onOpen={onShowPnl}/>}</div>
    </div>
    <div className="portfolio-summary-allocation">
@@ -161,7 +166,7 @@ export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoadin
 
    <Segmented className="asset-category-filters" label={t('Filter assets by category')} value={category} onChange={selectCategory} options={[{ value: 'all', label: <>{t('All assets')}<span aria-hidden="true">{formatNumber(otherHoldings.length, locale, 0)}</span><span className="sr-only">{counted('{count} assets', otherHoldings.length)}</span></> }, ...otherCategories.map(group => ({ value: group.kind, label: <><i style={{ '--asset-color': categoryColor(group.kind) } as CSSProperties}/>{t(group.kind)}<span aria-hidden="true">{formatNumber(group.count, locale, 0)}</span><span className="sr-only">{counted('{count} assets', group.count)}</span></> }))]}/>
    {category !== 'all' && <p className="asset-result-count" role="status">{t('{shown} of {total} assets', { shown: formatNumber(filtered.length, locale, 0), total: formatNumber(otherHoldings.length, locale, 0) })}<button onClick={clearFilters}>{t('Clear filters')}</button></p>}
-   {loading ? <LoadingPlaceholder label={t('Loading records…')}/> : !filtered.length ? <EmptyState icon={<Search size={26}/>} title={t(otherHoldings.length ? 'No matching assets' : 'A fresh start')} description={t(otherHoldings.length ? 'Try another category.' : 'Add your first asset to start building your portfolio.')}><Button variant="outline" onClick={otherHoldings.length ? clearFilters : onAdd}>{t(otherHoldings.length ? 'Clear filters' : 'Add your first record')}</Button></EmptyState> : <div className={'asset-card-grid asset-layout-' + layout}>{visible.map(renderCard)}</div>}
+   {loading ? <AssetCardsSkeleton label={t('Loading records…')} layout={layout}/> : !filtered.length ? <EmptyState icon={<Search size={26}/>} title={t(otherHoldings.length ? 'No matching assets' : 'A fresh start')} description={t(otherHoldings.length ? 'Try another category.' : 'Add your first asset to start building your portfolio.')}><Button variant="outline" onClick={otherHoldings.length ? clearFilters : onAdd}>{t(otherHoldings.length ? 'Clear filters' : 'Add your first record')}</Button></EmptyState> : <div className={'asset-card-grid asset-layout-' + layout}>{visible.map(renderCard)}</div>}
    {!loading && <Pagination label={t('Asset pages')} summary={t('Page {page} of {pages} · {count} records', { page: formatNumber(page, locale, 0), pages: formatNumber(pageCount, locale, 0), count: formatNumber(filtered.length, locale, 0) })} page={page} pageCount={pageCount} hasNext={page < pageCount} onPage={next => { setAssetPage(next); holdingsRef.current?.scrollIntoView({ block: 'start' }); }}/>}
   </section>
  </div>;

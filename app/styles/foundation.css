@@ -75,6 +75,15 @@
   --motion-settle: .28s;
   --motion-exit: .14s;
   --motion-lead: 120ms;
+  /* A page tab's new content fades up in this long: shorter than an arrival, so the views read as one page. */
+  --motion-swap: .18s;
+  /* What answers a press or the pointer (interaction.css): a control gives by --press, a wide row or card by half of
+     that, and every tappable row shares one tint under the pointer and a deeper one while pressed. Reduced motion
+     sets both scales to 1 (motion.css), so nothing shrinks there and no rule has to undo a press. */
+  --press: .97;
+  --press-wide: .985;
+  --row-hover: color-mix(in srgb, var(--accent) 35%, transparent);
+  --row-press: color-mix(in srgb, var(--accent) 60%, transparent);
   --positive: #4cc38a;
   --negative: #f0a096;
   --caution: #dfb883;
@@ -215,7 +224,6 @@ summary::-webkit-details-marker{display:none}
 summary:not(:has(svg))::before{content:"";flex-shrink:0;width:7px;height:7px;margin-inline:2px;border-inline-end:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(-45deg);transition:transform .15s}
 [dir=rtl] summary:not(:has(svg))::before{transform:rotate(135deg)}
 details[open]>summary:not(:has(svg))::before{transform:rotate(45deg)}
-@media(prefers-reduced-motion:reduce){summary:not(:has(svg))::before{transition:none}}
 
 /* Form fields. */
 label{display:grid;gap:8px;font-size:var(--type-small);font-weight:500;margin-bottom:20px}

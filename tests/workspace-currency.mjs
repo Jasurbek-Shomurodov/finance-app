@@ -8,7 +8,7 @@ const passthrough=({children})=>React.createElement('div',null,children);
 function component(file,name){
  const states=[];let cursor=0;
  const loaded=loadTS(file,{
-  react:{...React,useContext:context=>context._currentValue,useEffect:()=>{},useMemo:build=>build(),useState(initial){const index=cursor++;if(!(index in states))states[index]=typeof initial==='function'?initial():initial;return [states[index],value=>{states[index]=value;}];}},
+  react:{...React,useId:()=>'id',useContext:context=>context._currentValue,useEffect:()=>{},useMemo:build=>build(),useState(initial){const index=cursor++;if(!(index in states))states[index]=typeof initial==='function'?initial():initial;return [states[index],value=>{states[index]=value;}];}},
   '@/hooks/use-owner-resource':{useOwnerResource:()=>({data:{records:[]},loading:false,error:'',retry(){}})},
   'next/link':{__esModule:true,default:passthrough},
   '@/components/language-provider':{useLanguage:()=>({t:key=>key,locale:'en-US'})},
@@ -53,7 +53,7 @@ test('monthly review follows header currency on rerender without changing stored
 function find(node,predicate){
  if(!node||typeof node!=='object')return;
  // The expense form's parts render where the form puts them.
- if(['CurrencySelect','IncomeRecordForm','AmountCurrencyFields','CategoryAmount','DateDetails','DebtPayment','ExpenseActions'].includes(node.type?.name))return find(node.type(node.props),predicate);
+ if(['CurrencySelect','IncomeRecordForm','IncomeName','IncomeNotes','AmountCurrencyFields','CategoryAmount','DateDetails','DebtPayment','ExpenseActions'].includes(node.type?.name))return find(node.type(node.props),predicate);
  if(predicate(node))return node;
  for(const child of React.Children.toArray(node.props?.children)){
   const result=find(child,predicate);if(result)return result;
@@ -137,7 +137,7 @@ test('income source selectors match category, supply the name, and keep Name for
   assert.equal(updated.name,records.find(row=>row.id===sourceId).name);assert.equal(updated.amount,12.125);
   assert.equal(find(tree,node=>node.type?.name==='RecordNameInput'),undefined);
   const other=component('components/record-dialog.tsx','RecordDialog').tree({...props,editing:{...props.editing,kind:'Other income'}});
-  assert.equal(find(other,node=>node.type?.name==='RecordNameInput').props.label,'Name');
+  assert.equal(find(other,node=>node.type?.name==='RecordNameInput').props.label,'Name (optional)');
  }
 });
 
@@ -162,7 +162,16 @@ test('missing salary sources block receipts and point to income sources; a payme
  const render=component('components/income-record-form.tsx','IncomeRecordForm');
  const props={currencies:['USD'],rows:[],planning:{data:{records:[],categories:[]}},setEditing:value=>{editing=value;}};
  let tree=render.tree({...props,editing});
- assert.equal(find(tree,node=>node.props?.children==='Save income').props.disabled,true);
+ // Save stays available and says what is missing under the field, rather than sitting switched off unexplained.
+ assert.equal(find(tree,node=>node.props?.children==='Save income').props.disabled,false);
+ assert.equal(find(tree,node=>node.type?.name==='FieldError'&&node.props.message),undefined,'nothing is marked wrong before a save is tried');
+ let saved=0,prevented=0;
+ find(tree,node=>node.type==='form').props.onSubmit({preventDefault(){prevented++;},currentTarget:{querySelector:()=>null}});
+ tree=render.tree({...props,editing,save:()=>{saved++;}});
+ assert.deepEqual([saved,prevented],[0,1],'a receipt without a salary plan is not saved');
+ assert.ok(find(tree,node=>node.type?.name==='FieldError'&&node.props.message==='Choose an income source.'));
+ assert.ok(find(tree,node=>node.type?.name==='FieldError'&&node.props.message==='Enter an amount greater than zero.'));
+ assert.equal(find(tree,node=>node.props?.['aria-invalid']===true&&node.props?.required).props['aria-describedby'],'id');
  assert.equal(find(tree,node=>node.props?.children==='Add salary plan'),undefined);
  assert.equal(find(tree,node=>node.props?.children==='Add income source').props.href,'/income-expenses#income-sources');
  assert.equal(find(tree,node=>node.type?.name==='ScheduleFields'),undefined,'one payment has no Repeats');

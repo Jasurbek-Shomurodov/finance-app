@@ -16,13 +16,14 @@ test('spending pace is the Monthly review total with each day as the cut-off, fo
  const pace=spendingPace(input,'2026-10-02','USD',{USD:1});
  assert.equal(pace.month,'2026-10');assert.equal(pace.previousMonth,'2026-09');
  assert.equal(pace.points.length,31);
- assert.deepEqual(pace.points.slice(0,3),[{day:1,current:100,previous:40},{day:2,current:1000,previous:40},{day:3,current:null,previous:40}]);
+ assert.deepEqual(pace.points.slice(0,3),[{day:1,current:100,previous:40,pace:null},{day:2,current:1000,previous:40,pace:null},{day:3,current:null,previous:40,pace:null}]);
  assert.equal(pace.points[14].previous,100);assert.equal(pace.points[29].previous,110);
  assert.equal(pace.points[30].previous,110,'September has 30 days; day 31 keeps its total');
  // Income, planned (recurring) records and future-dated spending are not counted.
  assert.equal(pace.spent,1000);assert.equal(pace.previousToDate,40);
  assert.equal(pace.spent,monthlyReview(records,[],[],'2026-10','USD','2026-10-02').spent);
  assert.equal(pace.missing,false);
+ assert.deepEqual([pace.running,pace.day,pace.days,pace.plan,pace.status],[true,2,31,null,null],'no plan, no pace line and no status');
 });
 
 test('spending pace handles year boundaries, February and missing exchange rates',()=>{
@@ -58,4 +59,33 @@ test('a day\'s spending includes a Tracker expense on an investment, named after
  assert.deepEqual(spendingOnDay(day,'2026-09-15','USD',{USD:1},links).map(item=>[item.name,item.kind,item.amount]),[['d','Living expense',60],['Apple','Other expense',12]]);
  const pace=spendingPace({records:day,splits:[],snapshots:[],investmentLinks:links},'2026-10-02','USD',{USD:1});
  assert.equal(pace.points[14].previous-pace.points[13].previous,72);
+});
+
+// The one series the Dashboard and Budget draw: Budget names the month, the plan and the categories it leaves out.
+test('with a plan the month runs beside an even pace toward it, without excluded categories, for any month Budget shows',()=>{
+ const rows=[record('a','Living expense',100,'2026-11-02'),record('b','Other expense',50,'2026-11-02',{custom_category_id:'gym'}),record('c','Living expense',30,'2026-11-10'),record('pay','Salary',5000,'2026-11-05'),
+  record('late','Living expense',999,'2026-11-20'),record('old','Living expense',999,'2026-10-31'),record('bill','Living expense',400,'2026-11-01',{frequency:'Monthly'}),record('som','Living expense',125000,'2026-11-03',{currency:'UZS'}),record('odd','Living expense',7,'2026-11-04',{currency:'XYZ'})];
+ const today='2026-11-14',rates={USD:1,UZS:12500},read=(plan,extra={})=>spendingPace({records:rows,splits:[]},today,'USD',rates,{month:'2026-11',plan,...extra});
+ const pace=read(600);
+ assert.equal(pace.points.length,31,'October, the month before, has 31 days');assert.equal(pace.days,30);assert.equal(pace.day,14);assert.equal(pace.plan,600);
+ assert.deepEqual(pace.points[0],{day:1,current:0,previous:0,pace:20});
+ assert.equal(pace.points[1].current,150);
+ assert.equal(pace.points[2].current,160,'another currency counts at its rate');
+ assert.equal(pace.points[3].current,160,'an amount no rate converts is left out, never added as it stands');assert.equal(pace.missing,true,'and the month says so');
+ assert.equal(pace.points[13].current,190);assert.equal(pace.points[13].pace,280);
+ assert.equal(pace.points[14].current,null,'days not reached carry no spending');
+ assert.equal(pace.points[29].pace,600,'the even pace ends on the plan');assert.equal(pace.points[30].pace,null,'and stops with the month');
+ assert.equal(pace.points[30].previous,999,'last month runs beside it, to its own last day');
+ assert.equal(pace.spent,190,'income, schedules, other months and later days are not spending so far');
+ assert.equal(pace.status,'on_pace');
+ assert.equal(read(300).status,'above_pace','190 spent against 140 by day 14');
+ assert.equal(read(150).status,'over_plan');
+ assert.equal(read(0).status,null,'no plan, no pace');
+ const unknown=read(null);assert.equal(unknown.status,null);assert.equal(unknown.points[0].pace,null);
+ assert.equal(read(600,{excluded:new Set(['gym'])}).spent,140,'an excluded category is left out, as in the budget totals');
+ // A past month is whole and has no status; a split counts in its parts.
+ const past=spendingPace({records:rows,splits:[{record_id:'old',category_id:'gym',amount:99},{record_id:'old',category_id:'Living expense',amount:900}]},today,'USD',rates,{month:'2026-10',plan:600,excluded:new Set(['gym'])});
+ assert.equal(past.day,31);assert.equal(past.status,null);assert.equal(past.running,false);assert.equal(past.points[30].current,900);assert.equal(past.spent,900);
+ const ahead=spendingPace({records:rows,splits:[]},today,'USD',rates,{month:'2026-12',plan:600});
+ assert.equal(ahead.day,0);assert.equal(ahead.spent,0);assert.equal(ahead.points[0].current,null);
 });

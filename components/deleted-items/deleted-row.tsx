@@ -29,7 +29,7 @@ export function deletedTypeLabel(item: DeletedItem) {
 }
 
 /** Type, category and the record's own date (or schedule) on one line. */
-export function deletedMeta(item: DeletedItem, names: ItemNames, t: (key: string) => string, locale: string) {
+function deletedMeta(item: DeletedItem, names: ItemNames, t: (key: string) => string, locale: string) {
  const parts = [t(deletedTypeLabel(item))];
  if (item.source === 'finance_records') {
   const type = deletedItemType(item);

@@ -3,7 +3,7 @@ import { showSaved } from '@/lib/feedback';
 import { useMemo, useState } from 'react';
 import { useLanguage } from '@/components/language-provider';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
-import { PanelSkeleton } from '@/components/presentation-foundation/loading-placeholder';
+import { TaxPrepSkeleton } from '@/components/presentation-foundation/screen-skeletons';
 import { TaxPrepSheet } from '@/components/tax-prep-sheet';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
 import { reportLedger, unconvertedCount, type LedgerLine } from '@/lib/business-report';
@@ -35,6 +35,6 @@ export function TaxTab({ preferences, save, saving = false, onOpen }: { preferen
  const categories = useMemo(() => [...income.filter(kind => kind !== 'Salary').map(key => ({ key, direction: 'income' as const })), ...expenses.map(key => ({ key, direction: 'expense' as const })), ...data.categories.map(category => ({ key: category.id, direction: category.direction }))], [data.categories]);
  const { t } = useLanguage();
  if (error || transactionTools.error) return <InlineError message={t(error || transactionTools.error)} onRetry={() => { retry(); transactionTools.retry(); }}/>;
- if (loading || transactionTools.loading) return <PanelSkeleton label={t('Loading records…')} rows={6}/>;
+ if (loading || transactionTools.loading) return <TaxPrepSkeleton label={t('Loading records…')}/>;
  return <TaxPrepSheet lines={lines} missing={missing} saving={saving} businesses={businessList} business={shownBusiness} onBusiness={setBusiness} year={year} years={[0, 1, 2, 3, 4].map(back => thisYear - back)} onYear={setYear} period={period} onPeriod={setPeriod} categories={categories} settings={settings} onSettings={async next => { if (demo) { setSample(next); showSaved(); } else await save({ key: 'tax_lines', data: next }); }} names={reportNames(data.categories, businessList, t)} currency={currency} onOpen={onOpen}/>;
 }

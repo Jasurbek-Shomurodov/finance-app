@@ -229,7 +229,9 @@ test('watchlist and goal forms let the user pick any preferred currency',()=>{
   assert.match(source,/<CurrencySelect /,file);
   assert.ok(!source.includes('<CurrencyValue'),file);
  }
- assert.match(read('components/workspace/screens/cash-flow-screen.tsx'),/<SpendingWatchlists [^>]*currencies=\{preferencesData\.currencies\}/);
+ // Watchlists live on Budget (docs/product-map.md); Cash flow's Spending tab only links there.
+ assert.match(read('components/workspace/screens/budget-screen.tsx'),/<SpendingWatchlists [^>]*currencies=\{preferencesData\.currencies\}/);
+ assert.ok(!read('components/workspace/screens/cash-flow-screen.tsx').includes('<SpendingWatchlists'),'one home: Cash flow does not render the watchlists');
 });
 
 test('the workspace holds one Budget: only the provider calls useBudget, so an edit reaches every forecast (CONC-007)',()=>{

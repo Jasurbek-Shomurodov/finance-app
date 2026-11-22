@@ -1,10 +1,10 @@
 "use client";
 import { useState } from 'react';
-import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, CartesianGrid, Cell, ComposedChart, Legend, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Download, ReceiptText, X } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
-import { ShareBars } from '@/components/cash-flow-report';
-import { chartAxis, chartBar, chartColors, chartDonut, chartGrid, chartHeight, chartLegend, chartMargin, chartTooltip, chartValueAxis, groupedBar, intervalLabel, moneyTick, stackTop } from '@/components/presentation-foundation/chart';
+import { ShareBars } from '@/components/cash-flow/flow-bars';
+import { chartAxis, chartBar, chartColors, chartDonut, chartGrid, chartHeight, chartLegend, chartMargin, chartTooltip, chartValueAxis, groupedBar, intervalLabel, leadLine, moneyTick, stackTop } from '@/components/presentation-foundation/chart';
 import { BusinessMark } from '@/components/presentation-foundation/business-mark';
 import type { BusinessOption } from '@/components/presentation-foundation/business-filter';
 import { CategoryIcon } from '@/components/presentation-foundation/category-icon';
@@ -40,20 +40,22 @@ export function BusinessName({ id, names }: { id: string | null; names: ReportNa
  return <span className="report-business-name">{record ? <BusinessMark name={record.name} color={record.business_color} logo={record.business_logo} size="sm"/> : <span className="business-mark" data-size="sm" aria-hidden="true">🏠</span>}<span>{names.business(id)}</span></span>;
 }
 
-/** Bars over time: one series per key, side by side or stacked. Clicking a legend entry hides or shows its series. */
-export function TrendChart({ rows, series, stacked, interval, currency }: { rows: Array<Record<string, number | string>>; series: Array<{ key: string; label: string; color: string }>; stacked: boolean; interval: Interval; currency: string }) {
+/** Bars over time: one series per key, side by side or stacked, with `line` (each period's net) drawn over them.
+ * Clicking a legend entry hides or shows its series. */
+export function TrendChart({ rows, series, line, stacked, interval, currency }: { rows: Array<Record<string, number | string>>; series: Array<{ key: string; label: string; color: string }>; line?: { key: string; label: string }; stacked: boolean; interval: Interval; currency: string }) {
  const { locale } = useLanguage();
  const [hidden, setHidden] = useState<string[]>([]);
  const label = useIntervalLabel(interval), longLabel = useIntervalLabel(interval, true);
  return <div className="cash-flow-chart"><ResponsiveContainer width="100%" height={chartHeight.regular}>
-  <BarChart data={rows} barGap={2} stackOffset="sign" accessibilityLayer margin={chartMargin}>
+  <ComposedChart data={rows} barGap={2} stackOffset="sign" accessibilityLayer margin={chartMargin}>
    <CartesianGrid {...chartGrid}/>
    <XAxis dataKey="period" tickFormatter={value => label(String(value))} {...chartAxis}/>
    <YAxis tickFormatter={moneyTick(currency, locale)} {...chartValueAxis}/>
    <Tooltip {...chartTooltip} labelFormatter={value => longLabel(String(value))} formatter={(value, name) => [formatMoney(Number(value), currency, locale), String(name)]}/>
    <Legend {...chartLegend} onClick={entry => { const key = String((entry as { dataKey?: unknown }).dataKey ?? ''); setHidden(list => toggleKey(list, key)); }} formatter={(value, entry) => <span className="trend-legend" data-hidden={hidden.includes(String((entry as { dataKey?: unknown }).dataKey)) || undefined}>{value}</span>}/>
    {series.map((item, index) => <Bar key={item.key} dataKey={item.key} name={item.label} hide={hidden.includes(item.key)} stackId={stacked ? 'total' : undefined} {...(stacked ? { ...chartBar, ...stackTop(index === series.length - 1) } : groupedBar)} fill={item.color}/>)}
-  </BarChart>
+   {line && <Line dataKey={line.key} name={line.label} hide={hidden.includes(line.key)} {...leadLine}/>}
+  </ComposedChart>
  </ResponsiveContainer></div>;
 }
 
@@ -82,7 +84,7 @@ export function attributeColor(attribute: 'category' | 'group' | 'business', key
 
 const reportLinesPerPage = 20;
 /** Largest first, by the amount in the display currency; equal amounts newest first. */
-export const largestFirst = (lines: readonly LedgerLine[]) => [...lines].sort((a, b) => b.amount - a.amount || b.date.localeCompare(a.date) || a.id.localeCompare(b.id));
+const largestFirst = (lines: readonly LedgerLine[]) => [...lines].sort((a, b) => b.amount - a.amount || b.date.localeCompare(a.date) || a.id.localeCompare(b.id));
 
 /** The transactions behind a report, narrowed by the last click on a chart or table, largest first. Each reads as it was
  * entered. A row opens its transaction; `href` opens the same list, filtered, on Transactions. */

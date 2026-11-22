@@ -179,7 +179,9 @@ test('dashboard payments show each instalment, and the comparison line is labell
  const comparison=read('components/investment-comparison.tsx');
  // The chart draws net worth, debts subtracted; its line and its chart carry that name.
  assert.match(comparison,/key:'actual',label:t\('Net worth'\)/);
- assert.match(read('components/dashboard-cards.tsx'),/budgetRowsForMode\(rows, budget\.state\.mode\)\.filter\(row => row\.budget\)/,'flex mode hides per-category budgets on the dashboard too');
+ const cardsSource=read('components/dashboard-cards.tsx');
+ assert.match(cardsSource,/const own = budgetRowsForMode\(rows, budget\.state\.mode\);\n const watched = own\.filter\(row => row\.budget\)/,'flex mode hides per-category budgets on the dashboard too');
+ assert.match(cardsSource,/const over = own\.filter\(/,'and so does what the dashboard says spent past its plan');
  assert.match(read('lib/dashboard-layout.ts'),/upcoming: 'Upcoming payments'/);assert.match(comparison,/label=\{t\('Net worth'\)\}/);
 });
 

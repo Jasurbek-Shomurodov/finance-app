@@ -3,6 +3,8 @@ import { useMemo } from 'react';
 import { DebtSummary } from '@/components/debt-summary';
 import { LoansList } from '@/components/loans/loans-list';
 import { OwedBreakdown, PayoffPlanCard } from '@/components/loans/loans-side';
+import { PayoffPlanCardSkeleton } from '@/components/presentation-foundation/screen-skeletons';
+import { useLanguage } from '@/components/language-provider';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
 import { usePortfolioHistory } from '@/hooks/use-portfolio-history';
 import { payoffDay, payoffPlan, planFor } from '@/lib/debt-plan';
@@ -13,6 +15,7 @@ import { liabilities } from '@/lib/finance';
 /** Loans & debts, the overview: the key figures, every record with how far it is paid off, and beside them what is
  * owed by debt and the payoff plan. `onOpenPlanner` switches to the Debt payoff planner tab. */
 export function LoansOverview({ onOpenPlanner }: { onOpenPlanner: () => void }) {
+ const { t } = useLanguage();
  const { user, demo, rows, current, currency, planning, workspacePreferences, reload } = useWorkspace();
  const today = depositToday();
  // The paid-off bars read the Tracker history the Overview charts use; the sample workspace builds its own.
@@ -30,7 +33,8 @@ export function LoansOverview({ onOpenPlanner }: { onOpenPlanner: () => void }) 
    <LoansList events={events}/>
    {debts.length > 0 && <div className="loans-side">
     <OwedBreakdown debts={debts}/>
-    {ready && <PayoffPlanCard plan={plan} worked={worked} today={today} onOpen={onOpenPlanner}/>}
+    {/* The plan reads the saved payoff settings: until they arrive its card keeps its place, so it never drops in under what is owed. */}
+    {ready ? <PayoffPlanCard plan={plan} worked={worked} today={today} onOpen={onOpenPlanner}/> : (planning.loading || workspacePreferences.loading) && !planning.error && <PayoffPlanCardSkeleton label={t('Loading records…')}/>}
    </div>}
   </div>
  </>;

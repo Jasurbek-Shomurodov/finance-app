@@ -196,8 +196,8 @@ test('business helpers: colours, filters, who can take a business, account group
  assert.deepEqual(loadTS('lib/comparison-profile.ts').investmentKinds, assets, 'benchmarks compare every asset kind');
  // The guide: three steps with a page each; tagged history is offered to those who tracked by hand, or who have tags.
  const hrefs = cards => cards.map(card => card.href);
- assert.deepEqual(hrefs(setupGuide(false, true)), ['/transactions?business=household', '/settings#rules', '/reports?tab=tax']);
- assert.deepEqual(hrefs(setupGuide(true, false)), ['/transactions', '/settings#tags', '/settings#rules']);
+ assert.deepEqual(hrefs(setupGuide(false, true)), ['/transactions?business=household', '/transactions#rules', '/reports?tab=tax']);
+ assert.deepEqual(hrefs(setupGuide(true, false)), ['/transactions', '/settings#tags', '/transactions#rules']);
  assert.deepEqual(hrefs(setupGuide(null, true)).at(-1), '/settings#tags');
  assert.equal(setupGuide(null, false).length, 3);
  for (const card of [...setupGuide(true, true), ...setupGuide(null, true)]) assert.ok(card.title && card.detail && card.action && card.emoji);

@@ -2,7 +2,9 @@
 import type { Entry } from '@/lib/finance';
 import { useEffect, useState, type ReactNode } from 'react';
 import { liabilities } from '@/lib/finance';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Workflow } from 'lucide-react';
+import { DrawerLink } from '@/components/presentation-foundation/drawer-link';
+import { flowLink } from '@/lib/add-links';
 import { TodayButton } from '@/components/presentation-foundation/today-button';
 import { PageHeader } from '@/components/presentation-foundation/page-header';
 import { ErrorPopup } from '@/components/presentation-foundation/error-popup';
@@ -26,7 +28,6 @@ import { useColumnsFit } from '@/hooks/use-columns-fit';
 import { AccountOperation, useRecurringDetails } from './recurring-lazy';
 import { paymentsFrom } from '@/lib/payment-account';
 import { AddRecurringMenu, type RecurringKind } from './add-recurring-menu';
-import { RecurringFlowButton } from './recurring-flow-button';
 import { RecurringSummary } from './recurring-summary';
 import { DayPanel, RecurringCalendar } from './recurring-calendar';
 import { ComingUp } from './coming-up';
@@ -39,7 +40,11 @@ type Props = { data: PlanningData; save: Save; currency: string; /** Preferred c
  /** Archiving moves a schedule out of the month and back. */
  onArchive?: (target: ArchiveTarget, archived: boolean) => Promise<void>;
  /** Moves a schedule to Recently deleted, keeping its recorded payments in history or deleting them too. */
- onDelete?: (target: ArchiveTarget, removeHistory: boolean) => Promise<void> };
+ onDelete?: (target: ArchiveTarget, removeHistory: boolean) => Promise<void>;
+ /** Schedules suggested from recorded transactions, shown under the list. */
+ suggestions?: ReactNode;
+ /** Tells the page the month whose money flow the link opens on Cash flow. */
+ onFlow?: (month: string) => void };
 type Direction = RecurringItem['direction'];
 
 /** The debt repayments and deposit maturities of the shown month, with any still open from earlier months. Loan installments
@@ -110,7 +115,7 @@ function RecurringFolds({ data, busy, onRestoreSkipped, onRestoreArchived }: { d
 }
 
 /** The month's incomes and bills, as a list or a calendar, with what came in and went out, and what is coming up beside it. */
-export function UpcomingPage({ data, save, currency, currencies = [], rates, view, onView, onEdit, onAddRecurring, onArchive, onDelete }: Props) {
+export function UpcomingPage({ data, save, currency, currencies = [], rates, view, onView, onEdit, onAddRecurring, onArchive, onDelete, suggestions, onFlow }: Props) {
  const { t } = useLanguage(), today = depositToday();
  const [error, setError] = useState(''), [busy, setBusy] = useState(false);
  const [month, setMonth] = useState(today.slice(0, 7));
@@ -153,7 +158,8 @@ export function UpcomingPage({ data, save, currency, currencies = [], rates, vie
   <ErrorPopup message={error}/>
   {scheduled && <>
    <RecurringSummary month={month} summary={recurringSummary(items, convert)} currency={currency} only={only} onToggle={direction => setOnly(only === direction ? null : direction)} dueToday={items.filter(item => item.date === today && item.status === 'due').length}>
-    <RecurringFlowButton items={items} month={month} currency={currency} convert={convert}/>
+    {/* The month's money flow has one home, Cash flow; a month still to come has none yet. */}
+    {month <= today.slice(0, 7) && <Button asChild variant="outline" size="sm"><DrawerLink href={flowLink} onClick={() => onFlow?.(month)}><Workflow size={16} aria-hidden="true"/>{t('Money flow')}</DrawerLink></Button>}
    </RecurringSummary>
    <div className="recurring-layout">
     <div className="recurring-main">
@@ -164,6 +170,7 @@ export function UpcomingPage({ data, save, currency, currencies = [], rates, vie
     </div>
     <RecurringSide picked={view === 'calendar' ? days.find(group => group.date === day) : undefined} upcoming={comingUp(data, today)} today={today} busy={busy} recordAll={recordDue.button} onClose={() => setDay(null)} onOpen={entry => entry.item ? details.open(entry.item) : onEdit?.(entry.record)} onDay={showDay} onCalendar={() => onView('calendar')} onPay={paying.pay} onEdit={onEdit} reminder={reminder}/>
    </div>
+   {view === 'list' && suggestions}
    <RecurringFolds data={data} busy={busy} onRestoreSkipped={(recordId, date) => skip(recordId, date, false)} onRestoreArchived={archive && (target => archive(target, false))}/>
   </>}
   {details.dialog}

@@ -130,7 +130,6 @@
 .asset-layout-list .asset-card-actions{grid-column:4;grid-row:1;margin:0;padding:0;border:0}
 @container content (max-width:760px){.asset-layout-list .asset-card{grid-template-columns:minmax(0,1fr) auto;gap:10px 16px}.asset-layout-list .asset-card-worth{text-align:end}.asset-layout-list .asset-card-facts,.asset-layout-list .asset-card-actions{grid-column:1/-1;grid-row:auto}.asset-layout-list .asset-card-details{grid-row:auto}}
 @media(pointer:coarse){.asset-card-actions :is(button,a),.asset-card-details summary{min-height:44px;height:auto}}
-@media(prefers-reduced-motion:reduce){.asset-card,.asset-card-details summary svg{transition:none}}
 
 /* Recently deleted: one row per item, newest first. */
 /* Recently deleted: the bin by deletion day beside the selected item and what restoring it changes. */
@@ -147,7 +146,7 @@
 .recovery-row{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding-inline-end:16px}
 .recovery-row.skeleton-row{padding:14px 20px}
 .recovery-row+.recovery-row{border-top:1px solid var(--hairline)}
-.recovery-row:hover{background:color-mix(in srgb,var(--muted) 60%,transparent)}
+.recovery-row:hover{background:var(--row-hover)}
 .recovery-row[data-selected]{background:color-mix(in srgb,var(--mark-bg) 8%,transparent)}
 .recovery-select{display:flex;flex:1 1 16rem;align-items:center;gap:12px;min-width:0;padding-block:12px;padding-inline:20px 8px;border:0;border-radius:var(--radius-control);background:none;color:inherit;font:inherit;text-align:start;cursor:pointer}
 .recovery-select:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
@@ -190,7 +189,6 @@
 .workspace .content .currency-catalogue{background:var(--background);gap:5px}
 .workspace .content .currency-catalogue label:has(input:checked){background:var(--accent);color:var(--accent-foreground)}
 .workspace .content .settings-form>button.primary{border-radius:12px;min-height:44px;justify-self:start;min-width:180px}
-@media(prefers-reduced-motion:reduce){.workspace .content tbody tr,.workspace .content .comparison-settings-options label,.nav-item,.segmented>button,.user-link,.info-hint,.account-group>summary>svg,.account-list-row,.goal-setup-progress>span,.goal-template{transition:none}}
 
 /* The legend swatch for planned, scheduled or estimated bars (`plannedBar` in presentation-foundation/chart.ts). */
 .chart-planned-key{background:color-mix(in srgb,var(--primary) 12%,transparent);border:1px dashed var(--primary);border-radius:2px}

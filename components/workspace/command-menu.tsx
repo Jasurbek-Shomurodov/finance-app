@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { ArrowDownLeft, ArrowRightLeft, ArrowUpRight, Coins, CornerDownLeft, Moon, Search, Sun, Target, Wallet } from 'lucide-react';
+import { ArrowDownLeft, ArrowRightLeft, ArrowUpRight, Coins, CornerDownLeft, Eye, Moon, ReceiptText, Search, Sun, Target, TrendingUp, Wallet, Wand2, Workflow } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { transferLink } from '@/lib/add-links';
+import { benchmarksLink, flowLink, rulesLink, taxPrepLink, transferLink, watchlistsLink } from '@/lib/add-links';
 import { useLanguage } from '@/components/language-provider';
 import { RecordIcon } from '@/components/presentation-foundation/record-icon';
 import { useThemeSwitch } from '@/components/theme-provider';
@@ -41,6 +41,15 @@ export function CommandMenu({ onNavigate }: { onNavigate: (path: string) => void
  const records = planning.data.records, goals = planning.data.goals;
  const lines = useMemo<Line[]>(() => {
   const pages: Line[] = sections.map(({ name, label, icon: Icon, path }) => ({ id: 'page:' + path, group: 'pages', label: t(label), keywords: `${t(name)} ${name} ${label}`, icon: <Icon aria-hidden="true"/>, run: () => onNavigate(path) }));
+  // Each feature has one home; a search for it opens that home with the feature showing.
+  const feature = (id: string, label: string, home: string, icon: ReactNode, path: string): Line => ({ id: 'feature:' + id, group: 'pages', label: t(label), detail: t(home), searchOnly: true, icon, run: () => onNavigate(path) });
+  const features: Line[] = [
+   feature('rules', 'Rules', 'Transactions', <Wand2 aria-hidden="true"/>, rulesLink),
+   feature('flow', 'Money flow', 'Cash flow', <Workflow aria-hidden="true"/>, flowLink),
+   feature('watchlists', 'Spending watchlists', 'Budget', <Eye aria-hidden="true"/>, watchlistsLink),
+   feature('benchmarks', 'Investment benchmarks', 'Settings', <TrendingUp aria-hidden="true"/>, benchmarksLink),
+   feature('tax', 'Business tax prep', 'Reports', <ReceiptText aria-hidden="true"/>, taxPrepLink),
+  ];
   const adds: Line[] = readOnly ? [] : [
    { id: 'add-expense', group: 'actions', label: t('Add expense'), icon: <ArrowUpRight aria-hidden="true"/>, run: quickExpense },
    { id: 'add-income', group: 'actions', label: t('Add income'), icon: <ArrowDownLeft aria-hidden="true"/>, run: () => addCashFlow('Other income') },
@@ -56,7 +65,7 @@ export function CommandMenu({ onNavigate }: { onNavigate: (path: string) => void
    ...searchableRecords(records).map((record): Line => ({ id: 'record:' + record.id, group: 'records', label: record.name, keywords: t(record.kind), detail: t(record.kind), icon: <RecordIcon record={record}/>, run: () => onNavigate(recordPath(record)) })),
    ...goals.filter(goal => !goal.archived).map((goal): Line => ({ id: 'goal:' + goal.id, group: 'records', label: goal.name, keywords: t('Goals'), detail: t('Goals'), icon: <Target aria-hidden="true"/>, run: () => onNavigate('/goals') })),
   ];
-  return [...pages, ...adds, ...display, ...saved];
+  return [...pages, ...features, ...adds, ...display, ...saved];
  }, [t, readOnly, resolvedTheme, currency, preferencesData.currencies, records, goals]); // eslint-disable-line react-hooks/exhaustive-deps -- the actions are rebuilt by the workspace on every render and read only when a line runs
  const shown = matchCommands(lines, query, locale);
  const group = (name: Line['group'], heading: string) => {

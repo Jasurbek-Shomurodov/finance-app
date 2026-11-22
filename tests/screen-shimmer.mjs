@@ -30,10 +30,14 @@ test('Cash flow shimmer draws the Overview blocks in the page order', () => {
  assert.match(screen, /<CashFlowSkeleton label=\{t\("Loading your workspace…"\)\}\/>/, 'inside the screen the real month bar is already there');
 });
 
-test('the report shimmer is the Period switch, then the bars beside Where the month went', () => {
- inOrder(report.slice(report.indexOf('export function CashFlowReport')), ['cash-flow-report-tools', 'cash-flow-report-grid', '<TrendPanel', '<WherePanel'], 'the report');
+test('the report shimmer is the bars beside Where the month went, with no Period switch', () => {
+ // Cash flow shows one month; every other period is on Reports (docs/product-map.md), so neither the report nor its
+ // shimmer draws a Period switch above the grid.
+ inOrder(report.slice(report.indexOf('export function CashFlowReport')), ['cash-flow-report-grid', '<TrendPanel', '<WherePanel'], 'the report');
  assert.match(report, /remote\.initialLoading\) return <CashFlowReportSkeleton/);
- inOrder(body(placeholders, 'CashFlowReportSkeleton'), ['cash-flow-report-tools', 'cash-flow-report-grid', 'cash-flow-trend', 'cash-flow-where'], 'the report shimmer');
+ inOrder(body(placeholders, 'CashFlowReportSkeleton'), ['cash-flow-report', 'cash-flow-report-grid', 'cash-flow-trend', 'cash-flow-where'], 'the report shimmer');
+ assert.doesNotMatch(report, /cash-flow-report-tools/, 'the report has no Period switch');
+ assert.doesNotMatch(body(placeholders, 'CashFlowReportSkeleton'), /cash-flow-report-tools/, 'so its shimmer draws none');
 });
 
 test('the preview shimmer is the income table beside Still to come; budget, mortgages and watchlists belong to Spending', () => {

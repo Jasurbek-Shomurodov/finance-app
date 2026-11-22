@@ -85,7 +85,6 @@
  .goal-funding-fields{grid-template-columns:minmax(0,1fr)}
  .goal-activity-actions>button{width:100%}
 }
-@media(prefers-reduced-motion:reduce){.goal-disclosure-chevron{transition:none}}
 
 /* Currency is chosen once in the workspace header; editors show its unit. */
 .currency-value{display:grid;align-content:start;gap:8px;min-width:0;margin-bottom:20px;font-size:var(--type-body)}

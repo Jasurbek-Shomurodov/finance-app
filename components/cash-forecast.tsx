@@ -11,7 +11,7 @@ import { EmptyState } from '@/components/presentation-foundation/empty-state';
 import { FormattedNumberInput } from '@/components/presentation-foundation/formatted-number-input';
 import { InfoHint } from '@/components/presentation-foundation/info-hint';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
-import { PanelSkeleton } from '@/components/presentation-foundation/loading-placeholder';
+import { ForecastSkeleton } from '@/components/presentation-foundation/screen-skeletons';
 import { PanelTitle } from '@/components/presentation-foundation/panel-title';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { StatTile, StatTiles } from '@/components/presentation-foundation/stat-tile';
@@ -78,7 +78,7 @@ export function CashForecastView({ owner, data, budget, payouts, currency, rates
  const options = [...forecast.totals, ...forecast.accounts];
  const shown = options.find(series => series.id === selected) ?? forecast.totals[0];
  const accountNames = new Map(forecast.accounts.map(account => [account.id, account.name]));
- if (loading) return <PanelSkeleton label={t('Loading records…')} rows={3}/>;
+ if (loading) return <ForecastSkeleton label={t('Loading records…')}/>;
  if (error) return <InlineError as="div" message={t(error)} onRetry={onRetry}/>;
  // Every figure in the display currency: an account in another currency is converted, or reads — without a rate.
  const view = shown ? seriesIn(shown, currency, rates) : null;

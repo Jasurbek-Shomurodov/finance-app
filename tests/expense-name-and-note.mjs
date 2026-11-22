@@ -15,8 +15,11 @@ test('a typed name is kept as typed, whatever the note says', () => {
   assert.equal(save.expenseName({ kind: 'Living expense', name: 'Fuel', notes: 'Gas & Diesel.' }, 'Living expense', 'Living expense'), 'Fuel');
 });
 
-test('income is never renamed from its note', () => {
-  assert.equal(save.expenseName({ kind: 'Salary', name: '', notes: 'EPAM payslip' }, undefined, 'Salary'), '');
+test('a blank income is named by its category too, never by its note', () => {
+  assert.equal(save.expenseName({ kind: 'Other income', name: '', notes: 'EPAM payslip' }, undefined, 'Other income'), 'Other income');
+  assert.equal(save.expenseName({ kind: 'Other income', name: ' ', notes: '' }, 'Tutoring', 'Other income'), 'Tutoring');
+  assert.equal(save.expenseName({ kind: 'Other income', name: 'Refund', notes: '' }, 'Tutoring', 'Other income'), 'Refund');
+  assert.equal(save.expenseName({ kind: 'Cash', name: '', notes: '' }, undefined, 'Cash'), '', 'an account is never named for the person');
 });
 
 const names = loadTS('lib/record-names.ts');

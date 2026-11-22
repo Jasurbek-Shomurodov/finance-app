@@ -11,7 +11,7 @@ import { accountAmount } from '@/lib/record-balance';
 
 /** `onSuggest`, for a new transaction: once the accounts have loaded, a blank account starts as the one last used in its
  * currency (or the only one), and the person can change it. */
-export function CashAccountField({entry,records,loading,error,busy,onSuggest,onChange}:{entry:Entry;records:Entry[];loading:boolean;error:string;busy:boolean;onSuggest?:(id:string)=>void;onChange:(id:string|null)=>void}){
+export function CashAccountField({entry,records,loading,error,busy,problem,onSuggest,onChange}:{/** Why the account stops the save, as an English key: shown under the field. */problem?:string;entry:Entry;records:Entry[];loading:boolean;error:string;busy:boolean;onSuggest?:(id:string)=>void;onChange:(id:string|null)=>void}){
  const {t,locale}=useLanguage();
  const suggestion=onSuggest&&!loading&&!error&&!entry.account_id&&entry.frequency==='Once'?suggestedCashAccount(records,entry.currency,income.includes(entry.kind)?'income':'expense'):null;
  const suggested=useRef(false);
@@ -28,7 +28,7 @@ export function CashAccountField({entry,records,loading,error,busy,onSuggest,onC
  const businesses=[...new Set(accounts.map(account=>account.business_id).filter((id):id is string=>!!id))];
  const groupLabel=(group:string)=>group==='household'?t('Household'):records.find(record=>record.id===group)?.name??t('Business');
  return <div className="cash-account-field"><GroupedPicker label={t('Cash account')} placeholder={t('Choose a cash account')} searchLabel={t('Search accounts...')} allLabel={t('All accounts')} emptyText={t('No matching records')}
-  groups={['household',...businesses]} groupLabel={groupLabel} value={entry.account_id||''} disabled={busy||loading||!!error||entry.frequency!=='Once'} onChange={id=>onChange(id||null)}
+  groups={['household',...businesses]} groupLabel={groupLabel} value={entry.account_id||''} disabled={busy||loading||!!error||entry.frequency!=='Once'} onChange={id=>onChange(id||null)} error={problem}
   items={accounts.map(account=>({id:account.id,name:`${formatAccountOption(account,locale)} · ${account.currency}`,group:account.business_id??'household'}))}/>
   {!loading&&!error&&!accounts.length&&<p className="muted">{t('Add a cash account to record this transaction.')}</p>}
   {loading&&<p className="muted">{t('Waiting for current cash account balances.')}</p>}

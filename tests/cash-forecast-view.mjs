@@ -16,6 +16,7 @@ const modules = {
  'lucide-react': hostModule(), '@/components/charts-lazy': hostModule(), '@/components/display-money': { useDisplayMoney: () => ({ entered: amount => String(amount), enteredSigned: amount => String(amount) }) },
  ...Object.fromEntries(['category-icon', 'count', 'date-picker', 'drawer-link', 'empty-state', 'formatted-number-input', 'info-hint', 'inline-error', 'loading-placeholder', 'panel-title', 'segmented', 'stat-tile', 'rolling-text'].map(name => ['@/components/presentation-foundation/' + name, hostModule()])),
  '@/components/presentation-foundation/tone': { signTone: value => value < 0 ? 'negative' : undefined },
+ '@/components/presentation-foundation/screen-skeletons': hostModule(),
  '@/components/ui/input': hostModule(), '@/components/ui/native-select': hostModule(),
 };
 const { CashForecastView } = r.load('components/cash-forecast.tsx', modules);
@@ -27,7 +28,8 @@ const found = type => r.all(node => node.type === type);
 
 test('the forecast waits for its records and shows a failed read with Retry', () => {
  view({ loading: true });
- assert.equal(found('PanelSkeleton').length, 1);
+ // The shimmer follows the loaded forecast's blocks (Shimmer follows the screen).
+ assert.deepEqual(found('ForecastSkeleton').map(node => node.props.label), ['Loading records…']);
  let retried = 0;
  view({ error: 'Could not load records.', onRetry: () => retried++ });
  const error = found('InlineError')[0];

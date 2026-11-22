@@ -738,7 +738,9 @@ test('a recent transaction on the dashboard opens its details by click, Enter or
  assert.deepEqual(opened, ['food', 'pay', 'pay']);
  r.mount(React.createElement(RecentTransactionsCard, { data }));
  assert.equal(r.all(node => node.type === 'li' && node.props.role === 'button').length, 0);
- assert.match(fs.readFileSync('components/workspace/screens/overview-screen.tsx', 'utf8'), /<RecentTransactionsCard [^\n]*onOpen=\{record => setViewing\(storedRecord\(record\)\)\}\/>/, 'the dashboard opens the transaction’s details');
+ const dashboard = fs.readFileSync('components/workspace/screens/overview-screen.tsx', 'utf8');
+ assert.match(dashboard, /<RecentTransactionsCard [^\n]*onOpen=\{open\}\/>/, 'the dashboard card opens what it is handed');
+ assert.match(dashboard, /dashboardCards\(nodes, \{[^\n]*open: record => setViewing\(storedRecord\(record\)\)/, 'and the dashboard hands it the transaction’s details');
 });
 
 test('a schedule’s Sankey shows what paid it and what is still due; a Recurring row opens its history instead', () => {
@@ -782,8 +784,8 @@ test('a schedule’s Sankey shows what paid it and what is still due; a Recurrin
  assert.match(page, /const reminder: ReminderActions = \{ today, busy, onOpen: onEdit, /, 'debt repayments and deposit maturities open their loan or deposit');
  assert.doesNotMatch(page, /onSankey/);
  const overview = fs.readFileSync('components/overview-page.tsx', 'utf8');
- assert.match(overview, /openRecurring = \(\) => router\.push\('\/upcoming'\)/);
- assert.match(overview, /<li key=\{item\.key\} \{\.\.\.openProps\(openRecurring, /, 'the dashboard’s upcoming payments open Recurring');
+ assert.match(overview, /<li key=\{item\.key\}><DrawerLink href=\{payLink\(item\.record\.id, item\.date\)\} className="overview-row"/, 'the dashboard’s upcoming payments open this payment on Recurring');
+ assert.match(fs.readFileSync('lib/recurring.ts', 'utf8'), /export const payLink = \(recordId: string, date: string\) => `\/upcoming#pay=/, 'which is on Recurring');
 });
 
 test('a schedule opened from the dashboard, where its history is not at hand, opens Recurring from its own node', () => {
@@ -833,7 +835,9 @@ test('a Budget row opens its category’s details; Money flow covers the month o
  const screen = fs.readFileSync('components/workspace/screens/budget-screen.tsx', 'utf8');
  assert.match(screen, /rowMenu, onOpen: setViewing/, 'a row opens its category’s details');
  assert.doesNotMatch(screen, /openSankey/);
- assert.match(screen, /title: t\('Money flow'\), month, months: view === 'year' \? periodMonths\(month, 'year'\) : undefined/);
+ // The money flow diagram has one home: Budget links to Cash flow for its month and to Reports for its year.
+ assert.match(screen, /<DrawerLink href=\{view === 'year' \? reportFlowLink : flowLink\} onClick=\{\(\) => \{ if \(view === 'month' && month <= thisMonth\) setForecastMonth\(month\); \}\}>/);
+ assert.doesNotMatch(screen, /setSankey/, 'Budget no longer opens a Sankey of its own');
  const r = createRenderer();
  let sankey = { target: { side: 'expense', key: 'Living expense' }, title: 'Living expense', month: '2026-08', months: ['2026-01', '2026-02', '2026-08'], period: '2026', onDetails() {} };
  const workspace = () => ({ drilling: null, sankey, setSankey: value => { sankey = value; }, setViewing() {}, storedRecord: item => item, user: null, demo: true, reload: 0,

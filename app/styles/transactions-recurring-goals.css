@@ -31,8 +31,6 @@
 .transaction-account{overflow-wrap:break-word}
 .transaction-chip{display:inline-flex;align-items:center;gap:5px;padding:1px 8px;border-radius:999px;background:var(--muted);color:var(--muted-foreground);font-size:var(--type-micro);font-weight:600;line-height:1.6;white-space:nowrap}
 .transaction-row+.transaction-row{border-top:1px solid var(--hairline)}
-.transaction-row:hover{background:color-mix(in srgb,var(--muted) 60%,transparent)}
-.transaction-row:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
 .transaction-row[data-selected]{background:color-mix(in srgb,var(--mark-bg) 8%,transparent)}
 .transaction-row>input{accent-color:var(--mark-bg);width:16px;height:16px}
 .transaction-merchant{display:flex;align-items:center;gap:12px;min-width:0}
@@ -101,7 +99,6 @@
 .recurring-bar,.recurring-left{display:flex;flex-direction:column;gap:8px;min-width:0;padding:20px;border:1px solid var(--border);border-radius:var(--radius-card);background:var(--card);box-shadow:var(--shadow-card);color:inherit;font:inherit;text-align:start}
 .recurring-bar{cursor:pointer}
 .recurring-bar:hover{border-color:color-mix(in srgb,var(--foreground) 16%,var(--border))}
-.recurring-bar:active{transform:scale(.985)}
 .recurring-bar[aria-pressed=true]{border-color:var(--mark-bg);box-shadow:inset 0 0 0 1px var(--mark-bg)}
 .recurring-bar:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 .recurring-bar-label,.recurring-left>h3{font-size:var(--type-caption);font-weight:500;line-height:1.4;color:var(--muted-foreground)}
@@ -110,7 +107,6 @@
 .recurring-left>.status-badge{align-self:flex-start}
 .recurring-bar .progress-track>*{background:var(--foreground)}
 .recurring-bar[data-tone=income] .progress-track>*{background:var(--positive)}
-@media(prefers-reduced-motion:reduce){.recurring-bar:active,.recurring-coming-row:active{transform:none}}
 /* The list or calendar with a side column: the picked day, or what is coming up. One column once the page is narrow. */
 .recurring-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;align-items:start;gap:var(--space-page);width:100%}
 .recurring-main,.recurring-side{display:flex;flex-direction:column;gap:var(--space-page);min-width:0}
@@ -141,7 +137,6 @@
 .recurring-list [data-layout=columns]>.recurring-row>.row-actions{grid-area:1/3}
 @media(hover:hover) and (pointer:fine){.recurring-list [data-layout=columns]>.recurring-row:not(:hover,:focus-within)>.row-actions:not(:has([aria-expanded=true])){opacity:0}}
 .recurring-row[data-editable]{cursor:pointer}
-.recurring-row[data-editable]:hover{background:color-mix(in srgb,var(--accent) 35%,transparent)}
 .recurring-edit{all:unset;display:block;max-width:100%;font-weight:500;overflow-wrap:break-word;cursor:pointer;border-radius:4px}
 /* A spending plan's share spent, as on the Spending tab: the percentage over a bar, red once it is overspent. */
 .recurring-edit:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
@@ -167,8 +162,6 @@
 /* A day with payments is one button filling its cell: one chip per kind of money, then how many payments (or the one's name). */
 .recurring-calendar-day:has(>.recurring-calendar-open){padding:0}
 .recurring-calendar-open{all:unset;box-sizing:border-box;display:flex;flex:1;flex-direction:column;align-items:flex-start;gap:4px;width:100%;min-width:0;padding:8px;cursor:pointer}
-.recurring-calendar-open:hover{background:color-mix(in srgb,var(--accent) 35%,transparent)}
-.recurring-calendar-open:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
 .recurring-chip{max-width:100%;padding:2px 8px;border-radius:var(--radius-control);background:var(--muted);font-size:var(--type-micro);font-weight:500;line-height:1.5;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .recurring-chip[data-tone=income]{background:color-mix(in srgb,var(--positive) 12%,transparent);color:var(--pill-positive)}
 .recurring-chip[data-tone=debt]{background:color-mix(in srgb,var(--caution) 14%,transparent);color:var(--pill-caution)}
@@ -197,9 +190,6 @@
 .recurring-coming{padding-bottom:8px}
 .recurring-coming li+li{border-top:1px solid var(--hairline)}
 .recurring-coming-row{all:unset;box-sizing:border-box;display:grid;grid-template-columns:52px minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;padding:10px 20px;font-size:var(--type-small);cursor:pointer}
-.recurring-coming-row:hover{background:color-mix(in srgb,var(--accent) 35%,transparent)}
-.recurring-coming-row:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
-.recurring-coming-row:active{transform:scale(.985)}
 .recurring-date-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;height:46px;border-radius:var(--radius-control);background:var(--muted)}
 .recurring-date-tile>b{font-size:var(--type-body);font-weight:600;line-height:1.1}
 .recurring-date-tile>small{color:var(--muted-foreground);font-size:var(--type-micro);font-weight:600}
@@ -232,10 +222,8 @@
 .dashboard-budget-total p{display:flex;align-items:baseline;gap:6px;margin:0}
 .dashboard-budget-total strong{font-size:var(--type-stat);font-weight:500;font-variant-numeric:tabular-nums}
 .dashboard-budget-total span,.dashboard-budget-total small{color:var(--muted-foreground);font-size:var(--type-small)}
-.dashboard-budget-total small[data-tone=positive]{color:var(--positive)}
-.dashboard-budget-total small[data-tone=negative]{color:var(--negative)}
 .dashboard-budget-list{margin-top:14px}
-.dashboard-budget-list>li>span{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dashboard-budget-list .overview-row>span{display:flex;flex-direction:column;gap:6px;min-width:0}
 /* Dashboard drag and drop: a six-dot handle in a card's top corner lifts it; the held card floats above the others. */
 .sortable-item{position:relative;min-width:0;touch-action:manipulation}
 .sortable-item[data-dragging]{z-index:5}
@@ -316,17 +304,7 @@
 
 /* Cash flow report: period figures, monthly bars, and the category / merchant breakdown or Sankey. */
 .cash-flow-report{display:flex;flex-direction:column;gap:16px;width:100%}
-.cash-flow-report-tools{display:flex;justify-content:flex-end}
 .cash-flow-switches{display:flex;flex-wrap:wrap;gap:8px}
-.share-bars{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none;font-size:var(--type-small);container:share-bars/inline-size}
-.share-bars>li{display:grid;grid-template-columns:minmax(0,1fr) minmax(max-content,.3fr) 52px;align-items:center;gap:10px}
-/* On the narrowest phones the share moves under the amount, leaving the bar's label the room. */
-@container share-bars (max-width:300px){.share-bars>li{grid-template-columns:minmax(0,1fr) max-content;row-gap:0}.share-bars>li>small{grid-column:2}}
-/* A short bar still shows its whole label; where the column is narrower than the label, the label wraps inside the column instead of running under the amount. */
-.share-bar{display:flex;align-items:center;min-width:fit-content;min-height:28px;padding:4px 10px;border-radius:6px}
-.share-bar>span{overflow-wrap:break-word}
-.share-bars strong{font-weight:500;font-variant-numeric:tabular-nums;text-align:end}
-.share-bars small{color:var(--muted-foreground);font-variant-numeric:tabular-nums;text-align:end}
 /* When the chart is wider than its card it scrolls; an edge shadow shows there is more to the side and fades out at the end (the covers scroll with the content). */
 /* Until the chart has measured its width, its skeleton holds the place and the empty container takes no room. */
 .cash-flow-sankey:not([data-measured]){position:relative}
@@ -357,7 +335,6 @@
 .assistant-prompts button>span{flex:1;min-width:0}
 .assistant-prompts button>svg{flex-shrink:0;color:var(--muted-foreground)}
 [dir=rtl] .assistant-prompts button>svg{transform:scaleX(-1)}
-.assistant-prompts button:hover:not(:disabled){background:color-mix(in srgb,var(--muted) 60%,transparent)}
 .assistant-prompts button:disabled{opacity:.55;cursor:not-allowed}
 @container content (max-width:900px){.assistant-layout{grid-template-columns:minmax(0,1fr)}.assistant-prompts{position:static}}
 .assistant-form{display:flex;align-items:flex-end;gap:8px}
@@ -437,7 +414,6 @@ button.goal-available:focus-visible,.surplus-link:focus-visible{outline:2px soli
 .surplus-sum .surplus-sum-total dt{color:var(--foreground);font-weight:600}
 .surplus-sum dd.positive{color:var(--positive)}
 .surplus-sum dd.negative{color:var(--negative)}
-@media(prefers-reduced-motion:reduce){button.goal-available{transition:none}}
 .goal-funding-figures{display:flex;flex-direction:column;margin:0}
 .goal-funding-figures>div{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--hairline);font-size:var(--type-small)}
 .goal-funding-figures dt{color:var(--muted-foreground)}

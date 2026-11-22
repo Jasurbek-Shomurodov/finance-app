@@ -103,32 +103,55 @@ test('public card titles are one h1 at one size, and phone tab strips wrap (HEAD
  const css=stylesheet();
  assert.match(css,/\.auth-page \.panel :is\(h1,h2\)\{font-family:var\(--font-display\);font-size:var\(--type-display\)/);
  assert.match(css,/@container content \(max-width:520px\)\{[^\n]*\.segmented\.page-tabs\{flex-wrap:wrap/);
- assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{[^}]*\.user-link,\.info-hint,\.account-group>summary>svg,\.account-list-row,\.goal-setup-progress>span,\.goal-template\{transition:none\}/);
+ // The drawer's user link, hints, chevrons, account rows and goal templates are stilled with every other transition by
+ // the one reduced-motion catch-all in motion.css (21 November 2026); MOT-001 below checks nothing escapes it.
+ for(const selector of ['.user-link','.info-hint','.account-group>summary>svg','.account-list-row','.goal-setup-progress>span','.goal-template'])assert.match(css,new RegExp(selector.replace(/[.*+?^${}()|[\]\\>]/g,'\\$&')+'[,)]?[^{]*\\{[^}]*transition:'),selector);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{[^@]*\*,\*::before,\*::after\{transition:none!important\}/);
 });
 
 test('every transition and animation is switched off under reduced motion, by the same selector (MOT-001, MOT-005, MOT-008)',()=>{
- // A broader reduce rule (summary::before) loses to a more specific moving rule (summary:not(:has(svg))::before), so selectors must match exactly.
- const moving=new Map(),still=new Set();
+ // Transitions: one catch-all in motion.css (21 November 2026) stills every element and its ::before/::after with
+ // !important, so no rule wins over it by specificity or cascade order. `*` does not reach other pseudo-elements
+ // (::-webkit-progress-value), so a transition on one needs its own reduced rule with the same selector.
+ // Animations: some become a fade instead of stopping, so each still needs a reduced rule with exactly its selector;
+ // a broader reduce rule (summary::before) loses to a more specific moving rule (summary:not(:has(svg))::before).
+ const moving=new Map(),still=new Set(),important=[];
+ let catchAll=false;
  for(const file of fs.readdirSync('app/styles').filter(name=>name.endsWith('.css'))){
   const css=fs.readFileSync('app/styles/'+file,'utf8').replace(/\/\*[\s\S]*?\*\//g,'');
   const stack=[];let buffer='';
   for(const ch of css){
    if(ch==='{'){stack.push(buffer.trim());buffer='';continue;}
    if(ch==='}'){const selector=stack.pop(),body=buffer,media=stack.join(' ');buffer='';
-    if(selector&&!selector.startsWith('@'))for(const one of selector.split(',').map(part=>part.trim().replace(/\s+/g,' '))){
-     if(/reduced-motion:\s*reduce/.test(media)&&/(?:transition|animation)\s*:\s*none/.test(body))still.add(one);
-     else if(/(?:^|;)\s*(?:transition|animation)\s*:\s*(?!none)[^;]+/.test(body)&&!/reduced-motion/.test(media))moving.set(one,file);
+    if(selector&&!selector.startsWith('@')){
+     const reduce=/reduced-motion:\s*reduce/.test(media);
+     if(reduce&&selector.replace(/\s+/g,'')==='*,*::before,*::after'&&/transition:none!important/.test(body))catchAll=true;
+     if(!reduce&&/transition\s*:[^;]*!important/.test(body))important.push(selector);
+     for(const one of selector.split(',').map(part=>part.trim().replace(/\s+/g,' '))){
+      if(reduce){
+       if(/transition\s*:\s*none/.test(body))still.add('transition '+one);
+       if(/animation\s*:\s*(?:none|fade-only\b)/.test(body))still.add('animation '+one);
+      }else if(!/reduced-motion/.test(media))for(const kind of ['transition','animation']){
+       if(!new RegExp(`(?:^|;)\\s*${kind}\\s*:\\s*(?!none)[^;]+`).test(body))continue;
+       const reached=kind==='transition'&&!/::(?!before\b|after\b)[\w-]/.test(one);
+       if(!reached)moving.set(kind+' '+one,file);
+      }
+     }
     }
     continue;}
    if(ch===';'&&!stack.length)buffer='';else buffer+=ch;
   }
  }
- assert.ok(moving.size>20,'the parser finds the moving rules');
+ assert.ok(catchAll,'motion.css stills every transition under reduced motion');
+ assert.deepEqual(important,[],'no moving transition is !important, so none can beat the catch-all');
+ assert.ok(moving.size>5,'the parser finds the moving animations');
+ assert.ok(moving.has('transition .goal-target-progress::-webkit-progress-value'),'the parser finds transitions the catch-all cannot reach');
  assert.deepEqual([...moving].filter(([selector])=>!still.has(selector)),[]);
- // The catch-all block sits last in the cascade so it wins over rules in earlier files.
- const order=fs.readFileSync('app/globals.css','utf8').match(/styles\/[\w-]+\.css/g);
- assert.equal(order.at(-1),'styles/dialogs-household.css');
- assert.match(fs.readFileSync('app/styles/dialogs-household.css','utf8'),/@media\(prefers-reduced-motion:reduce\)\{\.sankey-link,\.switch,\.switch-thumb/);
+ // A press never moves either: every :active scale reads the press tokens, which reduced motion sets to 1.
+ const all=stylesheet();
+ assert.deepEqual(all.match(/:active[^{]*\{[^}]*transform:scale\((?!var\(--press(?:-wide)?\)\))[^)]*\)/g),null,'every press scale is a token');
+ assert.match(all,/@media\(prefers-reduced-motion:reduce\)\{[^@]*:root\{--press:1;--press-wide:1\}/);
+ assert.match(all,/--press: \.97;\s*--press-wide: \.985;/);
 });
 
 test('panel links keep a 44px touch target (RESP-004, RESP-024)',()=>{
@@ -359,8 +382,10 @@ test('narrow rows keep names whole and never stack controls on them (RESP-030, R
  // Figures never break between digits; names and account lines wrap at spaces instead of being cut with an ellipsis.
  assert.doesNotMatch(rule('.portfolio-headline strong'),/overflow-wrap:anywhere/);
  for(const selector of ['.transaction-merchant small','.report-business-name>span:last-child','.goal-funding-figures>.goal-funding-share>dt']) assert.doesNotMatch(rule(selector),/text-overflow:ellipsis|white-space:nowrap/,selector);
- // A share bar's label may wrap inside its column instead of running under the amount.
- assert.doesNotMatch(rule('.share-bar'),/min-width:max-content/);
+ // A flow bar's label may wrap inside its column instead of running under the amount (the share bars it replaced
+ // were removed with the old Cash flow report, November 2026).
+ assert.doesNotMatch(rule('.flow-bar-name>span:last-child'),/min-width:max-content/);
+ assert.match(rule('.flow-bar-name>span:last-child'),/min-width:0;overflow-wrap:break-word/);
  // Names keep a minimum beside their figures; the figures move to the next line below it.
  assert.match(rule('.goal-row-line>strong:first-child'),/flex:1 1 8rem/);
  assert.match(rule('.goal-row-line'),/flex-wrap:wrap/);
@@ -458,12 +483,14 @@ test('motion tokens, overlay exits, cause before effect, reduced motion fades (M
 // open-page bar, a pointer glow on key figures, and a top bar edge once the page scrolls.
 test('controls answer a press and the pointer on every screen, and stand still under reduced motion (MOT-022)',()=>{
  const css=stylesheet(),layer=fs.readFileSync('app/styles/interaction.css','utf8');
- assert.match(layer,/:is\(\[data-slot=button\],\.segmented>button,\.nav-item,\.pos-day\):active:not\(:disabled,\[aria-disabled=true\]\)\{transform:scale\(\.97\)\}/,'a pressed control gives');
+ assert.match(layer,/:is\(\[data-slot=button\],\.segmented>button,\.nav-item,\.pos-day\):active:not\(:disabled,\[aria-disabled=true\]\)\{transform:scale\(var\(--press\)\)\}/,'a pressed control gives');
+ assert.match(css,/--press: \.97;/,'by 3%');
  assert.match(layer,/\.nav-item::before\{[^}]*transform:scaleY\(0\);transition:transform var\(--motion-settle\) var\(--ease-out\)\}\n\.nav-item\[data-active=true\]::before\{transform:scaleY\(1\)\}/,'the drawer marks the open page');
- assert.match(layer,/@media\(hover:hover\)\{:is\(\.stat-tile,\.asset-card\):hover::after\{opacity:1\}\}/,'the glow shows only where a pointer hovers');
+ assert.match(layer,/@media\(hover:hover\)\{:is\(\.stat-tile,\.asset-card,[^)]*\.recurring-bar,\.choice-card,[^)]*\):hover::after\{opacity:1\}\}/,'the glow shows only where a pointer hovers');
  assert.match(layer,/@supports \(animation-timeline:scroll\(\)\)\{\.topbar\{animation:topbar-edge linear both/);
  assert.doesNotMatch(layer,/cubic-bezier|transition:[^;}]*\b(width|height|top|left|margin)\b/,'tokens only, and nothing but transform, opacity and colour moves');
- assert.match(layer.slice(layer.indexOf('@media(prefers-reduced-motion:reduce)')),/:active\{transform:none\}[\s\S]*\.topbar\{animation:none\}/);
+ assert.match(layer,/@media\(prefers-reduced-motion:reduce\)\{\.topbar\{animation:none\}\}/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{[^@]*:root\{--press:1;--press-wide:1\}\s*\*,\*::before,\*::after\{transition:none!important\}/,'presses and transitions are stilled in one place');
  // The pressed marker is a pseudo-element behind the label, so it can slide without moving the label.
  assert.match(css,/\.segmented>button::before\{content:"";position:absolute;inset:0;z-index:-1;[^}]*opacity:0;transform-origin:0 0;pointer-events:none\}/);
  assert.match(css,/\.segmented\.page-tabs>button::before\{inset:auto 0 -2px;height:2px;/,'page tabs slide their underline');

@@ -1,17 +1,14 @@
 "use client";
-import { useMemo, useState } from 'react';
-import { LogOut } from 'lucide-react';
+import { useMemo } from 'react';
+import { LogOut, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BusinessSettings, TagSettings } from '@/components/business-settings';
 import { useLanguage } from '@/components/language-provider';
-import { RulesPanel } from '@/components/transactions/rules-list';
-import { useTransactionRules } from '@/hooks/use-transaction-rules';
-import { nextPaletteColor } from '@/lib/business';
+import { DrawerLink } from '@/components/presentation-foundation/drawer-link';
+import { PanelTitle } from '@/components/presentation-foundation/panel-title';
+import { rulesLink } from '@/lib/add-links';
 import { depositToday } from '@/lib/deposit-interest';
-import { showNotice } from '@/lib/feedback';
 import { marketRates } from '@/lib/market';
-import { tagsByRecord } from '@/lib/tags';
-import { newRule, type TransactionRule } from '@/lib/transaction-rules';
 import { AccountAccessPanel } from '@/components/account-access-panel';
 import { DataTools } from '@/components/data-tools';
 import { sampleBackup } from '@/lib/report-figures';
@@ -24,21 +21,15 @@ import { SettingsPanel } from '@/components/settings-panel';
 import { TelegramPanel } from '@/components/telegram-panel';
 import { TransactionToolsPanel } from '@/components/transaction-tools-panel';
 import { PlanningError } from '@/components/workspace/screen-notices';
-import { RuleDialog } from '@/components/workspace/workspace-lazy';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
 
 export function SettingsScreen() {
  const { household, user, demo, logout, currency, market, reload, preferencesData, applyPreferences, settingsLoading, settingsError, retrySettings, planning, workspacePreferences, refreshRecords, clearLocalSession, restartOnboarding,
-  businessList, tags, transactionTools, categorize, assignTransactionsBusiness, editRecord, requestDelete, setSettingUpBusinesses, categoryIcons, removedCategories, budget } = useWorkspace();
+  businessList, tags, transactionTools, editRecord, requestDelete, setSettingUpBusinesses, categoryIcons, removedCategories, budget } = useWorkspace();
  const { t } = useLanguage();
  const rates = marketRates(market);
  // What each category plans this month: its budget and the schedules still running under it.
  const plans = useMemo(() => ({ amounts: budget.loading || budget.error ? [] : budget.state.amounts, records: planning.data.records, month: depositToday().slice(0, 7), currency, rates }), [budget.loading, budget.error, budget.state.amounts, planning.data.records, currency, rates]);
- const tagMap = useMemo(() => tagsByRecord(tags.data.links), [tags.data.links]);
- const tagsOf = (id: string) => tagMap.get(id) ?? [];
- const rules = useTransactionRules(user, demo, reload, planning.data.records, transactionTools.data.splits, { categorize, assignBusiness: assignTransactionsBusiness, changeTags: tags.change, tagsOf }, refreshRecords);
- const [rule, setRule] = useState<TransactionRule | null>(null);
- const createTag = async (name: string) => { const id = crypto.randomUUID(); await tags.save({ id, name, color: nextPaletteColor(tags.data.tags.map(tag => tag.color)) }); return id; };
  return <div data-page="Settings" className="content">
   {/* Signing out (or leaving the sample workspace) lives here, beside the account's other settings. */}
   <SettingsLayout
@@ -51,8 +42,8 @@ export function SettingsScreen() {
    categories={<TransactionToolsPanel plans={plans} preferences={workspacePreferences} owner={demo?null:user} demo={demo} onDeleted={refreshRecords} categories={planning.data.categories} loading={planning.loading} error={planning.error} onRetry={refreshRecords} icons={categoryIcons} removed={removedCategories} saveCategory={async (name,direction,existing)=>{const id=existing??crypto.randomUUID();await planning.save('category',{id,name,direction});return id;}}/>}
    businesses={<BusinessSettings businesses={businessList} records={planning.data.records} preferences={workspacePreferences} owner={demo?null:user} demo={demo} onEdit={editRecord} onDelete={requestDelete} onSetup={() => setSettingUpBusinesses(true)} onGuide={() => setSettingUpBusinesses('guide')}/>}
    tags={<TagSettings tags={tags} preferences={workspacePreferences} owner={demo?null:user} demo={demo}/>}
-   rules={<><RulesPanel rules={rules.rules} loading={rules.loading} error={rules.error} onRetry={rules.retry} categories={planning.data.categories} businesses={businessList} tags={tags.data.tags} onEdit={setRule} onAdd={() => setRule(newRule())} onRemove={item => rules.remove(item.id)}/>
-    {rule && <RuleDialog key={rule.id} rule={rule} records={demo ? planning.data.records : undefined} categories={planning.data.categories} businesses={businessList} accounts={planning.data.records.filter(record => record.kind === 'Cash').map(record => ({ id: record.id, name: record.name }))} tags={tags.data.tags} tagsOf={tagsOf} onCreateTag={createTag} splits={transactionTools.data.splits} onSave={async (next, apply) => { const changed = await rules.save(next, apply); if (apply) showNotice(t('{changed} updated', { changed })); return changed; }} onClose={() => setRule(null)}/>}</>}
+   /* Rules have one home, Transactions, where their effect shows; this section is the way there. */
+   rules={<section className="panel tools-panel"><PanelTitle title={t('Rules')} hint={t('A rule sets the category, business or tags of transactions whose name contains its words. New bank statement imports follow your rules too.')}><Button asChild><DrawerLink href={rulesLink}><Wand2 size={16} aria-hidden="true"/>{t('Open in Transactions')}</DrawerLink></Button></PanelTitle></section>}
    data-tools={<><DataTools owner={user} currency={currency} market={market} preferences={workspacePreferences} records={planning.data.records} onSaved={refreshRecords} demo={demo} sample={demo?()=>sampleBackup(planning.data,transactionTools.data.splits,categoryIcons):undefined}/><ImportHistory owner={user} demo={demo} revision={reload} onSaved={refreshRecords}/><DatabaseHealth demo={demo}/></>}
   />
  </div>;

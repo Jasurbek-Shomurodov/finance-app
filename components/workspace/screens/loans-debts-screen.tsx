@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { LoansOverview } from '@/components/loans/loans-overview';
 import { useLanguage } from '@/components/language-provider';
-import { PanelSkeleton } from '@/components/presentation-foundation/loading-placeholder';
-import { LoansSkeleton } from '@/components/presentation-foundation/screen-skeletons';
+import { LoansSkeleton, PayoffPlannerSkeleton } from '@/components/presentation-foundation/screen-skeletons';
+import { liabilities } from '@/lib/finance';
 import { PageHeader } from '@/components/presentation-foundation/page-header';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { DebtPayoffPanel } from '@/components/planning/debt-payoff-panel';
@@ -22,9 +22,9 @@ export function LoansDebtsScreen() {
   <div data-page="Loans & debts" className="content">
    <PageHeader title={t('Loans & debts')} tabs={<Segmented className="page-tabs" as="nav" label={t('Loans & debts')} options={[{ value: 'overview', label: t('Overview') }, { value: 'payoff', label: t('Debt payoff planner') }] as const} value={view} onChange={setView}/>}><Button onClick={addRecord}><Plus size={17} aria-hidden="true"/>{t("Add loan or debt")}</Button></PageHeader>
    <ScreenNotices/>
-   {view === 'overview' && (workspaceLoading ? <LoansSkeleton label={t("Loading your workspace…")}/> : <LoansOverview onOpenPlanner={() => setView('payoff')}/>)}
+   {view === 'overview' && (workspaceLoading ? <LoansSkeleton label={t("Loading your workspace…")} side={planning.loading || planning.data.records.some(record => liabilities.includes(record.kind) && record.amount > 0)}/> : <LoansOverview onOpenPlanner={() => setView('payoff')}/>)}
   </div>
-  {view === 'payoff' && planning.loading&&<div className="content review-content"><PanelSkeleton label={t('Loading records…')}/></div>}
+  {view === 'payoff' && planning.loading&&<div className="content review-content"><PayoffPlannerSkeleton label={t('Loading records…')}/></div>}
   {view === 'payoff' && planning.error&&<div className="content review-content"><PlanningError/></div>}
   {view === 'payoff' && !planning.loading&&!planning.error&&<div className="content review-content" key={user??'demo'}><DebtPayoffPanel records={planning.data.records} currency={currency} today={depositToday()} preferences={workspacePreferences}/></div>}
  </>;

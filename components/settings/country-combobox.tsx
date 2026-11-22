@@ -10,7 +10,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { countryOptions } from '@/lib/countries';
 
 /** The countries whose translated name contains the search, or whose two-letter code is the search. */
-export function matchingCountries(countries: ReadonlyArray<{ code: string; name: string }>, query: string, locale: string) {
+function matchingCountries(countries: ReadonlyArray<{ code: string; name: string }>, query: string, locale: string) {
  const search = query.trim().toLocaleLowerCase(locale);
  return search ? countries.filter(item => item.name.toLocaleLowerCase(locale).includes(search) || item.code.toLowerCase() === search) : [...countries];
 }

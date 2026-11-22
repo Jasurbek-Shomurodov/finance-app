@@ -21,9 +21,6 @@ export function reportLink(search: string): { tab?: ReportTab; businesses?: stri
  };
 }
 
-/** Tax prep needs a business; a link to it without one falls back to cash flow. */
-export const reportTabsFor = (hasBusinesses: boolean) => reportTabs.filter(tab => tab !== 'tax' || hasBusinesses);
-
 /** The lines a tab reads: cash flow takes both directions, Spending and Income one each. */
 export const tabLines = <L extends Pick<LedgerLine, 'direction'>>(tab: ReportTab, lines: L[]) => tab === 'spending' ? lines.filter(line => line.direction === 'expense') : tab === 'income' ? lines.filter(line => line.direction === 'income') : lines;
 

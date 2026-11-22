@@ -72,6 +72,14 @@ it instead of styling a page on its own.
   A failed load is `InlineError` with its Retry callback; a fetched resource's
   loading, failed and ready states are `ResourceState`. Confirmations use
   `ConfirmDialog`; dialog forms close with `FormFooter`.
+- A form says what is wrong under the field it belongs to, never only in a toast: `FieldError`
+  (`presentation-foundation/field-error.tsx`) under the control, which carries `aria-invalid` and `aria-describedby`
+  (`AmountCurrencyFields`, `GroupedPicker`, `CashAccountField` and `RecordNameInput` take the message as a prop). The
+  income and expense forms list their problems with `entryFieldProblems` (`lib/record-save.ts`) and submit through
+  `useEntrySubmit` (`components/record-dialog/entry-submit.ts`), which focuses the first field at fault; ⌘Enter /
+  Ctrl+Enter there is Save and add another. A Save button is switched off only while something loads or saves, and
+  then `FormFooter`'s `blocked` says why in words beside it, never in a hover title alone. Server errors stay in
+  `ErrorPopup`.
 - **Shimmer follows the screen (the user's rule, 15 November 2026).** Whenever a screen, tab or panel changes
   (a block added, removed, moved, resized or restyled), update its loading shimmer in the same change. Every loading
   shape is built from the loaded blocks' own classes, in the same order and columns: the drawer shimmer per route in

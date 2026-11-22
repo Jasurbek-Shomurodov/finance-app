@@ -6,7 +6,7 @@ export const commandMenuEvent = 'hoggish:command-menu';
 export const openCommandMenu = () => { window.dispatchEvent(new Event(commandMenuEvent)); };
 
 /** One line of the command menu: a page, an action, or something the person saved. */
-export type Command = { id: string; group: 'pages' | 'actions' | 'records'; label: string; /** Extra words a search may match (a kind, a page's long name). */ keywords?: string; /** A short word shown beside the label. */ detail?: string };
+export type Command = { id: string; group: 'pages' | 'actions' | 'records'; label: string; /** Extra words a search may match (a kind, a page's long name). */ keywords?: string; /** A short word shown beside the label. */ detail?: string; /** A feature inside a page (Rules on Transactions): found by a search, not listed before one. */ searchOnly?: boolean };
 
 /** How well `text` answers `query`: 3 it starts with it, 2 one of its words does, 1 it holds it, 0 it does not. */
 export function matchRank(text: string, query: string, locale: string) {
@@ -18,9 +18,9 @@ export function matchRank(text: string, query: string, locale: string) {
 }
 
 /** The commands that answer the search, best first; a label match outranks a keyword match, and ties keep their order.
- * Without a search every page and action is listed and saved records stay out of the way. */
+ * Without a search every page and action is listed; saved records and the features inside pages stay out of the way. */
 export function matchCommands<T extends Command>(commands: readonly T[], query: string, locale: string, limit = 8): T[] {
- if (!query.trim()) return commands.filter(command => command.group !== 'records');
+ if (!query.trim()) return commands.filter(command => command.group !== 'records' && !command.searchOnly);
  const ranked = commands.map((command, index) => ({ command, index, rank: Math.max(matchRank(command.label, query, locale) * 2, matchRank(command.keywords ?? '', query, locale)) })).filter(item => item.rank > 0).sort((a, b) => b.rank - a.rank || a.index - b.index);
  const counts = new Map<string, number>();
  return ranked.filter(({ command }) => { const count = (counts.get(command.group) ?? 0) + 1; counts.set(command.group, count); return count <= limit; }).map(item => item.command);

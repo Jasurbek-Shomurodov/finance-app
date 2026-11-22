@@ -15,8 +15,11 @@ import type { Entry } from '@/lib/finance';
 import type { EarningSource } from '@/lib/earning-sources';
 import { amountIn, type RateTable } from '@/lib/money';
 import { ratesOrPair } from '@/lib/transaction-rates';
+import { openProps } from '@/lib/row-open';
 
 type Card=ReturnType<typeof monthlyIncomeCards>[number];
+/** One row of Income this month, as its `onOpen` receives it. */
+export type IncomeCardRow=Card;
 /** Where a source stands this month: received in full, in part, or still expected. Income that follows no schedule has no status. */
 function IncomeStatus({card}:{card:Card}){
  const {t}=useLanguage();
@@ -25,10 +28,10 @@ function IncomeStatus({card}:{card:Card}){
  return card.missing||card.receivedAmount>=card.amount?<span className="status-badge is-paid">{t('Received')}</span>:<span className="status-badge">{t('Partly received')}</span>;
 }
 /** One source of the month: its estimate and what came in, each in the source's own currency (AGENTS.md, entered or converted). */
-function IncomeRow({card}:{card:Card}){
+function IncomeRow({card,onOpen}:{card:Card;/** Opens the source, schedule or payment behind the row. */onOpen?:(card:Card)=>void}){
  const {t,locale}=useLanguage();
  const received=card.entered??{amount:card.receivedAmount,currency:card.entry.currency};
- return <tr><td><div className="record-name"><CategoryIcon kind={card.entry.kind}/><div><strong>{card.entry.name||t(card.entry.kind)}</strong><small>{card.excluded?`${t('Not scheduled')} · ${t(card.entry.kind)}`:t(card.entry.kind)}</small></div></div></td>
+ return <tr {...openProps(onOpen&&(()=>onOpen(card)),t('Open {name}',{name:card.entry.name||t(card.entry.kind)}))}><td><div className="record-name"><CategoryIcon kind={card.entry.kind}/><div><strong>{card.entry.name||t(card.entry.kind)}</strong><small>{card.excluded?`${t('Not scheduled')} · ${t(card.entry.kind)}`:t(card.entry.kind)}</small></div></div></td>
   <td data-label={t('Status')}><IncomeStatus card={card}/></td>
   <td data-label={t('Expected')}>{card.excluded?'—':formatMoney(card.amount,card.entry.currency,locale)}</td>
   <td data-label={t('Received')} className={card.received&&!card.missing&&received.amount>0?'positive':undefined}>{card.received&&!card.missing?formatSignedMoney(received.amount,received.currency,locale):'—'}</td>
@@ -38,7 +41,7 @@ function IncomeRow({card}:{card:Card}){
 /** Cash flow's overview: the month's income by source beside what is still to come (`closing`). The budget, mortgage
  * payments and watchlists live on the Spending tab alone. `rates` converts a payment no rate converted into the display currency into its card's; without one
  * its amount is missing. */
-export function CashflowPreview({entries,sources,month,currency,rates,loading,error,onRetry,onIncome,onAddSource,closing}:{entries:Entry[];sources:EarningSource[];month:string;currency:string;rates?:RateTable|null;loading:boolean;error:string;onRetry:()=>void;onIncome:()=>void;/** Opens the income source editor. */onAddSource:()=>void;closing?:ReactNode}){
+export function CashflowPreview({entries,sources,month,currency,rates,loading,error,onRetry,onIncome,onOpen,onAddSource,closing}:{entries:Entry[];sources:EarningSource[];month:string;currency:string;rates?:RateTable|null;loading:boolean;error:string;onRetry:()=>void;onIncome:()=>void;/** A row opens what is behind it. */onOpen?:(card:IncomeCardRow)=>void;/** Opens the income source editor. */onAddSource:()=>void;closing?:ReactNode}){
  const {t,locale}=useLanguage();
  const {convert}=useDisplayMoney();
  // Five sources at first, and every other one that brought money in, so the Received column adds up to the headline;
@@ -52,7 +55,7 @@ export function CashflowPreview({entries,sources,month,currency,rates,loading,er
  if(loading)return <CashflowPreviewSkeleton label={t('Loading records…')}/>;
  return <div className="cashflow-preview-grid">
   <section className="panel cashflow-income-preview"><PanelTitle title={<>{t('Income this month')} {allCards.length>0&&<span className="panel-figure">{income.missing?'—':formatMoney(income.received,currency,locale)} / {income.missing?'—':formatMoney(income.estimate,currency,locale)}</span>}</>}><Button variant="link" onClick={onIncome}>{t('View all')}</Button></PanelTitle>
-   <div className="table-scroll"><table className="stack-table"><thead><tr><th>{t('Source')}</th><th>{t('Status')}</th><th>{t('Expected')}</th><th>{t('Received')}</th><th>{t('Progress')}</th></tr></thead><tbody>{cards.map(card=><IncomeRow key={card.entry.id} card={card}/>)}</tbody></table></div>
+   <div className="table-scroll"><table className="stack-table"><thead><tr><th>{t('Source')}</th><th>{t('Status')}</th><th>{t('Expected')}</th><th>{t('Received')}</th><th>{t('Progress')}</th></tr></thead><tbody>{cards.map(card=><IncomeRow key={card.entry.id} card={card} onOpen={onOpen}/>)}</tbody></table></div>
    {income.missing>0&&<p role="status" className="muted">{t('Exchange rate unavailable.')}</p>}
    {!allSources&&allCards.length>cards.length&&<Button variant="link" onClick={()=>setAllSources(true)}>{t('Show more')}</Button>}
    {!cards.length&&<p className="muted">{t('No income is included for this month. Add a monthly salary or another income source below.')}</p>}
