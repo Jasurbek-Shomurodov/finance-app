@@ -17,7 +17,7 @@ function screen(file, name, tab, planning) {
   '@/components/presentation-foundation/page-header': { PageHeader: ({ children, tabs }) => h('header', null, tabs, children) },
   '@/components/presentation-foundation/inline-error': { InlineError: ({ message, onRetry }) => h('p', { role: 'alert', 'data-retry': !!onRetry }, message) },
   '@/components/presentation-foundation/loading-placeholder': { PanelSkeleton: part('skeleton') },
-  '@/components/presentation-foundation/screen-skeletons': { InvestmentsSkeleton: part('skeleton'), LoansSkeleton: part('skeleton'), AllocationSkeleton: part('skeleton'), PerformanceSkeleton: part('skeleton') },
+  '@/components/presentation-foundation/screen-skeletons': { InvestmentsSkeleton: part('skeleton'), LoansSkeleton: part('skeleton'), AllocationSkeleton: part('skeleton'), PerformanceSkeleton: part('skeleton'), PayoutsAlertsSkeleton: part('skeleton') },
   '@/components/asset-dashboard': { AssetDashboard: part('dashboard') },
   '@/components/planning/add-asset-dialog': { AddAssetDialog: () => null },
   '@/components/portfolio-allocation-plan': { PortfolioAllocationPlan: part('plan') },

@@ -60,7 +60,7 @@ test('the view waits for history, reports a failed read, and says when nothing i
  assert.equal(r.find(byType('EmptyState')).props.title, 'No performance yet');
  // Payouts & alerts waits for and retries the same history read.
  openPayouts({ history: null });
- assert.equal(r.find(byType('PanelSkeleton')).props.label, 'Loading history…');
+ assert.equal(r.find(byType('PayoutsAlertsSkeleton')).props.label, 'Loading history…');
  retried = false;
  openPayouts({ history: null, error: true, onRetry: () => { retried = true; } });
  r.find(byType('InlineError')).props.onRetry();assert.ok(retried);

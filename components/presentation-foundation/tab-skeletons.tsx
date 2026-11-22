@@ -81,6 +81,28 @@ export function PerformanceSkeleton({ label }: { label: string }) {
  </div></Loading>;
 }
 
+/** A holdings list row as `perf-list` draws it: the icon tile, the name over its line, then what sits at the end. */
+const perfRow = (row: number, end: ReactNode) => <li key={row}><Skeleton className="size-9 shrink-0 rounded-[10px]"/><span className="grid gap-1.5"><Bar width={[120, 96, 140][row % 3]}/><Skeleton className="h-3 w-24"/></span>{end}</li>;
+
+/** Investments' Payouts & alerts: Expected payouts (its months, the first one open) beside Price alerts (the alerts,
+ * then the add form), as `PayoutsAlertsView` draws them. The Bitcoin panels below come only with a Bitcoin holding. */
+export function PayoutsAlertsSkeleton({ label }: { label: string }) {
+ return <Loading label={label}><div className="performance">
+  <div className="performance-columns">
+   <section className="panel"><Heading width={190} link/>
+    <div className="payout-months">{times(3).map(month => <div key={month}>
+     <div className="flex items-center justify-between gap-3 py-3"><Bar width={110}/><Bar width={64}/></div>
+     {month === 0 && <ul className="perf-list">{times(3).map(row => perfRow(row, <Bar width={56}/>))}</ul>}
+    </div>)}</div>
+   </section>
+   <section className="panel"><Heading width={140}/>
+    <ul className="perf-list">{times(2).map(row => perfRow(row, <Skeleton className="h-6 w-16 rounded-full"/>))}</ul>
+    <div className="alert-form">{[80, 104, 72].map(width => <label key={width}><Skeleton className="mb-2 h-4" style={{ width }}/><Skeleton className="h-11 w-full rounded-xl"/></label>)}<Skeleton className="h-10 w-28 rounded-lg"/></div>
+   </section>
+  </div>
+ </div></Loading>;
+}
+
 /** Investments' Target allocation: the heading, the target fields and the weights table. */
 export function AllocationSkeleton({ label }: { label: string }) {
  return <Loading label={label}><section className="panel tools-panel"><Bar className="h-6" width={170}/>

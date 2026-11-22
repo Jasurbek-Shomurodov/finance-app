@@ -4,8 +4,7 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { AssetDashboard } from '@/components/asset-dashboard';
 import { useLanguage } from '@/components/language-provider';
-import { PanelSkeleton } from '@/components/presentation-foundation/loading-placeholder';
-import { AllocationSkeleton, InvestmentsSkeleton, PerformanceSkeleton } from '@/components/presentation-foundation/screen-skeletons';
+import { AllocationSkeleton, InvestmentsSkeleton, PayoutsAlertsSkeleton, PerformanceSkeleton } from '@/components/presentation-foundation/screen-skeletons';
 import { PageHeader } from '@/components/presentation-foundation/page-header';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { PortfolioAllocationPlan } from '@/components/portfolio-allocation-plan';
@@ -37,7 +36,7 @@ export function AssetsScreen() {
    {view === 'holdings' && (workspaceLoading ? <InvestmentsSkeleton label={t("Loading your workspace…")}/> : <AssetDashboard excludedCurrencies={excludedCurrencies} accounts={planning.data.holdingAccounts??[]} accountsLoading={planning.loading} accountsError={planning.error} onRetryAccounts={refreshRecords} onAddHolding={addAccountRecord} records={rows} currency={currency} market={market} netWorth={netWorth} debt={totalDebt} forecast={forecast} forecastReady={forecastReady} loading={tableLoading} demo={demo} onAdd={() => setChoosing(true)} onEdit={editRecord} onTrack={setTracking} onInvest={investIn} onDelete={requestDelete} quoteLabel={quoteLabel} propertyTotals={properties} pnl={earned.pnl} pnlError={earned.error} onShowPnl={() => setView('pnl')}/>)}
   </div>
   {view === 'pnl' && <div className="content review-content" key={'pnl:' + (user ?? 'demo')}>{workspaceLoading ? <PerformanceSkeleton label={t('Loading your workspace…')}/> : <PerformanceView history={earned.history} rate={earned.rate} error={earned.error} onRetry={earned.retry} currency={currency} market={market} accounts={planning.data.holdingAccounts ?? []}/>}</div>}
-  {view === 'payouts' && <div className="content review-content" key={'payouts:' + (user ?? 'demo')}>{workspaceLoading ? <PanelSkeleton label={t('Loading your workspace…')}/> : <PayoutsAlertsView history={earned.history} error={earned.error} onRetry={earned.retry} currency={currency} market={market} preferences={workspacePreferences} demo={demo}/>}</div>}
+  {view === 'payouts' && <div className="content review-content" key={'payouts:' + (user ?? 'demo')}>{workspaceLoading ? <PayoutsAlertsSkeleton label={t('Loading your workspace…')}/> : <PayoutsAlertsView history={earned.history} error={earned.error} onRetry={earned.retry} currency={currency} market={market} preferences={workspacePreferences} demo={demo}/>}</div>}
   {view === 'allocation' && planning.loading&&<div className="content review-content"><AllocationSkeleton label={t('Loading records…')}/></div>}
   {view === 'allocation' && planning.error&&<div className="content review-content"><PlanningError/></div>}
   {view === 'allocation' && !planning.loading&&!planning.error&&<div className="content review-content" key={user??'demo'}><PortfolioAllocationPlan currencies={preferencesData.currencies} records={planning.data.records} currency={currency} market={market} preferences={workspacePreferences}/></div>}

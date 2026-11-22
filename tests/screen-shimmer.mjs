@@ -75,3 +75,17 @@ test('every drawer destination has its own shimmer, and each in-screen skeleton 
  for (const [file, name] of [['transactions', 'TransactionsSkeleton'], ['reports', 'ReportsSkeleton'], ['budget', 'BudgetSkeleton'], ['upcoming', 'RecurringSkeleton'], ['goals', 'GoalsSkeleton'], ['assets', 'InvestmentsSkeleton'], ['loans-debts', 'LoansSkeleton'], ['cash-flow', 'CashFlowSkeleton']])
   assert.match(read(`components/workspace/screens/${file}-screen.tsx`), new RegExp(`<${name} `), `${file} loads in the drawer's shape`);
 });
+
+test('Payouts & alerts shimmers as its own two panels, in the screen and while the view waits for history', () => {
+ const view = read('components/performance/payouts-alerts-view.tsx');
+ const tabs = read('components/presentation-foundation/tab-skeletons.tsx');
+ const assets = read('components/workspace/screens/assets-screen.tsx');
+ inOrder(view.slice(view.indexOf('export function PayoutsAlertsView')), ['className="performance"', 'performance-columns', '<PayoutCalendar', '<PriceAlerts'], 'the view');
+ inOrder(read('components/performance/payout-calendar.tsx'), ['className="panel"', 'payout-months', 'perf-list'], 'Expected payouts');
+ inOrder(read('components/performance/price-alerts.tsx'), ['className="panel"', 'perf-list', 'alert-form'], 'Price alerts');
+ inOrder(body(tabs, 'PayoutsAlertsSkeleton'), ['className="performance"', 'performance-columns', 'payout-months', 'perf-list', 'rounded-full', 'alert-form'], 'the shimmer: payouts, then the alerts with their status badge, then the add form');
+ assert.match(view, /if \(!history\) return <PayoutsAlertsSkeleton label=\{t\('Loading history…'\)\}\/>/);
+ assert.match(assets, /view === 'payouts'[^\n]*workspaceLoading \? <PayoutsAlertsSkeleton /, 'the tab never falls back to a generic panel');
+ assert.doesNotMatch(assets, /PanelSkeleton/);
+ assert.equal(read('components/presentation-foundation/page-heading-skeleton.tsx').match(/'\/assets': \{ tabs: \[([^\]]*)\]/)[1].split(',').length, 4, 'the heading shimmer reserves all four Investments tabs');
+});

@@ -27,7 +27,7 @@ export const pageHeadings: Record<string, { tabs?: readonly number[]; actions?: 
  '/budget': { tabs: [48, 36], actions: [240, 124, 104] },
  '/upcoming': { tabs: [28, 64, 96, 76], actions: [164, 150] },
  '/goals': { tabs: [64, 92, 52], actions: [112] },
- '/assets': { tabs: [64, 88, 116], actions: [112] },
+ '/assets': { tabs: [64, 88, 112, 116], actions: [112] },
  '/loans-debts': { tabs: [64, 132], actions: [164] },
  '/recently-deleted': { tabs: [24, 96, 76, 48, 72] },
 };

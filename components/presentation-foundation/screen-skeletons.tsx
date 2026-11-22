@@ -6,7 +6,7 @@ import { AssistantSkeleton, GoalsSkeleton, InvestmentsSkeleton, LoansSkeleton, R
 import { CalendarSkeleton, ForecastSkeleton } from './tab-skeletons';
 
 export { AssistantSkeleton, GoalsSkeleton, InvestmentsSkeleton, LoansSkeleton, PayoffPlanCardSkeleton, PreferencesSkeleton, RecoveryDetailSkeleton, RecoveryRowsSkeleton, SettingsSkeleton } from './planning-skeletons';
-export { AllocationSkeleton, AssetCardsSkeleton, BudgetYearSkeleton, ForecastSkeleton, IncomeEstimatesSkeleton, PayoffPlannerSkeleton, PerformanceSkeleton, RemindersSkeleton, TaxPrepSkeleton, WatchlistsSkeleton } from './tab-skeletons';
+export { AllocationSkeleton, AssetCardsSkeleton, BudgetYearSkeleton, ForecastSkeleton, IncomeEstimatesSkeleton, PayoffPlannerSkeleton, PayoutsAlertsSkeleton, PerformanceSkeleton, RemindersSkeleton, TaxPrepSkeleton, WatchlistsSkeleton } from './tab-skeletons';
 
 // Each screen's loading shape, built from the classes its loaded blocks use, in the loaded page's order, so the page keeps
 // its layout when the records arrive. The drawer shows the whole screen's shape; a screen that already drew its toolbar

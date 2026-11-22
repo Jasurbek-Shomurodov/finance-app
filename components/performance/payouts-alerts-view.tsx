@@ -1,7 +1,7 @@
 "use client";
 import { useLanguage } from '@/components/language-provider';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
-import { PanelSkeleton } from '@/components/presentation-foundation/loading-placeholder';
+import { PayoutsAlertsSkeleton } from '@/components/presentation-foundation/screen-skeletons';
 import { BitcoinPanel } from '@/components/performance/bitcoin-panel';
 import { PayoutCalendar } from '@/components/performance/payout-calendar';
 import { PriceAlerts } from '@/components/performance/price-alerts';
@@ -21,7 +21,7 @@ export function PayoutsAlertsView({ history, error, onRetry, currency, market, p
  const { t } = useLanguage();
  const today = depositToday();
  if (error) return <section className="panel"><InlineError message={t('Could not load portfolio history.')} onRetry={onRetry}/></section>;
- if (!history) return <PanelSkeleton label={t('Loading history…')}/>;
+ if (!history) return <PayoutsAlertsSkeleton label={t('Loading history…')}/>;
  const payouts = expectedPayouts(history.records, history.events, today, addMonths(today, 12));
  return <div className="performance">
   <div className="performance-columns">
