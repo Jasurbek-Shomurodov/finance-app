@@ -146,9 +146,10 @@ test('TX-022 editing an expense moves its account once', async ({ page }) => {
 });
 
 test('TX-024 DEL-004 deleting an expense returns its money and restoring takes it again, exactly once', async ({ page }) => {
-  await page.goto('/income-expenses');
-  await page.getByRole('button', { name: 'Actions for E2E Lunch' }).click();
-  await page.getByRole('menuitem', { name: 'Delete' }).click();
+  // Cash flow no longer lists transactions; an expense is deleted from its details on Transactions.
+  await page.goto('/transactions');
+  await page.getByRole('listitem', { name: /View details for E2E Lunch/ }).getByText('E2E Lunch', { exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Delete E2E Lunch', exact: true }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Delete record' }).click();
   await open(page, 'Accounts');
   await expect.poll(() => accountBalance(page, 'E2E Checking')).toBe(dollars(expected.checking + 12.75));
@@ -160,11 +161,15 @@ test('TX-024 DEL-004 deleting an expense returns its money and restoring takes i
   await expect.poll(() => accountBalance(page, 'E2E Checking')).toBe(dollars(expected.checking));
 });
 
-test('CF-040 Recent transactions lists the expense saved last first', async ({ page }) => {
-  await page.goto('/income-expenses');
-  const rows = page.locator('section', { has: page.getByRole('heading', { name: /^Recent transactions/ }) }).locator('tbody tr');
-  await expect(rows.first()).toContainText('E2E Lunch');
-  await expect(rows.nth(1)).toContainText('E2E Coffee');
+test('CF-040 the Dashboard\'s Transactions card lists the expense saved last first', async ({ page }) => {
+  await page.goto('/');
+  const rows = page.locator('.dashboard-transactions li');
+  await expect(rows.filter({ hasText: 'E2E Coffee' })).toHaveCount(1);
+  // The card mixes income and spending of the day; among them the later expense sits above the earlier one.
+  const names = await rows.allTextContents();
+  const place = name => names.findIndex(text => text.includes(name));
+  expect(place('E2E Lunch')).toBeGreaterThanOrEqual(0);
+  expect(place('E2E Lunch')).toBeLessThan(place('E2E Coffee'));
 });
 
 test('REC-027 REC-003 a schedule started two years back keeps its unpaid months open, and paying it from an empty account is refused', async ({ page }) => {
