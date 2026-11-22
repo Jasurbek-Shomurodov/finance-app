@@ -107,14 +107,6 @@
       "count": 1
     }
   },
-  "components/investment-tracker.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-statements": {
-      "count": 1
-    }
-  },
   "components/mortgage-payment-dialog.tsx": {
     "complexity": {
       "count": 1

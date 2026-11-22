@@ -1,180 +1,93 @@
 "use client";
+import { useEffect, useEffectEvent, useState } from 'react';
 import { InfoHint } from '@/components/presentation-foundation/info-hint';
 import { showDeleted, showSaved } from '@/lib/feedback';
 import { ErrorPopup } from '@/components/presentation-foundation/error-popup';
-import { useDraftDialog } from '@/components/discard-changes';
-import { useDatedExchangeRate } from '@/hooks/use-dated-exchange-rate';
-import { ExchangeRatePreview } from '@/components/presentation-foundation/exchange-rate-preview';
 import { LoadingPlaceholder } from '@/components/presentation-foundation/loading-placeholder';
-import { useEffect, useState } from 'react';
-import { Line, LineChart, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/presentation-foundation/confirm-dialog';
-import { FormFooter } from '@/components/presentation-foundation/form-footer';
-import { InlineError } from '@/components/presentation-foundation/inline-error';
-import { Button } from '@/components/ui/button';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { NativeSelect } from '@/components/ui/native-select';
-import { DatePicker } from '@/components/presentation-foundation/date-picker';
-import { FormattedNumberInput } from '@/components/presentation-foundation/formatted-number-input';
-import { AmountCurrencyFields } from '@/components/presentation-foundation/amount-currency-fields';
 import { useLanguage } from '@/components/language-provider';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { TrackerHistory } from '@/components/investment-tracker-history';
-import { formatAccountOption, formatMoney, formatDate, formatMonthYear, formatPercent } from '@/lib/format';
-import { chartAxis, chartDot, chartGrid, chartHeight, chartLegend, chartLine, chartMargin, chartTooltip, chartValueAxis, leadLine } from '@/components/presentation-foundation/chart';
-import { historyCashDelta, historySeries, historyChartDate, historyEventLabel, historyUpdateTypes, isLendingKind, type HistoryEvent, type HistoryUpdateType, type TrackerEvent } from '@/lib/investment-history';
-import { depositInterest, depositProjection, depositToday } from '@/lib/deposit-interest';
+import { TrackerOverview } from '@/components/investment-tracker-overview';
+import { TrackerForm, trackerFormHelp, useTrackerForm } from '@/components/investment-tracker-form';
+import { formatDate, formatMoney } from '@/lib/format';
+import { historyEventLabel, historyValueLabel, isLendingKind, type HistoryUpdateType, type TrackerEvent } from '@/lib/investment-history';
 import { AssetMovementDialog, type MovementDraft } from '@/components/planning/asset-movement-dialog';
-import { isHolding, type AssetMovement } from '@/lib/asset-movements';
-import { interestCompounding, interestKinds, valuedKinds, type Entry } from '@/lib/finance';
-import { accountAmount } from '@/lib/record-balance';
-import { categoryColor } from '@/lib/category-colors';
-import { requestJson, type RequestError } from '@/lib/api-client';
-import { Textarea } from '@/components/ui/textarea';
+import type { AssetMovement } from '@/lib/asset-movements';
+import { valuedKinds, type Entry } from '@/lib/finance';
+import { requestJson } from '@/lib/api-client';
 
-type Draft={exchange_rate?:number;account_id?:string;id:string;record_id:string;type:HistoryUpdateType;date:string;amount:number;balance:number|null;notes:string};
-export function InvestmentTracker({inline=false,onDraftState,initialType,record,accounts=[],accountsReady=true,onClose,onSaved,onPayment,onOpenPayment}:{/** What opens a mortgage payment of the History, when its transaction is at hand. */onOpenPayment?:(id:string)=>(()=>void)|undefined;inline?:boolean;onDraftState?:(dirty:boolean,busy:boolean)=>void;initialType?:HistoryUpdateType;accounts?:Entry[];accountsReady?:boolean;record:Entry;onClose:()=>void;onSaved:()=>void;onPayment:()=>void}){
+type Tab='overview'|'history'|'update';
+type Props={/** What opens a mortgage payment of the History, when its transaction is at hand. */onOpenPayment?:(id:string)=>(()=>void)|undefined;inline?:boolean;onDraftState?:(dirty:boolean,busy:boolean)=>void;initialType?:HistoryUpdateType;/** The tab the dialog opens on. Without it, a preset update type opens the form and anything else the Overview. */startTab?:Tab;accounts?:Entry[];accountsReady?:boolean;record:Entry;onClose:()=>void;onSaved:()=>void;onPayment:()=>void};
+
+/** The record's dated history, read again after each save or delete. */
+function useTrackerEvents(recordId:string,onError:(message:string)=>void){
+ const report=useEffectEvent(onError);
+ const [events,setEvents]=useState<TrackerEvent[]>([]),[loading,setLoading]=useState(true),[reload,setReload]=useState(0);
+ useEffect(()=>{
+  const controller=new AbortController();
+  fetch('/api/investment-history?record='+recordId,{signal:controller.signal}).then(async r=>{const data=await r.json() as TrackerEvent[] & {error?:string};if(!r.ok)throw Error(data.error);if(!controller.signal.aborted){setEvents(data);setLoading(false);}}).catch(e=>{if(!controller.signal.aborted){report(e.message);setLoading(false);}});
+  return ()=>controller.abort();
+ },[recordId,reload]);
+ return {events,loading,refresh:()=>{setLoading(true);setReload(n=>n+1);}};
+}
+
+// Mirrors delete_tracker_update: asset value/cash updates, and lending additions or repayments.
+const deletableUpdate=(kind:string,type:string)=>valuedKinds.includes(kind)?['valuation','contribution','withdrawal'].includes(type):['Money lent','Loan','Debt'].includes(kind)&&['contribution','withdrawal'].includes(type);
+const trackerAbout=(kind:string)=>isLendingKind(kind)?'Track additions and repayments against the outstanding balance.':kind==='Cash'?'Track your cash balance and transfers between accounts.':'Dated values and actual cash movements. Estimates stay separate.';
+/** What the History list holds and which of its entries can be deleted, behind the tracker's ⓘ. */
+function historyHelp(kind:string,t:(key:string)=>string):string[]{
+ const lending=isLendingKind(kind);
+ return [t(lending?'History starts with a balance snapshot. Additions increase the balance; principal repayments reduce it.':kind==='Cash'?'History shows confirmed balances and account movements.':'History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.'),...(valuedKinds.includes(kind)||lending?[t(kind==='Mortgage'?'Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.':'Delete newer balance updates first. Starting snapshots and other transaction types are protected.')]:[])];
+}
+
+/** Confirms deleting one History entry: a linked payment goes to Recently deleted, a tracker update is reversed. */
+function DeleteEntryDialog({record,deleting,busy,onClose,onConfirm}:{record:Entry;deleting:TrackerEvent|null;busy:boolean;onClose:()=>void;onConfirm:()=>void}){
  const {t,locale}=useLanguage();
- const [events,setEvents]=useState<TrackerEvent[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState(''),[busy,setBusy]=useState(false),[submitted,setSubmitted]=useState(false),[reload,setReload]=useState(0);
+ const entered=deleting?.entered;
+ const description=entered?t('Move {name} to Recently deleted? It will be removed from your records, totals and all planning months. Separate transactions stay unchanged. You can restore it from Recently deleted.',{name:entered.name}):<>{t('This removes the update. If it changed the asset value, the previous value and ownership are restored. Any linked cash movement is reversed using its original amount. This cannot be undone from the app.')}{deleting&&<> {t(historyEventLabel(record.kind,deleting.event_type))} · {formatDate(deleting.occurred_on,locale)}{Number(deleting.amount)>0&&<> · {formatMoney(Number(deleting.amount),record.currency,locale)}</>}</>}</>;
+ return <ConfirmDialog deletes open={!!deleting} onClose={onClose} busy={busy} title={t(entered?'Delete this record?':'Delete this tracker update?')} description={description} confirmLabel={t(busy?'Deleting…':entered?'Delete record':'Delete update')} onConfirm={onConfirm}/>;
+}
+
+/** An asset's or loan's tracker: its figures (Overview), every dated entry (History) and the form that adds one
+ * (Add update). `inline` is the form alone, inside another dialog. */
+export function InvestmentTracker({inline=false,onDraftState,initialType,startTab,record,accounts=[],accountsReady=true,onClose,onSaved,onPayment,onOpenPayment}:Props){
+ const {t}=useLanguage();
+ const [busy,setBusy]=useState(false),[error,setError]=useState('');
+ const history=useTrackerEvents(record.id,setError);
  const [deleting,setDeleting]=useState<TrackerEvent|null>(null);
- const [tab,setTab]=useState<'overview'|'history'>('overview');
+ // An update type chosen by the caller is a request to add that update; otherwise the figures come first.
+ const [tab,setTab]=useState<Tab>(startTab??(initialType?'update':'overview'));
+ const [movement,setMovement]=useState<MovementDraft|null>(null);
+ const form=useTrackerForm({record,accounts,accountsReady,initialType,inline,history,status:{busy,setBusy,setError},onClose,onSaved,onDone:()=>setTab('overview')});
+ const {guard,dirty,submitted}=form,{events,loading}=history;
+ useEffect(()=>{onDraftState?.(dirty,busy);},[dirty,busy,onDraftState]);
  async function deleteUpdate(){
   if(!deleting||busy)return;setBusy(true);setError('');
   try{
    // A linked payment is a transaction: it goes to Recently deleted like any other, and its schedule date opens again.
    await requestJson(deleting.entered?'/api/records':'/api/investment-history',{method:'DELETE',body:deleting.entered?{id:deleting.id}:{id:deleting.id,record_id:record.id}});
-   setDeleting(null);setLoading(true);setReload(n=>n+1);onSaved();showDeleted();
+   setDeleting(null);history.refresh();onSaved();showDeleted();
   }catch(reason){setError((reason as Error).message);setDeleting(null);}finally{setBusy(false);}
  }
- const lending=isLendingKind(record.kind);
- const cash=record.kind==='Cash';
- const updateTypes=historyUpdateTypes(record.kind);
- const makeDraft=():Draft=>({id:crypto.randomUUID(),record_id:record.id,type:initialType&&updateTypes.includes(initialType)?initialType:updateTypes[0],date:depositToday(),amount:0,balance:lending||initialType==='contribution'||initialType==='withdrawal'?null:0,notes:''});
- const [draft,setDraft]=useState<Draft>(makeDraft);
- // A blank value field reads as zero; saving it would silently wipe the asset's value.
- const [balanceBlank,setBalanceBlank]=useState(true);
- // The currency the cash amount is typed in, when it is the cash account's rather than the record's.
- const [typedCurrency,setTypedCurrency]=useState<string>();
- const guard=useDraftDialog(draft,onClose,busy);
- // Each reset draws a new idempotency id; it is not a user edit.
- const draftContent=(value:Draft)=>JSON.stringify({...value,id:undefined});
- const [initialDraft]=useState(()=>draftContent(draft));
- const dirty=draftContent(draft)!==initialDraft;
- useEffect(()=>{onDraftState?.(dirty,busy);},[dirty,busy,onDraftState]);
- const [movement,setMovement]=useState<MovementDraft|null>(null);
- // Mirrors delete_tracker_update: asset value/cash updates, and lending additions or repayments.
- const deletableUpdate=(type:string)=>valuedKinds.includes(record.kind)?['valuation','contribution','withdrawal'].includes(type):['Money lent','Loan','Debt'].includes(record.kind)&&['contribution','withdrawal'].includes(type);
- const mortgage=record.kind==='Mortgage';
- const deposit=interestKinds.includes(record.kind);
- // Money moves in and out of a bank deposit alone: a bill or bond is bought once (`record_asset_movement` refuses them).
- const movable=record.kind==='Deposit';
- // Units at a quoted price: stocks, crypto, metals and vested equity are bought and sold by quantity.
- const security=isHolding(record);
- // A deposit has no linked payments, so every amount of its history is known.
- const ledger=events.filter((event):event is HistoryEvent=>event.amount!==null);
- const projection=depositProjection(ledger,record.rate,undefined,interestCompounding(record),record.date);
- const movementRecords=accounts.some(account=>account.id===record.id)?accounts:[...accounts,record];
  async function saveMovement(payload:AssetMovement){
   await requestJson('/api/asset-movements',{body:payload});
   showSaved();onSaved();onClose();
  }
- const eventLabel=(type:TrackerEvent['event_type'])=>historyEventLabel(record.kind,type);
- const money=(n:number)=>formatMoney(n,record.currency,locale);
- const total=(n:number|null)=>n===null?'—':money(n);
- const fullValueNote=(full:number,ownership:number)=>t('Full value {amount} · you own {percent}',{amount:money(full),percent:formatPercent(ownership,locale)});
- const valueLabel=lending?(record.kind==='Money lent'?'Amount owed to you':'Outstanding balance'):cash||deposit?'Account balance':'Value (your share)';
- useEffect(()=>{
-  const controller=new AbortController();
-  fetch('/api/investment-history?record='+record.id,{signal:controller.signal}).then(async r=>{const data=await r.json() as TrackerEvent[] & {error?:string};if(!r.ok)throw Error(data.error);if(!controller.signal.aborted){setEvents(data);setLoading(false);}}).catch(e=>{if(!controller.signal.aborted){setError(e.message);setLoading(false);}});
-  return ()=>controller.abort();
- },[record.id,reload]);
- const stats=historySeries(events);
- const optionalValuation=valuedKinds.includes(record.kind)&&['contribution','withdrawal'].includes(draft.type);
- const hasBalance=!lending&&(draft.type==='valuation'||optionalValuation&&draft.balance!==null);
- const latestBalanceDate=events.filter(event=>event.balance!==null).reduce((latest,event)=>event.occurred_on>latest?event.occurred_on:latest,'');
- const currentBalance=stats.balance??Number(record.amount);
- const cashAccounts=accounts.filter(account=>account.kind==='Cash');
- const selectedAccount=cashAccounts.find(account=>account.id===draft.account_id);
- const fx=useDatedExchangeRate(selectedAccount?.currency,record.currency,draft.date);
- const crossCurrency=!!selectedAccount&&selectedAccount.currency!==record.currency;
- const amountCurrency=selectedAccount&&crossCurrency&&typedCurrency===selectedAccount.currency?selectedAccount.currency:record.currency;
- const inAccount=amountCurrency!==record.currency;
- const recordAmount=inAccount?(fx.rate?draft.amount*fx.rate:null):draft.amount;
- const cashAmount=inAccount?draft.amount:fx.rate?accountAmount(draft.amount,fx.rate):null;
- const remainingBalance=currentBalance+(draft.type==='withdrawal'?-1:1)*(recordAmount??0);
- const cashDelta=cashAmount===null?null:historyCashDelta(record.kind,draft.type,cashAmount);
- const accountMoney=(amount:number)=>formatMoney(amount,selectedAccount?.currency??record.currency,locale);
- const cashOutgoing=historyCashDelta(record.kind,draft.type,1)<0;
- const cashAfter=selectedAccount&&cashDelta!==null?Number(selectedAccount.amount)+cashDelta:null;
- const canSave=!busy&&(submitted||(!loading&&!!draft.date&&draft.date<=depositToday()&&updateTypes.includes(draft.type)&&(draft.type==='valuation'||draft.amount>0&&recordAmount!==null)&&(!hasBalance||!balanceBlank)&&(draft.type==='valuation'||(accountsReady&&!!selectedAccount&&cashAfter!==null&&cashAfter>=0&&cashAfter<=1e15))&&(!lending||(accountsReady&&!!selectedAccount&&draft.date>=latestBalanceDate&&remainingBalance>=0&&remainingBalance<=1e15))));
- async function save(event?:React.FormEvent){
-  event?.preventDefault();if(!canSave)return;setBusy(true);setSubmitted(true);setError('');
-  try{
-   // The update is saved in the record's currency, whichever currency the amount was typed in.
-   const payload=submitted?draft:{...draft,amount:recordAmount!,...(crossCurrency?{exchange_rate:fx.rate!}:{})};
-   setDraft(payload);setTypedCurrency(undefined);
-   await requestJson(payload.exchange_rate!==undefined?'/api/investment-history/exchange':'/api/investment-history',{body:payload});
-   showSaved();setDraft(makeDraft());setBalanceBlank(true);setSubmitted(false);setLoading(true);setReload(n=>n+1);onSaved();if(inline)onClose();
-  }catch(e){if((e as RequestError).confirmedFailure){setSubmitted(false);if(crossCurrency)fx.retry();}setError((e as Error).message);}finally{setBusy(false);}
- }
- const paymentFields=<div className="record-form">
-   {!inline&&<h3>{t('Add a dated update')}</h3>}{inline&&<p className="muted">{t('Enter any amount up to the outstanding balance. You can repay the rest later.')}</p>}
-   <fieldset disabled={busy||submitted||loading} className="tracker-fields">
-    <div className="form-grid">{!inline&&<label>{t('Update type')}<NativeSelect value={draft.type} onChange={e=>{const type=e.target.value as Draft['type'];setBalanceBlank(true);setDraft({...draft,type,account_id:undefined,exchange_rate:undefined,amount:0,balance:!lending&&type==='valuation'?0:null});}}>
-     {updateTypes.map(type=><option key={type} value={type}>{t(eventLabel(type))}</option>)}
-    </NativeSelect></label>}<label>{t(inline?'Payment date':'Date')}<DatePicker value={draft.date} min={lending?latestBalanceDate:undefined} max={depositToday()} onChange={date=>setDraft({...draft,date,exchange_rate:undefined})}/></label></div>
-    {optionalValuation&&<div className="tracker-value-choice"><span className="tracker-value-label">{t('Asset value')}</span><ToggleGroup type="single" aria-label={t('Asset value')} value={draft.balance===null?'keep':'change'} disabled={busy||submitted||loading} onValueChange={choice=>{if(choice&&choice!==(draft.balance===null?'keep':'change')){setBalanceBlank(true);setDraft({...draft,balance:choice==='change'?0:null});}}}><ToggleGroupItem value="keep">{t('Keep current value')}</ToggleGroupItem><ToggleGroupItem value="change">{t('Enter new value')}</ToggleGroupItem></ToggleGroup>{draft.balance===null&&<small className="muted">{t('The asset value stays unchanged. Only the cash movement is recorded.')}</small>}</div>}
-    {hasBalance&&<label>{t(deposit||cash?'Account balance after update':'Full asset value after update')}<FormattedNumberInput value={draft.balance??0} requireEntry onValueChange={(balance,blank)=>{setBalanceBlank(blank);setDraft({...draft,balance});}}/><small className="muted">{t('Enter 0 only when the asset is worth nothing.')}</small></label>}
-    {draft.type!=='valuation'&&<label>{t(lending?(cashOutgoing?'Pay from cash account':'Receive into cash account'):'Cash account')}<NativeSelect required disabled={!accountsReady} value={draft.account_id??''} onChange={e=>setDraft({...draft,account_id:e.target.value||undefined,exchange_rate:undefined})}><option value="" disabled>{t('Choose a cash account')}</option>{cashAccounts.map(a=><option key={a.id} value={a.id}>{formatAccountOption(a,locale)}</option>)}</NativeSelect>{accountsReady&&!cashAccounts.length&&<small>{t('Add a cash account to record this transaction.')}</small>}{!accountsReady&&<small>{t('Waiting for current cash account balances.')}</small>}</label>}{draft.type!=='valuation'&&<AmountCurrencyFields amount={draft.amount} currency={amountCurrency} currencies={selectedAccount?[record.currency,selectedAccount.currency]:[record.currency]} currencyLocked={!crossCurrency} max={lending&&draft.type==='withdrawal'?(inAccount?accountAmount(currentBalance,fx.rate):currentBalance):undefined} label={t(lending?'Principal amount':'Cash amount (your share)')} onAmountChange={amount=>setDraft({...draft,amount})} onCurrencyChange={setTypedCurrency}/>}
-    {crossCurrency&&<ExchangeRatePreview fx={fx}/>}
-    {selectedAccount&&cashOutgoing&&fx.rate&&<p className="muted">{t('Available for this payment')}: {inAccount?accountMoney(Number(selectedAccount.amount)):money(Number(selectedAccount.amount)*fx.rate)}</p>}
-    {lending&&<p aria-live="polite">{t('Outstanding balance after update')}: {money(remainingBalance)}</p>}
-    {selectedAccount&&cashAfter!==null&&cashDelta!==null&&draft.type!=='valuation'&&<div className="ownership-summary" aria-live="polite"><p>{t(cashOutgoing?'Cash deducted from {account}: {amount}':'Cash added to {account}: {amount}',{account:selectedAccount.name,amount:accountMoney(Math.abs(cashDelta))})}</p><p>{t('Cash balance after update')}: {accountMoney(cashAfter!)}</p>{cashAfter!<0&&<InlineError message={t('Not enough money in the selected cash account.')}/>}</div>}
-    <label>{t('Notes (optional)')}<Textarea rows={2} maxLength={2000} value={draft.notes} onChange={e=>setDraft({...draft,notes:e.target.value})}/></label>
-   </fieldset>
-   {deposit&&<p className="muted tracker-help">{t('Use Top-up or Withdraw to move money between accounts. Use Record capitalized interest when interest stays in the deposit; Income received is for interest paid out.')}</p>}
-   <p className="muted tracker-help">{t(lending?'Select the cash account used for this transaction. The cash balance and outstanding principal change together; principal is not income or an expense.':cash?'Use Balance update to confirm a cash balance, or Transfer money to move funds between accounts.':security?'Use Value update for a valuation, Buy or Sell / convert for trades, and income or expenses for actual cash payments.':deposit?'Use Balance update for a confirmed bank balance. Record paid-out interest and fees separately.':'Use Value update for a valuation. Record invested money, sale proceeds, income and expenses separately.')}</p>
-   <p className="muted tracker-help">{t(lending?'Enter updates on or after the latest balance date. Repayments cannot exceed the outstanding balance.':record.kind==='Business'?'Past valuations do not replace a newer balance. Business valuations use the current ownership share.':'Past valuations do not replace a newer balance.')}</p>
-   <ErrorPopup message={error}/>
-   {submitted&&<p className="muted tracker-help">{t('Retry with the same details to avoid duplicates.')}</p>}
-   <FormFooter busy={busy} onCancel={guard.close} cancelLabel={t('Close')}><Button type="button" onClick={()=>void save()} disabled={!canSave}>{t(busy?'Saving…':submitted?'Retry update':inline?'Save payment':'Save update')}</Button></FormFooter>
-  </div>;
- if(inline)return <>{paymentFields}{guard.confirmation}</>;
- const historyHelp=[t(lending?'History starts with a balance snapshot. Additions increase the balance; principal repayments reduce it.':cash?'History shows confirmed balances and account movements.':'History starts with a current snapshot. Add older values and contributions if known. Recorded contributions are not a complete purchase cost unless you enter them all.'),...(valuedKinds.includes(record.kind)||lending?[t(mortgage?'Click a payment to open it: you can edit or delete it there. Balance updates are deleted from the newest.':'Delete newer balance updates first. Starting snapshots and other transaction types are protected.')]:[])];
- const about=t(lending?'Track additions and repayments against the outstanding balance.':cash?'Track your cash balance and transfers between accounts.':'Dated values and actual cash movements. Estimates stay separate.');
- if(movement)return <AssetMovementDialog initial={movement} records={movementRecords} save={saveMovement} onClose={()=>setMovement(null)}/>;
+ const paymentFields=<TrackerForm form={form} inline={inline}/>;
+ const alert=<ErrorPopup message={error}/>;
+ if(inline)return <>{paymentFields}{alert}{guard.confirmation}</>;
+ if(movement)return <AssetMovementDialog initial={movement} records={accounts.some(account=>account.id===record.id)?accounts:[...accounts,record]} save={saveMovement} onClose={()=>setMovement(null)}/>;
+ const about=t(trackerAbout(record.kind));
+ const help=tab==='history'?historyHelp(record.kind,t):tab==='update'?trackerFormHelp(record,t):[];
  return <><Dialog open onOpenChange={open=>{if(!open&&!busy)guard.close();}}><DialogContent className="record-dialog investment-tracker" showCloseButton={!busy}>
-  <DialogTitle>{record.name} · {t('Tracker')}<InfoHint>{[about,...(tab==='history'?historyHelp:[])].map(text=><p key={text}>{text}</p>)}</InfoHint></DialogTitle>
+  <DialogTitle>{record.name} · {t('Tracker')}<InfoHint>{[about,...help].map(text=><p key={text}>{text}</p>)}</InfoHint></DialogTitle>
   <DialogDescription className="sr-only">{about}</DialogDescription>
-  <Segmented className="tracker-tabs" label={t('Tracker')} options={[{value:'overview',label:t('Overview')},{value:'history',label:t('History')}]} value={tab} onChange={setTab}/>
-  {tab==='history'&&<ErrorPopup message={error}/>}
-  {tab==='history'?(loading?<LoadingPlaceholder label={t('Loading history…')}/>:<TrackerHistory events={events} record={record} accounts={accounts} valueLabel={valueLabel} open={e=>e.event_type==='mortgage_payment'?onOpenPayment?.(e.id):undefined} deletable={e=>!!e.entered||deletableUpdate(e.event_type)} deleteDisabled={busy||loading||submitted||dirty} onDelete={setDeleting}/>):<>
-  {loading?<LoadingPlaceholder label={t('Loading history…')}/>:<>
-   {deposit&&<div className="ownership-summary"><p>{t('Estimated interest for {month}: {amount}', {month:formatMonthYear(depositToday().slice(0,7),locale),amount:money(depositInterest(ledger,record.rate,undefined,interestCompounding(record),record.date))})}</p><p>{t('Estimated balance including interest')}: {money(projection.total)}</p><p className="muted">{t(({monthly:'Monthly compounding',daily:'Daily compounding',none:'No compounding'})[interestCompounding(record)??'monthly'])}. {t('Top-ups and withdrawals affect interest from their recorded date. Estimates use the current annual rate. A confirmed balance or interest credit replaces the projection.')}</p><p className="muted">{t('Estimates start at the first dated balance. Record confirmed capitalized interest to update the available balance. Projections are not spendable cash.')}</p></div>}
-   <div className="tracker-metrics">
-    <div><small>{t(lending?(record.kind==='Money lent'?'Amount owed to you':'Outstanding balance'):cash||deposit?'Account balance':'Latest tracked value (your share)')}</small><strong>{stats.balance===null?'—':money(stats.balance)}</strong>{!lending&&stats.fullBalance!==null&&stats.ownership<100&&<span className="tracker-full-value">{fullValueNote(stats.fullBalance,stats.ownership)}</span>}</div>
-    {!cash&&<div><small>{t(mortgage?'Principal repaid':lending?'Repayments recorded':'Income received')}</small><strong>{total(mortgage?stats.principal:lending?stats.repayments:stats.receipts)}</strong></div>}
-    {!cash&&<div><small>{t(mortgage?'Interest paid':lending?'Additions recorded':'Expense paid')}</small><strong>{money(mortgage?stats.interest:lending?stats.additions:stats.expenses)}</strong></div>}
-   </div>
-   {stats.missing&&<p className="muted">{t('Exchange rate unavailable.')}</p>}
-   {stats.points.length>0&&<div className="tracker-chart" aria-label={t('Investment history chart')}>
-    <ResponsiveContainer width="100%" height={chartHeight.regular}><LineChart data={stats.points} margin={chartMargin} accessibilityLayer>
-     <CartesianGrid {...chartGrid}/>
-     <XAxis dataKey="timestamp" type="number" scale="time" domain={['dataMin','dataMax']} tickFormatter={date=>formatDate(historyChartDate(Number(date)),locale)} minTickGap={80} {...chartAxis}/>
-     <YAxis tickFormatter={money} {...chartValueAxis}/>
-     <Tooltip {...chartTooltip} labelFormatter={date=>formatDate(historyChartDate(Number(date)),locale)} formatter={v=>total(v===null||v===undefined?null:Number(v))}/>
-     <Legend {...chartLegend}/>
-     <Line type="linear" dataKey="balance" name={t(valueLabel)} {...leadLine} dot={chartDot} connectNulls={false}/>
-     {!lending&&!cash&&<Line type="stepAfter" dataKey="contributions" name={t('Net contributions recorded')} {...chartLine} stroke={categoryColor('Property')} strokeDasharray="5 4"/>}
-     {!lending&&!cash&&<Line type="stepAfter" dataKey="receipts" name={t('Income received')} {...chartLine} stroke={categoryColor('Deposit')}/>}
-    </LineChart></ResponsiveContainer>
-   </div>}
-  </>}
-  {cash&&<Button type="button" variant="outline" disabled={busy} onClick={()=>setMovement({kind:'transfer',source_id:record.id})}>{t('Transfer money')}</Button>}
-  {(movable||security)&&<div className="entry-actions"><Button variant="outline" onClick={()=>setMovement({kind:movable?'transfer':'buy',target_id:record.id})}>{t(movable?'Top-up':'Buy')}</Button><Button variant="outline" onClick={()=>setMovement({kind:movable?'transfer':'sell',source_id:record.id})}>{t(movable?'Withdraw':'Sell / convert')}</Button>{movable&&<Button variant="outline" onClick={()=>setMovement({kind:'interest',source_id:record.id})}>{t('Record capitalized interest')}</Button>}</div>}
-  {mortgage&&<Button type="button" variant="outline" disabled={busy} onClick={onPayment}>{t('Record payment')}</Button>}
-  {paymentFields}
-  </>}
- </DialogContent></Dialog>{guard.confirmation}<ConfirmDialog deletes open={!!deleting} onClose={()=>setDeleting(null)} busy={busy} title={t(deleting?.entered?'Delete this record?':'Delete this tracker update?')} description={deleting?.entered?t('Move {name} to Recently deleted? It will be removed from your records, totals and all planning months. Separate transactions stay unchanged. You can restore it from Recently deleted.',{name:deleting.entered.name}):<>{t('This removes the update. If it changed the asset value, the previous value and ownership are restored. Any linked cash movement is reversed using its original amount. This cannot be undone from the app.')}{deleting&&<> {t(eventLabel(deleting.event_type))} · {formatDate(deleting.occurred_on,locale)}{Number(deleting.amount)>0&&<> · {money(Number(deleting.amount))}</>}</>}</>} confirmLabel={t(busy?'Deleting…':deleting?.entered?'Delete record':'Delete update')} onConfirm={()=>void deleteUpdate()}/></>;
+  <Segmented className="tracker-tabs" label={t('Tracker')} options={[{value:'overview',label:t('Overview')},{value:'history',label:t('History')},{value:'update',label:t('Add update')}]} value={tab} onChange={setTab}/>
+  {alert}
+  {tab==='overview'&&<TrackerOverview record={record} events={events} loading={loading} busy={busy} onMovement={setMovement} onPayment={onPayment}/>}
+  {tab==='history'&&(loading?<LoadingPlaceholder label={t('Loading history…')}/>:<TrackerHistory events={events} record={record} accounts={accounts} valueLabel={historyValueLabel(record.kind)} open={e=>e.event_type==='mortgage_payment'?onOpenPayment?.(e.id):undefined} deletable={e=>!!e.entered||deletableUpdate(record.kind,e.event_type)} deleteDisabled={busy||loading||submitted||dirty} onDelete={setDeleting}/>)}
+  {tab==='update'&&paymentFields}
+ </DialogContent></Dialog>{guard.confirmation}<DeleteEntryDialog record={record} deleting={deleting} busy={busy} onClose={()=>setDeleting(null)} onConfirm={()=>void deleteUpdate()}/></>;
 }

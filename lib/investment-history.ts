@@ -73,6 +73,36 @@ export function historySeries(events:TrackerEvent[]) {
  return {points:[...days.values()],balance,fullBalance,ownership,contributions,additions,repayments,receipts,expenses,principal,interest,missing:contributions===null||receipts===null};
 }
 
+/** What a kind's dated value is called on its Tracker: what is owed for lending, the balance of an account, otherwise your share of the value. */
+export const historyValueLabel = (kind:string) => isLendingKind(kind)?(kind==='Money lent'?'Amount owed to you':'Outstanding balance'):kind==='Cash'||interestKinds.includes(kind)?'Account balance':'Value (your share)';
+/** How an asset has done since its first tracked value. The first value is the earliest dated event that carries a
+ * balance, in `byHistoryDate` order; only what comes after it in that order counts (a later date, or the same date but
+ * later in the order), so money recorded before the asset was first valued is ignored. Values are your share: each
+ * event's balance at its own ownership percentage, as in `historySeries`; cash amounts are already your share.
+ * - `change`: the latest tracked value minus the first; null until a second value is tracked.
+ * - `changePercent`: `change` as a percentage of the first value; null when there is no change or the first value is zero.
+ * - `result` (total return): `change` − net contributions (money invested − withdrawals) + income received − expenses
+ *   paid, all after the first value. Null when `change` is, or when one of those amounts is a linked payment no rate
+ *   converts: unknown, never short. Income that carries a balance stayed in the asset (capitalized interest, saved by
+ *   `record_asset_movement` with the balance it left): it is in the value change already and is not added again. */
+export function historyPerformance(events:TrackerEvent[]) {
+ const sorted=[...events].sort(byHistoryDate);
+ const start=sorted.findIndex(event=>event.balance!==null);
+ if(start<0)return {first:null,firstDate:null,change:null,changePercent:null,result:null};
+ const share=(event:TrackerEvent)=>Number(event.balance)*Number(event.ownership_percentage)/100;
+ // Money in the person's pocket: income and withdrawals come back, contributions and expenses go in.
+ const direction:Partial<Record<TrackerEvent['event_type'],number>>={contribution:-1,expense:-1,withdrawal:1,income:1};
+ const first=share(sorted[start]);
+ let latest=first,values=1,cash:number|null=0;
+ for(const event of sorted.slice(start+1)){
+  if(event.balance!==null){latest=share(event);values++;}
+  const sign=event.event_type==='income'&&event.balance!==null?0:direction[event.event_type];
+  if(sign)cash=cash===null||event.amount===null?null:cash+sign*Number(event.amount);
+ }
+ const change=values>1?latest-first:null;
+ return {first,firstDate:sorted[start].occurred_on,change,changePercent:change===null||first===0?null:change/first*100,result:change===null||cash===null?null:change+cash};
+}
+
 // Convert chart coordinates back to stored date-only values before shared display formatting.
 export const historyChartDate = (timestamp: number) => new Date(timestamp).toISOString().slice(0,10);
 

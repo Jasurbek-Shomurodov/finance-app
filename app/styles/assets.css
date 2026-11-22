@@ -207,7 +207,10 @@
 .recharts-cartesian-axis-tick text { font-size: var(--type-small); fill: var(--muted-foreground); }
 .recharts-legend-wrapper { font-size: var(--type-small); line-height: 1.7; }
 /* Recharts writes a white background inline; every chart tooltip takes the theme's surface instead (THEME-011). */
-.recharts-default-tooltip { font-size: var(--type-small); line-height: 1.6; color: var(--popover-foreground); background: var(--popover) !important; border-color: var(--border) !important; }
+/* A tooltip never leaves its chart: it is no wider than the plot (the chart less its value axis), and a long row wraps
+   instead of running past the edge (recharts writes nowrap inline). */
+.recharts-tooltip-wrapper { max-width: calc(100% - 6rem); }
+.recharts-default-tooltip { font-size: var(--type-small); line-height: 1.6; color: var(--popover-foreground); background: var(--popover) !important; border-color: var(--border) !important; white-space: normal !important; }
 .recharts-default-tooltip .recharts-tooltip-item { color: var(--popover-foreground) !important; }
 .recharts-tooltip-label { color: var(--foreground); }
 /* Legend labels stay readable; the series colour is carried by the dot beside each label. */

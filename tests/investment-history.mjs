@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import ts from 'typescript';
 import {z} from 'zod';
-import {byHistoryDate,historySeries} from '../lib/investment-history.ts';
+import {byHistoryDate,historyPerformance,historySeries} from '../lib/investment-history.ts';
 import {loadTS} from './helpers/load-ts.mjs';
 const {assetPaymentEvents,assetPaymentsQuery,assetSchedulesQuery,schedulePaymentsQuery}=loadTS('lib/asset-payments.ts');
 const event=(id,date,type,amount,balance=null,ownership=100)=>({id,occurred_on:date,event_type:type,amount,balance,ownership_percentage:ownership,created_at:date+'T12:00:00Z',principal:0,interest:0});
@@ -22,6 +22,45 @@ test('mortgage payments show principal and interest without inventing a historic
  const p={...event('a','2024-01-01','mortgage_payment',300),principal:200,interest:100};
  const result=historySeries([p,event('b','2026-01-01','baseline',0,9000)]);
  assert.equal(result.points[0].balance,null);assert.equal(result.balance,9000);assert.equal(result.principal,200);assert.equal(result.interest,100);
+});
+test('performance needs two dated values: one value has no change and no return',()=>{
+ assert.deepEqual(historyPerformance([]),{first:null,firstDate:null,change:null,changePercent:null,result:null});
+ assert.deepEqual(historyPerformance([event('a','2024-01-01','baseline',0,8000),event('i','2024-02-01','income',50)]),{first:8000,firstDate:'2024-01-01',change:null,changePercent:null,result:null});
+});
+test('value change is the latest tracked value minus the first, as a share of the first',()=>{
+ assert.deepEqual(historyPerformance([event('b','2025-01-01','valuation',0,10000),event('a','2024-01-01','baseline',0,8000)]),{first:8000,firstDate:'2024-01-01',change:2000,changePercent:25,result:2000});
+ const fall=historyPerformance([event('a','2024-01-01','baseline',0,8000),event('b','2025-01-01','valuation',0,6000)]);
+ assert.equal(fall.change,-2000);assert.equal(fall.changePercent,-25);assert.equal(fall.result,-2000);
+ // A first value of zero has no percentage to grow from.
+ assert.equal(historyPerformance([event('a','2024-01-01','baseline',0,0),event('b','2025-01-01','valuation',0,500)]).changePercent,null);
+});
+test('total return takes money put in out of the value change, and adds income less costs',()=>{
+ const invested=historyPerformance([event('a','2024-01-01','baseline',0,8000),event('c','2024-06-01','contribution',1500),event('b','2025-01-01','valuation',0,10000)]);
+ assert.equal(invested.change,2000);assert.equal(invested.result,500,'1,500 of the rise was paid for');
+ const earned=historyPerformance([event('a','2024-01-01','baseline',0,8000),event('i','2024-03-01','income',300),event('e','2024-04-01','expense',120),event('b','2025-01-01','valuation',0,10000)]);
+ assert.equal(earned.result,2180);
+ const sold=historyPerformance([event('a','2024-01-01','baseline',0,8000),event('w','2024-06-01','withdrawal',3000,5500),event('b','2025-01-01','valuation',0,6000)]);
+ assert.equal(sold.change,-2000);assert.equal(sold.result,1000,'the 3,000 taken out comes back to the owner');
+ // Capitalized interest raised the balance itself, so it is counted once, in the value change.
+ assert.equal(historyPerformance([event('a','2024-01-01','baseline',0,10000),event('i','2024-02-01','income',100,10100),event('p','2024-03-01','income',40)]).result,140);
+ // A movement after the latest value still counts: the money has moved.
+ assert.equal(historyPerformance([event('a','2024-01-01','baseline',0,8000),event('b','2025-01-01','valuation',0,9000),event('i','2025-02-01','income',40)]).result,1040);
+});
+test('values are your share, at the ownership each event was recorded with',()=>{
+ const result=historyPerformance([event('a','2024-01-01','baseline',0,10000,50),event('c','2024-06-01','contribution',4000),event('b','2025-01-01','valuation',0,12000,100)]);
+ assert.deepEqual(result,{first:5000,firstDate:'2024-01-01',change:7000,changePercent:140,result:3000});
+});
+test('a linked payment no rate converts leaves the return unknown, never short; the value change stays known',()=>{
+ const result=historyPerformance([event('a','2024-01-01','baseline',0,8000),{...event('p','2024-06-01','income',null),entered:{amount:500000,currency:'UZS',name:'Rent'}},event('b','2025-01-01','valuation',0,10000)]);
+ assert.equal(result.change,2000);assert.equal(result.changePercent,25);assert.equal(result.result,null);
+});
+test('only what follows the first value counts: earlier money, and the cash recorded with the first value, are ignored',()=>{
+ const before=[event('c','2023-01-01','contribution',900),event('i','2023-06-01','income',70),{...event('p','2023-07-01','expense',null),entered:{amount:1,currency:'UZS',name:'Fee'}}];
+ const result=historyPerformance([...before,event('a','2024-01-01','contribution',500,8000),event('b','2025-01-01','valuation',0,10000)]);
+ assert.deepEqual(result,{first:8000,firstDate:'2024-01-01',change:2000,changePercent:25,result:2000});
+ // On the first value's own day, an entry later in the list's order counts and an earlier one does not.
+ const sameDay=historyPerformance([{...event('z','2024-01-01','income',30),created_at:'2024-01-01T13:00:00Z'},{...event('y','2024-01-01','income',7),created_at:'2024-01-01T09:00:00Z'},event('a','2024-01-01','baseline',0,8000),event('b','2025-01-01','valuation',0,8000)]);
+ assert.equal(sameDay.result,30);
 });
 const source=fs.readFileSync('app/api/investment-history/route.ts','utf8').replace(/^import .*;\n/gm,'').replace(/export async function/g,'async function');
 const js=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;

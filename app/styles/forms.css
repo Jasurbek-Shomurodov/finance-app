@@ -161,15 +161,21 @@ label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 .income-estimates li small{display:block;font-size:var(--type-small);font-weight:400;color:var(--muted-foreground);margin-top:4px}
 
 .record-dialog.investment-tracker{max-width:960px!important}
-.tracker-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:10px 0}
-.tracker-metrics>div{border:1px solid var(--border);background:var(--accent);border-radius:10px;padding:14px}
-.tracker-metrics small{display:block;font-size:var(--type-small);color:var(--muted-foreground);margin-bottom:8px}
-.tracker-metrics strong{font-size:var(--type-heading);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
-.tracker-full-value{display:block;margin-top:6px;font-size:var(--type-small);color:var(--muted-foreground);font-variant-numeric:tabular-nums}
-.tracker-chart{width:100%;min-width:0;margin-block:12px}
+/* The tracker's figures: the latest value across the row, the rest as many per row as fit (two on a phone). */
+.record-dialog.investment-tracker .stat-tiles{display:flex;flex-wrap:wrap;gap:10px}
+.investment-tracker .stat-tile{flex:1 1 140px;gap:4px;padding:12px;box-shadow:none}
+.investment-tracker .stat-tile:first-child{flex-basis:100%}
+.investment-tracker .stat-tile:not(:first-child)>strong{font-size:var(--type-compact)}
+.investment-tracker .stat-tile>p{font-variant-numeric:tabular-nums}
+.tracker-overview{display:grid;gap:10px;min-width:0}
+.tracker-overview .ownership-summary{margin-top:0}
+.tracker-chart{width:100%;min-width:0;margin-block:6px}
+.tracker-chart .chart-skeleton{margin:0}
+/* One or two series stay on one line on a phone. */
+.tracker-chart .comparison-legend{gap:6px;margin-top:8px}
+.tracker-chart .comparison-legend button{padding:4px 9px;font-size:var(--type-caption)}
 .tracker-help{font-size:var(--type-small);line-height:1.6}
 .tracker-fields{display:grid;gap:16px;border:0;padding:0;margin:0;min-width:0}
-.investment-tracker h3{font-size:var(--type-body);font-weight:600;margin-top:12px}
 .tracker-tabs{justify-self:start;width:fit-content;margin-block-end:4px}
 /* One set of columns for the whole list: each row is a subgrid, so amounts and bins line up on every row. */
 .tracker-history ul{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;column-gap:16px;list-style:none;margin:0;padding:0}
@@ -185,7 +191,7 @@ label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 .tracker-history li.tracker-event-open{cursor:pointer}
 .tracker-history li.tracker-event-open:hover{background:color-mix(in srgb,var(--foreground) 4%,transparent)}
 .tracker-history li.tracker-event-open:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
-@media(max-width:600px){.tracker-metrics{grid-template-columns:1fr}.tracker-metrics>div{display:flex;align-items:center;justify-content:space-between;gap:12px}.tracker-metrics small{margin:0}.tracker-metrics>div:has(.tracker-full-value){flex-wrap:wrap}.tracker-full-value{flex-basis:100%;margin-top:0}.tracker-history ul{grid-template-columns:auto minmax(0,1fr) auto}.tracker-history li>.record-icon{grid-column:1;grid-row:1/span 2}.tracker-event-main,.tracker-event-amount{grid-column:2}.tracker-event-amount{text-align:start;margin-top:6px}.tracker-history li .delete-button{grid-column:3;grid-row:1/span 2}}
+@media(max-width:600px){.tracker-history ul{grid-template-columns:auto minmax(0,1fr) auto}.tracker-history li>.record-icon{grid-column:1;grid-row:1/span 2}.tracker-event-main,.tracker-event-amount{grid-column:2}.tracker-event-amount{text-align:start;margin-top:6px}.tracker-history li .delete-button{grid-column:3;grid-row:1/span 2}}
 
 /* Shared loading placeholders use theme colors and respect reduced motion. */
 .skeleton-sheen{position:relative;overflow:hidden;isolation:isolate}

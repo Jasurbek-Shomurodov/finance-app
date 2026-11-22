@@ -10,7 +10,7 @@ import { historyEventLabel, historyEventMovesCash, withoutRepeatedBalances, type
 
 type Props = { events: TrackerEvent[]; record: Entry; accounts: Entry[]; valueLabel: string; /** What clicking an entry opens: a mortgage payment opens its transaction. Undefined where there is nothing to open. */ open?: (event: TrackerEvent) => (() => void) | undefined; deletable: (event: TrackerEvent) => boolean; deleteDisabled: boolean; onDelete: (event: TrackerEvent) => void };
 
-/** Each kind of entry keeps one symbol and hue; invested money and income match their lines on the Overview chart. */
+/** Each kind of entry keeps one symbol and hue; invested money matches its line on the Overview chart. */
 const eventMarks: Record<TrackerEvent['event_type'], { icon: LucideIcon; hue: number }> = {
  baseline: { icon: Flag, hue: 210 }, valuation: { icon: ChartLine, hue: 160 }, contribution: { icon: HandCoins, hue: categoryHue('Property') },
  withdrawal: { icon: ArrowUpFromLine, hue: 32 }, income: { icon: Banknote, hue: categoryHue('Deposit') }, expense: { icon: Receipt, hue: 0 }, mortgage_payment: { icon: Landmark, hue: 350 },

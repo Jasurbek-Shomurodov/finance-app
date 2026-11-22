@@ -261,6 +261,9 @@ test('INV-053 tapping a property card records money invested from cash, and the 
   await expect(dialog).toHaveCount(0);
   await card.locator('.asset-card-worth').click();
   await expect(dialog.getByRole('heading', { name: /E2E Flat/ })).toBeVisible();
+  // The card opens the Tracker on its Overview; the form waits on its own tab with Money invested ready.
+  await expect(dialog.locator('.stat-tile').first()).toContainText('$60,000');
+  await dialog.getByRole('button', { name: 'Add update', exact: true }).click();
   await expect(dialog.locator('select').first()).toHaveValue('contribution');
   await chooseOption(dialog.locator('select').nth(1), 'E2E Checking');
   await dialog.getByLabel(/Cash amount/).fill('1200');

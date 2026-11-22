@@ -5,7 +5,7 @@ import { loadTS } from './helpers/load-ts.mjs';
 import { byType, createRenderer, stubs, text } from './helpers/component-tree.mjs';
 
 const h = React.createElement;
-const { formatMoney, formatDate, formatMonthYear } = loadTS('lib/format.ts');
+const { formatMoney, formatDate, formatMonthYear, formatCompactMoney, formatSignedMoney } = loadTS('lib/format.ts');
 const { depositToday, depositInterest, depositProjection } = loadTS('lib/deposit-interest.ts');
 const r = createRenderer();
 // Each view renders its component from scratch; the view is the renderer, holding that tree.
@@ -18,6 +18,7 @@ const Line = named('Line', ({ dataKey, name }) => h('span', { 'data-line': dataK
 const ConfirmDialog = named('ConfirmDialog', ({ open, title, description, confirmLabel }) => open ? h('div', { role: 'dialog' }, h('h3', null, title), h('p', null, description), h('button', null, confirmLabel)) : null);
 const InlineError = named('InlineError', ({ message }) => h('p', { className: 'inline-error' }, message));
 const LoadingPlaceholder = named('LoadingPlaceholder', ({ label }) => h('p', { className: 'loading' }, label));
+const ChartSkeleton = named('ChartSkeleton', ({ height }) => h('div', { className: 'chart-skeleton', 'data-height': height }));
 const ToggleGroup = named('ToggleGroup', ({ children, value }) => h('div', { 'data-toggle': value }, children));
 const ToggleGroupItem = named('ToggleGroupItem', ({ children, value }) => h('button', { value }, children));
 const AssetMovementDialog = named('AssetMovementDialog', ({ initial }) => h('div', { className: 'movement' }, JSON.stringify(initial)));
@@ -31,7 +32,7 @@ const { InvestmentTracker } = r.load('components/investment-tracker.tsx', {
  '@/lib/api-client': { requestJson: (url, options) => { api.calls.push({ url, ...options }); return api.handler(url, options); } },
  '@/components/discard-changes': { useDraftDialog: (value, onClose, busy) => ({ close: () => { if (!busy) onClose(); }, confirmation: h('i', { 'data-guard': '' }) }) },
  '@/hooks/use-dated-exchange-rate': { useDatedExchangeRate: (from, to) => ({ rate: !from || !to ? null : from === to ? 1 : fx.rates[from + to] ?? null, retry() { fx.retries++; } }) },
- '@/components/presentation-foundation/loading-placeholder': { LoadingPlaceholder },
+ '@/components/presentation-foundation/loading-placeholder': { LoadingPlaceholder, ChartSkeleton },
  '@/components/presentation-foundation/confirm-dialog': { ConfirmDialog },
  '@/components/presentation-foundation/inline-error': { InlineError },
  '@/components/ui/toggle-group': { ToggleGroup, ToggleGroupItem },
@@ -67,8 +68,9 @@ async function open(entry, events = [], props = {}) {
  const saveButton = () => view.find(byType(ui.FormFooter)).props.children;
  const save = async () => { await saveButton().props.onClick(); view.update(); };
  const button = name => view.find(byType(ui.Button, name));
- const showTab = tab => { view.find(element => element.props?.className === 'tracker-tabs').props.onChange(tab); view.update(); };
- return { showTab, view, calls, selects, accountSelect, typeSelect, setType, setAccount, inputs, label, setNumber, saveButton, save, button };
+ const tabs = () => view.find(element => element.props?.className === 'tracker-tabs');
+ const showTab = tab => { tabs().props.onChange(tab); view.update(); };
+ return { tabs, showTab, view, calls, selects, accountSelect, typeSelect, setType, setAccount, inputs, label, setNumber, saveButton, save, button };
 }
 
 test('the tracker loads the record history and shows a loading placeholder until it arrives', async () => {
@@ -76,16 +78,28 @@ test('the tracker loads the record history and shows a loading placeholder until
  serve(() => new Promise(done => { resolve = done; }));
  const view = mount(InvestmentTracker, { record: record('Cash'), onClose() {}, onSaved() {}, onPayment() {} });
  assert.equal(requests[0].url, '/api/investment-history?record=r');
- assert.match(view.html(), /<p class="loading">Loading history…<\/p>/);
+ const showTab = tab => { view.find(element => element.props?.className === 'tracker-tabs').props.onChange(tab); view.update(); };
+ // The Overview loads in its own shape: the kind's tiles (a cash account has one), then the chart and its legend.
+ assert.match(view.html(), /<div role="status" aria-busy="true" class="tracker-overview"><span class="sr-only">Loading history…<\/span><div class="stat-tiles" data-columns="auto" aria-hidden="true"><article class="stat-tile">.*?<\/article><\/div><div class="tracker-chart" aria-hidden="true"><div class="chart-skeleton" data-height="220"><\/div>/);
+ assert.equal(view.html().match(/<article class="stat-tile">/g).length, 1);
+ assert.match(view.html(), /Transfer money/, 'the record\'s actions do not wait for the history');
+ // The form is its own loading shape: every field in place, none editable yet.
+ showTab('update');
  assert.equal(view.find(byType('fieldset')).props.disabled, true);
+ assert.match(view.html(), /Account balance: —/);
+ showTab('history');
+ assert.match(view.html(), /<p class="loading">Loading history…<\/p>/);
+ showTab('overview');
  resolve({ ok: true, json: async () => [] });
  await view.flush();
  const html = view.html();
  assert.doesNotMatch(html, /Loading history/);
- assert.match(html, /<small>Account balance<\/small><strong>—<\/strong>/);
- assert.match(html, /Account balance after update/);
- view.find(element => element.props?.className === 'tracker-tabs').props.onChange('history');
- view.update();
+ assert.match(html, /<h3>Account balance<\/h3><strong>—<\/strong>/);
+ assert.doesNotMatch(html, /tracker-chart/, 'no dated value, no chart');
+ showTab('update');
+ assert.equal(view.find(byType('fieldset')).props.disabled, false);
+ assert.match(view.html(), /Account balance after update/);
+ showTab('history');
  assert.match(view.html(), /<p>No history yet.<\/p>/);
 });
 
@@ -110,19 +124,24 @@ test('a failed history request shows its error, and responses after closing are 
 });
 
 test('a cash balance update needs an entered value, saves it, reloads history and offers transfers', async () => {
- const { showTab, view, calls, saveButton, save, setNumber, button } = await open(record('Cash', { amount: 800 }), [event('b', 'baseline', '2026-09-01', { balance: 800 })]);
+ const { tabs, showTab, view, calls, saveButton, save, setNumber, button } = await open(record('Cash', { amount: 800 }), [event('b', 'baseline', '2026-09-01', { balance: 800 })]);
  let html = view.html();
  assert.match(html, /<h2>Cash asset · Tracker<i data-hint="Track your cash balance and transfers between accounts."><\/i><\/h2>/);
  assert.match(html, /Track your cash balance and transfers between accounts./);
- assert.ok(html.includes(`<small>Account balance</small><strong>${money(800)}</strong>`));
- assert.doesNotMatch(html, /Income received|Expense paid|data-line="contributions"/);
+ assert.ok(html.includes(`<h3>Account balance</h3><strong>${money(800)}</strong>`));
+ assert.doesNotMatch(html, /Income received|Expense paid|Value change|Total return|data-line="contributions"/);
+ assert.doesNotMatch(html, /Use Balance update to confirm a cash balance/, 'the form\'s guidance belongs to its own tab');
+ showTab('update');
+ html = view.html();
  assert.match(html, /Account balance after update/);
- assert.match(html, /Use Balance update to confirm a cash balance/);
+ assert.match(html, /<i data-hint="Track your cash balance and transfers between accounts\.Use Balance update to confirm a cash balance, or Transfer money to move funds between accounts\.Past valuations do not replace a newer balance\."><\/i>/, 'the guidance sits behind the title\'s ⓘ');
+ assert.doesNotMatch(html, /tracker-help/, 'and not as paragraphs under the fields');
+ assert.ok(html.includes(`<small class="muted" aria-live="polite">Account balance: ${money(800)}</small><small class="muted">Enter 0 only when the asset is worth nothing.</small>`), 'the current balance is in view while the new one is typed');
  assert.equal(view.all(element => element.type === ui.NativeSelect && element.props.required).length, 0);
  showTab('history');
  assert.match(view.html(), /History shows confirmed balances and account movements./);
  assert.doesNotMatch(view.html(), /Delete newer balance updates first/);
- showTab('overview');
+ showTab('update');
  assert.equal(saveButton().props.disabled, true);
  await save();
  assert.equal(api.calls.length, 0);
@@ -138,12 +157,16 @@ test('a cash balance update needs an entered value, saves it, reloads history an
  assert.equal(feedback.saved, 1);
  assert.equal(calls.saved, 1);
  assert.equal(calls.closed, 0);
+ assert.equal(tabs().props.value, 'overview', 'a saved update returns to the figures');
  assert.match(view.html(), /Loading history…/);
  await view.flush();
  html = view.html();
  assert.equal(requests.length, 1);
- assert.ok(html.includes(`<strong>${money(950)}</strong>`));
+ assert.ok(html.includes(`<h3>Account balance</h3><strong>${money(950)}</strong>`));
+ showTab('update');
  assert.equal(saveButton().props.disabled, true);
+ assert.ok(view.html().includes(`Account balance: ${money(950)}`));
+ showTab('overview');
  button('Transfer money').props.onClick();
  view.update();
  const movement = view.find(byType(AssetMovementDialog));
@@ -156,7 +179,9 @@ test('a cash balance update needs an entered value, saves it, reloads history an
 
 test('a property contribution from a foreign-currency account converts the cash leg and can keep or replace the value', async () => {
  fx.rates = { EURUSD: 1.25 }; fx.retries = 0;
- const { view, setType, setAccount, setNumber, saveButton, save, typeSelect } = await open(record('Property', { amount: 90000 }), [event('b', 'baseline', '2026-01-01', { balance: 90000 })]);
+ const { tabs, showTab, view, setType, setAccount, setNumber, saveButton, save, typeSelect } = await open(record('Property', { amount: 90000 }), [event('b', 'baseline', '2026-01-01', { balance: 90000 })]);
+ showTab('update');
+ assert.ok(view.html().includes(`Current value: ${money(90000)}`));
  assert.deepEqual(typeSelect().props.children.map(text), ['Value update', 'Money invested', 'Sale / withdrawal', 'Rent income', 'Expense paid']);
  assert.match(view.html(), /Full asset value after update/);
  setType('contribution');
@@ -166,7 +191,7 @@ test('a property contribution from a foreign-currency account converts the cash 
  assert.doesNotMatch(html, /Full asset value after update/);
  assert.match(html, /Cash amount \(your share\) · USD/);
  assert.match(html, /Use Value update for a valuation. Record invested money/);
- assert.match(html, /Past valuations do not replace a newer balance.</);
+ assert.match(html, /Past valuations do not replace a newer balance\."/);
  setAccount('eur');
  setNumber('Cash amount', 500);
  html = view.html();
@@ -209,7 +234,8 @@ test('a property contribution from a foreign-currency account converts the cash 
  api.handler = async () => { throw Error('Connection reset'); };
  await save();
  assert.equal(text(saveButton()), 'Retry update');
- assert.match(view.html(), /Retry with the same details to avoid duplicates./);
+ assert.match(view.html(), /<p class="muted tracker-help">Retry with the same details to avoid duplicates.<\/p>/);
+ assert.equal(tabs().props.value, 'update', 'a failed save stays on the form');
  assert.equal(view.find(byType('fieldset')).props.disabled, true);
  assert.equal(fx.retries, 1);
  api.handler = async () => ({});
@@ -217,12 +243,15 @@ test('a property contribution from a foreign-currency account converts the cash 
  await save();
  assert.equal(api.calls[2].body.id, api.calls[1].body.id);
  assert.equal(api.calls[2].body.exchange_rate, 1.25);
+ assert.equal(tabs().props.value, 'overview');
+ showTab('update');
  assert.doesNotMatch(view.html(), /Retry with the same details/);
 });
 
 test('the cash amount can be typed in the cash account currency and is saved converted to the record currency', async () => {
  fx.rates = { EURUSD: 1.25 };
- const { view, setType, setAccount, setNumber, saveButton, save } = await open(record('Property', { amount: 90000 }), [event('b', 'baseline', '2026-01-01', { balance: 90000 })]);
+ const { showTab, view, setType, setAccount, setNumber, saveButton, save } = await open(record('Property', { amount: 90000 }), [event('b', 'baseline', '2026-01-01', { balance: 90000 })]);
+ showTab('update');
  setType('contribution');
  const amount = () => view.find(element => element.props?.onCurrencyChange);
  assert.equal(amount().props.currencyLocked, true, 'one currency needs no picker');
@@ -247,7 +276,8 @@ test('the cash amount can be typed in the cash account currency and is saved con
 });
 
 test('an outgoing payment larger than the cash balance is refused, and changing the type resets the cash leg', async () => {
- const { view, setType, setAccount, setNumber, saveButton } = await open(record('Stock', { amount: 1000 }), [], { initialType: 'expense' });
+ const { tabs, view, setType, setAccount, setNumber, saveButton } = await open(record('Stock', { amount: 1000 }), [], { initialType: 'expense' });
+ assert.equal(tabs().props.value, 'update', 'an update type chosen by the caller opens its form');
  assert.match(view.html(), /Use Value update for a valuation, Buy or Sell \/ convert for trades/);
  setAccount('cash');
  setNumber('Cash amount', 1500);
@@ -274,11 +304,13 @@ test('money lent tracks additions and repayments against the outstanding balance
  const { showTab, view, setType, setAccount, setNumber, saveButton, label, inputs } = await open(record('Money lent', { amount: 1100 }), events);
  let html = view.html();
  assert.match(html, /Track additions and repayments against the outstanding balance./);
- assert.ok(html.includes(`<small>Amount owed to you</small><strong>${money(1100)}</strong>`));
- assert.ok(html.includes(`<small>Repayments recorded</small><strong>${money(100)}</strong>`));
- assert.ok(html.includes(`<small>Additions recorded</small><strong>${money(200)}</strong>`));
+ assert.ok(html.includes(`<h3>Amount owed to you</h3><strong>${money(1100)}</strong>`));
+ assert.ok(html.includes(`<h3>Repayments recorded</h3><strong>${money(100)}</strong>`));
+ assert.ok(html.includes(`<h3>Additions recorded</h3><strong>${money(200)}</strong>`));
  assert.match(html, /data-line="balance">Amount owed to you</);
- assert.doesNotMatch(html, /data-line="contributions"/);
+ assert.doesNotMatch(html, /data-line="contributions"|Value change|Total return/);
+ showTab('update');
+ html = view.html();
  assert.match(html, /Enter updates on or after the latest balance date/);
  showTab('history');
  const history = view.html();
@@ -290,7 +322,7 @@ test('money lent tracks additions and repayments against the outstanding balance
  assert.ok(history.includes(`<strong>${money(200)}</strong><span>Amount owed to you: ${money(1200)}</span>`));
  assert.ok(history.includes(`<small><time>${formatDate('2026-03-01', 'en-US')}</time></small><p>Opening</p>`));
  assert.equal(view.all(element => element.props?.label === 'Delete update').length, 2);
- showTab('overview');
+ showTab('update');
  assert.equal(view.find(byType(ui.DatePicker)).props.min, '2026-05-01');
  assert.match(text(label('Pay from cash account')), /Pay from cash account/);
  assert.ok(html.includes(`Outstanding balance after update: ${money(1100)}`));
@@ -315,7 +347,9 @@ test('inline repayments use payment wording and close the panel once saved', asy
  assert.equal(view.all(element => element.type === ui.Dialog).length, 0);
  const html = view.html();
  assert.match(html, /Enter any amount up to the outstanding balance/);
- assert.doesNotMatch(html, /Add a dated update|Update type/);
+ assert.doesNotMatch(html, /tracker-tabs|stat-tile|Update type/);
+ assert.match(html, /<p class="muted tracker-help">Select the cash account used for this transaction\./, 'on its own, the form keeps its guidance under the fields');
+ assert.match(html, /<p class="muted tracker-help">Enter updates on or after the latest balance date\./);
  assert.match(html, /<label>Payment date/);
  assert.equal(text(saveButton()), 'Save payment');
  setAccount('cash');
@@ -329,14 +363,14 @@ test('inline repayments use payment wording and close the panel once saved', asy
 
 test('debts and loans name the outstanding balance, and waiting or missing cash accounts are explained', async () => {
  const debt = await open(record('Debt'), [event('b', 'baseline', '2026-03-01', { balance: 400 })], { accountsReady: false });
- let html = debt.view.html();
- assert.match(html, /<small>Outstanding balance<\/small>/);
- assert.match(html, /Waiting for current cash account balances./);
+ assert.match(debt.view.html(), /<h3>Outstanding balance<\/h3>/);
+ debt.showTab('update');
+ assert.match(debt.view.html(), /Waiting for current cash account balances./);
  assert.equal(debt.accountSelect().props.disabled, true);
  const loan = await open(record('Loan'), [], { accounts: [] });
- html = loan.view.html();
- assert.match(html, /Add a cash account to record this transaction./);
- assert.match(html, /<small>Outstanding balance<\/small><strong>—<\/strong>/);
+ assert.match(loan.view.html(), /<h3>Outstanding balance<\/h3><strong>—<\/strong>/);
+ loan.showTab('update');
+ assert.match(loan.view.html(), /Add a cash account to record this transaction./);
  assert.equal(loan.view.find(byType(ui.DatePicker)).props.min, '');
 });
 
@@ -344,15 +378,17 @@ test('deposits show the interest estimate and open top-up, withdrawal and intere
  const events = [event('b', 'baseline', '2026-09-01', { balance: 10000 })];
  for (const [compounding, label] of [[undefined, 'Monthly compounding'], ['daily', 'Daily compounding'], ['none', 'No compounding']]) {
   const entry = record('Deposit', { rate: 12, deposit_compounding: compounding });
-  const { view, calls, button } = await open(entry, events, { accounts: [wallet, entry] });
+  const { showTab, view, calls, button } = await open(entry, events, { accounts: [wallet, entry] });
   const html = view.html();
   const mode = compounding ?? 'monthly';
   assert.ok(html.includes(`Estimated interest for ${formatMonthYear(depositToday().slice(0, 7), 'en-US')}: ${money(depositInterest(events, 12, undefined, mode))}`));
   assert.ok(html.includes(`Estimated balance including interest: ${money(depositProjection(events, 12, undefined, mode).total)}`));
-  assert.ok(html.includes(label + '. Top-ups and withdrawals affect interest'));
-  assert.match(html, /Use Top-up or Withdraw to move money between accounts/);
-  assert.match(html, /Use Balance update for a confirmed bank balance/);
-  assert.match(html, /<small>Account balance<\/small>/);
+  assert.ok(html.includes(`<i data-hint="${label}. Top-ups and withdrawals affect interest`), 'how the estimate is worked out sits behind its ⓘ');
+  assert.doesNotMatch(html, /<p class="muted">/, 'no grey paragraphs on the Overview');
+  assert.match(html, /<h3>Account balance<\/h3>/);
+  showTab('update');
+  assert.match(view.html(), /data-hint="[^"]*Use Top-up or Withdraw to move money between accounts[^"]*Use Balance update for a confirmed bank balance/);
+  showTab('overview');
   if (compounding) continue;
   for (const [name, initial] of [['Top-up', { kind: 'transfer', target_id: 'r' }], ['Withdraw', { kind: 'transfer', source_id: 'r' }], ['Record capitalized interest', { kind: 'interest', source_id: 'r' }]]) {
    button(name).props.onClick();
@@ -383,10 +419,23 @@ test('stocks plot value, contributions and income, and format chart axes through
  ];
  const { showTab, view, button } = await open(record('Stock'), events);
  const html = view.html();
- assert.ok(html.includes(`<small>Latest tracked value (your share)</small><strong>${money(1000)}</strong><span class="tracker-full-value">Full value ${money(2000)} · you own 50%</span>`));
- assert.ok(html.includes(`<small>Income received</small><strong>${money(40)}</strong>`));
- assert.ok(html.includes(`<small>Expense paid</small><strong>${money(15)}</strong>`));
- assert.match(html, /data-line="balance">Value \(your share\)<\/span><span data-line="contributions">Net contributions recorded<\/span><span data-line="receipts">Income received</);
+ assert.ok(html.includes(`<div class="stat-tiles" data-columns="auto"><article class="stat-tile"><h3>Latest tracked value (your share)</h3><strong>${money(1000)}</strong><p>Full value ${money(2000)} · you own 50%</p></article>`), 'the lead figure opens the tiles');
+ assert.ok(html.includes(`<h3>Income received</h3><strong>${money(40)}</strong>`));
+ assert.ok(html.includes(`<h3>Expense paid</h3><strong>${money(15)}</strong>`));
+ assert.doesNotMatch(html, /record-form|<fieldset/, 'the form has its own tab');
+ assert.match(html, /data-line="balance">Value \(your share\)<\/span><span data-line="contributions">Net contributions<\/span><span data-line="receipts">Income received</);
+ const lines = () => view.all(byType(Line));
+ assert.deepEqual(lines().map(line => [line.props.dataKey, line.props.stroke]), [['balance', 'var(--primary)'], ['contributions', lines()[1].props.stroke], ['receipts', 'var(--positive)']], 'income takes the income colour, not the value line\'s');
+ assert.notEqual(lines()[1].props.stroke, 'var(--primary)');
+ // The legend is the shared clickable one: pressing an entry hides its line.
+ const legend = () => view.all(byType('button'), view.find(element => element.props?.className === 'comparison-legend'));
+ assert.deepEqual(legend().map(text), ['Value (your share)', 'Net contributions', 'Income received']);
+ legend()[2].props.onClick();
+ view.update();
+ assert.deepEqual(lines().map(line => line.props.dataKey), ['balance', 'contributions']);
+ assert.equal(legend()[2].props['aria-pressed'], false);
+ legend()[2].props.onClick();
+ view.update();
  assert.match(html, /Dated values and actual cash movements. Estimates stay separate./);
  showTab('history');
  assert.match(view.html(), /History starts with a current snapshot/);
@@ -395,10 +444,15 @@ test('stocks plot value, contributions and income, and format chart axes through
  showTab('overview');
  const timestamp = Date.parse('2026-03-10T00:00:00Z');
  assert.equal(view.find(byType(chart.XAxis)).props.tickFormatter(timestamp), formatDate('2026-03-10', 'en-US'));
- assert.equal(view.find(byType(chart.YAxis)).props.tickFormatter(1234.4), money(1234));
+ const axis = view.find(byType(chart.YAxis)).props;
+ assert.deepEqual(axis.ticks, [0, 250, 500, 750, 1000]);
+ assert.equal(axis.tickFormatter(1234.4), formatCompactMoney(1234.4, 'USD', 'en-US'), 'value-axis ticks are compact');
+ assert.equal(axis.tickFormatter(1000), '$1K');
  const tooltip = view.find(byType(chart.Tooltip)).props;
  assert.equal(tooltip.labelFormatter(String(timestamp)), formatDate('2026-03-10', 'en-US'));
- assert.equal(tooltip.formatter('99.6'), money(100));
+ assert.equal(tooltip.formatter('99.6'), money(100), 'the tooltip keeps the whole amount');
+ assert.equal(tooltip.formatter(1234567), money(1234567));
+ assert.equal(tooltip.formatter(null), '—');
  for (const [name, initial] of [['Buy', { kind: 'buy', target_id: 'r' }], ['Sell / convert', { kind: 'sell', source_id: 'r' }]]) {
   button(name).props.onClick();
   view.update();
@@ -412,11 +466,13 @@ test('mortgages show principal and interest paid and hand payments to the paymen
  const events = [event('b', 'baseline', '2026-01-01', { balance: 100000 }), event('p', 'mortgage_payment', '2026-02-01', { amount: 1500, principal: 1000, interest: 500 })];
  const { showTab, view, calls, button, typeSelect } = await open(record('Mortgage'), events);
  const html = view.html();
- assert.ok(html.includes(`<small>Principal repaid</small><strong>${money(1000)}</strong>`));
- assert.ok(html.includes(`<small>Interest paid</small><strong>${money(500)}</strong>`));
- assert.ok(html.includes(`<small>Outstanding balance</small><strong>${money(100000)}</strong>`));
+ assert.ok(html.includes(`<h3>Principal repaid</h3><strong>${money(1000)}</strong>`));
+ assert.ok(html.includes(`<h3>Interest paid</h3><strong>${money(500)}</strong>`));
+ assert.ok(html.includes(`<h3>Outstanding balance</h3><strong>${money(100000)}</strong>`));
+ showTab('update');
  assert.deepEqual(typeSelect().props.children.map(text), ['Additional borrowing']);
- assert.match(html, /Receive into cash account/);
+ assert.match(view.html(), /Receive into cash account/);
+ showTab('overview');
  button('Record payment').props.onClick();
  assert.equal(calls.payments, 1);
  showTab('history');
@@ -427,21 +483,78 @@ test('mortgages show principal and interest paid and hand payments to the paymen
  assert.equal(view.all(element => element.props?.label === 'Delete update').length, 0);
 });
 
-test('Overview shows the figures and the form, History shows every entry, and an unsaved draft survives the switch', async () => {
+test('Overview shows the figures, History every entry and Add update the form, and an unsaved draft survives the switch', async () => {
  const events = [event('b', 'baseline', '2026-01-01', { balance: 5000 }), event('c', 'contribution', '2026-02-01', { amount: 300 })];
- const { showTab, view } = await open(record('Business'), events);
- const tabs = () => view.find(element => element.props?.className === 'tracker-tabs');
- assert.deepEqual(tabs().props.options.map(option => option.label), ['Overview', 'History']);
- assert.equal(tabs().props.value, 'overview');
- assert.match(view.html(), /Add a dated update/);
- assert.doesNotMatch(view.html(), /Starting snapshot|tracker-history/);
+ const { tabs, showTab, view, calls } = await open(record('Business'), events);
+ assert.deepEqual(tabs().props.options.map(option => [option.value, option.label]), [['overview', 'Overview'], ['history', 'History'], ['update', 'Add update']]);
+ assert.equal(tabs().props.value, 'overview', 'without an update type the figures come first');
+ assert.match(view.html(), /stat-tiles/);
+ assert.doesNotMatch(view.html(), /record-form|<fieldset|Update type|Starting snapshot|tracker-history/, 'the form is not on the Overview');
+ showTab('update');
+ assert.match(view.html(), /<div class="record-form"><fieldset class="tracker-fields">/);
+ assert.doesNotMatch(view.html(), /stat-tiles|tracker-chart|tracker-history/);
  view.find(byType('textarea')).props.onChange({ target: { value: 'Kept' } });
+ view.update();
+ assert.deepEqual(calls.draft.at(-1), [true, false]);
  showTab('history');
  assert.equal(tabs().props.value, 'history');
- assert.doesNotMatch(view.html(), /Add a dated update|tracker-metrics/);
+ assert.doesNotMatch(view.html(), /record-form|<fieldset|Update type|stat-tiles/, 'nor on History');
  assert.match(view.html(), /Money invested[\s\S]*Starting snapshot/, 'newest first');
+ assert.deepEqual(calls.draft.at(-1), [true, false], 'the draft is still unsaved on another tab');
  showTab('overview');
+ showTab('update');
  assert.equal(view.find(byType('textarea')).props.value, 'Kept');
+});
+
+test('value change and total return are measured from the first tracked value, signed and toned', async () => {
+ const tile = (view, label) => view.html().split('<article class="stat-tile">').find(item => item.startsWith(`<h3>${label}`));
+ const signed = value => formatSignedMoney(value, 'USD', 'en-US');
+ const gain = await open(record('Property'), [
+  event('b', 'baseline', '2026-01-01', { balance: 100000, ownership_percentage: 50 }),
+  event('c', 'contribution', '2026-02-01', { amount: 4000 }),
+  event('i', 'income', '2026-03-01', { amount: 1500 }),
+  event('e', 'expense', '2026-03-05', { amount: 500 }),
+  event('v', 'valuation', '2026-04-01', { balance: 120000, ownership_percentage: 50 }),
+ ]);
+ assert.equal(tile(gain.view, 'Value change'), `<h3>Value change</h3><strong class="positive">${signed(10000)}</strong><p>+20% since ${formatDate('2026-01-01', 'en-US')}</p></article>`);
+ assert.equal(tile(gain.view, 'Total return'), `<h3>Total return<i data-hint="Value change plus income received, minus expenses paid and net contributions, since the first tracked value."></i></h3><strong class="positive">${signed(7000)}</strong></article>`);
+ const loss = await open(record('Stock'), [event('b', 'baseline', '2026-01-01', { balance: 2000 }), event('v', 'valuation', '2026-02-01', { balance: 1500 }), event('i', 'income', '2026-02-10', { amount: 100 })]);
+ assert.equal(tile(loss.view, 'Value change'), `<h3>Value change</h3><strong class="negative">${signed(-500)}</strong><p>−25% since ${formatDate('2026-01-01', 'en-US')}</p></article>`);
+ assert.ok(tile(loss.view, 'Total return').endsWith(`<strong class="negative">${signed(-400)}</strong></article>`));
+ // One dated value: nothing to compare yet, so no figure and no tone.
+ const single = await open(record('Stock'), [event('b', 'baseline', '2026-01-01', { balance: 2000 }), event('i', 'income', '2026-02-10', { amount: 100 })]);
+ assert.equal(tile(single.view, 'Value change'), '<h3>Value change</h3><strong>—</strong></article>');
+ assert.ok(tile(single.view, 'Total return').endsWith('<strong>—</strong></article>'));
+ // A payment no rate converts: the value change is known, what it returned is not.
+ const unknown = await open(record('Property'), [event('b', 'baseline', '2026-01-01', { balance: 5000 }), event('p', 'income', '2026-02-01', { amount: null, entered: { amount: 500000, currency: 'UZS', name: 'Rent' } }), event('v', 'valuation', '2026-03-01', { balance: 6000 })]);
+ assert.ok(tile(unknown.view, 'Value change').startsWith(`<h3>Value change</h3><strong class="positive">${signed(1000)}</strong>`));
+ assert.ok(tile(unknown.view, 'Total return').endsWith('<strong>—</strong></article>'));
+ // An unchanged value is neither a gain nor a loss.
+ const flat = await open(record('Valuables'), [event('b', 'baseline', '2026-01-01', { balance: 900 }), event('v', 'valuation', '2026-02-01', { balance: 900 })]);
+ assert.equal(tile(flat.view, 'Value change'), `<h3>Value change</h3><strong>${money(0)}</strong><p>0% since ${formatDate('2026-01-01', 'en-US')}</p></article>`);
+});
+
+test('a line that is zero for the whole history is not drawn or listed, and a lone value is a dot on a bounded axis', async () => {
+ const { view } = await open(record('Property'), [event('b', 'baseline', '2026-01-10', { balance: 80000000, ownership_percentage: 50 })]);
+ const drawn = () => view.all(byType(Line)).map(line => line.props.dataKey);
+ const legend = () => view.all(byType('button'), view.find(element => element.props?.className === 'comparison-legend')).map(text);
+ assert.deepEqual(drawn(), ['balance']);
+ assert.deepEqual(legend(), ['Value (your share)']);
+ assert.equal(view.all(byType(chart.Legend)).length, 0);
+ const first = Date.parse('2026-01-10T00:00:00Z');
+ const time = view.find(byType(chart.XAxis)).props;
+ assert.deepEqual(time.domain, [first, first + 86400000]);
+ assert.deepEqual(time.ticks, [first]);
+ assert.deepEqual(view.find(byType(Line)).props.dot, { r: 4, strokeWidth: 2, fill: 'var(--card)' });
+ const axis = view.find(byType(chart.YAxis)).props;
+ assert.ok(axis.domain[0] < 40000000 && axis.domain[1] > 40000000 && axis.domain[0] >= 0);
+ assert.ok(axis.ticks.every(tick => axis.tickFormatter(tick).length <= 'UZS 99.9M'.length), 'no whole amounts on the axis');
+ // Income alone adds its line; money invested stays out until some is recorded.
+ const income = await open(record('Property'), [event('b', 'baseline', '2026-01-10', { balance: 5000 }), event('i', 'income', '2026-02-10', { amount: 70 })]);
+ assert.deepEqual(income.view.all(byType(Line)).map(line => line.props.dataKey), ['balance', 'receipts']);
+ const invested = await open(record('Property'), [event('b', 'baseline', '2026-01-10', { balance: 5000 }), event('c', 'contribution', '2026-02-10', { amount: 70 }), event('i', 'income', '2026-02-11', { amount: 0 })]);
+ assert.deepEqual(invested.view.all(byType(Line)).map(line => line.props.dataKey), ['balance', 'contributions']);
+ assert.deepEqual(invested.view.find(byType(chart.XAxis)).props.ticks, undefined);
 });
 
 test('a wholly owned asset shows no full-value note; a shared one shows it on its value rows', async () => {
@@ -493,7 +606,7 @@ test('a payment linked to the asset reads as entered, and its bin deletes the tr
 test('a linked payment no rate converts leaves the tiles it adds to unknown, with the note, and its row as entered', async () => {
  const paid = event('p', 'income', '2026-02-01', { amount: null, notes: 'Rent', entered: { amount: 500000, currency: 'UZS', name: 'Rent' } });
  const { showTab, view } = await open(record('Property'), [event('b', 'baseline', '2026-01-01', { balance: 5000 }), paid]);
- assert.match(view.html(), /<small>Income received<\/small><strong>—<\/strong>/);
+ assert.match(view.html(), /<h3>Income received<\/h3><strong>—<\/strong>/);
  assert.match(view.html(), /Exchange rate unavailable\./);
  assert.ok(view.html().includes(`<strong>${money(0)}</strong>`), 'an expense total nothing is missing from stays a number');
  showTab('history');
@@ -506,7 +619,9 @@ test('a linked payment no rate converts leaves the tiles it adds to unknown, wit
 test('business updates can be deleted after confirmation, and a failed delete reports its error', async () => {
  const events = [event('b', 'baseline', '2026-01-01', { balance: 5000 }), event('v', 'valuation', '2026-02-01', { balance: 6000, amount: 250 })];
  const { showTab, view, calls } = await open(record('Business'), events);
+ showTab('update');
  assert.match(view.html(), /Business valuations use the current ownership share./);
+ showTab('overview');
  const confirm = () => view.find(byType(ConfirmDialog));
  await confirm().props.onConfirm();
  assert.equal(api.calls.filter(call => call.method === 'DELETE').length, 0);
@@ -557,14 +672,15 @@ test('business updates can be deleted after confirmation, and a failed delete re
 });
 
 test('an edited draft locks deletes, and the dialog closes through the guard unless saving', async () => {
- const { showTab, view, calls, setType, save, setAccount, setNumber } = await open(record('Property', { amount: 100 }), [event('v', 'valuation', '2026-02-01', { balance: 100 })], { initialType: 'withdrawal' });
+ const { tabs, showTab, view, calls, setType, save, setAccount, setNumber } = await open(record('Property', { amount: 100 }), [event('v', 'valuation', '2026-02-01', { balance: 100 })], { initialType: 'withdrawal' });
+ assert.equal(tabs().props.value, 'update');
  assert.equal(view.find(byType(ToggleGroup)).props.value, 'keep');
  view.find(byType('textarea')).props.onChange({ target: { value: 'Sold a room' } });
  view.update();
  assert.equal(view.find(byType('textarea')).props.value, 'Sold a room');
  showTab('history');
  assert.equal(view.find((element => element.props?.label === 'Delete update')).props.disabled, true);
- showTab('overview');
+ showTab('update');
  setType('valuation');
  assert.equal(view.all(element => element.type === ToggleGroup).length, 0);
  setType('withdrawal');
@@ -588,7 +704,7 @@ test('an edited draft locks deletes, and the dialog closes through the guard unl
 test('an initial type the record does not support falls back to its first update type', async () => {
  const { view, typeSelect } = await open(record('Cash'), [], { initialType: 'income', onDraftState: undefined });
  assert.equal(typeSelect().props.value, 'valuation');
- assert.match(view.html(), /<h3>Add a dated update<\/h3>/);
+ assert.equal(view.find(element => element.props?.className === 'tracker-tabs').props.value, 'update');
  // A cash balance opened as a withdrawal falls back to a balance update and starts with an empty value.
  const cash = await open(record('Cash'), [], { initialType: 'withdrawal' });
  assert.equal(cash.typeSelect().props.value, 'valuation');
@@ -596,9 +712,11 @@ test('an initial type the record does not support falls back to its first update
  assert.equal(cash.saveButton().props.disabled, true);
  // History may arrive newest first; the latest balance date still bounds lending updates.
  const lent = await open(record('Money lent'), [event('n', 'valuation', '2026-06-01', { balance: 50 }), event('o', 'baseline', '2026-03-01', { balance: 100 })]);
+ lent.showTab('update');
  assert.equal(lent.view.find(byType(ui.DatePicker)).props.min, '2026-06-01');
  const bill = await open(record('Treasury bill', { rate: 5 }), []);
  assert.match(bill.view.html(), /Estimated interest for/);
+ bill.showTab('update');
  assert.deepEqual(bill.typeSelect().props.children.map(text), ['Balance update', 'Interest received', 'Expense paid']);
 });
 
@@ -620,6 +738,7 @@ test('a foreign cash account without a quote shows no conversion, and amounts be
  assert.equal(income.saveButton().props.disabled, false);
 
  const lent = await open(record('Money lent'), [event('b', 'baseline', '2026-03-01', { balance: 100 })], { accounts: [{ ...wallet, amount: 5e15 }] });
+ lent.showTab('update');
  lent.setAccount('cash');
  lent.setNumber('Principal amount', 2e15);
  html = lent.view.html();

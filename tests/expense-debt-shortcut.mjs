@@ -14,8 +14,8 @@ test('shortcut routes mortgages to their existing form and loans to repayment mo
  const workspace=fs.readFileSync('components/workspace/workspace-dialogs.tsx','utf8');
  assert.match(workspace,/setEditing\(null\);if\(record.kind==='Mortgage'\)setPayingMortgage\(record\);else setDebtPayment\(record\)/);
  assert.match(workspace,/initialType="withdrawal" record=\{debtPayment\}/);
- const tracker=fs.readFileSync('components/investment-tracker.tsx','utf8');
- assert.match(tracker,/initialType&&updateTypes.includes\(initialType\)\?initialType:updateTypes\[0\]/);
+ const form=fs.readFileSync('components/investment-tracker-form.tsx','utf8');
+ assert.match(form,/initialType&&updateTypes.includes\(initialType\)\?initialType:updateTypes\[0\]/);
 });
 
 test('debt payment is a third segment and cannot submit an ordinary expense',()=>{
@@ -42,8 +42,11 @@ test('debt selection embeds repayment fields with a user-entered partial amount'
  const ui=sourceWithParts('components/record-dialog.tsx');
  assert.match(ui,/<InvestmentTracker inline key=\{selectedDebt.id\} initialType="withdrawal"/);
  const tracker=fs.readFileSync('components/investment-tracker.tsx','utf8');
- assert.match(tracker,/if\(inline\)return <>{paymentFields}{guard.confirmation}<\/>/);
- assert.match(tracker,/max=\{lending&&draft.type==='withdrawal'\?\(inAccount\?accountAmount\(currentBalance,fx.rate\):currentBalance\):undefined\}/);
- assert.match(tracker,/remainingBalance>=0/);
- assert.match(tracker,/if\(inline\)onClose\(\)/);
+ // Inline, the tracker is its form alone (no tabs, figures or dialog), with its error popup and discard guard.
+ assert.match(tracker,/const paymentFields=<TrackerForm form=\{form\} inline=\{inline\}\/>/);
+ assert.match(tracker,/if\(inline\)return <>{paymentFields}{alert}{guard.confirmation}<\/>/);
+ const form=fs.readFileSync('components/investment-tracker-form.tsx','utf8');
+ assert.match(form,/max=\{lending&&draft.type==='withdrawal'\?\(inAccount\?accountAmount\(currentBalance,fx.rate\):currentBalance\):undefined\}/);
+ assert.match(form,/remainingBalance>=0/);
+ assert.match(form,/if\(inline\)onClose\(\)/);
 });
