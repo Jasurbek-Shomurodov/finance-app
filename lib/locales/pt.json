@@ -3007,5 +3007,21 @@
   "Command menu": "Menu de comandos",
   "Switch to dark mode": "Mudar para o modo escuro",
   "Switch to light mode": "Mudar para o modo claro",
-  "Navigate": "Navegar"
+  "Navigate": "Navegar",
+  "Counted in units": "Contado em unidades",
+  "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.": "Ative para um ativo que você conta, como animais, hectares ou máquinas. Ele vale a quantidade vezes o valor por unidade, e cada atualização de valor guarda os dois números.",
+  "Unit name": "Nome da unidade",
+  "e.g. sheep, hectares or machines": "ex.: ovelhas, hectares ou máquinas",
+  "Enter the full value and the percentage you own. Totals and net worth count your share.": "Informe o valor total e a porcentagem que você possui. Os totais e o patrimônio líquido contam a sua parte.",
+  "Total value: {amount}": "Valor total: {amount}",
+  "You own {percent} · your share {amount}": "Você possui {percent} · sua parte {amount}",
+  "Value per unit": "Valor por unidade",
+  "{quantity} {unit} × {value}": "{quantity} {unit} × {value}",
+  "Amount is for": "O valor se refere a",
+  "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.": "Escolha Negócio inteiro quando o valor for o número do próprio negócio: os relatórios contam a sua parte. Escolha Minha parte quando for apenas o dinheiro que é seu.",
+  "My share": "Minha parte",
+  "Whole business": "Negócio inteiro",
+  "Figures shown": "Valores exibidos",
+  "Your share": "Sua parte",
+  "You own {percent}": "Você possui {percent}"
 }

@@ -3007,5 +3007,21 @@
   "Command menu": "কমান্ড মেনু",
   "Switch to dark mode": "ডার্ক মোডে যান",
   "Switch to light mode": "লাইট মোডে যান",
-  "Navigate": "নেভিগেট"
+  "Navigate": "নেভিগেট",
+  "Counted in units": "একক হিসেবে গণনা",
+  "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.": "যে সম্পদ আপনি গুনে রাখেন, যেমন পশু, হেক্টর বা যন্ত্র, তার জন্য চালু করুন। এর মূল্য পরিমাণ গুণ প্রতি এককের মূল্য, এবং প্রতিটি মূল্য আপডেটে দুটি সংখ্যাই থাকে।",
+  "Unit name": "এককের নাম",
+  "e.g. sheep, hectares or machines": "যেমন ভেড়া, হেক্টর বা যন্ত্র",
+  "Enter the full value and the percentage you own. Totals and net worth count your share.": "পুরো মূল্য এবং আপনার মালিকানার শতাংশ লিখুন। মোট ও নিট সম্পদে আপনার অংশ গণনা হয়।",
+  "Total value: {amount}": "মোট মূল্য: {amount}",
+  "You own {percent} · your share {amount}": "আপনার মালিকানা {percent} · আপনার অংশ {amount}",
+  "Value per unit": "প্রতি এককের মূল্য",
+  "{quantity} {unit} × {value}": "{quantity} {unit} × {value}",
+  "Amount is for": "এই পরিমাণ কার",
+  "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.": "পরিমাণটি পুরো ব্যবসার হিসাব হলে পুরো ব্যবসা বেছে নিন: রিপোর্টে আপনার অংশ গণনা হবে। শুধু আপনার নিজের টাকা হলে আমার অংশ বেছে নিন।",
+  "My share": "আমার অংশ",
+  "Whole business": "পুরো ব্যবসা",
+  "Figures shown": "দেখানো হিসাব",
+  "Your share": "আপনার অংশ",
+  "You own {percent}": "আপনার মালিকানা {percent}"
 }

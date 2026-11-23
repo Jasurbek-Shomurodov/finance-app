@@ -3007,5 +3007,21 @@
   "Command menu": "Menu perintah",
   "Switch to dark mode": "Beralih ke mode gelap",
   "Switch to light mode": "Beralih ke mode terang",
-  "Navigate": "Navigasi"
+  "Navigate": "Navigasi",
+  "Counted in units": "Dihitung per unit",
+  "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.": "Aktifkan untuk aset yang Anda hitung, seperti hewan, hektare, atau mesin. Nilainya adalah jumlah dikali nilai per unit, dan setiap pembaruan nilai menyimpan kedua angka.",
+  "Unit name": "Nama unit",
+  "e.g. sheep, hectares or machines": "mis. domba, hektare, atau mesin",
+  "Enter the full value and the percentage you own. Totals and net worth count your share.": "Masukkan nilai penuh dan persentase yang Anda miliki. Total dan kekayaan bersih menghitung bagian Anda.",
+  "Total value: {amount}": "Nilai total: {amount}",
+  "You own {percent} · your share {amount}": "Anda memiliki {percent} · bagian Anda {amount}",
+  "Value per unit": "Nilai per unit",
+  "{quantity} {unit} × {value}": "{quantity} {unit} × {value}",
+  "Amount is for": "Jumlah ini untuk",
+  "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.": "Pilih Seluruh bisnis jika jumlahnya adalah angka bisnis itu sendiri: laporan akan menghitung bagian Anda. Pilih Bagian saya jika hanya uang milik Anda.",
+  "My share": "Bagian saya",
+  "Whole business": "Seluruh bisnis",
+  "Figures shown": "Angka yang ditampilkan",
+  "Your share": "Bagian Anda",
+  "You own {percent}": "Anda memiliki {percent}"
 }

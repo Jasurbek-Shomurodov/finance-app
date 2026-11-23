@@ -9,7 +9,7 @@ export const recordSchema=z.object({revision:z.number().int().positive().max(Num
 export type RecordInput=z.input<typeof recordSchema>;
 
 // What a person reads when a record is refused: the rule's own message, or the field that needs a look.
-const fieldMessages:Record<string,string>={name:'Enter a name.',amount:'Check the amount.',cost:'Check the amount.',estimated_monthly_payment:'Check the amount.',estimated_monthly_income:'Check the amount.',quantity:'Check the quantity.',rate:'Check the annual rate.',currency:'Choose a supported currency.',date:'Check the date format.',lent_date:'Check the date format.',opened_on:'Check the date format.',end_date:'Check the date format.',notes:'Notes are too long.',borrower_group:'Borrower group is too long.',ownership_percentage:'Enter an ownership share above 0%, up to 100%.',unit_label:'Enter a unit name of up to 40 characters.'};
+const fieldMessages:Record<string,string>={name:'Enter a name.',amount:'Check the amount.',cost:'Check the amount.',estimated_monthly_payment:'Check the amount.',estimated_monthly_income:'Check the amount.',quantity:'Check the quantity.',rate:'Check the annual rate.',currency:'Choose a supported currency.',date:'Check the date format.',lent_date:'Check the date format.',opened_on:'Check the date format.',end_date:'Check the date format.',notes:'Notes are too long.',borrower_group:'Borrower group is too long.'};
 export function recordIssueMessage(error:z.ZodError){
  const issue=error.issues[0];
  if(!issue)return 'Check the record fields.';

@@ -3007,5 +3007,21 @@
   "Command menu": "قائمة الأوامر",
   "Switch to dark mode": "التبديل إلى الوضع الداكن",
   "Switch to light mode": "التبديل إلى الوضع الفاتح",
-  "Navigate": "تنقّل"
+  "Navigate": "تنقّل",
+  "Counted in units": "يُحسب بالوحدات",
+  "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.": "فعّل هذا الخيار لأصل تعدّه، مثل المواشي أو الهكتارات أو الآلات. قيمته تساوي الكمية مضروبة في قيمة الوحدة، وكل تحديث للقيمة يحتفظ بالرقمين.",
+  "Unit name": "اسم الوحدة",
+  "e.g. sheep, hectares or machines": "مثل: أغنام أو هكتارات أو آلات",
+  "Enter the full value and the percentage you own. Totals and net worth count your share.": "أدخل القيمة الكاملة والنسبة التي تملكها. تحتسب الإجماليات وصافي الثروة حصتك.",
+  "Total value: {amount}": "القيمة الإجمالية: {amount}",
+  "You own {percent} · your share {amount}": "تملك {percent} · حصتك {amount}",
+  "Value per unit": "قيمة الوحدة",
+  "{quantity} {unit} × {value}": "{quantity} {unit} × {value}",
+  "Amount is for": "المبلغ يخص",
+  "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.": "اختر النشاط التجاري كاملًا عندما يكون المبلغ رقم النشاط نفسه: تحتسب التقارير حصتك منه. اختر حصتي عندما يكون المبلغ مالك أنت فقط.",
+  "My share": "حصتي",
+  "Whole business": "النشاط التجاري كاملًا",
+  "Figures shown": "الأرقام المعروضة",
+  "Your share": "حصتك",
+  "You own {percent}": "تملك {percent}"
 }

@@ -3007,5 +3007,21 @@
   "Command menu": "Command menu",
   "Switch to dark mode": "Switch to dark mode",
   "Switch to light mode": "Switch to light mode",
-  "Navigate": "Navigate"
+  "Navigate": "Navigate",
+  "Counted in units": "Counted in units",
+  "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.": "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.",
+  "Unit name": "Unit name",
+  "e.g. sheep, hectares or machines": "e.g. sheep, hectares or machines",
+  "Enter the full value and the percentage you own. Totals and net worth count your share.": "Enter the full value and the percentage you own. Totals and net worth count your share.",
+  "Total value: {amount}": "Total value: {amount}",
+  "You own {percent} · your share {amount}": "You own {percent} · your share {amount}",
+  "Value per unit": "Value per unit",
+  "{quantity} {unit} × {value}": "{quantity} {unit} × {value}",
+  "Amount is for": "Amount is for",
+  "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.": "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.",
+  "My share": "My share",
+  "Whole business": "Whole business",
+  "Figures shown": "Figures shown",
+  "Your share": "Your share",
+  "You own {percent}": "You own {percent}"
 }

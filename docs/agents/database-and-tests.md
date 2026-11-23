@@ -8,6 +8,12 @@ Keep all incremental SQL migrations in the root `migrations/` folder. Name them 
 (`npm run migrations:check`), which reads that version from the database named in `.env` / `.env.local` and
 lists the migration files not yet applied (a warning; `MIGRATIONS_CHECK=strict` refuses the commit instead).
 
+A migration that changes a function older migrations patch by text keeps that function's signature and the patched
+text in place: tests re-apply older migrations to the finished schema (`tests/database-integrity-sql.mjs`,
+`tests/more-asset-kinds.mjs`, `tests/asset-payment-links-sql.mjs`) and expect them to change nothing. Add a parameter
+through a second signature (as 166 does for `record_investment_event`), and add a column to `save_finance_record`'s
+list in the middle, never at its end.
+
 ## Browser tests
 
 `npm run test:e2e` runs the P0 flows in Chromium (`e2e/p0.spec.mjs`, Playwright) against a production build

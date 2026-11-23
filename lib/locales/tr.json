@@ -3007,5 +3007,21 @@
   "Command menu": "Komut menüsü",
   "Switch to dark mode": "Koyu moda geç",
   "Switch to light mode": "Açık moda geç",
-  "Navigate": "Gezin"
+  "Navigate": "Gezin",
+  "Counted in units": "Adet olarak sayılır",
+  "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.": "Hayvan, hektar veya makine gibi saydığınız bir varlık için açın. Değeri, adet ile birim değerin çarpımıdır ve her değer güncellemesi iki sayıyı da saklar.",
+  "Unit name": "Birim adı",
+  "e.g. sheep, hectares or machines": "örn. koyun, hektar veya makine",
+  "Enter the full value and the percentage you own. Totals and net worth count your share.": "Tam değeri ve sahip olduğunuz yüzdeyi girin. Toplamlar ve net varlık sizin payınızı sayar.",
+  "Total value: {amount}": "Toplam değer: {amount}",
+  "You own {percent} · your share {amount}": "{percent} sizin · payınız {amount}",
+  "Value per unit": "Birim değeri",
+  "{quantity} {unit} × {value}": "{quantity} {unit} × {value}",
+  "Amount is for": "Tutar kime ait",
+  "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.": "Tutar işletmenin kendi rakamıysa İşletmenin tamamı’nı seçin: raporlar payınızı sayar. Yalnızca size ait paraysa Benim payım’ı seçin.",
+  "My share": "Benim payım",
+  "Whole business": "İşletmenin tamamı",
+  "Figures shown": "Gösterilen tutarlar",
+  "Your share": "Sizin payınız",
+  "You own {percent}": "{percent} sizin"
 }

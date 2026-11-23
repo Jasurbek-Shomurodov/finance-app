@@ -16,7 +16,9 @@ test('a unit price is never reused as a balance, or a balance as a unit price',(
 });
 test('fields hidden by the new category are reset instead of being saved unseen',()=>{
  const property=changeRecordKind(entry({kind:'Business',ownership_percentage:40,estimated_monthly_income:700,rate:3}),'Property','2026-09-29');
- assert.deepEqual([property.ownership_percentage,property.estimated_monthly_income,property.rate],[100,700,0]);
+ // A property can be part-owned too, so the share stays; anything not valued by hand is owned in full.
+ assert.deepEqual([property.ownership_percentage,property.estimated_monthly_income,property.rate],[40,700,0]);
+ assert.equal(changeRecordKind(entry({kind:'Business',ownership_percentage:40}),'Cash','2026-09-29').ownership_percentage,100);
  const cash=changeRecordKind(entry({kind:'Mortgage',estimated_monthly_payment:450,rate:12}),'Cash','2026-09-29');
  assert.deepEqual([cash.estimated_monthly_payment,cash.rate,cash.is_investment??false],[0,0,false]);
  assert.equal(changeRecordKind(entry({kind:'Cash',is_investment:true,holding_account_id:'a'}),'Deposit','2026-09-29').is_investment,false);

@@ -3007,5 +3007,21 @@
   "Command menu": "Menyu ya amri",
   "Switch to dark mode": "Badilisha hadi hali ya giza",
   "Switch to light mode": "Badilisha hadi hali ya mwanga",
-  "Navigate": "Vinjari"
+  "Navigate": "Vinjari",
+  "Counted in units": "Huhesabiwa kwa vipimo",
+  "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.": "Washa kwa mali unayoihesabu, kama wanyama, hekta au mashine. Thamani yake ni idadi mara thamani ya kipimo kimoja, na kila sasisho la thamani huhifadhi namba zote mbili.",
+  "Unit name": "Jina la kipimo",
+  "e.g. sheep, hectares or machines": "mf. kondoo, hekta au mashine",
+  "Enter the full value and the percentage you own. Totals and net worth count your share.": "Weka thamani kamili na asilimia unayomiliki. Jumla na thamani halisi huhesabu sehemu yako.",
+  "Total value: {amount}": "Thamani ya jumla: {amount}",
+  "You own {percent} · your share {amount}": "Unamiliki {percent} · sehemu yako {amount}",
+  "Value per unit": "Thamani kwa kipimo",
+  "{quantity} {unit} × {value}": "{quantity} {unit} × {value}",
+  "Amount is for": "Kiasi hiki ni cha",
+  "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.": "Chagua Biashara nzima kiasi kinapokuwa namba ya biashara yenyewe: ripoti zitahesabu sehemu yako. Chagua Sehemu yangu kinapokuwa pesa zako tu.",
+  "My share": "Sehemu yangu",
+  "Whole business": "Biashara nzima",
+  "Figures shown": "Takwimu zinazoonyeshwa",
+  "Your share": "Sehemu yako",
+  "You own {percent}": "Unamiliki {percent}"
 }

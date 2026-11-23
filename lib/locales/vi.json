@@ -3007,5 +3007,21 @@
   "Command menu": "Trình đơn lệnh",
   "Switch to dark mode": "Chuyển sang chế độ tối",
   "Switch to light mode": "Chuyển sang chế độ sáng",
-  "Navigate": "Điều hướng"
+  "Navigate": "Điều hướng",
+  "Counted in units": "Tính theo đơn vị",
+  "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.": "Bật cho tài sản bạn đếm được, như vật nuôi, héc-ta hoặc máy móc. Giá trị của nó bằng số lượng nhân với giá trị mỗi đơn vị, và mỗi lần cập nhật giá trị đều giữ cả hai con số.",
+  "Unit name": "Tên đơn vị",
+  "e.g. sheep, hectares or machines": "vd. cừu, héc-ta hoặc máy móc",
+  "Enter the full value and the percentage you own. Totals and net worth count your share.": "Nhập toàn bộ giá trị và tỷ lệ phần trăm bạn sở hữu. Các tổng và tài sản ròng tính phần của bạn.",
+  "Total value: {amount}": "Tổng giá trị: {amount}",
+  "You own {percent} · your share {amount}": "Bạn sở hữu {percent} · phần của bạn {amount}",
+  "Value per unit": "Giá trị mỗi đơn vị",
+  "{quantity} {unit} × {value}": "{quantity} {unit} × {value}",
+  "Amount is for": "Số tiền này là của",
+  "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.": "Chọn Toàn bộ doanh nghiệp khi số tiền là con số của chính doanh nghiệp: báo cáo sẽ tính phần của bạn. Chọn Phần của tôi khi đó chỉ là tiền của bạn.",
+  "My share": "Phần của tôi",
+  "Whole business": "Toàn bộ doanh nghiệp",
+  "Figures shown": "Số liệu hiển thị",
+  "Your share": "Phần của bạn",
+  "You own {percent}": "Bạn sở hữu {percent}"
 }

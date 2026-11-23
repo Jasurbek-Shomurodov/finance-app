@@ -3007,5 +3007,21 @@
   "Command menu": "Meniu de comenzi",
   "Switch to dark mode": "Comută la modul întunecat",
   "Switch to light mode": "Comută la modul luminos",
-  "Navigate": "Navighează"
+  "Navigate": "Navighează",
+  "Counted in units": "Numărat în unități",
+  "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.": "Activează pentru un activ pe care îl numeri, cum ar fi animale, hectare sau utilaje. Valorează cantitatea înmulțită cu valoarea pe unitate, iar fiecare actualizare a valorii păstrează ambele numere.",
+  "Unit name": "Numele unității",
+  "e.g. sheep, hectares or machines": "de ex. oi, hectare sau utilaje",
+  "Enter the full value and the percentage you own. Totals and net worth count your share.": "Introdu valoarea totală și procentul pe care îl deții. Totalurile și averea netă iau în calcul partea ta.",
+  "Total value: {amount}": "Valoare totală: {amount}",
+  "You own {percent} · your share {amount}": "Deții {percent} · partea ta {amount}",
+  "Value per unit": "Valoare pe unitate",
+  "{quantity} {unit} × {value}": "{quantity} {unit} × {value}",
+  "Amount is for": "Suma se referă la",
+  "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.": "Alege Întreaga afacere când suma este cifra afacerii: rapoartele vor lua în calcul partea ta. Alege Partea mea când sunt doar banii tăi.",
+  "My share": "Partea mea",
+  "Whole business": "Întreaga afacere",
+  "Figures shown": "Cifre afișate",
+  "Your share": "Partea ta",
+  "You own {percent}": "Deții {percent}"
 }

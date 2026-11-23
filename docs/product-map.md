@@ -50,7 +50,7 @@ other screens link to it.
 ## Oddly placed, and where it moves
 
 - **Business setup** (Settings only) moves to Investments, where a business is an asset; Settings links to it.
-- **Business income and expenses** are added from the business's own page, with category, account and tags.
+- **Business income and expenses** are added from the business's own page, with category, account and tags (done: the Tracker's Add income and Add expense open the normal forms).
 - **Business tax prep** stays in Reports but is always listed, with an invitation when no business exists.
 - **Review suggestions** (bottom of Transactions) move to Recurring: they propose schedules.
 - **Price alerts, payout calendar, Bitcoin panel** leave Profit & loss for their own Investments tab.
@@ -97,15 +97,37 @@ containers become deletable.
 
 ### Ownership and valuations
 
-Businesses already carry an ownership percentage, and net worth counts only the owned share. Missing: the same for
-property, vehicles and other valued assets; counted assets (1,000 sheep × value per head) with a dated history of both
-numbers; profit and loss by share.
+Built 23 November 2026 (migrations 166 and 167 are files; the owner applies them).
 
-- Migration 166: ownership on every valued kind; `quantity` and `unit_label` on valued kinds; `quantity` and
-  `unit_value` on `investment_history`; dated valuations through `record_investment_event`.
-- Migration 167: `business_share` and `amount_basis` ('whole' or 'mine') on business transactions, so a figure entered
-  for the whole business is reported at the owner's share. Existing rows stay 'mine'; nothing changes retroactively.
-- One `ownedShare(record)` helper used by totals, history and reports.
+- **Owned share.** Every asset valued by hand (`valuedKinds`: property, business, valuables, vehicle, retirement
+  account) carries `ownership_percentage`, above 0 up to 100. `ownedShare` / `ownedPercent` (`lib/finance.ts`) is the
+  one rule; `value()` is the whole value at that share, so totals, net worth, today's parts, snapshots, the assistant
+  and the Telegram digests follow. History keeps the share each value was recorded at
+  (`balance × ownership_percentage / 100` per event), so changing the share is a dated update and never rewrites the
+  days before it.
+- **Counted assets.** A valued asset with a unit name (`unit_label`, "sheep") is counted: `quantity` is how many and
+  `amount` is the value of ONE unit, so the whole asset is `amount × quantity` (`isCounted`, `fullValue`). Without a
+  unit name the quantity column means nothing and the record reads as before. A value update of a counted asset is
+  its two numbers and any past date; `investment_history` keeps `quantity` and `unit_value` beside the balance.
+- **Whole business or my share.** A one-time income or expense of a part-owned business says how its amount was
+  entered (`amount_basis`). 'mine' (the default, and every row from before) counts in full; 'whole' counts at
+  `business_share`, the ownership on the day the transaction was linked, kept afterwards. `ownAmount` applies it in the
+  one spending walk (`cashFlowItems`, `spendingAmount`), so Cash flow, Budget actuals, the Dashboard, reports and
+  digests agree; a single transaction still reads as it was entered. Reports has a Your share / Whole business switch
+  (`linesOn`); the whole-business view also scales 'mine' amounts up by their kept share.
+- **Entering business money.** A business's or a property's Tracker opens the normal income and expense forms with it
+  chosen (`assetEntryStart`); the Tracker's own income and expense entries remain only for vehicles, valuables and
+  retirement accounts, which no transaction can name.
+- **Decision: cash accounts of a part-owned business count in full.** A cash account assigned to a business is money
+  in an account the person holds, so it stays at 100% in net worth, whatever the business's share; nobody's net worth
+  shrank when ownership reached every valued kind. A per-business "count its cash at my share" switch is NOT built:
+  the net worth history replays cash accounts day by day and would have to apply the same share on the same days, or
+  the headline and the chart would disagree. It belongs with build-order step 7 (net worth history). Until then a
+  jointly held account is best entered at the person's own part of its balance.
+- A business saved at 0% before migration 166 keeps reading as nothing owned, and must be given a share when it is
+  next edited (the stricter check is `NOT VALID`).
+- `record_investment_event` keeps its seven arguments, because older migrations patch it by that signature; the count,
+  value per unit and share arrive through a ten-argument form that passes them as transaction-local settings.
 
 ### Database cleanup, by value
 
@@ -124,7 +146,7 @@ numbers; profit and loss by share.
 4. **Shimmers:** Cash flow tabs, Overview cards, Investments, Loans, Recently deleted; headers outside the skeleton.
 5. **De-duplicate:** the table above (Cash flow Overview done; `/benchmarks` and unused styles removed), then the
    unused transfer branch.
-6. **Ownership and valuations:** migrations 166 and 167, asset page, share-aware profit and loss.
+6. **Ownership and valuations:** migrations 166 and 167, asset page, share-aware profit and loss. Done; the cash-at-share switch waits for step 7.
 7. **Net worth history:** historical prices (done), day rates, deletion dents, speed.
 8. **Close account:** `closed_on`, one deletion rule across surfaces.
 9. **Motion:** one press scale and row tint, tab content transition, reduced-motion rules in one place.

@@ -3007,5 +3007,21 @@
   "Command menu": "コマンドメニュー",
   "Switch to dark mode": "ダークモードに切り替え",
   "Switch to light mode": "ライトモードに切り替え",
-  "Navigate": "移動する"
+  "Navigate": "移動する",
+  "Counted in units": "単位で数える",
+  "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.": "家畜、ヘクタール、機械など、数で管理する資産でオンにします。価値は数量×単価で、評価額を更新するたびに両方の数値が保存されます。",
+  "Unit name": "単位名",
+  "e.g. sheep, hectares or machines": "例：羊、ヘクタール、機械",
+  "Enter the full value and the percentage you own. Totals and net worth count your share.": "全体の価値と自分の持分の割合を入力します。合計と純資産には自分の持分が計上されます。",
+  "Total value: {amount}": "合計額：{amount}",
+  "You own {percent} · your share {amount}": "持分 {percent} · あなたの持分額 {amount}",
+  "Value per unit": "単価",
+  "{quantity} {unit} × {value}": "{quantity} {unit} × {value}",
+  "Amount is for": "金額の対象",
+  "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.": "金額が事業全体の数値のときは「事業全体」を選びます。レポートにはあなたの持分が計上されます。自分のお金だけのときは「自分の持分」を選びます。",
+  "My share": "自分の持分",
+  "Whole business": "事業全体",
+  "Figures shown": "表示する数値",
+  "Your share": "あなたの持分",
+  "You own {percent}": "持分 {percent}"
 }
