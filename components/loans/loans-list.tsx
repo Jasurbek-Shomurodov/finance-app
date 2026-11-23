@@ -39,8 +39,8 @@ export function LoansList({ events }: { events: readonly HistoryEvent[] }) {
  const today = depositToday();
  const row = (shown: Entry) => {
   const saved = storedRecord(shown), name = shownName(shown, t);
-  // Every row is paid in the one Record payment dialog: a loan, a debt, a mortgage, or money lent coming back.
-  const pay = () => { openPayment({ record: saved, tracked: true }); };
+  // What you owe is paid in the one Record payment dialog; money lent is collected from its Tracker.
+  const pay = liabilities.includes(shown.kind) ? () => { openPayment({ record: saved, tracked: true }); } : undefined;
   return <LoanRow key={shown.id} record={saved} name={name} balance={money(value(shown), shown.currency)} today={today} progress={debtProgress(saved, events)}
    onOpen={() => editRecord(shown)} onPay={pay} payBlocked={demo && shown.kind !== 'Mortgage' ? t('Available after you sign in.') : undefined}
    menu={[

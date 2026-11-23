@@ -535,7 +535,7 @@ test('no screen keeps a payment form of its own: every entry point goes through 
  const fs = await import('node:fs');
  const read = file => fs.readFileSync(file, 'utf8');
  for (const gone of ['components/mortgage-payment-dialog.tsx']) assert.equal(fs.existsSync(gone), false, gone);
- assert.match(read('components/loans/loans-list.tsx'), /const pay = \(\) => \{ openPayment\(\{ record: saved, tracked: true \}\); \};/);
+ assert.match(read('components/loans/loans-list.tsx'), /liabilities\.includes\(shown\.kind\) \? \(\) => \{ openPayment\(\{ record: saved, tracked: true \}\); \} : undefined;/);
  assert.match(read('components/workspace/records-table.tsx'), /openPayment\(\{ record: storedRecord\(r\), tracked: true \}\)/);
  assert.match(read('components/workspace/screens/cash-flow-screen.tsx'), /onPay=\{record => \{ openPayment\(\{ record \}\); \}\}/);
  assert.match(read('components/workspace/screens/upcoming-screen.tsx'), /onPay=\{request => \{ openPayment\(request\); \}\}/);

@@ -24,7 +24,7 @@ function list(overrides = {}, events = []) {
  const workspace = {
   filters: { order: 'newest' }, setFilters() {}, filtersActive: false, visible: [shownFlat, card, ali, vali], totalRecords: 4, tableLoading: false, planning: { error: '', data: {} }, demo: false, currency: 'USD',
   money: (amount, currency) => formatMoney(amount, currency, 'en-US'), storedRecord: record => stored.get(record.id), refreshRecords() {}, addRecord() {},
-  editRecord: call('edit'), requestDelete: call('delete'), setTracking: call('tracker'), setPayingMortgage: call('mortgage'), setDebtPayment: call('debt'), ...overrides,
+  editRecord: call('edit'), requestDelete: call('delete'), setTracking: call('tracker'), openPayment: request => calls.push(['pay', request.record.id, request.tracked]), ...overrides,
  };
  const modules = {
   ...ui.modules,
@@ -94,11 +94,11 @@ test('Record payment is the row\'s one button and the rest sits in the menu; the
  pay[0].props.onClick(); pay[1].props.onClick();
  r.find(element => element.props?.['data-menu'] === 'Tracker').props.onClick();
  r.all(element => element.props?.['data-menu'] === 'Delete')[1].props.onClick();
- assert.deepEqual(calls, [['mortgage', 'flat'], ['debt', 'card'], ['tracker', 'flat'], ['delete', 'card']]);
+ assert.deepEqual(calls, [['pay', 'flat', true], ['pay', 'card', true], ['tracker', 'flat'], ['delete', 'card']]);
  const sample = list({ demo: true });
  const blocked = sample.r.all(element => element.props?.className === 'loan-row-pay');
  blocked[0].props.onClick(); blocked[1].props.onClick();
- assert.deepEqual(sample.calls, [['mortgage', 'flat']]);
+ assert.deepEqual(sample.calls, [['pay', 'flat', true]]);
  assert.equal(blocked[1].props['aria-disabled'], true);
  assert.ok(!sample.words().includes('Tracker'));
 });
