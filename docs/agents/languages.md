@@ -20,7 +20,7 @@ never a default, never listed first, never special-cased.
   CSS properties (`margin-inline-start`, `inset-inline-end`) in new rules. Charts stay drawn left to right: their
   SVG text is `direction: ltr; unicode-bidi: plaintext` (`app/styles/assets.css`), so axis labels keep their place
   and still read in their own script's order. A figure inside a fixed shape (the donut's total) is sized to fit,
-  since compact amounts cannot wrap. `e2e/dashboard-screens.spec.mjs` draws the Dashboard in Arabic.
+  since compact amounts cannot wrap. `e2e/screens.spec.mjs` draws every screen in Arabic.
 - Amounts always use Latin digits, whatever the language. The financial report PDF
   falls back to English for scripts the bundled font cannot draw
   (`pdfUnsupportedLanguages`).

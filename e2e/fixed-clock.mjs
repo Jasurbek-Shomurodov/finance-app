@@ -1,6 +1,6 @@
 // One calendar day for the whole browser-test run. The Dashboard and the schedules print "today", the day of the
 // month and how many payments are overdue, so a run on another day would draw other pages; screenshot tests
-// (e2e/*-screens.spec.mjs) need the same page every time. The clock is moved, not stopped: it starts at
+// (e2e/screens.spec.mjs) need the same page every time. The clock is moved, not stopped: it starts at
 // `startsAt` and ticks on, so timers, sessions and token expiry behave as usual.
 //
 // It is loaded into every process of a run: the test runner and its workers (imported by e2e/fixture.mjs), both

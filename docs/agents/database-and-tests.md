@@ -35,16 +35,17 @@ forward, and refresh every screenshot, before real time reaches it.
 
 ### Screenshot tests
 
-`e2e/*-screens.spec.mjs` compare whole pages with saved pictures (`toHaveScreenshot`). The Dashboard has four:
-light, dark, phone width (390 px) and Arabic right to left. They catch layout jumps, theme breaks and blocks that
+`e2e/screens.spec.mjs` compares whole pages with saved pictures (`toHaveScreenshot`): every workspace screen (the
+drawer's list in `components/workspace/navigation.ts`) and the signed-out landing and sign-in pages, each in light,
+dark, at phone width (390 px) and in Arabic right to left. They catch layout jumps, theme breaks and blocks that
 change size; the figures stay in `e2e/p0.spec.mjs`. Fonts draw differently on each system, so every picture is saved
 twice: `-darwin` (a Mac) and `-linux` (CI). A screen redesign refreshes both sets in the same change, as with any test
 that asserts on markup:
 
-1. Mac: `npx playwright test e2e/<name>-screens.spec.mjs --update-snapshots` after `npm run build:production`, and
+1. Mac: `npx playwright test e2e/screens.spec.mjs --update-snapshots` (`-g "SHOT budget"` for one screen) after `npm run build:production`, and
    look at every picture it wrote.
 2. Linux: push to a `feature/…` branch. Its e2e job fails on the old pictures and uploads what it drew; then
    `npm run screenshots:ci` copies those into the `-linux` files. Look at them, commit and push again; the job turns green.
 
-A new screenshot test waits for the page's records, charts and fonts, and for nothing to be loading
-(`aria-busy`, `.skeleton`), before the picture.
+A new screen gets a row in the spec's `workspace` list, with `ready` naming a piece of the fixture it shows; every
+picture waits for that, for fonts and for nothing to be loading (`aria-busy`, a `skeleton` class) first.

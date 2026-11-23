@@ -1,4 +1,4 @@
-// Takes the Linux pictures of the screenshot tests (e2e/*-screens.spec.mjs) from CI. CI draws on Linux, whose fonts
+// Takes the Linux pictures of the screenshot tests (e2e/screens.spec.mjs) from CI. CI draws on Linux, whose fonts
 // differ from a Mac's, so its pictures can only come from a CI run: when its e2e job fails on a missing or changed
 // picture, it uploads what it drew (`-actual.png` in the playwright-report artifact). This copies those into
 // e2e/<spec>-snapshots/ as the new -linux pictures. Look at each one before committing it.
