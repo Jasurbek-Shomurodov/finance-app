@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {loadTS} from './helpers/load-ts.mjs';
+// The readers of the daily snapshots: the net-worth goal's line, the Telegram digest and monthly message
+// (`snapshotPoints`), and the monthly review behind the report and the assistant (`monthlyReview`).
+const {snapshotPoints}=loadTS('lib/portfolio-snapshots.ts');
+const {monthlyReview}=loadTS('lib/transaction-tools.ts');
 const id=n=>`16800000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 const [owner,stranger,viewer,member]=[1,2,3,4].map(id);
 const setup=fs.readFileSync('database/setup.sql','utf8');
@@ -265,7 +270,18 @@ test('a deleted holding leaves the daily snapshots as if it never existed, and R
    INSERT INTO portfolio_snapshots(user_id,occurred_on,assets,debt,rates) VALUES('${stranger}','2026-01-06',71000,8000,'{"USD":1}');`);
   await as(owner);
   const before=await snapshots();
+  // What each reader makes of the days, read with the columns it asks for.
+  const readers=async()=>{
+   const saved=(await rows("SELECT occurred_on::text AS occurred_on,assets::float8 AS assets,debt::float8 AS debt,rates,updated_at FROM portfolio_snapshots WHERE user_id=$1 ORDER BY occurred_on",[owner])).map(row=>({...row,updated_at:String(row.updated_at)}));
+   const points=snapshotPoints(saved,'USD');
+   return {goal:points.map(point=>point.net),digest:points.at(-1).net-points.at(-2).net,month:monthlyReview([],[],saved,'2026-01','USD','2026-01-31').netWorthChange};
+  };
+  const readBefore=await readers();
+  assert.deepEqual(readBefore,{goal:[400,63000,63000,68000,73500],digest:5500,month:73100});
   await remove(10);
+  // The net-worth goal's line, the digest's change and the month's change read as if the 50,000 holding was never
+  // there: no day still carries it, so the next day captured without it is no cliff.
+  assert.deepEqual(await readers(),{goal:[400,13000,13000,18000,18000],digest:0,month:17600});
   // No cliff: every day counts the property and the cash alone, the day before the holding existed is untouched.
   assert.deepEqual((await snapshots()).map(row=>[row.day,row.assets,row.debt]),[['2025-12-31',400,0],['2026-01-05',21000,8000],['2026-01-06',21000,8000],['2026-01-07',26000,8000],['2026-01-08',26000,8000]]);
   assert.ok((await snapshots()).slice(3).every(row=>!(id(10) in row.parts)&&id(11) in row.parts),'its part leaves; the others stay');
@@ -278,6 +294,7 @@ test('a deleted holding leaves the daily snapshots as if it never existed, and R
   await as(owner);
   await restoreAll();
   assert.deepEqual(await snapshots(),before,'Restore brings every day back identically');
+  assert.deepEqual(await readers(),readBefore,'and every reader with them');
   // Days captured while it sat in Recently deleted carry the value it left with.
   await remove(10);
   await db.exec(`RESET ROLE;INSERT INTO portfolio_snapshots(user_id,occurred_on,assets,debt,rates,parts) VALUES('${owner}','${today}',26000,8000,'{"USD":1,"UZS":8}','{"${id(11)}":25000,"${id(12)}":8000,"${id(13)}":1000}') ON CONFLICT(user_id,occurred_on) DO UPDATE SET assets=26000,debt=8000,parts=excluded.parts;`);

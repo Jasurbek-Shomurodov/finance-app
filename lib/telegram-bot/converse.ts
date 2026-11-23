@@ -34,7 +34,9 @@ async function loadContext(db:ServiceDatabase,owner:string,language:Language,clo
   // offering categories the workspace removed.
   db.read<Array<{data?:{kinds?:string[]}}>>(`/rest/v1/workspace_preferences?select=data&key=eq.removed_categories&user_id=eq.${owner}`).then(rows=>rows[0]?.data?.kinds??[]),
  ]);
- return {language,currencies:preferences[0]?.currencies??[],today:clock.today,newId:clock.newId(),categories,records,rules,removed,accounts:records.filter(record=>record.kind==='Cash'),businesses:records.filter(record=>record.kind==='Business'),liabilities:records.filter(record=>['Loan','Debt','Mortgage'].includes(record.kind))};
+ // A closed account or loan is never offered to pay from or to (migration 168); the records it was used in keep naming it.
+ const open=records.filter(record=>!record.closed_on);
+ return {language,currencies:preferences[0]?.currencies??[],today:clock.today,newId:clock.newId(),categories,records,rules,removed,accounts:open.filter(record=>record.kind==='Cash'),businesses:open.filter(record=>record.kind==='Business'),liabilities:open.filter(record=>['Loan','Debt','Mortgage'].includes(record.kind))};
 }
 /** An entry in another currency than its account waits for the day's rate; without one the owner is asked for the converted amount. */
 async function withDatedRate({env,chatId}:Turn,result:FlowResult,ctx:Context){
