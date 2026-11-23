@@ -3007,5 +3007,6 @@
   "Command menu": "コマンドメニュー",
   "Switch to dark mode": "ダークモードに切り替え",
   "Switch to light mode": "ライトモードに切り替え",
-  "Navigate": "移動する"
+  "Navigate": "移動する",
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "この期間に初めて記録された保有資産は、最初に記録された評価額から計算されるため、追加しても利益や損失としては表示されません。"
 }

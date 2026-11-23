@@ -109,7 +109,9 @@ test('partial-history view retains older observations after a positive new openi
  assert.deepEqual(result.points.map(p=>[p.date,p.net,!!p.partial]),[['2020-01-01',1000,true],['2021-01-01',2000,true],['2026-09-25',52000,false]]);
  assert.equal(result.missing,0);
  assert.equal(portfolioWindow(result.points,30,'2026-09-25')[0].partial,true);
- assert.deepEqual(portfolioHistory(rows,events,'USD',undefined,'2026-09-25').points,result.points.slice(-1));
+ assert.equal(result.points.at(-1).joined,50000,'the day says what it counts for the first time');
+ const {joined,...complete}=result.points.at(-1);
+ assert.deepEqual(portfolioHistory(rows,events,'USD',undefined,'2026-09-25').points,[complete],'a history that starts on that day joined nothing');
 });
 
 test('today’s parts come from the live records: each asset kind, debts together and negative, adding up to net worth',async()=>{
@@ -140,4 +142,55 @@ test('a holding with no close by its snapshot keeps its recorded value, and clos
  assert.deepEqual(result.points.map(point => [point.date, point.net]), [['2026-01-15', 500], ['2026-02-01', 500], ['2026-02-05', 500]]);
  const early = portfolioHistory([record('aapl', 'Stock')], [event('aapl', '2026-02-03', 500)], 'USD', undefined, '2026-03-01', false, [], closes);
  assert.deepEqual(early.points.map(point => [point.date, point.net]), [['2026-02-03', 500], ['2026-02-05', 1000]], 'measured from the last close on or before the snapshot');
+});
+
+test('a holding first recorded inside the period does not hide the period\'s change: it counts from its first value',()=>{
+ const {periodChange,joinedToday}=history;
+ const today='2026-09-25';
+ // Cash followed all year; a stock typed in today with no opening date, already worth 5,000.
+ const rows=[record('cash','Cash'),record('stock','Stock')];
+ const events=[event('cash','2026-01-01',1000),event('cash','2026-06-01',1400),{...event('cash',today,1500),created_at:today+'T08:00:00Z'},{...event('stock',today,5000),created_at:today+'T09:00:00Z'}];
+ const result=portfolioHistory(rows,events,'USD',undefined,today,true);
+ assert.deepEqual(result.points.map(point=>[point.date,point.net,!!point.partial,point.joined??0]),[['2026-01-01',1000,true,0],['2026-06-01',1400,true,0],[today,6500,false,5000]]);
+ assert.deepEqual(periodChange(result.points),{change:500,joined:5000},'cash grew by 500; the stock was not earned today');
+ assert.deepEqual(periodChange(portfolioWindow(result.points,90,today)),{change:100,joined:5000},'the last 90 days start from the balance carried into them');
+ // The day after, the stock is up 200: that is a change like any other.
+ const later=portfolioHistory(rows,[...events,event('stock','2026-09-26',5200)],'USD',undefined,'2026-09-26',true);
+ assert.deepEqual(periodChange(later.points),{change:700,joined:5000});
+ assert.deepEqual(periodChange(portfolioWindow(later.points,1,'2026-09-26')),{change:300,joined:5000},'the day it joined is inside the last day\'s period: cash +100, the stock +200');
+ assert.deepEqual(periodChange(portfolioWindow(later.points,0,'2026-09-26')),{change:200,joined:0},'a period that starts after it joined leaves nothing out');
+ // A debt entered late lowers net worth by what was owed all along, not by a loss in the period.
+ const owed=portfolioHistory([record('cash','Cash'),record('loan','Loan')],[event('cash','2026-01-01',1000),event('cash','2026-06-01',1400),event('loan','2026-06-01',300)],'USD',undefined,today,true);
+ assert.deepEqual(owed.points.map(point=>[point.net,point.joined??0]),[[1000,0],[1100,-300]]);
+ assert.deepEqual(periodChange(owed.points),{change:400,joined:-300});
+ // An explicit zero opening is known from the start, so the money put into it later is not left out.
+ const opened=portfolioHistory([record('cash','Cash'),{...record('new','Stock'),opened_on:'2026-06-01'}],[event('cash','2026-01-01',1000),{...event('new','2026-06-01',0),event_type:'baseline'},event('new','2026-07-01',250)],'USD',undefined,today,true);
+ assert.deepEqual(periodChange(opened.points),{change:250,joined:0});
+ assert.deepEqual(periodChange(result.points.slice(0,1)),{change:null,joined:0},'one day is no change');
+ assert.deepEqual(periodChange([]),{change:null,joined:0});
+});
+
+test('today\'s live point leaves out what the books first count today, a holding with no history included',()=>{
+ const {joinedToday,periodChange}=history;
+ const today='2026-09-25';
+ const rows=[record('cash','Cash'),record('stock','Stock'),record('car','Vehicle'),record('loan','Loan')];
+ const events=[event('cash','2026-01-01',1000),event('cash','2026-06-01',1400),event('stock',today,5000)];
+ const recorded=portfolioHistory(rows,events,'USD',undefined,today,true);
+ assert.deepEqual(recorded.unknown,['car','loan'],'no balance on record at all');
+ assert.equal(recorded.missing,2);
+ const live=[{id:'cash',kind:'Cash',amount:1400,quantity:1},{id:'stock',kind:'Stock',amount:51,quantity:100},{id:'car',kind:'Vehicle',amount:8000,quantity:1},{id:'loan',kind:'Loan',amount:2000,quantity:1},{id:'pay',kind:'Salary',amount:900,quantity:1}];
+ const joined=joinedToday(recorded,today,live);
+ assert.equal(joined,5000+8000-2000,'the stock at its first recorded value, the car and the loan at their live ones');
+ // Net worth today is 1400 + 5100 + 8000 - 2000; of the change since January only cash (+400) and the stock since it was recorded (+100) are real.
+ const points=[...recorded.points.slice(0,-1),{date:today,net:12500,joined}];
+ assert.deepEqual(periodChange(points),{change:500,joined:11000});
+ assert.equal(joinedToday({points:recorded.points.slice(0,-1),unknown:[]},today,live),0,'nothing joins on a day the history did not reach');
+});
+
+test('the net worth headline measures the period with what joined left out, says so, and keeps the split for periods on one basis',async()=>{
+ const source=(await import('node:fs')).readFileSync('components/portfolio-overview.tsx','utf8');
+ assert.match(source,/joined:joinedToday\(recorded,today,entries\)/,'today\'s live point carries what it first counts');
+ assert.match(source,/const \{ change, joined \} = periodChange\(visible\);\s*const newlyCounted = Math\.abs\(joined\) >= \.5;/);
+ assert.match(source,/\{newlyCounted && <InfoHint>\{t\('Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss\.'\)\}<\/InfoHint>\}/);
+ assert.match(source,/change !== null && !newlyCounted && growth && <p className="overview-change-split">/,'returns and own money are split only when the comparison stands on the same days');
 });

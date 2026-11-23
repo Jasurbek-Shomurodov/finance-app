@@ -3007,5 +3007,6 @@
   "Command menu": "कमांड मेनू",
   "Switch to dark mode": "डार्क मोड पर जाएँ",
   "Switch to light mode": "लाइट मोड पर जाएँ",
-  "Navigate": "नेविगेट"
+  "Navigate": "नेविगेट",
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "इस अवधि में पहली बार दर्ज की गई होल्डिंग्स अपने पहले दर्ज मूल्य से गिनी जाती हैं, इसलिए किसी को जोड़ना लाभ या हानि के रूप में नहीं दिखता।"
 }

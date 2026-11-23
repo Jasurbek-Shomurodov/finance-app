@@ -3007,5 +3007,6 @@
   "Command menu": "قائمة الأوامر",
   "Switch to dark mode": "التبديل إلى الوضع الداكن",
   "Switch to light mode": "التبديل إلى الوضع الفاتح",
-  "Navigate": "تنقّل"
+  "Navigate": "تنقّل",
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "الأصول التي سُجّلت لأول مرة في هذه الفترة تُحتسب من أول قيمة مسجّلة لها، لذلك لا تظهر إضافتها كربح أو خسارة."
 }

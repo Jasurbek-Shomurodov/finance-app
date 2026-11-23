@@ -3007,5 +3007,6 @@
   "Command menu": "Komut menüsü",
   "Switch to dark mode": "Koyu moda geç",
   "Switch to light mode": "Açık moda geç",
-  "Navigate": "Gezin"
+  "Navigate": "Gezin",
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Bu dönemde ilk kez kaydedilen varlıklar ilk kaydedilen değerlerinden itibaren sayılır; bu yüzden bir varlık eklemek kazanç ya da kayıp olarak gösterilmez."
 }

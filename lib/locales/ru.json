@@ -3007,5 +3007,6 @@
   "Command menu": "Меню команд",
   "Switch to dark mode": "Включить тёмную тему",
   "Switch to light mode": "Включить светлую тему",
-  "Navigate": "Перемещение"
+  "Navigate": "Перемещение",
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Активы и долги, впервые записанные в этом периоде, учитываются с их первого записанного значения, поэтому добавление не показывается как прибыль или убыток."
 }

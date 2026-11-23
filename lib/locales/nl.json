@@ -3007,5 +3007,6 @@
   "Command menu": "Opdrachtmenu",
   "Switch to dark mode": "Overschakelen naar donkere modus",
   "Switch to light mode": "Overschakelen naar lichte modus",
-  "Navigate": "Navigeren"
+  "Navigate": "Navigeren",
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Bezittingen die in deze periode voor het eerst zijn vastgelegd, tellen vanaf hun eerste vastgelegde waarde. Een toevoeging wordt dus niet als winst of verlies getoond."
 }

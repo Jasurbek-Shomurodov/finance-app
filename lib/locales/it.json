@@ -3007,5 +3007,6 @@
   "Command menu": "Menu comandi",
   "Switch to dark mode": "Passa alla modalità scura",
   "Switch to light mode": "Passa alla modalità chiara",
-  "Navigate": "Naviga"
+  "Navigate": "Naviga",
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Le posizioni registrate per la prima volta in questo periodo contano dal loro primo valore registrato, quindi aggiungerne una non appare come un guadagno né come una perdita."
 }

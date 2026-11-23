@@ -3007,5 +3007,6 @@
   "Command menu": "Trình đơn lệnh",
   "Switch to dark mode": "Chuyển sang chế độ tối",
   "Switch to light mode": "Chuyển sang chế độ sáng",
-  "Navigate": "Điều hướng"
+  "Navigate": "Điều hướng",
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Các tài sản được ghi nhận lần đầu trong kỳ này được tính từ giá trị ghi nhận đầu tiên, nên việc thêm tài sản không hiển thị thành lãi hay lỗ."
 }

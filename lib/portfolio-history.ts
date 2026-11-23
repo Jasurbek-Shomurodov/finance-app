@@ -1,5 +1,5 @@
 import { shiftDay } from './calendar-days';
-import { assets, income, liabilities, totalValue, valuedKinds, type Entry } from './finance';
+import { assets, income, liabilities, totalValue, value, valuedKinds, type Entry } from './finance';
 import type { HistoryEvent } from './investment-history';
 import { convertAmount } from './market';
 import type { FxPoint, PricePoint } from './benchmark-data';
@@ -10,8 +10,10 @@ import { dayRates } from './history-rates';
 export function historyIncomeRecords(history: { cashflows?: Entry[]; recurringIncome?: Entry[]; incomeRecords?: Entry[] }): Entry[] {
  return history.incomeRecords ?? [...(history.cashflows ?? []).filter(record => income.includes(record.kind)), ...(history.recurringIncome ?? [])];
 }
-/** `parts` is the day's net worth by kind of record (debts together under `Debt`, negative), so a change can be traced to what moved it. */
-export type PortfolioPoint = { date: string; assets: number; debt: number; net: number; partial?: boolean; parts?: Record<string, number> };
+/** `parts` is the day's net worth by kind of record (debts together under `Debt`, negative), so a change can be traced to what moved it.
+ * `joined` is what the day counts for the first time: the net worth of records whose history begins on it (debts
+ * negative). It was owned before and only entered the books that day, so a period's change leaves it out (`periodChange`). */
+export type PortfolioPoint = { date: string; assets: number; debt: number; net: number; partial?: boolean; parts?: Record<string, number>; joined?: number };
 /** A balance change shown on the day it happened rather than the day its snapshot was written (`balanceMoves`). */
 type Move = { record_id: string; date: string; entered: string; amount: number };
 type DayChanges = { events: HistoryEvent[]; shifts: Array<[string, number]> };
@@ -137,6 +139,17 @@ function applyBalances(events: readonly HistoryEvent[], balances: Map<string, nu
  }
  return observed;
 }
+/** Which records each day counts for the first time, and what they were worth then. A record known from the start (an
+ * explicit zero opening) never joins. What joins on a day that draws no point is carried to the next one drawn. */
+function joinTracker(known: Iterable<string>) {
+ const counted = new Set(known);
+ let arrived: string[] = [], pending = 0;
+ return {
+  note(id: string) { if (!counted.has(id)) { counted.add(id); arrived.push(id); } },
+  settle(worthOf: (id: string) => number) { for (const id of arrived) pending += worthOf(id); arrived = []; },
+  take() { const joined = pending; pending = 0; return joined; },
+ };
+}
 // Require known balances; an explicit zero opening contributes nothing before it opens.
 // `moves` puts late-entered changes on their own day: from that day until the snapshot that includes them, the record's
 // balance carries the change, so a transaction typed a week late does not look like money that appeared a week late.
@@ -153,6 +166,7 @@ export function portfolioHistory(records: Entry[], events: HistoryEvent[], view:
  const sorted = recorded, openings = earlyOpenings(included, firstBalances, prices);
  // Balances are kept in each record's own currency; `shifted` is what late-entered changes add until their snapshot.
  const balances = zeroOpenings(included, firstBalances, events), shifted = new Map<string, number>();
+ const joins = joinTracker(balances.keys());
  const byDay = changesByDay(sorted, moves, byId, today);
  // Quoted holdings follow their price between snapshots (`priceScale`).
  const priced = addPriceDays(byDay, sorted, prices, today), scale = priceScale(prices);
@@ -164,28 +178,47 @@ export function portfolioHistory(records: Entry[], events: HistoryEvent[], view:
   // A record opened by this day counts from it, at its first recorded balance.
   while (nextOpening < openings.length && openings[nextOpening].openedOn <= date) {
    const opening = openings[nextOpening++];
-   if (!balances.has(opening.id)) balances.set(opening.id, opening.balance);
+   if (!balances.has(opening.id)) { balances.set(opening.id, opening.balance); joins.note(opening.id); }
   }
-  const observed = applyBalances(changes.events, balances, id => scale.anchor(id, date));
+  const observed = applyBalances(changes.events, balances, id => { scale.anchor(id, date); joins.note(id); });
   for (const [id, amount] of changes.shifts) shifted.set(id, (shifted.get(id) ?? 0) + amount);
+  const table = ratesOn(date);
+  const worth = (id: string, amount: number, from: string) => convertAmount(amount * scale.factor(id, date) + (shifted.get(id) ?? 0), from, currency, table) ?? 0;
+  joins.settle(id => { const record = byId.get(id)!; return (assets.includes(record.kind) ? 1 : -1) * worth(id, balances.get(id)!, record.currency); });
   // A day that only moves a change within a record not yet known adds nothing to draw.
   if (!observed && !movesDay(date, changes.shifts, balances, priced, rated)) continue;
   if (!includePartial && balances.size !== included.length) continue;
-  const table = ratesOn(date);
-  const { assetTotal, debt, parts } = dayTotals(balances, id => byId.get(id)!, (id, amount, from) => convertAmount(amount * scale.factor(id, date) + (shifted.get(id) ?? 0), from, currency, table) ?? 0);
-  days.set(date, { date, assets: assetTotal, debt, net: assetTotal - debt, ...(balances.size !== included.length ? {partial:true} : {}), parts });
+  // The first day drawn is where the history starts: what it counts joined nothing.
+  const joined = joins.take(), first = !days.size;
+  days.set(date, dayPoint(date, dayTotals(balances, id => byId.get(id)!, worth), balances.size !== included.length, first ? 0 : joined));
  }
- return { points: [...days.values()], missing: included.length - balances.size, excluded: eligible.length - included.length };
+ return { points: [...days.values()], missing: included.length - balances.size, excluded: eligible.length - included.length,
+  /** The records with no balance on record at all: only today's live figure counts them. */
+  unknown: included.filter(record => !balances.has(record.id)).map(record => record.id) };
+}
+function dayPoint(date: string, { assetTotal, debt, parts }: ReturnType<typeof dayTotals>, partial: boolean, joined: number): PortfolioPoint {
+ return { date, assets: assetTotal, debt, net: assetTotal - debt, ...(partial ? { partial: true } : {}), parts, ...(joined ? { joined } : {}) };
 }
 
-/** A period's change in net worth. When a holding's history begins inside the period, the earlier days do not count
- * everything owned (`partial`), so the change is measured over the days that do: `from` names the first of them. With
- * fewer than two such days there is no change to show. */
-export function periodChange(points: readonly Pick<PortfolioPoint, 'date' | 'net' | 'partial'>[]): { change: number | null; from: string | null } {
- const lastPartial = points.findLastIndex(point => point.partial);
- const covered = lastPartial < 0 ? points : points.slice(lastPartial + 1);
- const change = covered.length < 2 ? null : covered.at(-1)!.net - covered[0].net;
- return { change, from: lastPartial < 0 || change === null ? null : covered[0].date };
+/** A period's change in net worth: where it ends less where it starts, less what was first counted in between
+ * (`joined`). A holding added today, or one whose history begins inside the period, was owned before its first record,
+ * so its arrival is neither a gain nor a loss and does not hide the change of everything else; it counts from its first
+ * recorded value. `joined` is what was left out, for the note beside the figure. With fewer than two days there is no
+ * change to show. */
+export function periodChange(points: readonly Pick<PortfolioPoint, 'net' | 'joined'>[]): { change: number | null; joined: number } {
+ if (points.length < 2) return { change: null, joined: 0 };
+ let joined = 0;
+ for (let index = 1; index < points.length; index++) joined += points[index].joined ?? 0;
+ return { change: points.at(-1)!.net - points[0].net - joined, joined };
+}
+
+/** What today's live point counts for the first time: what the recorded history joined today, and every record with no
+ * history at all at its live value (`entries` are in the display currency). */
+export function joinedToday(recorded: { points: readonly PortfolioPoint[]; unknown: readonly string[] }, today: string, entries: readonly Entry[]) {
+ const last = recorded.points.at(-1), unknown = new Set(recorded.unknown);
+ let joined = last?.date === today ? last.joined ?? 0 : 0;
+ for (const entry of entries) if (unknown.has(entry.id)) joined += (liabilities.includes(entry.kind) ? -1 : 1) * value(entry);
+ return joined;
 }
 
 /** The day the chart ends on. The history read names the day it was read on; the browser's own day is the same one

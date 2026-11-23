@@ -3007,5 +3007,6 @@
   "Command menu": "منوی فرمان",
   "Switch to dark mode": "تغییر به حالت تیره",
   "Switch to light mode": "تغییر به حالت روشن",
-  "Navigate": "پیمایش"
+  "Navigate": "پیمایش",
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "دارایی‌هایی که نخستین بار در این دوره ثبت شده‌اند از اولین ارزش ثبت‌شده‌شان حساب می‌شوند؛ بنابراین افزودن آن‌ها به‌صورت سود یا زیان نشان داده نمی‌شود."
 }

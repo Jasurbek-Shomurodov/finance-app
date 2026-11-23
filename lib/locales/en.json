@@ -3007,5 +3007,6 @@
   "Command menu": "Command menu",
   "Switch to dark mode": "Switch to dark mode",
   "Switch to light mode": "Switch to light mode",
-  "Navigate": "Navigate"
+  "Navigate": "Navigate",
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss."
 }

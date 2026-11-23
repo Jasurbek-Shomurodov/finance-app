@@ -3007,5 +3007,6 @@
   "Command menu": "Menyu ya amri",
   "Switch to dark mode": "Badilisha hadi hali ya giza",
   "Switch to light mode": "Badilisha hadi hali ya mwanga",
-  "Navigate": "Vinjari"
+  "Navigate": "Vinjari",
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Mali zilizorekodiwa kwa mara ya kwanza katika kipindi hiki huhesabiwa kuanzia thamani yake ya kwanza iliyorekodiwa, kwa hiyo kuongeza moja hakuonyeshwi kama faida wala hasara."
 }

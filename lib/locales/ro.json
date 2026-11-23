@@ -3007,5 +3007,6 @@
   "Command menu": "Meniu de comenzi",
   "Switch to dark mode": "Comută la modul întunecat",
   "Switch to light mode": "Comută la modul luminos",
-  "Navigate": "Navighează"
+  "Navigate": "Navighează",
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Activele înregistrate pentru prima dată în această perioadă se socotesc de la prima lor valoare înregistrată, așa că adăugarea unuia nu apare nici ca un câștig, nici ca o pierdere."
 }

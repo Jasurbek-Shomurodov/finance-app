@@ -3007,5 +3007,6 @@
   "Command menu": "เมนูคำสั่ง",
   "Switch to dark mode": "เปลี่ยนเป็นโหมดมืด",
   "Switch to light mode": "เปลี่ยนเป็นโหมดสว่าง",
-  "Navigate": "เลื่อนดู"
+  "Navigate": "เลื่อนดู",
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "สินทรัพย์ที่บันทึกครั้งแรกในช่วงเวลานี้จะนับจากมูลค่าที่บันทึกครั้งแรก การเพิ่มรายการจึงไม่แสดงเป็นกำไรหรือขาดทุน"
 }

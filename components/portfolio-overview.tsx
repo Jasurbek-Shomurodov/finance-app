@@ -18,10 +18,10 @@ import { changePercent } from '@/lib/overview';
 import { useLanguage } from '@/components/language-provider';
 import { NetWorthBodySkeleton } from '@/components/presentation-foundation/loading-placeholder';
 import { financialTotals, type Entry } from '@/lib/finance';
-import { formatDate, formatMoney, formatNumber, formatPercent, formatSignedMoney } from '@/lib/format';
+import { formatMoney, formatNumber, formatPercent, formatSignedMoney } from '@/lib/format';
 import { depositToday } from '@/lib/deposit-interest';
 import { mergePortfolioPoints } from '@/lib/portfolio-snapshots';
-import { chartDay, currentParts, periodChange, portfolioHistory, portfolioWindow, trackingWindowStart } from '@/lib/portfolio-history';
+import { chartDay, currentParts, joinedToday, periodChange, portfolioHistory, portfolioWindow, trackingWindowStart } from '@/lib/portfolio-history';
 import { pricesByRecord } from '@/lib/holding-prices';
 import { netWorthBalances } from '@/lib/cash-ledger';
 import { historyFx } from '@/lib/history-rates';
@@ -59,13 +59,15 @@ export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecord
  const recorded = useMemo(() => portfolioHistory(history?.records ?? noHistory.records, balances.events, { currency, rates, today, includePartial: true, moves: balances.moves, prices: pricesByRecord(history?.records ?? noHistory.records, history?.prices), fx }), [history, balances, currency, rates, today, fx]);
  const portfolioValue = assetTotal - debt;
  // Today's point carries its own breakdown by kind, so the chart can say what moved net worth since the last recorded day.
- const points = useMemo(() => mergePortfolioPoints(recorded.points, [], {date:today,assets:assetTotal,debt,net:portfolioValue,parts:currentParts(entries)}), [recorded.points, today, assetTotal, debt, portfolioValue, entries]);
+ // It also says what it counts for the first time (a holding added today), which the period's change leaves out.
+ const points = useMemo(() => mergePortfolioPoints(recorded.points, [], {date:today,assets:assetTotal,debt,net:portfolioValue,parts:currentParts(entries),joined:joinedToday(recorded,today,entries)}), [recorded, today, assetTotal, debt, portfolioValue, entries]);
  const windowStart = trackingWindowStart(range, today, comparison.trackingStart);
  const visible = portfolioWindow(points, range, today, comparison.trackingStart);
  const tracked = useMemo(() => portfolioWindow(points, null, today, comparison.trackingStart), [points, today, comparison.trackingStart]);
- // A holding whose history begins inside the period leaves its earlier days incomplete: the change is then measured
- // from the first day that counts everything, and the headline says since when.
- const { change, from: coveredFrom } = periodChange(visible);
+ // A holding whose history begins inside the period was owned before its first record: the change leaves its arrival
+ // out and counts it from its first recorded value, and the headline says so behind its ⓘ.
+ const { change, joined } = periodChange(visible);
+ const newlyCounted = Math.abs(joined) >= .5;
  const loading = !demo && !history && !error;
  const percent = changePercent(portfolioValue, change);
  const Trend = change !== null && change < 0 ? TrendingDown : TrendingUp;
@@ -76,9 +78,9 @@ export function PortfolioOverview({ entries, excludedCurrencies = [], demoRecord
      <h2 id="overview-net-worth">{t('Net worth over time')}</h2>
      {/* Today's figure leads the card; the tiles beside it are this month's. */}
      <strong className="overview-hero-figure"><RollingText text={money(portfolioValue)}/></strong>
-     {!loading && !error && change !== null && <p><span className={change >= 0 ? 'overview-delta positive' : 'overview-delta negative'}><Trend size={15} aria-hidden="true"/>{change > 0 ? '+' : ''}{money(change)}{percent !== null && <> · {percent > 0 ? '+' : ''}{formatPercent(percent, locale)}</>}</span><span>{coveredFrom ? t('Tracking since {date}', { date: formatDate(coveredFrom, locale) }) : t('Change in selected period')}</span></p>}
+     {!loading && !error && change !== null && <p><span className={change >= 0 ? 'overview-delta positive' : 'overview-delta negative'}><Trend size={15} aria-hidden="true"/>{change > 0 ? '+' : ''}{money(change)}{percent !== null && <> · {percent > 0 ? '+' : ''}{formatPercent(percent, locale)}</>}</span><span>{t('Change in selected period')}</span>{newlyCounted && <InfoHint>{t('Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.')}</InfoHint>}</p>}
      {/* The change in two parts: what the investments earned, and the rest, which came from the person's own money. */}
-     {!loading && !error && change !== null && !coveredFrom && growth && <p className="overview-change-split"><span><i className="returns" aria-hidden="true"/>{t('Investment returns')} <b className={signTone(growth.returns)}>{formatSignedMoney(growth.returns, currency, locale)}</b></span><span><i aria-hidden="true"/>{t('Your own money')} <b className={signTone(change - growth.returns)}>{formatSignedMoney(change - growth.returns, currency, locale)}</b></span><InfoHint>{t('Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.', { amount: money(Math.max(0, growth.invested)) })}</InfoHint></p>}
+     {!loading && !error && change !== null && !newlyCounted && growth && <p className="overview-change-split"><span><i className="returns" aria-hidden="true"/>{t('Investment returns')} <b className={signTone(growth.returns)}>{formatSignedMoney(growth.returns, currency, locale)}</b></span><span><i aria-hidden="true"/>{t('Your own money')} <b className={signTone(change - growth.returns)}>{formatSignedMoney(change - growth.returns, currency, locale)}</b></span><InfoHint>{t('Investment returns are what your investments earned beyond the money put into them. Your own money is the rest of the change: income you kept after spending and debts you paid off. In this period you put {amount} of your own money into investments.', { amount: money(Math.max(0, growth.invested)) })}</InfoHint></p>}
      <PartialTotal currencies={excludedCurrencies}/>
     </div>
     <div className="overview-hero-tools">

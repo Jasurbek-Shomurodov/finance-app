@@ -3007,5 +3007,6 @@
   "Command menu": "কমান্ড মেনু",
   "Switch to dark mode": "ডার্ক মোডে যান",
   "Switch to light mode": "লাইট মোডে যান",
-  "Navigate": "নেভিগেট"
+  "Navigate": "নেভিগেট",
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "এই সময়ে প্রথমবার নথিভুক্ত সম্পদগুলো তাদের প্রথম নথিভুক্ত মূল্য থেকে গণনা করা হয়, তাই কোনো সম্পদ যোগ করলে তা লাভ বা ক্ষতি হিসেবে দেখানো হয় না।"
 }

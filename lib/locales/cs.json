@@ -3007,5 +3007,6 @@
   "Command menu": "Nabídka příkazů",
   "Switch to dark mode": "Přepnout na tmavý režim",
   "Switch to light mode": "Přepnout na světlý režim",
-  "Navigate": "Procházet"
+  "Navigate": "Procházet",
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Položky poprvé zaznamenané v tomto období se počítají od své první zaznamenané hodnoty, takže jejich přidání se nezobrazí jako zisk ani ztráta."
 }

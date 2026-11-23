@@ -3007,5 +3007,6 @@
   "Command menu": "명령 메뉴",
   "Switch to dark mode": "다크 모드로 전환",
   "Switch to light mode": "라이트 모드로 전환",
-  "Navigate": "탐색"
+  "Navigate": "탐색",
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "이 기간에 처음 기록된 보유 자산은 처음 기록된 가치부터 계산되므로, 자산을 추가해도 이익이나 손실로 표시되지 않습니다."
 }

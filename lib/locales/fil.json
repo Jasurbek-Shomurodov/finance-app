@@ -3007,5 +3007,6 @@
   "Command menu": "Menu ng mga utos",
   "Switch to dark mode": "Lumipat sa madilim na mode",
   "Switch to light mode": "Lumipat sa maliwanag na mode",
-  "Navigate": "Mag-navigate"
+  "Navigate": "Mag-navigate",
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Ang mga hawak na unang naitala sa panahong ito ay binibilang mula sa una nilang naitalang halaga, kaya ang pagdaragdag ng isa ay hindi ipinapakita bilang kita o lugi."
 }

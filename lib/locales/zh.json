@@ -3007,5 +3007,6 @@
   "Command menu": "命令菜单",
   "Switch to dark mode": "切换到深色模式",
   "Switch to light mode": "切换到浅色模式",
-  "Navigate": "导航"
+  "Navigate": "导航",
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "在此期间首次记录的持有资产从其首次记录的价值起计算，因此添加资产不会显示为收益或亏损。"
 }

@@ -3007,5 +3007,6 @@
   "Command menu": "Buyruqlar menyusi",
   "Switch to dark mode": "Tungi rejimga oʻtish",
   "Switch to light mode": "Yorugʻ rejimga oʻtish",
-  "Navigate": "Harakatlanish"
+  "Navigate": "Harakatlanish",
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Bu davrda birinchi marta qayd etilgan aktivlar va qarzlar birinchi qayd etilgan qiymatidan hisoblanadi, shuning uchun ularni qo‘shish foyda yoki zarar sifatida ko‘rsatilmaydi."
 }
