@@ -1,4 +1,4 @@
-// Screenshot tests of every screen and dialog: the seeded workspace in light, dark, at phone width and right to left in Arabic,
+// Screenshot tests of every screen, dialog and loading shimmer: the seeded workspace in light, dark, at phone width and right to left in Arabic,
 // compared pixel by pixel with the pictures saved beside this file. A layout jump, a theme break or a block that
 // changes size fails here even when every figure is right (e2e/p0.spec.mjs checks the figures). The run stands on one
 // fixed day (e2e/fixed-clock.mjs), so dates, overdue counts and charts draw the same every time. Pictures depend on
@@ -123,11 +123,50 @@ function dialogTests() {
   }
 }
 
+/** Requests the session needs before any screen draws; everything else is a screen's own data. */
+const sessionRequests = /\/api\/(auth|settings|household|workspace-preferences|database-status)(\?|$)/;
+
+/** One test per screen for each loading shimmer, in light and at phone width (dark and Arabic only recolour or mirror
+ * the same blocks). `data`: a fresh visit whose records never arrive, so the screen keeps its own skeleton. `drawer`:
+ * a drawer tap whose route never arrives, so the shimmer from `screenSkeletons` stays. Each is compared with a saved
+ * picture, and beside the loaded screen's picture of the same name it shows whether the blocks line up (the
+ * shimmer-follows-the-screen rule in docs/agents/interface.md). */
+function shimmerTests() {
+  for (const screen of workspace) for (const variant of variants.filter(row => row.name === 'light' || row.name === 'phone')) {
+    // The Assistant and Settings read no records of their own, so they have no data shimmer.
+    if (!['assistant', 'settings'].includes(screen.name)) test(`SHOT shimmer data ${screen.name} in ${variant.name}`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: variant.colorScheme, reducedMotion: 'reduce' });
+      if (variant.viewport) await page.setViewportSize(variant.viewport);
+      // Held, never answered: the test ends with them still waiting.
+      await page.route('**/api/**', route => sessionRequests.test(route.request().url()) ? route.continue() : undefined);
+      await page.goto(screen.path);
+      await expect(page).toHaveTitle(`${screen.title} · Hoggish Finance`);
+      await expect(page.locator(loading).first()).toBeVisible();
+      await page.evaluate(() => document.fonts.ready);
+      await expect(page).toHaveScreenshot(`shimmer-data-${screen.name}-${variant.name}.png`, { fullPage: true });
+    });
+    // Settings opens from the account button, not a drawer link.
+    if (screen.name !== 'settings') test(`SHOT shimmer drawer ${screen.name} in ${variant.name}`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: variant.colorScheme, reducedMotion: 'reduce' });
+      if (variant.viewport) await page.setViewportSize(variant.viewport);
+      await openScreen(page, screen.name === 'dashboard' ? workspace.find(row => row.name === 'settings') : workspace[0], variant, true);
+      await page.route(url => url.pathname === screen.path && url.searchParams.has('_rsc'), () => {});
+      if (variant.viewport) await page.getByRole('button', { name: 'Toggle Sidebar' }).click();
+      await page.getByRole('navigation').getByRole('link', { name: new RegExp(`^${screen.title.replace('&', '\\&')}`) }).click();
+      await expect(page.locator('.topbar[data-pending]')).toBeVisible();
+      await expect(page.locator(loading).first()).toBeVisible();
+      await expect(page.getByRole('dialog')).toHaveCount(0);
+      await expect(page).toHaveScreenshot(`shimmer-drawer-${screen.name}-${variant.name}.png`, { fullPage: true });
+    });
+  }
+}
+
 test.beforeEach(async () => { await resetDatabase(); });
 
 test.describe('signed in', () => {
   screenTests(workspace, true);
   dialogTests();
+  shimmerTests();
 });
 
 test.describe('signed out', () => {

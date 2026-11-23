@@ -39,7 +39,7 @@ forward, and refresh every screenshot, before real time reaches it.
 drawer's list in `components/workspace/navigation.ts`), the signed-out landing and sign-in pages, and the main dialogs
 (the spec's `dialogs` list: add, edit and delete an expense, its details, add account, transfer, record payment, add
 recurring, the Add goal and Add asset steppers, sell a holding, add loan, loan payment, Customize, search, Budget
-settings), each in light, dark, at phone width (390 px) and in Arabic right to left. They catch layout jumps, theme breaks and blocks that
+settings), each in light, dark, at phone width (390 px) and in Arabic right to left, and the loading shimmers. They catch layout jumps, theme breaks and blocks that
 change size; the figures stay in `e2e/p0.spec.mjs`. Fonts draw differently on each system, so every picture is saved
 twice: `-darwin` (a Mac) and `-linux` (CI). A screen redesign refreshes both sets in the same change, as with any test
 that asserts on markup:
@@ -48,6 +48,12 @@ that asserts on markup:
    look at every picture it wrote.
 2. Linux: push to a `feature/…` branch. Its e2e job fails on the old pictures and uploads what it drew; then
    `npm run screenshots:ci` copies those into the `-linux` files. Look at them, commit and push again; the job turns green.
+
+Loading shimmers are pictured too, in light and at phone width: `shimmer-data-<screen>` holds a fresh visit's data
+requests (everything but the session's) so the screen keeps its own skeleton, and `shimmer-drawer-<screen>` holds a
+drawer tap's route request (`?_rsc=`) so the drawer shimmer from `screenSkeletons` stays. Put each beside the loaded
+`<screen>-light` picture to check the shimmer-follows-the-screen rule block for block; a screen change refreshes all
+three. (The Assistant and Settings load no records, and Settings is not a drawer link.)
 
 A dialog picture is the window with the dialog open over its screen, opened the way a person opens it; buttons are
 found by the app's own wording in the test's language (`lib/locales/ar.json` for Arabic), and dialog pictures allow 250
