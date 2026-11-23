@@ -62,7 +62,9 @@ test('migration 168 is in setup.sql, moves the schema version, changes no existi
   assert.deepEqual(await rows('SELECT parts FROM portfolio_snapshots'),[{parts:null}]);
   assert.deepEqual(await rows('SELECT snapshot_changes FROM deleted_items'),[{snapshot_changes:[]}]);
   assert.equal((await rows("SELECT count(*)::int AS n FROM pg_trigger WHERE tgname IN ('guard_closed_record','guard_closed_holding_account')"))[0].n,2);
-  // The record deleted before the migration still restores.
+  // The record deleted before the migration still restores, and so does one whose archive names no snapshot changes
+  // at all (a backup made before this migration puts it back that way).
+  await db.exec('UPDATE deleted_items SET snapshot_changes=NULL');
   await as(owner);
   await kit(db).restoreAll();
   assert.equal(Number((await kit(db).record(12)).amount),5);

@@ -8,8 +8,9 @@ BEGIN;
 
 ALTER TABLE public.finance_records ADD COLUMN IF NOT EXISTS closed_on date;
 ALTER TABLE public.holding_accounts ADD COLUMN IF NOT EXISTS closed_on date;
--- What a deleted record took out of each daily snapshot, so Restore puts back exactly that.
-ALTER TABLE public.deleted_items ADD COLUMN IF NOT EXISTS snapshot_changes jsonb NOT NULL DEFAULT '[]'::jsonb;
+-- What a deleted record took out of each daily snapshot, so Restore puts back exactly that. Empty by default and
+-- allowed to be missing, so a backup made before this migration still restores its Recently deleted items.
+ALTER TABLE public.deleted_items ADD COLUMN IF NOT EXISTS snapshot_changes jsonb DEFAULT '[]'::jsonb;
 -- Each record's own value inside a day's totals, in US dollars. Snapshots from before this migration have none.
 ALTER TABLE public.portfolio_snapshots ADD COLUMN IF NOT EXISTS parts jsonb;
 ALTER TABLE public.portfolio_snapshots DROP CONSTRAINT IF EXISTS portfolio_snapshots_parts_check;
