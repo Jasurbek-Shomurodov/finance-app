@@ -13,7 +13,8 @@ test('the allocation donut draws each kind with a value, names every share and s
  const html=renderToStaticMarkup(React.createElement(AllocationDonut,{slices:[{kind:'Property',amount:265000},{kind:'Business',amount:97812},{kind:'Deposit',amount:0}],total:362812,currency:'USD'}));
  assert.match(html,/aria-label="Asset allocation: Property 73%, Business 27%"/);
  assert.match(html,/data-kinds="Property,Business"/,'a kind worth nothing has no slice');
- assert.match(html,/<strong>\$363K<\/strong><span>Total assets<\/span>/);
+ // The total carries its length, which sizes it to the hole (a long compact form, such as Arabic's, cannot wrap).
+ assert.match(html,/<strong style=\"--chars:5\">\$363K<\/strong><span>Total assets<\/span>/);
 });
 
 test('a tap on a slice opens its kind',()=>{

@@ -3,6 +3,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { useLanguage } from '@/components/language-provider';
 import { chartDonut, chartTooltip } from '@/components/presentation-foundation/chart';
 import { categoryColor } from '@/lib/category-colors';
+import type { CSSProperties } from 'react';
 import { formatCompactMoney, formatMoney, formatPercent } from '@/lib/format';
 
 /** `color` and `label` override the kind's own, for a grouped row such as Other. */
@@ -12,6 +13,7 @@ type Slice = { kind: string; amount: number; color?: string; label?: string };
 export function AllocationDonut({ slices, total, currency, onSelect }: { slices: readonly Slice[]; total: number; currency: string; onSelect?: (kind: string) => void }) {
  const { t, locale } = useLanguage();
  const shown = slices.filter(slice => slice.amount > 0);
+ const totalLabel = formatCompactMoney(total, currency, locale, true);
  return <div className="allocation-donut" role="img" aria-label={`${t('Asset allocation')}: ${shown.map(slice => `${slice.label ?? t(slice.kind)} ${formatPercent(total > 0 ? slice.amount / total * 100 : 0, locale)}`).join(', ')}`}>
   <ResponsiveContainer width="100%" height="100%"><PieChart>
    <Pie data={shown} dataKey="amount" nameKey="kind" {...chartDonut} onClick={entry => { const kind = (entry.payload as Slice | undefined)?.kind; if (kind) onSelect?.(kind); }}>
@@ -19,6 +21,7 @@ export function AllocationDonut({ slices, total, currency, onSelect }: { slices:
    </Pie>
    <Tooltip {...chartTooltip} formatter={(value, kind) => [`${formatMoney(Number(value), currency, locale)} · ${formatPercent(total > 0 ? Number(value) / total * 100 : 0, locale)}`, shown.find(slice => slice.kind === kind)?.label ?? t(String(kind))]}/>
   </PieChart></ResponsiveContainer>
-  <div className="allocation-donut-total" aria-hidden="true"><strong>{formatCompactMoney(total, currency, locale, true)}</strong><span>{t('Total assets')}</span></div>
+  {/* The total's length sizes it to the hole (assets.css): a long compact form, such as Arabic's, cannot wrap. */}
+  <div className="allocation-donut-total" aria-hidden="true"><strong style={{ '--chars': totalLabel.length } as CSSProperties}>{totalLabel}</strong><span>{t('Total assets')}</span></div>
  </div>;
 }

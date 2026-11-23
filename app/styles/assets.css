@@ -23,10 +23,13 @@
 /* A long list keeps the donut at its top instead of centring it in a tall blank column. */
 .portfolio-allocation-body:has(.overview-list>li:nth-child(7)){align-items:start}
 @container content (max-width:640px){.portfolio-allocation-body{grid-template-columns:minmax(0,1fr)}.allocation-donut{margin-inline:auto}}
-.allocation-donut{position:relative;width:200px;height:200px}
+.allocation-donut{position:relative;width:200px;height:200px;container-type:inline-size}
 .allocation-donut .donut-slice{cursor:pointer;outline:none}
-.allocation-donut-total{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;pointer-events:none}
-.allocation-donut-total strong{font-size:var(--type-title);font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+/* The total stays inside the hole (58% of the donut). Compact amounts keep their parts together with no-break spaces,
+   so a longer form, such as Arabic's "17.9 ألف US$", gets a smaller size instead: about half the donut's width over
+   its character count (`--chars`, set by AllocationDonut), never above the title size. */
+.allocation-donut-total{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding-inline:23%;text-align:center;pointer-events:none}
+.allocation-donut-total strong{font-size:min(var(--type-title),calc(88cqi / var(--chars, 6)));font-weight:600;letter-spacing:-.02em;white-space:nowrap;font-variant-numeric:tabular-nums}
 .allocation-donut-total span{font-size:var(--type-caption);color:var(--muted-foreground)}
 .portfolio-summary-allocation .overview-list{display:grid;grid-template-columns:minmax(0,1fr);column-gap:32px}
 /* A long list of kinds takes two columns rather than running far below the donut. */
@@ -202,6 +205,10 @@
 [data-slot="button"][data-size^="icon"] { width: auto; aspect-ratio: 1; }
 [data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"] { font-size: var(--type-body); }
 .comparison-legend button { min-height: 40px; }
+/* Charts are drawn left to right in every language, so their text is placed left to right too: under a right-to-left
+   page an inherited `direction: rtl` flips what text-anchor start and end mean, and value-axis labels grew into the
+   plot. `plaintext` still reads each label in its own script's order (an Arabic date or amount right to left). */
+.recharts-surface text { direction: ltr; unicode-bidi: plaintext; }
 .recharts-cartesian-axis-tick text { font-size: var(--type-small); fill: var(--muted-foreground); }
 .recharts-legend-wrapper { font-size: var(--type-small); line-height: 1.7; }
 /* Recharts writes a white background inline; every chart tooltip takes the theme's surface instead (THEME-011). */
