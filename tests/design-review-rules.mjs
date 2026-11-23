@@ -526,3 +526,13 @@ test('phone dialog footers: with three buttons the main one takes its own row (2
  // under "Save expense": three buttons were held to one row at 390px.
  assert.match(stylesheet(),/@media\(max-width:480px\)\{[^}]*\{[^}]*\}[^@]*\[data-slot=dialog-content\] \.record-form-footer:has\(>button:nth-of-type\(3\)\) \.primary\{flex-basis:100%\}/);
 });
+
+test('a drawer shimmer reserves the page actions row when they will not fit the bar (23 November 2026)', () => {
+ // The shimmer screenshots (e2e/screens.spec.mjs) caught Transactions, Budget, Recurring, Investments and Accounts
+ // drawing no actions row while the loaded page opens with one: the bar looked roomy until the page arrived.
+ const source=fs.readFileSync('components/presentation-foundation/page-heading-skeleton.tsx','utf8');
+ assert.match(source,/if \(!slot\?\.title \|\| \(slot\.actions && !actionsInPage\)\) return null;/);
+ assert.match(source,/useSyncExternalStore\(subscribe, \(\) => !!bar && actionsOverflow\(bar, heading\), \(\) => false\)/,'measured while rendering, so the first frame has the row');
+ assert.match(source,/'\/transactions': \{ tabs: \[25, 57, 73\], actions: \[87, 132, 162\], hint: true \}/);
+ assert.match(stylesheet(),/\.entry-actions>\.page-action-skeleton\{flex:1 1 auto\}/,'phone action blocks wrap at their widths, as the buttons do');
+});

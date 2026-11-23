@@ -232,7 +232,8 @@ label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 .screen-skeleton-region{min-width:0}
 .screen-skeleton{display:flex;flex-direction:column;gap:var(--space-page);min-width:0;pointer-events:none}
 /* On a phone the page's own blocks sit 16px apart (tables.css), so its shimmer does too. */
-@media(max-width:640px){.screen-skeleton,.overview-content-loading{gap:16px}.entry-actions>.page-action-skeleton{flex:1}}
+/* On a phone the page's buttons share their row and wrap at their own widths; their shimmer blocks wrap the same. */
+@media(max-width:640px){.screen-skeleton,.overview-content-loading{gap:16px}.entry-actions>.page-action-skeleton{flex:1 1 auto}}
 /* The page's tabs and actions where the top bar has no room for them (`PageHeadingSkeleton`): a tab's label on the
    tab's own line height, an action at the button's height. */
 .page-tab-skeleton{display:flex;align-items:center;min-height:39px;padding-inline:4px}

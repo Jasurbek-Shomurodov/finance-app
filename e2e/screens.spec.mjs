@@ -123,6 +123,10 @@ function dialogTests() {
   }
 }
 
+/** Two frames drawn: a picture that matches its saved one passes at once, so a block that arrives a frame late (a
+ * shimmer row measured after paint) would otherwise slip through on the first frame. */
+const settled = page => page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
+
 /** Requests the session needs before any screen draws; everything else is a screen's own data. */
 const sessionRequests = /\/api\/(auth|settings|household|workspace-preferences|database-status)(\?|$)/;
 
@@ -143,6 +147,7 @@ function shimmerTests() {
       await expect(page).toHaveTitle(`${screen.title} · Hoggish Finance`);
       await expect(page.locator(loading).first()).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
+      await settled(page);
       await expect(page).toHaveScreenshot(`shimmer-data-${screen.name}-${variant.name}.png`, { fullPage: true });
     });
     // Settings opens from the account button, not a drawer link.
@@ -156,6 +161,7 @@ function shimmerTests() {
       await expect(page.locator('.topbar[data-pending]')).toBeVisible();
       await expect(page.locator(loading).first()).toBeVisible();
       await expect(page.getByRole('dialog')).toHaveCount(0);
+      await settled(page);
       await expect(page).toHaveScreenshot(`shimmer-drawer-${screen.name}-${variant.name}.png`, { fullPage: true });
     });
   }
