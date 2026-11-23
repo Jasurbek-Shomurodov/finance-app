@@ -3008,5 +3008,21 @@
   "Paid from": "שולם מתוך",
   "Received into": "התקבל אל",
   "Still due: {amount}": "נותר לתשלום: {amount}",
-  "Record another": "רישום נוסף"
+  "Record another": "רישום נוסף",
+  "Counted in units": "נספר ביחידות",
+  "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.": "הפעילו עבור נכס שאתם סופרים, כמו בעלי חיים, הקטרים או מכונות. שוויו הוא הכמות כפול הערך ליחידה, וכל עדכון ערך שומר את שני המספרים.",
+  "Unit name": "שם היחידה",
+  "e.g. sheep, hectares or machines": "למשל כבשים, הקטרים או מכונות",
+  "Enter the full value and the percentage you own. Totals and net worth count your share.": "הזינו את השווי המלא ואת האחוז שבבעלותכם. הסכומים והשווי הנקי סופרים את חלקכם.",
+  "Total value: {amount}": "שווי כולל: {amount}",
+  "You own {percent} · your share {amount}": "בבעלותכם {percent} · חלקכם {amount}",
+  "Value per unit": "ערך ליחידה",
+  "{quantity} {unit} × {value}": "{quantity} {unit} × {value}",
+  "Amount is for": "הסכום מתייחס אל",
+  "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.": "בחרו העסק כולו כשהסכום הוא הנתון של העסק עצמו: הדוחות יספרו את חלקכם בו. בחרו החלק שלי כשזה רק הכסף שלכם.",
+  "My share": "החלק שלי",
+  "Whole business": "העסק כולו",
+  "Figures shown": "הנתונים המוצגים",
+  "Your share": "החלק שלכם",
+  "You own {percent}": "בבעלותכם {percent}"
 }

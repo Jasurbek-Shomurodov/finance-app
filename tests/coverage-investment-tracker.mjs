@@ -182,7 +182,7 @@ test('a property contribution from a foreign-currency account converts the cash 
  const { tabs, showTab, view, setType, setAccount, setNumber, saveButton, save, typeSelect } = await open(record('Property', { amount: 90000 }), [event('b', 'baseline', '2026-01-01', { balance: 90000 })]);
  showTab('update');
  assert.ok(view.html().includes(`Current value: ${money(90000)}`));
- assert.deepEqual(typeSelect().props.children.map(text), ['Value update', 'Money invested', 'Sale / withdrawal', 'Rent income', 'Expense paid']);
+ assert.deepEqual(typeSelect().props.children.map(text), ['Value update', 'Money invested', 'Sale / withdrawal']);
  assert.match(view.html(), /Full asset value after update/);
  setType('contribution');
  let html = view.html();
@@ -722,7 +722,7 @@ test('an initial type the record does not support falls back to its first update
 
 test('a foreign cash account without a quote shows no conversion, and amounts beyond the supported range are refused', async () => {
  fx.rates = {};
- const property = await open(record('Property'), [], { initialType: 'expense' });
+ const property = await open(record('Vehicle'), [], { initialType: 'expense' });
  property.setAccount('eur');
  property.setNumber('Cash amount', 100);
  let html = property.view.html();

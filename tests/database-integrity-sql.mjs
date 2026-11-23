@@ -26,6 +26,8 @@ test('text-patching migrations change nothing when applied again',async()=>{
   // 133 is left out too: its one-time update reads budget_categories.group_name, which 142 dropped.
   for(const name of ['110_scheduled_payment_date.sql','118_newest_records_first.sql','124_database_integrity.sql','125_repair_recategorize_names.sql','127_category_delete_moves_budget.sql','128_review_integrity.sql','129_telegram_deliveries.sql','130_attachment_files_first.sql','132_income_source_one_id.sql','134_source_ids_and_plan_currency.sql','142_drop_budget_group_name.sql','143_payment_after_schedule_start.sql','144_scheduled_payment_currency.sql','145_later_income_receipts.sql','146_scheduled_payment_any_currency.sql','147_telegram_monthly_report.sql']){
    await d.exec(fs.readFileSync('migrations/'+name,'utf8'));
+   // 128 writes finance_records_page in full, and 166 then patches it (counted assets): the two are re-applied in their order.
+   if(name==='128_review_integrity.sql')await d.exec(fs.readFileSync('migrations/166_ownership_and_counted_assets.sql','utf8'));
    assert.equal(await functions(d),before,name+' re-applied leaves every function as it was');
   }
  }finally{await d.close();}

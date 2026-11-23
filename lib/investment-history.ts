@@ -2,15 +2,19 @@
 const interestKinds = ['Deposit','Treasury bill','Bond'], simpleInterestKinds = ['Treasury bill','Bond'];
 const unitPricedKinds = ['Stock','Crypto','Precious metals','Equity compensation'];
 const valuedKinds = ['Property','Business','Valuables','Vehicle','Retirement account'];
+/** The assets a transaction can name (`business_id`, `property_id`, a property's rent): their income and expenses are entered as transactions. */
+export const linkedPaymentKinds: readonly string[] = ['Business','Property'];
 export const trackedKinds: readonly string[] = ['Cash','Stock','Crypto','Precious metals','Equity compensation','Deposit','Treasury bill','Bond','Retirement account','Property','Business','Vehicle','Valuables','Money lent','Mortgage','Loan','Debt'];
 /** The columns of a transaction or income schedule the Overview charts read (/api/portfolio-history): the expense and
  * income funding of the benchmarks, the period summary, the income chart's receipts and monthly estimates, the
  * rates each one converts at, and the account and entry day the net worth history dates its cash change by. A full row is about 60 columns, which made the read megabytes for a long history. */
-export const historyCashflowColumns = 'id,name,kind,custom_category_id,amount,currency,date,frequency,recurrence_days,end_date,source_paused,archived,archive_pauses,business_id,income_source_id,property_id,history_event_id,movement_id,mortgage_payment_id,payment_principal,payment_interest,account_currency,account_exchange_rate,day_rates,account_id,operation_id,created_at';
+export const historyCashflowColumns = 'id,name,kind,custom_category_id,amount,currency,date,frequency,recurrence_days,end_date,source_paused,archived,archive_pauses,business_id,amount_basis,business_share,income_source_id,property_id,history_event_id,movement_id,mortgage_payment_id,payment_principal,payment_interest,account_currency,account_exchange_rate,day_rates,account_id,operation_id,created_at';
 export const historyKindGroups = { interestKinds, simpleInterestKinds, unitPricedKinds, valuedKinds };
 export type HistoryEvent = {
  id:string; record_id:string; event_type:'baseline'|'valuation'|'contribution'|'withdrawal'|'income'|'expense'|'mortgage_payment';
  occurred_on:string; amount:number; balance:number|null; ownership_percentage:number; principal:number; interest:number; notes:string; created_at:string;
+ /** A counted asset's value update (migration 166): how many units and the value of one; the balance is their product. */
+ quantity?:number|null; unit_value?:number|null;
  account_link?:{account_id:string;amount:number;account_currency?:string|null;record_currency?:string|null;exchange_rate?:number|null;rate_date?:string|null}|null;
  /** A payment linked to the asset (`assetPaymentEvents`), as it was entered; its row is the transaction itself. */
  entered?:{amount:number;currency:string;name:string};
@@ -33,6 +37,9 @@ export function historyUpdateTypes(kind:string):HistoryUpdateType[] {
  if(isLendingKind(kind))return ['contribution','withdrawal'];
  if(kind==='Cash')return ['valuation'];
  if([...interestKinds,...unitPricedKinds].includes(kind))return ['valuation','income','expense'];
+ // A business's or a property's income and expenses are ordinary transactions that name it (the normal forms, with
+ // category, account and tags); the other valued kinds have no such link and keep the Tracker's own entries.
+ if(linkedPaymentKinds.includes(kind))return ['valuation','contribution','withdrawal'];
  if(valuedKinds.includes(kind))return ['valuation','contribution','withdrawal','income','expense'];
  return [];
 }
@@ -57,12 +64,12 @@ export const byHistoryDate = (a:TrackerEvent,b:TrackerEvent) => a.occurred_on.lo
  * `balance` is your share; `fullBalance` and `ownership` are the whole asset's value and the share it was valued at. */
 export function historySeries(events:TrackerEvent[]) {
  const sorted=[...events].sort(byHistoryDate);
- let fullBalance:number|null=null, ownership=100;
+ let fullBalance:number|null=null, ownership=100, quantity:number|null=null, unitValue:number|null=null;
  let balance:number|null=null, contributions:number|null=0, additions=0, repayments=0, receipts:number|null=0, expenses=0, principal=0, interest=0;
  const days=new Map<string,{date:string;timestamp:number;balance:number|null;contributions:number|null;receipts:number|null}>();
  const plus=(sum:number|null,amount:number|null)=>sum===null||amount===null?null:sum+Number(amount);
  for(const e of sorted){
-  if(e.balance!==null){fullBalance=Number(e.balance);ownership=Number(e.ownership_percentage);balance=fullBalance*ownership/100;}
+  if(e.balance!==null){fullBalance=Number(e.balance);ownership=Number(e.ownership_percentage);balance=fullBalance*ownership/100;if(e.quantity!=null&&e.unit_value!=null){quantity=Number(e.quantity);unitValue=Number(e.unit_value);}}
   if(e.event_type==='contribution'){contributions=plus(contributions,e.amount);additions+=Number(e.amount);}
   if(e.event_type==='withdrawal'){contributions=plus(contributions,e.amount===null?null:-e.amount);repayments+=Number(e.amount);}
   if(e.event_type==='income')receipts=plus(receipts,e.amount);
@@ -70,7 +77,7 @@ export function historySeries(events:TrackerEvent[]) {
   if(e.event_type==='mortgage_payment'){principal+=Number(e.principal);interest+=Number(e.interest);}
   days.set(e.occurred_on,{date:e.occurred_on,timestamp:Date.parse(e.occurred_on+'T00:00:00Z'),balance,contributions,receipts});
  }
- return {points:[...days.values()],balance,fullBalance,ownership,contributions,additions,repayments,receipts,expenses,principal,interest,missing:contributions===null||receipts===null};
+ return {points:[...days.values()],balance,fullBalance,ownership,quantity,unitValue,contributions,additions,repayments,receipts,expenses,principal,interest,missing:contributions===null||receipts===null};
 }
 
 /** What a kind's dated value is called on its Tracker: what is owed for lending, the balance of an account, otherwise your share of the value. */

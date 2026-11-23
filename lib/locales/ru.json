@@ -3008,5 +3008,21 @@
   "Paid from": "Оплачено со счёта",
   "Received into": "Зачислено на счёт",
   "Still due: {amount}": "Осталось оплатить: {amount}",
-  "Record another": "Записать ещё"
+  "Record another": "Записать ещё",
+  "Counted in units": "Считается в единицах",
+  "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.": "Включите для актива, который вы считаете поштучно: животные, гектары, станки. Его стоимость равна количеству, умноженному на стоимость единицы, и каждое обновление сохраняет оба числа.",
+  "Unit name": "Название единицы",
+  "e.g. sheep, hectares or machines": "напр. овцы, гектары или станки",
+  "Enter the full value and the percentage you own. Totals and net worth count your share.": "Введите полную стоимость и вашу долю в процентах. В итогах и чистом капитале учитывается ваша доля.",
+  "Total value: {amount}": "Общая стоимость: {amount}",
+  "You own {percent} · your share {amount}": "Ваша доля {percent} · на вашу долю приходится {amount}",
+  "Value per unit": "Стоимость единицы",
+  "{quantity} {unit} × {value}": "{quantity} {unit} × {value}",
+  "Amount is for": "Сумма относится к",
+  "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.": "Выберите «Весь бизнес», если сумма относится ко всему бизнесу: в отчётах будет учтена ваша доля. Выберите «Моя доля», если это только ваши деньги.",
+  "My share": "Моя доля",
+  "Whole business": "Весь бизнес",
+  "Figures shown": "Показывать суммы",
+  "Your share": "Ваша доля",
+  "You own {percent}": "Ваша доля {percent}"
 }

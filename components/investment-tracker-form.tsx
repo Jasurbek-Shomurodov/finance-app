@@ -18,11 +18,12 @@ import { formatAccountOption, formatMoney } from '@/lib/format';
 import { historyCashDelta, historyEventLabel, historySeries, historyUpdateTypes, isLendingKind, type HistoryUpdateType, type TrackerEvent } from '@/lib/investment-history';
 import { depositToday } from '@/lib/deposit-interest';
 import { isHolding } from '@/lib/asset-movements';
-import { interestKinds, valuedKinds, type Entry } from '@/lib/finance';
+import { fullValue, interestKinds, valuedKinds, type Entry } from '@/lib/finance';
+import { CountedValueFields, OwnershipField, countedUpdate, ownedBalance, ownedDraftReady, ownedDraftStart, ownedPayload, sharedUpdate, type OwnedDraft } from '@/components/investment-tracker-owned';
 import { accountAmount } from '@/lib/record-balance';
 import { requestJson, type RequestError } from '@/lib/api-client';
 
-type TrackerDraft={exchange_rate?:number;account_id?:string;id:string;record_id:string;type:HistoryUpdateType;date:string;amount:number;balance:number|null;notes:string};
+type TrackerDraft=OwnedDraft&{exchange_rate?:number;account_id?:string;id:string;record_id:string;type:HistoryUpdateType;date:string;amount:number;balance:number|null;notes:string};
 /** What the tracker shares with its form: the loaded history, and the one busy flag and error of the whole dialog. */
 type TrackerHistoryState={events:TrackerEvent[];loading:boolean;refresh:()=>void};
 type TrackerStatus={busy:boolean;setBusy:(busy:boolean)=>void;setError:(message:string)=>void};
@@ -62,7 +63,7 @@ export function useTrackerForm({record,accounts,accountsReady,initialType,inline
  const {busy,setBusy,setError}=status,{events,loading}=history;
  const lending=isLendingKind(record.kind);
  const updateTypes=historyUpdateTypes(record.kind);
- const makeDraft=():TrackerDraft=>({id:crypto.randomUUID(),record_id:record.id,type:initialType&&updateTypes.includes(initialType)?initialType:updateTypes[0],date:depositToday(),amount:0,balance:lending||initialType==='contribution'||initialType==='withdrawal'?null:0,notes:''});
+ const makeDraft=():TrackerDraft=>{const type=initialType&&updateTypes.includes(initialType)?initialType:updateTypes[0];return {id:crypto.randomUUID(),record_id:record.id,type,date:depositToday(),amount:0,balance:lending||initialType==='contribution'||initialType==='withdrawal'?null:0,notes:'',...ownedDraftStart(record,type)};};
  const [draft,setDraft]=useState<TrackerDraft>(makeDraft);
  // A blank value field reads as zero; saving it would silently wipe the asset's value.
  const [balanceBlank,setBalanceBlank]=useState(true);
@@ -76,24 +77,29 @@ export function useTrackerForm({record,accounts,accountsReady,initialType,inline
  const hasBalance=!lending&&(draft.type==='valuation'||optionalValuation&&draft.balance!==null);
  const latestBalanceDate=events.filter(event=>event.balance!==null).reduce((latest,event)=>event.occurred_on>latest?event.occurred_on:latest,'');
  const currentBalance=stats.balance??Number(record.amount);
+ // The whole asset's value today, and the one this update saves (a counted asset's two numbers, or the value typed).
+ const currentFull=stats.fullBalance??fullValue(record);
+ const counted=countedUpdate(record,draft.type);
+ const savedBalance=ownedBalance(record,draft,balanceBlank,currentFull);
+ const valueEntered=counted||!balanceBlank||savedBalance!==draft.balance;
  const cashAccounts=accounts.filter(account=>account.kind==='Cash');
  const selectedAccount=cashAccounts.find(account=>account.id===draft.account_id);
  const fx=useDatedExchangeRate(selectedAccount?.currency,record.currency,draft.date);
  const leg=cashLeg({record,draft,account:selectedAccount,typedCurrency,rate:fx.rate,currentBalance});
  const {recordAmount,crossCurrency}=leg;
  const dated=!loading&&!!draft.date&&draft.date<=depositToday()&&updateTypes.includes(draft.type);
- const canSave=!busy&&(submitted||dated&&(!hasBalance||!balanceBlank)&&cashLegReady({draft,leg,lending,cashReady:accountsReady&&!!selectedAccount,latestBalanceDate}));
+ const canSave=!busy&&(submitted||dated&&(!hasBalance||valueEntered)&&ownedDraftReady(record,draft)&&cashLegReady({draft,leg,lending,cashReady:accountsReady&&!!selectedAccount,latestBalanceDate}));
  async function save(){
   if(!canSave)return;setBusy(true);setSubmitted(true);setError('');
   try{
    // The update is saved in the record's currency, whichever currency the amount was typed in.
-   const payload=submitted?draft:{...draft,amount:recordAmount!,...(crossCurrency?{exchange_rate:fx.rate!}:{})};
+   const payload=submitted?draft:{...draft,amount:recordAmount!,...(hasBalance?{balance:savedBalance}:{}),...ownedPayload(record,draft),...(crossCurrency?{exchange_rate:fx.rate!}:{})};
    setDraft(payload);setTypedCurrency(undefined);
    await requestJson(payload.exchange_rate!==undefined?'/api/investment-history/exchange':'/api/investment-history',{body:payload});
    showSaved();setDraft(makeDraft());setBalanceBlank(true);setSubmitted(false);history.refresh();onSaved();if(inline)onClose();else onDone();
   }catch(e){if((e as RequestError).confirmedFailure){setSubmitted(false);if(crossCurrency)fx.retry();}setError((e as Error).message);}finally{setBusy(false);}
  }
- return {...leg,record,accountsReady,busy,loading,lending,updateTypes,draft,setDraft,setBalanceBlank,setTypedCurrency,submitted,guard,dirty,stats,optionalValuation,hasBalance,latestBalanceDate,currentBalance,cashAccounts,selectedAccount,fx,canSave,save};
+ return {...leg,counted,currentFull,savedBalance,record,accountsReady,busy,loading,lending,updateTypes,draft,setDraft,setBalanceBlank,setTypedCurrency,submitted,guard,dirty,stats,optionalValuation,hasBalance,latestBalanceDate,currentBalance,cashAccounts,selectedAccount,fx,canSave,save};
 }
 export type TrackerFormState=ReturnType<typeof useTrackerForm>;
 
@@ -110,12 +116,14 @@ export function trackerFormHelp(record:Entry,t:(key:string)=>string):string[]{
 /** The asset's value: kept or replaced for a cash movement, and the new value itself with the current one under it. */
 function ValueFields({form}:{form:TrackerFormState}){
  const {t,locale}=useLanguage();
- const {record,draft,setDraft,setBalanceBlank,optionalValuation,hasBalance,busy,submitted,loading,stats}=form;
+ const {record,draft,setDraft,setBalanceBlank,optionalValuation,hasBalance,busy,submitted,loading,stats,counted,currentFull,savedBalance}=form;
  const account=record.kind==='Cash'||interestKinds.includes(record.kind);
  const choice=draft.balance===null?'keep':'change';
  return <>
   {optionalValuation&&<div className="tracker-value-choice"><span className="tracker-value-label">{t('Asset value')}</span><ToggleGroup type="single" aria-label={t('Asset value')} value={choice} disabled={busy||submitted||loading} onValueChange={next=>{if(next&&next!==choice){setBalanceBlank(true);setDraft({...draft,balance:next==='change'?0:null});}}}><ToggleGroupItem value="keep">{t('Keep current value')}</ToggleGroupItem><ToggleGroupItem value="change">{t('Enter new value')}</ToggleGroupItem></ToggleGroup>{draft.balance===null&&<small className="muted">{t('The asset value stays unchanged. Only the cash movement is recorded.')}</small>}</div>}
-  {hasBalance&&<label>{t(account?'Account balance after update':'Full asset value after update')}<FormattedNumberInput value={draft.balance??0} requireEntry onValueChange={(balance,blank)=>{setBalanceBlank(blank);setDraft({...draft,balance});}}/><small className="muted" aria-live="polite">{t(account?'Account balance':'Current value')}: {stats.fullBalance===null?'—':formatMoney(stats.fullBalance,record.currency,locale)}</small><small className="muted">{t('Enter 0 only when the asset is worth nothing.')}</small></label>}
+  {hasBalance&&counted&&<CountedValueFields record={record} draft={draft} setDraft={setDraft} currentFull={currentFull}/>}
+  {hasBalance&&!counted&&<label>{t(account?'Account balance after update':'Full asset value after update')}<FormattedNumberInput value={draft.balance??0} requireEntry onValueChange={(balance,blank)=>{setBalanceBlank(blank);setDraft({...draft,balance});}}/><small className="muted" aria-live="polite">{t(account?'Account balance':'Current value')}: {stats.fullBalance===null?'—':formatMoney(stats.fullBalance,record.currency,locale)}</small><small className="muted">{t('Enter 0 only when the asset is worth nothing.')}</small></label>}
+  {sharedUpdate(record,draft.type)&&<OwnershipField record={record} draft={draft} setDraft={setDraft} full={savedBalance}/>}
  </>;
 }
 
@@ -150,7 +158,7 @@ function CashFields({form}:{form:TrackerFormState}){
 export function TrackerForm({form,inline}:{form:TrackerFormState;inline:boolean}){
  const {t}=useLanguage();
  const {record,draft,setDraft,setBalanceBlank,busy,submitted,loading,lending,updateTypes,latestBalanceDate,guard,canSave,save}=form;
- const changeType=(type:HistoryUpdateType)=>{setBalanceBlank(true);setDraft({...draft,type,account_id:undefined,exchange_rate:undefined,amount:0,balance:!lending&&type==='valuation'?0:null});};
+ const changeType=(type:HistoryUpdateType)=>{setBalanceBlank(true);setDraft({...draft,type,account_id:undefined,exchange_rate:undefined,amount:0,balance:!lending&&type==='valuation'?0:null,quantity:undefined,unit_value:undefined,ownership:undefined,...ownedDraftStart(record,type)});};
  return <div className="record-form">
   {inline&&<p className="muted">{t('Enter any amount up to the outstanding balance. You can repay the rest later.')}</p>}
   <fieldset disabled={busy||submitted||loading} className="tracker-fields">

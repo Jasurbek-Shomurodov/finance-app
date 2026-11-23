@@ -5,10 +5,10 @@ const setup=fs.readFileSync('database/setup.sql','utf8');
 const migration=fs.readFileSync('migrations/165_trigger_grants_and_reference_indexes.sql','utf8');
 const skip=!process.env.PGLITE_MODULE;
 
-test('migration 165 is the end of setup.sql and the app asks for it',()=>{
- assert.ok(setup.trimEnd().endsWith(migration.trimEnd()));
+test('migration 165 is in setup.sql and the app asks for at least it',()=>{
+ assert.ok(setup.includes(migration));
  assert.match(migration,/'schema_version',165/);
- assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 165/);
+ assert.ok(Number(fs.readFileSync('lib/database-capabilities.ts','utf8').match(/requiredSchemaVersion = (\d+)/)[1])>=165);
  // It only tightens grants and adds indexes: no row is written.
  assert.doesNotMatch(migration,/\b(UPDATE|DELETE FROM|INSERT INTO)\b/);
 });
@@ -20,7 +20,7 @@ test('no trigger function can be called by name, triggers still fire, and every 
   await db.exec(`CREATE ROLE anon;CREATE ROLE authenticated;CREATE ROLE service_role;CREATE SCHEMA auth;CREATE TABLE auth.users(id uuid PRIMARY KEY);CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;GRANT USAGE ON SCHEMA auth TO authenticated;INSERT INTO auth.users VALUES('${owner}');`);
   await db.exec(setup);
   const rows=async sql=>(await db.query(sql)).rows;
-  assert.equal((await rows("SELECT finance_capabilities()->>'schema_version' AS v"))[0].v,'165');
+  assert.ok(Number((await rows("SELECT finance_capabilities()->>'schema_version' AS v"))[0].v)>=165);
   const open=await rows(`SELECT p.proname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prorettype IN ('trigger'::regtype,'event_trigger'::regtype) AND (has_function_privilege('anon',p.oid,'EXECUTE') OR has_function_privilege('authenticated',p.oid,'EXECUTE'))`);
   assert.deepEqual(open,[]);
   assert.equal((await rows("SELECT proconfig::text AS c FROM pg_proc WHERE proname='protect_category_direction'"))[0].c,'{search_path=public}');

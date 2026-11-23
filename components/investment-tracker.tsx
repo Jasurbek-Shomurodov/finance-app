@@ -19,7 +19,7 @@ import { valuedKinds, type Entry } from '@/lib/finance';
 import { requestJson } from '@/lib/api-client';
 
 type Tab='overview'|'history'|'update';
-type Props={/** What opens a mortgage payment of the History, when its transaction is at hand. */onOpenPayment?:(id:string)=>(()=>void)|undefined;inline?:boolean;onDraftState?:(dirty:boolean,busy:boolean)=>void;initialType?:HistoryUpdateType;/** The tab the dialog opens on. Without it, a preset update type opens the form and anything else the Overview. */startTab?:Tab;accounts?:Entry[];accountsReady?:boolean;record:Entry;onClose:()=>void;onSaved:()=>void;onPayment:()=>void};
+type Props={/** Opens the normal income or expense form with this business or property chosen (the Overview's Add income and Add expense). */onAddEntry?:(direction:'income'|'expense')=>void;/** What opens a mortgage payment of the History, when its transaction is at hand. */onOpenPayment?:(id:string)=>(()=>void)|undefined;inline?:boolean;onDraftState?:(dirty:boolean,busy:boolean)=>void;initialType?:HistoryUpdateType;/** The tab the dialog opens on. Without it, a preset update type opens the form and anything else the Overview. */startTab?:Tab;accounts?:Entry[];accountsReady?:boolean;record:Entry;onClose:()=>void;onSaved:()=>void;onPayment:()=>void};
 
 /** The record's dated history, read again after each save or delete. */
 function useTrackerEvents(recordId:string,onError:(message:string)=>void){
@@ -52,7 +52,7 @@ function DeleteEntryDialog({record,deleting,busy,onClose,onConfirm}:{record:Entr
 
 /** An asset's or loan's tracker: its figures (Overview), every dated entry (History) and the form that adds one
  * (Add update). `inline` is the form alone, inside another dialog. */
-export function InvestmentTracker({inline=false,onDraftState,initialType,startTab,record,accounts=[],accountsReady=true,onClose,onSaved,onPayment,onOpenPayment}:Props){
+export function InvestmentTracker({inline=false,onDraftState,initialType,startTab,record,accounts=[],accountsReady=true,onClose,onSaved,onPayment,onOpenPayment,onAddEntry}:Props){
  const {t}=useLanguage();
  const [busy,setBusy]=useState(false),[error,setError]=useState('');
  const history=useTrackerEvents(record.id,setError);
@@ -86,7 +86,7 @@ export function InvestmentTracker({inline=false,onDraftState,initialType,startTa
   <DialogDescription className="sr-only">{about}</DialogDescription>
   <Segmented className="tracker-tabs" label={t('Tracker')} options={[{value:'overview',label:t('Overview')},{value:'history',label:t('History')},{value:'update',label:t('Add update')}]} value={tab} onChange={setTab}/>
   {alert}
-  {tab==='overview'&&<TrackerOverview record={record} events={events} loading={loading} busy={busy} onMovement={setMovement} onPayment={onPayment}/>}
+  {tab==='overview'&&<TrackerOverview record={record} events={events} loading={loading} busy={busy} onMovement={setMovement} onPayment={onPayment} onAddEntry={onAddEntry&&(direction=>guard.request(()=>onAddEntry(direction)))}/>}
   {tab==='history'&&(loading?<LoadingPlaceholder label={t('Loading history…')}/>:<TrackerHistory events={events} record={record} accounts={accounts} valueLabel={historyValueLabel(record.kind)} open={e=>e.event_type==='mortgage_payment'?onOpenPayment?.(e.id):undefined} deletable={e=>!!e.entered||deletableUpdate(record.kind,e.event_type)} deleteDisabled={busy||loading||submitted||dirty} onDelete={setDeleting}/>)}
   {tab==='update'&&paymentFields}
  </DialogContent></Dialog>{guard.confirmation}<DeleteEntryDialog record={record} deleting={deleting} busy={busy} onClose={()=>setDeleting(null)} onConfirm={()=>void deleteUpdate()}/></>;

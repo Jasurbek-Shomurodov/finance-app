@@ -3008,5 +3008,21 @@
   "Paid from": "Qaysi hisobdan toʻlandi",
   "Received into": "Qaysi hisobga tushdi",
   "Still due: {amount}": "Hali toʻlanishi kerak: {amount}",
-  "Record another": "Yana birini yozish"
+  "Record another": "Yana birini yozish",
+  "Counted in units": "Donalab hisoblanadi",
+  "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.": "Sanab yuritiladigan aktiv uchun yoqing: chorva, gektar yoki uskunalar. Uning qiymati son va bir birlik qiymatining ko‘paytmasiga teng, har bir yangilanish ikkala raqamni saqlaydi.",
+  "Unit name": "Birlik nomi",
+  "e.g. sheep, hectares or machines": "masalan, qo‘y, gektar yoki uskuna",
+  "Enter the full value and the percentage you own. Totals and net worth count your share.": "To‘liq qiymatni va o‘zingizga tegishli foizni kiriting. Jami summalar va sof boylikda sizning ulushingiz hisoblanadi.",
+  "Total value: {amount}": "Jami qiymat: {amount}",
+  "You own {percent} · your share {amount}": "Sizga {percent} tegishli · ulushingiz {amount}",
+  "Value per unit": "Bir birlik qiymati",
+  "{quantity} {unit} × {value}": "{quantity} {unit} × {value}",
+  "Amount is for": "Summa kimga tegishli",
+  "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.": "Summa butun biznesniki bo‘lsa, «Butun biznes»ni tanlang: hisobotlarda uning sizga tegishli ulushi hisoblanadi. Faqat o‘zingizning pulingiz bo‘lsa, «Mening ulushim»ni tanlang.",
+  "My share": "Mening ulushim",
+  "Whole business": "Butun biznes",
+  "Figures shown": "Ko‘rsatiladigan summalar",
+  "Your share": "Sizning ulushingiz",
+  "You own {percent}": "Sizga {percent} tegishli"
 }

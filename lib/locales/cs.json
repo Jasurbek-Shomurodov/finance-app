@@ -3008,5 +3008,21 @@
   "Paid from": "Zaplaceno z",
   "Received into": "Přijato na",
   "Still due: {amount}": "Zbývá uhradit: {amount}",
-  "Record another": "Zaznamenat další"
+  "Record another": "Zaznamenat další",
+  "Counted in units": "Počítáno v jednotkách",
+  "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.": "Zapněte u majetku, který počítáte na kusy, například zvířata, hektary nebo stroje. Jeho hodnota je množství krát hodnota za jednotku a každá aktualizace hodnoty uchová obě čísla.",
+  "Unit name": "Název jednotky",
+  "e.g. sheep, hectares or machines": "např. ovce, hektary nebo stroje",
+  "Enter the full value and the percentage you own. Totals and net worth count your share.": "Zadejte celou hodnotu a procento, které vlastníte. Součty a čisté jmění počítají váš podíl.",
+  "Total value: {amount}": "Celková hodnota: {amount}",
+  "You own {percent} · your share {amount}": "Vlastníte {percent} · váš podíl {amount}",
+  "Value per unit": "Hodnota za jednotku",
+  "{quantity} {unit} × {value}": "{quantity} {unit} × {value}",
+  "Amount is for": "Částka se týká",
+  "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.": "Zvolte Celý podnik, když je částka číslem samotného podniku: přehledy pak počítají váš podíl. Zvolte Můj podíl, když jde jen o vaše peníze.",
+  "My share": "Můj podíl",
+  "Whole business": "Celý podnik",
+  "Figures shown": "Zobrazené částky",
+  "Your share": "Váš podíl",
+  "You own {percent}": "Vlastníte {percent}"
 }

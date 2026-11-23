@@ -3008,5 +3008,21 @@
   "Paid from": "Dibayar daripada",
   "Received into": "Diterima ke dalam",
   "Still due: {amount}": "Masih perlu dibayar: {amount}",
-  "Record another": "Rekod satu lagi"
+  "Record another": "Rekod satu lagi",
+  "Counted in units": "Dikira dalam unit",
+  "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.": "Hidupkan untuk aset yang anda kira, seperti haiwan, hektar atau mesin. Nilainya ialah kuantiti didarab nilai seunit, dan setiap kemas kini nilai menyimpan kedua-dua nombor.",
+  "Unit name": "Nama unit",
+  "e.g. sheep, hectares or machines": "cth. biri-biri, hektar atau mesin",
+  "Enter the full value and the percentage you own. Totals and net worth count your share.": "Masukkan nilai penuh dan peratusan yang anda miliki. Jumlah dan nilai bersih mengira bahagian anda.",
+  "Total value: {amount}": "Jumlah nilai: {amount}",
+  "You own {percent} · your share {amount}": "Anda memiliki {percent} · bahagian anda {amount}",
+  "Value per unit": "Nilai seunit",
+  "{quantity} {unit} × {value}": "{quantity} {unit} × {value}",
+  "Amount is for": "Amaun ini untuk",
+  "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.": "Pilih Seluruh perniagaan apabila amaun ialah angka perniagaan itu sendiri: laporan akan mengira bahagian anda. Pilih Bahagian saya apabila ia hanya wang milik anda.",
+  "My share": "Bahagian saya",
+  "Whole business": "Seluruh perniagaan",
+  "Figures shown": "Angka yang ditunjukkan",
+  "Your share": "Bahagian anda",
+  "You own {percent}": "Anda memiliki {percent}"
 }

@@ -3008,5 +3008,21 @@
   "Paid from": "จ่ายจาก",
   "Received into": "รับเข้า",
   "Still due: {amount}": "ยังค้างชำระ: {amount}",
-  "Record another": "บันทึกอีกรายการ"
+  "Record another": "บันทึกอีกรายการ",
+  "Counted in units": "นับเป็นหน่วย",
+  "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.": "เปิดใช้สำหรับสินทรัพย์ที่คุณนับจำนวน เช่น สัตว์ เฮกตาร์ หรือเครื่องจักร มูลค่าเท่ากับจำนวนคูณมูลค่าต่อหน่วย และการอัปเดตมูลค่าแต่ละครั้งจะเก็บตัวเลขทั้งสองไว้",
+  "Unit name": "ชื่อหน่วย",
+  "e.g. sheep, hectares or machines": "เช่น แกะ เฮกตาร์ หรือเครื่องจักร",
+  "Enter the full value and the percentage you own. Totals and net worth count your share.": "กรอกมูลค่าทั้งหมดและเปอร์เซ็นต์ที่คุณเป็นเจ้าของ ยอดรวมและความมั่งคั่งสุทธิจะนับส่วนของคุณ",
+  "Total value: {amount}": "มูลค่ารวม: {amount}",
+  "You own {percent} · your share {amount}": "คุณเป็นเจ้าของ {percent} · ส่วนของคุณ {amount}",
+  "Value per unit": "มูลค่าต่อหน่วย",
+  "{quantity} {unit} × {value}": "{quantity} {unit} × {value}",
+  "Amount is for": "จำนวนเงินนี้เป็นของ",
+  "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.": "เลือก ทั้งธุรกิจ เมื่อจำนวนเงินเป็นตัวเลขของธุรกิจเอง รายงานจะนับส่วนของคุณ เลือก ส่วนของฉัน เมื่อเป็นเงินของคุณเท่านั้น",
+  "My share": "ส่วนของฉัน",
+  "Whole business": "ทั้งธุรกิจ",
+  "Figures shown": "ตัวเลขที่แสดง",
+  "Your share": "ส่วนของคุณ",
+  "You own {percent}": "คุณเป็นเจ้าของ {percent}"
 }

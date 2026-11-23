@@ -14,7 +14,7 @@ import { assets, liabilities, type Entry } from '@/lib/finance';
 export const maxDuration=60;
 const route='/api/cron/portfolio-snapshots';
 // Only what snapshotTotals and the market feed read: holdings and debts, never the cash-flow history.
-const columns='id,user_id,kind,name,amount,quantity,currency,ownership_percentage,metal,metal_unit,metal_purity';
+const columns='id,user_id,kind,name,amount,quantity,unit_label,currency,ownership_percentage,metal,metal_unit,metal_purity';
 const kinds=encodeURIComponent([...assets,...liabilities].join(','));
 /** Owners valued at once: captures and milestone checks overlap without opening one request per owner. */
 const ownerConcurrency=8;

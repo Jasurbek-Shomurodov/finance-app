@@ -14,3 +14,12 @@ export function chooseLinked(value: string, accountBusiness?: string | null): Pi
  if (kind === 'property' && id) return { business_id: accountBusiness ?? null, property_id: id };
  return { business_id: null, property_id: null };
 }
+
+/** The normal income or expense form opened from a business's or a property's own page, with that asset already
+ * chosen: a business takes Business income or an expense linked to it; a property takes rent that names it or an
+ * expense paid for it (kept under the business the property is held in). Null for any other record. */
+export function assetEntryStart(asset: Pick<Entry, 'id' | 'kind' | 'business_id'>, direction: 'income' | 'expense'): { kind: Entry['kind']; preset: Partial<Entry> } | null {
+ if (asset.kind === 'Business') return direction === 'income' ? { kind: 'Business income', preset: { business_id: asset.id } } : { kind: 'Other expense', preset: { business_id: asset.id } };
+ if (asset.kind === 'Property') return direction === 'income' ? { kind: 'Rent income', preset: { income_source_id: asset.id } } : { kind: 'Other expense', preset: { property_id: asset.id, business_id: asset.business_id ?? null } };
+ return null;
+}

@@ -1,7 +1,7 @@
 import { cashFlowAmountMissing, requiresCashAccount } from './cash-account-required';
 import { depositToday } from './deposit-interest';
 import { isBusinessAccount } from './business';
-import { expenses, income, liabilities, simpleInterestKinds, type Entry } from './finance';
+import { expenses, income, liabilities, ownedPercent, simpleInterestKinds, type Entry } from './finance';
 import { scheduledPaymentDue, type Occurrence } from './planning';
 
 const today = depositToday;
@@ -74,6 +74,16 @@ export function demoScheduleLink(editing: Entry, patch: Pick<Entry, 'earning_due
  if (source && patch.earning_due_on) return { occurrence_record_id: source.schedule_id ?? source.id, occurrence_due_on: patch.earning_due_on };
  if (editing.kind === 'Salary' && editing.income_source_id && patch.income_due_on) return { occurrence_record_id: editing.income_source_id, occurrence_due_on: patch.income_due_on };
  return {};
+}
+
+/** The sample workspace's copy of the `set_business_share` trigger (migration 167): a transaction keeps the share its
+ * business was owned at when it was linked; another business brings its own; without a business there is none and the
+ * amount is the owner's. */
+export function demoBusinessShare(editing: Entry, records: readonly Entry[], stored?: Entry | null): Pick<Entry, 'business_share' | 'amount_basis'> {
+ if (!editing.business_id || !(income.includes(editing.kind) || expenses.includes(editing.kind))) return { business_share: null, amount_basis: 'mine' };
+ const kept = stored?.business_id === editing.business_id && stored.business_share != null ? stored.business_share : null;
+ const business = records.find(record => record.id === editing.business_id && record.kind === 'Business');
+ return { business_share: kept ?? (business ? ownedPercent(business) || null : null), amount_basis: editing.amount_basis ?? 'mine' };
 }
 
 /** A debt starts when it is first saved, never in the future and never after it is due. */

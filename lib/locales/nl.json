@@ -3008,5 +3008,21 @@
   "Paid from": "Betaald vanaf",
   "Received into": "Ontvangen op",
   "Still due: {amount}": "Nog verschuldigd: {amount}",
-  "Record another": "Nog een vastleggen"
+  "Record another": "Nog een vastleggen",
+  "Counted in units": "Geteld in eenheden",
+  "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.": "Zet dit aan voor bezit dat je telt, zoals dieren, hectaren of machines. Het is het aantal maal de waarde per eenheid waard, en elke waarde-update bewaart beide getallen.",
+  "Unit name": "Naam van de eenheid",
+  "e.g. sheep, hectares or machines": "bijv. schapen, hectaren of machines",
+  "Enter the full value and the percentage you own. Totals and net worth count your share.": "Vul de volledige waarde in en het percentage dat van jou is. Totalen en nettovermogen tellen jouw aandeel.",
+  "Total value: {amount}": "Totale waarde: {amount}",
+  "You own {percent} · your share {amount}": "Je bezit {percent} · jouw aandeel {amount}",
+  "Value per unit": "Waarde per eenheid",
+  "{quantity} {unit} × {value}": "{quantity} {unit} × {value}",
+  "Amount is for": "Het bedrag geldt voor",
+  "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.": "Kies Hele bedrijf als het bedrag het cijfer van het bedrijf zelf is: rapporten tellen dan jouw aandeel. Kies Mijn aandeel als het alleen jouw eigen geld is.",
+  "My share": "Mijn aandeel",
+  "Whole business": "Hele bedrijf",
+  "Figures shown": "Getoonde cijfers",
+  "Your share": "Jouw aandeel",
+  "You own {percent}": "Je bezit {percent}"
 }

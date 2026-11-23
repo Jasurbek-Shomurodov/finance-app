@@ -3008,5 +3008,21 @@
   "Paid from": "ادائیگی کا کھاتہ",
   "Received into": "وصولی کا کھاتہ",
   "Still due: {amount}": "ابھی واجب الادا: {amount}",
-  "Record another": "ایک اور درج کریں"
+  "Record another": "ایک اور درج کریں",
+  "Counted in units": "اکائیوں میں شمار",
+  "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.": "ایسے اثاثے کے لیے آن کریں جسے آپ گنتے ہیں، جیسے مویشی، ہیکٹر یا مشینیں۔ اس کی مالیت تعداد ضرب فی اکائی مالیت ہے، اور ہر مالیت کی تازہ کاری دونوں اعداد محفوظ رکھتی ہے۔",
+  "Unit name": "اکائی کا نام",
+  "e.g. sheep, hectares or machines": "مثلاً بھیڑیں، ہیکٹر یا مشینیں",
+  "Enter the full value and the percentage you own. Totals and net worth count your share.": "پوری مالیت اور اپنی ملکیت کا فیصد درج کریں۔ مجموعے اور خالص مالیت میں آپ کا حصہ شمار ہوتا ہے۔",
+  "Total value: {amount}": "کل مالیت: {amount}",
+  "You own {percent} · your share {amount}": "آپ کی ملکیت {percent} · آپ کا حصہ {amount}",
+  "Value per unit": "فی اکائی مالیت",
+  "{quantity} {unit} × {value}": "{quantity} {unit} × {value}",
+  "Amount is for": "یہ رقم کس کی ہے",
+  "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.": "جب رقم پورے کاروبار کا عدد ہو تو پورا کاروبار منتخب کریں: رپورٹس میں آپ کا حصہ شمار ہوگا۔ جب یہ صرف آپ کی اپنی رقم ہو تو میرا حصہ منتخب کریں۔",
+  "My share": "میرا حصہ",
+  "Whole business": "پورا کاروبار",
+  "Figures shown": "دکھائے گئے اعداد",
+  "Your share": "آپ کا حصہ",
+  "You own {percent}": "آپ کی ملکیت {percent}"
 }

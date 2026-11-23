@@ -3008,5 +3008,21 @@
   "Paid from": "Payé depuis",
   "Received into": "Reçu sur",
   "Still due: {amount}": "Reste dû : {amount}",
-  "Record another": "Enregistrer un autre"
+  "Record another": "Enregistrer un autre",
+  "Counted in units": "Compté en unités",
+  "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.": "Activez cette option pour un actif que vous comptez : animaux, hectares ou machines. Il vaut la quantité multipliée par la valeur unitaire, et chaque mise à jour conserve les deux chiffres.",
+  "Unit name": "Nom de l’unité",
+  "e.g. sheep, hectares or machines": "p. ex. moutons, hectares ou machines",
+  "Enter the full value and the percentage you own. Totals and net worth count your share.": "Saisissez la valeur totale et le pourcentage que vous détenez. Les totaux et le patrimoine net comptent votre part.",
+  "Total value: {amount}": "Valeur totale : {amount}",
+  "You own {percent} · your share {amount}": "Vous détenez {percent} · votre part {amount}",
+  "Value per unit": "Valeur par unité",
+  "{quantity} {unit} × {value}": "{quantity} {unit} × {value}",
+  "Amount is for": "Le montant concerne",
+  "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.": "Choisissez Toute l’entreprise lorsque le montant est celui de l’entreprise elle-même : les rapports comptent alors votre part. Choisissez Ma part lorsqu’il s’agit uniquement de votre argent.",
+  "My share": "Ma part",
+  "Whole business": "Toute l’entreprise",
+  "Figures shown": "Chiffres affichés",
+  "Your share": "Votre part",
+  "You own {percent}": "Vous détenez {percent}"
 }

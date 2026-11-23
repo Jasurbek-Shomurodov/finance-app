@@ -13,6 +13,7 @@ import { changedFields, nameSuggestion, recentCategories, scheduleChoice } from 
 import { entryFieldProblems, type FieldProblems } from '@/lib/record-save';
 import { useEntrySubmit } from './entry-submit';
 import { RecentCategories } from './recent-categories';
+import { BusinessBasisField } from './business-basis-field';
 import { chooseLinked, linkedValue } from '@/lib/linked-asset';
 import { GroupedPicker } from '@/components/presentation-foundation/grouped-picker';
 import { CategoryBadge } from '@/components/presentation-foundation/category-badge';
@@ -115,6 +116,7 @@ function OptionalDetails({form}:{form:ExpenseContext}){
     {(businesses.length>0||properties.length>0||!!editing.business_id||!!editing.property_id)&&<GroupedPicker label={t('Linked to (optional)')} placeholder={t('Not linked')} searchLabel={t('Business or property')} allLabel={t('All')} emptyText={t('No matching records')}
      groups={['Business','Property']} groupLabel={kind=>t(kind)} value={linkedValue(editing)} disabled={busy} onChange={value=>update(chooseLinked(value,accountBusiness))}
      items={[{id:'',name:t('Not linked'),group:''},...[...businesses,...properties].map(record=>({id:`${record.kind==='Business'?'business':'property'}:${record.id}`,name:record.name,group:record.kind,badge:<CategoryBadge kind={record.kind} label={t(record.kind)}/>}))]}/>}
+    <BusinessBasisField editing={editing} records={planning.data.records} saved={form.original} disabled={busy} onChange={amount_basis=>update({amount_basis})}/>
     {editing.frequency!=='Once'&&<label>{t('End date (optional)')}<DatePicker value={editing.end_date||''} required={false} min={editing.date} onChange={end_date=>update({end_date:end_date||null})}/></label>}
     <label>{t('Notes (optional)')}<Textarea value={editing.notes} maxLength={2000} rows={2} onChange={event=>update({notes:event.target.value})}/></label>
    </div></details>;

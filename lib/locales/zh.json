@@ -3008,5 +3008,21 @@
   "Paid from": "付款账户",
   "Received into": "收款账户",
   "Still due: {amount}": "尚未支付：{amount}",
-  "Record another": "再记一笔"
+  "Record another": "再记一笔",
+  "Counted in units": "按单位计数",
+  "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.": "为按数量计算的资产开启，例如牲畜、公顷或机器。其价值等于数量乘以单位价值，每次价值更新都会保留这两个数字。",
+  "Unit name": "单位名称",
+  "e.g. sheep, hectares or machines": "例如：羊、公顷或机器",
+  "Enter the full value and the percentage you own. Totals and net worth count your share.": "输入全部价值和你拥有的百分比。合计和净资产按你的份额计算。",
+  "Total value: {amount}": "总价值：{amount}",
+  "You own {percent} · your share {amount}": "你拥有 {percent} · 你的份额 {amount}",
+  "Value per unit": "单位价值",
+  "{quantity} {unit} × {value}": "{quantity} {unit} × {value}",
+  "Amount is for": "金额属于",
+  "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.": "当金额是企业自身的数字时选择“整个企业”：报表将按你的份额计算。仅为你自己的钱时选择“我的份额”。",
+  "My share": "我的份额",
+  "Whole business": "整个企业",
+  "Figures shown": "显示的数字",
+  "Your share": "你的份额",
+  "You own {percent}": "你拥有 {percent}"
 }

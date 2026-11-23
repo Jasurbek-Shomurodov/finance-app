@@ -1,4 +1,4 @@
-import { expenses, income, type Entry } from './finance';
+import { expenses, income, ownAmount, type Entry } from './finance';
 import type { DatedRecord, DayTable } from './transaction-rates';
 
 // The one definition of "spending", shared by Cash flow, Transactions, the
@@ -7,8 +7,9 @@ import type { DatedRecord, DayTable } from './transaction-rates';
 //   which are saved as their own expense records;
 // - a mortgage payment counts only its interest: the principal reduces the
 //   debt, so it is a transfer between your own balances, not spending;
-// - loan and debt repayments (principal) are transfers and never count.
-type SpendingRow = Pick<Entry, 'kind' | 'amount'> & Partial<Pick<Entry, 'mortgage_payment_id' | 'payment_principal' | 'payment_interest'>>;
+// - loan and debt repayments (principal) are transfers and never count;
+// - a figure entered for the whole of a part-owned business counts at the owner's share (`ownAmount`, migration 167).
+type SpendingRow = Pick<Entry, 'kind' | 'amount'> & Partial<Pick<Entry, 'mortgage_payment_id' | 'payment_principal' | 'payment_interest' | 'amount_basis' | 'business_id' | 'business_share'>>;
 
 /** True for a saved mortgage payment copy, whose amount is principal plus interest. */
 export const isMortgagePayment = (row: Pick<SpendingRow, 'mortgage_payment_id'>) => !!row.mortgage_payment_id;
@@ -16,7 +17,7 @@ export const isMortgagePayment = (row: Pick<SpendingRow, 'mortgage_payment_id'>)
 /** The part of a record that is spending, in the record's own currency. Zero for income and holdings. */
 export function spendingAmount(row: SpendingRow): number {
  if (!expenses.includes(row.kind)) return 0;
- if (!isMortgagePayment(row)) return Number(row.amount);
+ if (!isMortgagePayment(row)) return ownAmount(row);
  if (row.payment_interest != null) return Number(row.payment_interest);
  return Math.max(0, Number(row.amount) - Number(row.payment_principal ?? 0));
 }
@@ -55,14 +56,14 @@ function trackerExpenses(links: readonly SpendingLink[], from: string, to: strin
 /** The categories a spending record's amount falls in: its splits, or its own category. A mortgage payment is never split. */
 function spendingParts(record: FlowRecord, splits: Map<string, SpendingSplit[]>) {
  const parts = isMortgagePayment(record) || !record.id ? undefined : splits.get(record.id);
- return parts?.length ? parts.map(part => ({ category: part.category_id, amount: Number(part.amount) })) : [{ category: record.custom_category_id ?? record.kind, amount: spendingAmount(record) }];
+ return parts?.length ? parts.map(part => ({ category: part.category_id, amount: ownAmount(record, Number(part.amount)) })) : [{ category: record.custom_category_id ?? record.kind, amount: spendingAmount(record) }];
 }
 
 const cashFlowKind = (record: FlowRecord) => income.includes(record.kind) || expenses.includes(record.kind);
 /** An income or expense record as a cash-flow item, in its own currency. */
 function recordItem<R extends FlowRecord>(record: R, splits: Map<string, SpendingSplit[]>): CashFlowItem<R> {
  const base = { id: record.id ?? '', date: record.date, currency: record.currency, record, link: null, dated: record };
- return income.includes(record.kind) ? { ...base, income: true, amount: Number(record.amount), parts: [] } : { ...base, income: false, amount: spendingAmount(record), parts: spendingParts(record, splits) };
+ return income.includes(record.kind) ? { ...base, income: true, amount: ownAmount(record), parts: [] } : { ...base, income: false, amount: spendingAmount(record), parts: spendingParts(record, splits) };
 }
 
 /** Every actual income and spending dated from..to inclusive, by the one definition above: one-time income and expense

@@ -15,7 +15,8 @@ import { useReportLink } from '@/hooks/use-report-link';
 import { useRangeData } from '@/hooks/use-report-data';
 import { budgetCategories } from '@/lib/budget';
 import { HOUSEHOLD } from '@/lib/business';
-import { drillMatches, filterLines, periodOf, reportLedger, shiftPeriod, trendWindow, unconvertedCount, type Drill, type Interval, type LedgerLine, type UnconvertedLine } from '@/lib/business-report';
+import { drillMatches, filterLines, linesOn, periodOf, reportLedger, shiftPeriod, trendWindow, unconvertedCount, type Drill, type Interval, type LedgerLine, type ReportBasis, type UnconvertedLine } from '@/lib/business-report';
+import { ownedPercent } from '@/lib/finance';
 import { depositToday } from '@/lib/deposit-interest';
 import { inOwnerFilter, ownerOf, SHARED, workspaceOwners } from '@/lib/household';
 import { describeDrill, groupFinder, reportNames, reportTabs, reportTransactionsLink, tabLines, type ReportTab } from '@/lib/report-view';
@@ -41,6 +42,9 @@ export function ReportsScreen() {
  // The page shows one month, quarter or year; Trends read back from it.
  const [interval, setInterval] = useState<Interval>('month');
  const [anchor, setAnchor] = useState(today);
+ // A part-owned business reads at the owner's share unless the whole business is asked for.
+ const [basis, setBasis] = useState<ReportBasis>('mine');
+ const shares = useMemo(() => new Map(businessList.filter(business => ownedPercent(business) < 100).map(business => [business.id, ownedPercent(business)])), [businessList]);
  const period = periodOf(interval, anchor, today), trendRange = trendWindow(period, interval);
  // Every report is always listed; tax prep without a business invites adding one.
  const shownTab = tab;
@@ -56,7 +60,7 @@ export function ReportsScreen() {
  // Costs that come from an asset's history rather than a transaction belong to the household.
  const narrowed = useCallback(<L extends Pick<LedgerLine, 'business' | 'record'>>(list: readonly L[]) => filterLines(list, businesses).filter(line => !homes || inOwnerFilter(ownerFilter, line.record ? ownerOf(line.record, homes) : SHARED)), [businesses, homes, ownerFilter]);
  const inPeriod = useCallback(<L extends Pick<LedgerLine, 'date'>>(list: readonly L[]) => list.filter(line => line.date >= period.from && line.date <= period.to), [period.from, period.to]);
- const trendLines = useMemo(() => narrowed(ledger.lines), [ledger.lines, narrowed]);
+ const trendLines = useMemo(() => narrowed(linesOn(ledger.lines, shares.size ? basis : 'mine')), [ledger.lines, narrowed, basis, shares.size]);
  const lines = useMemo(() => inPeriod(trendLines), [trendLines, inPeriod]);
  // What no rate converts counts only where it is in view: an amount months ago or in another business blanks nothing here.
  const trendUnconverted = useMemo(() => narrowed(ledger.unconverted), [ledger.unconverted, narrowed]);
@@ -74,12 +78,12 @@ export function ReportsScreen() {
 
  return <div data-page="Reports" className="content reports-content">
   <PageHeader title={t('Reports')} tabs={<Segmented as="nav" className="page-tabs" label={t('Reports')} options={reportTabs.map(value => ({ value, label: t(tabLabels[value]) }))} value={shownTab} onChange={reset(setTab)}/>} hint={t('Cash flow, spending and income for your household and each business. Click any part of a chart or table to see its transactions.')}>
-   {shownTab !== 'tax' && <ReportFilters businesses={businessList} business={businesses} onBusiness={reset(setBusinesses)} owners={owners} owner={ownerFilter} onOwner={reset(setOwnerFilter)} interval={interval} onInterval={reset(setInterval)} period={period} today={today} onStep={reset((steps: number) => setAnchor(shiftPeriod(period.from, interval, steps)))} onToday={() => reset(setAnchor)(today)}/>}
+   {shownTab !== 'tax' && <ReportFilters businesses={businessList} business={businesses} onBusiness={reset(setBusinesses)} owners={owners} owner={ownerFilter} onOwner={reset(setOwnerFilter)} interval={interval} onInterval={reset(setInterval)} period={period} today={today} onStep={reset((steps: number) => setAnchor(shiftPeriod(period.from, interval, steps)))} onToday={() => reset(setAnchor)(today)} basis={shares.size ? basis : undefined} onBasis={reset(setBasis)}/>}
   </PageHeader>
   {shownTab === 'tax' ? (businessList.length ? <TaxTab preferences={workspacePreferences.data.preferences} save={workspacePreferences.save} saving={workspacePreferences.loading} onOpen={open}/>
     : <section className="panel"><EmptyState icon={<Briefcase/>} title={t('No businesses yet.')} description={t('Add a business to prepare its tax figures here.')}>{!readOnly && <Button onClick={() => setSettingUpBusinesses(true)}><Plus size={16} aria-hidden="true"/>{t('Set up business tracking')}</Button>}</EmptyState></section>)
    : error ? <InlineError message={t(error)} onRetry={retry}/> : loading ? <ReportsSkeleton label={t('Loading records…')} donut={shownTab !== 'cash_flow'}/> : <ReportBody tab={shownTab} lines={lines} names={names} currency={currency} drill={drill} onClear={() => setDrill(null)} unconverted={unconverted} fileName={`${shownTab.replace('_', '-')}-${period.from}-${period.to}`} href={transactionsHref(reportTransactionsLink(shownTab, drill?.drill ?? null, period, businesses))} onOpen={open}>
-    {shownTab === 'cash_flow' ? <CashFlowTab {...tabProps} lines={lines} includeHousehold={!businesses.length || businesses.includes(HOUSEHOLD)} businessIds={businessList.map(item => item.id).filter(id => businesses.includes(id) || (!businesses.length && (cashMode === 'trends' ? trendLines : lines).some(line => line.business === id)))} view={cashView} onView={setCashView} mode={cashMode} onMode={setCashMode}/>
+    {shownTab === 'cash_flow' ? <CashFlowTab {...tabProps} shares={shares} lines={lines} includeHousehold={!businesses.length || businesses.includes(HOUSEHOLD)} businessIds={businessList.map(item => item.id).filter(id => businesses.includes(id) || (!businesses.length && (cashMode === 'trends' ? trendLines : lines).some(line => line.business === id)))} view={cashView} onView={setCashView} mode={cashMode} onMode={setCashMode}/>
      : <AttributeTab {...tabProps} key={shownTab} direction={shownTab === 'spending' ? 'expense' : 'income'} lines={tabLines(shownTab, lines)} trendLines={tabLines(shownTab, trendLines)} hasBusinesses={businessList.length > 0}/>}
    </ReportBody>}
  </div>;

@@ -3008,5 +3008,21 @@
   "Paid from": "Сплачено з рахунку",
   "Received into": "Зараховано на рахунок",
   "Still due: {amount}": "Залишилося сплатити: {amount}",
-  "Record another": "Записати ще"
+  "Record another": "Записати ще",
+  "Counted in units": "Рахується в одиницях",
+  "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.": "Увімкніть для активу, який ви рахуєте поштучно: тварини, гектари, верстати. Його вартість дорівнює кількості, помноженій на вартість одиниці, і кожне оновлення зберігає обидва числа.",
+  "Unit name": "Назва одиниці",
+  "e.g. sheep, hectares or machines": "напр. вівці, гектари чи верстати",
+  "Enter the full value and the percentage you own. Totals and net worth count your share.": "Введіть повну вартість і вашу частку у відсотках. У підсумках і чистому капіталі враховується ваша частка.",
+  "Total value: {amount}": "Загальна вартість: {amount}",
+  "You own {percent} · your share {amount}": "Ваша частка {percent} · на вашу частку припадає {amount}",
+  "Value per unit": "Вартість одиниці",
+  "{quantity} {unit} × {value}": "{quantity} {unit} × {value}",
+  "Amount is for": "Сума стосується",
+  "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.": "Виберіть «Весь бізнес», якщо сума стосується всього бізнесу: у звітах буде врахована ваша частка. Виберіть «Моя частка», якщо це лише ваші гроші.",
+  "My share": "Моя частка",
+  "Whole business": "Весь бізнес",
+  "Figures shown": "Показувати суми",
+  "Your share": "Ваша частка",
+  "You own {percent}": "Ваша частка {percent}"
 }

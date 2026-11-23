@@ -3008,5 +3008,21 @@
   "Paid from": "Binayaran mula sa",
   "Received into": "Natanggap sa",
   "Still due: {amount}": "Dapat pang bayaran: {amount}",
-  "Record another": "Magtala ng isa pa"
+  "Record another": "Magtala ng isa pa",
+  "Counted in units": "Binibilang ayon sa yunit",
+  "Turn this on for an asset you count, such as animals, hectares or machines. It is worth the quantity times the value per unit, and each value update keeps both numbers.": "I-on ito para sa asset na binibilang mo, gaya ng mga hayop, ektarya o makina. Ang halaga nito ay dami na pinarami sa halaga bawat yunit, at pinapanatili ng bawat update ng halaga ang dalawang numero.",
+  "Unit name": "Pangalan ng yunit",
+  "e.g. sheep, hectares or machines": "hal. tupa, ektarya o makina",
+  "Enter the full value and the percentage you own. Totals and net worth count your share.": "Ilagay ang buong halaga at ang porsiyentong pag-aari mo. Ang iyong bahagi ang binibilang sa mga kabuuan at net worth.",
+  "Total value: {amount}": "Kabuuang halaga: {amount}",
+  "You own {percent} · your share {amount}": "Pag-aari mo ang {percent} · ang iyong bahagi {amount}",
+  "Value per unit": "Halaga bawat yunit",
+  "{quantity} {unit} × {value}": "{quantity} {unit} × {value}",
+  "Amount is for": "Ang halaga ay para sa",
+  "Choose Whole business when the amount is the business’s own figure: reports then count your share of it. Choose My share when it is only the money that is yours.": "Piliin ang Buong negosyo kapag ang halaga ay ang mismong numero ng negosyo: bibilangin ng mga ulat ang iyong bahagi nito. Piliin ang Aking bahagi kapag ito ay pera mo lamang.",
+  "My share": "Aking bahagi",
+  "Whole business": "Buong negosyo",
+  "Figures shown": "Mga numerong ipinapakita",
+  "Your share": "Ang iyong bahagi",
+  "You own {percent}": "Pag-aari mo ang {percent}"
 }

@@ -6,7 +6,15 @@ import { byHistoryDate, type HistoryEvent } from '@/lib/investment-history';
 import { readAllPages } from '@/lib/owner-rows';
 import { session, supa, sameOrigin } from '@/lib/supabase';
 import { withViewerDayRates } from '@/lib/viewer-day-rates';
-const schema = z.object({ account_id:uuid.optional(),id:uuid,record_id:uuid,type:z.enum(['valuation','contribution','withdrawal','income','expense']),date:isoDate,amount:nonnegativeAmount,balance:nonnegativeAmount.nullable(),notes:z.string().max(2000) }).refine(p => (p.type==='valuation' ? p.amount===0 : p.amount>0) && (p.type==='valuation' ? p.balance!==null : ['income','expense'].includes(p.type) ? p.balance===null : true));
+const schema = z.object({ account_id:uuid.optional(),id:uuid,record_id:uuid,type:z.enum(['valuation','contribution','withdrawal','income','expense']),date:isoDate,amount:nonnegativeAmount,balance:nonnegativeAmount.nullable(),notes:z.string().max(2000),
+ /** A counted asset's value update: how many units and the value of one (the balance is their product), and a new ownership share. Value updates only. */
+ quantity:z.number().finite().min(0).max(1e12).nullish(),unit_value:nonnegativeAmount.nullish(),ownership:z.number().finite().gt(0).max(100).nullish() })
+ .refine(p => (p.type==='valuation' ? p.amount===0 : p.amount>0) && (p.type==='valuation' ? p.balance!==null : ['income','expense'].includes(p.type) ? p.balance===null : true))
+ .refine(p => (p.quantity==null)===(p.unit_value==null) && (p.type==='valuation' || (p.quantity==null && p.ownership==null)));
+type Update=z.infer<typeof schema>;
+/** The arguments of `record_investment_event`: its seven, or with a count and a share its ten (migration 166). */
+const eventArguments=(p:Update)=>({p_id:p.id,p_record_id:p.record_id,p_type:p.type,p_date:p.date,p_amount:p.amount,p_balance:p.balance,p_notes:p.notes,
+ ...(p.account_id?{p_account:p.account_id}:p.quantity!=null||p.ownership!=null?{p_quantity:p.quantity??null,p_unit_value:p.unit_value??null,p_ownership:p.ownership??null}:{})});
 // A refusal the database explains (P0001) is shown in its words; a database without the function answers 503 (lib/api-route.ts).
 const databaseUpdate='The app database needs an update. Ask the administrator to apply the latest migrations.';
 /** The asset and its linked payments, each with its own day's rates. A payment may name a rent schedule and not the
@@ -36,7 +44,7 @@ export async function POST(req:Request){
   const p=parsed.data;
   if(p.type!=='valuation'&&!p.account_id)return Response.json({error:'Choose a cash account.'},{status:400});
   if(p.type==='valuation'&&p.account_id)return Response.json({error:'Check the tracker fields.'},{status:400});
-  const r=await supa(p.account_id?'/rest/v1/rpc/record_investment_with_account':'/rest/v1/rpc/record_investment_event',{method:'POST',body:JSON.stringify({p_id:p.id,p_record_id:p.record_id,p_type:p.type,p_date:p.date,p_amount:p.amount,p_balance:p.balance,p_notes:p.notes,...(p.account_id?{p_account:p.account_id}:{})})},auth.token);
+  const r=await supa(p.account_id?'/rest/v1/rpc/record_investment_with_account':'/rest/v1/rpc/record_investment_event',{method:'POST',body:JSON.stringify(eventArguments(p))},auth.token);
   if(!r.ok)return postgrestFailure(r,'Update could not be confirmed. Retry with the same details.',{codes:{PGRST202:[databaseUpdate,503]}});
   return Response.json(await r.json());
  }catch{return Response.json({error:'Update could not be confirmed. Retry with the same details.'},{status:503});}

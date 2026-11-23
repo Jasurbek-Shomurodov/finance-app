@@ -1,6 +1,6 @@
 import { addMonths, shiftDay, shiftMonth } from './calendar-days';
 import { defaultComparisonPreferences, isInvestmentRecord } from './comparison-profile';
-import { assets, expenses, income, interestKinds, liabilities, scheduleDates, unitPricedKinds, value, type Entry } from './finance';
+import { assets, expenses, income, interestKinds, liabilities, ownedShare, scheduleDates, unitPricedKinds, value, type Entry } from './finance';
 import { withAssetIncomePlans } from './earning-sources';
 import type { HoldingAccount } from './holding-accounts';
 import { demoPeople, ownedBy } from './household';
@@ -70,7 +70,8 @@ export function demoRecords(today: string): Entry[] {
   record('biz-rentals', 'Lakeside Rentals LLC', 'Business', 0, { business_structure: 'rental_property', business_color: 'violet' }),
   record('candle-checking', 'Candle Co. checking', 'Cash', 3200, { business_id: 'demo-biz-candles' }),
   record('rental-checking', 'Rentals operating account', 'Cash', 9800, { business_id: 'demo-biz-rentals' }),
-  record('watches', 'Watch collection', 'Valuables', 14000, mine),
+  // Counted in units: seven watches at a value each (the café above is part-owned).
+  record('watches', 'Watch collection', 'Valuables', 2000, { quantity: 7, unit_label: 'watches', ...mine }),
   record('lent', 'Loan to a friend', 'Money lent', 3000, { lent_date: shiftDay(today, -60), date: shiftDay(today, 30) }),
   // Debts
   record('mortgage', 'Family home mortgage', 'Mortgage', 182000, { rate: 6.1, estimated_monthly_payment: 1480, date: shiftDay(today, 20) }),
@@ -230,7 +231,7 @@ export function demoHistory(records: Entry[], today: string) {
   if (!original || original.kind !== record.kind || original.currency !== record.currency) continue;
   const investment = isInvestmentRecord(record);
   const amount = value(original);
-  const share = record.kind === 'Business' ? (original.ownership_percentage ?? 100) / 100 : 1;
+  const share = ownedShare(original);
   const opening = unitPricedKinds.includes(record.kind) ? original.cost * original.quantity : (openings[record.id] ?? amount / share) * share;
   const add = (suffix: string, date: string, event_type: HistoryEvent['event_type'], amount: number, balance: number | null) => events.push({
    id: record.id + ':' + suffix, record_id: record.id, occurred_on: date, created_at: date + 'T12:00:00Z',

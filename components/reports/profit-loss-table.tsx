@@ -36,7 +36,7 @@ const groupTotal = (section: Section, group: string, groupOf: (key: string) => s
  * business expenses), household expenses and net cash flow, for the period, the period before and the year to date,
  * with each row's share of its revenue (a business's gross income, or total income). A section's chevron folds its
  * lines away; hovering a row offers its transactions. Rows are the period's own; the other columns read the same rows. */
-export function ProfitLossTable({ columns, breakdown, names, groupOf, currency, onDrill }: { columns: readonly PnlColumn[]; breakdown: Breakdown; names: ReportNames; groupOf: (key: string) => string; currency: string; onDrill: (drill: Drill) => void }) {
+export function ProfitLossTable({ columns, breakdown, names, groupOf, currency, onDrill, shares }: { /** Each part-owned business's share, in percent, named beside it. */ shares?: ReadonlyMap<string, number>; columns: readonly PnlColumn[]; breakdown: Breakdown; names: ReportNames; groupOf: (key: string) => string; currency: string; onDrill: (drill: Drill) => void }) {
  const { t, locale } = useLanguage();
  const [closed, setClosed] = useState<string[]>([]);
  const pnl = columns[0].pnl;
@@ -71,7 +71,7 @@ export function ProfitLossTable({ columns, breakdown, names, groupOf, currency, 
    {pnl.businesses.map(business => {
     const of = businessOf(business.id), gross = business.grossIncome;
     return <Fragment key={business.id}>
-     {row(`b:${business.id}`, <><BusinessName id={business.id} names={names}/><small>{t('Net income')}</small></>, p => of(p)?.net ?? 0, { level: 1, drill: { business: business.id }, base: gross, kind: 'subtotal', tone: 'loss', section: names.business(business.id) })}
+     {row(`b:${business.id}`, <><BusinessName id={business.id} names={names}/><small>{t('Net income')}</small>{shares?.has(business.id) && <small>{t('You own {percent}', { percent: formatPercent(shares.get(business.id)!, locale, 8) })}</small>}</>, p => of(p)?.net ?? 0, { level: 1, drill: { business: business.id }, base: gross, kind: 'subtotal', tone: 'loss', section: names.business(business.id) })}
      {!closed.includes(`b:${business.id}`) && <>
       {row(`b:${business.id}:gross`, t('Gross business income'), p => of(p)?.grossIncome ?? 0, { level: 2, drill: { direction: 'income', business: business.id }, base: gross, kind: 'subtotal' })}
       {lines(p => of(p)?.income ?? [], 3, { direction: 'income', business: business.id }, `b:${business.id}:i`, gross)}

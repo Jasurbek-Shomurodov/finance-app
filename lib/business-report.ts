@@ -1,7 +1,7 @@
 import { monthsBetween } from './budget';
 import { monthEnd, shiftMonth } from './calendar-days';
 import { HOUSEHOLD, inBusinessFilter, type BusinessFilter } from './business';
-import { budgetKey, type Entry } from './finance';
+import { budgetKey, ownAmount, wholeAmount, type Entry } from './finance';
 import { convertAmount } from './market';
 import type { Money } from './money';
 import type { Share } from './cash-flow-report';
@@ -25,9 +25,13 @@ export const readableRange = (range: ReportRange): ReportRange => {
 
 /** One amount on a report: a transaction, or one split part of it, in the display currency. `entered` is the same amount
  * as it was recorded: one transaction reads this way, and only sums read `amount` (AGENTS.md, entered or converted). */
-export type LedgerLine = { id: string; record: Entry | null; name: string; date: string; direction: Direction; amount: number; entered: Money; category: string; business: string | null };
+export type LedgerLine = { id: string; record: Entry | null; name: string; date: string; direction: Direction; amount: number; /** The same line for the whole business (`wholeAmount`); equal to `amount` outside a part-owned business. */ whole: number; entered: Money; category: string; business: string | null };
+/** Whose figures a report shows: the owner's share of each business (the default), or each business in full. */
+export type ReportBasis = 'mine' | 'whole';
+/** The lines as a basis reads them. 'mine' is what they already hold; 'whole' swaps in each line's whole-business figure. */
+export const linesOn = (lines: readonly LedgerLine[], basis: ReportBasis): readonly LedgerLine[] => basis === 'mine' ? lines : lines.map(line => line.whole === line.amount ? line : { ...line, amount: line.whole });
 /** A line no rate converts: known by its date, side, owner and category, so a screen counts it only where it is in view. */
-export type UnconvertedLine = Omit<LedgerLine, 'amount' | 'entered'>;
+export type UnconvertedLine = Omit<LedgerLine, 'amount' | 'whole' | 'entered'>;
 
 /** The business a Tracker expense belongs to: its asset, or the business that asset is held under. */
 const assetBusiness = (asset: Entry | undefined) => asset ? asset.kind === 'Business' ? asset.id : asset.business_id ?? null : null;
@@ -45,7 +49,9 @@ export function reportLedger(data: Pick<PlanningData, 'records' | 'investmentLin
   const { record } = item, asset = item.link ? byId.get(item.link.investment_history?.record_id ?? '') : undefined;
   const split = record && !isMortgagePayment(record) ? splitsOf.get(record.id) ?? [] : [];
   // Spending carries its parts; a split income is read the same way, and otherwise stands in its own category.
-  const parts = !item.income ? item.parts : split.length ? split.map(part => ({ category: part.category_id, amount: Number(part.amount) })) : [{ category: budgetKey(record!), amount: item.amount }];
+  const parts = !item.income ? item.parts : split.length ? split.map(part => ({ category: part.category_id, amount: ownAmount(record!, Number(part.amount)) })) : [{ category: budgetKey(record!), amount: item.amount }];
+  // Each part is the owner's share already (`cashFlowItems`); the whole business's figure is worked back from what was entered.
+  const scale = record && item.amount > 0 && !isMortgagePayment(record) ? wholeAmount(record) / ownAmount(record) : 1;
   const base = { name: record ? record.name.trim() || record.kind : asset?.name ?? 'Other expense', date: item.date, direction: (item.income ? 'income' : 'expense') as Direction, record, business: record ? record.business_id ?? null : assetBusiness(asset) };
   const converted = parts.map((part, index) => ({ ...base, id: split.length ? `${item.id}:${index}` : item.id, category: part.category, part, value: item.currency === null ? null : convertAmount(part.amount, item.currency, currency, ratesOf(item.dated, rates)) }));
   if (converted.some(line => line.value === null || !Number.isFinite(line.value))) {
@@ -53,7 +59,7 @@ export function reportLedger(data: Pick<PlanningData, 'records' | 'investmentLin
    for (const { id, category } of converted) unconverted.push({ ...base, id, category });
    continue;
   }
-  for (const { part, value, ...line } of converted) lines.push({ ...line, amount: value!, entered: { amount: part.amount, currency: item.currency! } });
+  for (const { part, value, ...line } of converted) lines.push({ ...line, amount: value!, whole: scale === 1 ? value! : value! * scale, entered: { amount: record?.amount_basis === 'whole' ? part.amount * scale : part.amount, currency: item.currency! } });
  }
  return { lines: lines.sort((a, b) => b.date.localeCompare(a.date) || a.name.localeCompare(b.name) || a.id.localeCompare(b.id)), unconverted, missing };
 }
