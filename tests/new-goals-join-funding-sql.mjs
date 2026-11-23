@@ -11,7 +11,7 @@ test('migration 163 is in setup.sql, moves only the default and touches no exist
  assert.match(migration,/ALTER COLUMN funding_enabled SET DEFAULT true/);
  assert.doesNotMatch(migration,/UPDATE public\.savings_goals/);
  assert.match(migration,/'schema_version',163/);
- assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 167/);
+ assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 168/);
 });
 
 test('a new goal is in the funding plan, and one without a budget asks for nothing rather than hiding the plan',()=>{

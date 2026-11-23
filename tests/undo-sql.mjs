@@ -27,7 +27,7 @@ test('goals, lending tracker updates and recorded scheduled payments can be undo
   assert.equal(await amount(30),700);assert.equal(await amount(10),1300);
   const mirror=()=>count("SELECT * FROM investment_history WHERE record_id=$1 AND event_type='withdrawal' AND amount=300",[id(10)]);
   assert.equal(await mirror(),1);
-  await assert.rejects(db.query("SELECT move_item_to_deleted($1,'finance_records')",[id(30)]),/saved tracker updates/);
+  await assert.rejects(db.query("SELECT move_item_to_deleted($1,'finance_records')",[id(30)]),/still has linked items/);
   await db.exec(`SET request.jwt.claim.sub='${other}'`);
   await assert.rejects(db.query('SELECT delete_tracker_update($1,$2)',[id(31),id(30)]),/not found/);
   await db.exec(`SET request.jwt.claim.sub='${owner}'`);
