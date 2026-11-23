@@ -1,18 +1,57 @@
-# Portfolio history and live prices
+# Net worth history and daily snapshots
 
-Overview always draws its chart. A single observation uses a short horizontal marker and one date tick; it does not fabricate another balance or an earlier return. Current values still update with the existing market refresh, normally every five minutes while the app is visible.
+What is true on 23 November 2026. Two things carry "history" in the app, and they are separate.
 
-Migration `017_portfolio_snapshots.sql` adds durable daily snapshots. Apply it after migration 016 (fresh databases use `database/setup.sql`). Until it is applied, the current chart continues to work and explains that daily history cannot be saved.
+## The net worth chart (Dashboard)
 
-The signed-in workspace captures a snapshot after market refreshes and record changes on any page. The server reads all owner-scoped holdings, applies ownership and quantities, and fetches market prices and explicit FX rates on the server. Browser-supplied quotes, totals and dates are ignored. Missing prices for nonzero stock/crypto positions, or missing required FX, prevent an incomplete snapshot from replacing a good one. The original investment records and Tracker entries are not changed.
+The chart is rebuilt on every read from the records themselves; it never draws a stored total.
 
-The snapshot contains assets and debts valued in USD plus the observed exchange rates. The database determines the date in Asia/Tashkent and updates only today's row. Each user's prior days remain unchanged; snapshot reads enforce owner RLS and direct table writes are disabled. The authenticated capture function cannot accept a target owner or historical date.
+- **One read.** `/api/portfolio-history` (`lib/portfolio-history-read.ts`) returns the current records, their balance
+  events, one-time transactions, income schedules, account operations, movements between holdings, the kept closes of
+  quoted holdings and the kept exchange rates. Reads that do not depend on one another run together, a long table's
+  pages are read together, and every table is asked only for the columns the charts use. A busy cash account sends one
+  balance snapshot a day (`lastCashValuations`); its first balance and every dated movement are kept. Everything is read
+  with the signed-in person's token, so row security decides what comes back. Deleted records are not read, so they
+  leave every past day.
+- **Each past day at its own rate.** Past days convert at the official rates kept in `exchange_rate_days`
+  (`keptHistoryRates` in `lib/history-fx.ts`): only the currencies the history is kept or shown in, the latest 400 days
+  one by one and older ones one a week. No rate service is asked at request time. Today converts at the live rates
+  today's own figure uses (`historyFx`, `dayRates` in `lib/history-rates.ts`). With nothing kept, every day falls back
+  to today's rates. The benchmark comparison reads the same series (`mergeFx`), so the headline's "Investment returns"
+  and "Your own money" stand on one basis.
+- **Cash accounts are rebuilt from their dated records.** The database writes a balance snapshot on the day an account
+  changes, so a transaction deleted or edited later used to leave a dent between its date and the day it was
+  corrected. Where an account's ledger is complete (its opening balance plus every change still on record comes to its
+  balance today), its past is today's balance walked back through those dated changes and the stale snapshots are not
+  used (`cashLedgers` in `lib/cash-ledger.ts`). An account that does not add up (a balance typed over, a payment at an
+  unknown rate, a row the read did not return), or one with no change on record, keeps its snapshots.
+- **Late entries count on their own day.** For every record that is not rebuilt, a transaction, a payment from an
+  account or a mortgage payment typed after its date moves the balance on the day it happened, not the day it was typed
+  (`balanceMoves` in `lib/net-worth-moves.ts`).
+- **Quoted holdings follow their price.** A stock or coin is carried between its snapshots by its kept closes
+  (`lib/holding-prices.ts`, `priceScale` in `lib/portfolio-history.ts`). Metals and equity compensation still use their
+  stored values.
+- **Incomplete days.** A day drawn before every record has a balance is marked `partial`. A record whose history begins
+  inside the period (a holding added today without an opening date) is taken to have been owned before: the day it is
+  first counted carries its value as `joined`, and the period's change leaves that out (`periodChange`), so adding a
+  holding neither reads as a gain nor hides the change of everything else. The headline says so behind its ⓘ and shows
+  no returns split for such a period. A record that names its opening day counts from that day at its first recorded
+  balance, and an explicit zero opening counts from the start.
+- **Today** is the live figure from current records and prices, on the day the read names (`chartDay`).
 
-The portfolio chart uses dated Tracker balances from existing records and live values for today. A balance change entered after its own day is shown on the day it happened: a transaction, a payment from an account or a mortgage payment typed a week late moves the account (and the mortgage's principal) on its own date, not on the day the new balance was written (`balanceMoves` in `lib/net-worth-moves.ts`). Only changes whose late snapshot is on record are moved, an operation that already wrote the balance on its own date is left alone, and a transaction saved for a coming day stays where its snapshot is. Deleted records are excluded from every historical date, so correcting a mistaken entry does not create an apparent loss. Partial repayments and completed loans retain their dated balances, including zero balances. Historical balances use current exchange rates. Aggregate daily observations are not offered in the chart because they cannot be reconciled to individual deleted or corrected records.
+Not done: metals and equity compensation by price; a `closed_on` date for accounts and holdings; a server-side cached
+daily series (the browser still replays the events after each save, though the quadratic loops are gone).
 
-Snapshots are observations, not historical market backfills. When the daily background job is configured, samples also arrive while the app is closed. Otherwise, only open-app observations are collected. The line connects the days actually observed. See `docs/planning-upgrade.md` for server configuration. Same-day refreshes replace today's observation rather than creating an intraday trading chart. Manual asset values change when updated in the app; quoted stock and crypto values change automatically when prices refresh.
+## Daily snapshots (`portfolio_snapshots`, migration 017)
 
+One row per owner per day: assets and debts valued in USD with the rates observed then. The signed-in workspace captures
+it after market refreshes and record changes (`usePortfolioSnapshots`, `/api/portfolio-snapshots`), and the daily cron
+`/api/cron/portfolio-snapshots` captures it while the app is closed. The server values the holdings itself; quotes,
+totals and dates sent by a browser are ignored, a missing price or rate prevents an incomplete snapshot from replacing a
+good one, and only today's row can be written. Reads enforce owner row security.
 
-The paragraph below describes an earlier implementation. The Overview chart now follows [the current comparison rules](investment-comparison.md), which exclude every cash balance.
+Snapshots are aggregate observations, so they cannot be reconciled with a record deleted or corrected later. The net
+worth chart therefore does not draw them. They feed the surfaces that need a figure for a past day without replaying
+records: goal forecasts, the financial review, and the Telegram digest and monthly report.
 
-The Overview investment chart and Benchmarks now share `actualInvestmentPerformance`: investment holdings and opted-in cash, plus received income outside that cash and cumulative repaid liability principal. Mortgage interest does not increase actual value. The full mortgage outlay funds the benchmark alternative, so interest remains a cost in performance. Income credited to included investment cash is neither counted twice as value nor treated as external funding. Everyday cash, new borrowing, and deleted records are excluded. Both pages use getInvestmentPortfolio for current-FX investment values. getInvestmentComparison simulates alternatives in USD with dated market and currency rates, then converts every series at current FX. Display-currency changes therefore do not change hypothetical purchases. This investment allocation measure is distinct from total net worth, where cash and liabilities both count.
+The investment comparison drawn on the same card follows [its own rules](investment-comparison.md).

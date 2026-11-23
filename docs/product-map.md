@@ -1,8 +1,8 @@
 # Product map and redesign plan
 
-Written 21 November 2026 from a full read of the app (screens, dialogs, database, net worth chart). It says what the
-app does, where each feature belongs, what is duplicated, and the order the redesign is built in. Update it when a
-phase lands.
+Written 21 November 2026 from a full read of the app (screens, dialogs, database, net worth chart); status last checked
+against the code on 23 November 2026. It says what the app does, where each feature belongs, what was duplicated, and
+the order the redesign is built in. Update it when a phase lands.
 
 ## What the app answers
 
@@ -32,58 +32,78 @@ other screens link to it.
 5. **Insight:** monthly review, watchlists, reports, assistant, Telegram digests.
 6. **Workspace:** households and owners, currencies, languages, backup, Recently deleted, settings.
 
-## What is duplicated today, and the one home for each
+## One home per feature
 
-| Feature | Shown today | One home | Elsewhere |
+What was shown in several places on 21 November, where it lives now, and whether that is built (`tests/one-home.mjs`
+pins the built rows).
+
+| Feature | One home | Elsewhere | Status |
 |---|---|---|---|
-| "What is left" | Eight figures with different definitions | **Safe to spend** on the Dashboard: budget left minus bills still due this month (`useMonthOutlook`) | Budget keeps Left to budget; Cash flow keeps Still to come |
-| Budget card | Dashboard, Cash flow Overview, Cash flow Spending | Budget | One compact card on the Dashboard |
-| Upcoming payments | Six lists | Recurring | Dashboard "Due" card; rows open the item, not the page |
-| Money flow diagram | Cash flow, Budget, Recurring, Reports | Cash flow (this month) and Reports (any period) | Budget and Recurring link to it |
-| Spending pace | Two components with one name | One chart with last month and budget lines | Dashboard and Budget share it |
-| Recent transactions | Dashboard, Cash flow (older table), Transactions | Transactions | Dashboard card; Cash flow drops its table |
-| Mortgage payments, watchlists | Cash flow Overview and Spending | Cash flow Spending | Overview drops them |
-| Record a loan or mortgage payment | Four dialogs | One payment dialog | Opened from Loans, Recurring, Cash flow, Dashboard |
-| Transfer | Two dialogs (one unreachable) | `AssetMovementDialog` | The unused `AccountOperation` branch is removed |
-| Rules | Transactions and Settings | Transactions | Settings links there |
+| "What is left" | **Safe to spend** on the Dashboard (`safeToSpend` in `lib/dashboard-glance.ts`): the budget less what was spent and the payments still due that no budget category covers; with no budget, expected income less spending and everything due | Budget keeps Left to budget; Cash flow keeps Still to come | Done |
+| Budget card | Budget | One compact card on the Dashboard (share used and three categories) | Done |
+| Upcoming payments | Recurring | Dashboard "Upcoming payments" card; each row opens that payment (`payLink`) | Done |
+| Money flow diagram | Cash flow (this month) and Reports (any period) | Budget and Recurring link to `/income-expenses#flow` | Done |
+| Spending pace | One chart with last month and budget lines (`SpendingPaceChart`) | Dashboard and Budget share it | Done |
+| Ranked bars | One piece (`rankedBar` in `components/cash-flow/flow-bars.tsx`) | Cash flow, Reports and the Dashboard's Where it is going | Done |
+| Recent transactions | Transactions | Dashboard card; Cash flow dropped its table | Done |
+| Spending watchlists | Budget (`/budget#watchlists`) | Cash flow › Spending links there | Done |
+| Mortgage payments list | Cash flow › Spending | Overview dropped it | Done |
+| Period switch and long-range trend | Reports | Cash flow keeps six recent months with the net line and average, and "See all periods" | Done |
+| Rules | Transactions (`/transactions#rules`) | Settings links there | Done |
+| Review suggestions | Recurring | Removed from Transactions | Done |
+| Payout calendar, price alerts, Bitcoin panel | Investments › Payouts & alerts | Left Profit & loss | Done |
+| Investment benchmarks | Settings › Investment benchmarks (`/settings#benchmarks`) | The net worth chart's details link there | Done (edited in Settings, not on the chart) |
+| Transfer | `AssetMovementDialog` | The unused `AccountOperation` transfer branch is removed | Done |
+| Record a loan or mortgage payment | One payment dialog | Opened from Loans, Recurring, Cash flow, Dashboard | Not done: being built separately |
 
 ## Oddly placed, and where it moves
 
-- **Business setup** (Settings only) moves to Investments, where a business is an asset; Settings links to it.
-- **Business income and expenses** are added from the business's own page, with category, account and tags.
-- **Business tax prep** stays in Reports but is always listed, with an invitation when no business exists.
-- **Review suggestions** (bottom of Transactions) move to Recurring: they propose schedules.
-- **Price alerts, payout calendar, Bitcoin panel** leave Profit & loss for their own Investments tab.
-- **Investment benchmarks** are edited from the net worth chart they affect; Settings keeps a link.
-- **Age of Money** and **Spending watchlists** sit with the Budget they measure.
+- **Business setup** starts from Investments › Add asset ("Add business" / "Set up business tracking"). Done. Settings ›
+  Businesses still lists and edits them.
+- **Business tax prep** stays in Reports and is always listed, with an invitation when no business exists. Done.
+- **Age of Money** sits with the Budget it measures. Done.
+- **Business income and expenses** added from the business's own page, with category, account and tags. Not done.
 
 ## Decisions taken (21 November 2026, on the owner's "decide and build")
 
-1. **Add on every screen.** The top bar's Add offers Expense, Income and Transfer everywhere; Transfer opens Accounts
-   with the dialog ready (`/accounts#transfer`, also in ⌘K). The expense form has Save and add another, which keeps the
-   category, date and account. Still to do: the same on the income form.
-2. **Cash flow and Reports stay separate.** Cash flow is this month and what is ahead; Reports is any period and any
-   business. Cash flow's Overview no longer repeats the Budget card, mortgage payments, watchlists (all on Spending)
-   or recent transactions (Transactions). Still to do: move the period switch and long-range trend to Reports.
-3. **Net worth without investments.** With two days of history the net worth line is drawn alone and the invitation to
-   add an investment sits under it.
+1. **Add on every screen.** Done. The top bar's Add offers Expense, Income and Transfer everywhere; Transfer opens
+   Accounts with the dialog ready (`/accounts#transfer`, also in ⌘K). Add income always opens on a one-time "Other
+   income" and saves with only an amount and an account; a blank name falls back to its category.
+2. **Fast entry.** Done. Expense and income forms have Save and add another (⌘/Ctrl+Enter), which keeps the category or
+   income source, date, account and currency. Problems are said under their field and the first one is focused; a
+   Save that is switched off says why in words. A past name fills its category and, into an empty amount, its last
+   amount. The transfer dialog opens in its amount and says why Save is blocked.
+3. **Cash flow and Reports stay separate.** Done. Cash flow is this month and what is ahead, with six recent months;
+   Reports is any period and any business.
+4. **Net worth without investments.** Done. With two days of history the net worth line is drawn alone and the
+   invitation to add an investment sits under it.
+5. **Dashboard at a glance.** Done. Safe to spend replaces Budget left; Where it is going ranks the month's categories
+   with their share and change against last month by this day, each row opening Transactions for that category; What to
+   improve gives at most three lines (overdue payment, the day cash goes below zero, categories over budget, the biggest
+   mover). No figure is both a tile and a card, and every row opens its own item: an allocation row opens Investments
+   filtered to that kind (`/assets?kind=…`), a goal its history, a payment its Record payment form.
 
 ## System design
 
 ### Net worth history (the chart everyone looks at)
 
-Found, in order of harm:
+Found on 21 November, in order of harm, and where each stands (details in `docs/portfolio-snapshots.md`):
 
-1. Fixed 21 November 2026: stock and crypto history used the stored value and only today used live prices, so the
-   line was flat and jumped on its last day. Each quoted holding is now carried between its snapshots by its price
-   (`lib/holding-prices.ts`, `priceScale` in `lib/portfolio-history.ts`); the history read returns the closes from the
-   kept price cache. Metals and equity compensation still use stored values.
-2. Fixed 21 November 2026: the line disappeared whenever benchmark data was loading or unavailable. It now draws alone.
-3. Past days convert at today's exchange rate. Fix: each day at its own rate, as transactions already do.
-4. Deleting or editing an old transaction leaves a dent from its date until today. Fix: adjust the account's valuation
-   rows from the transaction's date.
-5. The whole history is re-read after every save, page by page. Fix: one reduced daily series from the server, cached
-   by revision; memoise the client work.
+1. **Done.** Stock and crypto history used the stored value and only today used live prices, so the line was flat and
+   jumped on its last day. Each quoted holding is carried between its snapshots by its price (`lib/holding-prices.ts`,
+   `priceScale` in `lib/portfolio-history.ts`). Not done: metals and equity compensation still use stored values.
+2. **Done.** The line disappeared whenever benchmark data was loading or unavailable. It draws alone.
+3. **Done.** Past days converted at today's exchange rate. Each day now converts at its own day's kept rate
+   (`exchange_rate_days`, `lib/history-fx.ts`, `lib/history-rates.ts`), never from a rate service at request time, and
+   the headline's Investment returns / Your own money split reads the same rates.
+4. **Done.** Deleting or editing an old transaction left a dent from its date until today. A cash account whose records
+   explain its balance is rebuilt from them (`lib/cash-ledger.ts`); one that does not add up keeps its snapshots. No
+   valuation rows are rewritten.
+5. **Done.** A holding added today without an opening date hid the whole period's change. It now counts from its first
+   recorded value and the change of everything else is shown (`periodChange`, `joined`).
+6. **Partly done.** The history read runs its pages together, asks only for the columns the charts use and sends one
+   cash valuation per account per day; the quadratic loops in the comparison are gone. Not done: one reduced daily
+   series from the server, cached by revision. The browser still replays the events after every save.
 
 ### Closing and deleting accounts
 
@@ -117,17 +137,28 @@ numbers; profit and loss by share.
 
 ## Build order
 
+Status on 23 November 2026.
+
 1. **Net worth line always draws.** Done.
-2. **Entry:** global Add (done), save and add another (expenses done), inline field errors, one payment dialog, investment stepper that can
-   pay from an account.
-3. **Dashboard:** safe to spend, where it is going, what to improve; every row opens its item.
-4. **Shimmers:** Cash flow tabs, Overview cards, Investments, Loans, Recently deleted; headers outside the skeleton.
-5. **De-duplicate:** the table above (Cash flow Overview done; `/benchmarks` and unused styles removed), then the
-   unused transfer branch.
-6. **Ownership and valuations:** migrations 166 and 167, asset page, share-aware profit and loss.
-7. **Net worth history:** historical prices (done), day rates, deletion dents, speed.
-8. **Close account:** `closed_on`, one deletion rule across surfaces.
-9. **Motion:** one press scale and row tint, tab content transition, reduced-motion rules in one place.
+2. **Entry.** Done: global Add, Save and add another on both forms, inline field errors, the transfer dialog's amount
+   focus and reason. Not done: one loan and mortgage payment dialog, and an investment stepper that can pay from an
+   account (both being built separately).
+3. **Dashboard.** Done: Safe to spend, Where it is going, What to improve, one spending pace chart, every row opens its
+   item, the shimmer matches the board card for card.
+4. **Shimmers.** Done: Cash flow's tabs (Forecast, Spending watchlists, Income estimate, the Overview income table),
+   Investments (summary, account and asset card grids, Profit & loss, Payouts & alerts, Target allocation), Loans (side
+   cards only when shown, the payoff planner), Recently deleted, Recurring (Reminders, Calendar), Budget Year, Reports
+   Tax, Assistant; page-heading tabs and actions are reserved on phones.
+5. **De-duplicate.** Done: every row of the table above except the one payment dialog.
+6. **Ownership and valuations.** Not started: migrations 166 and 167, asset page, share-aware profit and loss.
+7. **Net worth history.** Done: historical prices, day rates, deletion dents, late entries, newly recorded holdings,
+   the faster read. Not done: metals and equity compensation by price, a cached daily series from the server.
+8. **Close account.** Not started: `closed_on`, one deletion rule across surfaces.
+9. **Motion.** Done: one press scale (`--press`, `--press-wide`) and row tint (`--row-hover`, `--row-press`) with press
+   and focus states on every tappable row, pointer glow on tappable cards, a 180 ms content change on page tabs,
+   scripted scrolls that respect reduced motion, and one reduced-motion block in `app/styles/motion.css` that stills
+   every press and transition (an animation's own reduced-motion rule stays beside its keyframes).
+10. **Database cleanup.** Not started.
 
 Design rules adopted from the outside review (they match `UI-AGENT.md` where it already speaks): one primary figure
 per screen; group by spacing before adding boxes and never nest cards; tabular numerals for money; gain and loss never
