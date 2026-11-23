@@ -2,7 +2,7 @@ import { assets, income, totalValue, type Entry } from './finance';
 import { upcomingPayments, type DueItem, type PlanningData } from './planning';
 import { shiftDay } from './calendar-days';
 import { amountIn, type PairRate, type RateTable } from './money';
-import { topShares } from './cash-flow-report';
+import { otherShareKey, topShares } from './cash-flow-report';
 
 /** Entries must already be expressed in the display currency. Shares stay precise; round only when displaying. */
 export function assetAllocation(entries: readonly Entry[]) {
@@ -19,9 +19,12 @@ export function allocationRows(items: ReturnType<typeof assetAllocation>, limit 
  return topShares(items.map(item => ({ key: item.kind as string, amount: item.total, share: item.share })), items.length === limit + 1 ? items.length : limit).map(share => ({ kind: share.key, total: share.amount, share: share.share }));
 }
 
-/** Where a kind of asset is kept: cash and deposits on Accounts, everything else on Investments. An allocation row or
- * slice opens it. */
-export const allocationHref = (kind: string) => kind === 'Cash' || kind === 'Deposit' ? '/accounts' : '/assets';
+/** Where a kind of asset is kept: cash and deposits on Accounts, money lent on Loans & debts, everything else on
+ * Investments, filtered to that kind (`assetKindOf` reads the link there); the merged "Other" row opens Investments
+ * whole. An allocation row or slice opens it. */
+export const allocationHref = (kind: string) => kind === 'Cash' || kind === 'Deposit' ? '/accounts' : kind === 'Money lent' ? '/loans-debts' : kind === otherShareKey ? '/assets' : '/assets?kind=' + encodeURIComponent(kind);
+/** The kind an Investments link asks for (`/assets?kind=Stock`), when it is one of `kinds`. */
+export const assetKindOf = (search: string, kinds: readonly string[]) => { const kind = new URLSearchParams(search).get('kind'); return kind && kinds.includes(kind) ? kind : undefined; };
 
 /** Which rows of a dated list name their category: the first, and any whose category differs from the row above it.
  * The icon tile carries the category on every row, so a run of one category does not repeat its name. */

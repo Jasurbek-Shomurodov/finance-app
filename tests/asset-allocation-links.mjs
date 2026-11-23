@@ -35,6 +35,20 @@ test('the allocation list shows every kind; a kind held only in accounts scrolls
  assert.equal(scrolled.at(-1), 'asset-account-section', 'cash held in a brokerage account is on the account card');
 });
 
+test('a link that names a kind opens Holdings on it once the records are in: filtered, or at the accounts that hold it', () => {
+ scrolled.length = 0;
+ r.mount(React.createElement(AssetDashboard, { ...props, loading: true, openKind: 'Stock' }));
+ assert.equal(r.find(byType('Segmented')).props.value, 'all', 'nothing is chosen from records still loading');
+ r.mount(React.createElement(AssetDashboard, { ...props, openKind: 'Stock' }));
+ assert.equal(r.find(byType('Segmented')).props.value, 'Stock');
+ assert.equal(scrolled.at(-1), 'asset-holdings');
+ // Clearing the filter holds: the same link is not applied a second time.
+ r.fire(r.find(byType('Segmented')), 'onChange', 'all');
+ assert.equal(r.find(byType('Segmented')).props.value, 'all');
+ r.mount(React.createElement(AssetDashboard, { ...props, openKind: 'Cash' }));
+ assert.equal(scrolled.at(-1), 'asset-account-section', 'a kind held only in accounts lands on them, never on an empty filter');
+});
+
 test('an account card’s Holdings count is the list and total under it, cash rows included', () => {
  r.mount(React.createElement(AssetDashboard, props));
  const card = r.find(node => node.type === 'article' && node.props['data-id'] === 'broker');

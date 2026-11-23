@@ -5,7 +5,7 @@ import { Count } from '@/components/presentation-foundation/count';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
 import { signTone } from '@/components/presentation-foundation/tone';
 
-import { useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { AssetCard } from '@/components/presentation-foundation/asset-card';
 import { AnimatedMoney } from '@/components/presentation-foundation/animated-money';
 import { Ellipsis, LayoutGrid, List, Search, Trash2 } from 'lucide-react';
@@ -46,6 +46,7 @@ type Props = {
  /** What each holding earned since tracking began; null while the history loads or when it cannot be read. */
  pnl?: InvestmentPnl | null; pnlError?: boolean;
  /** Opens the Profit & loss tab. */ onShowPnl?: () => void;
+ /** The kind a link asked for (the Dashboard's allocation rows): its assets are filtered and scrolled to, once per link. */ openKind?: string;
 };
 
 const assetsPerPage = 12;
@@ -90,7 +91,20 @@ function EarningFacts({ record, shown }: { record: Entry; shown: (amount: number
   {interestKinds.includes(record.kind) && record.rate > 0 && <div><dt>{t('Annual interest')}</dt><dd>{formatPercent(record.rate, locale, 8)}</dd></div>}</>;
 }
 
-export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoading, accountsError, onRetryAccounts, onAddHolding, records, currency, market, netWorth, debt, loading, demo, onAdd, onEdit, onTrack, onInvest, onDelete, quoteLabel, propertyTotals = null, pnl = null, pnlError = false, onShowPnl }: Props) {
+type KindLink = { openKind?: string; ready: boolean; hasCards: (kind: string) => boolean; onFilter: (kind: string) => void; holdings: RefObject<HTMLElement | null>; accounts: RefObject<HTMLElement | null> };
+/** A link that names a kind lands on it once the records are in, once per link: filtered and scrolled to when it has
+ * cards of its own, else at the accounts that hold it (never an empty filter). */
+function useKindLink({ openKind, ready, hasCards, onFilter, holdings, accounts }: KindLink) {
+ const [linked, setLinked] = useState<{ kind?: string; at: 'holdings' | 'accounts' | null }>({ at: null });
+ if (ready && openKind !== linked.kind) {
+  const loose = !!openKind && hasCards(openKind);
+  setLinked({ kind: openKind, at: !openKind ? null : loose ? 'holdings' : 'accounts' });
+  if (loose) onFilter(openKind!);
+ }
+ useEffect(() => { if (linked.at) (linked.at === 'holdings' ? holdings : accounts).current?.scrollIntoView({ block: 'start', behavior: scrollBehavior() }); }, [linked, holdings, accounts]);
+}
+
+export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoading, accountsError, onRetryAccounts, onAddHolding, records, currency, market, netWorth, debt, loading, demo, onAdd, onEdit, onTrack, onInvest, onDelete, quoteLabel, openKind, propertyTotals = null, pnl = null, pnlError = false, onShowPnl }: Props) {
  const { t, locale } = useLanguage();
  const [category, setCategory] = useState('all');
  const holdingsRef = useRef<HTMLElement>(null), accountsRef = useRef<HTMLElement>(null);
@@ -117,6 +131,7 @@ export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoadin
  // accounts (Cash, Deposit, holdings grouped under an account) has no card in that filter, so it moves to the accounts.
  const showCategory = (kind: string) => { if (otherCategories.some(group => group.kind === kind)) { selectCategory(kind); scrollTo(holdingsRef.current); } else scrollTo(accountsRef.current); };
  const clearFilters = () => { setCategory('all'); setAssetPage(1); };
+ useKindLink({ openKind, ready: !loading, hasCards: kind => otherCategories.some(group => group.kind === kind), onFilter: selectCategory, holdings: holdingsRef, accounts: accountsRef });
 
  const renderCard = ({ original, converted }: (typeof holdings)[number]) => {
     // Every figure in the display currency; without a rate they read "—" with a note, never under the saved currency.

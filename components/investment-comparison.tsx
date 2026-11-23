@@ -27,6 +27,8 @@ import { type BenchmarkData, type FxPoint } from '@/lib/benchmark-data';
 import { mergeFx } from '@/lib/history-rates';
 import { benchmarkColor,defaultBenchmarkColor,defaultComparisonPreferences,isInvestmentRecord,type ComparisonProfile } from '@/lib/comparison-profile';
 import Link from 'next/link';
+import { DrawerLink } from '@/components/presentation-foundation/drawer-link';
+import { benchmarksLink } from '@/lib/add-links';
 import { ChartNoAxesCombined } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
@@ -152,6 +154,8 @@ export function InvestmentComparison({fx,allPoints,periodPick,onViewMove,history
    <p className="comparison-note">{t(scope==='expenses'?'Investment purchases, principal repayments and every recorded expense fund benchmarks. Spending adds nothing to your investment value, so the gap shows what it cost. Transfers between your accounts and income receipts are not counted.':'Investment purchases and principal repayments fund benchmarks. Explicit transfers between investments are not counted again. Cash balances and income receipts are excluded.')}</p>
    {beforeMarketHistory&&<p className="comparison-note">{t('Market history starts on {date}. Earlier purchases are compared from their recorded values on that day.',{date:formatDate(earliestStart,locale)})}</p>}
    {coverage.missing.length>0&&<p className="comparison-note">{t('Some investments have no recorded purchase. Their first recorded value counts as invested on the day it was recorded, so it is never shown as a gain.')}</p>}
+   {/* Which benchmarks are drawn, and their colours, are chosen in Settings: one home, linked from the chart they change. */}
+   <p className="comparison-note"><DrawerLink href={benchmarksLink}>{t('Investment benchmarks')}</DrawerLink></p>
    {demo&&<p className="comparison-note">{t("Sample portfolio compared with real BTC and SPY price history. SPY tracks the S&P 500; deposits use assumed annual rates.")}</p>}
   </details>}
   <Dialog open={!!detailPoint} onOpenChange={open=>{if(!open)setDetailDate(null);}}><DialogContent className="chart-point-details sm:max-w-xl"><DialogHeader><DialogTitle>{t('Activity and investments')}</DialogTitle><DialogDescription>{detailDate?formatDate(detailDate,locale):''}</DialogDescription></DialogHeader>

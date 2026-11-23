@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {loadTS} from './helpers/load-ts.mjs';
-const {assetAllocation,changePercent,nextPayments,dueCounts,namesCategory}=loadTS('lib/overview.ts');
+const {allocationHref,assetAllocation,assetKindOf,changePercent,nextPayments,dueCounts,namesCategory}=loadTS('lib/overview.ts');
 const entry=(id,kind,amount,extra={})=>({id,name:id,kind,amount,quantity:1,cost:0,rate:0,currency:'USD',frequency:'Once',date:'2026-09-01',...extra});
 
 test('allocation lists only owned asset kinds, largest first, with precise shares',()=>{
@@ -144,4 +144,17 @@ test('the Overview pill and the Due tile count the same set: payments only, the 
 test('a dated list names a category on its first row and wherever it differs from the row above',()=>{
  assert.deepEqual(namesCategory(['Living expense','Living expense','Household','Living expense','Living expense'].map(kind=>({kind}))),[true,false,true,true,false]);
  assert.deepEqual(namesCategory([]),[]);
+});
+
+test('an allocation row opens where its kind is kept, Investments filtered to it',()=>{
+ assert.equal(allocationHref('Cash'),'/accounts');
+ assert.equal(allocationHref('Deposit'),'/accounts');
+ assert.equal(allocationHref('Money lent'),'/loans-debts');
+ assert.equal(allocationHref('Stock'),'/assets?kind=Stock');
+ assert.equal(allocationHref('Treasury bill'),'/assets?kind=Treasury%20bill');
+ assert.equal(allocationHref(loadTS('lib/cash-flow-report.ts').otherShareKey),'/assets','the merged row opens every asset');
+ const kinds=['Stock','Treasury bill'];
+ assert.equal(assetKindOf('?kind=Treasury%20bill',kinds),'Treasury bill');
+ assert.equal(assetKindOf('?kind=Salary',kinds),undefined,'only a kind Investments holds is taken from a link');
+ assert.equal(assetKindOf('',kinds),undefined);
 });
