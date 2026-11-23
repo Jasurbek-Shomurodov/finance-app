@@ -62,7 +62,8 @@ function firstBalanceDay(events: readonly HistoryEvent[], today: string) {
  * events; then the closes and the day rates those events ask for. */
 export async function readPortfolioHistory({ read, preferred, closes, rates, today }: HistoryReadDeps) {
  const [records, activity, cashflows, recurringIncome, movements, currencies] = await Promise.all([
-  // Only current records enter the chart.
+  // Only records still on file enter the chart: a deleted one leaves every past day, a closed one keeps its past
+  // (it carries `closed_on`, from which it counts nothing).
   read<Entry>(`/rest/v1/finance_records?kind=in.(${trackedKinds.map(encodeURIComponent).join(',')})&select=*&order=id.asc`),
   // Repayments saved from Accounts have no Tracker transaction; the chart reads them as one. Every operation also
   // carries its account's balance before and after, which dates the change on the operation's own day.

@@ -118,6 +118,21 @@ function addRateDays(byDay: Map<string, DayChanges>, fx: readonly FxPoint[], fro
  }
  return rated;
 }
+/** A closed record (`closed_on`) keeps its value up to the day before it closed and counts nothing from that day,
+ * whatever its later snapshots say. The closing day is drawn (`drawn`), so the line steps on it and not on the next day
+ * something else changes. Answers whether a record is closed by a day. */
+function closings(included: readonly Entry[], byDay: Map<string, DayChanges>, drawn: Set<string>, from: string | undefined, today: string) {
+ const closed = new Map<string, string>();
+ for (const record of included) {
+  const day = record.closed_on;
+  if (!day || day > today) continue;
+  closed.set(record.id, day);
+  if (!from || day <= from) continue;
+  drawn.add(day);
+  if (!byDay.has(day)) byDay.set(day, { events: [], shifts: [] });
+ }
+ return (id: string, date: string) => closed.get(id)! <= date;
+}
 /** How a history is read: the currency it is shown in, today's rates (which also decide the currencies that can be
  * shown at all), and the day it ends. `fx` is the rate of each past day (`historyFx`); without it every day converts at
  * `rates`. `moves` puts late-entered changes on their own day, `prices` carries quoted holdings between snapshots. */
@@ -170,8 +185,9 @@ export function portfolioHistory(records: Entry[], events: HistoryEvent[], view:
  const byDay = changesByDay(sorted, moves, byId, today);
  // Quoted holdings follow their price between snapshots (`priceScale`).
  const priced = addPriceDays(byDay, sorted, prices, today), scale = priceScale(prices);
- const rated = included.some(record => record.currency !== currency) ? addRateDays(byDay, fx, sorted[0]?.occurred_on, today) : new Set<string>();
- const ratesOn = dayRates(fx, rates);
+ const from = sorted[0]?.occurred_on;
+ const rated = included.some(record => record.currency !== currency) ? addRateDays(byDay, fx, from, today) : new Set<string>();
+ const ratesOn = dayRates(fx, rates), closedBy = closings(included, byDay, priced, from, today);
  let nextOpening = 0;
  for (const date of [...byDay.keys()].sort()) {
   const changes = byDay.get(date)!;
@@ -183,7 +199,7 @@ export function portfolioHistory(records: Entry[], events: HistoryEvent[], view:
   const observed = applyBalances(changes.events, balances, id => { scale.anchor(id, date); joins.note(id); });
   for (const [id, amount] of changes.shifts) shifted.set(id, (shifted.get(id) ?? 0) + amount);
   const table = ratesOn(date);
-  const worth = (id: string, amount: number, from: string) => convertAmount(amount * scale.factor(id, date) + (shifted.get(id) ?? 0), from, currency, table) ?? 0;
+  const worth = (id: string, amount: number, from: string) => closedBy(id, date) ? 0 : convertAmount(amount * scale.factor(id, date) + (shifted.get(id) ?? 0), from, currency, table) ?? 0;
   joins.settle(id => { const record = byId.get(id)!; return (assets.includes(record.kind) ? 1 : -1) * worth(id, balances.get(id)!, record.currency); });
   // A day that only moves a change within a record not yet known adds nothing to draw.
   if (!observed && !movesDay(date, changes.shifts, balances, priced, rated)) continue;

@@ -104,7 +104,7 @@ test('the database refuses case-only duplicate categories per owner and keeps li
   await db.query("INSERT INTO finance_records(id,user_id,name,kind,currency,amount,date,frequency) VALUES($1,auth.uid(),'Wallet','Cash','USD',100,'2026-01-01','Once')",[id(20)]);
   await db.query("INSERT INTO finance_records(id,user_id,name,kind,currency,amount,date,frequency,account_id) VALUES($1,auth.uid(),'Lunch','Living expense','USD',5,'2026-01-02','Once',$2)",[id(21),id(20)]);
   await db.exec('SET ROLE authenticated');
-  await assert.rejects(db.query('SELECT move_item_to_deleted($1,$2)',[id(20),'finance_records']),/cannot be deleted|account_id/);
+  await assert.rejects(db.query('SELECT move_item_to_deleted($1,$2)',[id(20),'finance_records']),/still has linked items/);
   await db.exec('RESET ROLE');
   await db.query("INSERT INTO finance_records(id,user_id,name,kind,currency,amount,date,frequency) VALUES($1,auth.uid(),'Spare','Cash','USD',0,'2026-01-01','Once')",[id(22)]);
   await db.exec('SET ROLE authenticated');

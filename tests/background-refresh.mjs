@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {harness} from './helpers/hooks.mjs';
+import {loadTS} from './helpers/load-ts.mjs';
+const {splitClosed}=loadTS('lib/closed-records.ts');
 
 // Exercise hook state transitions with manually controlled network responses.
 function network(){const requests=[];return {requests,fetch:(url,options={})=>new Promise(resolve=>requests.push({url,options,reply:(data,status=200)=>resolve(Response.json(data,{status}))}))};}
@@ -10,7 +12,7 @@ const fixture={...emptyPlanning,records:[{id:'salary',amount:3450},{id:'cash',am
 function planning(){
  const net=network();let revision=0;
  const onSaved=()=>revision++;
- const run=harness('hooks/use-planning.ts','usePlanning',{fetch:net.fetch,emptyPlanning,normalizeEntry:r=>r});
+ const run=harness('hooks/use-planning.ts','usePlanning',{fetch:net.fetch,emptyPlanning,normalizeEntry:r=>r,splitClosed});
  return {...net,render:(user='owner')=>run(user,false,[],revision,onSaved)};
 }
 
@@ -50,5 +52,5 @@ test('superseded reads cannot undo a confirmed payment and a different user neve
  assert.equal(app.requests[2].options.signal.aborted,true);
  app.requests[2].reply(fixture);await flush();
  assert.equal(app.render().data.occurrences.length,1);
- const other=app.render('other');assert.equal(other.loading,true);assert.deepEqual(other.data,emptyPlanning);
+ const other=app.render('other');assert.equal(other.loading,true);assert.deepEqual(other.data,{...emptyPlanning,closed:[],closedAccounts:[]});
 });

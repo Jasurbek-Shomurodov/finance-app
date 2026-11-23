@@ -57,6 +57,12 @@ it instead of styling a page on its own.
   it deletes; in a form footer it sits apart at the start. A ⋯ menu's delete is a
   `RowMenu` item with `deletes: true`, and a confirmation that deletes passes
   `deletes` to `ConfirmDialog`; both show the bin beside the label.
+- Close and Delete are different things and are never offered as one (migration 168). Close retires an account or
+  holding that has history: it leaves the lists and waits in the Closed fold (`ClosedFold`) with Reopen. Delete is for
+  mistakes. A menu that offers Delete on an account or holding offers Close above it; the delete confirmation
+  (`DeleteHeldDialog`) names what still points at the record and then offers Close in place of Delete, so a person
+  never presses Delete to read a refusal. The fold is rendered only while something is closed, at the foot of its
+  screen, so the loading shimmer has no block for it.
 - Every list whose order the person chooses (goals, accounts, categories, cards,
   templates and the like) is reorderable by drag and drop with `SortableList` /
   `SortableItem` from `presentation-foundation/sortable.tsx`; chronological or

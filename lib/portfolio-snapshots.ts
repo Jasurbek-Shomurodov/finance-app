@@ -4,10 +4,12 @@ import type { PortfolioPoint } from './portfolio-history';
 
 export type PortfolioSnapshot = { occurred_on: string; assets: number; debt: number; rates: Record<string,number>; updated_at: string };
 
-// Totals are in USD; original holdings, ownership and quantities remain untouched.
+// Totals are in USD; original holdings, ownership and quantities remain untouched. `parts` is each record's own value
+// inside them (migration 168), so a record deleted later leaves the day exactly; a record worth nothing has no part.
 export function snapshotTotals(records:Entry[],market:Pick<MarketData,'quotes'|'rates'|'fx'>){
  const rates={...marketRates(market),USD:1};
  let assetTotal=0,debt=0;
+ const parts:Record<string,number>={};
  for(const record of records){
   if(!assets.includes(record.kind)&&!liabilities.includes(record.kind))continue;
   const instrument=instrumentFor(record);
@@ -19,8 +21,9 @@ export function snapshotTotals(records:Entry[],market:Pick<MarketData,'quotes'|'
   }else amount=convertAmount(value(record),record.currency,'USD',rates);
   if(amount===null||!Number.isFinite(amount)||amount<0)return null;
   if(assets.includes(record.kind))assetTotal+=amount;else debt+=amount;
+  if(amount>0)parts[record.id]=amount;
  }
- return {assets:assetTotal,debt,rates};
+ return {assets:assetTotal,debt,rates,parts};
 }
 
 export function snapshotPoints(snapshots:PortfolioSnapshot[],currency:string):PortfolioPoint[]{

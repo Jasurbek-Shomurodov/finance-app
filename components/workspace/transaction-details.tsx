@@ -1,4 +1,5 @@
 "use client";
+import { recordAmong } from '@/lib/closed-records';
 import { PaymentDialog, TransactionDetailsDialog } from '@/components/workspace/workspace-lazy';
 import { RecordAttachments } from '@/components/record-attachments';
 import { useLanguage } from '@/components/language-provider';
@@ -45,7 +46,7 @@ export function WorkspaceTransactionDetails() {
   origin={origin}
   tagging={{ tags: tags.data.tags, tagIds: tags.data.links.filter(link => link.record_id === viewing.id).map(link => link.tag_id), onTags: (add, remove) => tags.change([viewing.id], add, remove),
    onCreateTag: async name => { const id = crypto.randomUUID(); await tags.save({ id, name, color: nextPaletteColor(tags.data.tags.map(tag => tag.color)) }); return id; } }}
-  accountName={accountId ? records.find(account => account.id === accountId)?.name : undefined} propertyName={propertyNameOf(viewing, records)}
+  accountName={recordAmong(accountId, planning.data)?.name} propertyName={propertyNameOf(viewing, records)}
   ownerName={owners.find(owner => owner.id === ownerOf(viewing, household.state!))?.name}
   onSplit={splittable(viewing) && !transactionTools.loading && !transactionTools.error ? leaveTo(setSplitting) : undefined}
   attachments={<RecordAttachments recordId={viewing.id} available={attachments.available} onChange={attachments.refresh}/>}

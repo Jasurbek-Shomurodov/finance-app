@@ -12,7 +12,11 @@ The chart is rebuilt on every read from the records themselves; it never draws a
   pages are read together, and every table is asked only for the columns the charts use. A busy cash account sends one
   balance snapshot a day (`lastCashValuations`); its first balance and every dated movement are kept. Everything is read
   with the signed-in person's token, so row security decides what comes back. Deleted records are not read, so they
-  leave every past day.
+  leave every past day. Closed records are read: their past is still part of the line.
+- **Closed records count up to their closing day.** A record with `closed_on` keeps its value on every day before it
+  and counts nothing from that day, whatever its later snapshots say (`closings` in `lib/portfolio-history.ts`); the
+  closing day is drawn, so the line steps on it. A closed cash account is rebuilt from its ledger like any other, so
+  its balance leaves on the day of the closing transfer.
 - **Each past day at its own rate.** Past days convert at the official rates kept in `exchange_rate_days`
   (`keptHistoryRates` in `lib/history-fx.ts`): only the currencies the history is kept or shown in, the latest 400 days
   one by one and older ones one a week. No rate service is asked at request time. Today converts at the live rates
@@ -39,7 +43,7 @@ The chart is rebuilt on every read from the records themselves; it never draws a
   balance, and an explicit zero opening counts from the start.
 - **Today** is the live figure from current records and prices, on the day the read names (`chartDay`).
 
-Not done: metals and equity compensation by price; a `closed_on` date for accounts and holdings; a server-side cached
+Not done: metals and equity compensation by price; a server-side cached
 daily series (the browser still replays the events after each save, though the quadratic loops are gone).
 
 ## Daily snapshots (`portfolio_snapshots`, migration 017)
@@ -50,8 +54,22 @@ it after market refreshes and record changes (`usePortfolioSnapshots`, `/api/por
 totals and dates sent by a browser are ignored, a missing price or rate prevents an incomplete snapshot from replacing a
 good one, and only today's row can be written. Reads enforce owner row security.
 
-Snapshots are aggregate observations, so they cannot be reconciled with a record deleted or corrected later. The net
-worth chart therefore does not draw them. They feed the surfaces that need a figure for a past day without replaying
-records: goal forecasts, the financial review, and the Telegram digest and monthly report.
+Snapshots are aggregate observations, so they cannot be reconciled with a record corrected later. The net worth chart
+therefore does not draw them. They feed the surfaces that need a figure for a past day without replaying records: goal
+forecasts, the financial review, and the Telegram digest and monthly report.
+
+**A deleted record leaves the snapshots too (migration 168).** Deleting an account or holding means it never existed,
+on these surfaces as on the chart, so nothing shows a cliff on the deletion day:
+
+- Each day now keeps its `parts`: every record's own value inside the day's totals, in US dollars
+  (`snapshotTotals`). The browser never receives them.
+- When an account or holding is deleted, `remove_from_portfolio_snapshots` takes it out of every day of its owner. A
+  day with parts gives back exactly the record's part. A day from before parts were kept gives back the balance the
+  record had recorded by then, at its owned share and at that day's own rates; for a quoted holding that is its last
+  saved value, so the price drift since then stays in those older days.
+- What was taken from each day is kept with the deleted record (`deleted_items.snapshot_changes`), and Restore adds
+  exactly that back, so every day reads as it did. The days captured while the record sat in Recently deleted carry
+  the value it left with.
+- A closed record is worth nothing, so the days after its closing day hold no part of it, and the days before keep it.
 
 The investment comparison drawn on the same card follows [its own rules](investment-comparison.md).

@@ -6,6 +6,7 @@ import { normalizeEntry } from '@/lib/finance';
 import { isLanguage, translate } from '@/lib/i18n';
 import { marketSymbols } from '@/lib/market';
 import type { PlanningData } from '@/lib/planning';
+import { openOnly } from '@/lib/closed-records';
 import { readOwnerRows } from '@/lib/server-records';
 import { crossSite, readJson, signInAgain, tooManyAttempts } from '@/lib/api-route';
 import { cachedMarket } from '@/lib/market-cache';
@@ -44,7 +45,8 @@ export async function POST(req: Request) {
   // The read Budget and Reports use, with the loan payments, so the figures are the ones those screens show.
   const planning = await readPlanning(new Request(new URL(`/api/planning?scope=budget&debts=1&month=${month}&from=${shiftMonth(month, -2)}`, req.url)));
   if (!planning.ok) throw Error(`Planning read failed (HTTP ${planning.status}).`);
-  const data = await planning.json() as PlanningData, records = data.records.map(normalizeEntry);
+  // Closed accounts and holdings are not current money: the snapshot leaves them out, and keeps every transaction.
+  const data = await planning.json() as PlanningData, records = openOnly(data.records.map(normalizeEntry));
   // Holdings are worth their live quotes, as the Net worth card shows them, so the feed is read only when there is a symbol to quote.
   const symbols = marketSymbols(records), quoted = symbols.crypto.length + symbols.stocks.length + symbols.metals.length > 0;
   const [history, splits, market] = await Promise.all([readHistory().then(reply => reply.ok ? reply.json() as Promise<PnlHistory> : null, () => null), readOwnerRows<Parameters<typeof normalizeSplits>[0][number]>('transaction_splits', auth.token, { order: 'record_id.asc,position.asc' }).then(normalizeSplits), quoted ? cachedMarket({ fx: true, rates: true, ...symbols, stockAccess: true, metalAccess: true }, { later: afterResponse }) : null]);

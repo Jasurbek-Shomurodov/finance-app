@@ -20,7 +20,7 @@ type Activity = ReturnType<typeof accountActivityPage>;
 /** Balance operations: transfers, reconciliations, repayments and mortgage payments, with the balance after each. */
 function OperationsTable({ activity, data, fallback }: { activity: Activity; data: PlanningData; fallback: string }) {
  const { t, locale } = useLanguage();
- const cash = data.records.filter(record=>record.kind==='Cash');
+ const cash = [...data.records,...(data.closed??[])].filter(record=>record.kind==='Cash');
  if(!activity.activity.length)return null;
  return <div className="table-scroll"><table><thead><tr><th>{t('Date')}</th><th>{t('Account')}</th><th>{t('Activity')}</th><th>{t('Amount')}</th><th>{t('Balance after')}</th></tr></thead><tbody>{activity.activity.map(item=>{const account=cash.find(a=>a.id===item.account_id);return <tr key={item.id}><td>{formatDate(item.occurred_on,locale)}</td><td>{account?.name??'—'}</td><td>{t(operationLabels[item.action]??item.action)}{item.target_id&&<small className="block">{data.records.find(record=>record.id===item.target_id)?.name}</small>}{item.notes&&<small className="block">{item.notes}</small>}</td><td>{formatMoney(item.action==='mortgage'?decimalSum([item.amount,item.fee]):item.amount,account?.currency??fallback,locale)}</td><td>{formatMoney(item.after_balance,account?.currency??fallback,locale)}</td></tr>;})}</tbody></table></div>;
 }
@@ -38,7 +38,7 @@ function CashFlowTable({ activity, data, fallback, onOpen }: { activity: Activit
  const { t, locale } = useLanguage();
  // A transaction opens its details: what was entered, its account, category and notes.
  const open = (record: Entry) => onOpen ? { className: 'clickable-row', ...openProps(() => onOpen(record), t('View details for {name}', { name: record.name.trim() || t(record.kind) })) } : {};
- const cash = data.records.filter(record=>record.kind==='Cash');
+ const cash = [...data.records,...(data.closed??[])].filter(record=>record.kind==='Cash');
  if(!activity.records.length&&!activity.investmentLinks.length)return null;
  return <><h3>{t('Income & expenses')}</h3><div className="table-scroll"><table><tbody>{activity.records.map(record=><tr key={record.id} {...open(record)}><td>{formatDate(record.date,locale)}</td><td>{record.name}</td><td>{cash.find(account=>account.id===record.account_id)?.name}</td><td className={signedAmount(record)>0?'positive':undefined}>{formatSignedMoney(signedAmount(record),record.currency,locale)}</td></tr>)}{activity.investmentLinks.map(moved=>{const account=cash.find(a=>a.id===moved.account_id);return <tr key={moved.id}><td>{formatDate(moved.investment_history.occurred_on,locale)}</td><td>{data.records.find(record=>record.id===moved.investment_history.record_id)?.name}</td><td>{account?.name}</td><td>{formatMoney(moved.amount,account?.currency??fallback,locale)}</td></tr>;})}</tbody></table></div></>;
 }

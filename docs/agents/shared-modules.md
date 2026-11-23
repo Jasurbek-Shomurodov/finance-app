@@ -15,6 +15,10 @@
   checks the client's against it. A day that is not kept yet (today before the
   download, a day the provider skipped) reads the rates in force on it: the latest
   kept day of the week before (`inForceDayTables`, `loadOfficialRate`).
+- Closed accounts and holdings: `lib/closed-records.ts` (`splitClosed`, `openOnly`, `recordAmong`, `isEmptyRecord`).
+  A list people choose from reads `planning.data.records`, which holds no closed record; a read of its own filters with
+  `openOnly`. What still points at an account before a delete: `deletionBlockers` (`lib/account-deletion.ts`) and
+  `/api/closing?id=`.
 - Abuse limits: `rateLimited` from `lib/rate-limit.ts` (Postgres-backed, migration
   106). Every new sign-in, code-sending or paid-API route needs one.
 - Day and month arithmetic: `lib/calendar-days.ts` (`shiftDay`, `daysBetween`,
