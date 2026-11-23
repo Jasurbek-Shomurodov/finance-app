@@ -30,7 +30,9 @@ Patterns already adopted:
 - Add goal: a full-screen stepper (Select tiles with counts, Targets,
   Contribution, Budget) with a live preview of the new goals beside the form
   (`components/planning/goal-setup-flow.tsx`, logic in `lib/goal-setup.ts`).
-  Multi-step creation flows follow this shape.
+  Multi-step creation flows follow this shape. Add asset is the second one (`components/add-asset/`): the kind
+  as tiles, then one question per step, with the chosen kind shown as a chip, a problem under its field, Enter to
+  move on and a review line above Save.
 
 ## Reordering: always, wherever order is the person's choice
 

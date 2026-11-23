@@ -19,7 +19,6 @@ function screen(file, name, tab, planning) {
   '@/components/presentation-foundation/loading-placeholder': { PanelSkeleton: part('skeleton') },
   '@/components/presentation-foundation/screen-skeletons': { InvestmentsSkeleton: part('skeleton'), LoansSkeleton: part('skeleton'), AllocationSkeleton: part('skeleton'), PerformanceSkeleton: part('skeleton'), PayoutsAlertsSkeleton: part('skeleton') },
   '@/components/asset-dashboard': { AssetDashboard: part('dashboard') },
-  '@/components/planning/add-asset-dialog': { AddAssetDialog: () => null },
   '@/components/portfolio-allocation-plan': { PortfolioAllocationPlan: part('plan') },
   '@/components/planning/debt-payoff-panel': { DebtPayoffPanel: part('plan') },
   '@/components/loans/loans-overview': { LoansOverview: part('overview') },

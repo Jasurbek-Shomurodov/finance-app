@@ -54,11 +54,12 @@ pins the built rows).
 | Payout calendar, price alerts, Bitcoin panel | Investments › Payouts & alerts | Left Profit & loss | Done |
 | Investment benchmarks | Settings › Investment benchmarks (`/settings#benchmarks`) | The net worth chart's details link there | Done (edited in Settings, not on the chart) |
 | Transfer | `AssetMovementDialog` | The unused `AccountOperation` transfer branch is removed | Done |
+| Add an asset | One Add asset flow (`components/add-asset/`, opened with `startAsset`; rules in `lib/add-asset.ts`) | Investments › Add asset, an investment account's Add holding (Investments and Accounts) and ⌘K; editing a saved record keeps the record form | Done |
 | Record a payment (loan, mortgage, scheduled bill or income) | One Record payment dialog (`components/payments/`, opened with `openPayment`) | Loans, Recurring, Cash flow, Dashboard, the records table and the expense form's Debt / mortgage tab | Done (see `docs/agents/scheduled-payments.md`) |
 
 ## Oddly placed, and where it moves
 
-- **Business setup** starts from Investments › Add asset ("Add business" / "Set up business tracking"). Done. Settings ›
+- **Business setup** starts from the Business tile of Add asset, which closes the flow and opens the setup. Done. Settings ›
   Businesses still lists and edits them.
 - **Business tax prep** stays in Reports and is always listed, with an invitation when no business exists. Done.
 - **Age of Money** sits with the Budget it measures. Done.
@@ -163,8 +164,13 @@ Status on 23 November 2026.
 
 1. **Net worth line always draws.** Done.
 2. **Entry.** Done: global Add, Save and add another on both forms, inline field errors, the transfer dialog's amount
-   focus and reason. the one Record payment dialog. Not done: an investment stepper that can
-   pay from an account.
+   focus and reason, the one Record payment dialog, and Add asset as a guided flow (23 November 2026): Kind, What, How
+   much, Paid from, one Save. A stock, coin or metal paid from a cash account is saved empty and filled by a Buy
+   (`/api/asset-movements`); a property, vehicle, valuable or retirement account is saved at its value and Money
+   invested debits the account (`/api/investment-history`). When the second request fails the flow says what was saved
+   and retries the purchase alone, under the same id. Not done: paying for a Treasury bill or a bond from an account
+   (their Tracker contribution needs a balance the flow cannot check without a database), and vested shares, which are
+   not bought.
 3. **Dashboard.** Done: Safe to spend, Where it is going, What to improve, one spending pace chart, every row opens its
    item, the shimmer matches the board card for card.
 4. **Shimmers.** Done: Cash flow's tabs (Forecast, Spending watchlists, Income estimate, the Overview income table),

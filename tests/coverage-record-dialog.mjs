@@ -570,3 +570,14 @@ test('a due bill of another category moves the expense into it, and a later cate
  d.r.fire(d.select('','rent'),'onChange',{target:{value:''}});
  assert.equal(d.state.editing.occurrence_record_id,null);
 });
+
+test('new vested shares have one date: the vesting date, which the opening date follows, never later than today',t=>{
+ const d=dialog(t,record('new-vest','Equity compensation',{name:'AAPL',opened_on:'2026-09-30'}));
+ const dates=d.r.all(node=>node.type==='DatePicker');
+ assert.equal(dates.length,1,'no opening or purchase date beside it');
+ assert.equal(d.labelled('Vesting date').children[0],'Vesting date');
+ d.r.fire(d.labelled('Vesting date','DatePicker'),'onChange','2026-08-15');
+ assert.deepEqual([d.state.editing.date,d.state.editing.opened_on],['2026-08-15','2026-08-15']);
+ d.r.fire(d.labelled('Vesting date','DatePicker'),'onChange','2027-01-10');
+ assert.deepEqual([d.state.editing.date,d.state.editing.opened_on],['2027-01-10','2026-09-30'],'shares that vest later open today');
+});
