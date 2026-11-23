@@ -1,6 +1,6 @@
 // P0 cases from .claude/skills/qa/references/cases.md, run in a browser on the fixed fixture (e2e/fixture.mjs).
 // Each test names its catalog cases. Expected figures are worked out from the fixture, never read off the screen.
-import { test, expect } from '@playwright/test';
+import { test, expect } from './test.mjs';
 import { accountBalance, accountsTotal, chooseOption, closeDialog, dollars, figureAfter, open, pageText, resetDatabase } from './helpers.mjs';
 import { expected, ids, today } from './fixture.mjs';
 import { testAccount } from './settings.mjs';

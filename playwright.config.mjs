@@ -5,6 +5,9 @@ import { pathToFileURL } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
 import { appUrl, supabaseUrl, testAccount } from './e2e/settings.mjs';
 
+// Both servers run on the same fixed day as the tests and the browser (e2e/fixed-clock.mjs).
+const fixedClock = `--import=${pathToFileURL('e2e/fixed-clock.mjs').href}`;
+
 // `next start` would read .env.local and the other env files, which hold real keys (the bot token, the service key,
 // market data). Every key they name is blanked for the test server, so a run never reaches a real service.
 const envFiles = ['.env', '.env.local', '.env.production', '.env.production.local'].filter(file => fs.existsSync(file));
@@ -36,7 +39,7 @@ export default defineConfig({
       command: 'node e2e/fake-supabase.mjs',
       url: supabaseUrl + '/auth/v1/.well-known/jwks.json',
       reuseExistingServer: false,
-      env: { E2E_SUPABASE_PORT: new URL(supabaseUrl).port, E2E_EMAIL: testAccount.email, E2E_PASSWORD: testAccount.password, E2E_USER_ID: testAccount.id },
+      env: { NODE_OPTIONS: fixedClock, E2E_SUPABASE_PORT: new URL(supabaseUrl).port, E2E_EMAIL: testAccount.email, E2E_PASSWORD: testAccount.password, E2E_USER_ID: testAccount.id },
     },
     {
       command: `npx next start -p ${new URL(appUrl).port} -H ${new URL(appUrl).hostname}`,
@@ -44,7 +47,7 @@ export default defineConfig({
       reuseExistingServer: false,
       timeout: 120_000,
       // Outside services (rates, prices) answer from e2e/offline-network.mjs instead of the network.
-      env: { ...blanked, NODE_OPTIONS: `--import=${pathToFileURL('e2e/offline-network.mjs').href}`, SUPABASE_URL: supabaseUrl, SUPABASE_PUBLISHABLE_KEY: 'e2e-publishable-key', SUPABASE_SERVICE_ROLE_KEY: 'sb_secret_e2e_only', APP_ORIGIN: appUrl, PUBLIC_SIGNUP_ENABLED: 'false' },
+      env: { ...blanked, NODE_OPTIONS: `${fixedClock} --import=${pathToFileURL('e2e/offline-network.mjs').href}`, SUPABASE_URL: supabaseUrl, SUPABASE_PUBLISHABLE_KEY: 'e2e-publishable-key', SUPABASE_SERVICE_ROLE_KEY: 'sb_secret_e2e_only', APP_ORIGIN: appUrl, PUBLIC_SIGNUP_ENABLED: 'false' },
     },
   ],
 });

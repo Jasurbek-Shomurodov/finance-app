@@ -2,6 +2,8 @@
 // schedules are built by the same code as in production. It includes the shapes that hid bugs in live QA: two
 // expenses saved minutes apart on one day, a schedule entered with a start two years back, a loan with a monthly
 // payment, a holding without a live price and an account in a second currency.
+// "Today" is the run's fixed day (e2e/fixed-clock.mjs), here and in every server and page of the run.
+import './fixed-clock.mjs';
 const tashkentDay = (offsetDays = 0) => {
   const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tashkent', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   const date = new Date(day + 'T00:00:00Z');

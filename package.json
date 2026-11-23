@@ -20,7 +20,8 @@
     "build:production": "next build --webpack",
     "typecheck": "tsc --noEmit --incremental false",
     "test:e2e": "playwright test",
-    "test:e2e:full": "npm run build:production && playwright test"
+    "test:e2e:full": "npm run build:production && playwright test",
+    "screenshots:ci": "node scripts/ci-screenshots.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",

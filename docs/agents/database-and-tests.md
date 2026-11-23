@@ -26,3 +26,25 @@ the later ones that set the capability version after it (`tests/edit-linked-tran
 with the fixed workspace in `e2e/fixture.mjs` and restored from a snapshot before each test. Keys from local env files
 are blanked for the test server, so a run never reaches a real service. CI runs it on every push (`e2e` job). When a
 new query uses a PostgREST feature the stand-in lacks, extend it there rather than working around it in the app.
+
+Every process of a run stands on one fixed day, 13 March 2030 at noon in Tashkent (`e2e/fixed-clock.mjs`): the
+runner through `e2e/fixture.mjs`, both servers through `NODE_OPTIONS`, PGlite's `now()` with them, and each page
+through the `test` in `e2e/test.mjs`, which every spec imports instead of `@playwright/test`. The clock ticks on from
+that moment. The day is in the future because the browser drops cookies that expired by its real clock; move it
+forward, and refresh every screenshot, before real time reaches it.
+
+### Screenshot tests
+
+`e2e/*-screens.spec.mjs` compare whole pages with saved pictures (`toHaveScreenshot`). The Dashboard has four:
+light, dark, phone width (390 px) and Arabic right to left. They catch layout jumps, theme breaks and blocks that
+change size; the figures stay in `e2e/p0.spec.mjs`. Fonts draw differently on each system, so every picture is saved
+twice: `-darwin` (a Mac) and `-linux` (CI). A screen redesign refreshes both sets in the same change, as with any test
+that asserts on markup:
+
+1. Mac: `npx playwright test e2e/<name>-screens.spec.mjs --update-snapshots` after `npm run build:production`, and
+   look at every picture it wrote.
+2. Linux: push to a `feature/…` branch. Its e2e job fails on the old pictures and uploads what it drew; then
+   `npm run screenshots:ci` copies those into the `-linux` files. Look at them, commit and push again; the job turns green.
+
+A new screenshot test waits for the page's records, charts and fonts, and for nothing to be loading
+(`aria-busy`, `.skeleton`), before the picture.
