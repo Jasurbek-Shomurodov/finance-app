@@ -3007,5 +3007,9 @@
   "Command menu": "कमांड मेनू",
   "Switch to dark mode": "डार्क मोड पर जाएँ",
   "Switch to light mode": "लाइट मोड पर जाएँ",
-  "Navigate": "नेविगेट"
+  "Navigate": "नेविगेट",
+  "Paid from": "यहाँ से भुगतान",
+  "Received into": "यहाँ प्राप्त",
+  "Still due: {amount}": "अभी बकाया: {amount}",
+  "Record another": "एक और दर्ज करें"
 }

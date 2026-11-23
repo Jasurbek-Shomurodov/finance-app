@@ -3007,5 +3007,9 @@
   "Command menu": "תפריט פקודות",
   "Switch to dark mode": "מעבר למצב כהה",
   "Switch to light mode": "מעבר למצב בהיר",
-  "Navigate": "ניווט"
+  "Navigate": "ניווט",
+  "Paid from": "שולם מתוך",
+  "Received into": "התקבל אל",
+  "Still due: {amount}": "נותר לתשלום: {amount}",
+  "Record another": "רישום נוסף"
 }

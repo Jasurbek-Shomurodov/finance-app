@@ -3007,5 +3007,9 @@
   "Command menu": "Menu de commandes",
   "Switch to dark mode": "Passer en mode sombre",
   "Switch to light mode": "Passer en mode clair",
-  "Navigate": "Naviguer"
+  "Navigate": "Naviguer",
+  "Paid from": "Payé depuis",
+  "Received into": "Reçu sur",
+  "Still due: {amount}": "Reste dû : {amount}",
+  "Record another": "Enregistrer un autre"
 }

@@ -43,8 +43,8 @@ other screens link to it.
 | Spending pace | Two components with one name | One chart with last month and budget lines | Dashboard and Budget share it |
 | Recent transactions | Dashboard, Cash flow (older table), Transactions | Transactions | Dashboard card; Cash flow drops its table |
 | Mortgage payments, watchlists | Cash flow Overview and Spending | Cash flow Spending | Overview drops them |
-| Record a loan or mortgage payment | Four dialogs | One payment dialog | Opened from Loans, Recurring, Cash flow, Dashboard |
-| Transfer | Two dialogs (one unreachable) | `AssetMovementDialog` | The unused `AccountOperation` branch is removed |
+| Record a loan or mortgage payment | Done 23 November 2026: one dialog (`components/payments/`), opened with `openPayment` | Record payment | Loans, Recurring, Cash flow, Dashboard, the records table, the expense form's Debt / mortgage tab and `#pay=` links all open it |
+| Transfer | Done: `AccountOperation` is Adjust balance only | `AssetMovementDialog` | — |
 | Rules | Transactions and Settings | Transactions | Settings links there |
 
 ## Oddly placed, and where it moves
@@ -118,7 +118,7 @@ numbers; profit and loss by share.
 ## Build order
 
 1. **Net worth line always draws.** Done.
-2. **Entry:** global Add (done), save and add another (expenses done), inline field errors, one payment dialog, investment stepper that can
+2. **Entry:** global Add (done), save and add another (expenses done), inline field errors, one payment dialog (done), investment stepper that can
    pay from an account.
 3. **Dashboard:** safe to spend, where it is going, what to improve; every row opens its item.
 4. **Shimmers:** Cash flow tabs, Overview cards, Investments, Loans, Recently deleted; headers outside the skeleton.

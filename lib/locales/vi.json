@@ -3007,5 +3007,9 @@
   "Command menu": "Trình đơn lệnh",
   "Switch to dark mode": "Chuyển sang chế độ tối",
   "Switch to light mode": "Chuyển sang chế độ sáng",
-  "Navigate": "Điều hướng"
+  "Navigate": "Điều hướng",
+  "Paid from": "Trả từ",
+  "Received into": "Nhận vào",
+  "Still due: {amount}": "Còn phải trả: {amount}",
+  "Record another": "Ghi thêm khoản khác"
 }

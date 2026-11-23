@@ -3007,5 +3007,9 @@
   "Command menu": "منوی فرمان",
   "Switch to dark mode": "تغییر به حالت تیره",
   "Switch to light mode": "تغییر به حالت روشن",
-  "Navigate": "پیمایش"
+  "Navigate": "پیمایش",
+  "Paid from": "پرداخت از",
+  "Received into": "دریافت در",
+  "Still due: {amount}": "باقی‌ماندهٔ سررسید: {amount}",
+  "Record another": "ثبت یکی دیگر"
 }

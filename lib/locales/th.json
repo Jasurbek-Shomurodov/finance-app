@@ -3007,5 +3007,9 @@
   "Command menu": "เมนูคำสั่ง",
   "Switch to dark mode": "เปลี่ยนเป็นโหมดมืด",
   "Switch to light mode": "เปลี่ยนเป็นโหมดสว่าง",
-  "Navigate": "เลื่อนดู"
+  "Navigate": "เลื่อนดู",
+  "Paid from": "จ่ายจาก",
+  "Received into": "รับเข้า",
+  "Still due: {amount}": "ยังค้างชำระ: {amount}",
+  "Record another": "บันทึกอีกรายการ"
 }

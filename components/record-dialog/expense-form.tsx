@@ -51,7 +51,7 @@ function leavingBill(form:ExpenseContext,next:Entry):Entry{
 function DebtPayment({form}:{form:ExpenseContext}){
  const {t}=useLanguage();
  const {payments,onPaymentDone,onPaymentDraftState,requestPaymentSwitch,busy,planning,demo,currencies,locale,paymentId,setPaymentId,debts,selectedDebt}=form;
- const plan=selectedDebt&&payments?planPayment({record:selectedDebt},planning.data,today()):null;
+ const plan=selectedDebt&&payments?planPayment({record:selectedDebt,tracked:true},planning.data,today()):null;
  // The sample workspace keeps mortgage payments; a loan or debt repayment needs a signed-in workspace.
  const available=!!plan&&!(demo&&plan.kind!=='mortgage');
  return <>    <p className="muted">{t('Choose a debt to record a payment.')}</p>

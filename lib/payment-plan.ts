@@ -9,13 +9,13 @@ import type { CategoryChoice } from './transaction-rules';
 /** What Record payment is asked to open: a loan, debt or mortgage itself, one row of Recurring, a schedule's due date
  * named by a link (`#pay=`), or a recorded mortgage payment to change. */
 export type PaymentRequest =
- | { record: Entry; date?: string }
+ | { record: Entry; date?: string; /** Opened from the loan itself (Loans, the records table, the expense form): a repayment without interest is kept in the loan's Tracker history, where it can be deleted. */ tracked?: boolean }
  | { item: RecurringItem }
  | { recordId: string; date: string }
  | { record: Entry; editing: MortgagePayment; category?: CategoryChoice };
 
-/** The three ways a payment is saved: a scheduled income or bill (`occurrence`), a loan, debt or money lent
- * (`repayment`), and a mortgage with its principal and interest. */
+/** The kinds of obligation: a scheduled income or bill (`occurrence`), a loan, debt or money lent (a `repayment`, or a
+ * Tracker withdrawal when it was opened from the loan itself), and a mortgage with its principal and interest. */
 export type PaymentKind = 'schedule' | 'debt' | 'mortgage';
 /** A request worked out against the planning data: what is paid, how much is still due in its own currency, and what the form starts with. */
 export type PaymentPlan = {
@@ -30,6 +30,8 @@ export type PaymentPlan = {
  incoming: boolean;
  /** Another payment for a due date that is already recorded. */
  extra?: boolean;
+ /** A loan or debt opened from its own row: see `PaymentRequest`. */
+ tracked?: boolean;
  /** A schedule's open due dates this payment may settle instead, `date` among them. */
  dues?: string[];
  /** The recorded mortgage payment being changed. */
@@ -72,7 +74,7 @@ export function planPayment(request: PaymentRequest, data: Data, today: string):
 function requestPlan(request: PaymentRequest, data: Data, today: string): PaymentPlan | null {
  if ('item' in request) return request.item.status === 'skipped' ? null : itemPlan(request.item, data, today);
  if ('editing' in request) return { ...debtPlan(request.record, request.editing.date), kind: 'mortgage', editing: request.editing, category: request.category };
- if ('record' in request) return debtPlan(request.record, request.date ?? today);
+ if ('record' in request) return { ...debtPlan(request.record, request.date ?? today), ...(request.tracked && request.record.kind !== 'Mortgage' ? { tracked: true } : {}) };
  const item = occurrencesBetween(data.records, data.occurrences, request.date, request.date, today, data.debtPayments).find(entry => entry.record.id === request.recordId && entry.date === request.date);
  if (item) return item.status === 'skipped' ? null : itemPlan(item, data, today);
  const debt = data.records.find(record => record.id === request.recordId && liabilities.includes(record.kind));
@@ -141,8 +143,9 @@ export function paymentProblems({ plan, draft, account, rate, today }: { plan: P
  return problems;
 }
 
-/** What is sent, and where: a mortgage payment to its own route, anything else as a planning action. */
-export type PaymentSave = { path: 'mortgage'; payment: MortgagePayment } | { path: 'planning'; action: 'repayment' | 'occurrence'; data: Record<string, unknown> };
+/** What is sent, and where: a mortgage payment to its own route, a loan's plain repayment opened from the loan to its
+ * Tracker history, anything else as a planning action. */
+export type PaymentSave = { path: 'mortgage'; payment: MortgagePayment } | { path: 'tracker'; data: Record<string, unknown> } | { path: 'planning'; action: 'repayment' | 'occurrence'; data: Record<string, unknown> };
 
 /** The payload of a save, exactly as the earlier payment forms sent it: key for key, in their order. `rate` is the dated
  * rate from the account's currency, only when the account's currency differs from the payment's. */
@@ -150,6 +153,8 @@ export function paymentSave(plan: PaymentPlan, draft: PaymentDraft, rate: number
  const fx = rate === null ? {} : { exchange_rate: rate };
  if (plan.kind === 'mortgage') return { path: 'mortgage', payment: { id: draft.id, mortgage_id: plan.target.id, principal: draft.principal, interest: draft.interest, date: draft.date, notes: draft.notes, account_id: draft.account_id, ...(draft.category ? { category: draft.category } : {}), ...fx } };
  const head = { id: draft.id, account_id: draft.account_id, target_id: plan.target.id };
+ // Interest is an expense (or income) of its own, which only the repayment action records.
+ if (plan.kind === 'debt' && plan.tracked && !(draft.interest > 0)) return { path: 'tracker', data: { id: draft.id, record_id: plan.target.id, type: 'withdrawal', date: draft.date, amount: draft.amount, balance: null, notes: draft.notes, account_id: draft.account_id, ...fx } };
  if (plan.kind === 'debt') return { path: 'planning', action: 'repayment', data: { ...head, date: draft.date, amount: draft.amount, fee: draft.interest, notes: draft.notes, ...fx, received: 0 } };
  return { path: 'planning', action: 'occurrence', data: { ...head, date: draft.due, paid_on: draft.date, amount: draft.amount, fee: 0, notes: draft.notes, ...(draft.currency ? { currency: draft.currency } : {}), ...fx, ...(plan.extra ? { extra: true } : {}), received: 0 } };
 }
@@ -168,5 +173,5 @@ export function nextPayment(plan: PaymentPlan, draft: PaymentDraft, data: Data, 
  if (!data.debtPayments || !(left > 0)) return null;
  const paidMonth = draft.date.slice(0, 7);
  const [open] = upcomingPayments(data.records, data.occurrences, today, today, data.debtPayments).filter(item => item.type === 'installment' && item.record.id === plan.target.id && item.date.slice(0, 7) !== paidMonth);
- return open ? debtPlan({ ...plan.target, amount: left }, open.date.slice(0, 7) < today.slice(0, 7) ? open.date : today) : null;
+ return open ? { ...debtPlan({ ...plan.target, amount: left }, open.date.slice(0, 7) < today.slice(0, 7) ? open.date : today), ...(plan.tracked ? { tracked: true } : {}), ...(plan.category ? { category: plan.category } : {}) } : null;
 }

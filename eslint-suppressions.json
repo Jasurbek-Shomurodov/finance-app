@@ -107,17 +107,7 @@
       "count": 1
     }
   },
-  "components/mortgage-payment-dialog.tsx": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "components/onboarding-screen.tsx": {
-    "complexity": {
-      "count": 1
-    }
-  },
-  "components/planning/account-operation.tsx": {
     "complexity": {
       "count": 1
     }

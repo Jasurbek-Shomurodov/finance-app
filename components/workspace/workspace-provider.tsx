@@ -193,7 +193,7 @@ function useWorkspaceState() {
         recordsLoading: table.recordsLoading, showFirstPage: table.showFirstPage, showPage: table.showPage,
         // Actions
         ...forms, storedRecord, navigate, openPayment,
-        saveHoldingAccount: actions.saveHoldingAccount, assignHolding: actions.assignHolding, recordMortgagePayment: actions.recordMortgagePayment, editMortgagePayment: actions.editMortgagePayment, mortgagePaymentSource: actions.mortgagePaymentSource, save, remove, stopRecord: actions.stopRecord, archiveSchedule, deleteSchedule, categorize: actions.categorize, assignTransactionsBusiness: actions.assignTransactionsBusiness, setAccountBusiness: actions.setAccountBusiness, saveBusiness: actions.saveBusiness, fetchPrice: price.fetchPrice, fetchingPrice: price.fetchingPrice, priceMessage: price.priceMessage,
+        saveHoldingAccount: actions.saveHoldingAccount, assignHolding: actions.assignHolding, recordMortgagePayment: actions.recordMortgagePayment, recordRepayment: actions.recordRepayment, editMortgagePayment: actions.editMortgagePayment, mortgagePaymentSource: actions.mortgagePaymentSource, save, remove, stopRecord: actions.stopRecord, archiveSchedule, deleteSchedule, categorize: actions.categorize, assignTransactionsBusiness: actions.assignTransactionsBusiness, setAccountBusiness: actions.setAccountBusiness, saveBusiness: actions.saveBusiness, fetchPrice: price.fetchPrice, fetchingPrice: price.fetchingPrice, priceMessage: price.priceMessage,
         // Open dialogs
         editing, setEditing, editingCashFlow, recordKinds, deleting, setDeleting, ...dialogs,
     };

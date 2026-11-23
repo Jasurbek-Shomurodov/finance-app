@@ -3007,5 +3007,9 @@
   "Command menu": "コマンドメニュー",
   "Switch to dark mode": "ダークモードに切り替え",
   "Switch to light mode": "ライトモードに切り替え",
-  "Navigate": "移動する"
+  "Navigate": "移動する",
+  "Paid from": "支払元",
+  "Received into": "受取先",
+  "Still due: {amount}": "未払い残額: {amount}",
+  "Record another": "続けて記録"
 }

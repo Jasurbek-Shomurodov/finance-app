@@ -3007,5 +3007,9 @@
   "Command menu": "Menu perintah",
   "Switch to dark mode": "Beralih ke mode gelap",
   "Switch to light mode": "Beralih ke mode terang",
-  "Navigate": "Navigasi"
+  "Navigate": "Navigasi",
+  "Paid from": "Dibayar dari",
+  "Received into": "Diterima ke",
+  "Still due: {amount}": "Masih terutang: {amount}",
+  "Record another": "Catat lagi"
 }

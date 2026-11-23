@@ -3007,5 +3007,9 @@
   "Command menu": "Menyu ya amri",
   "Switch to dark mode": "Badilisha hadi hali ya giza",
   "Switch to light mode": "Badilisha hadi hali ya mwanga",
-  "Navigate": "Vinjari"
+  "Navigate": "Vinjari",
+  "Paid from": "Imelipwa kutoka",
+  "Received into": "Imepokelewa kwenye",
+  "Still due: {amount}": "Bado inadaiwa: {amount}",
+  "Record another": "Rekodi nyingine"
 }

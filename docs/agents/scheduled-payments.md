@@ -60,3 +60,37 @@ name, amount or date that happens to match (migration 119).
   costs name their property on every path (`income_source_id` on rent, `property_id` on an expense; migration 161):
   the Property card (`paymentProperty`) and its Tracker (`assetPaymentsQuery`, following the schedule's id) count the
   same payments.
+
+# One Record payment dialog
+
+Every payment of an obligation is recorded in one dialog, `PaymentDialog` (`components/payments/`), whatever screen it
+is opened from (the user's redesign, 23 November 2026). Do not add another payment form; extend this one.
+
+- **One opener.** A screen calls `openPayment(request)` from `useWorkspace()` (state in
+  `components/workspace/state/use-open-dialogs.ts`, rendered once by `WorkspacePayment`). A request is a loan, debt,
+  mortgage or money lent itself (`{ record }`), a Recurring row (`{ item }`) or a due date named by a link
+  (`{ recordId, date }`, the `#pay=<id>:<date>` address `payLink` writes, answered once by `usePayLink` on any page).
+  No screen imports the dialog; the expense form's Debt / mortgage tab embeds the same `PaymentForm` with `inline`.
+- **The rules live in `lib/payment-plan.ts`** (`planPayment`, `paymentDraft`, `paymentProblems`, `paymentSave`,
+  `nextPayment`), away from the markup. One layout for every kind: who is paid and what is still due in its own
+  currency, Amount, Payment date, Paid from (or Received into), then a mortgage's principal and interest or a
+  schedule's due date, and Optional details folded (a loan's interest, a mortgage payment's category, notes).
+- **Each kind saves the way it always did**; the payloads are pinned key for key in `tests/payment-dialog.mjs`.
+  A scheduled income or bill is `planning.save('occurrence', …)`. A loan, a debt or money lent opened from Recurring,
+  a reminder or a link is `planning.save('repayment', …)` (principal as `amount`, interest as `fee`); opened from the
+  loan itself (`tracked`: Loans, the records table, the expense form) a repayment without interest is a withdrawal in
+  its Tracker history (`recordRepayment`), where it shows in History, counts in Paid off and can be deleted, and one
+  with interest is the repayment action, the only one that records interest. A mortgage is `recordMortgagePayment`
+  (`/api/mortgage-payments`, the same `planning_action` the old Recurring form reached), and changing a recorded one
+  is `editMortgagePayment`. `withTrackerRepayments` counts both kinds of repayment once.
+- **Kept behaviour:** a zero scheduled payment is a real one; a part payment leaves the rest for a later payment
+  (`extra`) which starts at what is still to come; a payment before its due date is dated the day it was paid; an open
+  row offers every open due date of its schedule; a scheduled payment may be typed in the schedule's, the account's or
+  a preferred currency, and any but the account's sends the day's rate; a loan month carried from an earlier month is
+  dated on its own due date; the account starts as the one that last paid the obligation (`suggestedPaymentAccount`).
+- **Validation is by field.** Problems show under their field after a save was tried and the first takes the focus;
+  Save is off only while the day's rate loads or the payment saves, and the footer says why. A save whose outcome is
+  unknown locks the form so Retry sends the same id.
+- **After a save** the planning data shows it before the reload (`planning.save`'s occurrence update,
+  `noteDebtPayment` for a loan or mortgage), and the dialog offers Record another only when the same obligation has
+  another open due date. "Record all due today" on Recurring stays a separate bulk action.

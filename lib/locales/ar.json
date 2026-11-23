@@ -3007,5 +3007,9 @@
   "Command menu": "قائمة الأوامر",
   "Switch to dark mode": "التبديل إلى الوضع الداكن",
   "Switch to light mode": "التبديل إلى الوضع الفاتح",
-  "Navigate": "تنقّل"
+  "Navigate": "تنقّل",
+  "Paid from": "مدفوع من",
+  "Received into": "مستلم في",
+  "Still due: {amount}": "المبلغ المتبقي المستحق: {amount}",
+  "Record another": "تسجيل دفعة أخرى"
 }

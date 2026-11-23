@@ -3007,5 +3007,9 @@
   "Command menu": "Buyruqlar menyusi",
   "Switch to dark mode": "Tungi rejimga oʻtish",
   "Switch to light mode": "Yorugʻ rejimga oʻtish",
-  "Navigate": "Harakatlanish"
+  "Navigate": "Harakatlanish",
+  "Paid from": "Qaysi hisobdan toʻlandi",
+  "Received into": "Qaysi hisobga tushdi",
+  "Still due: {amount}": "Hali toʻlanishi kerak: {amount}",
+  "Record another": "Yana birini yozish"
 }

@@ -10,7 +10,7 @@ import { cashSide, draftCurrency, paymentDraft, paymentProblems, paymentSave, ty
 import type { PlanningData } from '@/lib/planning';
 
 /** Where a payment goes once the form is right: the existing save of each kind, unchanged. */
-export type PaymentSaves = { mortgage: (payment: MortgagePayment) => Promise<void>; /** Changes a recorded mortgage payment. */ edit?: (payment: MortgagePayment) => Promise<void>; planning: (action: string, data: unknown) => Promise<void> };
+export type PaymentSaves = { mortgage: (payment: MortgagePayment) => Promise<void>; /** A loan's repayment as an update of its Tracker history. */ tracker: (data: Record<string, unknown>) => Promise<void>; /** Changes a recorded mortgage payment. */ edit?: (payment: MortgagePayment) => Promise<void>; planning: (action: string, data: unknown) => Promise<void> };
 export type PaymentData = Pick<PlanningData, 'records' | 'occurrences' | 'debtPayments' | 'activity' | 'categories' | 'removedKinds'>;
 type Options = { plan: PaymentPlan; data: PaymentData; saves: PaymentSaves; /** After a confirmed save, with the values that were saved. */ onSaved: (draft: PaymentDraft) => void; onClose: () => void; onDraftState?: (dirty: boolean, busy: boolean) => void };
 
@@ -64,6 +64,7 @@ export function usePaymentForm({ plan, data, saves, onSaved, onClose, onDraftSta
   setBusy(true); setSent(save); setError('');
   try {
    if (save.path === 'planning') await saves.planning(save.action, save.data);
+   else if (save.path === 'tracker') await saves.tracker(save.data);
    else await (plan.editing && saves.edit ? saves.edit : saves.mortgage)(save.payment);
    onSaved(draft);
   } catch (reason) {

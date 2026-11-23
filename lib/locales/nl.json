@@ -3007,5 +3007,9 @@
   "Command menu": "Opdrachtmenu",
   "Switch to dark mode": "Overschakelen naar donkere modus",
   "Switch to light mode": "Overschakelen naar lichte modus",
-  "Navigate": "Navigeren"
+  "Navigate": "Navigeren",
+  "Paid from": "Betaald vanaf",
+  "Received into": "Ontvangen op",
+  "Still due: {amount}": "Nog verschuldigd: {amount}",
+  "Record another": "Nog een vastleggen"
 }

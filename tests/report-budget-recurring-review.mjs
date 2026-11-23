@@ -209,7 +209,7 @@ test('Recurring reads — on a side with an unconverted amount, and a carried lo
   '@/components/presentation-foundation/segmented': hostModule(), '@/components/presentation-foundation/count': hostModule(), '@/components/presentation-foundation/category-icon': hostModule(), '@/components/presentation-foundation/today-button': hostModule(),
   '@/components/display-money': { useDisplayMoney: () => ({ entered: String }) },
   '@/hooks/use-columns-fit': { useColumnsFit: () => null },
-  './recurring-lazy': { AccountOperation: ({ operation }) => { opened.push(operation); return null; }, useRecurringDetails: () => ({ open() {}, dialog: null }) },
+  './recurring-lazy': { useRecurringDetails: () => ({ open() {}, dialog: null }) },
   './recurring-list': { RecurringList: ({ carried, row }) => h('ul', null, carried.map(item => row(item))) },
   './recurring-rows': { OccurrenceRow: ({ item, onPay }) => { pays.push(() => onPay(item)); return h('li', null, item.key); }, ArchivedFold: () => null, useDueLabel: () => () => '' },
   './delete-schedule-dialog': { useScheduleDeletion: () => ({ open: undefined, dialog: null }) },
@@ -219,7 +219,7 @@ test('Recurring reads — on a side with an unconverted amount, and a carried lo
  const due = shiftMonth(thisMonth, -1) + '-10';
  const loan = { id: 'loan', name: 'Loan', kind: 'Loan', currency: 'XYZ', amount: 1000, quantity: 1, cost: 0, rate: 0, date: '2040-01-10', frequency: 'Once', opened_on: shiftMonth(thisMonth, -3) + '-10', estimated_monthly_payment: 100, created_at: shiftMonth(thisMonth, -3) + '-10T00:00:00Z' };
  const bill = { ...usd, id: 'bill', currency: 'XYZ', frequency: 'Monthly', date: thisMonth + '-20', kind: 'Rent expense' };
- r.mount(h(UpcomingPage, { data: { records: [loan, bill], categories: [], goals: [], occurrences: [], activity: [], debtPayments: [{ record_id: 'loan', date: shiftMonth(thisMonth, -2) + '-11' }] }, save: async () => {}, currency: 'USD', rates: { USD: 1 }, view: 'list', onView() {} }));
+ r.mount(h(UpcomingPage, { data: { records: [loan, bill], categories: [], goals: [], occurrences: [], activity: [], debtPayments: [{ record_id: 'loan', date: shiftMonth(thisMonth, -2) + '-11' }] }, save: async () => {}, onPay: request => opened.push(request), currency: 'USD', rates: { USD: 1 }, view: 'list', onView() {} }));
  const shown = text(r.tree);
  assert.ok(shown.includes('Exchange rate unavailable.'), shown);
  assert.ok(shown.includes('— paid · — remaining'), shown);
@@ -227,7 +227,9 @@ test('Recurring reads — on a side with an unconverted amount, and a carried lo
  const carried = pays.at(-1);
  carried();
  r.update();
- assert.equal(opened.at(-1).action, 'repayment');
- assert.equal(opened.at(-1).date, due);
+ // The row itself goes to the workspace's Record payment, which dates a carried loan month on its own due date.
+ const plan = loadTS('lib/payment-plan.ts').planPayment(opened.at(-1), { records: [loan, bill], occurrences: [] }, loadTS('lib/deposit-interest.ts').depositToday());
+ assert.equal(opened.at(-1).item.installment, true);
+ assert.deepEqual([plan.kind, plan.date], ['debt', due]);
  delete globalThis.window;
 });

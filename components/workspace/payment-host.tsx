@@ -25,11 +25,11 @@ export function usePayLink(ready: boolean, open: (request: PaymentRequest) => vo
 /** The one Record payment dialog of the workspace: whatever screen asked for it (`openPayment`), it saves each kind of
  * obligation the way it always was, and the planning data shows a loan's payment before the reload returns. */
 export function WorkspacePayment() {
- const { paying, setPaying, openPayment, planning, preferencesData, recordMortgagePayment } = useWorkspace();
+ const { paying, setPaying, openPayment, planning, preferencesData, recordMortgagePayment, recordRepayment } = useWorkspace();
  usePayLink(planning.data.records.length > 0, openPayment);
  if (!paying) return null;
  return <PaymentDialog key={paying.target.id + ':' + paying.date} plan={paying} data={planning.data} currencies={preferencesData.currencies}
-  saves={{ mortgage: recordMortgagePayment, planning: planning.save }}
+  saves={{ mortgage: recordMortgagePayment, tracker: recordRepayment, planning: planning.save }}
   onPaid={(plan, draft) => { const note = debtPaymentNote(plan, draft); if (note) planning.noteDebtPayment(note.payment, note.principal); }}
   onClose={() => setPaying(null)}/>;
 }

@@ -3007,5 +3007,9 @@
   "Command menu": "কমান্ড মেনু",
   "Switch to dark mode": "ডার্ক মোডে যান",
   "Switch to light mode": "লাইট মোডে যান",
-  "Navigate": "নেভিগেট"
+  "Navigate": "নেভিগেট",
+  "Paid from": "যেখান থেকে পরিশোধ",
+  "Received into": "যেখানে জমা",
+  "Still due: {amount}": "এখনও বাকি: {amount}",
+  "Record another": "আরেকটি রেকর্ড করুন"
 }

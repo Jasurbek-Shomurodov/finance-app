@@ -8,7 +8,7 @@ import {loadTS} from './helpers/load-ts.mjs';
 test('the shell and dialog parts load on demand, each from its own module and export',async()=>{
  const loaders=[],modules={
   '@/components/landing-page':'LandingPage','@/components/sign-in-screen':'SignInScreen','@/components/onboarding-screen':'OnboardingScreen','@/components/telegram-panel':'TelegramPanel',
-  '@/components/record-dialog':'RecordDialog','@/components/transaction-details-dialog':'TransactionDetailsDialog','@/components/mortgage-payment-dialog':'MortgagePaymentDialog',
+  '@/components/record-dialog':'RecordDialog','@/components/transaction-details-dialog':'TransactionDetailsDialog','@/components/payments/payment-dialog':'PaymentDialog',
   '@/components/transaction-tools-panel':'SplitTransactionDialog','@/components/business-setup-flow':'BusinessSetupFlow','@/components/household-panel':'JoinHouseholdDialog',
   '@/components/income-sources-panel':'IncomeSourceEditor','@/components/stop-schedule-dialog':'StopScheduleDialog',
   '@/components/delete-category-dialog':'DeleteCategoryDialog','@/components/edit-category-dialog':'EditCategoryDialog',

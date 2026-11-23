@@ -3007,5 +3007,9 @@
   "Command menu": "Меню команд",
   "Switch to dark mode": "Увімкнути темну тему",
   "Switch to light mode": "Увімкнути світлу тему",
-  "Navigate": "Переміщення"
+  "Navigate": "Переміщення",
+  "Paid from": "Сплачено з рахунку",
+  "Received into": "Зараховано на рахунок",
+  "Still due: {amount}": "Залишилося сплатити: {amount}",
+  "Record another": "Записати ще"
 }

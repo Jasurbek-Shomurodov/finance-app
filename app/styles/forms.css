@@ -281,3 +281,8 @@ label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 .change-history dd>strong{font-weight:500}
 .change-history .records-pagination{padding:12px 0 0}
 @media(max-width:480px){.change-history dl>div{grid-template-columns:minmax(0,1fr)}}
+/* Record payment (components/payments): who is paid and what is still due, above the fields. */
+.payment-summary{display:flex;align-items:center;gap:12px;min-width:0}
+.payment-summary>span{display:grid;gap:2px;min-width:0}
+.payment-summary small{font-size:var(--type-small);color:var(--muted-foreground)}
+.payment-form .ownership-summary{margin-top:0}

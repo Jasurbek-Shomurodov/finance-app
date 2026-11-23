@@ -3007,5 +3007,9 @@
   "Command menu": "命令菜单",
   "Switch to dark mode": "切换到深色模式",
   "Switch to light mode": "切换到浅色模式",
-  "Navigate": "导航"
+  "Navigate": "导航",
+  "Paid from": "付款账户",
+  "Received into": "收款账户",
+  "Still due: {amount}": "尚未支付：{amount}",
+  "Record another": "再记一笔"
 }

@@ -7,7 +7,7 @@ const {formatMoney}=loadTS('lib/format.ts');
 const finance=loadTS('lib/finance.ts');
 const now=new Date('2026-09-30T07:00:00Z');// 30 September 2026 in Tashkent
 const stubs=['grouped-picker','loading-placeholder','form-footer','schedule-fields','error-popup','amount-currency-fields','currency-select','currency-value','record-icon','date-picker','formatted-number-input','confirm-dialog','info-hint'].map(name=>'@/components/presentation-foundation/'+name);
-const components=['record-edit-history','cash-investment-option','investment-tracker','investment-tracker-lazy','mortgage-payment-dialog','income-record-form','cash-account-field','instrument-picker','record-name-input','business-profile-fields','ui/tabs','ui/button','ui/native-select','ui/dialog'].map(name=>'@/components/'+name);
+const components=['record-edit-history','cash-investment-option','investment-tracker','investment-tracker-lazy','payments/payment-form','income-record-form','cash-account-field','instrument-picker','record-name-input','business-profile-fields','ui/tabs','ui/button','ui/native-select','ui/dialog'].map(name=>'@/components/'+name);
 
 const record=(id,kind,extra={})=>({id,name:id,kind,amount:100,quantity:1,cost:0,rate:0,currency:'USD',frequency:'Once',date:'2026-09-15',notes:'',...extra});
 const planning=(data={},state={})=>({loading:false,error:'',...state,data:{records:[],categories:[],holdingAccounts:[],...data}});
@@ -449,98 +449,82 @@ test('a failed record read disables the category choice and explains why',t=>{
  assert.ok(planningFailed.r.all(node=>node.props.role==='alert').map(text).every(message=>message==='Records are unavailable.'));
 });
 
-test('the debt tab lists outstanding debts and records a payment through the tracker or the mortgage form',async t=>{
+test('the debt tab lists outstanding debts and records a payment in the shared Record payment form',async t=>{
  const debts=[record('loan','Loan',{amount:2500}),record('home','Mortgage',{amount:150000}),record('paid','Debt',{amount:0}),record('cash','Cash')];
- const payments=[],done=[],saved=[];
- const props={editingCashFlow:true,planning:planning({records:debts}),onDebtPayment:debt=>payments.push(debt.id),onMortgageSave:async payment=>saved.push(payment),onMortgageDone:()=>done.push(true),onDebtSaved:()=>done.push('saved')};
+ const payments={mortgage:async()=>{},tracker:async()=>{},planning:async()=>{}};
+ const props={editingCashFlow:true,planning:planning({records:debts}),payments};
  const d=dialog(t,expense(),props);
  assert.deepEqual(d.r.all(byType('TabsTrigger')).map(text),['Expense','Debt / mortgage']);
  d.r.fire(d.r.find(byType('Tabs')),'onValueChange','debt');
  const choice=()=>d.labelled('Loans & debts','NativeSelect');
  assert.deepEqual(choice().children.map(text),['Choose a debt',`loan · Loan · ${formatMoney(2500,'USD','en')}`,`home · Mortgage · ${formatMoney(150000,'USD','en')}`],'paid-off debts and other records are not offered');
- assert.equal(d.r.find(byText('Button','Record payment')).props.disabled,true);
+ assert.equal(d.r.all(byType('PaymentForm')).length,0,'no payment form before a debt is chosen');
  assert.equal(d.r.all(node=>node.type==='Button'&&node.props.className==='primary').length,0,'the debt tab has no expense save');
+ assert.ok(d.r.find(byType('FormFooter')),'the footer stays so the dialog can be closed');
  const submit=event();d.r.fire(d.r.find(byType('form')),'onSubmit',submit);
  assert.equal(submit.defaultPrevented,true);assert.equal(d.saves.length,0,'submitting on the debt tab saves no expense');
  d.r.fire(choice(),'onChange',{target:{value:'loan'}});
- const tracker=d.r.find(byType('InvestmentTracker'));
- assert.equal(tracker.props.initialType,'withdrawal');assert.equal(tracker.props.record.id,'loan');assert.equal(tracker.props.accountsReady,true);
- assert.equal(d.r.all(byType('FormFooter')).length,0,'the tracker brings its own actions');
- tracker.props.onSaved();tracker.props.onPayment();d.r.fire(tracker,'onClose');
- assert.deepEqual(done,['saved']);
- assert.equal(d.state.editing,null,'closing the tracker closes the dialog');
- // A mortgage uses the inline mortgage form.
+ const loan=d.r.find(byType('PaymentForm'));
+ // A loan chosen here is paid as from its own row; the form saves through what the workspace handed in.
+ assert.deepEqual([loan.props.inline,loan.props.plan.kind,loan.props.plan.target.id,loan.props.plan.tracked,loan.props.saves],[true,'debt','loan',true,payments]);
+ assert.deepEqual(loan.props.currencies,['USD','EUR']);
+ assert.equal(d.r.all(byType('FormFooter')).length,0,'the payment form brings its own actions');
+ d.r.fire(loan,'onSaved');
+ assert.equal(d.state.editing,null,'a saved payment closes the dialog');
+ // A mortgage opens the same form, split into principal and interest.
  const m=dialog(t,expense(),props);
  m.r.fire(m.r.find(byType('Tabs')),'onValueChange','debt');
  m.r.fire(m.labelled('Loans & debts','NativeSelect'),'onChange',{target:{value:'home'}});
- const form=m.r.find(byType('MortgagePaymentDialog'));
- assert.equal(form.props.mortgage.id,'home');assert.equal(form.props.inline,true);
- await form.props.onSave({amount:900});assert.deepEqual(saved,[{amount:900}]);
+ const form=()=>m.r.find(byType('PaymentForm'));
+ assert.deepEqual([form().props.plan.kind,form().props.plan.target.id,form().props.plan.tracked],['mortgage','home',undefined]);
  // A payment draft in progress makes the dialog ask before switching debts, tabs or closing.
- m.r.fire(form,'onDraftState',true,false);
- m.r.fire(m.r.find(byType('MortgagePaymentDialog')),'onDraftState',true,false);
+ m.r.fire(form(),'onDraftState',true,false);
+ m.r.fire(form(),'onDraftState',true,false);
  m.r.fire(m.labelled('Loans & debts','NativeSelect'),'onChange',{target:{value:'loan'}});
  assert.equal(m.confirm().props.open,true);
  m.r.fire(m.confirm(),'onClose');
- assert.equal(m.r.find(byType('MortgagePaymentDialog')).props.mortgage.id,'home','keeping the draft keeps the mortgage');
+ assert.equal(form().props.plan.target.id,'home','keeping the draft keeps the mortgage');
  m.r.fire(m.r.find(byType('Tabs')),'onValueChange','expense');
  m.r.fire(m.confirm(),'onConfirm');
  assert.equal(m.r.find(byType('Tabs')).props.value,'expense','discarding the draft switches tabs');
  m.r.fire(m.r.find(byType('Tabs')),'onValueChange','debt');
  m.r.fire(m.labelled('Loans & debts','NativeSelect'),'onChange',{target:{value:'home'}});
- m.r.fire(m.r.find(byType('MortgagePaymentDialog')),'onClose');
+ m.r.fire(form(),'onClose');
  assert.equal(m.state.editing,null);
  // A busy payment keeps the dialog busy.
  const busy=dialog(t,expense(),props);
  busy.r.fire(busy.r.find(byType('Tabs')),'onValueChange','debt');
  busy.r.fire(busy.labelled('Loans & debts','NativeSelect'),'onChange',{target:{value:'loan'}});
- busy.r.fire(busy.r.find(byType('InvestmentTracker')),'onDraftState',false,true);
+ busy.r.fire(busy.r.find(byType('PaymentForm')),'onDraftState',false,true);
  assert.equal(busy.labelled('Loans & debts','NativeSelect').props.disabled,true);
  assert.equal(busy.r.find(byType('DialogClose')).props.disabled,false,'the close button follows the page busy state');
  busy.r.fire(busy.r.find(byType('Dialog')),'onOpenChange',false);
  assert.ok(busy.state.editing,'a payment being saved keeps the dialog open');
 });
 
-test('the sample workspace records only mortgage payments; other debts hand off to the debt shortcut',t=>{
+test('the sample workspace records only mortgage payments; a loan repayment says it needs a signed-in workspace',t=>{
  const debts=[record('loan','Loan',{amount:2500}),record('home','Mortgage',{amount:150000})];
- const payments=[];
- const d=dialog(t,expense(),{editingCashFlow:true,demo:true,planning:planning({records:debts}),onDebtPayment:debt=>payments.push(debt.id)});
+ const payments={mortgage:async()=>{},tracker:async()=>{},planning:async()=>{}};
+ const d=dialog(t,expense(),{editingCashFlow:true,demo:true,planning:planning({records:debts}),payments});
  d.r.fire(d.r.find(byType('Tabs')),'onValueChange','debt');
  d.r.fire(d.labelled('Loans & debts','NativeSelect'),'onChange',{target:{value:'loan'}});
  assert.ok(d.r.find(node=>node.type==='p'&&text(node)==='Debt repayments are available in your signed-in workspace.'));
- assert.equal(d.r.find(byText('Button','Record payment')).props.disabled,true);
+ assert.equal(d.r.all(byType('PaymentForm')).length,0);
  assert.ok(d.r.find(byType('FormFooter')),'the footer stays so the dialog can be closed');
- // Without an inline mortgage form, a mortgage hands off to the shortcut.
  d.r.fire(d.labelled('Loans & debts','NativeSelect'),'onChange',{target:{value:'home'}});
- const button=d.r.find(byText('Button','Record payment'));
- assert.equal(button.props.disabled,false);
- d.r.fire(button,'onClick');
- assert.deepEqual(payments,['home']);
- const nothing=dialog(t,expense(),{editingCashFlow:true,onDebtPayment:()=>{}});
+ assert.equal(d.r.find(byType('PaymentForm')).props.plan.kind,'mortgage');
+ assert.equal(d.r.all(byType('FormFooter')).length,0);
+ const nothing=dialog(t,expense(),{editingCashFlow:true,payments});
  nothing.r.fire(nothing.r.find(byType('Tabs')),'onValueChange','debt');
  assert.ok(nothing.r.find(node=>node.type==='p'&&text(node)==='No outstanding debts. Add one in Loans & debts first.'));
- const loading=dialog(t,expense(),{editingCashFlow:true,onDebtPayment:()=>{},planning:planning({},{loading:true})});
+ const loading=dialog(t,expense(),{editingCashFlow:true,payments,planning:planning({},{loading:true})});
  assert.equal(loading.r.find(byType('LoadingPlaceholder')).props.label,'Loading records…');
- const failed=dialog(t,expense(),{editingCashFlow:true,onDebtPayment:()=>{},planning:planning({},{error:'Records are unavailable.'})});
+ const failed=dialog(t,expense(),{editingCashFlow:true,payments,planning:planning({},{error:'Records are unavailable.'})});
  assert.ok(failed.r.all(node=>node.props.role==='alert').length>=1);
- // A record-payment click before any debt is chosen does nothing.
- const none=dialog(t,expense(),{editingCashFlow:true,demo:true,planning:planning({records:debts}),onDebtPayment:debt=>payments.push(debt.id)});
- none.r.fire(none.r.find(byText('Button','Record payment')),'onClick');
- assert.deepEqual(payments,['home']);
+ // Where payments cannot be saved, the tab is not offered at all.
+ assert.equal(dialog(t,expense(),{editingCashFlow:true}).r.all(byType('TabsTrigger')).length,0);
 });
 
-test('a debt payment from a changed expense asks before leaving the expense',t=>{
- const debts=[record('home','Mortgage',{amount:150000})];
- const payments=[];
- const d=dialog(t,expense(),{editingCashFlow:true,demo:true,planning:planning({records:debts}),onDebtPayment:debt=>payments.push(debt.id)});
- d.r.fire(d.r.find(byType('AmountCurrencyFields')),'onAmountChange',99);
- d.r.fire(d.r.find(byType('Tabs')),'onValueChange','debt');
- d.r.fire(d.labelled('Loans & debts','NativeSelect'),'onChange',{target:{value:'home'}});
- d.r.fire(d.r.find(byText('Button','Record payment')),'onClick');
- assert.deepEqual(payments,[]);assert.equal(d.confirm().props.open,true);
- d.r.fire(d.confirm(),'onConfirm');
- assert.deepEqual(payments,['home']);
-});
 test('Add expense records one payment: no Repeats, a cash account, and the Debt tab',t=>{
  const d=dialog(t,expense({frequency:'Once'}),{editingCashFlow:true});
  assert.equal(d.r.all(byType('ScheduleFields')).length,0);

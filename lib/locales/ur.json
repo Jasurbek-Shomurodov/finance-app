@@ -3007,5 +3007,9 @@
   "Command menu": "کمانڈ مینو",
   "Switch to dark mode": "ڈارک موڈ پر جائیں",
   "Switch to light mode": "لائٹ موڈ پر جائیں",
-  "Navigate": "نیویگیٹ"
+  "Navigate": "نیویگیٹ",
+  "Paid from": "ادائیگی کا کھاتہ",
+  "Received into": "وصولی کا کھاتہ",
+  "Still due: {amount}": "ابھی واجب الادا: {amount}",
+  "Record another": "ایک اور درج کریں"
 }

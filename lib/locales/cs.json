@@ -3007,5 +3007,9 @@
   "Command menu": "Nabídka příkazů",
   "Switch to dark mode": "Přepnout na tmavý režim",
   "Switch to light mode": "Přepnout na světlý režim",
-  "Navigate": "Procházet"
+  "Navigate": "Procházet",
+  "Paid from": "Zaplaceno z",
+  "Received into": "Přijato na",
+  "Still due: {amount}": "Zbývá uhradit: {amount}",
+  "Record another": "Zaznamenat další"
 }

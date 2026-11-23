@@ -3007,5 +3007,9 @@
   "Command menu": "Menu ng mga utos",
   "Switch to dark mode": "Lumipat sa madilim na mode",
   "Switch to light mode": "Lumipat sa maliwanag na mode",
-  "Navigate": "Mag-navigate"
+  "Navigate": "Mag-navigate",
+  "Paid from": "Binayaran mula sa",
+  "Received into": "Natanggap sa",
+  "Still due: {amount}": "Dapat pang bayaran: {amount}",
+  "Record another": "Magtala ng isa pa"
 }

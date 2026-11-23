@@ -3007,5 +3007,9 @@
   "Command menu": "명령 메뉴",
   "Switch to dark mode": "다크 모드로 전환",
   "Switch to light mode": "라이트 모드로 전환",
-  "Navigate": "탐색"
+  "Navigate": "탐색",
+  "Paid from": "출금 계좌",
+  "Received into": "입금 계좌",
+  "Still due: {amount}": "남은 납부액: {amount}",
+  "Record another": "하나 더 기록"
 }

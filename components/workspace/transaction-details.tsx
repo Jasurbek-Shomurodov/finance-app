@@ -54,7 +54,7 @@ export function WorkspaceTransactionDetails() {
 
 /** Edit for a recorded mortgage payment: its form opens on the payment's own values once they are read. */
 export function MortgagePaymentEditor() {
- const { editingPayment, setEditingPayment, mortgagePaymentSource, editMortgagePayment, planning, removedCategories } = useWorkspace();
+ const { editingPayment, setEditingPayment, mortgagePaymentSource, editMortgagePayment, recordRepayment, planning, removedCategories } = useWorkspace();
  const payment = useMortgagePaymentSource(editingPayment, mortgagePaymentSource);
  const mortgage = planning.data.records.find(record => record.id === payment?.source?.mortgage_id);
  const failed = payment?.error ?? (payment?.source && !mortgage ? 'Mortgage not found.' : undefined);
@@ -63,5 +63,5 @@ export function MortgagePaymentEditor() {
  const plan = planPayment({ record: mortgage, editing: payment.source, category: { kind: editingPayment.kind, category_id: editingPayment.custom_category_id ?? null } }, planning.data, depositToday());
  if (!plan) return null;
  return <PaymentDialog key={editingPayment.id} plan={plan} data={{ ...planning.data, removedKinds: removedCategories.kinds }}
-  saves={{ mortgage: editMortgagePayment, edit: editMortgagePayment, planning: planning.save }} onClose={() => setEditingPayment(null)}/>;
+  saves={{ mortgage: editMortgagePayment, edit: editMortgagePayment, tracker: recordRepayment, planning: planning.save }} onClose={() => setEditingPayment(null)}/>;
 }
