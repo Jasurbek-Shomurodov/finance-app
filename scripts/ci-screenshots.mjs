@@ -21,14 +21,14 @@ try {
   const walk = dir => readdirSync(dir).flatMap(name => { const file = path.join(dir, name); return statSync(file).isDirectory() ? walk(file) : [file]; });
   const specs = readdirSync('e2e').filter(name => name.endsWith('.spec.mjs')).map(name => name.slice(0, -'.spec.mjs'.length));
   const copied = walk(folder).filter(file => file.endsWith('-actual.png')).map(file => {
-    // test-results/<spec>-<test title>-<project>/<picture>-actual.png
-    const test = path.basename(path.dirname(file)), spec = specs.find(name => test.startsWith(name + '-'));
+    // test-results/<spec>-<test title>-<project>[-retry<n>]/<picture>-actual.png; a retry draws the same picture.
+    const test = path.basename(path.dirname(file)).replace(/-retry\d+$/, ''), spec = specs.find(name => test.startsWith(name + '-'));
     if (!spec) throw new Error(`No spec in e2e/ matches ${test}.`);
     const project = test.slice(test.lastIndexOf('-') + 1);
     const target = path.join('e2e', `${spec}.spec.mjs-snapshots`, `${path.basename(file, '-actual.png')}-${project}-linux.png`);
     copyFileSync(file, target);
     return target;
-  });
+  }).filter((target, index, all) => all.indexOf(target) === index);
   console.log(copied.length ? `From run ${run}:\n  ${copied.join('\n  ')}` : `Run ${run} drew no new pictures.`);
 } finally {
   rmSync(folder, { recursive: true, force: true });
