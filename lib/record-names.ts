@@ -58,3 +58,12 @@ export function noteLine(record: Named, categoryName?: string) {
   const note = record.notes?.trim();
   return note && !noteTitle(record, categoryName) && !note.startsWith(record.name.trim()) ? note : null;
 }
+
+/** The example name a new record's field shows, by kind; income and expense plans have their own. */
+const namePlaceholders: Record<string, string> = {
+ 'Rent income': 'e.g. Apartment rent', 'Business income': 'e.g. Monthly business payout', Salary: 'e.g. Monthly salary', 'Other income': 'e.g. Monthly salary',
+ 'Money lent': 'e.g. Full name', Business: 'e.g. Solar panels, café, or game club', Property: 'e.g. Apartment or land', Valuables: 'e.g. Watch, jewellery or art',
+ Vehicle: 'e.g. Family car or motorbike', 'Retirement account': 'e.g. Pension, 401(k) or IRA', Bond: 'e.g. 10-year government bond', 'Precious metals': 'e.g. Gold bars or coins',
+ 'Treasury bill': 'e.g. 6-month Treasury bill', Mortgage: 'e.g. Apartment mortgage', Loan: 'e.g. Car loan or credit card', Debt: 'e.g. Car loan or credit card',
+};
+export const namePlaceholder = (kind: string, cashFlow: boolean) => cashFlow && !income.includes(kind) ? 'e.g. Rent or internet subscription' : namePlaceholders[kind] ?? 'e.g. Savings account';

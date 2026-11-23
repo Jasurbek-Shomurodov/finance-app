@@ -13,6 +13,7 @@ export const RecordDialog = dynamic(() => import('@/components/record-dialog').t
 export const TransactionDetailsDialog = dynamic(() => import('@/components/transaction-details-dialog').then(module => module.TransactionDetailsDialog), { ssr: false });
 export const PaymentDialog = dynamic(() => import('@/components/payments/payment-dialog').then(module => module.PaymentDialog), { ssr: false });
 export const SplitTransactionDialog = dynamic(() => import('@/components/transaction-tools-panel').then(module => module.SplitTransactionDialog), { ssr: false });
+export const AddAssetFlow = dynamic(() => import('@/components/add-asset/add-asset-flow').then(module => module.AddAssetFlow), { ssr: false });
 export const BusinessSetupFlow = dynamic(() => import('@/components/business-setup-flow').then(module => module.BusinessSetupFlow), { ssr: false });
 export const JoinHouseholdDialog = dynamic(() => import('@/components/household-panel').then(module => module.JoinHouseholdDialog), { ssr: false });
 export const IncomeSourceEditor = dynamic(() => import('@/components/income-sources-panel').then(module => module.IncomeSourceEditor), { ssr: false });

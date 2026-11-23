@@ -6,6 +6,7 @@ import { depositToday } from '@/lib/deposit-interest';
 import { freshEntry as fresh } from '@/lib/record-save';
 import { offeredChoice } from '@/lib/removed-categories';
 import type { Category } from '@/lib/planning';
+import type { AssetStart } from './use-add-asset';
 
 export type RecordFormsInput = {
     /** False, after saying so, where the person may not change the workspace. */
@@ -18,6 +19,8 @@ export type RecordFormsInput = {
     setEditingPayment: Dispatch<SetStateAction<Entry | null>>;
     currency: string; section: string; cashFlowSection: boolean;
     holdingAccounts?: HoldingAccount[]; preferredCurrencies: string[]; sources: EarningSource[];
+    /** Opens the Add asset flow, on a kind when one is given. */
+    startAsset: (preset?: AssetStart) => void;
     /** The saved record behind a table row, in its own currency. */
     storedRecord: (record: Entry) => Entry;
     /** Added categories and the deleted built-in ones: a new record never starts in a deleted category. */
@@ -26,7 +29,7 @@ export type RecordFormsInput = {
 
 /** Opening and closing the record form and the delete confirmation. Each form offers only the kinds that fit where it
  * was opened from, and starts in the workspace currency. */
-export function recordForms({ editable, setError, setRecordKinds, setEditing, setDeleting, setEditingIncomeSource, setEditingPayment, currency, section, cashFlowSection, holdingAccounts, preferredCurrencies, sources, storedRecord, categories, removedKinds }: RecordFormsInput) {
+export function recordForms({ editable, setError, setRecordKinds, setEditing, setDeleting, setEditingIncomeSource, setEditingPayment, currency, section, cashFlowSection, holdingAccounts, preferredCurrencies, sources, storedRecord, startAsset, categories, removedKinds }: RecordFormsInput) {
     const start = (kind: Entry['kind']) => offeredChoice(kind, categories, removedKinds);
     /** Opens the income or expense form; Recurring's Add recurring › Bill opens it already repeating, as a schedule.
      * `preset` fills in fields the caller already knows, such as Budget's Make recurring (name, category and amount). */
@@ -34,17 +37,18 @@ export function recordForms({ editable, setError, setRecordKinds, setEditing, se
     const addRecord = () => {
         if (!editable()) return;
         if (cashFlowSection) { addCashFlow('Other expense'); return; }
+        // A new asset is added through the Add asset flow, which asks for its kind first.
+        if (section === 'Assets & investments') { startAsset(); return; }
         setError('');
-        setRecordKinds(section === 'Assets & investments' ? assetRecordKinds : section === 'Loans & debts' ? lendingRecordKinds : kinds);
-        // Investments' Add asset chooses a kind first (addAsset); elsewhere a new asset starts on a property, not cash.
-        setEditing({ ...fresh(), currency, kind: section === 'Loans & debts' ? 'Mortgage' : section === 'Assets & investments' ? 'Property' : 'Cash' });
+        setRecordKinds(section === 'Loans & debts' ? lendingRecordKinds : kinds);
+        setEditing({ ...fresh(), currency, kind: section === 'Loans & debts' ? 'Mortgage' : 'Cash' });
     };
-    /** Investments' Add asset, once a kind is chosen: the asset form on that kind, offering every asset kind. */
-    const addAsset = (kind: Entry['kind']) => { if (!editable()) return; setError(''); setRecordKinds(assetRecordKinds); setEditing({ ...fresh(), currency, kind }); };
     const addAccountRecord = (kind: 'Cash'|'Deposit'|'Stock'|'Crypto', holdingAccountId?: string) => {
         if (!editable()) return;
-        setError(''); setRecordKinds(holdingAccountId ? [kind] : kind==='Cash'||kind==='Deposit' ? ['Cash','Deposit'] : ['Stock','Crypto']);
         const account=holdingAccounts?.find(item=>item.id===holdingAccountId);
+        // A stock or a coin is an asset: Add holding is the Add asset flow, started on that kind inside the account.
+        if (kind==='Stock'||kind==='Crypto') { startAsset({kind,holdingAccountId,currency:account&&preferredCurrencies.includes(account.currency)?account.currency:undefined}); return; }
+        setError(''); setRecordKinds(holdingAccountId ? [kind] : ['Cash','Deposit']);
         setEditing({...fresh(),kind,is_investment:kind==='Cash'&&account?.kind==='Cash',currency:account&&preferredCurrencies.includes(account.currency)?account.currency:currency,holding_account_id:holdingAccountId??null});
     };
     /** Opens a record's form; a scheduled income source and a mortgage payment open their own forms instead. */
@@ -67,5 +71,5 @@ export function recordForms({ editable, setError, setRecordKinds, setEditing, se
     const closeDeleting = () => { setError(''); setDeleting(null); };
     const field = (key: keyof Entry, v: string | number) => setEditing(p => p ? { ...p, [key]: v, ...(key === 'currency' ? {account_id: null} : {}) } : p);
     const newBusiness = (name = ''): Entry => ({ ...fresh(), name, kind: 'Business', currency, amount: 0 });
-    return { addCashFlow, addRecurringIncome, addRecord, addAsset, addAccountRecord, editRecord, quickExpense, recordFromSource, reviewRecurring, requestDelete, closeEditing, closeDeleting, field, newBusiness };
+    return { addCashFlow, addRecurringIncome, addRecord, addAccountRecord, editRecord, quickExpense, recordFromSource, reviewRecurring, requestDelete, closeEditing, closeDeleting, field, newBusiness };
 }

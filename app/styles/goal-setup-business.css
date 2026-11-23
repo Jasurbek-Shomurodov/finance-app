@@ -136,3 +136,31 @@
 .account-businesses-dialog li>span{display:flex;flex-direction:column;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .account-businesses-dialog li small{color:var(--muted-foreground);font-size:var(--type-caption)}
 @media (max-width:520px){.account-businesses-dialog li{grid-template-columns:auto minmax(0,1fr)}.account-businesses-dialog li>[data-slot=native-select-wrapper]{grid-column:2}}
+
+/* Add asset: the goal stepper's frame around one kind's fields (components/add-asset). The form wraps the bar, the
+   step and the footer so Enter moves on, and takes no box of its own. */
+.asset-flow-form{display:contents}
+.asset-flow-step{display:flex;flex-direction:column;gap:16px;width:100%}
+.asset-flow .goal-setup-single{gap:14px}
+.asset-flow .asset-type-options{margin-top:0}
+.asset-type-options>button[aria-pressed=true]{border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary)}
+.asset-kind-chip{display:flex;align-items:center;gap:8px;width:100%;max-width:560px;margin:0 auto;font-size:var(--type-small)}
+.asset-kind-chip>span{font-weight:600}
+.asset-kind-chip>button{min-height:32px;padding:2px 6px;border:0;border-radius:var(--radius-control);background:none;color:var(--primary);font:inherit;cursor:pointer}
+.asset-kind-chip>button:hover{text-decoration:underline}
+.asset-kind-chip>button:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+.asset-field{display:grid;gap:6px;min-width:0;margin:0;font-size:var(--type-small)}
+.asset-field>label{display:grid;gap:6px;margin:0;font-size:var(--type-small)}
+.asset-flow .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+.asset-flow .date-picker-trigger{width:100%}
+.asset-quote{margin:0;font-size:var(--type-small)}
+.asset-owned{display:flex;flex-direction:column;gap:12px}
+.asset-paid-choice{align-self:flex-start}
+.asset-partial{display:flex;flex-direction:column;align-items:flex-start;gap:8px;width:100%;max-width:560px;margin:0 auto;padding:14px 16px;border:1px solid color-mix(in srgb,var(--caution) 55%,var(--border));border-radius:var(--radius-card);background:color-mix(in srgb,var(--caution) 8%,var(--card));font-size:var(--type-small)}
+.asset-partial>p{margin:0}
+.asset-flow-footer{flex-direction:column;align-items:center;gap:10px}
+.asset-flow-footer>button:last-child{width:min(100%,320px)}
+.asset-review{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 10px;max-width:760px;margin:0;font-size:var(--type-small);font-variant-numeric:tabular-nums;text-align:center}
+.asset-review>strong{font-weight:600}
+.asset-save-error{max-width:760px;margin:0;text-align:center}
+@container goal-setup (max-width:520px){.asset-flow .form-grid{grid-template-columns:minmax(0,1fr)}}

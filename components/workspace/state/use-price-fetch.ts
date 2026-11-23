@@ -2,31 +2,26 @@
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import { fetchMarket } from '@/hooks/use-market';
 import type { Entry } from '@/lib/finance';
-import { convertAmount, instrumentFor, instrumentKey, quotedUnitPrice, marketRates } from '@/lib/market';
+import { instrumentFor } from '@/lib/market';
+import { quoteKey, unitQuote } from '@/lib/unit-quote';
 
 /** The record form's "fetch price": the current quote of the holding being edited, in its own currency. A failure
- * message belongs to the holding it was for and disappears once its name or currency changes. */
+ * message belongs to the holding it was for and disappears once its name or currency changes. Picking another
+ * instrument passes the changed record as `next`, so its price is fetched without a second press. */
 export function usePriceFetch(editing: Entry | null, setEditing: Dispatch<SetStateAction<Entry | null>>) {
     const [fetchingPrice, setFetchingPrice] = useState(false);
-    const priceKey = JSON.stringify([editing?.id, editing?.name, editing?.currency, editing?.metal, editing?.metal_unit, editing?.metal_purity]);
+    const priceKey = editing ? quoteKey(editing) : '';
     const [priceResult, setPriceResult] = useState({key:'',message:''});
     const priceMessage = priceResult.key === priceKey ? priceResult.message : '';
-    const setPriceMessage = (message:string) => setPriceResult({key:priceKey,message});
-    async function fetchPrice() {
-        if (!editing) return;
-        const target = editing, instrument = instrumentFor(target);
-        if (!instrument) return;
-        setFetchingPrice(true); setPriceMessage('');
+    async function fetchPrice(next?: Entry) {
+        const target = next ?? editing;
+        if (!target || !instrumentFor(target)) return;
+        const key = quoteKey(target);
+        setFetchingPrice(true); setPriceResult({key,message:''});
         try {
-            const data = await fetchMarket([target]);
-            const price = quotedUnitPrice(target, data.quotes[instrumentKey(instrument)]);
-            if (price === null) throw Error(data.errors[instrumentKey(instrument)] || 'Price unavailable. Saved price is shown.');
-            const amount = convertAmount(price, 'USD', target.currency, marketRates(data));
-            if (amount === null) throw Error('Exchange rate unavailable.');
-            // A converted quote keeps a unit quote's eight decimals, never the tail of the division.
-            const price8 = Math.round(amount * 1e8) / 1e8;
-            setEditing(current => current?.id === target.id && current.name === target.name && current.currency === target.currency && current.kind === target.kind && current.metal === target.metal && current.metal_unit === target.metal_unit && current.metal_purity === target.metal_purity ? { ...current, amount: price8 } : current);
-        } catch (error) { setPriceMessage((error as Error).message); }
+            const price = unitQuote(target, await fetchMarket([target]));
+            setEditing(current => current && quoteKey(current) === key ? { ...current, amount: price } : current);
+        } catch (error) { setPriceResult({key,message:(error as Error).message}); }
         finally { setFetchingPrice(false); }
     }
     const resetPrice = () => setPriceResult({key:'',message:''});

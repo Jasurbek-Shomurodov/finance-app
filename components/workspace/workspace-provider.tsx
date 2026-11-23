@@ -48,6 +48,7 @@ import { useRecordFormTool } from './state/use-record-form-tool';
 import { useRecordSave } from './state/use-record-save';
 import { useSectionWarmup } from './state/use-section-warmup';
 import { useOpenDialogs } from './state/use-open-dialogs';
+import { useAddAsset } from './state/use-add-asset';
 import { useSampleWorkspace } from './state/use-sample-workspace';
 import { useForecastBudget } from './state/use-forecast-budget';
 import { useBudget } from '@/hooks/use-budget';
@@ -129,7 +130,7 @@ function useWorkspaceState() {
     /** Opens a form only where the person may change the workspace. */
     const editable = () => { if (readOnly) showError('This shared workspace is view-only.'); return !readOnly; };
     const { save, remove } = useRecordSave({ demo, rows, setRows, editing, setEditing, deleting, setDeleting, setBusy, setError, fail, planning, sources: earningSources.sources, refreshRecords, setAccountBusiness: actions.setAccountBusiness, binRecord: bin.binRecord });
-    function clearLocalSession() { forgetSharedReads(); setEditing(null); setDeleting(null); closeRecordDialogs(); setRecordKinds(kinds); price.resetPrice(); settings.resetSettings(); table.resetTable(); setSummary([]); setUser(null); setDemo(false); sample.clearSample(); bin.emptyBin(); setRows([]); setError(''); }
+    function clearLocalSession() { forgetSharedReads(); assetFlow.closeAsset(); setEditing(null); setDeleting(null); closeRecordDialogs(); setRecordKinds(kinds); price.resetPrice(); settings.resetSettings(); table.resetTable(); setSummary([]); setUser(null); setDemo(false); sample.clearSample(); bin.emptyBin(); setRows([]); setError(''); }
     async function logout() {
         if (!demo) {
             try { await requestJson('/api/auth', { method: 'DELETE' }); }
@@ -165,7 +166,8 @@ function useWorkspaceState() {
     const navigate = (path: string) => router.push(path);
     /** Opens the one Record payment dialog, from any screen: for a loan, debt or mortgage, a Recurring row, or a due date a link names. False when there is nothing to pay. */
     const openPayment = (request: PaymentRequest) => { const plan = planPayment(request, planningData, today); if (plan) dialogs.setPaying(plan); return !!plan; };
-    const forms = recordForms({ editable, setError, setRecordKinds, setEditing, setDeleting, setEditingIncomeSource, setEditingPayment: dialogs.setEditingPayment, currency, section, cashFlowSection, holdingAccounts: planning.data.holdingAccounts, preferredCurrencies: preferencesData.currencies, sources: earningSources.sources, storedRecord, categories: planning.data.categories, removedKinds: removedCategories.kinds });
+    const assetFlow = useAddAsset({ demo, editable, setRows, planning, refreshRecords });
+    const forms = recordForms({ startAsset: assetFlow.startAsset, editable, setError, setRecordKinds, setEditing, setDeleting, setEditingIncomeSource, setEditingPayment: dialogs.setEditingPayment, currency, section, cashFlowSection, holdingAccounts: planning.data.holdingAccounts, preferredCurrencies: preferencesData.currencies, sources: earningSources.sources, storedRecord, categories: planning.data.categories, removedKinds: removedCategories.kinds });
 
     const seedSample = sample.seedSample;
     async function startDemo() {
@@ -192,7 +194,7 @@ function useWorkspaceState() {
         filters: table.filters, setFilters: table.setFilters, filtersActive: table.filtersActive, historyOnly: table.historyOnly, useFilteredRecords: table.useFilteredRecords, remoteHistory: table.remoteHistory, historyPage, visible: table.visible, totalRecords: table.totalRecords, pageCount: table.pageCount, tablePage: table.tablePage, tableLoading,
         recordsLoading: table.recordsLoading, showFirstPage: table.showFirstPage, showPage: table.showPage,
         // Actions
-        ...forms, storedRecord, navigate, openPayment,
+        ...forms, ...assetFlow, storedRecord, navigate, openPayment,
         saveHoldingAccount: actions.saveHoldingAccount, assignHolding: actions.assignHolding, recordMortgagePayment: actions.recordMortgagePayment, recordRepayment: actions.recordRepayment, editMortgagePayment: actions.editMortgagePayment, mortgagePaymentSource: actions.mortgagePaymentSource, save, remove, stopRecord: actions.stopRecord, archiveSchedule, deleteSchedule, categorize: actions.categorize, assignTransactionsBusiness: actions.assignTransactionsBusiness, setAccountBusiness: actions.setAccountBusiness, saveBusiness: actions.saveBusiness, fetchPrice: price.fetchPrice, fetchingPrice: price.fetchingPrice, priceMessage: price.priceMessage,
         // Open dialogs
         editing, setEditing, editingCashFlow, recordKinds, deleting, setDeleting, ...dialogs,

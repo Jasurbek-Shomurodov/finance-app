@@ -21,7 +21,7 @@ const typing = (target: EventTarget | null) => target instanceof HTMLElement && 
  * ⌘K (Ctrl+K), with "/" outside a field, or from the top bar. `onNavigate` opens a page as the drawer does. */
 export function CommandMenu({ onNavigate }: { onNavigate: (path: string) => void }) {
  const { t, locale } = useLanguage();
- const { planning, readOnly, quickExpense, addCashFlow, addAccountRecord, currency, setCurrency, preferencesData } = useWorkspace();
+ const { planning, readOnly, quickExpense, addCashFlow, addAccountRecord, startAsset, currency, setCurrency, preferencesData } = useWorkspace();
  const { resolvedTheme } = useTheme();
  const switchTheme = useThemeSwitch();
  const [open, setOpen] = useState(false), [query, setQuery] = useState('');
@@ -55,6 +55,7 @@ export function CommandMenu({ onNavigate }: { onNavigate: (path: string) => void
    { id: 'add-income', group: 'actions', label: t('Add income'), icon: <ArrowDownLeft aria-hidden="true"/>, run: () => addCashFlow('Other income') },
    { id: 'transfer', group: 'actions', label: t('Transfer money'), icon: <ArrowRightLeft aria-hidden="true"/>, run: () => onNavigate(transferLink) },
    { id: 'add-account', group: 'actions', label: t('Add account'), icon: <Wallet aria-hidden="true"/>, run: () => addAccountRecord('Cash') },
+   { id: 'add-asset', group: 'actions', label: t('Add asset'), keywords: `${t('Investments')} ${t('Stock')} ${t('Crypto')} ${t('Property')} ${t('Add holding')}`, icon: <TrendingUp aria-hidden="true"/>, run: () => startAsset() },
   ];
   const dark = resolvedTheme !== 'light';
   const display: Line[] = [

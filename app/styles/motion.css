@@ -23,6 +23,8 @@
    view afterwards (its skeleton swapped for content) still appears in place. */
 @keyframes tab-in{from{opacity:0;transform:translateY(4px)}}
 .workspace [data-settled][data-swapped]{animation:tab-in var(--motion-swap) var(--ease-out) backwards!important}
+/* A step of Add asset replaces the one before it the same way: Continue and Back read as one movement. */
+.asset-flow-step{animation:tab-in var(--motion-swap) var(--ease-out) backwards}
 @media(hover:hover){
  .stat-tile-link{transition:border-color var(--motion-quick),background var(--motion-quick),transform .2s var(--ease-out),box-shadow .2s}
  .stat-tile-link:hover{transform:translateY(-2px);box-shadow:0 10px 24px -14px color-mix(in srgb,var(--mark-bg) 50%,transparent),var(--shadow-card)}
@@ -80,6 +82,7 @@ html[data-theme-switch]::view-transition-new(root){animation:theme-reveal .52s v
  .goal-target-progress::-webkit-progress-value{transition:none!important}
  .workspace .content>*,.stat-tiles>.stat-tile,.dashboard-grid>*,[data-arrived]{animation:fade-only .15s linear backwards;transition:none}
  .workspace [data-settled][data-swapped]{animation:fade-only .12s linear backwards!important}
+ .asset-flow-step{animation:fade-only .12s linear backwards}
  .stat-tile-bar>i,.progress-track>*,.budget-progress>div,.asset-card-share i,.allocation-share>span,.stat-tile-link{animation:none;transition:none}
  .stat-tile-link:hover{transform:none}
  html[data-theme-switch]::view-transition-new(root){animation:none}

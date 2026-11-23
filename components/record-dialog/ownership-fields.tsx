@@ -17,8 +17,8 @@ type Props = { editing: Entry; setEditing: (entry: Entry) => void; disabled: boo
 export function OwnershipFields({ editing, setEditing, disabled }: Props) {
  const { t, locale } = useLanguage();
  const switchId = useId();
- // The switch is the form's own state: a unit name still being typed is empty, and an empty name is not a count yet.
- const [counted, setCounted] = useState(() => !!editing.unit_label);
+ // The switch is the form's own state: a unit name still being typed is empty (not null), and is a count already.
+ const [counted, setCounted] = useState(() => editing.unit_label != null);
  const total = counted ? editing.amount * editing.quantity : editing.amount;
  const percent = ownedPercent(editing);
  const money = (amount: number) => formatMoney(amount, editing.currency, locale);

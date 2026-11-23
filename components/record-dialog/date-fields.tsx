@@ -20,7 +20,9 @@ function DueDateField({form}:{form:FormContext}){
  const {t}=useLanguage();
  const {editing,editingCashFlow,field,existing,liability}=form;
  if(openingDated(form))return null;
- return <><label>{editing.kind === 'Money lent' ? t("Due date (optional)") : simpleInterestKinds.includes(editing.kind) ? t("Maturity date") : editing.kind === 'Equity compensation' ? t("Vesting date") : ['Deposit', ...liabilities].includes(editing.kind) ? t("Due / maturity date") : editingCashFlow && editing.frequency !== 'Once' ? t("Start date") : t("Record date")}<DatePicker value={editing.date} required={editing.kind !== 'Money lent'} min={editing.kind === 'Money lent' ? editing.lent_date || undefined : liability || simpleInterestKinds.includes(editing.kind) ? editing.opened_on??(existing?undefined:today()) : undefined} onChange={value => field('date', value)}/></label></>;
+ // Vested shares have one date: a new record's opening date follows it, never later than today.
+ const vested=editing.kind==='Equity compensation'&&!existing;
+ return <><label>{editing.kind === 'Money lent' ? t("Due date (optional)") : simpleInterestKinds.includes(editing.kind) ? t("Maturity date") : editing.kind === 'Equity compensation' ? t("Vesting date") : ['Deposit', ...liabilities].includes(editing.kind) ? t("Due / maturity date") : editingCashFlow && editing.frequency !== 'Once' ? t("Start date") : t("Record date")}<DatePicker value={editing.date} required={editing.kind !== 'Money lent'} min={editing.kind === 'Money lent' ? editing.lent_date || undefined : liability || simpleInterestKinds.includes(editing.kind) ? editing.opened_on??(existing?undefined:today()) : undefined} onChange={value => vested ? form.setEditing({ ...editing, date: value, opened_on: value && value < today() ? value : today() }) : field('date', value)}/></label></>;
 }
 /** Until when a repeating cash flow runs, and what it means. */
 export function RecurrenceFields({form}:{form:FormContext}){
