@@ -1,9 +1,10 @@
-// Screenshot tests of every screen: the seeded workspace in light, dark, at phone width and right to left in Arabic,
+// Screenshot tests of every screen and dialog: the seeded workspace in light, dark, at phone width and right to left in Arabic,
 // compared pixel by pixel with the pictures saved beside this file. A layout jump, a theme break or a block that
 // changes size fails here even when every figure is right (e2e/p0.spec.mjs checks the figures). The run stands on one
 // fixed day (e2e/fixed-clock.mjs), so dates, overdue counts and charts draw the same every time. Pictures depend on
 // the system's fonts, so each platform keeps its own set (-darwin, -linux); after an intended change, refresh them
 // as docs/agents/database-and-tests.md says.
+import fs from 'node:fs';
 import { expect, test } from './test.mjs';
 import { settings } from './fixture.mjs';
 import { resetDatabase } from './helpers.mjs';
@@ -73,10 +74,60 @@ function screenTests(screens, signedIn) {
   }
 }
 
+/** The app's own wording in a variant's language, so a dialog opens by the name a person reads (`{name}` filled in). */
+const dictionaries = { ar: JSON.parse(fs.readFileSync('lib/locales/ar.json', 'utf8')) };
+const wording = language => (key, params = {}) => Object.entries(params).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, value), (language && dictionaries[language][key]) || key);
+
+/** A transaction row opens its details, as on Transactions. */
+const openLunch = page => page.getByRole('listitem').getByText('E2E Lunch', { exact: true }).first().click();
+
+/** Every dialog by the screen it opens from and the steps that open it. `t` gives the app's wording in the test's
+ * language; `role` is the dialog's own role where it is not `dialog`. */
+const dialogs = [
+  { name: 'add-expense', screen: 'transactions', open: async (page, t) => { await page.getByRole('button', { name: t('Add transaction') }).click(); await page.getByRole('menuitem', { name: t('Add expense') }).click(); } },
+  { name: 'transaction-details', screen: 'transactions', open: page => openLunch(page) },
+  { name: 'edit-expense', screen: 'transactions', open: async (page, t) => { await openLunch(page); await page.getByRole('dialog').getByRole('button', { name: t('Edit {name}', { name: 'E2E Lunch' }), exact: true }).click(); } },
+  { name: 'delete-expense', screen: 'transactions', role: 'alertdialog', open: async (page, t) => { await openLunch(page); await page.getByRole('dialog').getByRole('button', { name: t('Delete {name}', { name: 'E2E Lunch' }), exact: true }).click(); } },
+  { name: 'add-account', screen: 'accounts', open: (page, t) => page.getByRole('button', { name: t('Add account') }).click() },
+  { name: 'transfer', screen: 'accounts', open: (page, t) => page.getByRole('button', { name: t('Transfer money') }).click() },
+  { name: 'record-payment', screen: 'recurring', open: (page, t) => page.getByRole('button', { name: t('Record payment'), exact: true }).first().click() },
+  { name: 'add-recurring', screen: 'recurring', open: async (page, t) => { await page.getByRole('button', { name: t('Add recurring') }).click(); await page.getByRole('menuitem', { name: t('Recurring bill') }).click(); } },
+  { name: 'add-goal', screen: 'goals', open: (page, t) => page.getByRole('button', { name: t('Add goal') }).first().click() },
+  { name: 'add-asset', screen: 'investments', open: (page, t) => page.getByRole('button', { name: t('Add asset') }).first().click() },
+  { name: 'sell-holding', screen: 'accounts', open: async (page, t) => { await page.getByRole('button', { name: `${t('Account actions')}: AAPL` }).click(); await page.getByRole('menuitem', { name: t('Sell / convert') }).click(); } },
+  { name: 'add-loan', screen: 'loans-debts', open: (page, t) => page.getByRole('button', { name: t('Add loan or debt') }).click() },
+  { name: 'loan-payment', screen: 'loans-debts', open: (page, t) => page.getByRole('button', { name: `${t('Record payment')}: E2E Car loan` }).click() },
+  { name: 'customize-dashboard', screen: 'dashboard', open: (page, t) => page.getByRole('button', { name: t('Customize') }).click() },
+  { name: 'search', screen: 'dashboard', open: (page, t) => page.getByRole('button', { name: t('Search') }).click() },
+  { name: 'budget-settings', screen: 'budget', open: (page, t) => page.getByRole('button', { name: t('Settings'), exact: true }).click() },
+];
+
+/** One test per dialog and variant: the screen loads, the dialog opens the way a person opens it, and the window is
+ * compared with the dialog standing over its screen. */
+function dialogTests() {
+  for (const dialog of dialogs) for (const variant of variants) {
+    test(`SHOT dialog ${dialog.name} in ${variant.name}`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: variant.colorScheme, reducedMotion: 'reduce' });
+      if (variant.viewport) await page.setViewportSize(variant.viewport);
+      await openScreen(page, workspace.find(screen => screen.name === dialog.screen), variant, true);
+      await dialog.open(page, wording(variant.language));
+      await expect(page.getByRole(dialog.role ?? 'dialog').last()).toBeVisible();
+      // A dialog opened from a menu waits for the menu to finish closing.
+      await expect(page.getByRole('menu')).toHaveCount(0);
+      await expect(page.locator(loading)).toHaveCount(0);
+      await page.evaluate(() => document.fonts.ready);
+      // Behind an open dialog a heading can land a fraction of a pixel apart from one run to the next (seen on
+      // Accounts in Arabic, 172 pixels of edge shading); a real change to a dialog moves far more than this.
+      await expect(page).toHaveScreenshot(`dialog-${dialog.name}-${variant.name}.png`, { maxDiffPixels: 250 });
+    });
+  }
+}
+
 test.beforeEach(async () => { await resetDatabase(); });
 
 test.describe('signed in', () => {
   screenTests(workspace, true);
+  dialogTests();
 });
 
 test.describe('signed out', () => {
