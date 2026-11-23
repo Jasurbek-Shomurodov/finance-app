@@ -5,15 +5,15 @@ import {sourceWithParts} from './helpers/source.mjs';
 test('expense shortcut uses owned outstanding liabilities and guards unsaved changes',()=>{
  const ui=sourceWithParts('components/record-dialog.tsx');
  assert.match(ui,/planning.data.records.filter\(record=>liabilities.includes\(record.kind\)&&record.amount>0\)/);
- assert.match(ui,/guard.request\(\(\)=>props.onDebtPayment!\(record\)\)/);
  assert.match(ui,/planning.loading\?/);
  assert.match(ui,/planning.error\?/);
- assert.match(ui,/type="button" disabled=\{busy\|\|!selectedDebt/);
+ // The tab is offered only where payments can be saved.
+ assert.match(ui,/\{!schedule&&payments&&<TabsList/);
 });
-test('shortcut routes mortgages to their existing form and loans to repayment mode',()=>{
+test('shortcut hands every debt to the one Record payment form, with the workspace\'s own saves',()=>{
  const workspace=fs.readFileSync('components/workspace/workspace-dialogs.tsx','utf8');
- assert.match(workspace,/setEditing\(null\);if\(record.kind==='Mortgage'\)setPayingMortgage\(record\);else setDebtPayment\(record\)/);
- assert.match(workspace,/initialType="withdrawal" record=\{debtPayment\}/);
+ assert.match(workspace,/payments=\{\{ mortgage: recordMortgagePayment, tracker: recordRepayment, planning: planning\.save \}\}/);
+ assert.doesNotMatch(workspace,/debtPayment|payingMortgage|initialType="withdrawal"/);
  const form=fs.readFileSync('components/investment-tracker-form.tsx','utf8');
  assert.match(form,/initialType&&updateTypes.includes\(initialType\)\?initialType:updateTypes\[0\]/);
 });
@@ -27,26 +27,25 @@ test('debt payment is a third segment and cannot submit an ordinary expense',()=
  assert.doesNotMatch(ui,/showPayments|expense-debt-shortcut/);
 });
 
-test('mortgage selection embeds the shared payment fields and guards draft switches',()=>{
+test('a chosen debt embeds the shared payment form and guards draft switches',()=>{
  const ui=sourceWithParts('components/record-dialog.tsx');
- assert.match(ui,/selectedDebt\?\.kind==='Mortgage'&&onMortgageSave\?<MortgagePaymentDialog inline/);
+ // A loan chosen here is paid as from its own row: kept in its Tracker history unless interest is entered.
+ assert.match(ui,/planPayment\(\{record:selectedDebt,tracked:true\},planning\.data,today\(\)\)/);
+ assert.match(ui,/<PaymentForm inline key=\{plan\.target\.id\} plan=\{plan\} data=\{planning\.data\} currencies=\{currencies\} saves=\{payments\}/);
  assert.match(ui,/requestPaymentSwitch\(change\)/);
  assert.match(ui,/paymentState.dirty/);
- const payment=fs.readFileSync('components/mortgage-payment-dialog.tsx','utf8');
- assert.match(payment,/if\(inline\)return <>{content}{guard.confirmation}<\/>/);
+ assert.doesNotMatch(ui,/MortgagePaymentDialog|InvestmentTracker/);
+ const payment=fs.readFileSync('components/payments/payment-form.tsx','utf8');
+ // Inside the expense form it is no form of its own.
+ assert.match(payment,/if \(inline\) return <><div className="record-form payment-form"/);
  assert.match(payment,/'Save payment'/);
- assert.doesNotMatch(payment,/<form/);
 });
 
-test('debt selection embeds repayment fields with a user-entered partial amount',()=>{
+test('the sample workspace keeps mortgage payments and explains that a loan repayment needs an account',()=>{
  const ui=sourceWithParts('components/record-dialog.tsx');
- assert.match(ui,/<InvestmentTracker inline key=\{selectedDebt.id\} initialType="withdrawal"/);
- const tracker=fs.readFileSync('components/investment-tracker.tsx','utf8');
- // Inline, the tracker is its form alone (no tabs, figures or dialog), with its error popup and discard guard.
- assert.match(tracker,/const paymentFields=<TrackerForm form=\{form\} inline=\{inline\}\/>/);
- assert.match(tracker,/if\(inline\)return <>{paymentFields}{alert}{guard.confirmation}<\/>/);
- const form=fs.readFileSync('components/investment-tracker-form.tsx','utf8');
- assert.match(form,/max=\{lending&&draft.type==='withdrawal'\?\(inAccount\?accountAmount\(currentBalance,fx.rate\):currentBalance\):undefined\}/);
- assert.match(form,/remainingBalance>=0/);
- assert.match(form,/if\(inline\)onClose\(\)/);
+ assert.match(ui,/const available=!!plan&&!\(demo&&plan\.kind!=='mortgage'\);/);
+ assert.match(ui,/Debt repayments are available in your signed-in workspace\./);
+ // A repayment is still limited to what is owed, and may be any part of it.
+ const plan=fs.readFileSync('lib/payment-plan.ts','utf8');
+ assert.match(plan,/draft\.amount > plan\.due\) problems\.amount = 'Repayment cannot exceed the outstanding balance\.'/);
 });

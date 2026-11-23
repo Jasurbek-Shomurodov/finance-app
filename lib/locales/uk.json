@@ -202,7 +202,6 @@
   "Principal repayment": "Погашення основної суми",
   "Interest paid": "Сплачені відсотки",
   "Payment date": "Дата платежу",
-  "Total payment: {amount}": "Загальний платіж: {amount}",
   "Remaining balance: {amount}": "Залишок: {amount}",
   "Retry the same payment to avoid duplicates.": "Повторіть той самий платіж, щоб уникнути дублікатів.",
   "Record payment": "Записати платіж",
@@ -392,7 +391,6 @@
   "Allocated amount": "Виділена сума",
   "Allocated to goals": "Виділено на цілі",
   "Amount": "Сума",
-  "Amount received": "Отримана сума",
   "Amount sent": "Надіслана сума",
   "Archived": "В архіві",
   "Balance after": "Баланс після",
@@ -435,7 +433,6 @@
   "Interest received": "Отримані відсотки",
   "Statement balance": "Баланс за випискою",
   "Record repayment": "Записати погашення",
-  "Record scheduled payment": "Записати запланований платіж",
   "Importing…": "Імпорт…",
   "Allocated money stays in the selected account.": "Виділені гроші залишаються на вибраному рахунку.",
   "Amount changes apply from the selected forecast month. Earlier months keep their budgets.": "Зміни сум діють із вибраного місяця прогнозу. Попередні місяці зберігають свої бюджети.",
@@ -1043,7 +1040,6 @@
   "Some transactions could not be converted. Current or previous month totals are incomplete.": "Деякі транзакції не вдалося конвертувати. Підсумки за поточний або попередній місяць неповні.",
   "Income received this month": "Дохід, отриманий цього місяця",
   "No income received this month": "Цього місяця дохід не отримано",
-  "Amount paid": "Сплачена сума",
   "Try another category.": "Спробуйте іншу категорію.",
   "A positive estimate creates a monthly income plan. Saving the record date also updates linked fixed-income start dates. Recorded payments stay unchanged.": "Додатна оцінка створює план місячного доходу. Збереження дати запису також оновлює дати початку пов’язаного фіксованого доходу. Записані платежі не змінюються.",
   "Forecast assignments require database update 045. Apply the pending database migrations and try again.": "Призначення прогнозу потребують оновлення бази даних 045. Застосуйте відкладені міграції бази даних і спробуйте ще раз.",
@@ -3008,5 +3004,9 @@
   "Switch to dark mode": "Увімкнути темну тему",
   "Switch to light mode": "Увімкнути світлу тему",
   "Navigate": "Переміщення",
-  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Активи й борги, вперше записані в цьому періоді, враховуються від їхнього першого записаного значення, тому додавання не показується як прибуток чи збиток."
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Активи й борги, вперше записані в цьому періоді, враховуються від їхнього першого записаного значення, тому додавання не показується як прибуток чи збиток.",
+  "Paid from": "Сплачено з рахунку",
+  "Received into": "Зараховано на рахунок",
+  "Still due: {amount}": "Залишилося сплатити: {amount}",
+  "Record another": "Записати ще"
 }

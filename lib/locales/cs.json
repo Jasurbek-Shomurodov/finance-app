@@ -202,7 +202,6 @@
   "Principal repayment": "Splátka jistiny",
   "Interest paid": "Zaplacený úrok",
   "Payment date": "Datum platby",
-  "Total payment: {amount}": "Celková platba: {amount}",
   "Remaining balance: {amount}": "Zbývající zůstatek: {amount}",
   "Retry the same payment to avoid duplicates.": "Zopakujte stejnou platbu, abyste předešli duplicitám.",
   "Record payment": "Zaznamenat platbu",
@@ -392,7 +391,6 @@
   "Allocated amount": "Přidělená částka",
   "Allocated to goals": "Přiděleno cílům",
   "Amount": "Částka",
-  "Amount received": "Přijatá částka",
   "Amount sent": "Odeslaná částka",
   "Archived": "Archivováno",
   "Balance after": "Zůstatek po",
@@ -435,7 +433,6 @@
   "Interest received": "Přijatý úrok",
   "Statement balance": "Zůstatek podle výpisu",
   "Record repayment": "Zaznamenat splátku",
-  "Record scheduled payment": "Zaznamenat plánovanou platbu",
   "Importing…": "Importování…",
   "Allocated money stays in the selected account.": "Přidělené peníze zůstávají na vybraném účtu.",
   "Amount changes apply from the selected forecast month. Earlier months keep their budgets.": "Změny částek platí od vybraného měsíce prognózy. Dřívější měsíce si ponechávají své rozpočty.",
@@ -1043,7 +1040,6 @@
   "Some transactions could not be converted. Current or previous month totals are incomplete.": "Některé transakce nelze převést. Součty za aktuální nebo předchozí měsíc jsou neúplné.",
   "Income received this month": "Příjem přijatý tento měsíc",
   "No income received this month": "Tento měsíc žádný přijatý příjem",
-  "Amount paid": "Zaplacená částka",
   "Try another category.": "Zkuste jinou kategorii.",
   "A positive estimate creates a monthly income plan. Saving the record date also updates linked fixed-income start dates. Recorded payments stay unchanged.": "Kladný odhad vytvoří plán měsíčního příjmu. Uložení data záznamu také aktualizuje data zahájení propojených pevných příjmů. Zaznamenané platby zůstanou beze změny.",
   "Forecast assignments require database update 045. Apply the pending database migrations and try again.": "Přiřazení prognózy vyžadují aktualizaci databáze 045. Použijte čekající migrace databáze a zkuste to znovu.",
@@ -3008,5 +3004,9 @@
   "Switch to dark mode": "Přepnout na tmavý režim",
   "Switch to light mode": "Přepnout na světlý režim",
   "Navigate": "Procházet",
-  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Položky poprvé zaznamenané v tomto období se počítají od své první zaznamenané hodnoty, takže jejich přidání se nezobrazí jako zisk ani ztráta."
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Položky poprvé zaznamenané v tomto období se počítají od své první zaznamenané hodnoty, takže jejich přidání se nezobrazí jako zisk ani ztráta.",
+  "Paid from": "Zaplaceno z",
+  "Received into": "Přijato na",
+  "Still due: {amount}": "Zbývá uhradit: {amount}",
+  "Record another": "Zaznamenat další"
 }

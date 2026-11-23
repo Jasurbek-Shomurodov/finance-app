@@ -784,8 +784,8 @@ test('a schedule’s Sankey shows what paid it and what is still due; a Recurrin
  assert.match(page, /const reminder: ReminderActions = \{ today, busy, onOpen: onEdit, /, 'debt repayments and deposit maturities open their loan or deposit');
  assert.doesNotMatch(page, /onSankey/);
  const overview = fs.readFileSync('components/overview-page.tsx', 'utf8');
- assert.match(overview, /<li key=\{item\.key\}><DrawerLink href=\{payLink\(item\.record\.id, item\.date\)\} className="overview-row"/, 'the dashboard’s upcoming payments open this payment on Recurring');
- assert.match(fs.readFileSync('lib/recurring.ts', 'utf8'), /export const payLink = \(recordId: string, date: string\) => `\/upcoming#pay=/, 'which is on Recurring');
+ assert.match(overview, /<li key=\{item\.key\}><DrawerLink href=\{payLink\(item\.record\.id, item\.date\)\} onClick=\{payable && onPay \? event => \{[^\n]*onPay\(item\.record\.id, item\.date\); \} : undefined\} className="overview-row"/, 'the dashboard’s upcoming payments open this payment’s Record payment in place');
+ assert.match(fs.readFileSync('lib/recurring.ts', 'utf8'), /export const payLink = \(recordId: string, date: string\) => `\/upcoming#pay=/, 'and the link itself still names the payment');
 });
 
 test('a schedule opened from the dashboard, where its history is not at hand, opens Recurring from its own node', () => {

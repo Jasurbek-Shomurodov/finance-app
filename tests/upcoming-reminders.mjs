@@ -8,7 +8,7 @@ const ui = stubs();
 const { monthReminders } = r.load('components/planning/upcoming-page.tsx', {
  ...ui.modules, 'lucide-react': hostModule(), '@/components/display-money': { useDisplayMoney: () => ({ entered: () => '' }) }, '@/hooks/use-columns-fit': { useColumnsFit: () => null },
  ...Object.fromEntries(['category-icon', 'today-button', 'page-header', 'count', 'segmented'].map(name => ['@/components/presentation-foundation/' + name, hostModule()])),
- ...Object.fromEntries(['./account-operation', './recurring-list', './recurring-rows', './delete-schedule-dialog', './recurring-details', './add-recurring-menu', './recurring-flow-button'].map(name => [name, hostModule()])),
+ ...Object.fromEntries(['./recurring-list', './recurring-rows', './delete-schedule-dialog', './recurring-details', './add-recurring-menu', './recurring-flow-button'].map(name => [name, hostModule()])),
 });
 const record = (id, kind, amount, date, extra = {}) => ({ id, name: id, kind, currency: 'USD', amount, quantity: 1, cost: 0, rate: 0, date, frequency: 'Once', notes: '', ...extra });
 const data = { records: [

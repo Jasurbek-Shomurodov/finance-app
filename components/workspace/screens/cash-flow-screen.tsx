@@ -40,7 +40,7 @@ export function CashFlowScreen() {
  useHashRequest('#forecast', () => setTab('Forecast'));
  useHashRequest(flowHash, () => { setTab('Overview'); setFlowView('sankey'); });
  const { user, demo, rows, currency, market, reload, preferencesData, planning, earningSources, transactionTools, workspacePreferences, snapshots, forecast, forecastReady, forecastMonth, setForecastMonth, workspaceLoading, refreshRecords,
-  addCashFlow, editRecord, setPayingMortgage, recordFromSource, budget, forecastBudget, forecastBudgetState, setViewing, storedRecord } = useWorkspace();
+  addCashFlow, editRecord, openPayment, recordFromSource, budget, forecastBudget, forecastBudgetState, setViewing, storedRecord } = useWorkspace();
  // Each income source in its own currency, as entered; only the month's headline is converted (AGENTS.md, entered or converted).
  // The spending estimate follows the one definition of spending (lib/spending.ts): bills plus mortgage interest; mortgage
  // principal and loan repayments are transfers, so they leave the net estimate but never the spending one.
@@ -55,7 +55,7 @@ export function CashFlowScreen() {
  // A row of Income this month opens what it is: a payment its details, a schedule or an earning asset its form, and a
  // source estimated by the month the Income tab, where sources are edited.
  const openIncome = ({ entry }: IncomeCardRow) => entry.id.startsWith('source:') ? showIncome() : entry.frequency === 'Once' ? setViewing(storedRecord(entry)) : editRecord(entry);
- const mortgages = <MonthlyMortgagePayments records={demo?rows:planning.data.records} loading={planning.loading} error={planning.error} onPay={setPayingMortgage} onEdit={editRecord}/>;
+ const mortgages = <MonthlyMortgagePayments records={demo?rows:planning.data.records} loading={planning.loading} error={planning.error} onPay={record => { openPayment({ record }); }} onEdit={editRecord}/>;
  // This month's budget on the Spending tab, as on Budget: spending categories against their limits.
  const budgetCard = !transactionTools.loading && !transactionTools.error ? <BudgetCard owner={user} demo={demo} revision={reload} budget={budget} data={planning.data} currency={currency} market={market} splits={transactionTools.data.splits}/> : null;
  // Watchlists measure the budget, so they live on Budget; Spending keeps the way there.

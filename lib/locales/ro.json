@@ -202,7 +202,6 @@
   "Principal repayment": "Rambursare principal",
   "Interest paid": "Dobândă plătită",
   "Payment date": "Data plății",
-  "Total payment: {amount}": "Plată totală: {amount}",
   "Remaining balance: {amount}": "Sold rămas: {amount}",
   "Retry the same payment to avoid duplicates.": "Reîncearcă aceeași plată pentru a evita dublurile.",
   "Record payment": "Înregistrează plata",
@@ -392,7 +391,6 @@
   "Allocated amount": "Sumă alocată",
   "Allocated to goals": "Alocat obiectivelor",
   "Amount": "Sumă",
-  "Amount received": "Sumă primită",
   "Amount sent": "Sumă trimisă",
   "Archived": "Arhivat",
   "Balance after": "Sold după",
@@ -435,7 +433,6 @@
   "Interest received": "Dobândă primită",
   "Statement balance": "Sold din extras",
   "Record repayment": "Înregistrează rambursarea",
-  "Record scheduled payment": "Înregistrează plata programată",
   "Importing…": "Se importă…",
   "Allocated money stays in the selected account.": "Banii alocați rămân în contul selectat.",
   "Amount changes apply from the selected forecast month. Earlier months keep their budgets.": "Modificările de sumă se aplică începând cu luna de prognoză selectată. Lunile anterioare își păstrează bugetele.",
@@ -1043,7 +1040,6 @@
   "Some transactions could not be converted. Current or previous month totals are incomplete.": "Unele tranzacții nu au putut fi convertite. Totalurile lunii curente sau anterioare sunt incomplete.",
   "Income received this month": "Venituri încasate luna aceasta",
   "No income received this month": "Niciun venit încasat luna aceasta",
-  "Amount paid": "Sumă plătită",
   "Try another category.": "Încearcă altă categorie.",
   "A positive estimate creates a monthly income plan. Saving the record date also updates linked fixed-income start dates. Recorded payments stay unchanged.": "O estimare pozitivă creează un plan lunar de venituri. Salvarea datei înregistrării actualizează și datele de început ale veniturilor fixe asociate. Plățile înregistrate rămân neschimbate.",
   "Forecast assignments require database update 045. Apply the pending database migrations and try again.": "Atribuirile pentru prognoză necesită actualizarea bazei de date 045. Aplică migrările în așteptare ale bazei de date și încearcă din nou.",
@@ -3008,5 +3004,9 @@
   "Switch to dark mode": "Comută la modul întunecat",
   "Switch to light mode": "Comută la modul luminos",
   "Navigate": "Navighează",
-  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Activele înregistrate pentru prima dată în această perioadă se socotesc de la prima lor valoare înregistrată, așa că adăugarea unuia nu apare nici ca un câștig, nici ca o pierdere."
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Activele înregistrate pentru prima dată în această perioadă se socotesc de la prima lor valoare înregistrată, așa că adăugarea unuia nu apare nici ca un câștig, nici ca o pierdere.",
+  "Paid from": "Plătit din",
+  "Received into": "Încasat în",
+  "Still due: {amount}": "Rămas de plată: {amount}",
+  "Record another": "Înregistrează încă una"
 }

@@ -98,7 +98,8 @@ test('actual transactions and payments cannot be dated in the future',()=>{
  const dialog=sourceWithParts('components/record-dialog.tsx'),income=fs.readFileSync('components/income-record-form.tsx','utf8');
  assert.match(dialog,/max=\{editing\.frequency==='Once'\?today\(\):undefined\}/);
  assert.match(income,/const actual=editing\.frequency==='Once'&&!salaryPlan;/);assert.match(income,/<DatePicker value=\{editing\.date\}[^>]*max=\{latestDate\}/);
- assert.match(fs.readFileSync('components/mortgage-payment-dialog.tsx','utf8'),/<DatePicker value=\{payment\.date\}[^>]*max=\{depositToday\(\)\}/);
+ assert.match(fs.readFileSync('components/payments/payment-fields.tsx','utf8'),/<DatePicker value=\{draft\.date\} min=\{min \|\| undefined\} max=\{today\}/);
+ assert.match(fs.readFileSync('lib/payment-plan.ts','utf8'),/draft\.date > today\) problems\.date = 'Actual income and expenses cannot be dated in the future\.'/);
  assert.match(fs.readFileSync('components/planning/asset-movement-dialog.tsx','utf8'),/<DatePicker value=\{draft\.date\} max=\{depositToday\(\)\}/);
  assert.match(fs.readFileSync('lib/record-save.ts','utf8'),/requiresCashAccount\(editing\) && editing\.date > today\(\)/);
 });
@@ -106,7 +107,7 @@ test('actual transactions and payments cannot be dated in the future',()=>{
 test('dialogs open the saved record, and the exchange rate reads in the stored direction',()=>{
  const table=fs.readFileSync('components/workspace/records-table.tsx','utf8');
  // A transaction row opens its details (`setViewing`), never a Sankey.
- for(const action of ['setViewing','setStopping','setTracking','setPayingMortgage','setSplitting'])assert.match(table,new RegExp(action+'\\(storedRecord\\(r\\)\\)'),action);
+ for(const action of ['setViewing','setStopping','setTracking','setSplitting'])assert.match(table,new RegExp(action+'\\(storedRecord\\(r\\)\\)'),action);
  assert.doesNotMatch(table,/rows\.find/);
  // account_exchange_rate is record currency per one unit of account currency.
  assert.match(fs.readFileSync('components/transaction-details-dialog.tsx','utf8'),/`1 \$\{record\.account_currency\} = \$\{formatNumber\(record\.account_exchange_rate,locale\)\} \$\{record\.currency\}`/);
@@ -150,23 +151,21 @@ test('QA 2026-10-02: dialogs explain limits, prefill scheduled amounts and offer
  // Split choices are built-in plus added categories of the transaction's type.
  assert.match(read('components/transaction-tools-panel.tsx'),/categoryChoices\(categories,income\.includes\(record\.kind\)\?'income':'expense',removed\)/);
  // A scheduled payment starts at its scheduled amount instead of a placeholder.
- const operation=read('components/planning/account-operation.tsx');
- assert.match(operation,/amount:operation\.amount\?\?\(operation\.action==='occurrence'/);
- assert.doesNotMatch(operation,/placeholder=\{formatNumber\(target/);
+ assert.match(read('lib/payment-plan.ts'),/return \{ kind: 'schedule', target: item\.record, date: item\.date, amount: item\.amount, due: item\.amount, incoming, dues \};/);
  // Over-limit quantities and oversized fees say why; the stablecoin note is for crypto only.
  const movement=read('components/planning/asset-movement-dialog.tsx');
  assert.match(movement,/max=\{available\} maxMessage=\{t\('Only \{amount\} available'/);
  assert.match(movement,/feeTooHigh&&<small role="alert"/);
  assert.match(movement,/\(source\.kind==='Crypto'\|\|target\.kind==='Crypto'\)&&<p className="muted">\{t\('USDT and USDC/);
  // Cash account pickers show balances through the shared label.
- for(const file of ['components/planning/asset-movement-dialog.tsx','components/planning/account-operation.tsx','components/planning/goals-page.tsx','components/data-tools.tsx','components/cash-account-field.tsx'])assert.match(read(file),/formatAccountOption\(/,file);
+ for(const file of ['components/planning/asset-movement-dialog.tsx','components/planning/account-operation.tsx','components/payments/payment-fields.tsx','components/planning/goals-page.tsx','components/data-tools.tsx','components/cash-account-field.tsx'])assert.match(read(file),/formatAccountOption\(/,file);
  assert.doesNotMatch(read('components/planning/account-operation.tsx'),/\{a\.name\} · \{a\.currency\}/);
  // Loans & debts: currency choice for new records, loan-only filter, payments for loans and debts, plural counts.
  assert.match(sourceWithParts('components/record-dialog.tsx'),/assetRecord\|\|lendingRecordKinds\.includes\(editing\.kind\)\)\?<CurrencySelect/);
  const table=read('components/workspace/records-table.tsx');
  // Loans & debts has its own list, which offers its kinds and no spending categories.
  assert.match(fs.readFileSync('components/loans/loans-list.tsx','utf8'),/<RecordFilters value=\{filters\} onChange=\{setFilters\} categories=\{\[\]\} kinds=\{lendingRecordKinds\}\/>/);
- assert.match(table,/\(r\.kind === 'Loan' \|\| r\.kind === 'Debt'\) && <Button.*?setDebtPayment/);
+ assert.match(table,/\(r\.kind === 'Loan' \|\| r\.kind === 'Debt'\) && <Button.*?openPayment\(\{ record: storedRecord\(r\), tracked: true \}\)/);
  assert.match(table,/<Pagination /);assert.match(read('components/recently-deleted.tsx'),/<Pagination /);
  assert.match(read('components/debt-summary.tsx'),/lentCount===1\?'1 lending record'/);
 });
@@ -322,7 +321,6 @@ test('Record payment starts from the account that last paid the loan or bill, el
 
 test('a disabled Save in an account operation says why beside it', () => {
  const source = fs.readFileSync('components/planning/account-operation.tsx', 'utf8');
- assert.match(source, /\{blocked&&!busy&&<p className="muted" role="status" id=\{blockedId\}>\{t\(blocked\)\}<\/p>\}/);
- assert.match(source, /aria-describedby=\{blocked&&!busy\?blockedId:undefined\}/, 'the disabled Save names its reason');
+ assert.match(source, /<FormFooter busy=\{busy\} blocked=\{blocked\} onCancel=\{guard\.close\}>/, 'the footer says the reason beside the disabled Save');
  assert.match(source, /'Choose a cash account\.'/);
 });

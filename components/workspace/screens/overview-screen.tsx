@@ -64,9 +64,9 @@ function dashboardCards({ netWorth, income }: { netWorth: ReactNode; income: Rea
 }
 export function OverviewScreen() {
  const { t } = useLanguage();
- const { user, demo, rows, netWorth, addCashFlow, current, currency, market, budget, earningSources, forecastBudget, forecastBudgetState, reload, preferencesData, excludedCurrencies, forecast, forecastReady, planning, transactionTools, workspacePreferences, workspaceLoading, setViewing, setTracking, storedRecord, refreshRecords, businessList } = useWorkspace();
+ const { user, demo, rows, netWorth, addCashFlow, current, currency, market, budget, earningSources, forecastBudget, forecastBudgetState, reload, preferencesData, excludedCurrencies, forecast, forecastReady, planning, transactionTools, workspacePreferences, workspaceLoading, setViewing, setTracking, storedRecord, refreshRecords, businessList, openPayment } = useWorkspace();
  const planningReady = demo || (!planning.loading && !planning.error);
- const cards = useOverviewCards({ entries: current, currency, excludedCurrencies, forecast, forecastReady, planning: planningReady ? planning.data : null, planningError: planning.error, onPlanningRetry: refreshRecords });
+ const cards = useOverviewCards({ entries: current, currency, excludedCurrencies, forecast, forecastReady, planning: planningReady ? planning.data : null, planningError: planning.error, onPlanningRetry: refreshRecords, onPay: (recordId, date) => { openPayment({ recordId, date }); } });
  const { layout, change } = useDashboardLayout(workspacePreferences, demo);
  const monthBudget = useMonthBudget({ owner: user, demo, revision: reload, budget, data: planning.data, currency, market, splits: transactionTools.data.splits });
  // The net worth history is read now, beside the workspace reads, not once they have finished.

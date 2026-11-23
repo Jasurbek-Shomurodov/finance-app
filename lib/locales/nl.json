@@ -202,7 +202,6 @@
   "Principal repayment": "Aflossing",
   "Interest paid": "Betaalde rente",
   "Payment date": "Betaaldatum",
-  "Total payment: {amount}": "Totale betaling: {amount}",
   "Remaining balance: {amount}": "Resterend saldo: {amount}",
   "Retry the same payment to avoid duplicates.": "Probeer dezelfde betaling opnieuw om duplicaten te voorkomen.",
   "Record payment": "Betaling registreren",
@@ -392,7 +391,6 @@
   "Allocated amount": "Toegewezen bedrag",
   "Allocated to goals": "Toegewezen aan doelen",
   "Amount": "Bedrag",
-  "Amount received": "Ontvangen bedrag",
   "Amount sent": "Verzonden bedrag",
   "Archived": "Gearchiveerd",
   "Balance after": "Saldo na afloop",
@@ -435,7 +433,6 @@
   "Interest received": "Ontvangen rente",
   "Statement balance": "Afschriftsaldo",
   "Record repayment": "Aflossing registreren",
-  "Record scheduled payment": "Geplande betaling registreren",
   "Importing…": "Importeren…",
   "Allocated money stays in the selected account.": "Toegewezen geld blijft op de geselecteerde rekening.",
   "Amount changes apply from the selected forecast month. Earlier months keep their budgets.": "Bedragwijzigingen gelden vanaf de geselecteerde prognosemaand. Eerdere maanden behouden hun budgetten.",
@@ -1043,7 +1040,6 @@
   "Some transactions could not be converted. Current or previous month totals are incomplete.": "Sommige transacties konden niet worden omgerekend. Totalen van de huidige of vorige maand zijn onvolledig.",
   "Income received this month": "Inkomsten ontvangen deze maand",
   "No income received this month": "Geen inkomsten ontvangen deze maand",
-  "Amount paid": "Betaald bedrag",
   "Try another category.": "Probeer een andere categorie.",
   "A positive estimate creates a monthly income plan. Saving the record date also updates linked fixed-income start dates. Recorded payments stay unchanged.": "Een positieve schatting maakt een maandelijks inkomstenplan aan. Het opslaan van de datum van de post werkt ook de startdatums van gekoppeld vast inkomen bij. Geregistreerde betalingen blijven ongewijzigd.",
   "Forecast assignments require database update 045. Apply the pending database migrations and try again.": "Prognosetoewijzingen vereisen database-update 045. Pas de openstaande databasemigraties toe en probeer het opnieuw.",
@@ -3008,5 +3004,9 @@
   "Switch to dark mode": "Overschakelen naar donkere modus",
   "Switch to light mode": "Overschakelen naar lichte modus",
   "Navigate": "Navigeren",
-  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Bezittingen die in deze periode voor het eerst zijn vastgelegd, tellen vanaf hun eerste vastgelegde waarde. Een toevoeging wordt dus niet als winst of verlies getoond."
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Bezittingen die in deze periode voor het eerst zijn vastgelegd, tellen vanaf hun eerste vastgelegde waarde. Een toevoeging wordt dus niet als winst of verlies getoond.",
+  "Paid from": "Betaald vanaf",
+  "Received into": "Ontvangen op",
+  "Still due: {amount}": "Nog verschuldigd: {amount}",
+  "Record another": "Nog een vastleggen"
 }

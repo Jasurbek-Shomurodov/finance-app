@@ -4,8 +4,7 @@ import { useState } from 'react';
 import type { PlanningData } from '@/lib/planning';
 import type { RecurringItem } from '@/lib/recurring';
 
-// Recurring's dialogs stay closed until a row opens one, and the details draw a chart, so each loads then.
-export const AccountOperation = dynamic(() => import('@/components/planning/account-operation').then(module => module.AccountOperation), { ssr: false });
+// Recurring's details stay closed until a row opens them, and they draw a chart, so they load then.
 const RecurringDetails = dynamic(() => import('@/components/planning/recurring-details').then(module => module.RecurringDetails), { ssr: false });
 
 /** The details dialog the Recurring list opens on a tap: `open` shows an occurrence's schedule, `dialog` renders it. Edit and

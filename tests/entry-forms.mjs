@@ -320,7 +320,7 @@ function expenseForm(start,props={}){
  const r=createRenderer(),saves=[],state={};
  const {ExpenseRecordForm}=r.load('components/record-dialog/expense-form.tsx',{
   ...host(['loading-placeholder','schedule-fields','month-day-field','error-popup','scheduled-payment-field','grouped-picker','category-badge','category-icon','amount-currency-fields','date-picker'].map(name=>'@/components/presentation-foundation/'+name)),
-  ...host(['@/components/record-name-input','@/components/investment-tracker-lazy','@/components/mortgage-payment-dialog','@/components/cash-account-field','@/components/ui/tabs','@/components/ui/button','@/components/ui/native-select','@/components/ui/textarea','./recent-categories']),
+  ...host(['@/components/record-name-input','@/components/payments/payment-form','@/components/cash-account-field','@/components/ui/tabs','@/components/ui/button','@/components/ui/native-select','@/components/ui/textarea','./recent-categories']),
   './record-form':{withAccountAndOwner:(editing,account_id)=>({...editing,account_id})},
   'next/link':{__esModule:true,default:'Link'},'@/components/language-provider':language('en'),
  });

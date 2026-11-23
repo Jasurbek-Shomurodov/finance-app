@@ -34,12 +34,13 @@ export function LoansList({ events }: { events: readonly HistoryEvent[] }) {
  const { showSum } = useDisplayMoney();
  const [grouping, setGrouping] = useState<Grouping>('month');
  const { filters, setFilters, filtersActive, visible, totalRecords, tableLoading, planning, demo, currency, money, storedRecord, refreshRecords,
-  addRecord, editRecord, requestDelete, setTracking, setPayingMortgage, setDebtPayment } = useWorkspace();
+  addRecord, editRecord, requestDelete, setTracking, openPayment } = useWorkspace();
  const list = useColumnsFit<HTMLUListElement>('.loan-row', 220);
  const today = depositToday();
  const row = (shown: Entry) => {
   const saved = storedRecord(shown), name = shownName(shown, t);
-  const pay = shown.kind === 'Mortgage' ? () => setPayingMortgage(saved) : shown.kind === 'Loan' || shown.kind === 'Debt' ? () => setDebtPayment(saved) : undefined;
+  // What you owe is paid in the one Record payment dialog; money lent is collected from its Tracker.
+  const pay = liabilities.includes(shown.kind) ? () => { openPayment({ record: saved, tracked: true }); } : undefined;
   return <LoanRow key={shown.id} record={saved} name={name} balance={money(value(shown), shown.currency)} today={today} progress={debtProgress(saved, events)}
    onOpen={() => editRecord(shown)} onPay={pay} payBlocked={demo && shown.kind !== 'Mortgage' ? t('Available after you sign in.') : undefined}
    menu={[

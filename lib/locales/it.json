@@ -202,7 +202,6 @@
   "Principal repayment": "Rimborso del capitale",
   "Interest paid": "Interessi pagati",
   "Payment date": "Data del pagamento",
-  "Total payment: {amount}": "Pagamento totale: {amount}",
   "Remaining balance: {amount}": "Saldo rimanente: {amount}",
   "Retry the same payment to avoid duplicates.": "Riprova lo stesso pagamento per evitare duplicati.",
   "Record payment": "Registra pagamento",
@@ -392,7 +391,6 @@
   "Allocated amount": "Importo allocato",
   "Allocated to goals": "Allocato agli obiettivi",
   "Amount": "Importo",
-  "Amount received": "Importo ricevuto",
   "Amount sent": "Importo inviato",
   "Archived": "Archiviato",
   "Balance after": "Saldo dopo",
@@ -435,7 +433,6 @@
   "Interest received": "Interessi ricevuti",
   "Statement balance": "Saldo dell’estratto conto",
   "Record repayment": "Registra rimborso",
-  "Record scheduled payment": "Registra pagamento programmato",
   "Importing…": "Importazione in corso…",
   "Allocated money stays in the selected account.": "Il denaro allocato resta nel conto selezionato.",
   "Amount changes apply from the selected forecast month. Earlier months keep their budgets.": "Le modifiche agli importi si applicano dal mese di previsione selezionato. I mesi precedenti mantengono i loro budget.",
@@ -1043,7 +1040,6 @@
   "Some transactions could not be converted. Current or previous month totals are incomplete.": "Alcune transazioni non hanno potuto essere convertite. I totali del mese corrente o precedente sono incompleti.",
   "Income received this month": "Entrate ricevute questo mese",
   "No income received this month": "Nessuna entrata ricevuta questo mese",
-  "Amount paid": "Importo pagato",
   "Try another category.": "Prova un’altra categoria.",
   "A positive estimate creates a monthly income plan. Saving the record date also updates linked fixed-income start dates. Recorded payments stay unchanged.": "Una stima positiva crea un piano di entrata mensile. Salvare la data della voce aggiorna anche le date di inizio dei redditi fissi collegati. I pagamenti registrati restano invariati.",
   "Forecast assignments require database update 045. Apply the pending database migrations and try again.": "Le assegnazioni delle previsioni richiedono l’aggiornamento 045 del database. Applica le migrazioni in sospeso e riprova.",
@@ -3008,5 +3004,9 @@
   "Switch to dark mode": "Passa alla modalità scura",
   "Switch to light mode": "Passa alla modalità chiara",
   "Navigate": "Naviga",
-  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Le posizioni registrate per la prima volta in questo periodo contano dal loro primo valore registrato, quindi aggiungerne una non appare come un guadagno né come una perdita."
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Le posizioni registrate per la prima volta in questo periodo contano dal loro primo valore registrato, quindi aggiungerne una non appare come un guadagno né come una perdita.",
+  "Paid from": "Pagato da",
+  "Received into": "Ricevuto su",
+  "Still due: {amount}": "Ancora dovuto: {amount}",
+  "Record another": "Registrane un altro"
 }

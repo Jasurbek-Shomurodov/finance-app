@@ -25,7 +25,7 @@ function open(viewing, { editingPayment = null, readOnly = false, load = async (
  });
  const hooks = r.load('hooks/use-mortgage-payment-source.ts', {});
  const parts = r.load('components/workspace/transaction-details.tsx', {
-  '@/components/workspace/workspace-lazy': { TransactionDetailsDialog: host('details'), MortgagePaymentDialog: host('payment-form') },
+  '@/components/workspace/workspace-lazy': { TransactionDetailsDialog: host('details'), PaymentDialog: host('payment-form') },
   '@/components/record-attachments': { RecordAttachments: host('attachments') },
   '@/components/language-provider': { useLanguage: () => ({ t, locale: 'en-US' }) },
   '@/components/workspace/workspace-provider': { useWorkspace: workspace },
@@ -90,8 +90,9 @@ test('Edit on a payment opens its form on the payment\'s own values; a payment t
  assert.equal(view.r.all(node => node.type === 'payment-form').length, 0, 'nothing shows until the payment is read');
  await flush();view.r.update();
  const form = view.r.all(node => node.type === 'payment-form')[0].props;
- assert.deepEqual([form.mortgage.id, form.editing, form.category.initial], ['m', source, { kind: 'Other expense', category_id: 'c' }]);
- await form.onSave({ ...source, principal: 5 });
+ // The one Record payment dialog, opened on the recorded payment: its values and its own category.
+ assert.deepEqual([form.plan.kind, form.plan.target.id, form.plan.editing, form.plan.category], ['mortgage', 'm', source, { kind: 'Other expense', category_id: 'c' }]);
+ await form.saves.edit({ ...source, principal: 5 });
  assert.deepEqual(view.calls.at(-1), ['save', { ...source, principal: 5 }]);
  form.onClose();
  assert.deepEqual(view.calls.at(-1), ['editingPayment', null]);

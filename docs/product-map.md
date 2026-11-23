@@ -54,7 +54,7 @@ pins the built rows).
 | Payout calendar, price alerts, Bitcoin panel | Investments › Payouts & alerts | Left Profit & loss | Done |
 | Investment benchmarks | Settings › Investment benchmarks (`/settings#benchmarks`) | The net worth chart's details link there | Done (edited in Settings, not on the chart) |
 | Transfer | `AssetMovementDialog` | The unused `AccountOperation` transfer branch is removed | Done |
-| Record a loan or mortgage payment | One payment dialog | Opened from Loans, Recurring, Cash flow, Dashboard | Not done: being built separately |
+| Record a payment (loan, mortgage, scheduled bill or income) | One Record payment dialog (`components/payments/`, opened with `openPayment`) | Loans, Recurring, Cash flow, Dashboard, the records table and the expense form's Debt / mortgage tab | Done (see `docs/agents/scheduled-payments.md`) |
 
 ## Oddly placed, and where it moves
 

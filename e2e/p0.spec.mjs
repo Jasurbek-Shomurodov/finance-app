@@ -181,8 +181,8 @@ test('REC-027 REC-003 a schedule started two years back keeps its unpaid months 
   const row = page.locator('li', { hasText: 'E2E Gym' }).first();
   await row.getByRole('button', { name: 'Record payment' }).click();
   const dialog = page.getByRole('dialog');
-  await chooseOption(dialog.getByLabel('Cash account'), 'E2E Empty');
-  await dialog.getByRole('button', { name: 'Save', exact: true }).click();
+  await chooseOption(dialog.getByLabel('Paid from'), 'E2E Empty');
+  await dialog.getByRole('button', { name: 'Save payment', exact: true }).click();
   await expect(page.getByText('Insufficient balance or invalid amount.').first()).toBeVisible();
   await closeDialog(page);
   await open(page, 'Accounts');
@@ -192,11 +192,16 @@ test('REC-027 REC-003 a schedule started two years back keeps its unpaid months 
 test('LOAN-004 LOAN-012 a loan repayment moves loan and cash together, and deleting it puts both back', async ({ page }) => {
   await page.goto('/loans-debts');
   await page.getByRole('button', { name: 'Record payment: E2E Car loan' }).click();
+  // The one Record payment dialog; a repayment opened from the loan's row is kept in its Tracker history.
+  const payment = page.getByRole('dialog');
+  await chooseOption(payment.getByLabel('Paid from'), 'E2E Checking');
+  await payment.getByPlaceholder('0').first().fill('50');
+  await expect(payment.getByText('Remaining balance: $4,950')).toBeVisible();
+  await payment.getByRole('button', { name: 'Save payment' }).click();
+  await expect(payment).toBeHidden();
+  await page.getByRole('button', { name: 'Actions for E2E Car loan' }).click();
+  await page.getByRole('menuitem', { name: 'Tracker' }).click();
   const dialog = page.getByRole('dialog');
-  await chooseOption(dialog.locator('select').nth(1), 'E2E Checking');
-  await dialog.getByPlaceholder('0').first().fill('50');
-  await expect(dialog.getByText('Outstanding balance after update: $4,950')).toBeVisible();
-  await dialog.getByRole('button', { name: 'Save update' }).click();
   await dialog.getByRole('button', { name: 'History', exact: true }).click();
   const repayment = dialog.getByRole('listitem').filter({ hasText: 'Repayment made' });
   await expect(repayment).toContainText('from E2E Checking');

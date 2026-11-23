@@ -45,7 +45,7 @@ export function RecordsTable({ title, transactions = false, limit, pagination = 
  const { entered } = useDisplayMoney();
  const { filters, setFilters, filtersActive, historyOnly, useFilteredRecords, remoteHistory, historyPage, visible, totalRecords, pageCount, tablePage, tableLoading, recordsLoading, showPage,
   sectionKey, planning, transactionTools, demo, busy, currency, money, storedRecord, refreshRecords,
-  addRecord, editRecord, requestDelete, setViewing, setStopping, setTracking, setPayingMortgage, setDebtPayment, setSplitting } = useWorkspace();
+  addRecord, editRecord, requestDelete, setViewing, setStopping, setTracking, openPayment, setSplitting } = useWorkspace();
  const date = (day: string) => formatDate(day, locale);
  const shown = limit === undefined ? visible : visible.slice(0, limit);
  // One schedule reads as it was entered, in the mortgage's own currency, whatever the row's value is shown in.
@@ -65,7 +65,7 @@ export function RecordsTable({ title, transactions = false, limit, pagination = 
     <td>{/* The row's icon tile is its one icon; the labels carry none. */}<CategoryBadge icon={false} kind={r.kind} label={t(r.payment_type==='bonus'?'Bonus':r.kind)}/>{r.custom_category_id&&<CategoryBadge icon={false} kind={r.custom_category_id} label={planning.data.categories.find(c=>c.id===r.custom_category_id)?.name??t('Custom category')}/>}</td>
     <td className="muted">{r.kind === 'Money lent' ? <><div>{t("Lent: {date}", { date: date(r.lent_date || '') })}</div><small>{r.date ? t("Due: {date}", { date: date(r.date) }) : t("No due date")}</small></> : liabilities.includes(r.kind)?<>{r.opened_on&&<div>{t('Started: {date}',{date:date(r.opened_on)})}</div>}<small>{t('Due: {date}',{date:date(r.date)})}</small></>:date(r.date)}</td>
     <td className={transactions&&income.includes(r.kind)?'amount positive':'amount'}>{transactions?formatSignedMoney(signedAmount(r),r.currency,locale):money(value(r), r.currency)}</td>
-    <td><div className="row-actions">{!demo && trackedKinds.includes(r.kind) && !paidByPayment(r) && <Button size="sm" variant="outline" onClick={() => setTracking(storedRecord(r))}>{t("Tracker")}</Button>}{r.kind === 'Mortgage' && <Button size="sm" variant="outline" onClick={() => setPayingMortgage(storedRecord(r))}>{t("Record payment")}</Button>}{(r.kind === 'Loan' || r.kind === 'Debt') && <Button size="sm" variant="outline" aria-disabled={demo || undefined} title={demo ? t('Available after you sign in.') : undefined} onClick={() => { if (!demo) setDebtPayment(storedRecord(r)); }}>{t("Record payment")}</Button>}
+    <td><div className="row-actions">{!demo && trackedKinds.includes(r.kind) && !paidByPayment(r) && <Button size="sm" variant="outline" onClick={() => setTracking(storedRecord(r))}>{t("Tracker")}</Button>}{r.kind === 'Mortgage' && <Button size="sm" variant="outline" onClick={() => { openPayment({ record: storedRecord(r) }); }}>{t("Record payment")}</Button>}{(r.kind === 'Loan' || r.kind === 'Debt') && <Button size="sm" variant="outline" aria-disabled={demo || undefined} title={demo ? t('Available after you sign in.') : undefined} onClick={() => { if (!demo) openPayment({ record: storedRecord(r), tracked: true }); }}>{t("Record payment")}</Button>}
      {/* Everything else is rare: it waits behind the row's ⋯ menu. */}
      <RowMenu label={t('Actions for {name}', { name: r.name })} items={[
       // A loan, debt or mortgage leads with Record payment, so its tracker is the rarer action.

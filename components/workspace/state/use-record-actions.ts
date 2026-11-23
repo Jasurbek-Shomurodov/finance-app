@@ -62,6 +62,13 @@ export function useRecordActions({ demo, rows, setRows, refreshRecords, splits, 
         }
         showSaved();
     }
+    /** A loan's, debt's or lent money's repayment, kept as a withdrawal in its Tracker history (the Tracker's own route). */
+    async function recordRepayment(update: Record<string, unknown>) {
+        if (demo) throw Error('Sign in to save planning changes.');
+        await requestJson(update.exchange_rate !== undefined ? '/api/investment-history/exchange' : '/api/investment-history', { body: update });
+        refreshRecords();
+        showSaved();
+    }
     /** Changes a recorded mortgage payment: its amounts, day, account, note and category. The balances follow. */
     async function editMortgagePayment(payment: MortgagePayment) {
         if (demo) setRows(withEditedPayment(rows, payment));
@@ -135,5 +142,5 @@ export function useRecordActions({ demo, rows, setRows, refreshRecords, splits, 
         if (demo) setRows(previous => applyRecordChange(previous, previous.find(row => row.id === record.id), record));
         else { await requestJson('/api/records', { body: record }); refreshRecords(); }
     }
-    return { stopRecord, recordMortgagePayment, editMortgagePayment, mortgagePaymentSource, saveHoldingAccount, assignHolding, categorize, assignTransactionsBusiness, setAccountBusiness, assignRecordOwner, setAccountOwner, saveBusiness };
+    return { stopRecord, recordMortgagePayment, recordRepayment, editMortgagePayment, mortgagePaymentSource, saveHoldingAccount, assignHolding, categorize, assignTransactionsBusiness, setAccountBusiness, assignRecordOwner, setAccountOwner, saveBusiness };
 }

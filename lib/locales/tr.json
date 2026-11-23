@@ -202,7 +202,6 @@
   "Principal repayment": "Anapara ödemesi",
   "Interest paid": "Ödenen faiz",
   "Payment date": "Ödeme tarihi",
-  "Total payment: {amount}": "Toplam ödeme: {amount}",
   "Remaining balance: {amount}": "Kalan bakiye: {amount}",
   "Retry the same payment to avoid duplicates.": "Mükerrer kaydı önlemek için aynı ödemeyi yeniden deneyin.",
   "Record payment": "Ödemeyi kaydet",
@@ -392,7 +391,6 @@
   "Allocated amount": "Ayrılan tutar",
   "Allocated to goals": "Hedeflere ayrılan",
   "Amount": "Tutar",
-  "Amount received": "Alınan tutar",
   "Amount sent": "Gönderilen tutar",
   "Archived": "Arşivlendi",
   "Balance after": "Sonraki bakiye",
@@ -435,7 +433,6 @@
   "Interest received": "Alınan faiz",
   "Statement balance": "Ekstre bakiyesi",
   "Record repayment": "Geri ödemeyi kaydet",
-  "Record scheduled payment": "Planlanan ödemeyi kaydet",
   "Importing…": "İçe aktarılıyor…",
   "Allocated money stays in the selected account.": "Ayrılan para seçili hesapta kalır.",
   "Amount changes apply from the selected forecast month. Earlier months keep their budgets.": "Tutar değişiklikleri seçili tahmin ayından itibaren geçerli olur. Önceki aylar bütçelerini korur.",
@@ -1043,7 +1040,6 @@
   "Some transactions could not be converted. Current or previous month totals are incomplete.": "Bazı işlemler dönüştürülemedi. Geçerli veya önceki ay toplamları eksik.",
   "Income received this month": "Bu ay alınan gelir",
   "No income received this month": "Bu ay alınan gelir yok",
-  "Amount paid": "Ödenen tutar",
   "Try another category.": "Başka bir kategori deneyin.",
   "A positive estimate creates a monthly income plan. Saving the record date also updates linked fixed-income start dates. Recorded payments stay unchanged.": "Pozitif bir tahmin, aylık bir gelir planı oluşturur. Kayıt tarihini kaydetmek, bağlı sabit gelirlerin başlangıç tarihlerini de günceller. Kaydedilen ödemeler değişmez.",
   "Forecast assignments require database update 045. Apply the pending database migrations and try again.": "Tahmin atamaları 045 numaralı veritabanı güncellemesini gerektirir. Bekleyen veritabanı geçişlerini uygulayıp tekrar deneyin.",
@@ -3008,5 +3004,9 @@
   "Switch to dark mode": "Koyu moda geç",
   "Switch to light mode": "Açık moda geç",
   "Navigate": "Gezin",
-  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Bu dönemde ilk kez kaydedilen varlıklar ilk kaydedilen değerlerinden itibaren sayılır; bu yüzden bir varlık eklemek kazanç ya da kayıp olarak gösterilmez."
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Bu dönemde ilk kez kaydedilen varlıklar ilk kaydedilen değerlerinden itibaren sayılır; bu yüzden bir varlık eklemek kazanç ya da kayıp olarak gösterilmez.",
+  "Paid from": "Ödendiği hesap",
+  "Received into": "Alındığı hesap",
+  "Still due: {amount}": "Kalan borç: {amount}",
+  "Record another": "Bir tane daha kaydet"
 }

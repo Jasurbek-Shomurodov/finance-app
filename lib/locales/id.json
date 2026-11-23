@@ -202,7 +202,6 @@
   "Principal repayment": "Pembayaran pokok",
   "Interest paid": "Bunga dibayar",
   "Payment date": "Tanggal pembayaran",
-  "Total payment: {amount}": "Total pembayaran: {amount}",
   "Remaining balance: {amount}": "Sisa saldo: {amount}",
   "Retry the same payment to avoid duplicates.": "Ulangi pembayaran yang sama untuk menghindari duplikasi.",
   "Record payment": "Catat pembayaran",
@@ -392,7 +391,6 @@
   "Allocated amount": "Jumlah dialokasikan",
   "Allocated to goals": "Dialokasikan ke tujuan",
   "Amount": "Jumlah",
-  "Amount received": "Jumlah diterima",
   "Amount sent": "Jumlah dikirim",
   "Archived": "Diarsipkan",
   "Balance after": "Saldo setelahnya",
@@ -435,7 +433,6 @@
   "Interest received": "Bunga diterima",
   "Statement balance": "Saldo rekening koran",
   "Record repayment": "Catat pelunasan",
-  "Record scheduled payment": "Catat pembayaran terjadwal",
   "Importing…": "Mengimpor…",
   "Allocated money stays in the selected account.": "Uang yang dialokasikan tetap berada di rekening terpilih.",
   "Amount changes apply from the selected forecast month. Earlier months keep their budgets.": "Perubahan jumlah berlaku mulai bulan proyeksi terpilih. Bulan sebelumnya mempertahankan anggarannya.",
@@ -1043,7 +1040,6 @@
   "Some transactions could not be converted. Current or previous month totals are incomplete.": "Beberapa transaksi tidak dapat dikonversi. Total bulan ini atau bulan lalu tidak lengkap.",
   "Income received this month": "Pemasukan diterima bulan ini",
   "No income received this month": "Tidak ada pemasukan diterima bulan ini",
-  "Amount paid": "Jumlah dibayar",
   "Try another category.": "Coba kategori lain.",
   "A positive estimate creates a monthly income plan. Saving the record date also updates linked fixed-income start dates. Recorded payments stay unchanged.": "Estimasi positif membuat rencana pemasukan bulanan. Menyimpan tanggal catatan juga memperbarui tanggal mulai pemasukan tetap terkait. Pembayaran tercatat tidak berubah.",
   "Forecast assignments require database update 045. Apply the pending database migrations and try again.": "Penugasan proyeksi memerlukan pembaruan database 045. Terapkan migrasi database yang tertunda lalu coba lagi.",
@@ -3008,5 +3004,9 @@
   "Switch to dark mode": "Beralih ke mode gelap",
   "Switch to light mode": "Beralih ke mode terang",
   "Navigate": "Navigasi",
-  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Kepemilikan yang pertama kali dicatat pada periode ini dihitung dari nilai tercatat pertamanya, sehingga menambahkannya tidak ditampilkan sebagai untung atau rugi."
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Kepemilikan yang pertama kali dicatat pada periode ini dihitung dari nilai tercatat pertamanya, sehingga menambahkannya tidak ditampilkan sebagai untung atau rugi.",
+  "Paid from": "Dibayar dari",
+  "Received into": "Diterima ke",
+  "Still due: {amount}": "Masih terutang: {amount}",
+  "Record another": "Catat lagi"
 }

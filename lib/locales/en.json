@@ -202,7 +202,6 @@
   "Principal repayment": "Principal repayment",
   "Interest paid": "Interest paid",
   "Payment date": "Payment date",
-  "Total payment: {amount}": "Total payment: {amount}",
   "Remaining balance: {amount}": "Remaining balance: {amount}",
   "Retry the same payment to avoid duplicates.": "Retry the same payment to avoid duplicates.",
   "Record payment": "Record payment",
@@ -392,7 +391,6 @@
   "Allocated amount": "Allocated amount",
   "Allocated to goals": "Allocated to goals",
   "Amount": "Amount",
-  "Amount received": "Amount received",
   "Amount sent": "Amount sent",
   "Archived": "Archived",
   "Balance after": "Balance after",
@@ -435,7 +433,6 @@
   "Interest received": "Interest received",
   "Statement balance": "Statement balance",
   "Record repayment": "Record repayment",
-  "Record scheduled payment": "Record scheduled payment",
   "Importing…": "Importing…",
   "Allocated money stays in the selected account.": "Allocated money stays in the selected account.",
   "Amount changes apply from the selected forecast month. Earlier months keep their budgets.": "Amount changes apply from the selected forecast month. Earlier months keep their budgets.",
@@ -1043,7 +1040,6 @@
   "Some transactions could not be converted. Current or previous month totals are incomplete.": "Some transactions could not be converted. Current or previous month totals are incomplete.",
   "Income received this month": "Income received this month",
   "No income received this month": "No income received this month",
-  "Amount paid": "Amount paid",
   "Try another category.": "Try another category.",
   "A positive estimate creates a monthly income plan. Saving the record date also updates linked fixed-income start dates. Recorded payments stay unchanged.": "A positive estimate creates a monthly income plan. Saving the record date also updates linked fixed-income start dates. Recorded payments stay unchanged.",
   "Forecast assignments require database update 045. Apply the pending database migrations and try again.": "Forecast assignments require database update 045. Apply the pending database migrations and try again.",
@@ -3008,5 +3004,9 @@
   "Switch to dark mode": "Switch to dark mode",
   "Switch to light mode": "Switch to light mode",
   "Navigate": "Navigate",
-  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss."
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.",
+  "Paid from": "Paid from",
+  "Received into": "Received into",
+  "Still due: {amount}": "Still due: {amount}",
+  "Record another": "Record another"
 }

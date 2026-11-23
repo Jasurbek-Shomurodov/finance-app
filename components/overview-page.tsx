@@ -30,8 +30,8 @@ export function OverviewHeading({ name, firstVisit = false, children }: { name?:
  return <PageHeader title={title}>{children}</PageHeader>;
 }
 
-type Props = { entries: Entry[]; currency: string; excludedCurrencies: string[]; forecast: ReturnType<typeof estimatedCashFlow>; forecastReady: boolean; planning: PlanningData | null; /** The planning read failed: `planning` is null and is not coming. */ planningError?: string; onPlanningRetry?: () => void };
-export function useOverviewCards({ entries, currency, excludedCurrencies, forecast, forecastReady, planning, planningError, onPlanningRetry }: Props) {
+type Props = { entries: Entry[]; currency: string; excludedCurrencies: string[]; forecast: ReturnType<typeof estimatedCashFlow>; forecastReady: boolean; planning: PlanningData | null; /** The planning read failed: `planning` is null and is not coming. */ planningError?: string; onPlanningRetry?: () => void; /** Opens Record payment for a due row in place; without it the row follows its link to Recurring. */ onPay?: (recordId: string, date: string) => void };
+export function useOverviewCards({ entries, currency, excludedCurrencies, forecast, forecastReady, planning, planningError, onPlanningRetry, onPay }: Props) {
  const { t, locale } = useLanguage();
  const { entered } = useDisplayMoney();
  const router = useRouter();
@@ -78,9 +78,9 @@ export function useOverviewCards({ entries, currency, excludedCurrencies, foreca
   <PanelTitle title={<>{t('Upcoming payments')} {counts.overdue > 0 ? <span className="panel-figure negative">{t('{count} overdue', { count: formatNumber(counts.overdue, locale, 0) })}</span> : counts.dueSoon > 0 && figure(t('{count} due soon', { count: formatNumber(counts.dueSoon, locale, 0) }))}</>}><DrawerLink href="/upcoming">{t('View all')}</DrawerLink></PanelTitle>
   {due.length ? <ul className="overview-list overview-due">{due.map(item => {
    const incoming = incomingDue(item);
-   // The whole row opens this payment on Recurring: its Record payment form, or for money that arrives by itself its month.
+   // The whole row opens this payment's Record payment form, right here; money that arrives by itself opens Recurring.
    const payable = !collectedDue(item);
-   return <li key={item.key}><DrawerLink href={payLink(item.record.id, item.date)} className="overview-row" aria-label={payable ? `${t('Record payment')}: ${item.record.name}` : t('Open {name}', { name: item.record.name })}><CategoryIcon kind={item.record.kind}/><span>{item.record.name}<small className={item.overdue ? 'negative' : undefined}>{item.overdue ? t('Overdue') + ' · ' : ''}{formatDate(item.date, locale)}</small>{payable && <span className="overview-due-pay">{t('Record payment')}</span>}</span><strong className={incoming ? 'positive' : undefined}>{incoming ? '+' : ''}{entered(item.amount, item.record.currency)}</strong></DrawerLink></li>;
+   return <li key={item.key}><DrawerLink href={payLink(item.record.id, item.date)} onClick={payable && onPay ? event => { if (event.shiftKey || event.metaKey || event.ctrlKey) return; event.preventDefault(); onPay(item.record.id, item.date); } : undefined} className="overview-row" aria-label={payable ? `${t('Record payment')}: ${item.record.name}` : t('Open {name}', { name: item.record.name })}><CategoryIcon kind={item.record.kind}/><span>{item.record.name}<small className={item.overdue ? 'negative' : undefined}>{item.overdue ? t('Overdue') + ' · ' : ''}{formatDate(item.date, locale)}</small>{payable && <span className="overview-due-pay">{t('Record payment')}</span>}</span><strong className={incoming ? 'positive' : undefined}>{incoming ? '+' : ''}{entered(item.amount, item.record.currency)}</strong></DrawerLink></li>;
   })}</ul> : planning ? <EmptyState icon={<CalendarClock/>} description={t('Nothing is due in the next 31 days.')}/> : planningError ? <InlineError message={t(planningError)} onRetry={onPlanningRetry}/> : <LoadingPlaceholder label={t('Loading records…')} rows={3}/>}
  </section>;
  return { commitments, allocation: allocationCard, upcoming };

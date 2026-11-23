@@ -202,7 +202,6 @@
   "Principal repayment": "اصل رقم کی ادائیگی",
   "Interest paid": "ادا کیا گیا سود",
   "Payment date": "ادائیگی کی تاریخ",
-  "Total payment: {amount}": "کل ادائیگی: {amount}",
   "Remaining balance: {amount}": "بقایا بیلنس: {amount}",
   "Retry the same payment to avoid duplicates.": "نقل سے بچنے کے لیے وہی ادائیگی دوبارہ کریں۔",
   "Record payment": "ادائیگی درج کریں",
@@ -392,7 +391,6 @@
   "Allocated amount": "مختص رقم",
   "Allocated to goals": "اہداف کے لیے مختص",
   "Amount": "رقم",
-  "Amount received": "وصول شدہ رقم",
   "Amount sent": "بھیجی گئی رقم",
   "Archived": "محفوظ شدہ",
   "Balance after": "بعد کا بیلنس",
@@ -435,7 +433,6 @@
   "Interest received": "وصول شدہ سود",
   "Statement balance": "اسٹیٹمنٹ بیلنس",
   "Record repayment": "واپسی کی ادائیگی درج کریں",
-  "Record scheduled payment": "طے شدہ ادائیگی درج کریں",
   "Importing…": "درآمد ہو رہا ہے…",
   "Allocated money stays in the selected account.": "مختص رقم منتخب اکاؤنٹ ہی میں رہتی ہے۔",
   "Amount changes apply from the selected forecast month. Earlier months keep their budgets.": "رقم کی تبدیلیاں منتخب پیش گوئی کے مہینے سے لاگو ہوتی ہیں۔ پچھلے مہینوں کے بجٹ برقرار رہتے ہیں۔",
@@ -1043,7 +1040,6 @@
   "Some transactions could not be converted. Current or previous month totals are incomplete.": "کچھ لین دین تبدیل نہیں ہو سکے۔ موجودہ یا پچھلے مہینے کے کل نامکمل ہیں۔",
   "Income received this month": "اس مہینے وصول شدہ آمدنی",
   "No income received this month": "اس مہینے کوئی آمدنی وصول نہیں ہوئی",
-  "Amount paid": "ادا کی گئی رقم",
   "Try another category.": "کوئی اور زمرہ آزمائیں۔",
   "A positive estimate creates a monthly income plan. Saving the record date also updates linked fixed-income start dates. Recorded payments stay unchanged.": "مثبت تخمینہ ماہانہ آمدنی کا منصوبہ بناتا ہے۔ ریکارڈ کی تاریخ محفوظ کرنے سے منسلک مقررہ آمدنی کی شروع کی تاریخیں بھی اپ ڈیٹ ہوتی ہیں۔ درج شدہ ادائیگیاں برقرار رہتی ہیں۔",
   "Forecast assignments require database update 045. Apply the pending database migrations and try again.": "پیش گوئی کی تفویض کے لیے ڈیٹا بیس اپ ڈیٹ 045 درکار ہے۔ زیر التوا ڈیٹا بیس مائیگریشنز لاگو کریں اور دوبارہ کوشش کریں۔",
@@ -3008,5 +3004,9 @@
   "Switch to dark mode": "ڈارک موڈ پر جائیں",
   "Switch to light mode": "لائٹ موڈ پر جائیں",
   "Navigate": "نیویگیٹ",
-  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "اس مدت میں پہلی بار درج کیے گئے اثاثے اپنی پہلی درج شدہ قدر سے شمار ہوتے ہیں، اس لیے کسی اثاثے کا اضافہ نفع یا نقصان کے طور پر نہیں دکھایا جاتا۔"
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "اس مدت میں پہلی بار درج کیے گئے اثاثے اپنی پہلی درج شدہ قدر سے شمار ہوتے ہیں، اس لیے کسی اثاثے کا اضافہ نفع یا نقصان کے طور پر نہیں دکھایا جاتا۔",
+  "Paid from": "ادائیگی کا کھاتہ",
+  "Received into": "وصولی کا کھاتہ",
+  "Still due: {amount}": "ابھی واجب الادا: {amount}",
+  "Record another": "ایک اور درج کریں"
 }

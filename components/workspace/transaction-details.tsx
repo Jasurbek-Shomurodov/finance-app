@@ -1,5 +1,5 @@
 "use client";
-import { MortgagePaymentDialog, TransactionDetailsDialog } from '@/components/workspace/workspace-lazy';
+import { PaymentDialog, TransactionDetailsDialog } from '@/components/workspace/workspace-lazy';
 import { RecordAttachments } from '@/components/record-attachments';
 import { useLanguage } from '@/components/language-provider';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
@@ -12,6 +12,8 @@ import { isLinkedTransaction, linkedSourceLabel } from '@/lib/linked-transaction
 import { propertyNameOf } from '@/lib/property-totals';
 import { isTransactionHistory } from '@/lib/transaction-history';
 import { canRecategorize } from '@/lib/transaction-rules';
+import { planPayment } from '@/lib/payment-plan';
+import { depositToday } from '@/lib/deposit-interest';
 import { useEffect } from 'react';
 
 /** What Split takes, as the records table offers it: a recorded transaction that no other action wrote. */
@@ -52,13 +54,14 @@ export function WorkspaceTransactionDetails() {
 
 /** Edit for a recorded mortgage payment: its form opens on the payment's own values once they are read. */
 export function MortgagePaymentEditor() {
- const { editingPayment, setEditingPayment, mortgagePaymentSource, editMortgagePayment, planning, removedCategories } = useWorkspace();
+ const { editingPayment, setEditingPayment, mortgagePaymentSource, editMortgagePayment, recordRepayment, planning, removedCategories } = useWorkspace();
  const payment = useMortgagePaymentSource(editingPayment, mortgagePaymentSource);
  const mortgage = planning.data.records.find(record => record.id === payment?.source?.mortgage_id);
  const failed = payment?.error ?? (payment?.source && !mortgage ? 'Mortgage not found.' : undefined);
  useEffect(() => { if (failed) { showError(failed); setEditingPayment(null); } }, [failed, setEditingPayment]);
  if (!editingPayment || !payment?.source || !mortgage) return null;
- return <MortgagePaymentDialog key={editingPayment.id} mortgage={mortgage} accounts={planning.data.records} editing={payment.source}
-  category={{ categories: planning.data.categories, removed: removedCategories.kinds, initial: { kind: editingPayment.kind, category_id: editingPayment.custom_category_id ?? null } }}
-  onClose={() => setEditingPayment(null)} onSave={editMortgagePayment}/>;
+ const plan = planPayment({ record: mortgage, editing: payment.source, category: { kind: editingPayment.kind, category_id: editingPayment.custom_category_id ?? null } }, planning.data, depositToday());
+ if (!plan) return null;
+ return <PaymentDialog key={editingPayment.id} plan={plan} data={{ ...planning.data, removedKinds: removedCategories.kinds }}
+  saves={{ mortgage: editMortgagePayment, edit: editMortgagePayment, tracker: recordRepayment, planning: planning.save }} onClose={() => setEditingPayment(null)}/>;
 }

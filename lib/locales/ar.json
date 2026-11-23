@@ -202,7 +202,6 @@
   "Principal repayment": "سداد أصل الدين",
   "Interest paid": "الفائدة المدفوعة",
   "Payment date": "تاريخ الدفع",
-  "Total payment: {amount}": "إجمالي الدفعة: {amount}",
   "Remaining balance: {amount}": "الرصيد المتبقي: {amount}",
   "Retry the same payment to avoid duplicates.": "أعد المحاولة بالدفعة نفسها لتجنب التكرار.",
   "Record payment": "سجّل الدفعة",
@@ -392,7 +391,6 @@
   "Allocated amount": "المبلغ المخصَّص",
   "Allocated to goals": "المخصَّص للأهداف",
   "Amount": "المبلغ",
-  "Amount received": "المبلغ المستلَم",
   "Amount sent": "المبلغ المرسَل",
   "Archived": "مؤرشف",
   "Balance after": "الرصيد بعد العملية",
@@ -435,7 +433,6 @@
   "Interest received": "الفائدة المستلَمة",
   "Statement balance": "رصيد كشف الحساب",
   "Record repayment": "سجّل السداد",
-  "Record scheduled payment": "سجّل الدفعة المجدولة",
   "Importing…": "جارٍ الاستيراد…",
   "Allocated money stays in the selected account.": "تبقى الأموال المخصَّصة في الحساب المحدد.",
   "Amount changes apply from the selected forecast month. Earlier months keep their budgets.": "تسري تغييرات المبلغ من شهر التوقع المحدد. تحتفظ الأشهر السابقة بميزانياتها.",
@@ -1043,7 +1040,6 @@
   "Some transactions could not be converted. Current or previous month totals are incomplete.": "تعذّر تحويل بعض المعاملات. إجماليات الشهر الحالي أو السابق غير مكتملة.",
   "Income received this month": "الدخل المستلَم هذا الشهر",
   "No income received this month": "لا دخل مستلَم هذا الشهر",
-  "Amount paid": "المبلغ المدفوع",
   "Try another category.": "جرّب فئة أخرى.",
   "A positive estimate creates a monthly income plan. Saving the record date also updates linked fixed-income start dates. Recorded payments stay unchanged.": "يُنشئ التقدير الموجب خطة دخل شهرية. كما يحدّث حفظ تاريخ السجل تواريخ بدء الدخل الثابت المرتبط. تبقى الدفعات المسجلة دون تغيير.",
   "Forecast assignments require database update 045. Apply the pending database migrations and try again.": "تتطلب تعيينات التوقعات تحديث قاعدة البيانات 045. طبّق ترحيلات قاعدة البيانات المعلّقة وحاول مرة أخرى.",
@@ -3008,5 +3004,9 @@
   "Switch to dark mode": "التبديل إلى الوضع الداكن",
   "Switch to light mode": "التبديل إلى الوضع الفاتح",
   "Navigate": "تنقّل",
-  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "الأصول التي سُجّلت لأول مرة في هذه الفترة تُحتسب من أول قيمة مسجّلة لها، لذلك لا تظهر إضافتها كربح أو خسارة."
+  "Holdings first recorded in this period count from their first recorded value, so adding one is not shown as a gain or a loss.": "الأصول التي سُجّلت لأول مرة في هذه الفترة تُحتسب من أول قيمة مسجّلة لها، لذلك لا تظهر إضافتها كربح أو خسارة.",
+  "Paid from": "مدفوع من",
+  "Received into": "مستلم في",
+  "Still due: {amount}": "المبلغ المتبقي المستحق: {amount}",
+  "Record another": "تسجيل دفعة أخرى"
 }

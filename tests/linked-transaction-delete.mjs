@@ -47,7 +47,7 @@ test('the details of a linked transaction offer Delete but not Edit; a plain one
 
 test('the mortgage payment dialog says a saved payment is undone from Transactions, not that it cannot be deleted (LOAN-029)', async () => {
  const fs = await import('node:fs');
- const dialog = fs.readFileSync('components/mortgage-payment-dialog.tsx', 'utf8');
+ const dialog = fs.readFileSync('components/payments/payment-dialog.tsx', 'utf8');
  assert.match(dialog, /To undo a payment, delete it from Transactions; you can restore it from Recently deleted\./);
  assert.doesNotMatch(dialog, /Saved payments cannot be edited or deleted/);
 });

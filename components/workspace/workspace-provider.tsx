@@ -24,6 +24,7 @@ import { usePortfolioSnapshots } from '@/hooks/use-portfolio-snapshots';
 import { useMarket } from '@/hooks/use-market';
 import { type Entry, normalizeEntry, kinds, income, expenses, estimatedCashFlow } from '@/lib/finance';
 import { storedEntry } from '@/lib/record-table';
+import { planPayment, type PaymentRequest } from '@/lib/payment-plan';
 import { inAccountOrder } from '@/lib/account-directory';
 import { sectionFor } from '@/components/workspace/navigation';
 import { businessesIn } from '@/lib/business';
@@ -162,6 +163,8 @@ function useWorkspaceState() {
     // currency. Transaction history returns raw rows, so normalize to the record shape forms expect.
     const storedRecord = (record: Entry) => storedEntry(record, { history: historyPage.data.records, planning: planning.data.records, rows, summary }, demo);
     const navigate = (path: string) => router.push(path);
+    /** Opens the one Record payment dialog, from any screen: for a loan, debt or mortgage, a Recurring row, or a due date a link names. False when there is nothing to pay. */
+    const openPayment = (request: PaymentRequest) => { const plan = planPayment(request, planningData, today); if (plan) dialogs.setPaying(plan); return !!plan; };
     const forms = recordForms({ editable, setError, setRecordKinds, setEditing, setDeleting, setEditingIncomeSource, setEditingPayment: dialogs.setEditingPayment, currency, section, cashFlowSection, holdingAccounts: planning.data.holdingAccounts, preferredCurrencies: preferencesData.currencies, sources: earningSources.sources, storedRecord, categories: planning.data.categories, removedKinds: removedCategories.kinds });
 
     const seedSample = sample.seedSample;
@@ -189,8 +192,8 @@ function useWorkspaceState() {
         filters: table.filters, setFilters: table.setFilters, filtersActive: table.filtersActive, historyOnly: table.historyOnly, useFilteredRecords: table.useFilteredRecords, remoteHistory: table.remoteHistory, historyPage, visible: table.visible, totalRecords: table.totalRecords, pageCount: table.pageCount, tablePage: table.tablePage, tableLoading,
         recordsLoading: table.recordsLoading, showFirstPage: table.showFirstPage, showPage: table.showPage,
         // Actions
-        ...forms, storedRecord, navigate,
-        saveHoldingAccount: actions.saveHoldingAccount, assignHolding: actions.assignHolding, recordMortgagePayment: actions.recordMortgagePayment, editMortgagePayment: actions.editMortgagePayment, mortgagePaymentSource: actions.mortgagePaymentSource, save, remove, stopRecord: actions.stopRecord, archiveSchedule, deleteSchedule, categorize: actions.categorize, assignTransactionsBusiness: actions.assignTransactionsBusiness, setAccountBusiness: actions.setAccountBusiness, saveBusiness: actions.saveBusiness, fetchPrice: price.fetchPrice, fetchingPrice: price.fetchingPrice, priceMessage: price.priceMessage,
+        ...forms, storedRecord, navigate, openPayment,
+        saveHoldingAccount: actions.saveHoldingAccount, assignHolding: actions.assignHolding, recordMortgagePayment: actions.recordMortgagePayment, recordRepayment: actions.recordRepayment, editMortgagePayment: actions.editMortgagePayment, mortgagePaymentSource: actions.mortgagePaymentSource, save, remove, stopRecord: actions.stopRecord, archiveSchedule, deleteSchedule, categorize: actions.categorize, assignTransactionsBusiness: actions.assignTransactionsBusiness, setAccountBusiness: actions.setAccountBusiness, saveBusiness: actions.saveBusiness, fetchPrice: price.fetchPrice, fetchingPrice: price.fetchingPrice, priceMessage: price.priceMessage,
         // Open dialogs
         editing, setEditing, editingCashFlow, recordKinds, deleting, setDeleting, ...dialogs,
     };
