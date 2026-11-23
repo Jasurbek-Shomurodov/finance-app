@@ -520,3 +520,9 @@ test('a figure in a fixed box stays on one line and shrinks to fit: donut total,
  const {fitFigure}=await loadTS('components/presentation-foundation/fit-figure.ts');
  assert.deepEqual(fitFigure('1,234,567 US$'),{'--chars':13});
 });
+
+test('phone dialog footers: with three buttons the main one takes its own row (23 November 2026)', () => {
+ // The phone dialog screenshot (e2e/screens.spec.mjs, add-expense phone) caught "Save and add another" running
+ // under "Save expense": three buttons were held to one row at 390px.
+ assert.match(stylesheet(),/@media\(max-width:480px\)\{[^}]*\{[^}]*\}[^@]*\[data-slot=dialog-content\] \.record-form-footer:has\(>button:nth-of-type\(3\)\) \.primary\{flex-basis:100%\}/);
+});

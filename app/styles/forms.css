@@ -122,7 +122,9 @@ label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 .delete-button:not(:disabled){color:var(--negative)}
 .record-form-footer :is(.delete-button,.delete-button-reason){order:-1;margin-inline-end:auto}
 .delete-button-reason{display:inline-flex;cursor:not-allowed}
-@media(max-width:480px){.record-dialog{padding:20px;width:calc(100vw - 20px);max-height:calc(100dvh - 20px)}.record-dialog .record-form .form-grid{grid-template-columns:1fr;gap:18px}[data-slot=dialog-content] .record-form-footer button{flex:1;min-width:0!important}}
+/* On a phone the buttons share the row; with three (Cancel, Save and add another, Save), the main one takes a row of its
+   own under the others, and a long label (German, Russian) wraps inside its button instead of spilling past it. */
+@media(max-width:480px){.record-dialog{padding:20px;width:calc(100vw - 20px);max-height:calc(100dvh - 20px)}.record-dialog .record-form .form-grid{grid-template-columns:1fr;gap:18px}[data-slot=dialog-content] .record-form-footer button{flex:1;min-width:0!important;height:auto;padding-inline:12px;white-space:normal;text-wrap:balance}[data-slot=dialog-content] .record-form-footer:has(>button:nth-of-type(3)) .primary{flex-basis:100%}}
 
 .settings-page{max-width:880px;margin:auto}
 .settings-form{display:grid;gap:18px}
