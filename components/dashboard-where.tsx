@@ -5,6 +5,7 @@ import { useLanguage } from '@/components/language-provider';
 import type { useMonthBudget } from '@/components/dashboard-cards';
 import type { HeadlineFigures } from '@/components/dashboard-headline';
 import type { SpendingPaceState } from '@/components/spending-pace-card';
+import { rankedBar } from '@/components/cash-flow/flow-bars';
 import { CategoryIcon } from '@/components/presentation-foundation/category-icon';
 import { DrawerLink } from '@/components/presentation-foundation/drawer-link';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
@@ -36,7 +37,7 @@ export function dashboardGlance({ spending, budget, figures }: { spending: Spend
 }
 
 /** One category's row: its icon and name, its share of the month and its change against last month by this day (an
- * arrow and a signed amount, never colour alone), a bar sized against the largest category, and the amount. The whole
+ * arrow and a signed amount, never colour alone), a bar sized against the largest category, and the amount: the app's one ranked bar (`rankedBar`). The whole
  * row opens that category's spending this month in Transactions. */
 function WhereRow({ row, peak, name, mark, currency }: { row: SpendingRow; peak: number; name: string; mark: ReactNode; currency: string }) {
  const { t, locale } = useLanguage();
@@ -44,15 +45,9 @@ function WhereRow({ row, peak, name, mark, currency }: { row: SpendingRow; peak:
  const change = Math.round(row.change);
  const compared = change > 0 ? t('{amount} more than last month by this day', { amount: money(change) }) : change < 0 ? t('{amount} less than last month by this day', { amount: money(-change) }) : t('Same as last month by this day');
  const share = formatPercent(row.share * 100, locale, 0);
- return <li data-side="expense">
-  <DrawerLink href={spendingHref(row.key)} className="flow-bar-row" aria-label={`${name}: ${money(row.amount)}, ${share}. ${compared}`}>
-   <span className="flow-bar-name">{mark}<span>{name}{row.mover && <> <span className="status-badge is-caution">{t('Biggest increase')}</span></>}
-    <small>{share}{change !== 0 && <> · {change > 0 ? <TrendingUp size={13} aria-hidden="true"/> : <TrendingDown size={13} aria-hidden="true"/>}{formatSignedMoney(change, currency, locale)}</>}</small>
-   </span></span>
-   <span className="flow-bar-track" aria-hidden="true"><i style={{ width: `${Math.min(100, Math.max(2, row.amount / peak * 100))}%` }}/></span>
-   <strong>{money(row.amount)}</strong>
-  </DrawerLink>
- </li>;
+ return rankedBar({ side: 'expense', key: row.key, name, mark, amount: money(row.amount), share: row.amount / peak, href: spendingHref(row.key), openLabel: `${name}: ${money(row.amount)}, ${share}. ${compared}`,
+  under: <>{row.mover && <> <span className="status-badge is-caution">{t('Biggest increase')}</span></>}
+   <small>{share}{change !== 0 && <> · {change > 0 ? <TrendingUp size={13} aria-hidden="true"/> : <TrendingDown size={13} aria-hidden="true"/>}{formatSignedMoney(change, currency, locale)}</>}</small></> });
 }
 
 /** What to improve: three lines at most, each a link to where it is fixed. Nothing is drawn when there is nothing to say. */

@@ -1,19 +1,23 @@
 "use client";
 import type { ReactNode } from 'react';
 import { useLanguage } from '@/components/language-provider';
+import { DrawerLink } from '@/components/presentation-foundation/drawer-link';
 import { otherShareKey, topShares, type Share } from '@/lib/cash-flow-report';
 import { formatMoney, formatPercent, formatSignedMoney } from '@/lib/format';
 
 type Side = 'income' | 'expense';
 type Row = { side: Side | 'left' | 'share'; key?: string; name: string; mark?: ReactNode; amount: string; /** Its share of the total, beside the amount. */note?: string;
+ /** A second line under the name (a badge, the share and change). */under?: ReactNode;
  /** The bar's length, 0 to 1 of the longest. */share: number; /** A colour of its own for the bar. */color?: string; /** What was left over is short. */short?: boolean;
- /** With it the row is a button, named by `openLabel`. */onOpen?: () => void; openLabel?: string };
+ /** With it the row is a button, named by `openLabel`; with `href` a link instead, to another page. */onOpen?: () => void; href?: string; openLabel?: string };
 
-/** One ranked bar, the only one the app draws: a mark and a name, a bar sized against the longest, the amount. */
-function barRow({ side, key = '', name, mark = null, amount, note, share, color, short, onOpen, openLabel }: Row) {
- const cells = <><span className="flow-bar-name">{mark}<span>{name}</span></span><span className="flow-bar-track" aria-hidden="true"><i style={{ width: `${Math.min(100, Math.max(share > 0 ? 2 : 0, share * 100))}%`, background: color }}/></span><strong>{amount}{note && <small>{note}</small>}</strong></>;
- return <li key={side + key} data-side={side} data-short={short || undefined} title={note ? `${name} · ${amount}` : undefined}>{onOpen
-  ? <button type="button" className="flow-bar-row" onClick={onOpen} aria-label={openLabel}>{cells}</button>
+/** One ranked bar, the only one the app draws (Cash flow, Reports and the Dashboard's Where it is going): a mark and a
+ * name, a bar sized against the longest, the amount. */
+export function rankedBar({ side, key = '', name, mark = null, amount, note, under, share, color, short, onOpen, href, openLabel }: Row) {
+ const cells = <><span className="flow-bar-name">{mark}<span>{name}{under}</span></span><span className="flow-bar-track" aria-hidden="true"><i style={{ width: `${Math.min(100, Math.max(share > 0 ? 2 : 0, share * 100))}%`, background: color }}/></span><strong>{amount}{note && <small>{note}</small>}</strong></>;
+ return <li key={side + key} data-side={side} data-short={short || undefined} title={note ? `${name} · ${amount}` : undefined}>{href
+  ? <DrawerLink href={href} className="flow-bar-row" aria-label={openLabel}>{cells}</DrawerLink>
+  : onOpen ? <button type="button" className="flow-bar-row" onClick={onOpen} aria-label={openLabel}>{cells}</button>
   : <div className="flow-bar-row">{cells}</div>}</li>;
 }
 
@@ -34,14 +38,14 @@ export function FlowBars({ income, expense, left, label, icon, currency, onOpen 
   return shown.map(item => {
    const other = item.key === otherShareKey, name = other ? t('Other') : label(item.key);
    const mark = side === 'income' || other || !icon ? <i className="flow-bar-dot" aria-hidden="true"/> : icon(item.key);
-   return barRow({ side, key: item.key, name, mark, amount: side === 'income' ? formatSignedMoney(item.amount, currency, locale) : formatMoney(item.amount, currency, locale), share: item.amount / peak, ...opening(side, item.key, name, !other) });
+   return rankedBar({ side, key: item.key, name, mark, amount: side === 'income' ? formatSignedMoney(item.amount, currency, locale) : formatMoney(item.amount, currency, locale), share: item.amount / peak, ...opening(side, item.key, name, !other) });
   });
  };
  const leftShare = left !== null && total > 0 ? Math.abs(left) / total : 0;
  return <ul className="flow-bars">
   {rows('income', income)}
   {rows('expense', expense)}
-  {barRow({ side: 'left', name: t('Left over'), amount: left === null ? '—' : formatSignedMoney(left, currency, locale), share: leftShare, short: left !== null && left < 0, ...opening('left', '', t('Left over'), left !== null && left > 0) })}
+  {rankedBar({ side: 'left', name: t('Left over'), amount: left === null ? '—' : formatSignedMoney(left, currency, locale), share: leftShare, short: left !== null && left < 0, ...opening('left', '', t('Left over'), left !== null && left > 0) })}
  </ul>;
 }
 
@@ -54,7 +58,7 @@ export function ShareBars({ items, label, colorKey, currency, onSelect }: { item
  const shown = topShares(items), peak = Math.max(...shown.map(item => item.amount));
  return <ul className="flow-bars">{shown.map(item => {
   const other = item.key === otherShareKey, name = other ? t('Other') : label(item.key), color = other ? undefined : colorKey(item.key);
-  return barRow({ side: 'share', key: item.key, name, mark: <i className="flow-bar-dot" style={{ background: color }} aria-hidden="true"/>, amount: formatMoney(item.amount, currency, locale), note: formatPercent(item.share * 100, locale), share: item.amount / peak, color,
+  return rankedBar({ side: 'share', key: item.key, name, mark: <i className="flow-bar-dot" style={{ background: color }} aria-hidden="true"/>, amount: formatMoney(item.amount, currency, locale), note: formatPercent(item.share * 100, locale), share: item.amount / peak, color,
    ...(onSelect && !other ? { onOpen: () => onSelect(item.key), openLabel: t('Show transactions for {name}', { name }) } : {}) });
  })}</ul>;
 }

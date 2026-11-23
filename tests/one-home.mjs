@@ -44,6 +44,12 @@ test('Cash flow keeps the recent months and sends every other period to Reports'
  assert.doesNotMatch(report, /'quarter'|'year'/, 'quarters and years are Reports\' periods');
 });
 
+test('one ranked bar: Cash flow, Reports and the Dashboard draw their rows with the same piece', () => {
+ // The loading shape repeats the class by rule (Shimmer follows the screen); nothing else writes the row's markup.
+ assert.deepEqual(importing(/className="flow-bar-row"/).filter(file => !file.includes('loading-placeholder')), ['components/cash-flow/flow-bars.tsx']);
+ assert.match(read('components/dashboard-where.tsx'), /return rankedBar\(\{ side: 'expense', key: row\.key,[^\n]*href: spendingHref\(row\.key\)/);
+});
+
 test('rules are edited on Transactions, review suggestions on Recurring, payouts and alerts on their own Investments tab', () => {
  assert.deepEqual(importing(/RulesDialog|rules-list/).filter(file => !file.startsWith('components/transactions/')), [screens + 'transactions-screen.tsx']);
  assert.match(read(screens + 'settings-screen.tsx'), /<DrawerLink href=\{rulesLink\}>/);
