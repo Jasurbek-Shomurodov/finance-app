@@ -110,7 +110,7 @@ test('partial-history view retains older observations after a positive new openi
  assert.equal(result.missing,0);
  assert.equal(portfolioWindow(result.points,30,'2026-09-25')[0].partial,true);
  assert.equal(result.points.at(-1).joined,50000,'the day says what it counts for the first time');
- const {joined,...complete}=result.points.at(-1);
+ const complete={...result.points.at(-1)};delete complete.joined;
  assert.deepEqual(portfolioHistory(rows,events,'USD',undefined,'2026-09-25').points,[complete],'a history that starts on that day joined nothing');
 });
 
@@ -145,7 +145,7 @@ test('a holding with no close by its snapshot keeps its recorded value, and clos
 });
 
 test('a holding first recorded inside the period does not hide the period\'s change: it counts from its first value',()=>{
- const {periodChange,joinedToday}=history;
+ const {periodChange}=history;
  const today='2026-09-25';
  // Cash followed all year; a stock typed in today with no opening date, already worth 5,000.
  const rows=[record('cash','Cash'),record('stock','Stock')];

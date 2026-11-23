@@ -24,6 +24,7 @@ function screen(file, name, tab, planning) {
   '@/components/planning/debt-payoff-panel': { DebtPayoffPanel: part('plan') },
   '@/components/loans/loans-overview': { LoansOverview: part('overview') },
   '@/hooks/use-property-totals': { usePropertyTotals: () => null },
+  '@/hooks/use-location-search': { useLocationSearch: () => '' },
  });
  r.mount(h(Screen));
  r.find(element => element.props?.['data-tab'] === tab).props.onClick();
