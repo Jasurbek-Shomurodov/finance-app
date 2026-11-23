@@ -86,7 +86,9 @@ test('number fields report a blank entry separately from a typed zero',()=>{
 
 test('tracker valuations must be typed and amounts use the required entry rule',()=>{
  const tracker=['form','overview'].map(part=>fs.readFileSync(`components/investment-tracker-${part}.tsx`,'utf8')).join('\n');
- assert.match(tracker,/\(!hasBalance\|\|!balanceBlank\)/);
+ // A blank value is saved only for a counted asset (its two numbers), or when the share alone changes and the value it has is kept.
+ assert.match(tracker,/\(!hasBalance\|\|valueEntered\)/);
+ assert.match(tracker,/valueEntered=counted\|\|!balanceBlank\|\|savedBalance!==draft\.balance/);
  assert.match(tracker,/<FormattedNumberInput value=\{draft\.balance\?\?0\} requireEntry onValueChange=\{\(balance,blank\)=>\{setBalanceBlank\(blank\)/);
  // Every reset of the draft starts from a blank value again.
  assert.equal(tracker.match(/setBalanceBlank\(true\)/g).length,3);

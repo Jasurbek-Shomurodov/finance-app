@@ -7,7 +7,7 @@ const {formatMoney}=loadTS('lib/format.ts');
 const finance=loadTS('lib/finance.ts');
 const now=new Date('2026-09-30T07:00:00Z');// 30 September 2026 in Tashkent
 const stubs=['grouped-picker','loading-placeholder','form-footer','schedule-fields','error-popup','amount-currency-fields','currency-select','currency-value','record-icon','date-picker','formatted-number-input','confirm-dialog','info-hint'].map(name=>'@/components/presentation-foundation/'+name);
-const components=['record-edit-history','cash-investment-option','investment-tracker','investment-tracker-lazy','mortgage-payment-dialog','income-record-form','cash-account-field','instrument-picker','record-name-input','business-profile-fields','ui/tabs','ui/button','ui/native-select','ui/dialog'].map(name=>'@/components/'+name);
+const components=['record-edit-history','cash-investment-option','investment-tracker','investment-tracker-lazy','mortgage-payment-dialog','income-record-form','cash-account-field','instrument-picker','record-name-input','business-profile-fields','ui/tabs','ui/button','ui/native-select','ui/dialog','ui/switch'].map(name=>'@/components/'+name);
 
 const record=(id,kind,extra={})=>({id,name:id,kind,amount:100,quantity:1,cost:0,rate:0,currency:'USD',frequency:'Once',date:'2026-09-15',notes:'',...extra});
 const planning=(data={},state={})=>({loading:false,error:'',...state,data:{records:[],categories:[],holdingAccounts:[],...data}});
@@ -223,9 +223,23 @@ test('a business takes its value, profile, income estimate and ownership, with t
  d.r.fire(d.r.find(byType('BusinessProfileFields')),'onChange',{business_industry:'Food'});
  assert.equal(d.state.editing.business_industry,'Food');
  assert.equal(d.labelled('Full business value').children[0],'Full business value');
- assert.equal(text(d.r.find(node=>node.props.className==='ownership-summary')),'Your share: '+formatMoney(50000,'USD','en'));
+ const summary=view=>text(view.r.find(node=>node.props.className==='ownership-summary owned-summary'));
+ assert.equal(summary(d),'You own 25% · your share '+formatMoney(50000,'USD','en'));
  d.r.fire(d.labelled('Ownership (%)','FormattedNumberInput'),'onValueChange',50);
- assert.equal(text(d.r.find(node=>node.props.className==='ownership-summary')),'Your share: '+formatMoney(100000,'USD','en'));
+ assert.equal(summary(d),'You own 50% · your share '+formatMoney(100000,'USD','en'));
+ // Any asset valued by hand can be part-owned and counted in units; the amount is then the value of one unit.
+ const herd=dialog(t,record('herd','Vehicle',{amount:85,quantity:1300,unit_label:'sheep',ownership_percentage:50}));
+ assert.equal(herd.labelled('Value per unit').children[0],'Value per unit');
+ assert.equal(herd.labelled('Quantity','FormattedNumberInput').props.value,1300);
+ assert.equal(summary(herd),'Total value: '+formatMoney(110500,'USD','en')+'You own 50% · your share '+formatMoney(55250,'USD','en'));
+ herd.r.fire(herd.labelled('Quantity','FormattedNumberInput'),'onValueChange',1400);
+ assert.equal(herd.state.editing.quantity,1400);
+ // Switching the count off keeps what the asset is worth.
+ herd.r.fire(herd.r.find(byType('Switch')),'onCheckedChange',false);
+ assert.deepEqual([herd.state.editing.amount,herd.state.editing.quantity,herd.state.editing.unit_label],[119000,1,null]);
+ // A full owner of an uncounted asset sees no summary, and no kind outside the valued ones is offered a share.
+ assert.equal(dialog(t,record('car','Vehicle',{amount:9000})).r.all(node=>node.props.className==='ownership-summary owned-summary').length,0);
+ assert.equal(dialog(t,record('wallet','Cash',{amount:10})).r.all(byType('Switch')).length,0);
  d.r.fire(d.labelled('Estimated monthly income (your share)','FormattedNumberInput'),'onValueChange',1200);
  assert.equal(d.state.editing.estimated_monthly_income,1200);
  assert.equal(dialog(t,record('cafe','Business')).labelled('Ownership (%)','FormattedNumberInput').props.value,100,'ownership defaults to 100%');
