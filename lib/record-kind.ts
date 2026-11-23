@@ -1,4 +1,4 @@
-import { expenses, income, interestKinds, liabilities, simpleInterestKinds, unitPricedKinds, type Entry } from './finance';
+import { expenses, income, interestKinds, liabilities, simpleInterestKinds, unitPricedKinds, valuedKinds, type Entry } from './finance';
 
 const unitPriced = (kind: string) => unitPricedKinds.includes(kind);
 const cashFlow: readonly string[] = [...income, ...expenses];
@@ -9,8 +9,8 @@ export function changeRecordKind(entry: Entry, kind: Entry['kind'], today: strin
  if (kind === entry.kind) return entry;
  return {
   ...entry, kind,
-  amount: unitPriced(kind) || unitPriced(entry.kind) ? 0 : entry.amount,
-  quantity: unitPriced(kind) ? entry.quantity : 1,
+  amount: unitPriced(kind) || unitPriced(entry.kind) || (!!entry.unit_label && !valuedKinds.includes(kind)) ? 0 : entry.amount,
+  quantity: unitPriced(kind) || (valuedKinds.includes(kind) && !!entry.unit_label) ? entry.quantity : 1,
   cost: unitPriced(kind) ? entry.cost : 0,
   rate: [...interestKinds, 'Money lent', ...liabilities].includes(kind) ? entry.rate : 0,
   deposit_compounding: simpleInterestKinds.includes(kind) ? 'none' : entry.deposit_compounding,
@@ -18,7 +18,9 @@ export function changeRecordKind(entry: Entry, kind: Entry['kind'], today: strin
   metal: kind === 'Precious metals' ? entry.metal ?? 'XAU' : entry.metal == null ? undefined : null,
   metal_unit: kind === 'Precious metals' ? entry.metal_unit ?? 'g' : entry.metal_unit == null ? undefined : null,
   metal_purity: kind === 'Precious metals' ? entry.metal_purity ?? 0.9999 : entry.metal_purity == null ? undefined : null,
-  ownership_percentage: kind === 'Business' ? entry.ownership_percentage : 100,
+  // A share and a count belong to assets valued by hand; the unit name is cleared only where it was set.
+  ownership_percentage: valuedKinds.includes(kind) ? entry.ownership_percentage : 100,
+  unit_label: valuedKinds.includes(kind) ? entry.unit_label : entry.unit_label == null ? undefined : null,
   estimated_monthly_income: kind === 'Property' || kind === 'Business' ? entry.estimated_monthly_income : 0,
   estimated_monthly_payment: kind === 'Mortgage' ? entry.estimated_monthly_payment : 0,
   is_investment: kind === 'Cash' ? entry.is_investment : false,

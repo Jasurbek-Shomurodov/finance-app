@@ -10067,8 +10067,8 @@ COMMIT;
 --   many and `amount` is then the value of ONE unit, so the whole asset is amount x quantity. Without a unit name the
 --   record reads exactly as before, whatever its quantity column holds.
 -- * `investment_history` gains `quantity` and `unit_value`. When both are set the balance is their product. The
---   trigger writes them for a counted asset, and `record_investment_event` takes them, and a new ownership share, as
---   optional parameters beside the date it always took: "2025: 1,000 x 80; 2026: 1,300 x 85" are two dated updates.
+--   trigger writes them for a counted asset, and `record_investment_event` takes them, and a new ownership share, in
+--   a ten-argument form beside the date it always took: "2025: 1,000 x 80; 2026: 1,300 x 85" are two dated updates.
 -- Existing rows keep their value: a record that is not a Business always counted at 100%, so any other share stored
 -- on one is reset to 100 (triggers off: no history row, revision or audit entry). The stricter share check is added
 -- NOT VALID, so a business saved at 0% stays as it is until it is next edited. No row is deleted. Re-runnable.
@@ -10114,13 +10114,16 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.capture_investment_balance() FROM PUBLIC,anon,authenticated;
 
--- The seven-argument function becomes one with three optional parameters; callers that pass seven still reach it.
-DROP FUNCTION IF EXISTS public.record_investment_event(uuid,uuid,text,date,numeric,numeric,text);
-CREATE OR REPLACE FUNCTION public.record_investment_event(p_id uuid,p_record_id uuid,p_type text,p_date date,p_amount numeric,p_balance numeric,p_notes text,
- p_quantity numeric DEFAULT NULL,p_unit_value numeric DEFAULT NULL,p_ownership numeric DEFAULT NULL)
+-- `record_investment_event` keeps its seven arguments, so the account and exchange-rate forms that call it are
+-- untouched. A count, a value per unit and a share reach it from the ten-argument form below, which hands them over
+-- for the length of its own call (transaction-local settings, the way `finance.history_write` already travels).
+CREATE OR REPLACE FUNCTION public.record_investment_event(p_id uuid,p_record_id uuid,p_type text,p_date date,p_amount numeric,p_balance numeric,p_notes text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 DECLARE r public.finance_records; existing public.investment_history; last_date date; lending boolean; next_balance numeric;
- valued boolean; counted boolean; unit_priced boolean; full_balance numeric:=p_balance;
+ valued boolean; counted boolean; full_balance numeric:=p_balance;
+ p_quantity numeric:=nullif(current_setting('finance.valuation_quantity',true),'')::numeric;
+ p_unit_value numeric:=nullif(current_setting('finance.valuation_unit_value',true),'')::numeric;
+ p_ownership numeric:=nullif(current_setting('finance.valuation_ownership',true),'')::numeric;
 BEGIN
  IF public.active_owner() IS NULL THEN RAISE EXCEPTION 'Please sign in again.'; END IF;
  IF (p_quantity IS NULL)<>(p_unit_value IS NULL) OR ((p_quantity IS NOT NULL OR p_ownership IS NOT NULL) AND p_type IS DISTINCT FROM 'valuation')
@@ -10142,7 +10145,6 @@ BEGIN
  lending:=r.kind IN ('Debt','Loan','Money lent','Mortgage');
  valued:=r.kind IN ('Property','Business','Valuables','Vehicle','Retirement account');
  counted:=valued AND r.unit_label IS NOT NULL;
- unit_priced:=r.kind IN ('Stock','Crypto','Precious metals','Equity compensation');
  IF (p_quantity IS NOT NULL AND NOT counted) OR (p_ownership IS NOT NULL AND NOT valued) THEN RAISE EXCEPTION 'Check the tracker fields.'; END IF;
  SELECT * INTO existing FROM public.investment_history WHERE id=p_id;
  IF FOUND THEN
@@ -10165,17 +10167,17 @@ BEGIN
   next_balance:=r.amount+CASE WHEN p_type='contribution' THEN p_amount ELSE -p_amount END;
   IF next_balance<0 THEN RAISE EXCEPTION 'Repayment cannot exceed the outstanding balance.'; END IF;
   IF next_balance>1e15 THEN RAISE EXCEPTION 'Check the tracker fields.'; END IF;
- ELSIF p_type IN ('contribution','withdrawal') AND full_balance IS NULL AND NOT valued THEN
+ ELSIF p_type IN ('contribution','withdrawal') AND p_balance IS NULL AND r.kind NOT IN ('Business','Property','Valuables','Vehicle','Retirement account') THEN
   RAISE EXCEPTION 'Check the tracker fields.';
  END IF;
  INSERT INTO public.investment_history(id,user_id,record_id,event_type,occurred_on,amount,balance,ownership_percentage,quantity,unit_value,notes)
  VALUES(p_id,public.active_owner(),r.id,p_type,p_date,p_amount,next_balance,CASE WHEN valued THEN coalesce(p_ownership,r.ownership_percentage) ELSE 100 END,p_quantity,p_unit_value,p_notes);
  -- Only the newest dated value becomes the record's own: an older one is history and replaces nothing.
  IF next_balance IS NOT NULL AND (last_date IS NULL OR p_date>=last_date) THEN
-  IF (unit_priced OR (counted AND p_quantity IS NULL)) AND r.quantity=0 THEN RAISE EXCEPTION 'Set a quantity before recording a valuation.'; END IF;
+  IF (r.kind IN ('Stock','Crypto','Precious metals','Equity compensation') OR (counted AND p_quantity IS NULL)) AND r.quantity=0 THEN RAISE EXCEPTION 'Set a quantity before recording a valuation.'; END IF;
   PERFORM set_config('finance.history_write','1',true);
   UPDATE public.finance_records SET
-   amount=CASE WHEN p_quantity IS NOT NULL THEN p_unit_value WHEN unit_priced OR counted THEN next_balance/r.quantity ELSE next_balance END,
+   amount=CASE WHEN p_quantity IS NOT NULL THEN p_unit_value ELSE next_balance/CASE WHEN counted OR r.kind IN ('Stock','Crypto','Precious metals','Equity compensation') THEN r.quantity ELSE 1 END END,
    quantity=coalesce(p_quantity,quantity),
    ownership_percentage=CASE WHEN valued THEN coalesce(p_ownership,ownership_percentage) ELSE ownership_percentage END
   WHERE id=r.id;
@@ -10186,6 +10188,20 @@ BEGIN
   VALUES(p_id,public.active_owner(),r.name,CASE WHEN p_type='expense' THEN 'Other expense' WHEN r.kind='Property' THEN 'Rent income' ELSE 'Other income' END,r.currency,p_amount,p_date,'Once',p_notes,CASE WHEN r.kind='Business' THEN r.id ELSE NULL END,p_id,CASE WHEN r.kind='Property' AND p_type='income' THEN r.id END,CASE WHEN r.kind='Property' AND p_type='expense' THEN r.id END);
  END IF;
  RETURN jsonb_build_object('ok',true);
+END $$;
+REVOKE ALL ON FUNCTION public.record_investment_event(uuid,uuid,text,date,numeric,numeric,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.record_investment_event(uuid,uuid,text,date,numeric,numeric,text) TO authenticated;
+
+-- A value update with a count and a value per unit, a new ownership share, or both. Every rule is the function's above.
+CREATE OR REPLACE FUNCTION public.record_investment_event(p_id uuid,p_record_id uuid,p_type text,p_date date,p_amount numeric,p_balance numeric,p_notes text,
+ p_quantity numeric,p_unit_value numeric,p_ownership numeric)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE result jsonb;
+BEGIN
+ PERFORM set_config('finance.valuation_quantity',coalesce(p_quantity::text,''),true),set_config('finance.valuation_unit_value',coalesce(p_unit_value::text,''),true),set_config('finance.valuation_ownership',coalesce(p_ownership::text,''),true);
+ result:=public.record_investment_event(p_id,p_record_id,p_type,p_date,p_amount,p_balance,p_notes);
+ PERFORM set_config('finance.valuation_quantity','',true),set_config('finance.valuation_unit_value','',true),set_config('finance.valuation_ownership','',true);
+ RETURN result;
 END $$;
 REVOKE ALL ON FUNCTION public.record_investment_event(uuid,uuid,text,date,numeric,numeric,text,numeric,numeric,numeric) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.record_investment_event(uuid,uuid,text,date,numeric,numeric,text,numeric,numeric,numeric) TO authenticated;
@@ -10208,7 +10224,7 @@ SELECT pg_temp.patch_counted_assets('public.delete_tracker_update(uuid,uuid)'::r
 
 -- The record form may save a unit name.
 SELECT pg_temp.patch_counted_assets('public.save_finance_record(jsonb,bigint)'::regprocedure,
- $old$'metal','metal_unit','metal_purity'$old$,$new$'metal','metal_unit','metal_purity','unit_label'$new$);
+ $old$'ownership_percentage',$old$,$new$'ownership_percentage','unit_label',$new$);
 
 -- The compact summary every total reads: a counted asset keeps its quantity and unit name (each valued asset is its own row).
 SELECT pg_temp.patch_counted_assets('public.finance_records_page(integer,text,text,boolean)'::regprocedure,
@@ -10255,13 +10271,15 @@ BEGIN
  RETURN NEW;
 END $$;
 REVOKE ALL ON FUNCTION public.set_business_share() FROM PUBLIC,anon,authenticated;
-DROP TRIGGER IF EXISTS finance_business_share ON public.finance_records;
-CREATE TRIGGER finance_business_share BEFORE INSERT OR UPDATE ON public.finance_records FOR EACH ROW EXECUTE FUNCTION public.set_business_share();
+-- Triggers fire by name: this one runs after the guards that compare a linked transaction with what it was, so the
+-- share it keeps is never read as an edit, and after the check that the business is the owner's own.
+DROP TRIGGER IF EXISTS x_business_share ON public.finance_records;
+CREATE TRIGGER x_business_share BEFORE INSERT OR UPDATE ON public.finance_records FOR EACH ROW EXECUTE FUNCTION public.set_business_share();
 
 -- The income and expense forms may save how the amount was entered. The share itself is never taken from the form.
 DO $patch$
 DECLARE definition text:=pg_get_functiondef('public.save_finance_record(jsonb,bigint)'::regprocedure);
- old_text text:=$old$'metal_purity','unit_label'$old$; new_text text:=$new$'metal_purity','unit_label','amount_basis'$new$; found integer;
+ old_text text:=$old$'ownership_percentage','unit_label',$old$; new_text text:=$new$'ownership_percentage','unit_label','amount_basis',$new$; found integer;
 BEGIN
  IF position(new_text IN definition)>0 THEN RETURN; END IF;
  found:=(length(definition)-length(replace(definition,old_text,'')))/length(old_text);

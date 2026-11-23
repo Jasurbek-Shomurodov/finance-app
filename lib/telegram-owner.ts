@@ -61,7 +61,7 @@ export async function snapshotOnOrBefore(db:ServiceDatabase,owner:string,day:str
 }
 /** The columns of one-time income and expenses that the bot and its messages use: totals, categories, the account last
  * used for a name, the Tracker expense a record copies, and the older way a salary settled its schedule. */
-const cashflowColumns='id,name,kind,amount,currency,date,frequency,custom_category_id,account_id,business_id,history_event_id,mortgage_payment_id,payment_principal,payment_interest,income_source_id,income_due_on';
+const cashflowColumns='id,name,kind,amount,currency,date,frequency,custom_category_id,account_id,business_id,amount_basis,business_share,history_event_id,mortgage_payment_id,payment_principal,payment_interest,income_source_id,income_due_on';
 const recordPages=(db:ServiceDatabase,owner:string,filter:string,select:string)=>readIdPages<Entry>(range=>db.read<Entry[]>(`/rest/v1/finance_records?select=${select}&user_id=eq.${owner}&${filter}&order=id.asc&${range}`));
 /** An owner's one-time income and expenses dated `from` on, with `cashflowColumns`, paged by id. */
 export function ownerCashflowSince(db:ServiceDatabase,owner:string,from:string){

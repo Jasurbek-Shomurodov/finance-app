@@ -17,7 +17,7 @@ type Table='movements'|'holdingAccounts'|'records'|'categories'|'goals'|'occurre
  * the 24 newest monthly ones they look at. */
 const insightMonths=25;
 /** The columns the pattern finders, the review drafts made from them, the goal income links, Budget's Age of Money and an opened charge read: its revision and account details let it be edited and saved. */
-export const insightColumns='id,revision,name,kind,amount,currency,quantity,cost,rate,date,frequency,recurrence_days,end_date,notes,custom_category_id,account_id,account_currency,account_exchange_rate,account_rate_date,business_id,property_id,income_source_id,source_paused,archived,earning_source_id,operation_id,history_event_id,mortgage_payment_id,payment_principal,payment_interest,payment_type,movement_id,occurrence_record_id,occurrence_due_on,ownership_percentage,member_id,shared';
+export const insightColumns='id,revision,name,kind,amount,currency,quantity,cost,rate,date,frequency,recurrence_days,end_date,notes,custom_category_id,account_id,account_currency,account_exchange_rate,account_rate_date,business_id,property_id,income_source_id,source_paused,archived,earning_source_id,operation_id,history_event_id,mortgage_payment_id,payment_principal,payment_interest,payment_type,movement_id,occurrence_record_id,occurrence_due_on,ownership_percentage,amount_basis,business_share,member_id,shared';
 
 /** The tables a scope reads, and whether it carries loan payments (`debtPayments`) or only transaction history
  * (no later scheduled payments and no deposit estimates). */

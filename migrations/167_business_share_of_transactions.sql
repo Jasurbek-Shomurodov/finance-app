@@ -29,13 +29,15 @@ BEGIN
  RETURN NEW;
 END $$;
 REVOKE ALL ON FUNCTION public.set_business_share() FROM PUBLIC,anon,authenticated;
-DROP TRIGGER IF EXISTS finance_business_share ON public.finance_records;
-CREATE TRIGGER finance_business_share BEFORE INSERT OR UPDATE ON public.finance_records FOR EACH ROW EXECUTE FUNCTION public.set_business_share();
+-- Triggers fire by name: this one runs after the guards that compare a linked transaction with what it was, so the
+-- share it keeps is never read as an edit, and after the check that the business is the owner's own.
+DROP TRIGGER IF EXISTS x_business_share ON public.finance_records;
+CREATE TRIGGER x_business_share BEFORE INSERT OR UPDATE ON public.finance_records FOR EACH ROW EXECUTE FUNCTION public.set_business_share();
 
 -- The income and expense forms may save how the amount was entered. The share itself is never taken from the form.
 DO $patch$
 DECLARE definition text:=pg_get_functiondef('public.save_finance_record(jsonb,bigint)'::regprocedure);
- old_text text:=$old$'metal_purity','unit_label'$old$; new_text text:=$new$'metal_purity','unit_label','amount_basis'$new$; found integer;
+ old_text text:=$old$'ownership_percentage','unit_label',$old$; new_text text:=$new$'ownership_percentage','unit_label','amount_basis',$new$; found integer;
 BEGIN
  IF position(new_text IN definition)>0 THEN RETURN; END IF;
  found:=(length(definition)-length(replace(definition,old_text,'')))/length(old_text);

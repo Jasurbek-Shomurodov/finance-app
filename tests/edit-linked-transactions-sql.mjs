@@ -40,7 +40,7 @@ test('migration 164 is in setup.sql and changes nothing when applied again',{ski
   const before=await functions();
   await db.exec(migration);
   // Applied again it rewrites only the capability version, which the next migration moves on.
-  await db.exec(fs.readFileSync('migrations/165_trigger_grants_and_reference_indexes.sql','utf8'));
+  for(const later of ['165_trigger_grants_and_reference_indexes.sql','166_ownership_and_counted_assets.sql','167_business_share_of_transactions.sql'])await db.exec(fs.readFileSync('migrations/'+later,'utf8'));
   assert.equal(await functions(),before);
   const grants=(await db.query(`SELECT p.proname,has_function_privilege('authenticated',p.oid,'EXECUTE') AS run FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname IN ('edit_mortgage_payment','inherit_mortgage_payment_category') ORDER BY 1`)).rows;
   assert.deepEqual(grants.map(row=>[row.proname,row.run]),[['edit_mortgage_payment',true],['inherit_mortgage_payment_category',false]]);

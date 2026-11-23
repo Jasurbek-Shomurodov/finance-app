@@ -75,7 +75,7 @@ export function withAssetIncomePlans(records:Entry[],sources:EarningSource[]=[])
  for(const asset of records){
   if(!['Property','Business'].includes(asset.kind)||!(Number(asset.estimated_monthly_income)>0))continue;
   if(sources.some(source=>source.linked_record_id===asset.id)||records.some(row=>row.frequency!=='Once'&&(asset.kind==='Business'?row.kind==='Business income'&&row.business_id===asset.id:row.kind==='Rent income'&&row.income_source_id===asset.id)))continue;
-  additions.push({...asset,id:crypto.randomUUID(),kind:asset.kind==='Business'?'Business income':'Rent income',amount:asset.estimated_monthly_income!,frequency:'Monthly',estimated_monthly_income:0,ownership_percentage:100,quantity:1,cost:0,rate:0,business_id:asset.kind==='Business'?asset.id:null,income_source_id:asset.kind==='Property'?asset.id:null,notes:''});
+  additions.push({...asset,id:crypto.randomUUID(),kind:asset.kind==='Business'?'Business income':'Rent income',amount:asset.estimated_monthly_income!,frequency:'Monthly',estimated_monthly_income:0,ownership_percentage:100,unit_label:undefined,quantity:1,cost:0,rate:0,business_id:asset.kind==='Business'?asset.id:null,income_source_id:asset.kind==='Property'?asset.id:null,notes:''});
  }
  return additions.length?[...records,...additions]:records;
 }

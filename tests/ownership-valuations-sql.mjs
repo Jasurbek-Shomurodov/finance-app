@@ -38,7 +38,7 @@ test('migrations 166 and 167 are in setup.sql, move the schema version and are s
   assert.equal((await record(db,11)).share,40);
   // Existing business transactions stay as entered: mine, with no share.
   assert.deepEqual([(await record(db,12)).amount_basis,(await record(db,12)).business_share],['mine',null]);
-  assert.equal((await db.query("SELECT 1 FROM pg_proc WHERE proname='record_investment_event'")).rows.length,1,'one signature, with optional parameters');
+  assert.equal((await db.query("SELECT 1 FROM pg_proc WHERE proname='record_investment_event'")).rows.length,2,'the seven-argument form and the one with a count and a share');
  }finally{await db.close();}
 });
 

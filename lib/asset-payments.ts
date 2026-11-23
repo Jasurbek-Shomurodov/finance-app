@@ -1,11 +1,11 @@
-import { expenses, income, type Entry } from './finance';
+import { expenses, income, ownAmount, type Entry } from './finance';
 import type { TrackerEvent } from './investment-history';
 import { amountIn } from './money';
 import { ratesOf } from './transaction-rates';
 
-export type AssetRow = Pick<Entry, 'id' | 'name' | 'kind' | 'amount' | 'currency' | 'date' | 'frequency' | 'notes' | 'account_id' | 'account_currency' | 'account_exchange_rate' | 'day_rates'> & { created_at: string };
+export type AssetRow = Pick<Entry, 'id' | 'name' | 'kind' | 'amount' | 'currency' | 'date' | 'frequency' | 'notes' | 'account_id' | 'account_currency' | 'account_exchange_rate' | 'day_rates' | 'amount_basis' | 'business_id' | 'business_share'> & { created_at: string };
 
-const columns = 'id,name,kind,amount,currency,date,frequency,notes,account_id,account_currency,account_exchange_rate,day_rates,created_at';
+const columns = 'id,name,kind,amount,currency,date,frequency,notes,account_id,account_currency,account_exchange_rate,day_rates,amount_basis,business_id,business_share,created_at';
 /** The asset itself and every payment that names it as its business or property: its currency comes from the same read.
  * Tracker copies (`history_event_id`) and transfer legs are left out, since their own event or movement records them. */
 export const assetPaymentsQuery = (id: string) => `select=${columns}&or=(id.eq.${id},and(frequency.eq.Once,history_event_id.is.null,movement_id.is.null,operation_id.is.null,mortgage_payment_id.is.null,or(business_id.eq.${id},property_id.eq.${id},income_source_id.eq.${id})))&order=id.asc`;
@@ -25,7 +25,8 @@ export function assetPaymentEvents(rows: readonly AssetRow[], assetId: string): 
   const entered = { amount: Number(row.amount), currency: row.currency, name: row.name };
   return [{
    id: row.id, record_id: assetId, event_type: spent ? 'contribution' as const : 'income' as const, occurred_on: row.date, created_at: row.created_at,
-   amount: amountIn(entered, asset.currency, ratesOf(row, null)), balance: null, ownership_percentage: 100, principal: 0, interest: 0, notes: row.notes || row.name, entered,
+   // The row reads as it was entered; what it counts for is the owner's share of a whole-business figure.
+   amount: amountIn({ amount: ownAmount(row), currency: row.currency }, asset.currency, ratesOf(row, null)), balance: null, ownership_percentage: 100, principal: 0, interest: 0, notes: row.notes || row.name, entered,
    account_link: row.account_id ? { account_id: row.account_id, amount: spent ? -entered.amount : entered.amount } : null,
   }];
  });
