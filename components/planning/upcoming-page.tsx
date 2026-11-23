@@ -1,7 +1,6 @@
 "use client";
 import type { Entry } from '@/lib/finance';
-import { useEffect, useState, type ReactNode } from 'react';
-import { liabilities } from '@/lib/finance';
+import { useState, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, Workflow } from 'lucide-react';
 import { DrawerLink } from '@/components/presentation-foundation/drawer-link';
 import { flowLink } from '@/lib/add-links';
@@ -18,15 +17,14 @@ import { depositToday } from '@/lib/deposit-interest';
 import { monthEnd, shiftMonth } from '@/lib/calendar-days';
 import { convertAmount } from '@/lib/market';
 import { upcomingPayments, type DueItem, type PlanningData } from '@/lib/planning';
-import { archivedSchedules, carriedOverdue, monthOccurrences, onlyDirection, openDueDates, payRequest, recurringSummary, type ArchiveTarget, type RecurringItem } from '@/lib/recurring';
+import { archivedSchedules, carriedOverdue, monthOccurrences, onlyDirection, recurringSummary, type ArchiveTarget, type RecurringItem } from '@/lib/recurring';
+import type { PaymentRequest } from '@/lib/payment-plan';
 import { comingUp, dayGroups, type DayEntry, type DayGroup } from '@/lib/recurring-days';
-import type { Operation } from './account-operation';
 import { RecurringList } from './recurring-list';
 import { ArchivedFold, OccurrenceRow, ReminderRow } from './recurring-rows';
 import { useScheduleDeletion } from './delete-schedule-dialog';
 import { useColumnsFit } from '@/hooks/use-columns-fit';
-import { AccountOperation, useRecurringDetails } from './recurring-lazy';
-import { paymentsFrom } from '@/lib/payment-account';
+import { useRecurringDetails } from './recurring-lazy';
 import { AddRecurringMenu, type RecurringKind } from './add-recurring-menu';
 import { RecurringSummary } from './recurring-summary';
 import { DayPanel, RecurringCalendar } from './recurring-calendar';
@@ -36,7 +34,7 @@ import { useRecordDue } from './record-due-dialog';
 /** The Recurring page's views, switched from tabs beside its title: the month as a list or a calendar, subscriptions and reminders. */
 export type RecurringView = 'list' | 'calendar' | 'subscriptions' | 'reminders';
 type Save = (action: string, data: unknown) => Promise<void>;
-type Props = { data: PlanningData; save: Save; currency: string; /** Preferred currencies a scheduled payment may arrive in. */ currencies?: readonly string[]; rates?: number | Record<string, number>; view: RecurringView; onView: (view: RecurringView) => void; onEdit?: (record: RecurringItem['record']) => void; onAddRecurring?: (kind: RecurringKind) => void;
+type Props = { data: PlanningData; save: Save; /** Opens the workspace's Record payment dialog for a row of the month, or for a debt itself. */ onPay: (request: PaymentRequest) => void; currency: string; rates?: number | Record<string, number>; view: RecurringView; onView: (view: RecurringView) => void; onEdit?: (record: RecurringItem['record']) => void; onAddRecurring?: (kind: RecurringKind) => void;
  /** Archiving moves a schedule out of the month and back. */
  onArchive?: (target: ArchiveTarget, archived: boolean) => Promise<void>;
  /** Moves a schedule to Recently deleted, keeping its recorded payments in history or deleting them too. */
@@ -52,31 +50,6 @@ type Direction = RecurringItem['direction'];
 export function monthReminders(data: Pick<PlanningData, 'records' | 'occurrences'>, month: string, today: string) {
  const end = monthEnd(month);
  return upcomingPayments(data.records, data.occurrences, today, end > today ? end : today).filter(item => (item.type === 'repayment' || item.type === 'maturity') && (item.date.slice(0, 7) === month || item.overdue));
-}
-
-/** Record payment: `pay` opens it for a scheduled income, bill or loan payment and `payDebt` for a debt itself; `dialog` is the form.
- * The dashboard's Record payment arrives as #pay=<schedule>:<date>. The router sets the address after the page first
- * renders, so it is read after every render until one is found; opening clears it, so it opens once. */
-function usePay({ data, today, month, setMonth, open, currencies, save }: { data: PlanningData; today: string; month: string; setMonth: (month: string) => void; /** The rows a #pay address may name. */open: RecurringItem[]; currencies: readonly string[]; save: Save }) {
- const [operation, setOperation] = useState<Operation | null>(null);
- const payDebt = (record: Entry, date = today) => setOperation({ action: record.kind === 'Mortgage' ? 'mortgage' : 'repayment', target_id: record.id, date, amount: 0 });
- // A recorded occurrence takes another payment, starting at what is still to come.
- // A loan month is settled by a payment dated in it, so one carried from an earlier month starts on its own due date.
- const pay = (item: RecurringItem) => item.installment ? payDebt(item.record, item.date.slice(0, 7) < today.slice(0, 7) ? item.date : today) : setOperation({ action: 'occurrence', target_id: item.record.id, date: item.date, ...(item.status === 'paid' ? { extra: true, amount: Math.max(Math.ceil(item.amount - (item.recorded ?? item.amount)), 0) } : { amount: item.amount, dues: [...new Set([...openDueDates(data.records, data.occurrences, item.record.id, today), item.date])].sort() }) });
- useEffect(() => {
-  const read = () => {
-   const request = payRequest(window.location.hash);
-   if (!request || !data.records.length) return;
-   const item = open.find(entry => entry.record.id === request.recordId && entry.date === request.date);
-   const debt = item ? undefined : data.records.find(record => record.id === request.recordId && liabilities.includes(record.kind));
-   if (!item && !debt && request.date.slice(0, 7) !== month) { setMonth(request.date.slice(0, 7)); return; }
-   window.history.replaceState(null, '', window.location.pathname);
-   if (item && item.status !== 'skipped') pay(item); else if (debt) payDebt(debt);
-  };
-  read();
- });
- const dialog = operation && <AccountOperation operation={operation} records={data.records} activity={paymentsFrom(data.activity, data.debtPayments)} currencies={currencies} save={save} onClose={() => setOperation(null)}/>;
- return { pay, payDebt, dialog };
 }
 
 type ReminderActions = { today: string; busy: boolean; onOpen?: (record: Entry) => void; onPay: (record: Entry) => void; onDismiss: (item: DueItem) => void };
@@ -115,7 +88,7 @@ function RecurringFolds({ data, busy, onRestoreSkipped, onRestoreArchived }: { d
 }
 
 /** The month's incomes and bills, as a list or a calendar, with what came in and went out, and what is coming up beside it. */
-export function UpcomingPage({ data, save, currency, currencies = [], rates, view, onView, onEdit, onAddRecurring, onArchive, onDelete, suggestions, onFlow }: Props) {
+export function UpcomingPage({ data, save, onPay, currency, rates, view, onView, onEdit, onAddRecurring, onArchive, onDelete, suggestions, onFlow }: Props) {
  const { t } = useLanguage(), today = depositToday();
  const [error, setError] = useState(''), [busy, setBusy] = useState(false);
  const [month, setMonth] = useState(today.slice(0, 7));
@@ -130,7 +103,7 @@ export function UpcomingPage({ data, save, currency, currencies = [], rates, vie
  const { shown, shownCarried } = onlyDirection(items, carried, only);
  const reminders = monthReminders(data, month, today);
  async function run(action: () => Promise<void>) { setBusy(true); setError(''); try { await action(); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } }
- const paying = usePay({ data, today, month, setMonth, open: [...carried, ...items], currencies, save });
+ const pay = (item: RecurringItem) => onPay({ item });
  // Tapping a row shows its history and totals; Edit is in its ⋯ menu and Record payment on the row.
  const details = useRecurringDetails(data, today);
  const archive = onArchive && ((target: ArchiveTarget, archived = true) => run(() => onArchive(target, archived)));
@@ -139,8 +112,8 @@ export function UpcomingPage({ data, save, currency, currencies = [], rates, vie
  // Rows stay on one line while their name keeps room beside status, amount and actions; two lines only when this month's content needs it.
  const rows = useColumnsFit<HTMLUListElement>('.recurring-row');
  const skip = (recordId: string, date: string, skipped = true) => run(() => save('exception', { target_id: recordId, date, skip: skipped }));
- const row = (item: RecurringItem, dated = false, grouped = false) => <OccurrenceRow key={item.key} item={item} dated={dated} grouped={grouped} today={today} busy={busy} categories={data.categories} onEdit={onEdit} onOpen={details.open} onPay={paying.pay} onSkip={item => skip(item.record.id, item.date)} onRestore={item => skip(item.record.id, item.date, false)} onArchive={archive && (() => archive({ source: 'record', record: item.record }))} onDelete={deletion.open}/>;
- const reminder: ReminderActions = { today, busy, onOpen: onEdit, onPay: record => paying.payDebt(record), onDismiss: item => run(() => save('dismiss', { id: crypto.randomUUID(), target_id: item.record.id, date: item.date })) };
+ const row = (item: RecurringItem, dated = false, grouped = false) => <OccurrenceRow key={item.key} item={item} dated={dated} grouped={grouped} today={today} busy={busy} categories={data.categories} onEdit={onEdit} onOpen={details.open} onPay={pay} onSkip={item => skip(item.record.id, item.date)} onRestore={item => skip(item.record.id, item.date, false)} onArchive={archive && (() => archive({ source: 'record', record: item.record }))} onDelete={deletion.open}/>;
+ const reminder: ReminderActions = { today, busy, onOpen: onEdit, onPay: record => onPay({ record }), onDismiss: item => run(() => save('dismiss', { id: crypto.randomUUID(), target_id: item.record.id, date: item.date })) };
  // Only when a debt payment or deposit maturity is due this month; an empty group is just noise.
  const reminderGroup = reminders.length > 0 && <ReminderGroup reminders={reminders} {...reminder}/>;
  const days = dayGroups(shown, reminders, month + '-01', monthEnd(month));
@@ -168,7 +141,7 @@ export function UpcomingPage({ data, save, currency, currencies = [], rates, vie
       {reminderGroup && <section className="panel recurring-list" aria-label={t('Debt repayments and deposit maturities')}><ul ref={rows}>{reminderGroup}</ul></section>}
      </>}
     </div>
-    <RecurringSide picked={view === 'calendar' ? days.find(group => group.date === day) : undefined} upcoming={comingUp(data, today)} today={today} busy={busy} recordAll={recordDue.button} onClose={() => setDay(null)} onOpen={entry => entry.item ? details.open(entry.item) : onEdit?.(entry.record)} onDay={showDay} onCalendar={() => onView('calendar')} onPay={paying.pay} onEdit={onEdit} reminder={reminder}/>
+    <RecurringSide picked={view === 'calendar' ? days.find(group => group.date === day) : undefined} upcoming={comingUp(data, today)} today={today} busy={busy} recordAll={recordDue.button} onClose={() => setDay(null)} onOpen={entry => entry.item ? details.open(entry.item) : onEdit?.(entry.record)} onDay={showDay} onCalendar={() => onView('calendar')} onPay={pay} onEdit={onEdit} reminder={reminder}/>
    </div>
    {view === 'list' && suggestions}
    <RecurringFolds data={data} busy={busy} onRestoreSkipped={(recordId, date) => skip(recordId, date, false)} onRestoreArchived={archive && (target => archive(target, false))}/>
@@ -176,6 +149,5 @@ export function UpcomingPage({ data, save, currency, currencies = [], rates, vie
   {details.dialog}
   {deletion.dialog}
   {recordDue.dialog}
-  {paying.dialog}
  </>;
 }

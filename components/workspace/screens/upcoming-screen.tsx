@@ -15,7 +15,7 @@ import { marketRates } from '@/lib/market';
 
 export function UpcomingScreen() {
  const { t } = useLanguage();
- const { user, demo, reload, planning, workspacePreferences, currency, preferencesData, market, reviewRecurring, editRecord, addCashFlow, addRecurringIncome, readOnly, archiveSchedule, deleteSchedule, setViewing, storedRecord, setForecastMonth } = useWorkspace();
+ const { user, demo, reload, planning, workspacePreferences, currency, market, openPayment, reviewRecurring, editRecord, addCashFlow, addRecurringIncome, readOnly, archiveSchedule, deleteSchedule, setViewing, storedRecord, setForecastMonth } = useWorkspace();
  const [view, setView] = useState<RecurringView>('list');
  // Add recurring sets up schedules only; payments are recorded on their rows.
  const addRecurring = (kind: RecurringKind) => kind === 'income' ? addRecurringIncome() : addCashFlow('Other expense', 'Monthly');
@@ -23,7 +23,7 @@ export function UpcomingScreen() {
  return <>
   <div data-page="Upcoming payments" className="content">
    <PlanningError/>
-   {planning.loading ? <RecurringSkeleton label={t('Loading records…')} view={view}/> : <UpcomingPage data={planning.data} save={planning.save} currency={currency} currencies={preferencesData.currencies} rates={marketRates(market)} view={view} onView={setView} onEdit={editRecord} onAddRecurring={readOnly ? undefined : addRecurring} onArchive={archiveSchedule} onDelete={deleteSchedule} onFlow={setForecastMonth}
+   {planning.loading ? <RecurringSkeleton label={t('Loading records…')} view={view}/> : <UpcomingPage data={planning.data} save={planning.save} onPay={request => { openPayment(request); }} currency={currency} rates={marketRates(market)} view={view} onView={setView} onEdit={editRecord} onAddRecurring={readOnly ? undefined : addRecurring} onArchive={archiveSchedule} onDelete={deleteSchedule} onFlow={setForecastMonth}
     suggestions={<TransactionInsights owner={user} demo={demo} revision={reload} records={planning.data.records} today={depositToday()} onReview={reviewRecurring}/>}/>}
    {view === 'subscriptions' && !planning.loading && <SubscriptionsPanel records={subscriptions.records} decisions={subscriptions.decisions} loading={subscriptions.loading} error={subscriptions.error} onRetry={subscriptions.retry} decide={subscriptions.decide} restore={subscriptions.restore} onTrack={reviewRecurring} onOpen={record => setViewing(storedRecord(record))}/>}
   </div>

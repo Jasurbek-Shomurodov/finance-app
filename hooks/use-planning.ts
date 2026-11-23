@@ -3,7 +3,7 @@ import { showSaved } from '@/lib/feedback';
 import { requestJson } from '@/lib/api-client';
 import { useOwnerResource } from './use-owner-resource';
 import { useCallback, useMemo } from 'react';
-import { emptyPlanning,type Category,type PlanningData } from '@/lib/planning';
+import { emptyPlanning,type Category,type DebtPayment,type PlanningData } from '@/lib/planning';
 import type { HoldingAccount } from '@/lib/holding-accounts';
 import { normalizeEntry,type Entry } from '@/lib/finance';
 export function usePlanning(user:string|null,demo:boolean,rows:Entry[],revision:number,onSaved:()=>void,holdingAccounts:HoldingAccount[]=[],scope:'full'|'accounts'|'review'|'workspace'='full',month?:string,demoSeed:Pick<PlanningData,'goals'|'occurrences'>&Partial<Pick<PlanningData,'categories'>>=emptyPlanning){
@@ -26,5 +26,7 @@ export function usePlanning(user:string|null,demo:boolean,rows:Entry[],revision:
  const data=useMemo(()=>demo?{...emptyPlanning,...demoSeed,records:rows,holdingAccounts}:{...resource.data,records:resource.data.records.map(normalizeEntry)},[demo,demoSeed,rows,holdingAccounts,resource.data]);
  return {data,loading:resource.initialLoading,refreshing:resource.loading,error:resource.error,save,
   /** Shows a confirmed record change before the reload that follows it returns. */
-  updateRecords:(change:(records:Entry[])=>Entry[])=>{if(!demo)resource.update(data=>({...data,records:change(data.records)}));}};
+  updateRecords:(change:(records:Entry[])=>Entry[])=>{if(!demo)resource.update(data=>({...data,records:change(data.records)}));},
+  /** Shows a confirmed loan or mortgage payment before the reload returns: its month is settled and the loan owes `principal` less. */
+  noteDebtPayment:(payment:DebtPayment,principal:number)=>{if(!demo)resource.update(data=>({...data,debtPayments:[...(data.debtPayments??[]),payment],records:data.records.map(record=>record.id===payment.record_id?{...record,amount:Number(record.amount)-principal}:record)}));}};
 }

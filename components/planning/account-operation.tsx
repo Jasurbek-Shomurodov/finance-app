@@ -1,78 +1,56 @@
 "use client";
-import {FormFooter} from '@/components/presentation-foundation/form-footer';
-import { ExchangeRatePreview } from '@/components/presentation-foundation/exchange-rate-preview';
+import { FormFooter } from '@/components/presentation-foundation/form-footer';
 import { ErrorPopup } from '@/components/presentation-foundation/error-popup';
-import { useDatedExchangeRate } from '@/hooks/use-dated-exchange-rate';
 import { useDiscardChanges } from '@/components/discard-changes';
-import { useId, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { NativeSelect } from '@/components/ui/native-select';
-import { Dialog,DialogContent,DialogTitle,DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { InfoHint } from '@/components/presentation-foundation/info-hint';
-import { DatePicker } from '@/components/presentation-foundation/date-picker';
 import { FormattedNumberInput } from '@/components/presentation-foundation/formatted-number-input';
 import { useLanguage } from '@/components/language-provider';
-import { formatAccountOption,formatDate,formatMoney } from '@/lib/format';
-import { useDueLabel } from '@/components/planning/recurring-rows';
+import { formatAccountOption } from '@/lib/format';
 import { depositToday } from '@/lib/deposit-interest';
 import type { Entry } from '@/lib/finance';
-import { suggestedPaymentAccount } from '@/lib/payment-account';
 import { Textarea } from '@/components/ui/textarea';
-/** A balance correction or a payment recorded against a cash account. Transfers between accounts are `AssetMovementDialog`. */
-export type Operation = {action:'reconcile'|'repayment'|'mortgage'|'occurrence';account_id?:string;target_id?:string;date?:string;amount?:number;/** Another payment for an occurrence that is already recorded. */extra?:boolean;/** The schedule's open due dates a payment may settle instead, `date` among them. */dues?:string[]};
-export function AccountOperation({operation,records,activity,currencies=[],save,onClose}:{operation:Operation;records:Entry[];/** The person's preferred currencies, offered for a scheduled payment. */currencies?:readonly string[];/** Earlier operations, to start a payment from the account that last paid it. */activity?:Array<{account_id:string;target_id:string|null;occurred_on:string}>;save:(action:string,data:unknown)=>Promise<void>;onClose:()=>void}){
- const {t,locale}=useLanguage(),dueLabel=useDueLabel();
- // A scheduled payment starts at its scheduled amount; the person edits it when the actual differs.
- const [draft,setDraft]=useState(()=>({id:crypto.randomUUID(),account_id:operation.account_id??(['repayment','mortgage','occurrence'].includes(operation.action)?suggestedPaymentAccount(records.filter(r=>r.kind==='Cash'),records.find(r=>r.id===operation.target_id),records,activity):''),target_id:operation.target_id??'',date:operation.date??depositToday(),paid_on:operation.action==='occurrence'?[operation.date??depositToday(),depositToday()].sort()[0]:undefined as string|undefined,amount:operation.amount??(operation.action==='occurrence'?Number(records.find(r=>r.id===operation.target_id)?.amount??0):0),fee:0,notes:'',currency:undefined as string|undefined}));
- const [busy,setBusy]=useState(false),[error,setError]=useState(''),[submitted,setSubmitted]=useState(false);
+/** A balance correction on a cash account. Payments are the Record payment dialog (`components/payments`); transfers between accounts are `AssetMovementDialog`. */
+export type Operation = { action: 'reconcile'; account_id?: string; amount?: number };
+/** Adjust balance: the account's balance as its statement shows it, recorded today. It is neither income nor spending. */
+export function AccountOperation({ operation, records, save, onClose }: { operation: Operation; records: Entry[]; save: (action: string, data: unknown) => Promise<void>; onClose: () => void }) {
+ const { t, locale } = useLanguage();
+ const [draft, setDraft] = useState(() => ({ id: crypto.randomUUID(), account_id: operation.account_id ?? '', date: depositToday(), amount: operation.amount ?? 0, notes: '' }));
+ const [busy, setBusy] = useState(false), [error, setError] = useState(''), [submitted, setSubmitted] = useState(false);
  // A statement balance must be typed: a blank field reads as zero and would empty the account.
- const [balanceBlank,setBalanceBlank]=useState(!(operation.amount&&operation.amount>0));
- const target=records.find(r=>r.id===draft.target_id),account=records.find(r=>r.id===draft.account_id);
- const accounts=records.filter(r=>r.kind==='Cash');
- const title={reconcile:'Adjust balance',repayment:'Record repayment',mortgage:'Record mortgage payment',occurrence:'Record scheduled payment'}[operation.action];
- // A scheduled payment is typed in the currency it arrived in: its schedule's, the cash account's or a preferred
- // one. Any but the account's moves the account at the day's rate.
- const paymentCurrency=draft.currency??target?.currency,paymentCurrencies=[...new Set([target?.currency,account?.currency,...currencies].filter((code):code is string=>!!code))];
- const rateCurrency=operation.action==='occurrence'?paymentCurrency:target?.currency;
- const convertedPayment=['repayment','mortgage','occurrence'].includes(operation.action)&&!!account&&!!target&&account.currency!==rateCurrency;
- const fx=useDatedExchangeRate(convertedPayment?account?.currency:undefined,rateCurrency,draft.paid_on??draft.date);
- // The schedule's own currency brings back its scheduled amount; another one is typed as it arrived.
- const switchCurrency=(code:string)=>setDraft({...draft,currency:code===target?.currency?undefined:code,amount:code===target?.currency?operation.amount??Number(target?.amount??0):0});
- const noAmount=(operation.action==='repayment'&&draft.amount<=0)||(operation.action==='mortgage'&&draft.amount+draft.fee<=0);
- const blockedId=useId();
- const blocked=!draft.account_id?'Choose a cash account.':noAmount?'Enter an amount greater than zero.':convertedPayment&&!fx.rate&&!fx.loading?'Exchange rate unavailable.':'';
- const [initialDraft]=useState(()=>JSON.stringify(draft));
- const guard=useDiscardChanges(JSON.stringify(draft)!==initialDraft,onClose,busy);
- return <><Dialog open onOpenChange={open=>{if(!open&&!busy)guard.close();}}><DialogContent className="record-dialog" showCloseButton={!busy}><DialogTitle>{t(title)}{operation.action==='reconcile'&&<InfoHint>{t('This records a balance correction today. It is not income or spending.')}</InfoHint>}</DialogTitle><DialogDescription className="sr-only">{t('Review the amounts before saving. Both balances update together.')}</DialogDescription>
- <form className="record-form" onSubmit={async e=>{e.preventDefault();setBusy(true);setSubmitted(true);setError('');try{const {currency,...fields}=draft;await save(operation.action,{...fields,...(currency?{currency}:{}),...(convertedPayment?{exchange_rate:fx.rate}:{}),...(operation.extra?{extra:true}:{}),target_id:draft.target_id||null,received:0});onClose();}catch(e){setError((e as Error).message);if((e as Error & {confirmedFailure?:boolean}).confirmedFailure)setSubmitted(false);}finally{setBusy(false);}}}>
- <fieldset disabled={busy||submitted} className="tracker-fields">
- {/* The account and the day share a row, and principal and interest another, when the dialog has room. */}
- {/* Which due date this pays: the one whose row was opened, or another still open, such as last month's. */}
- {operation.action==='occurrence'&&target&&<label>{t('Scheduled payment')}<NativeSelect value={draft.date} disabled={!operation.dues||operation.dues.length<2} onChange={e=>setDraft({...draft,date:e.target.value})}>{(operation.dues??[draft.date]).map(day=><option key={day} value={day}>{target.name} · {formatDate(day,locale)} · {dueLabel(depositToday(),day)}</option>)}</NativeSelect></label>}
- <div className="form-grid">
- <label>{t('Cash account')}<NativeSelect required value={draft.account_id} onChange={e=>{
-  // A statement balance belongs to one account: never carry it over to another.
-  const balance=Number(records.find(r=>r.id===e.target.value)?.amount??0);
-  if(operation.action==='reconcile')setBalanceBlank(!(balance>0));
-  setDraft({...draft,account_id:e.target.value,...(operation.action==='reconcile'?{amount:balance}:{})});
- }}><option value="">{t('Select account')}</option>{accounts.map(a=><option key={a.id} value={a.id}>{formatAccountOption(a,locale)}</option>)}</NativeSelect></label>
- {/* The day it was actually received or paid: the due date by default, never a day ahead nor before the schedule starts. */}
- {operation.action==='occurrence'&&<label>{t('Payment date')}<DatePicker value={draft.paid_on??''} min={target?.date} max={depositToday()} onChange={paid_on=>setDraft({...draft,paid_on:paid_on||depositToday()})}/></label>}
- {operation.action!=='occurrence'&&operation.action!=='reconcile'&&<label>{t('Date')}<DatePicker value={draft.date} max={depositToday()} onChange={date=>setDraft({...draft,date})}/></label>}
- </div>
- {target&&operation.action!=='occurrence'&&<p>{target.name} · {formatMoney(target.amount,target.currency,locale)}</p>}
- {operation.action==='occurrence'&&<div className="form-grid"><label>{t(target&&['Salary','Rent income','Business income','Other income'].includes(target.kind)?'Amount received':'Amount paid')}<FormattedNumberInput value={draft.amount} max={1e15} onValueChange={amount=>setDraft({...draft,amount})}/></label>
- <label>{t('Currency')}<NativeSelect value={paymentCurrency??''} disabled={paymentCurrencies.length<2} onChange={e=>switchCurrency(e.target.value)}>{paymentCurrencies.map(code=><option key={code} value={code}>{code}</option>)}</NativeSelect></label></div>}
- {operation.action!=='occurrence'&&<div className="form-grid">
- <label>{t(operation.action==='reconcile'?'Statement balance':'Principal repayment')} {operation.action==='repayment'||operation.action==='mortgage'?target?.currency:account?.currency}<FormattedNumberInput value={draft.amount} required={operation.action!=='mortgage'} requireEntry={operation.action==='reconcile'} onValueChange={(amount,blank)=>{setBalanceBlank(blank);setDraft({...draft,amount});}}/></label>
- {['repayment','mortgage'].includes(operation.action)&&<label>{t(target?.kind==='Money lent'?'Interest received':'Interest paid')} {operation.action==='repayment'||operation.action==='mortgage'?target?.currency:account?.currency}<FormattedNumberInput required={false} value={draft.fee} onValueChange={fee=>setDraft({...draft,fee})}/></label>}
- </div>}
- <label>{t('Notes (optional)')}<Textarea rows={2} value={draft.notes} maxLength={2000} onChange={e=>setDraft({...draft,notes:e.target.value})}/></label>
- </fieldset>
- {convertedPayment&&<><ExchangeRatePreview fx={fx}/>{fx.rate&&account&&<p className="muted">{t('Account amount')}: {formatMoney((operation.action==='occurrence'?draft.amount:draft.amount+draft.fee)/fx.rate,account.currency,locale)}</p>}</>}
- <ErrorPopup message={error}/>
- {/* Why Save is off, said beside it: a disabled button shows no tooltip on most screens. */}
- {blocked&&!busy&&<p className="muted" role="status" id={blockedId}>{t(blocked)}</p>}
- <FormFooter busy={busy} onCancel={guard.close}><Button disabled={busy||!!blocked||(operation.action==='reconcile'&&balanceBlank)||(convertedPayment&&!fx.rate)} aria-describedby={blocked&&!busy?blockedId:undefined}>{t(busy?'Saving…':submitted?'Retry':'Save')}</Button></FormFooter>
- </form></DialogContent></Dialog>{guard.confirmation}</>;
+ const [balanceBlank, setBalanceBlank] = useState(!(operation.amount && operation.amount > 0));
+ const account = records.find(record => record.id === draft.account_id);
+ const accounts = records.filter(record => record.kind === 'Cash');
+ const blocked = !draft.account_id ? t('Choose a cash account.') : undefined;
+ const [initialDraft] = useState(() => JSON.stringify(draft));
+ const guard = useDiscardChanges(JSON.stringify(draft) !== initialDraft, onClose, busy);
+ async function submit() {
+  setBusy(true); setSubmitted(true); setError('');
+  try { await save('reconcile', { id: draft.id, account_id: draft.account_id, target_id: null, date: draft.date, amount: draft.amount, fee: 0, notes: draft.notes, received: 0 }); onClose(); }
+  catch (reason) { setError((reason as Error).message); if ((reason as Error & { confirmedFailure?: boolean }).confirmedFailure) setSubmitted(false); }
+  finally { setBusy(false); }
+ }
+ return <><Dialog open onOpenChange={open => { if (!open && !busy) guard.close(); }}><DialogContent className="record-dialog" showCloseButton={!busy}><DialogTitle>{t('Adjust balance')}<InfoHint>{t('This records a balance correction today. It is not income or spending.')}</InfoHint></DialogTitle><DialogDescription className="sr-only">{t('Review the amounts before saving. Both balances update together.')}</DialogDescription>
+  <form className="record-form" onSubmit={event => { event.preventDefault(); void submit(); }}>
+   <fieldset disabled={busy || submitted} className="tracker-fields">
+    <div className="form-grid">
+     <label>{t('Cash account')}<NativeSelect required value={draft.account_id} onChange={event => {
+      // A statement balance belongs to one account: never carry it over to another.
+      const balance = Number(records.find(record => record.id === event.target.value)?.amount ?? 0);
+      setBalanceBlank(!(balance > 0));
+      setDraft({ ...draft, account_id: event.target.value, amount: balance });
+     }}><option value="">{t('Select account')}</option>{accounts.map(item => <option key={item.id} value={item.id}>{formatAccountOption(item, locale)}</option>)}</NativeSelect></label>
+    </div>
+    <div className="form-grid">
+     <label>{t('Statement balance')} {account?.currency}<FormattedNumberInput value={draft.amount} requireEntry onValueChange={(amount, blank) => { setBalanceBlank(blank); setDraft({ ...draft, amount }); }}/></label>
+    </div>
+    <label>{t('Notes (optional)')}<Textarea rows={2} value={draft.notes} maxLength={2000} onChange={event => setDraft({ ...draft, notes: event.target.value })}/></label>
+   </fieldset>
+   <ErrorPopup message={error}/>
+   {/* Why Save is off is said beside it: a disabled button shows no tooltip on most screens. */}
+   <FormFooter busy={busy} blocked={blocked} onCancel={guard.close}><Button disabled={busy || !!blocked || balanceBlank}>{t(busy ? 'Saving…' : submitted ? 'Retry' : 'Save')}</Button></FormFooter>
+  </form></DialogContent></Dialog>{guard.confirmation}</>;
 }
