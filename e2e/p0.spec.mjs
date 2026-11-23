@@ -46,7 +46,8 @@ test('SHELL-001 every drawer link opens its page with its title', async ({ page 
 test('XAPP-001 DASH-013 spending is one figure on the Dashboard, Cash flow, Transactions and Budget', async ({ page }) => {
   const spending = dollars(expected.spendingThisMonth);
   await page.goto('/');
-  await expect.poll(() => figureAfter(page, 'Spending')).toBe(`${spending} this month`);
+  // The Dashboard's one spending figure is the Spent this month tile; the Spending pace card draws it over the month.
+  await expect.poll(() => figureAfter(page, 'Spent this month')).toBe(spending);
   await open(page, 'Cash flow');
   await expect.poll(() => figureAfter(page, 'Actual spending')).toBe(spending);
   await expect.poll(() => figureAfter(page, 'Income received')).toBe(dollars(expected.incomeThisMonth));
