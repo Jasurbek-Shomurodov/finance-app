@@ -500,3 +500,12 @@ test('controls answer a press and the pointer on every screen, and stand still u
  assert.doesNotMatch(segmented,/cubic-bezier/,'the slide reads its timing from the tokens');
  assert.match(fs.readFileSync('hooks/use-pointer-glow.ts','utf8'),/matchMedia\('\(hover: hover\)'\)\.matches\) return;/,'touch screens are left alone');
 });
+
+test('phone top bar: the title has a row of its own under the controls, and wraps rather than hides (23 November 2026)', () => {
+ const css=stylesheet();
+ // The screenshot tests (e2e/screens.spec.mjs, phone) caught titles cut to "Investme" and "Transacti", and the Budget
+ // ⓘ under the currency switch, because the controls left the title about 70px at 390px wide.
+ assert.match(css,/@media\(max-width:640px\)\{\.topbar\{display:grid;grid-template-columns:auto minmax\(0,1fr\);grid-template-areas:"toggle actions" "title title";/);
+ assert.match(css,/\.topbar-location\{display:contents\}\.drawer-toggle\{grid-area:toggle\}\.topbar-page-title,\.topbar-title\{grid-area:title;min-width:0\}/);
+ assert.match(css,/\.topbar-location>span\.topbar-title\{white-space:normal;/,'the fallback title wraps like the page title');
+});

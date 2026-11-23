@@ -55,7 +55,9 @@
 .topbar-location>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .topbar-actions{display:flex;align-items:center;gap:8px}
 .topbar-actions [data-slot=button]{height:38px;min-height:38px}
-@media(max-width:640px){.topbar{gap:8px}.topbar-page-title .page-eyebrow{display:none}.topbar-page-title h1{white-space:normal;line-height:1.2;overflow-wrap:break-word}.topbar-actions{gap:6px}.quick-add{width:38px;padding:0}@media(pointer:coarse){.quick-add{width:44px}}.quick-add>span{display:none}}
+/* On a phone the controls leave the title about 70px, so the bar takes two rows: the drawer toggle and the controls,
+   then the page's title on a line of its own, which wraps rather than hides a long title in any language. */
+@media(max-width:640px){.topbar{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"toggle actions" "title title";align-items:center;gap:6px 8px;height:auto;padding-block:10px 8px}.topbar-location{display:contents}.drawer-toggle{grid-area:toggle}.topbar-page-title,.topbar-title{grid-area:title;min-width:0}.topbar-actions{grid-area:actions;justify-content:flex-end;min-width:0}.topbar-page-title .page-eyebrow{display:none}.topbar-page-title h1{white-space:normal;line-height:1.2;overflow-wrap:break-word}.topbar-location>span.topbar-title{white-space:normal;line-height:1.2;overflow-wrap:break-word}.topbar-actions{gap:6px}.quick-add{width:38px;padding:0}@media(pointer:coarse){.quick-add{width:44px}}.quick-add>span{display:none}}
 .content{padding:32px 36px;max-width:1640px;margin:auto}
 .workspace .content{container:content/inline-size;display:flex;flex-direction:column;gap:var(--space-page);width:100%;max-width:none;margin-inline:auto;padding:28px 36px 0}
 .workspace .content>*{flex-shrink:0;margin-block:0}
