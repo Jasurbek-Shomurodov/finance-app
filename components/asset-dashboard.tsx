@@ -37,7 +37,7 @@ type Props = {
  accounts: HoldingAccount[]; accountsLoading:boolean; accountsError:string; onRetryAccounts:()=>void; onAddHolding:(kind:'Cash'|'Stock'|'Crypto',accountId:string)=>void;
  records: Entry[]; currency: string; market: MarketData | null; netWorth: number; debt: number;
  forecast: ReturnType<typeof estimatedCashFlow>; forecastReady: boolean; loading: boolean; demo: boolean;
- onAdd: () => void; onEdit: (entry: Entry) => void; onTrack: (entry: Entry) => void; onDelete: (entry: Entry) => void;
+ onAdd: () => void; onEdit: (entry: Entry) => void; onTrack: (entry: Entry) => void; onDelete: (entry: Entry) => void; /** Retires a holding: its history stays and it leaves the lists. */ onClose?: (entry: Entry) => void;
  /** Opens the Tracker on Money invested for an asset (a purchase or a repair, paid from a cash account). */
  onInvest?: (entry: Entry) => void;
  quoteLabel: (entry: Entry) => string;
@@ -117,7 +117,7 @@ function useKindLink({ openKind, ready, hasCards, onFilter, holdings, accounts }
  useEffect(() => { if (linked.at) (linked.at === 'holdings' ? holdings : accounts).current?.scrollIntoView({ block: 'start', behavior: scrollBehavior() }); }, [linked, holdings, accounts]);
 }
 
-export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoading, accountsError, onRetryAccounts, onAddHolding, records, currency, market, netWorth, debt, loading, demo, onAdd, onEdit, onTrack, onInvest, onDelete, quoteLabel, openKind, propertyTotals = null, pnl = null, pnlError = false, onShowPnl }: Props) {
+export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoading, accountsError, onRetryAccounts, onAddHolding, records, currency, market, netWorth, debt, loading, demo, onAdd, onEdit, onTrack, onInvest, onDelete, onClose, quoteLabel, openKind, propertyTotals = null, pnl = null, pnlError = false, onShowPnl }: Props) {
  const { t, locale } = useLanguage();
  const [category, setCategory] = useState('all');
  const holdingsRef = useRef<HTMLElement>(null), accountsRef = useRef<HTMLElement>(null);
@@ -163,7 +163,7 @@ export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoadin
      detailsOpen={isAccount || layout === 'grid'}
      share={converted && total > 0 ? worth / total * 100 : null}
      note={converted ? <OwnedNote record={record} worth={worth} shown={shown}/> : <small>{t('Exchange rate unavailable.')}</small>}
-     menu={<DropdownMenu><DropdownMenuTrigger asChild><Button size="icon" variant="ghost" aria-label={t('Actions for {name}', { name: original.name })}><Ellipsis size={18}/></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => onEdit(original)}>{t('Edit {name}', { name: original.name })}</DropdownMenuItem>{!demo && <DropdownMenuItem onSelect={() => onTrack(original)}>{t('Open Tracker for {name}', { name: original.name })}</DropdownMenuItem>}{!original.history_event_id && <DropdownMenuItem variant="destructive" onSelect={() => onDelete(original)}><Trash2 aria-hidden="true"/>{t('Delete {name}', { name: original.name })}</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>}
+     menu={<DropdownMenu><DropdownMenuTrigger asChild><Button size="icon" variant="ghost" aria-label={t('Actions for {name}', { name: original.name })}><Ellipsis size={18}/></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => onEdit(original)}>{t('Edit {name}', { name: original.name })}</DropdownMenuItem>{!demo && <DropdownMenuItem onSelect={() => onTrack(original)}>{t('Open Tracker for {name}', { name: original.name })}</DropdownMenuItem>}{onClose && <DropdownMenuItem onSelect={() => onClose(original)}>{t('Close {name}', { name: original.name })}</DropdownMenuItem>}{!original.history_event_id && <DropdownMenuItem variant="destructive" onSelect={() => onDelete(original)}><Trash2 aria-hidden="true"/>{t('Delete {name}', { name: original.name })}</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>}
      detailsLabel={t(isAccount?'Account details':'Asset details')}
      details={<dl><div><dt>{t('Date / due date')}</dt><dd>{formatDate(original.date, locale)}</dd></div>{(record.kind === 'Business' || ownedPercent(record) < 100) && <div><dt>{t('Ownership')}</dt><dd>{formatPercent(ownedPercent(record), locale, 8)}</dd></div>}{earned && <EarningFacts record={record} shown={shown}/>}{hasQuote && <><div><dt>{t('Quantity')}</dt><dd>{formatNumber(record.quantity, locale)}</dd></div><div><dt>{t('Price per unit')}</dt><dd>{quote}</dd></div><div><dt>{t('Price source')}</dt><dd>{quoteLabel(record)}</dd></div></>}{original.kind === 'Property' && <PropertyYear totals={propertyTotals?.get(original.id)} money={money}/>}{original.currency !== currency && <div><dt>{t('Saved value')}</dt><dd>{money(value(original), original.currency)}</dd></div>}{original.notes && <div><dt>{t('Notes')}</dt><dd>{original.notes}</dd></div>}</dl>}/>;
    };

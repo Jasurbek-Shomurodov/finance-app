@@ -10372,13 +10372,19 @@ BEGIN
  IF EXISTS(SELECT 1 FROM public.savings_goals g WHERE g.account_id=p_id AND g.user_id=owner AND NOT g.archived) THEN
   RAISE EXCEPTION 'Move or archive the goals saved in this account before closing it.';
  END IF;
+ -- What a business or property is expected to pay ends with it: its income schedule is stopped by its owner first, and
+ -- its own monthly estimate is cleared below, so no forecast counts income from something that is gone.
+ IF EXISTS(SELECT 1 FROM public.finance_records t WHERE t.income_source_id=p_id AND t.user_id=owner AND t.frequency<>'Once'
+  AND NOT t.archived AND NOT t.source_paused AND (t.end_date IS NULL OR t.end_date>day)) THEN
+  RAISE EXCEPTION 'Stop or archive its recurring income before closing it.';
+ END IF;
  IF EXISTS(SELECT 1 FROM public.finance_records t WHERE t.account_id=p_id AND t.user_id=owner AND t.date>day)
   OR EXISTS(SELECT 1 FROM public.account_activity a WHERE (a.account_id=p_id OR a.target_id=p_id) AND a.user_id=owner AND a.occurred_on>day)
   OR EXISTS(SELECT 1 FROM public.asset_movements m WHERE (m.source_id=p_id OR m.target_id=p_id) AND m.user_id=owner AND m.occurred_on>day)
   OR EXISTS(SELECT 1 FROM public.investment_history h WHERE h.record_id=p_id AND h.user_id=owner AND h.event_type NOT IN ('baseline','valuation') AND h.occurred_on>day) THEN
   RAISE EXCEPTION 'This account has activity after that day. Choose a later closing day.';
  END IF;
- UPDATE public.finance_records SET closed_on=day WHERE id=p_id AND user_id=owner;
+ UPDATE public.finance_records SET closed_on=day,estimated_monthly_income=0 WHERE id=p_id AND user_id=owner;
 END $$;
 
 CREATE OR REPLACE FUNCTION public.reopen_finance_record(p_id uuid) RETURNS void
@@ -10445,8 +10451,11 @@ END $$;
 CREATE OR REPLACE FUNCTION public.record_delete_blockers(p_id uuid) RETURNS text[]
 LANGUAGE sql STABLE SET search_path=public AS $$
  SELECT array_remove(ARRAY[
-  CASE WHEN EXISTS(SELECT 1 FROM public.finance_records t WHERE t.account_id=p_id OR t.business_id=p_id OR t.income_source_id=p_id)
+  CASE WHEN EXISTS(SELECT 1 FROM public.finance_records t WHERE t.account_id=p_id OR t.business_id=p_id)
    OR EXISTS(SELECT 1 FROM public.finance_records t JOIN public.investment_history h ON h.id=t.history_event_id WHERE h.record_id=p_id) THEN 'transactions' END,
+  -- An asset's expected income is a schedule of its own (a rent or interest plan), with the receipts recorded for it.
+  CASE WHEN EXISTS(SELECT 1 FROM public.finance_records t WHERE t.income_source_id=p_id)
+   OR EXISTS(SELECT 1 FROM public.income_sources s WHERE s.linked_record_id=p_id) THEN 'schedules' END,
   CASE WHEN EXISTS(SELECT 1 FROM public.asset_movements m WHERE m.source_id=p_id OR m.target_id=p_id)
    OR EXISTS(SELECT 1 FROM public.account_activity a WHERE a.account_id=p_id OR a.target_id=p_id) THEN 'transfers' END,
   CASE WHEN EXISTS(SELECT 1 FROM public.investment_account_links l WHERE l.account_id=p_id)

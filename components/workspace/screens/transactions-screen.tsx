@@ -100,7 +100,8 @@ export function TransactionsScreen() {
  const days = useMemo(() => groupPageByDay(records, (page - 1) * transactionsPerPage, page * transactionsPerPage, convert), [records, page, convert]);
  const summary = useMemo(() => summarizeTransactions(records, convert), [records, convert]);
  const top = useMemo(() => topSpendingCategories(records, convert).map(row => ({ key: row.key, amount: row.amount, name: choiceName(row.choice), icon: row.choice.category_id ? choiceName(row.choice) : row.choice.kind })), [records, convert, choiceName]);
- const accounts = new Map(data.records.filter(record => record.kind === 'Cash').map(record => [record.id, record.name]));
+ // A past transaction still names the account it was paid from, also once that account is closed.
+ const accounts = new Map([...data.records, ...(data.closed ?? [])].filter(record => record.kind === 'Cash').map(record => [record.id, record.name]));
  const chosen = records.filter(record => selected.has(record.id));
  const categoryOptions = [...categoryChoices(data.categories, 'income', removedCategories.kinds), ...categoryChoices(data.categories, 'expense', removedCategories.kinds)];
 
@@ -203,7 +204,7 @@ export function TransactionsScreen() {
    <TransactionsSummary title={period === 'custom' ? t('Summary') : t(transactionPeriodLabels[period])} summary={summary} average={dailyAverage(summary.spent, range)} top={top} currency={currency}/>
   </div>}
   {editingMany && <BulkEditSheet records={chosen} categories={data.categories} removed={removedCategories.kinds} businesses={businessList} owners={owners} tags={tags.data.tags} tagsOf={tagsOf} onCreateTag={createTag} onSave={editMany} onClose={() => setEditingMany(false)}/>}
-  {rule && <RuleDialog key={rule.id} rule={rule} records={demo ? data.records : undefined} categories={data.categories} removed={removedCategories.kinds} businesses={businessList} accounts={[...accounts].map(([id, name]) => ({ id, name }))} tags={tags.data.tags} tagsOf={tagsOf} onCreateTag={createTag} splits={splits} onSave={async (next, apply) => { const changed = await rules.save(next, apply); if (apply) showNotice(t('{changed} updated', { changed: formatNumber(changed, locale, 0) })); return changed; }} onClose={() => setRule(null)}/>}
+  {rule && <RuleDialog key={rule.id} rule={rule} records={demo ? data.records : undefined} categories={data.categories} removed={removedCategories.kinds} businesses={businessList} accounts={data.records.filter(record => record.kind === 'Cash').map(({ id, name }) => ({ id, name }))} tags={tags.data.tags} tagsOf={tagsOf} onCreateTag={createTag} splits={splits} onSave={async (next, apply) => { const changed = await rules.save(next, apply); if (apply) showNotice(t('{changed} updated', { changed: formatNumber(changed, locale, 0) })); return changed; }} onClose={() => setRule(null)}/>}
   {rulesOpen && !rule && <RulesDialog rules={rules.rules} loading={rules.loading} error={rules.error} onRetry={rules.retry} categories={data.categories} businesses={businessList} tags={tags.data.tags} onEdit={setRule} onAdd={() => setRule(newRule())} onRemove={item => rules.remove(item.id)} onClose={() => setRulesOpen(false)}/>}
  </div>;
 }

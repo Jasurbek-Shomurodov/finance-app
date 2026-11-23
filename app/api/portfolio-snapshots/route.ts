@@ -29,7 +29,7 @@ export async function POST(req:Request){
   const market=await cachedMarket({fx:true,rates:true,...symbols,stockAccess:true,metalAccess:true},{later:afterResponse});
   const totals=snapshotTotals(records,market);
   if(!totals)return Response.json({error:'Complete prices and exchange rates are needed to save today’s portfolio.'},{status:409});
-  const response=await supa('/rest/v1/rpc/capture_portfolio_snapshot',{method:'POST',body:JSON.stringify({p_assets:totals.assets,p_debt:totals.debt,p_rates:totals.rates})},auth.token);
+  const response=await supa('/rest/v1/rpc/capture_portfolio_snapshot',{method:'POST',body:JSON.stringify({p_assets:totals.assets,p_debt:totals.debt,p_rates:totals.rates,p_parts:totals.parts})},auth.token);
   // The database's refusal keeps its status and words (a view-only member answers 403); only a missing function is a setup problem.
   if(!response.ok)return postgrestFailure(response,notSaved,{codes:{PGRST202:[notSaved,503]}});
   return Response.json({snapshot:await response.json()},{headers:{'Cache-Control':'no-store'}});

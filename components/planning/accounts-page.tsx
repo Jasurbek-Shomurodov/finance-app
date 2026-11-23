@@ -18,8 +18,9 @@ import type { Operation } from './account-operation';
 import type { PlanningData } from '@/lib/planning';
 import { useDisplayOrder } from '@/hooks/use-display-order';
 import type { PreferenceResource } from '@/hooks/use-workspace-preferences';
-import { accountHasLinks, linkedAccountMessage } from '@/lib/account-deletion';
+import { accountHasHoldings, accountHoldsMessage, closesWithTransfer } from '@/lib/closed-records';
 import { showError } from '@/lib/feedback';
+import { ClosedFold } from '@/components/closing/closed-fold';
 import { directoryItems } from '@/lib/account-directory';
 import { useAccountFilters } from './accounts/use-account-filters';
 import type { HoldingActions } from './accounts/holding-rows';
@@ -51,9 +52,11 @@ type Props = {
  onAccountOwner: (accountId: string, owner: string) => Promise<number>;
  /** Opens a transaction's details from Recent activity. */
  onView?: (record: Entry) => void;
+ /** Closing and reopening accounts, and deleting an empty investment account (migration 168). */
+ closing: { onClose: (record: Entry) => void; onReopen: (record: Entry) => void; onCloseAccount: (account: HoldingAccount) => void; onReopenAccount: (account: HoldingAccount) => void; onDeleteAccount: (account: HoldingAccount) => void };
 };
 
-export function AccountsPage({ owner,loadFailed,onSaved,revision=0,data, save, onAdd, onEdit, onTrack, onDelete, demo, preferences, market, currencies, currency, saveAccount, assignHolding, businesses, onAccountBusiness, household, readOnly, onAccountOwner, onView }: Props) {
+export function AccountsPage({ owner,loadFailed,onSaved,revision=0,data, save, onAdd, onEdit, onTrack, onDelete, demo, preferences, market, currencies, currency, saveAccount, assignHolding, businesses, onAccountBusiness, household, readOnly, onAccountOwner, onView, closing }: Props) {
  const { t } = useLanguage();
  const [statement,setStatement]=useState<Entry|null>(null),[corporate,setCorporate]=useState<Entry|null>(null);
  // The page's two views, switched from the top bar: the accounts themselves and their recent operations.
@@ -67,7 +70,8 @@ export function AccountsPage({ owner,loadFailed,onSaved,revision=0,data, save, o
  // Accounts keep the order the person drags them into within their group.
  const order=useDisplayOrder('account_order',directoryItems(data,market),preferences,owner,demo);
  const accountItems=order.items;
- const remove=(account:Entry)=>{if(accountHasLinks(account.id,data))showError(linkedAccountMessage);else onDelete(account);};
+ // An investment account that still names holdings is closed, not deleted: said at once, without a dialog to refuse it.
+ const removeAccount=(account:HoldingAccount)=>{if(accountHasHoldings(account,data))showError(accountHoldsMessage);else closing.onDeleteAccount(account);};
  const filters=useAccountFilters({items:accountItems,records:data.records,businesses,household});
  // Picking an account shows its card beside the directory: balance, details and activity. A holding or another asset
  // opens its details.
@@ -85,9 +89,11 @@ export function AccountsPage({ owner,loadFailed,onSaved,revision=0,data, save, o
  useEffect(()=>{const check=()=>{if(readOnly||!transferRequested(window.location.hash))return;window.history.replaceState(null,'',window.location.pathname+window.location.search);startTransfer();};check();window.addEventListener('hashchange',check);return()=>window.removeEventListener('hashchange',check);});
  return <>
   <PageHeader title={t('Accounts')} tabs={<Segmented className="page-tabs" as="nav" label={t('Accounts')} options={[{value:'accounts',label:t('Overview')},{value:'activity',label:t('Recent activity')}]} value={view} onChange={setView}/>}>{/* Rarely used lists sit behind ⋯; moving money and adding an account stay in view. */}<RowMenu label={t('More actions')} items={[owners.length>0&&{label:t('Edit owners'),disabled:readOnly,onSelect:()=>setEditingOwners(true)},businesses.length>0&&{label:t('Edit businesses'),onSelect:()=>setEditingBusinesses(true)}]}/><Button variant="outline" onClick={startTransfer}><ArrowRightLeft size={17} aria-hidden="true"/>{t('Transfer money')}</Button><Button onClick={()=>setChoosing(true)}><Plus size={17} aria-hidden="true" />{t('Add account')}</Button></PageHeader>
-  {view==='accounts'&&<AccountsOverview loadFailed={loadFailed} items={accountItems} data={data} filters={filters} order={order} businesses={businesses} holdingActions={holdingActions} onEditAccount={setDraft} onAdd={onAdd} onAddAccount={()=>setChoosing(true)} selected={selected} onSelect={setSelected}
+  {view==='accounts'&&<AccountsOverview loadFailed={loadFailed} items={accountItems} data={data} filters={filters} order={order} businesses={businesses} holdingActions={holdingActions} onEditAccount={setDraft} onCloseAccount={closing.onCloseAccount} onDeleteAccount={removeAccount} onAdd={onAdd} onAddAccount={()=>setChoosing(true)} selected={selected} onSelect={setSelected}
    story={{context:story,...reading,onViewAll:()=>setView('activity'),onView}}
-   cardActions={{onEdit,onTrack,onDelete:remove,onMove:setMovement,onOperation:setOperation,onStatement:owner?setStatement:undefined}}/>}
+   cardActions={{onEdit,onTrack,onDelete,onClose:closing.onClose,onMove:setMovement,onOperation:setOperation,onStatement:owner?setStatement:undefined}}/>}
+  {/* What was closed waits folded at the foot of the page, with the way back. */}
+  {view==='accounts'&&<ClosedFold records={(data.closed??[]).filter(closesWithTransfer)} accounts={data.closedAccounts} onReopen={closing.onReopen} onReopenAccount={closing.onReopenAccount} onDelete={onDelete} onDeleteAccount={removeAccount}/>}
   {/* Account operations are their own view, opened from the top bar. */}
   {view==='activity'&&<AccountActivity data={history} owner={owner} booked={reading} currency={currencies[0]} onOpen={onView}/>}
   <AddAccountDialog open={choosing} onOpenChange={setChoosing} onChoose={choose}/>

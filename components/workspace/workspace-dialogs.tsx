@@ -7,6 +7,7 @@ import { TransactionSankey } from '@/components/workspace/transaction-sankey';
 import { MortgagePaymentEditor, WorkspaceTransactionDetails } from '@/components/workspace/transaction-details';
 import { WorkspacePayment } from '@/components/workspace/payment-host';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
+import { ClosingDialogs, deletesHeld } from '@/components/workspace/closing-dialogs';
 import { isLinkedTransaction } from '@/lib/linked-transactions';
 import { assetEntryStart } from '@/lib/linked-asset';
 
@@ -28,7 +29,9 @@ export function WorkspaceDialogs() {
  {/* An asset's card opens its Tracker to look first: the Overview, with the card's update type ready on the form. */}
  {tracking && <InvestmentTracker onAddEntry={readOnly ? undefined : direction => { const start = assetEntryStart(tracking, direction); if (!start) return; closeTracker(); addCashFlow(start.kind, 'Once', start.preset); }} key={tracking.id + (trackingType ?? '')} initialType={trackingType ?? undefined} startTab="overview" record={tracking} accounts={planning.data.records} accountsReady={!planning.loading&&!planning.refreshing&&!planning.error} onClose={closeTracker} onSaved={refreshRecords} onPayment={() => { openPayment({ record: storedRecord(tracking), tracked: true }); closeTracker(); }} onOpenPayment={id => { const payment = [...planning.data.records, ...rows].find(row => row.id === id && !!row.mortgage_payment_id); return payment && (() => { closeTracker(); setViewing(payment); }); }}/>}
  <WorkspacePayment/>
- <ConfirmDialog deletes open={!!deleting} onClose={closeDeleting} busy={busy} error={error} title={t("Delete this record?")} description={<>{deleting&&isLinkedTransaction(deleting)?t('Move {name} to Recently deleted? It came from a transfer, a mortgage payment or an asset update, so everything that action changed is undone and the balances go back. Restore puts it all back.',{name:deleting.name}):t('Move {name} to Recently deleted? It will be removed from your records, totals and all planning months. Separate transactions stay unchanged. You can restore it from Recently deleted.',{name:deleting?.name||''})}{deleting?.frequency!=='Once'&&<span className="block">{t('To keep past planning and only end future repeats, choose Stop instead.')}</span>}</>} cancelLabel={t("Keep record")} confirmLabel={t("Delete record")} onConfirm={() => void remove()}/>
+ {/* An account or holding has its own confirmation, which offers Close when something still points at it. */}
+ <ClosingDialogs/>
+ <ConfirmDialog deletes open={!!deleting&&!deletesHeld(deleting)} onClose={closeDeleting} busy={busy} error={error} title={t("Delete this record?")} description={<>{deleting&&isLinkedTransaction(deleting)?t('Move {name} to Recently deleted? It came from a transfer, a mortgage payment or an asset update, so everything that action changed is undone and the balances go back. Restore puts it all back.',{name:deleting.name}):t('Move {name} to Recently deleted? It will be removed from your records, totals and all planning months. Separate transactions stay unchanged. You can restore it from Recently deleted.',{name:deleting?.name||''})}{deleting?.frequency!=='Once'&&<span className="block">{t('To keep past planning and only end future repeats, choose Stop instead.')}</span>}</>} cancelLabel={t("Keep record")} confirmLabel={t("Delete record")} onConfirm={() => void remove()}/>
  {pendingInvite&&!demo&&<JoinHouseholdDialog token={pendingInvite} household={household} onClose={dismissInvite}/>}
  {stopping&&<StopScheduleDialog name={stopping.name} start={stopping.date} onSave={stopRecord} onClose={()=>setStopping(null)}/>}
  </>;

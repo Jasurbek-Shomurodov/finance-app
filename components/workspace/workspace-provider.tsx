@@ -20,6 +20,7 @@ import { withAssetIncomePlans, legacyEarningSources, sourceSchedule } from '@/li
 import { approximateIncome } from '@/lib/monthly-income-cards';
 import { saveTrackingStartRequest } from '@/hooks/use-comparison-profile';
 import { marketRates } from '@/lib/market';
+import { useClosing } from '@/components/workspace/state/use-closing';
 import { usePortfolioSnapshots } from '@/hooks/use-portfolio-snapshots';
 import { useMarket } from '@/hooks/use-market';
 import { type Entry, normalizeEntry, kinds, income, expenses, estimatedCashFlow } from '@/lib/finance';
@@ -128,6 +129,7 @@ function useWorkspaceState() {
     const fail = (message: string) => { const shown = readOnly ? 'This shared workspace is view-only.' : message; setError(shown); showError(shown); };
     /** Opens a form only where the person may change the workspace. */
     const editable = () => { if (readOnly) showError('This shared workspace is view-only.'); return !readOnly; };
+    const closingActions = useClosing({ demo, setRows, refreshRecords, setDemoHoldingAccounts, editable });
     const { save, remove } = useRecordSave({ demo, rows, setRows, editing, setEditing, deleting, setDeleting, setBusy, setError, fail, planning, sources: earningSources.sources, refreshRecords, setAccountBusiness: actions.setAccountBusiness, binRecord: bin.binRecord });
     function clearLocalSession() { forgetSharedReads(); setEditing(null); setDeleting(null); closeRecordDialogs(); setRecordKinds(kinds); price.resetPrice(); settings.resetSettings(); table.resetTable(); setSummary([]); setUser(null); setDemo(false); sample.clearSample(); bin.emptyBin(); setRows([]); setError(''); }
     async function logout() {
@@ -196,6 +198,8 @@ function useWorkspaceState() {
         saveHoldingAccount: actions.saveHoldingAccount, assignHolding: actions.assignHolding, recordMortgagePayment: actions.recordMortgagePayment, recordRepayment: actions.recordRepayment, editMortgagePayment: actions.editMortgagePayment, mortgagePaymentSource: actions.mortgagePaymentSource, save, remove, stopRecord: actions.stopRecord, archiveSchedule, deleteSchedule, categorize: actions.categorize, assignTransactionsBusiness: actions.assignTransactionsBusiness, setAccountBusiness: actions.setAccountBusiness, saveBusiness: actions.saveBusiness, fetchPrice: price.fetchPrice, fetchingPrice: price.fetchingPrice, priceMessage: price.priceMessage,
         // Open dialogs
         editing, setEditing, editingCashFlow, recordKinds, deleting, setDeleting, ...dialogs,
+        // Closing, reopening and deleting accounts
+        ...closingActions,
     };
 }
 

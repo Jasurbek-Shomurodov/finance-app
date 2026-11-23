@@ -40,6 +40,17 @@
 .account-group>summary>strong{margin-inline-start:auto;font-size:var(--type-title);font-weight:650;font-variant-numeric:tabular-nums}
 .account-group>summary:focus-visible{outline:2px solid var(--ring);outline-offset:-3px}
 .account-group>.muted{padding:0 20px 12px;font-size:var(--type-small)}
+/* Closed accounts and holdings: one folded group at the foot of Accounts and Investments, each row with its way back. */
+.closed-rows{display:grid;margin:0;padding:0 0 8px;list-style:none}
+.closed-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 20px;border-top:1px solid var(--hairline)}
+.closed-row-name{display:grid;flex:1 1 12rem;min-width:0}
+.closed-row-name strong{font-weight:600;overflow-wrap:anywhere}
+.closed-row-name span,.closed-row-day{color:var(--muted-foreground);font-size:var(--type-small)}
+.closed-row .row-actions{margin-inline-start:auto}
+/* The Close dialog: what is left in the account, and what happens to an investment account's holdings. */
+.closing-balance div{display:flex;justify-content:space-between;gap:12px}
+.closing-balance dd{font-weight:600;font-variant-numeric:tabular-nums}
+.closing-choice{display:grid;gap:6px}
 .account-rows{display:grid}
 .account-list-row{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;width:100%;min-height:64px;padding:10px 20px;padding-inline-start:38px;font-size:var(--type-small);text-align:start;cursor:pointer}
 .account-list-row[aria-pressed=true]{background:color-mix(in srgb,var(--accent) 70%,transparent)}

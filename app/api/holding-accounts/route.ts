@@ -19,7 +19,7 @@ export async function POST(req: Request) {
    : await supa(`/rest/v1/finance_records?id=eq.${data.record_id}&kind=in.(Cash,Stock,Crypto)`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ holding_account_id: data.holding_account_id }) }, auth.token);
   if (!response.ok) {
    const failure = await postgrestError(response);
-   const known = ['Update the investment goals before removing or changing this account.','Update the investment goals before changing this account type.','Choose one of your matching stock or crypto accounts.', 'Move the holdings before changing this account type.'];
+   const known = ['Update the investment goals before removing or changing this account.','Update the investment goals before changing this account type.','Choose one of your matching stock or crypto accounts.', 'Move the holdings before changing this account type.', 'This investment account is closed. Reopen it first.'];
    return Response.json({ error: known.includes(failure.message ?? '') ? failure.message : 'Could not save the account. Check that the latest migrations are installed.' }, { status: 409 });
   }
   const rows = await response.json() as unknown[];

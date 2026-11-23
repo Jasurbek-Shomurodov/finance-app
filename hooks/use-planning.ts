@@ -6,6 +6,7 @@ import { useCallback, useMemo } from 'react';
 import { emptyPlanning,type Category,type DebtPayment,type PlanningData } from '@/lib/planning';
 import type { HoldingAccount } from '@/lib/holding-accounts';
 import { normalizeEntry,type Entry } from '@/lib/finance';
+import { splitClosed } from '@/lib/closed-records';
 export function usePlanning(user:string|null,demo:boolean,rows:Entry[],revision:number,onSaved:()=>void,holdingAccounts:HoldingAccount[]=[],scope:'full'|'accounts'|'review'|'workspace'='full',month?:string,demoSeed:Pick<PlanningData,'goals'|'occurrences'>&Partial<Pick<PlanningData,'categories'>>=emptyPlanning){
  const resource=useOwnerResource('/api/planning?scope='+scope+(scope==='review'&&month?'&month='+encodeURIComponent(month):''),user,!demo,revision,emptyPlanning);
  const save=useCallback(async(action:string,payload:unknown)=>{
@@ -23,7 +24,8 @@ export function usePlanning(user:string|null,demo:boolean,rows:Entry[],revision:
   onSaved();
  },[demo,onSaved,resource]);
  // One copy per reply: built on every render, it changed identity each time and every memo reading it ran again.
- const data=useMemo(()=>demo?{...emptyPlanning,...demoSeed,records:rows,holdingAccounts}:{...resource.data,records:resource.data.records.map(normalizeEntry)},[demo,demoSeed,rows,holdingAccounts,resource.data]);
+ // Closed accounts and holdings leave `records` here, once, so no screen's picker or list offers them.
+ const data=useMemo(()=>splitClosed<PlanningData>(demo?{...emptyPlanning,...demoSeed,records:rows,holdingAccounts}:{...resource.data,records:resource.data.records.map(normalizeEntry)}),[demo,demoSeed,rows,holdingAccounts,resource.data]);
  return {data,loading:resource.initialLoading,refreshing:resource.loading,error:resource.error,save,
   /** Shows a confirmed record change before the reload that follows it returns. */
   updateRecords:(change:(records:Entry[])=>Entry[])=>{if(!demo)resource.update(data=>({...data,records:change(data.records)}));},

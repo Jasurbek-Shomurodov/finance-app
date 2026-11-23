@@ -61,13 +61,14 @@ const data = {
 };
 
 function open(props = {}) {
- const calls = { added: [], edited: [], deleted: [], assigned: [], saved: [] };
+ const calls = { added: [], edited: [], deleted: [], assigned: [], saved: [], closing: [] };
+ const closing = Object.fromEntries(['onClose', 'onReopen', 'onCloseAccount', 'onReopenAccount', 'onDeleteAccount'].map(name => [name, item => calls.closing.push([name, item.id])]));
  r.mount(React.createElement(AccountsPage, {
   owner: 'me', onSaved() {}, data, save: async (action, payload) => { calls.saved.push([action, payload]); },
   onAdd: (...args) => calls.added.push(args), onEdit: record => calls.edited.push(record.id), onTrack() {}, onDelete: record => calls.deleted.push(record.id),
   demo: true, preferences: {}, market: null, currencies: ['USD', 'EUR'], currency: 'USD', saveAccount: async () => {},
   assignHolding: async (record, account) => { calls.assigned.push([record.id, account]); if (account === 'fail') throw Error('Could not move it.'); },
-  businesses: [{ id: 'b1', name: 'Bakery' }], onAccountBusiness: async () => 0, household: null, onAccountOwner: async () => 0, ...props,
+  businesses: [{ id: 'b1', name: 'Bakery' }], onAccountBusiness: async () => 0, household: null, onAccountOwner: async () => 0, closing, ...props,
  }));
  return calls;
 }
@@ -135,9 +136,12 @@ test('Accounts shows one total in the display currency, the grouped directory an
  assert.equal(r.find(byType('StatementReconciliation')).props.account.id, 'wallet');
  r.fire(labelled('Edit Wallet'), 'onClick');
  assert.deepEqual(calls.edited, ['wallet']);
- // An account that savings goals still use is not deleted; the reason is shown instead.
+ // Delete always opens its confirmation, which says what still uses the account and offers Close; Close opens its own dialog.
  r.fire(item('Delete'), 'onSelect');
- assert.deepEqual(calls.deleted, []);assert.equal(errors.length, 1);
+ assert.deepEqual(calls.deleted, ['wallet']);assert.equal(errors.length, 0);
+ r.fire(item('Close Wallet'), 'onSelect');
+ assert.deepEqual(calls.closing, [['onClose', 'wallet']]);
+ assert.equal(r.all(node => node.type === 'section' && node.props.className?.includes('closed-fold')).length, 0, 'no Closed fold while nothing is closed');
  // Dragging an account reorders it within its group.
  r.fire(r.find(node => node.type === 'SortableList' && node.props.id === 'accounts-cash'), 'onMove', 'euro', 'wallet');
  assert.deepEqual(reorders.at(-1), ['euro', 'wallet', ['wallet', 'euro']]);
@@ -228,6 +232,12 @@ test('an investment account lists its holdings, which move, sell and change acco
  r.fire(button('Add holding'), 'onClick');
  r.fire(item('Add cash balance'), 'onSelect');
  assert.deepEqual(calls.added, [['Stock', 'broker'], ['Cash', 'broker']]);
+ // Its menu closes it with its holdings; one that still names a holding is not deleted, and says why at once.
+ r.fire(item('Close Broker'), 'onSelect');
+ const before = errors.length;
+ r.fire(item('Delete'), 'onSelect');
+ assert.deepEqual(calls.closing, [['onCloseAccount', 'broker']]);
+ assert.equal(errors.at(-1), 'This account still has holdings. Move or delete them first, or close the account instead.');assert.equal(errors.length, before + 1);
  r.fire(labelled('Edit Broker'), 'onClick');
  assert.equal(r.find(byType('HoldingAccountDialog')).props.existing, true);
  r.fire(r.all(node => node.type === 'DropdownMenuItem' && text(node) === 'Sell / convert')[0], 'onSelect');
@@ -341,4 +351,36 @@ test('the bar’s Add → Transfer arrives as #transfer and opens Transfer money
  assert.equal(r.find(byType('AssetMovementDialog')).props.initial.kind, 'transfer');
  assert.deepEqual(replaced.at(-1), '/accounts', 'the address is cleared, so it opens once');
  assert.equal(address.hash, '');
+});
+
+test('closed accounts wait in a fold at the foot of the page, with Reopen and Delete; an empty investment account is deleted', () => {
+ const shut = { ...wallet, id: 'old', name: 'Old wallet', amount: 0, closed_on: '2026-10-05' }, soldOut = { ...apple, id: 'sold', quantity: 0, closed_on: '2026-10-06' };
+ const emptied = { id: 'empty', name: 'Empty broker', kind: 'Crypto', currency: 'USD' }, gone = { id: 'gone', name: 'Old broker', kind: 'Stock', currency: 'USD', closed_on: '2026-10-07' };
+ const calls = open({ data: { ...data, holdingAccounts: [broker, emptied], closed: [shut, soldOut], closedAccounts: [gone] } });
+ const fold = r.find(node => node.type === 'section' && node.props.className === 'panel account-directory closed-fold');
+ // Folded shut, counting what it holds: the closed investment account and the closed cash account (a closed holding belongs to Investments).
+ const details = r.find(node => node.type === 'details', [fold]);
+ assert.equal(details.props.open, undefined);
+ assert.equal(r.find(byType('Count'), [fold]).props.value, 2);
+ const rows = r.all(node => node.type === 'li' && node.props.className === 'closed-row', [fold]);
+ assert.deepEqual(rows.map(text), ['Old brokerStock accountClosed on ' + formatDate('2026-10-07', 'en-US') + 'ReopenDelete', 'Old walletCashClosed on ' + formatDate('2026-10-05', 'en-US') + 'ReopenDelete']);
+ assert.ok(!rowNames().includes('Old wallet'), 'a closed account is not in the directory');
+ for (const row of rows) r.fire(r.find(node => node.type === ui.Button && text(node) === 'Reopen', [row]), 'onClick');
+ assert.deepEqual(calls.closing, [['onReopenAccount', 'gone'], ['onReopen', 'old']]);
+ // Each row's menu deletes: a record through the shared confirmation, an investment account only when nothing sits in it.
+ const menus = r.all(component('RowMenu'), [fold]).map(node => node.props.items.find(Boolean));
+ assert.deepEqual(menus.map(menu => [menu.label, menu.deletes]), [['Delete', true], ['Delete', true]]);
+ menus[1].onSelect();
+ assert.deepEqual(calls.deleted, ['old']);
+ menus[0].onSelect();
+ assert.deepEqual(calls.closing.at(-1), ['onDeleteAccount', 'gone']);
+ // An open account with nothing in it is deleted from its own menu.
+ select('Empty broker');
+ r.fire(item('Delete'), 'onSelect');
+ assert.deepEqual(calls.closing.at(-1), ['onDeleteAccount', 'empty']);
+ // A closed holding that still sits in an account keeps that account from being deleted.
+ const kept = open({ data: { ...data, holdingAccounts: [emptied], records: [wallet], closed: [{ ...soldOut, holding_account_id: 'empty' }], closedAccounts: [] } });
+ select('Empty broker');
+ r.fire(item('Delete'), 'onSelect');
+ assert.deepEqual(kept.closing, []);
 });

@@ -155,6 +155,12 @@ test('close keeps the record, needs a zero balance and holds it there until it i
   await assert.rejects(close(14),/Move or archive the goals saved in this account before closing it/);
   await seed(`UPDATE savings_goals SET archived=true WHERE id='${id(50)}'`);
   await close(14);
+  // A property that is still expected to pay rent closes once its income schedule is stopped; its estimate ends with it.
+  await add(15,'Property',0,{estimated_monthly_income:500});
+  await assert.rejects(close(15),/Stop or archive its recurring income before closing it/);
+  await seed(`UPDATE finance_records SET archived=true WHERE income_source_id='${id(15)}'`);
+  await close(15);
+  assert.equal(Number((await record(15)).estimated_monthly_income),0);
   // Another owner and a view-only member cannot close or reopen; a member can.
   await as(stranger);
   await assert.rejects(close(12),/Record not found/);

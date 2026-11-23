@@ -12,7 +12,10 @@ const btc={id:'btc',kind:'Crypto',name:'BTC',quantity:2,amount:1,currency:'USD'}
 const market={quotes:{'Crypto:BTC':{usd:100}},rates:{USD:1,UZS:12000},fx:null};
 test('market prices and holdings quantities change snapshots without changing saved balances',()=>{
  const records=[cash,btc,{kind:'Business',amount:1000,ownership_percentage:40,currency:'USD'},{kind:'Loan',amount:50,currency:'USD'}];
- assert.deepEqual(snapshotTotals(records,market),{assets:700,debt:50,rates:market.rates});
+ const totals=snapshotTotals(records,market);
+ assert.deepEqual({assets:totals.assets,debt:totals.debt,rates:totals.rates},{assets:700,debt:50,rates:market.rates});
+ // Each record's own part of the day, in USD, so a record deleted later leaves the day exactly (migration 168).
+ assert.deepEqual([totals.parts.cash,totals.parts.btc],[100,200]);
  assert.equal(snapshotTotals(records,{...market,quotes:{'Crypto:BTC':{usd:200}}}).assets,900);
  assert.equal(snapshotTotals([{...btc,quantity:3}],market).assets,300);assert.equal(btc.amount,1);
 });

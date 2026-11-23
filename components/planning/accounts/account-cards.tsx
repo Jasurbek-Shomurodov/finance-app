@@ -26,6 +26,8 @@ import { pnlText } from '@/components/investment-pnl/pnl-figure';
 /** What can open from a cash account's or deposit's card. */
 export type BalanceCardActions = {
  onEdit: (record: Entry) => void; onTrack?: (record: Entry) => void; onDelete: (record: Entry) => void;
+ /** Retires the account: its history stays and it leaves the lists (migration 168). */
+ onClose: (record: Entry) => void;
  onMove: (draft: MovementDraft) => void; onOperation: (operation: Operation) => void;
  /** Reconciling a statement needs a signed-in owner; without one the button explains why it is unavailable. */
  onStatement?: (account: Entry) => void;
@@ -46,14 +48,14 @@ function BalanceFacts({ account, goals, tracked }: { account: Entry; goals: Plan
 
 /** The selected cash account or deposit, told as the directory row cannot: its balance over six months, what it holds
  * for goals, this month's money in and out and its latest activity, with its actions at the foot. */
-export function BalanceAccountCard({ account, goals, story, onEdit, onTrack, onDelete, onMove, onOperation, onStatement }: BalanceCardActions & { account: Entry; goals: PlanningData['goals']; story: StoryState }) {
+export function BalanceAccountCard({ account, goals, story, onEdit, onTrack, onDelete, onClose, onMove, onOperation, onStatement }: BalanceCardActions & { account: Entry; goals: PlanningData['goals']; story: StoryState }) {
  const { t } = useLanguage();
  // A balance is a display-currency figure, like the directory beside it; one no rate converts reads — with the note.
  const { show } = useDisplayMoney();
  const balance=show(account.amount,account.currency);
  const deposit=account.kind==='Deposit';
  return <article className="panel account-card">
-  <header><CategoryIcon kind={account.kind}/><h2>{account.name}</h2><Button variant="ghost" size="icon" className="account-card-menu" aria-label={t('Edit {name}',{name:account.name})} onClick={()=>onEdit(account)}><Pencil size={17} aria-hidden="true"/></Button><AccountMenu name={account.name}>{deposit&&<DropdownMenuItem onSelect={()=>onMove({kind:'interest',source_id:account.id})}>{t('Record capitalized interest')}</DropdownMenuItem>}{deposit&&onTrack&&<DropdownMenuItem onSelect={()=>onTrack(account)}>{t('Manage deposit')}</DropdownMenuItem>}<DropdownMenuItem variant="destructive" onSelect={()=>onDelete(account)}><Trash2 aria-hidden="true"/>{t('Delete')}</DropdownMenuItem></AccountMenu></header>
+  <header><CategoryIcon kind={account.kind}/><h2>{account.name}</h2><Button variant="ghost" size="icon" className="account-card-menu" aria-label={t('Edit {name}',{name:account.name})} onClick={()=>onEdit(account)}><Pencil size={17} aria-hidden="true"/></Button><AccountMenu name={account.name}>{deposit&&<DropdownMenuItem onSelect={()=>onMove({kind:'interest',source_id:account.id})}>{t('Record capitalized interest')}</DropdownMenuItem>}{deposit&&onTrack&&<DropdownMenuItem onSelect={()=>onTrack(account)}>{t('Manage deposit')}</DropdownMenuItem>}<DropdownMenuItem onSelect={()=>onClose(account)}>{t('Close {name}',{name:account.name})}</DropdownMenuItem><DropdownMenuItem variant="destructive" onSelect={()=>onDelete(account)}><Trash2 aria-hidden="true"/>{t('Delete')}</DropdownMenuItem></AccountMenu></header>
   <div className="account-card-balance"><span>{t('Balance')}</span><strong className="account-card-value"><RollingText text={balance}/></strong></div>
   {balance==='—'&&<p role="status" className="muted">{t('Exchange rate unavailable.')}</p>}
   <AccountStoryView account={account} state={story}><BalanceFacts account={account} goals={goals} tracked={!!onTrack}/></AccountStoryView>
@@ -62,7 +64,7 @@ export function BalanceAccountCard({ account, goals, story, onEdit, onTrack, onD
 }
 
 /** The selected investment account: its value, holdings count and a dialog listing the holdings. */
-export function InvestmentAccountCard({ account, records, onEditAccount, onAdd, holdingActions }: { account: HoldingAccount; records: Entry[]; onEditAccount: (account: HoldingAccount) => void; onAdd: (kind: HoldingAccount['kind'], accountId: string) => void; holdingActions: HoldingActions }) {
+export function InvestmentAccountCard({ account, records, onEditAccount, onCloseAccount, onDeleteAccount, onAdd, holdingActions }: { account: HoldingAccount; records: Entry[]; onEditAccount: (account: HoldingAccount) => void; /** Closes the account with its holdings, or deletes it once it is empty. */ onCloseAccount: (account: HoldingAccount) => void; onDeleteAccount: (account: HoldingAccount) => void; onAdd: (kind: HoldingAccount['kind'], accountId: string) => void; holdingActions: HoldingActions }) {
  const { t, locale } = useLanguage();
  const display=useDisplayMoney();
  const {holdings,total}=holdingAccountValue(account,records,holdingActions.market);
@@ -71,7 +73,7 @@ export function InvestmentAccountCard({ account, records, onEditAccount, onAdd, 
  // What its holdings earned since tracking began, as the Investments screen shows it.
  const earned=pnlOf(holdingActions.pnl??null,holdings.map(record=>record.id));
  return <article className="panel account-card">
-  <header><CategoryIcon kind={account.kind}/><h2>{account.name}</h2><Button variant="ghost" size="icon" className="account-card-menu" aria-label={t('Edit {name}',{name:account.name})} onClick={()=>onEditAccount(account)}><Pencil size={17} aria-hidden="true"/></Button><AccountMenu name={account.name}><DropdownMenuItem onSelect={()=>onAdd('Cash',account.id)}>{t('Add cash balance')}</DropdownMenuItem></AccountMenu></header>
+  <header><CategoryIcon kind={account.kind}/><h2>{account.name}</h2><Button variant="ghost" size="icon" className="account-card-menu" aria-label={t('Edit {name}',{name:account.name})} onClick={()=>onEditAccount(account)}><Pencil size={17} aria-hidden="true"/></Button><AccountMenu name={account.name}><DropdownMenuItem onSelect={()=>onAdd('Cash',account.id)}>{t('Add cash balance')}</DropdownMenuItem><DropdownMenuItem onSelect={()=>onCloseAccount(account)}>{t('Close {name}',{name:account.name})}</DropdownMenuItem><DropdownMenuItem variant="destructive" onSelect={()=>onDeleteAccount(account)}><Trash2 aria-hidden="true"/>{t('Delete')}</DropdownMenuItem></AccountMenu></header>
   <div className="account-card-balance"><span>{t(holdingAccountLabel(account.kind))}</span><strong className="account-card-value">{shown===null?'—':<AnimatedMoney value={shown} currency={display.currency??account.currency}/>}</strong></div><p className="muted">{t('{count} holdings',{count:formatNumber(holdings.filter(isHolding).length,locale,0)})} · {account.currency}</p>
   {earned&&holdingActions.pnlCurrency&&<p className="account-card-pnl"><span>{t('Profit & loss')}</span><strong className={signTone(earned.total)}>{pnlText(earned,holdingActions.pnlCurrency,locale)}</strong></p>}
   {shown===null&&<p className="muted">{t('Exchange rates are missing. The account total is unavailable.')}</p>}
