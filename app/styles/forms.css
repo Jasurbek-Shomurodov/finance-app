@@ -135,6 +135,11 @@ label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 .currency-catalogue input[type=checkbox]{min-height:18px!important;width:18px;height:18px;padding:0;flex-shrink:0;accent-color:var(--mark-bg)}
 @media(max-width:600px){.currency-catalogue{grid-template-columns:1fr}.settings-form{padding:18px}}
 
+.basis-field{display:grid;gap:6px;font-size:var(--type-small)}.basis-field fieldset{border:0;padding:0;margin:0;min-width:0}
+.basis-field-label{display:flex;align-items:center;gap:6px;font-weight:500}
+.record-switch-row{display:flex;align-items:center;gap:8px;font-size:var(--type-small);font-weight:500}
+.record-switch-row .switch{margin-inline-start:auto}
+.owned-summary p{margin:0}.owned-summary p+p{margin-top:4px}
 .ownership-summary{padding:12px 16px;border:1px solid var(--border);border-radius:10px;background:var(--accent);font-size:var(--type-compact);font-weight:600;margin-top:-8px}
 
 .badge.category-badge{display:inline-flex;align-items:center;gap:5px;background:hsl(var(--category-hue) 38% 18%);color:hsl(var(--category-hue) 75% 82%);border-color:hsl(var(--category-hue) 36% 35%);font-weight:500;white-space:nowrap}

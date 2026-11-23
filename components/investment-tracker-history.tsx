@@ -3,7 +3,7 @@ import type { CSSProperties, KeyboardEvent, MouseEvent } from 'react';
 import { ArrowUpFromLine, Banknote, ChartLine, Flag, HandCoins, Landmark, Receipt, type LucideIcon } from 'lucide-react';
 import { DeleteButton } from '@/components/presentation-foundation/delete-button';
 import { useLanguage } from '@/components/language-provider';
-import { formatDate, formatMoney, formatPercent } from '@/lib/format';
+import { formatDate, formatMoney, formatNumber, formatPercent } from '@/lib/format';
 import type { Entry } from '@/lib/finance';
 import { categoryHue } from '@/lib/category-colors';
 import { historyEventLabel, historyEventMovesCash, withoutRepeatedBalances, type TrackerEvent } from '@/lib/investment-history';
@@ -23,6 +23,17 @@ const openable = (onOpen: (() => void) | undefined, label: string) => !onOpen ? 
  onKeyDown: (press: KeyboardEvent) => { if (press.target === press.currentTarget && (press.key === 'Enter' || press.key === ' ')) { press.preventDefault(); onOpen(); } },
 });
 
+/** What a dated value was made of: a counted asset's two numbers, and the whole value with the share owned on that day. */
+function OwnedLines({ event, record }: { event: TrackerEvent; record: Entry }) {
+ const { t, locale } = useLanguage();
+ const money = (value: number) => formatMoney(value, record.currency, locale);
+ const shared = event.balance !== null && Number(event.ownership_percentage) < 100;
+ return <>
+  {event.quantity != null && event.unit_value != null && <span>{t('{quantity} {unit} × {value}', { quantity: formatNumber(Number(event.quantity), locale, 8), unit: record.unit_label ?? '', value: money(Number(event.unit_value)) })}</span>}
+  {shared && <span>{t('Full value {amount} · you own {percent}', { amount: money(Number(event.balance)), percent: formatPercent(Number(event.ownership_percentage), locale, 8) })}</span>}
+ </>;
+}
+
 /** One entry: what happened on the left, its amount on the right, and a bin only when the tracker may delete it. */
 function HistoryRow({ event, record, accounts, valueLabel, onOpen, deletable, deleteDisabled, onDelete }: Omit<Props, 'events' | 'open'> & { event: TrackerEvent; onOpen?: () => void }) {
  const { t, locale } = useLanguage();
@@ -32,7 +43,6 @@ function HistoryRow({ event, record, accounts, valueLabel, onOpen, deletable, de
  const account = link && t(Number(link.amount) < 0 ? 'from {account}' : 'to {account}', { account: accounts.find(item => item.id === link.account_id)?.name ?? t('Cash account') });
  const mark = eventMarks[event.event_type];
  const Icon = mark.icon;
- const shared = event.balance !== null && Number(event.ownership_percentage) < 100;
  // A payment entered in another currency counts in the asset's currency at its own day's rate.
  const converted = event.entered && event.entered.currency !== record.currency && event.amount !== null;
  const label = t(historyEventLabel(record.kind, event.event_type));
@@ -42,7 +52,7 @@ function HistoryRow({ event, record, accounts, valueLabel, onOpen, deletable, de
   <div className="tracker-event-amount">
    {historyEventMovesCash(event) ? <><strong>{event.entered ? formatMoney(event.entered.amount, event.entered.currency, locale) : money(Number(event.amount))}</strong>{converted && <span>{t('{amount} at that day\'s rate', { amount: money(Number(event.amount)) })}</span>}{event.balance !== null && <span>{t(valueLabel)}: {money(value)}</span>}</>
     : <>{event.balance !== null && <strong>{money(value)}</strong>}{Number(event.amount) > 0 && <span>{t('Cash amount (your share)')}: {money(Number(event.amount))}</span>}</>}
-   {shared && <span>{t('Full value {amount} · you own {percent}', { amount: money(Number(event.balance)), percent: formatPercent(Number(event.ownership_percentage), locale) })}</span>}
+   <OwnedLines event={event} record={record}/>
    {event.event_type === 'mortgage_payment' && <small>{t('Principal repayment')}: {money(Number(event.principal))} · {t('Interest paid')}: {money(Number(event.interest))}</small>}
   </div>
   {deletable(event) && <DeleteButton disabled={deleteDisabled} label={t(event.entered ? 'Delete record' : 'Delete update')} onClick={() => onDelete(event)}/>}

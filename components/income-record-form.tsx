@@ -12,6 +12,7 @@ import { FieldError } from '@/components/presentation-foundation/field-error';
 import { FormFooter } from '@/components/presentation-foundation/form-footer';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
 import {frequencyLabels} from '@/lib/finance';
+import { BusinessBasisField } from '@/components/record-dialog/business-basis-field';
 import { selectTransactionCategory } from '@/lib/transaction-categories';
 import { IncomeSourcePicker } from '@/components/income-source-picker';
 import Link from 'next/link';
@@ -168,6 +169,7 @@ export function IncomeRecordForm({onSuggest,editing,setEditing,busy,save,currenc
    {!planning.loading&&!planning.error&&!sources.length&&!sourceId&&<p className="muted">{t(editing.kind==='Salary'?'Add a salary plan before recording its income.':editing.kind==='Rent income'?'Add a property in Assets & investments first.':'Add a business in Assets & investments first.')}</p>}
    {editing.kind==='Salary'?<Link href="/income-expenses#income-sources">{t('Add income source')}</Link>:<Link href="/assets">{t('Assets & investments')}</Link>}
   </div>)}
+  <BusinessBasisField editing={editing} records={planning.data.records} saved={original} disabled={busy} onChange={amount_basis=>update({amount_basis})}/>
   {editing.kind==='Salary'&&source&&<DueDateField label={t('Salary due date')} date={editing.income_due_on??''} choices={salarySource?dueChoices:[]} disabled={busy} onChoose={chooseDue}/>}
   <div className="form-grid"><label>{t(editing.frequency==='Once'?'Record date':'Start date')}<DatePicker value={editing.date} disabled={!!original&&original.frequency!=='Once'&&editing.frequency!=='Once'} min={editing.kind==='Salary'&&source?source.date:undefined} max={latestDate} onChange={changeDate}/></label>
   {!schedule&&!salaryPlan&&cashAccount}

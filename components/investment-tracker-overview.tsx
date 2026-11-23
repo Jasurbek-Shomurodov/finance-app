@@ -11,13 +11,13 @@ import { SeriesLegend, toggleKey } from '@/components/presentation-foundation/se
 import { ChartSkeleton } from '@/components/presentation-foundation/loading-placeholder';
 import { times } from '@/components/presentation-foundation/skeleton-kit';
 import { chartAxis, chartColors, chartDot, chartGrid, chartHeight, chartLine, chartMargin, chartTooltip, chartValueAxis, distinctMoneyTick, leadLine } from '@/components/presentation-foundation/chart';
-import { formatDate, formatMoney, formatMonthYear, formatPercent, formatSignedMoney, formatSignedPercent } from '@/lib/format';
+import { formatDate, formatMoney, formatMonthYear, formatNumber, formatPercent, formatSignedMoney, formatSignedPercent } from '@/lib/format';
 import { niceAxis } from '@/lib/chart-scale';
 import { categoryColor } from '@/lib/category-colors';
-import { historyChartDate, historyPerformance, historySeries, historyValueLabel, isLendingKind, type HistoryEvent, type TrackerEvent } from '@/lib/investment-history';
+import { historyChartDate, historyPerformance, historySeries, historyValueLabel, isLendingKind, linkedPaymentKinds, type HistoryEvent, type TrackerEvent } from '@/lib/investment-history';
 import { depositInterest, depositProjection, depositToday } from '@/lib/deposit-interest';
 import { isHolding } from '@/lib/asset-movements';
-import { interestCompounding, interestKinds, type Entry } from '@/lib/finance';
+import { interestCompounding, interestKinds, isCounted, type Entry } from '@/lib/finance';
 import type { MovementDraft } from '@/components/planning/asset-movement-dialog';
 
 type Point=ReturnType<typeof historySeries>['points'][number];
@@ -46,7 +46,7 @@ function TrackerTiles({record,events}:{record:Entry;events:TrackerEvent[]}){
  const shared=!lending&&stats.fullBalance!==null&&stats.ownership<100;
  const performs=tracksReturn(record.kind);
  return <StatTiles columns="auto">
-  <StatTile label={t(lead)} value={money(stats.balance)}>{shared&&<p>{t('Full value {amount} · you own {percent}',{amount:money(stats.fullBalance),percent:formatPercent(stats.ownership,locale)})}</p>}</StatTile>
+  <StatTile label={t(lead)} value={money(stats.balance)}>{isCounted(record)&&stats.quantity!==null&&stats.unitValue!==null&&<p>{t('{quantity} {unit} × {value}',{quantity:formatNumber(stats.quantity,locale,8),unit:record.unit_label??'',value:money(stats.unitValue)})}</p>}{shared&&<p>{t('Full value {amount} · you own {percent}',{amount:money(stats.fullBalance),percent:formatPercent(stats.ownership,locale)})}</p>}</StatTile>
   {performs&&<StatTile label={t('Value change')} value={signed(performance.change)} tone={signTone(performance.change)}>{performance.changePercent!==null&&performance.firstDate&&<p>{t('{percent} since {date}',{percent:formatSignedPercent(performance.changePercent,locale),date:formatDate(performance.firstDate,locale)})}</p>}</StatTile>}
   {performs&&<StatTile label={t('Total return')} value={signed(performance.result)} tone={signTone(performance.result)} hint={<p>{t('Value change plus income received, minus expenses paid and net contributions, since the first tracked value.')}</p>}/>}
   {historyTotals(record.kind,stats).map(([label,amount])=><StatTile key={label} label={t(label)} value={money(amount)}/>)}
@@ -98,14 +98,18 @@ function TrackerChart({record,points}:{record:Entry;points:Point[]}){
 }
 
 /** What the record lets the person do from its tracker, as one row that wraps. */
-function TrackerActions({record,busy,onMovement,onPayment}:{record:Entry;busy:boolean;onMovement:(movement:MovementDraft)=>void;onPayment:()=>void}){
+function TrackerActions({record,busy,onMovement,onPayment,onAddEntry}:{record:Entry;busy:boolean;onMovement:(movement:MovementDraft)=>void;onPayment:()=>void;onAddEntry?:(direction:'income'|'expense')=>void}){
  const {t}=useLanguage();
  // Money moves in and out of a bank deposit alone: a bill or bond is bought once (`record_asset_movement` refuses them).
  const movable=record.kind==='Deposit';
  // Units at a quoted price: stocks, crypto, metals and vested equity are bought and sold by quantity.
  const trades=movable||isHolding(record);
- if(!trades&&record.kind!=='Cash'&&record.kind!=='Mortgage')return null;
+ // A business's or a property's income and expenses are ordinary transactions that name it: the normal forms open.
+ const entries=!!onAddEntry&&linkedPaymentKinds.includes(record.kind);
+ if(!trades&&!entries&&record.kind!=='Cash'&&record.kind!=='Mortgage')return null;
  return <div className="entry-actions">
+  {entries&&<Button type="button" variant="outline" disabled={busy} onClick={()=>onAddEntry('income')}>{t('Add income')}</Button>}
+  {entries&&<Button type="button" variant="outline" disabled={busy} onClick={()=>onAddEntry('expense')}>{t('Add expense')}</Button>}
   {record.kind==='Cash'&&<Button type="button" variant="outline" disabled={busy} onClick={()=>onMovement({kind:'transfer',source_id:record.id})}>{t('Transfer money')}</Button>}
   {trades&&<Button variant="outline" onClick={()=>onMovement({kind:movable?'transfer':'buy',target_id:record.id})}>{t(movable?'Top-up':'Buy')}</Button>}
   {trades&&<Button variant="outline" onClick={()=>onMovement({kind:movable?'transfer':'sell',source_id:record.id})}>{t(movable?'Withdraw':'Sell / convert')}</Button>}
@@ -122,10 +126,10 @@ function OverviewSkeleton({kind,label}:{kind:string;label:string}){
  </div>;
 }
 
-type Props={record:Entry;events:TrackerEvent[];loading:boolean;busy:boolean;onMovement:(movement:MovementDraft)=>void;onPayment:()=>void};
+type Props={record:Entry;events:TrackerEvent[];loading:boolean;busy:boolean;onMovement:(movement:MovementDraft)=>void;onPayment:()=>void;/** Opens the normal income or expense form with this business or property chosen. */onAddEntry?:(direction:'income'|'expense')=>void};
 
 /** The tracker's Overview tab: the figures, the chart, then the record's own actions. */
-export function TrackerOverview({record,events,loading,busy,onMovement,onPayment}:Props){
+export function TrackerOverview({record,events,loading,busy,onMovement,onPayment,onAddEntry}:Props){
  const {t}=useLanguage();
  const stats=historySeries(events);
  return <>
@@ -135,6 +139,6 @@ export function TrackerOverview({record,events,loading,busy,onMovement,onPayment
    {stats.missing&&<p className="muted">{t('Exchange rate unavailable.')}</p>}
    {stats.points.length>0&&<TrackerChart record={record} points={stats.points}/>}
   </div>}
-  <TrackerActions record={record} busy={busy} onMovement={onMovement} onPayment={onPayment}/>
+  <TrackerActions record={record} busy={busy} onMovement={onMovement} onPayment={onPayment} onAddEntry={onAddEntry}/>
  </>;
 }
