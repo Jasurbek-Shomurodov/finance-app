@@ -5,10 +5,10 @@ const setup=fs.readFileSync('database/setup.sql','utf8');
 const migration=fs.readFileSync('migrations/165_trigger_grants_and_reference_indexes.sql','utf8');
 const skip=!process.env.PGLITE_MODULE;
 
-test('migration 165 is the end of setup.sql and the app asks for it',()=>{
- assert.ok(setup.trimEnd().endsWith(migration.trimEnd()));
+test('migration 165 is in setup.sql and the app asks for at least it',()=>{
+ assert.ok(setup.includes(migration));
  assert.match(migration,/'schema_version',165/);
- assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 165/);
+ assert.ok(Number(fs.readFileSync('lib/database-capabilities.ts','utf8').match(/requiredSchemaVersion = (\d+)/)[1])>=165);
  // It only tightens grants and adds indexes: no row is written.
  assert.doesNotMatch(migration,/\b(UPDATE|DELETE FROM|INSERT INTO)\b/);
 });

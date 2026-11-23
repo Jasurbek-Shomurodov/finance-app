@@ -10058,3 +10058,221 @@ $$;
 
 NOTIFY pgrst,'reload schema';
 COMMIT;
+
+-- Ownership and counted assets (product map, "Ownership and valuations"). Apply after 165.
+-- * `ownership_percentage` now counts for every asset whose value is entered by hand (Property, Business, Valuables,
+--   Vehicle, Retirement account), not only a Business: the history trigger and `record_investment_event` write the
+--   share an asset was valued at, and `delete_tracker_update` restores it. A share is more than 0 and at most 100.
+-- * A valued asset can be counted in units: `unit_label` (up to 40 characters, "sheep") marks it, `quantity` is how
+--   many and `amount` is then the value of ONE unit, so the whole asset is amount x quantity. Without a unit name the
+--   record reads exactly as before, whatever its quantity column holds.
+-- * `investment_history` gains `quantity` and `unit_value`. When both are set the balance is their product. The
+--   trigger writes them for a counted asset, and `record_investment_event` takes them, and a new ownership share, as
+--   optional parameters beside the date it always took: "2025: 1,000 x 80; 2026: 1,300 x 85" are two dated updates.
+-- Existing rows keep their value: a record that is not a Business always counted at 100%, so any other share stored
+-- on one is reset to 100 (triggers off: no history row, revision or audit entry). The stricter share check is added
+-- NOT VALID, so a business saved at 0% stays as it is until it is next edited. No row is deleted. Re-runnable.
+BEGIN;
+
+ALTER TABLE public.finance_records ADD COLUMN IF NOT EXISTS unit_label text;
+ALTER TABLE public.finance_records DROP CONSTRAINT IF EXISTS finance_records_unit_label_check;
+ALTER TABLE public.finance_records ADD CONSTRAINT finance_records_unit_label_check CHECK (unit_label IS NULL
+ OR (kind IN ('Property','Business','Valuables','Vehicle','Retirement account') AND length(unit_label)<=40 AND length(btrim(unit_label))>=1));
+
+ALTER TABLE public.finance_records DISABLE TRIGGER USER;
+UPDATE public.finance_records SET ownership_percentage=100 WHERE kind<>'Business' AND ownership_percentage<>100;
+ALTER TABLE public.finance_records ENABLE TRIGGER USER;
+ALTER TABLE public.finance_records DROP CONSTRAINT IF EXISTS finance_records_ownership_percentage_check;
+ALTER TABLE public.finance_records ADD CONSTRAINT finance_records_ownership_percentage_check CHECK (ownership_percentage>0 AND ownership_percentage<=100) NOT VALID;
+
+ALTER TABLE public.investment_history ADD COLUMN IF NOT EXISTS quantity numeric;
+ALTER TABLE public.investment_history ADD COLUMN IF NOT EXISTS unit_value numeric;
+ALTER TABLE public.investment_history DROP CONSTRAINT IF EXISTS investment_history_counted_check;
+ALTER TABLE public.investment_history ADD CONSTRAINT investment_history_counted_check CHECK ((quantity IS NULL AND unit_value IS NULL)
+ OR (quantity IS NOT NULL AND unit_value IS NOT NULL AND quantity>=0 AND quantity<=1e12 AND unit_value>=0 AND unit_value<=1e15 AND balance IS NOT NULL AND balance=quantity*unit_value));
+
+CREATE OR REPLACE FUNCTION public.capture_investment_balance() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE valued boolean; counted boolean;
+BEGIN
+ IF public.finance_restore_active() THEN
+  IF TG_LEVEL='STATEMENT' THEN RETURN NULL; ELSIF TG_OP='DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF;
+ END IF;
+ IF NEW.kind NOT IN ('Cash','Stock','Crypto','Deposit','Treasury bill','Bond','Property','Business','Valuables','Vehicle','Retirement account','Precious metals','Equity compensation','Money lent','Mortgage','Loan','Debt') THEN RETURN NEW; END IF;
+ IF current_setting('finance.history_write',true)='1' THEN RETURN NEW; END IF;
+ valued:=NEW.kind IN ('Property','Business','Valuables','Vehicle','Retirement account');
+ counted:=valued AND NEW.unit_label IS NOT NULL;
+ IF TG_OP='UPDATE' AND NEW.amount=OLD.amount AND NEW.quantity=OLD.quantity AND NEW.ownership_percentage=OLD.ownership_percentage
+  AND (NEW.unit_label IS NULL)=(OLD.unit_label IS NULL) THEN RETURN NEW; END IF;
+ INSERT INTO public.investment_history(user_id,record_id,event_type,occurred_on,balance,ownership_percentage,quantity,unit_value,notes)
+ VALUES(NEW.user_id,NEW.id,CASE WHEN TG_OP='INSERT' THEN 'baseline' ELSE 'valuation' END,
+ CASE WHEN TG_OP='INSERT' THEN coalesce(NEW.opened_on,(now() AT TIME ZONE 'Asia/Tashkent')::date) ELSE (now() AT TIME ZONE 'Asia/Tashkent')::date END,
+ NEW.amount*CASE WHEN counted OR NEW.kind IN ('Stock','Crypto','Precious metals','Equity compensation') THEN NEW.quantity ELSE 1 END,
+ CASE WHEN valued THEN NEW.ownership_percentage ELSE 100 END,
+ CASE WHEN counted THEN NEW.quantity END,CASE WHEN counted THEN NEW.amount END,'');
+ RETURN NEW;
+END $$;
+REVOKE ALL ON FUNCTION public.capture_investment_balance() FROM PUBLIC,anon,authenticated;
+
+-- The seven-argument function becomes one with three optional parameters; callers that pass seven still reach it.
+DROP FUNCTION IF EXISTS public.record_investment_event(uuid,uuid,text,date,numeric,numeric,text);
+CREATE OR REPLACE FUNCTION public.record_investment_event(p_id uuid,p_record_id uuid,p_type text,p_date date,p_amount numeric,p_balance numeric,p_notes text,
+ p_quantity numeric DEFAULT NULL,p_unit_value numeric DEFAULT NULL,p_ownership numeric DEFAULT NULL)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE r public.finance_records; existing public.investment_history; last_date date; lending boolean; next_balance numeric;
+ valued boolean; counted boolean; unit_priced boolean; full_balance numeric:=p_balance;
+BEGIN
+ IF public.active_owner() IS NULL THEN RAISE EXCEPTION 'Please sign in again.'; END IF;
+ IF (p_quantity IS NULL)<>(p_unit_value IS NULL) OR ((p_quantity IS NOT NULL OR p_ownership IS NOT NULL) AND p_type IS DISTINCT FROM 'valuation')
+ OR p_quantity<0 OR p_quantity>1e12 OR p_unit_value<0 OR p_unit_value>1e15 OR p_ownership<=0 OR p_ownership>100 THEN RAISE EXCEPTION 'Check the tracker fields.'; END IF;
+ -- A counted valuation is its two numbers; a total sent with them must be their product.
+ IF p_quantity IS NOT NULL THEN
+  full_balance:=p_quantity*p_unit_value;
+  IF p_balance IS NOT NULL AND p_balance<>full_balance THEN RAISE EXCEPTION 'Check the tracker fields.'; END IF;
+ END IF;
+ IF p_id IS NULL OR p_record_id IS NULL OR p_type IS NULL OR p_date IS NULL OR p_amount IS NULL OR p_notes IS NULL
+ OR p_type NOT IN ('valuation','contribution','withdrawal','income','expense') OR p_amount<0 OR p_amount>1e15
+ OR p_date>(now() AT TIME ZONE 'Asia/Tashkent')::date OR length(p_notes)>2000
+ OR (full_balance IS NOT NULL AND (full_balance<0 OR full_balance>1e15))
+ OR (p_type='valuation' AND full_balance IS NULL)
+ OR (p_type IN ('income','expense') AND full_balance IS NOT NULL) OR (p_type<>'valuation' AND p_amount<=0)
+ OR (p_type='valuation' AND p_amount<>0) THEN RAISE EXCEPTION 'Check the tracker fields.'; END IF;
+ SELECT * INTO r FROM public.finance_records WHERE id=p_record_id AND user_id=public.active_owner() FOR UPDATE;
+ IF NOT FOUND OR r.kind NOT IN ('Cash','Stock','Crypto','Deposit','Treasury bill','Bond','Property','Business','Valuables','Vehicle','Retirement account','Precious metals','Equity compensation','Money lent','Mortgage','Loan','Debt') THEN RAISE EXCEPTION 'Investment not found.'; END IF;
+ lending:=r.kind IN ('Debt','Loan','Money lent','Mortgage');
+ valued:=r.kind IN ('Property','Business','Valuables','Vehicle','Retirement account');
+ counted:=valued AND r.unit_label IS NOT NULL;
+ unit_priced:=r.kind IN ('Stock','Crypto','Precious metals','Equity compensation');
+ IF (p_quantity IS NOT NULL AND NOT counted) OR (p_ownership IS NOT NULL AND NOT valued) THEN RAISE EXCEPTION 'Check the tracker fields.'; END IF;
+ SELECT * INTO existing FROM public.investment_history WHERE id=p_id;
+ IF FOUND THEN
+  IF existing.user_id<>public.active_owner() OR existing.record_id<>p_record_id OR existing.event_type<>p_type OR existing.occurred_on<>p_date OR existing.amount<>p_amount
+   OR (NOT (lending AND p_type IN ('contribution','withdrawal') AND full_balance IS NULL) AND existing.balance IS DISTINCT FROM full_balance)
+   OR existing.quantity IS DISTINCT FROM p_quantity OR existing.unit_value IS DISTINCT FROM p_unit_value
+   OR (p_ownership IS NOT NULL AND existing.ownership_percentage<>p_ownership) OR existing.notes<>p_notes THEN RAISE EXCEPTION 'This update was already saved with different details.'; END IF;
+  RETURN jsonb_build_object('ok',true);
+ END IF;
+ -- Validate against the record under the same lock that protects its balance.
+ IF (lending AND p_type NOT IN ('contribution','withdrawal')) OR (r.kind='Cash' AND p_type<>'valuation') THEN
+  RAISE EXCEPTION 'This update type is not available for this record.';
+ END IF;
+ IF r.kind='Mortgage' AND p_type='withdrawal' THEN RAISE EXCEPTION 'Use Record payment for mortgage payments.'; END IF;
+ SELECT max(occurred_on) INTO last_date FROM public.investment_history WHERE record_id=r.id AND balance IS NOT NULL;
+ next_balance:=full_balance;
+ IF lending THEN
+  IF full_balance IS NOT NULL THEN RAISE EXCEPTION 'Enter debt additions and repayments without a balance override.'; END IF;
+  IF p_date<last_date THEN RAISE EXCEPTION 'Enter updates on or after the latest balance date.'; END IF;
+  next_balance:=r.amount+CASE WHEN p_type='contribution' THEN p_amount ELSE -p_amount END;
+  IF next_balance<0 THEN RAISE EXCEPTION 'Repayment cannot exceed the outstanding balance.'; END IF;
+  IF next_balance>1e15 THEN RAISE EXCEPTION 'Check the tracker fields.'; END IF;
+ ELSIF p_type IN ('contribution','withdrawal') AND full_balance IS NULL AND NOT valued THEN
+  RAISE EXCEPTION 'Check the tracker fields.';
+ END IF;
+ INSERT INTO public.investment_history(id,user_id,record_id,event_type,occurred_on,amount,balance,ownership_percentage,quantity,unit_value,notes)
+ VALUES(p_id,public.active_owner(),r.id,p_type,p_date,p_amount,next_balance,CASE WHEN valued THEN coalesce(p_ownership,r.ownership_percentage) ELSE 100 END,p_quantity,p_unit_value,p_notes);
+ -- Only the newest dated value becomes the record's own: an older one is history and replaces nothing.
+ IF next_balance IS NOT NULL AND (last_date IS NULL OR p_date>=last_date) THEN
+  IF (unit_priced OR (counted AND p_quantity IS NULL)) AND r.quantity=0 THEN RAISE EXCEPTION 'Set a quantity before recording a valuation.'; END IF;
+  PERFORM set_config('finance.history_write','1',true);
+  UPDATE public.finance_records SET
+   amount=CASE WHEN p_quantity IS NOT NULL THEN p_unit_value WHEN unit_priced OR counted THEN next_balance/r.quantity ELSE next_balance END,
+   quantity=coalesce(p_quantity,quantity),
+   ownership_percentage=CASE WHEN valued THEN coalesce(p_ownership,ownership_percentage) ELSE ownership_percentage END
+  WHERE id=r.id;
+  PERFORM set_config('finance.history_write','0',true);
+ END IF;
+ IF p_type IN ('income','expense') THEN
+  INSERT INTO public.finance_records(id,user_id,name,kind,currency,amount,date,frequency,notes,business_id,history_event_id,income_source_id,property_id)
+  VALUES(p_id,public.active_owner(),r.name,CASE WHEN p_type='expense' THEN 'Other expense' WHEN r.kind='Property' THEN 'Rent income' ELSE 'Other income' END,r.currency,p_amount,p_date,'Once',p_notes,CASE WHEN r.kind='Business' THEN r.id ELSE NULL END,p_id,CASE WHEN r.kind='Property' AND p_type='income' THEN r.id END,CASE WHEN r.kind='Property' AND p_type='expense' THEN r.id END);
+ END IF;
+ RETURN jsonb_build_object('ok',true);
+END $$;
+REVOKE ALL ON FUNCTION public.record_investment_event(uuid,uuid,text,date,numeric,numeric,text,numeric,numeric,numeric) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.record_investment_event(uuid,uuid,text,date,numeric,numeric,text,numeric,numeric,numeric) TO authenticated;
+
+CREATE OR REPLACE FUNCTION pg_temp.patch_counted_assets(fn regprocedure,old_text text,new_text text) RETURNS void LANGUAGE plpgsql AS $$
+DECLARE definition text:=pg_get_functiondef(fn); found integer;
+BEGIN
+ found:=(length(definition)-length(replace(definition,old_text,'')))/length(old_text);
+ -- Re-running is a no-op once the text was already patched.
+ IF position(new_text IN definition)>0 THEN RETURN; END IF;
+ IF found<>1 THEN RAISE EXCEPTION 'Unexpected function definition: % (% matches)',fn,found; END IF;
+ EXECUTE replace(definition,old_text,new_text);
+END $$;
+
+-- Deleting the newest value update brings back the value before it: for a counted asset its two numbers, and for
+-- every valued kind the share it was valued at (a share of 0 from before this migration is not restored).
+SELECT pg_temp.patch_counted_assets('public.delete_tracker_update(uuid,uuid)'::regprocedure,
+ $old$SET amount=prior.balance,ownership_percentage=CASE WHEN kind='Business' THEN prior.ownership_percentage ELSE ownership_percentage END WHERE$old$,
+ $new$SET amount=CASE WHEN prior.quantity IS NOT NULL THEN prior.unit_value WHEN unit_label IS NOT NULL AND quantity>0 THEN prior.balance/quantity ELSE prior.balance END,quantity=coalesce(prior.quantity,quantity),ownership_percentage=CASE WHEN kind IN ('Property','Business','Valuables','Vehicle','Retirement account') AND prior.ownership_percentage>0 THEN prior.ownership_percentage ELSE ownership_percentage END WHERE$new$);
+
+-- The record form may save a unit name.
+SELECT pg_temp.patch_counted_assets('public.save_finance_record(jsonb,bigint)'::regprocedure,
+ $old$'metal','metal_unit','metal_purity'$old$,$new$'metal','metal_unit','metal_purity','unit_label'$new$);
+
+-- The compact summary every total reads: a counted asset keeps its quantity and unit name (each valued asset is its own row).
+SELECT pg_temp.patch_counted_assets('public.finance_records_page(integer,text,text,boolean)'::regprocedure,
+ $old$THEN sum(r.quantity) ELSE 1 END AS quantity,$old$,$new$THEN sum(r.quantity) WHEN min(r.unit_label) IS NOT NULL THEN sum(r.quantity) ELSE 1 END AS quantity, min(r.unit_label) AS unit_label,$new$);
+SELECT pg_temp.patch_counted_assets('public.finance_records_page(integer,text,text,boolean)'::regprocedure,
+ $old$f.ownership_percentage,f.amount,f.quantity,f.cost,$old$,$new$f.ownership_percentage,f.unit_label,f.amount,f.quantity,f.cost,$new$);
+
+-- The capability version moves to 166, so the app can ask for this migration.
+CREATE OR REPLACE FUNCTION public.finance_capabilities() RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public AS $$
+ SELECT jsonb_build_object('schema_version',166,'record_revisions',true,'verified_restore',true)
+$$;
+
+NOTIFY pgrst,'reload schema';
+COMMIT;
+
+-- Profit and loss by share (product map, "Ownership and valuations"). Apply after 166.
+-- A transaction linked to a business the person owns part of can be entered two ways: as their own share of the
+-- money (`amount_basis` 'mine', the default and what every existing row is), or as the figure of the whole business
+-- ('whole'), which is then reported at amount x business_share / 100.
+-- `business_share` is the business's ownership on the day the transaction was linked to it. It is kept afterwards, so
+-- changing the ownership later does not rewrite past months; linking the transaction to another business takes that
+-- business's share. A transaction without a business has no share and is always 'mine'.
+-- Existing rows get the default 'mine' and no share: nothing they report changes. No row is rewritten. Re-runnable.
+BEGIN;
+
+ALTER TABLE public.finance_records ADD COLUMN IF NOT EXISTS business_share numeric;
+ALTER TABLE public.finance_records ADD COLUMN IF NOT EXISTS amount_basis text NOT NULL DEFAULT 'mine';
+ALTER TABLE public.finance_records DROP CONSTRAINT IF EXISTS finance_records_business_share_check;
+ALTER TABLE public.finance_records ADD CONSTRAINT finance_records_business_share_check CHECK (business_share IS NULL OR (business_share>0 AND business_share<=100));
+ALTER TABLE public.finance_records DROP CONSTRAINT IF EXISTS finance_records_amount_basis_check;
+ALTER TABLE public.finance_records ADD CONSTRAINT finance_records_amount_basis_check CHECK (amount_basis IN ('whole','mine'));
+
+CREATE OR REPLACE FUNCTION public.set_business_share() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+BEGIN
+ -- A verified restore brings records back exactly as they were saved.
+ IF public.finance_restore_active() THEN RETURN NEW; END IF;
+ IF NEW.business_id IS NULL OR NEW.kind NOT IN ('Salary','Rent income','Business income','Other income','Rent expense','Living expense','Charity','Other expense') THEN
+  NEW.business_share:=NULL; NEW.amount_basis:='mine';
+ ELSIF NEW.business_share IS NULL OR (TG_OP='UPDATE' AND NEW.business_id IS DISTINCT FROM OLD.business_id) THEN
+  -- The share is read once, when the link is made. Only the owner's own business answers (same `user_id`).
+  NEW.business_share:=(SELECT nullif(b.ownership_percentage,0) FROM public.finance_records b WHERE b.id=NEW.business_id AND b.user_id=NEW.user_id AND b.kind='Business');
+ END IF;
+ RETURN NEW;
+END $$;
+REVOKE ALL ON FUNCTION public.set_business_share() FROM PUBLIC,anon,authenticated;
+DROP TRIGGER IF EXISTS finance_business_share ON public.finance_records;
+CREATE TRIGGER finance_business_share BEFORE INSERT OR UPDATE ON public.finance_records FOR EACH ROW EXECUTE FUNCTION public.set_business_share();
+
+-- The income and expense forms may save how the amount was entered. The share itself is never taken from the form.
+DO $patch$
+DECLARE definition text:=pg_get_functiondef('public.save_finance_record(jsonb,bigint)'::regprocedure);
+ old_text text:=$old$'metal_purity','unit_label'$old$; new_text text:=$new$'metal_purity','unit_label','amount_basis'$new$; found integer;
+BEGIN
+ IF position(new_text IN definition)>0 THEN RETURN; END IF;
+ found:=(length(definition)-length(replace(definition,old_text,'')))/length(old_text);
+ IF found<>1 THEN RAISE EXCEPTION 'Unexpected function definition: save_finance_record (% matches)',found; END IF;
+ EXECUTE replace(definition,old_text,new_text);
+END $patch$;
+
+-- The capability version moves to 167, so the app can ask for this migration.
+CREATE OR REPLACE FUNCTION public.finance_capabilities() RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public AS $$
+ SELECT jsonb_build_object('schema_version',167,'record_revisions',true,'verified_restore',true)
+$$;
+
+NOTIFY pgrst,'reload schema';
+COMMIT;

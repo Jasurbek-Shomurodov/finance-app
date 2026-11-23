@@ -33,7 +33,7 @@ async function workspace(){
 
 test('migration 164 is in setup.sql and changes nothing when applied again',{skip},async()=>{
  assert.ok(setup.includes(migration.trimEnd()));
- assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 165/);
+ assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 167/);
  const db=await database();
  try{
   const functions=()=>db.query(`SELECT md5(string_agg(pg_get_functiondef(p.oid),'' ORDER BY p.oid::regprocedure::text)) AS sum FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prokind='f'`).then(r=>r.rows[0].sum);
