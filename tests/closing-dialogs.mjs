@@ -137,7 +137,7 @@ test('an empty investment account is deleted after one question, and a refusal s
 // The host any screen opens these through.
 function host(workspace, asked = { data: { blockers: [] }, loading: false, error: '' }) {
  const view = createRenderer(), reads = [];
- const part = name => Object.assign(props => h('div', { 'data-part': name }), { displayName: name });
+ const part = name => Object.assign(() => h('div', { 'data-part': name }), { displayName: name });
  const parts = { CloseRecordDialog: part('CloseRecordDialog'), CloseAccountDialog: part('CloseAccountDialog'), DeleteHeldDialog: part('DeleteHeldDialog'), DeleteAccountDialog: part('DeleteAccountDialog') };
  const { ClosingDialogs, deletesHeld } = view.load('components/workspace/closing-dialogs.tsx', {
   '@/components/closing/close-dialogs': parts, '@/components/closing/delete-dialogs': parts,

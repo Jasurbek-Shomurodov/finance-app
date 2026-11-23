@@ -54,6 +54,7 @@ pins the built rows).
 | Payout calendar, price alerts, Bitcoin panel | Investments › Payouts & alerts | Left Profit & loss | Done |
 | Investment benchmarks | Settings › Investment benchmarks (`/settings#benchmarks`) | The net worth chart's details link there | Done (edited in Settings, not on the chart) |
 | Transfer | `AssetMovementDialog` | The unused `AccountOperation` transfer branch is removed | Done |
+| Close or delete an account or holding | One Close dialog and one delete confirmation (`components/closing/`, opened with `requestClose` / `requestDelete`) | Accounts and Investments menus; the Closed fold on both | Done |
 | Record a payment (loan, mortgage, scheduled bill or income) | One Record payment dialog (`components/payments/`, opened with `openPayment`) | Loans, Recurring, Cash flow, Dashboard, the records table and the expense form's Debt / mortgage tab | Done (see `docs/agents/scheduled-payments.md`) |
 
 ## Oddly placed, and where it moves
@@ -107,13 +108,36 @@ Found on 21 November, in order of harm, and where each stands (details in `docs/
 
 ### Closing and deleting accounts
 
-An account or holding with any history cannot be deleted, a cash account stays undeletable after its transactions are
-gone, and stock or crypto account containers cannot be deleted at all. There is no "closed" state. The Dashboard drops
-a deleted holding from history while reports, goals and Telegram keep it, so they disagree.
+Built 23 November 2026 (migration 168 is a file; the owner applies it). Two actions, with one meaning each:
 
-Design: a `closed_on` date on accounts and holdings. History is kept up to that day and is zero after it; closed items
-leave pickers and totals. Delete stays for mistakes and removes the record from every surface's history; empty account
-containers become deletable.
+- **Close** retires something that has history. `closed_on` on `finance_records` and `holding_accounts`
+  (`close_finance_record`, `close_holding_account`, and their reopen pair). A closed record keeps every day before its
+  closing day and counts nothing from it; the database holds it at zero until it is reopened (`guard_closed_record`),
+  so current totals, allocation, forecasts, snapshots and digests leave it out by themselves. Closing needs an empty
+  record: a cash account or deposit sends what is left to another account in its currency through the ordinary
+  transfer, dated the closing day; anything else is sold, moved or revalued to zero first. A goal saved in the account,
+  a running income schedule of the asset, or activity dated after the closing day keeps it open, each with its own
+  message. An investment account closes with its holdings: they move to another account (or to none), or close with it.
+- **Delete** is for mistakes and means "this never existed" on every surface. An account or holding goes to Recently
+  deleted with its whole balance history (the automatic snapshots of its balance and its own Tracker updates), and
+  Restore returns all of it, closed state included. It is refused only while something else still points at the
+  record, and the refusal names what (`record_delete_blockers`: transactions, recurring income, transfers, payments,
+  goals, corporate events, reconciled statements). An investment account with nothing in it is deleted for good
+  (`delete_holding_account`).
+- **Where closed things are.** The planning read's records pass through `splitClosed` (`lib/closed-records.ts`) in
+  `usePlanning`: closed records and investment accounts leave `records` and `holdingAccounts`, so no picker, list or
+  "what is left" figure offers them, and wait in `closed` / `closedAccounts` for the Closed fold at the foot of
+  Accounts and Investments (`ClosedFold`, with Reopen) and for naming the account of a past transaction
+  (`recordAmong`). The Telegram bot and the assistant leave them out of their account lists the same way.
+- **The dialogs predict the database.** Delete on an account or holding asks `/api/closing?id=` what still points at
+  it before it offers Delete (`DeleteHeldDialog`); with a blocker it names it and offers Close instead. Both dialogs
+  say what Close and Delete each do, in one sentence.
+- **One rule for a deleted record.** The net worth chart reads no deleted record. The daily snapshots follow: the
+  delete takes the record's value out of every day (`remove_from_portfolio_snapshots`), keeps what it took in
+  `deleted_items.snapshot_changes`, and Restore puts exactly that back. See `docs/portfolio-snapshots.md`.
+
+Not built: Close in Loans & debts (the database accepts a loan; no screen offers it), a transfer in another currency
+from the Close dialog (transfer first, then close), and writing a holding off to zero from the dialog.
 
 ### Ownership and valuations
 
@@ -177,7 +201,10 @@ Status on 23 November 2026.
    business's cash accounts at the owner's share (they count in full).
 7. **Net worth history.** Done: historical prices, day rates, deletion dents, late entries, newly recorded holdings,
    the faster read. Not done: metals and equity compensation by price, a cached daily series from the server.
-8. **Close account.** Not started: `closed_on`, one deletion rule across surfaces.
+8. **Close account.** Done: migration 168 (a file; not applied), `closed_on` on accounts, holdings and investment
+   accounts, the Closed fold on Accounts and Investments, a delete that works for anything with only its own history,
+   empty investment accounts deletable, and the daily snapshots following a delete and a restore. Not done: Close on
+   Loans & debts, a cross-currency transfer or a write-off inside the Close dialog.
 9. **Motion.** Done: one press scale (`--press`, `--press-wide`) and row tint (`--row-hover`, `--row-press`) with press
    and focus states on every tappable row, pointer glow on tappable cards, a 180 ms content change on page tabs,
    scripted scrolls that respect reduced motion, and one reduced-motion block in `app/styles/motion.css` that stills

@@ -14,6 +14,10 @@ text in place: tests re-apply older migrations to the finished schema (`tests/da
 through a second signature (as 166 does for `record_investment_event`), and add a column to `save_finance_record`'s
 list in the middle, never at its end.
 
+A function that takes a new argument through a second signature keeps the first as a thin wrapper (as 168 does for
+`capture_portfolio_snapshot`), and a test that re-applies an older migration and compares every function re-applies
+the later ones that set the capability version after it (`tests/edit-linked-transactions-sql.mjs`).
+
 ## Browser tests
 
 `npm run test:e2e` runs the P0 flows in Chromium (`e2e/p0.spec.mjs`, Playwright) against a production build
