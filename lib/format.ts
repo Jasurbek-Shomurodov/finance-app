@@ -8,6 +8,15 @@ export function formatNumber(value: number, locale: string, maximumFractionDigit
   return Number.isFinite(value) ? new Intl.NumberFormat(locale, { maximumFractionDigits }).format(value) : '—';
 }
 
+/** An exchange rate as people read one: two decimals from 100 up (12,014.45), four from 1 up (1.0842) and six
+ * significant digits below 1 (0.0000832351), never the tail of a division such as 12,014.44543183. Display only: the
+ * stored rate keeps its precision. */
+export function formatRate(rate: number, locale: string) {
+  if (!Number.isFinite(rate)) return '—';
+  const size = Math.abs(rate);
+  return size >= 100 ? formatNumber(rate, locale, 2) : size >= 1 ? formatNumber(rate, locale, 4) : formatNumber(Number(rate.toPrecision(6)), locale, 12);
+}
+
 /** A share or rate as a percentage, using the locale digits and one decimal by default. Unknown values show an em dash. */
 /** Pass `minimumFractionDigits` when percentages sit in a column, so "2.0%" lines up under "12.2%". */
 export function formatPercent(value: number, locale: string, maximumFractionDigits = 1, minimumFractionDigits = 0) {

@@ -36,14 +36,15 @@ export function WhatStep({ draft, change, problems, disabled, quote, onQuote, ho
  const { t, locale } = useLanguage();
  const errorId = useId();
  const { entry } = draft, picker = instrumentKind(entry.kind);
- /** Another instrument or metal grade is another price: the old one is dropped and the new one asked for. */
+ /** Another instrument or metal grade is another price: the old one is dropped and the new one asked for. The same
+  * instrument picked again changes nothing, so a price on its way still lands. */
  const repriced = (next: Entry) => { change({ ...draft, entry: next }); onQuote(next); };
  const accounts = holdingAccounts.filter(account => account.kind === entry.kind);
  const price = quote.status === 'ready' && entry.amount > 0 ? <p className="muted asset-quote" role="status">{t('Current price: {price}', { price: formatMoney(entry.amount, entry.currency, locale, true) })}</p> : <QuoteStatus entry={entry} quote={quote} onQuote={onQuote}/>;
  if (picker) return <section className="goal-setup-single">
   <h1>{t('What is it?')}</h1>
   <div className="asset-field" data-field="name" aria-describedby={problems.name ? errorId : undefined}>
-   <InstrumentPicker key={entry.kind} kind={picker} value={entry.name} disabled={disabled} onChange={name => { const same = instrumentFor({ ...entry, name })?.symbol === instrumentFor(entry)?.symbol; if (same) change({ ...draft, entry: { ...entry, name } }); else repriced({ ...entry, name, amount: 0 }); }}/>
+   <InstrumentPicker key={entry.kind} kind={picker} value={entry.name} disabled={disabled} onChange={name => { if (instrumentFor({ ...entry, name })?.symbol !== instrumentFor(entry)?.symbol) repriced({ ...entry, name, amount: 0 }); }}/>
    <FieldError id={errorId} message={problems.name?.message}/>
   </div>
   {price}

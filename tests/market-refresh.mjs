@@ -44,14 +44,48 @@ test('the first read that fails leaves no market, as before', async t => {
 test('the same holdings from another list, in another order, ask for nothing new', async t => {
  t.mock.method(globalThis, 'setInterval', () => 1); t.mock.method(globalThis, 'clearInterval', () => {});
  const coin = { kind: 'Crypto', name: 'BTC', metal: null }, stock = { kind: 'Stock', name: 'AAPL', metal: null };
- const page = market([quotes, quotes]);
+ const page = market([quotes, quotes, quotes]);
  page.list.entries = [coin, stock, coin];
  page.r.mount(React.createElement(page.Probe));
  await page.settle();
  page.list.entries = [stock, coin];
  page.r.update();
  await page.settle();
- assert.equal(page.asked.length, 1);
+ // The first answer is two reads (the rates, then the quotes); the reordered list adds none.
+ assert.equal(page.asked.length, 2);
+});
+
+test('the first paint waits for the rates only: they are read alone and shown, and the quotes fill in after', async t => {
+ t.mock.method(globalThis, 'setInterval', () => 1); t.mock.method(globalThis, 'clearInterval', () => {});
+ const r = createRenderer(), asked = [];
+ let release;
+ const priced = { ...quotes, quotes: { 'Crypto:BTC': { usd: 65000 } } };
+ // The rates answer at once; the quotes wait until the test lets them go, as a slow price feed does.
+ const { useMarket } = r.load('hooks/use-market.ts', { '@/lib/refresh-read': { refreshRead: async url => { asked.push(url); if (asked.length === 2) await new Promise(resolve => { release = resolve; }); return { ok: true, status: 200, json: async () => asked.length === 1 ? quotes : priced }; } } });
+ let state;
+ const entries = [{ kind: 'Crypto', name: 'BTC', metal: null }];
+ r.mount(React.createElement(() => { state = useMarket(entries, true); return null; }));
+ for (let i = 0; i < 4; i++) { await new Promise(resolve => setTimeout(resolve, 0)); r.update(); }
+ assert.match(asked[0], /crypto=&stocks=$/, 'the first read asks for no instrument');
+ assert.match(asked[1], /crypto=BTC/);
+ assert.equal(state.market.rates.UZS, 12500, 'the rates are on screen while the quotes are still on their way');
+ assert.deepEqual(state.market.quotes, {});
+ assert.equal(state.loading, true, 'and the market still reads as loading, so no snapshot is taken on saved prices');
+ release();
+ for (let i = 0; i < 4; i++) { await new Promise(resolve => setTimeout(resolve, 0)); r.update(); }
+ assert.equal(state.market.quotes['Crypto:BTC'].usd, 65000);
+ assert.equal(state.loading, false);
+ assert.equal(asked.length, 2, 'a workspace without holdings, or a later refresh, reads once');
+});
+
+test('a rates-only read that fails costs nothing: the full read brings the rates too', async t => {
+ t.mock.method(globalThis, 'setInterval', () => 1); t.mock.method(globalThis, 'clearInterval', () => {});
+ const page = market([Error('offline'), quotes]);
+ page.list.entries = [{ kind: 'Stock', name: 'AAPL', metal: null }];
+ page.r.mount(React.createElement(page.Probe));
+ await page.settle();
+ assert.equal(page.state().market.rates.UZS, 12500);
+ assert.equal(page.state().error, '');
 });
 
 test('Settings reads no records page, so the planning holdings are quoted there and only there', () => {

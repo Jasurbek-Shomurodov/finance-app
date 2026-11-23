@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/compone
 import { CategoryBadge } from '@/components/presentation-foundation/category-badge';
 import { CategoryIcon } from '@/components/presentation-foundation/category-icon';
 import { useLanguage } from '@/components/language-provider';
-import { formatDate, formatMoney, formatNumber, formatSignedMoney } from '@/lib/format';
+import { formatDate, formatMoney, formatRate, formatSignedMoney } from '@/lib/format';
 import type { Entry } from '@/lib/finance';
 import { shownName } from '@/lib/record-names';
 
@@ -54,7 +54,7 @@ export function TransactionDetailsDialog({record:initial,incoming,categoryName,b
  if(businessEditable)rows.push([t('Business'),<BusinessPicker key="b" record={record} businesses={businesses} onChange={next=>void changeBusiness(next)}/>]);
  else if(business)rows.push([t('Business'),business.name]);
  if(propertyName)rows.push([t('Property'),propertyName]);
- if(record.account_currency&&record.account_currency!==record.currency&&record.account_exchange_rate)rows.push([t('Exchange rate'),`1 ${record.account_currency} = ${formatNumber(record.account_exchange_rate,locale)} ${record.currency}`]);
+ if(record.account_currency&&record.account_currency!==record.currency&&record.account_exchange_rate)rows.push([t('Exchange rate'),`1 ${record.account_currency} = ${formatRate(record.account_exchange_rate,locale)} ${record.currency}`]);
  if(canTag(record))rows.push([t('Tags'),<TagSelector key="t" tags={tagging.tags} selected={tagIds} onToggle={id=>void toggleTag(id)} onCreate={tagging.onCreateTag}/>,true]);
  if(record.notes)rows.push([t('Notes'),<span key="n" className="whitespace-pre-wrap break-words">{record.notes}</span>,true]);
  return <Dialog open onOpenChange={open=>{if(!open)onClose();}}><DialogContent className="transaction-details" onOpenAutoFocus={event=>{/* Reading comes first: focus the dialog, not its tag field. */event.preventDefault();(event.currentTarget as HTMLElement).focus();}}>

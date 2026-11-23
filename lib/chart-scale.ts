@@ -30,6 +30,17 @@ export function flooredAxis(values:readonly number[],floor:number,count=5):{doma
  return {domain:[floor,top],ticks:[floor,...(above.length?above:[top])]};
 }
 
+const day=86_400_000;
+/** The days a time axis labels between `start` and `end` (timestamps): at most `count`, evenly spread from the first
+ * day to the last and each a whole day, so no two fall on the same date or crowd one edge. (Left to itself the chart
+ * library labels the first day and then the next round number of milliseconds, which may be the day after.) */
+export function evenTimeTicks(start:number,end:number,count:number):number[]{
+ if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start)return Number.isFinite(start)?[start]:[];
+ const steps=Math.max(1,Math.min(Math.floor(count)-1,Math.floor((end-start)/day)));
+ const ticks=Array.from({length:steps+1},(_,index)=>index===steps?end:start+Math.round((end-start)*index/steps/day)*day);
+ return [...new Set(ticks)];
+}
+
 // Where each line's end label sits on the value axis: at its last value, pushed apart so no two are closer than
 // `gap` (a value distance), and kept inside the axis. Labels keep the order of their values.
 export function spreadLabels<T extends {value:number}>(items:readonly T[],domain:[number,number],gap:number):(T&{at:number})[]{

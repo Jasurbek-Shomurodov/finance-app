@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { formatNumberInput, numberInputValue, formatMoney, formatConvertedQuote, formatAccountOption, formatSignedMoney, formatCompactMoney, formatDate, formatDateTime, formatMonthYear, formatPercent, formatSignedPercent } from '../lib/format.ts';
+import { formatNumberInput, numberInputValue, formatMoney, formatConvertedQuote, formatAccountOption, formatSignedMoney, formatCompactMoney, formatDate, formatDateTime, formatMonthYear, formatPercent, formatSignedPercent, formatRate } from '../lib/format.ts';
 test('amount entry groups digits and round-trips supported locales',()=>{
  for(const locale of ['en-US','ru-RU','uz-UZ']) {
   const formatted=numberInputValue(9300.25,locale);
@@ -247,4 +247,29 @@ test('a signed percentage shows its direction with a true minus, and a dash when
  assert.equal(formatSignedPercent(null, 'en-US'), '\u2014');
  assert.equal(formatSignedPercent(Infinity, 'en-US'), '\u2014');
  assert.equal(formatSignedPercent(-1.5, 'de-DE'), '\u22121,5%');
+});
+
+test('an exchange rate reads to a sensible precision, never with the tail of a division', () => {
+ assert.equal(formatRate(12014.44543183, 'en-US'), '12,014.45');
+ assert.equal(formatRate(12500, 'en-US'), '12,500');
+ assert.equal(formatRate(100, 'en-US'), '100');
+ assert.equal(formatRate(1.08423917, 'en-US'), '1.0842');
+ assert.equal(formatRate(92.5, 'en-US'), '92.5');
+ // Below one, six significant digits keep a small rate meaningful.
+ assert.equal(formatRate(0.00008323514872, 'en-US'), '0.0000832351');
+ assert.equal(formatRate(0.9231, 'en-US'), '0.9231');
+ assert.equal(formatRate(12014.44543183, 'de-DE'), '12.014,45');
+ assert.match(formatRate(12014.44543183, 'ru-RU'), /^12\s014,45$/);
+ assert.match(formatRate(12014.44543183, 'uz-UZ'), /^12\s014,45$/);
+ assert.equal(formatRate(NaN, 'en-US'), '—');
+ assert.equal(formatRate(Infinity, 'en-US'), '—');
+});
+
+test('every exchange rate shown to a person goes through formatRate', async () => {
+ const fs = await import('node:fs');
+ for (const file of ['components/presentation-foundation/exchange-rate-preview.tsx', 'components/transaction-details-dialog.tsx', 'components/settings/preferred-currencies.tsx', 'lib/financial-report.ts', 'lib/telegram-flow/summary.ts']) {
+  const source = fs.readFileSync(file, 'utf8');
+  assert.match(source, /formatRate\(/, file);
+  assert.doesNotMatch(source, /formatNumber\([^()]*(?:\.rate|exchange_rate|fx_rate)[^()]*\)/, file);
+ }
 });

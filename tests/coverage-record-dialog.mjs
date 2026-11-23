@@ -21,7 +21,7 @@ function dialog(t,start,props={}){
   'next/link':{__esModule:true,default:'Link'},
   '@/components/language-provider':language('en'),
  });
- const settings={currencies:['USD','EUR'],household:null,busy:false,rows:[],save:e=>{e.preventDefault?.();saves.push(state.editing);},editingCashFlow:false,recordKinds:finance.assets,demo:false,summary:[],availableBusinesses:[],money:(amount,currency)=>formatMoney(amount,currency,'en'),fetchingPrice:false,fetchPrice:()=>fetches.push(true),priceMessage:'',error:'',planning:planning(),navigate:path=>navigations.push(path),...props};
+ const settings={currencies:['USD','EUR'],household:null,busy:false,rows:[],save:e=>{e.preventDefault?.();saves.push(state.editing);},editingCashFlow:false,recordKinds:finance.assets,demo:false,summary:[],availableBusinesses:[],money:(amount,currency)=>formatMoney(amount,currency,'en'),fetchingPrice:false,fetchPrice:next=>fetches.push(next??true),priceMessage:'',error:'',planning:planning(),navigate:path=>navigations.push(path),...props};
  function Host(){
   const [editing,setEditing]=r.react.useState(start);
   state.editing=editing;
@@ -202,18 +202,20 @@ test('stocks and crypto take an instrument, price, quantity and cost, and fetch 
  assert.equal(d.state.editing.amount,180,'the same instrument keeps its price');
  d.r.fire(picker(),'onChange','MSFT');
  assert.equal(d.state.editing.amount,0,'a different instrument clears the old price');
+ assert.deepEqual(d.fetches.map(next=>next.name),['MSFT'],'and its price is fetched at once, for the instrument just picked');
  assert.equal(d.labelled('Current price per unit').children[0],'Current price per unit');
  d.r.fire(d.labelled('Quantity','FormattedNumberInput'),'onValueChange',3);
  d.r.fire(d.labelled('Purchase price per unit','FormattedNumberInput'),'onValueChange',140);
  assert.equal(d.state.editing.quantity,3);assert.equal(d.state.editing.cost,140);
  const fetch=d.r.find(byText('Button','Fetch current price'));
  assert.equal(fetch.props.disabled,false);
- d.r.fire(fetch,'onClick');assert.equal(d.fetches.length,1);
+ d.r.fire(fetch,'onClick');assert.deepEqual(d.fetches.slice(1),[true],'Fetch asks for the record as it is');
  assert.equal(text(d.r.find(node=>node.props.role==='status')),'Price updated.');
  const unknown=dialog(t,record('h','Crypto',{name:'not a coin'}),{fetchingPrice:true});
  assert.equal(unknown.r.find(byText('Button','Fetching prices…')).props.disabled,true);
  assert.equal(unknown.r.find(node=>node.type==='Button'&&node.props.className==='primary').props.disabled,true,'an unknown instrument cannot be saved');
- assert.equal(unknown.r.all(node=>node.props.role==='status').length,0);
+ assert.equal(text(unknown.r.find(node=>node.props.className==='form-blocked-reason')),'Choose a coin.','and the footer says why Save is off');
+ assert.equal(unknown.r.all(node=>node.props.role==='status'&&node.props.className!=='form-blocked-reason').length,0);
 });
 
 test('a business takes its value, profile, income estimate and ownership, with the share through the money formatter',t=>{

@@ -261,3 +261,21 @@ test('tapping any card in Other assets opens the Tracker on Money invested; its 
  assert.equal(other('Flat').onOpen, undefined, 'the sample workspace has no Tracker');
  assert.equal(other('Flat').detailsOpen, true);
 });
+
+test('a part-owned asset card gives the whole value under the owned figure, and a counted one keeps its count line', () => {
+ const notes = new Map();
+ const Spy = Object.assign(props => React.createElement('article', { 'data-id': props.record.id }, props.note), { displayName: 'AssetCard' });
+ const props = { accounts: [], accountsLoading: false, accountsError: '', onRetryAccounts() {}, onAddHolding() {}, currency: 'USD', market, netWorth: 0, debt: 0, loading: false, onAdd() {}, onEdit() {}, onTrack() {}, onDelete() {}, quoteLabel: () => '', onInvest() {} };
+ const records = [entry('Club', 'Business', 'USD', 60000, { ownership_percentage: 60 }), entry('Herd', 'Business', 'USD', 85, { quantity: 1300, unit_label: 'sheep', ownership_percentage: 50 }), entry('Lot', 'Property', 'USD', 500, { quantity: 4, unit_label: 'hectares' }), entry('Car', 'Vehicle', 'USD', 9000)];
+ const r = createRenderer(), ui = stubs();
+ const { AssetDashboard } = r.load('components/asset-dashboard.tsx', { ...ui.modules, '@/components/display-money': { useDisplayMoney: () => displayMoney({ currency: 'USD', rates: { USD: 1 } }) }, '@/components/language-provider': language('en'), ...assetModules, '@/components/presentation-foundation/asset-card': { AssetCard: Spy }, '@/components/asset-accounts': hostModule() });
+ r.mount(React.createElement(AssetDashboard, { ...props, records, demo: false }));
+ for (const card of r.all(node => node.type === 'article')) notes.set(card.props['data-id'], text(r.all(node => node.props?.className === 'asset-owned-note', card)));
+ const money = amount => formatMoney(amount, 'USD', 'en');
+ // The card's figure is the owned $36,000; the note gives the missing number, the whole $60,000, and never repeats the share.
+ assert.equal(notes.get('Club'), `You own 60% of ${money(60000)}`);
+ assert.ok(!notes.get('Club').includes(money(36000)) && !notes.get('Club').includes('your share'));
+ assert.equal(notes.get('Herd'), `1,300 sheep × ${money(85)} · You own 50% of ${money(110500)}`);
+ assert.equal(notes.get('Lot'), `4 hectares × ${money(500)}`);
+ assert.equal(notes.get('Car'), '', 'owned in full and not counted: no note');
+});

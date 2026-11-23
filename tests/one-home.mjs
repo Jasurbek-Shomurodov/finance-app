@@ -64,8 +64,9 @@ test('rules are edited on Transactions, review suggestions on Recurring, payouts
 });
 
 test('a business starts from Add asset, and tax prep is always listed', () => {
- assert.match(read(screens + 'assets-screen.tsx'), /onBusinessSetup=\{readOnly \? undefined : \(\) => setSettingUpBusinesses\(true\)\}/);
- assert.match(read('components/planning/add-asset-dialog.tsx'), /onOpenChange\(false\); onBusinessSetup\(\);[^\n]*t\(tracksBusinesses \? 'Add business' : 'Set up business tracking'\)/);
+ // The Business tile of Add asset closes the flow and starts business setup; the shell hands it the way in.
+ assert.match(read('components/add-asset/add-asset-flow.tsx'), /if \(kind === 'Business'\) \{ onClose\(\); onBusinessSetup\(\); return; \}/);
+ assert.match(read('components/workspace/workspace-dialogs.tsx'), /<AddAssetFlow [^\n]*onBusinessSetup=\{\(\)=>setSettingUpBusinesses\(true\)\}/);
  const { reportTabs } = loadTS('lib/report-view.ts');
  assert.ok(reportTabs.includes('tax'));
  assert.match(read(screens + 'reports-screen.tsx'), /shownTab === 'tax' \? \(businessList\.length \? <TaxTab [^\n]*\n\s*: <section className="panel"><EmptyState icon=\{<Briefcase\/>\} title=\{t\('No businesses yet\.'\)\}/);

@@ -110,7 +110,7 @@ test('unsearched it lists every page and the actions; a page opens as a drawer t
  assert.deepEqual(view.groups(),['Go to','Actions']);
  assert.deepEqual(view.labels().slice(0,3),['Dashboard','Assistant','Accounts']);
  assert.ok(view.labels().includes('Settings'));
- assert.deepEqual(view.labels().slice(-6),['Add expense','Add income','Transfer money','Add account','Switch to dark mode','Show amounts in EUR']);
+ assert.deepEqual(view.labels().slice(-7),['Add expense','Add income','Transfer money','Add account','Add asset','Switch to dark mode','Show amounts in EUR']);
  view.key('k',{metaKey:true});view.type('bud');
  assert.deepEqual(view.labels(),['Budget','Search transactions for “bud”']);
  view.choose('Budget');

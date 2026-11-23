@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {flooredAxis,niceAxis,spreadLabels} from '../lib/chart-scale.ts';
+import {evenTimeTicks,flooredAxis,niceAxis,spreadLabels} from '../lib/chart-scale.ts';
 test('money axes use round ticks and never show negative values for non-negative data',()=>{
  assert.deepEqual(niceAxis([49645,3105952]),{domain:[0,4000000],ticks:[0,1000000,2000000,3000000,4000000]});
  assert.deepEqual(niceAxis([148480,901509]).ticks,[0,250000,500000,750000,1000000]);
@@ -51,4 +51,21 @@ test('a floored axis starts exactly at the main line’s opening value, with rou
  const flat=flooredAxis([100,100],100);assert.equal(flat.domain[0],100);assert.ok(flat.domain[1]>100);
  assert.equal(flooredAxis([100,90],100).domain[0],90,'a value under the floor lowers the axis, as the comparison lines need');
  assert.deepEqual(flooredAxis([0,10],Number.NaN),niceAxis([0,10]));
+});
+
+test('time axis labels are whole days spread evenly from the first to the last, never two at one edge',()=>{
+ const day=86400000,at=date=>Date.parse(date+'T00:00:00Z');
+ const year=evenTimeTicks(at('2026-01-01'),at('2026-11-23'),5);
+ assert.equal(year.length,5);assert.equal(year[0],at('2026-01-01'));assert.equal(year.at(-1),at('2026-11-23'));
+ assert.ok(year.every(tick=>tick%day===0),'each label is a day');
+ // No two labels are closer than a fifth of the period: the first two cannot share the left edge.
+ const gaps=year.slice(1).map((tick,index)=>tick-year[index]);
+ assert.ok(Math.min(...gaps)>=(year.at(-1)-year[0])/5,gaps.join());
+ // A short history gets one label per day at most, and no date twice.
+ assert.deepEqual(evenTimeTicks(at('2026-11-21'),at('2026-11-23'),5),[at('2026-11-21'),at('2026-11-22'),at('2026-11-23')]);
+ assert.deepEqual(evenTimeTicks(at('2026-11-22'),at('2026-11-23'),5),[at('2026-11-22'),at('2026-11-23')]);
+ assert.deepEqual(evenTimeTicks(at('2026-11-23'),at('2026-11-23')+day/2,5),[at('2026-11-23'),at('2026-11-23')+day/2]);
+ assert.deepEqual(evenTimeTicks(at('2026-11-23'),at('2026-11-23'),5),[at('2026-11-23')]);
+ assert.deepEqual(evenTimeTicks(NaN,1,5),[]);
+ assert.equal(evenTimeTicks(at('2026-01-01'),at('2026-11-23'),3).length,3);
 });

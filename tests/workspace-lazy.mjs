@@ -11,7 +11,7 @@ test('the shell and dialog parts load on demand, each from its own module and ex
   '@/components/record-dialog':'RecordDialog','@/components/transaction-details-dialog':'TransactionDetailsDialog','@/components/payments/payment-dialog':'PaymentDialog',
   '@/components/transaction-tools-panel':'SplitTransactionDialog','@/components/business-setup-flow':'BusinessSetupFlow','@/components/household-panel':'JoinHouseholdDialog',
   '@/components/income-sources-panel':'IncomeSourceEditor','@/components/stop-schedule-dialog':'StopScheduleDialog',
-  '@/components/delete-category-dialog':'DeleteCategoryDialog','@/components/edit-category-dialog':'EditCategoryDialog',
+  '@/components/add-asset/add-asset-flow':'AddAssetFlow','@/components/delete-category-dialog':'DeleteCategoryDialog','@/components/edit-category-dialog':'EditCategoryDialog',
  };
  const overrides={'next/dynamic':{default:(load,options)=>{loaders.push({load,options});return {load};},__esModule:true}};
  for(const [path,name] of Object.entries(modules))overrides[path]={[name]:{component:name}};

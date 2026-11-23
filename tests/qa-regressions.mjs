@@ -112,7 +112,7 @@ test('dialogs open the saved record, and the exchange rate reads in the stored d
  for(const action of ['setViewing','setStopping','setTracking','setSplitting'])assert.match(table,new RegExp(action+'\\(storedRecord\\(r\\)\\)'),action);
  assert.doesNotMatch(table,/rows\.find/);
  // account_exchange_rate is record currency per one unit of account currency.
- assert.match(fs.readFileSync('components/transaction-details-dialog.tsx','utf8'),/`1 \$\{record\.account_currency\} = \$\{formatNumber\(record\.account_exchange_rate,locale\)\} \$\{record\.currency\}`/);
+ assert.match(fs.readFileSync('components/transaction-details-dialog.tsx','utf8'),/`1 \$\{record\.account_currency\} = \$\{formatRate\(record\.account_exchange_rate,locale\)\} \$\{record\.currency\}`/);
 });
 
 test('the edit form and its history panel are siblings with different keys',()=>{

@@ -1,5 +1,5 @@
 // The confirmation card: what the owner is about to save, in their language.
-import {formatDate,formatNumber,formatPercent} from '../format';
+import {formatDate,formatPercent,formatRate} from '../format';
 import {locales} from '../i18n';
 import {escapeHtml} from '../telegram';
 import {moneyIn as money,t} from '../telegram-kit';
@@ -43,7 +43,7 @@ const cardLines:Record<FlowKind,(card:Card)=>string[]>={
 export function summary(draft:Draft,ctx:FlowContext):string{
  const language=ctx.language,d=draft.data,account=find(ctx.accounts,d.account_id);
  const {record}=currencies(draft,ctx);
- const converted=(amount:number)=>d.fx_rate&&account&&record?` · ≈ ${money(amount/d.fx_rate,account.currency,language)}\n1 ${record} = ${formatNumber(1/d.fx_rate,locales[language],6)} ${account.currency}`:'';
+ const converted=(amount:number)=>d.fx_rate&&account&&record?` · ≈ ${money(amount/d.fx_rate,account.currency,language)}\n1 ${record} = ${formatRate(1/d.fx_rate,locales[language])} ${account.currency}`:'';
  const card:Card={draft,ctx,language,d,account,target:find(ctx.liabilities,d.target_id),to:find(ctx.accounts,d.target_id),day:formatDate(d.date??ctx.today,locales[language]),name:value=>`<b>${escapeHtml(value??'')}</b>`,converted};
  return [`<b>${t(language,'Save this?')}</b>`,...cardLines[draft.kind](card)].join('\n');
 }

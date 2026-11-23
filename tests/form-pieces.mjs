@@ -8,25 +8,30 @@ const {assetRecordKinds,lendingRecordKinds}=loadTS('lib/finance.ts');
 const language={useLanguage:()=>({locale:'en-US',t:text=>text})};
 
 function forms(overrides={}){
- const calls={editing:[],kinds:[],errors:[]};
+ const calls={editing:[],kinds:[],errors:[],assets:[]};
  const {recordForms}=loadTS('components/workspace/state/record-forms.ts');
- const api=recordForms({editable:()=>true,setError:e=>calls.errors.push(e),setRecordKinds:k=>calls.kinds.push(k),setEditing:e=>calls.editing.push(e),setDeleting:()=>{},setEditingIncomeSource:()=>{},currency:'EUR',section:'Assets & investments',cashFlowSection:false,preferredCurrencies:['EUR'],sources:[],storedRecord:r=>r,categories:[],removedKinds:[],...overrides});
+ const api=recordForms({editable:()=>true,setError:e=>calls.errors.push(e),setRecordKinds:k=>calls.kinds.push(k),setEditing:e=>calls.editing.push(e),setDeleting:()=>{},setEditingIncomeSource:()=>{},currency:'EUR',section:'Assets & investments',cashFlowSection:false,preferredCurrencies:['EUR'],sources:[],storedRecord:r=>r,startAsset:preset=>calls.assets.push(preset),categories:[],removedKinds:[],...overrides});
  return {api,calls};
 }
 
-test('Add asset opens the chosen kind with every asset kind on offer, in the workspace currency',()=>{
- const {api,calls}=forms();
- api.addAsset('Bond');
- assert.equal(calls.editing.at(-1).kind,'Bond');assert.equal(calls.editing.at(-1).currency,'EUR');
- assert.deepEqual(calls.kinds.at(-1),assetRecordKinds);
+test('Add holding is the Add asset flow, started on the stock or coin inside its account; cash and deposits keep the account form',()=>{
+ const accounts=[{id:'broker',kind:'Stock',currency:'EUR'},{id:'exchange',kind:'Crypto',currency:'JPY'}];
+ const {api,calls}=forms({section:'Accounts',holdingAccounts:accounts});
+ api.addAccountRecord('Stock','broker');api.addAccountRecord('Crypto','exchange');api.addAccountRecord('Stock');
+ // The account's currency is used only while it is one of the preferred ones.
+ assert.deepEqual(calls.assets,[{kind:'Stock',holdingAccountId:'broker',currency:'EUR'},{kind:'Crypto',holdingAccountId:'exchange',currency:undefined},{kind:'Stock',holdingAccountId:undefined,currency:undefined}]);
+ assert.equal(calls.editing.length,0,'no record form opens for a holding');
+ api.addAccountRecord('Deposit');
+ assert.equal(calls.editing.at(-1).kind,'Deposit');assert.deepEqual(calls.kinds.at(-1),['Cash','Deposit']);
  const locked=forms({editable:()=>false});
- locked.api.addAsset('Bond');
- assert.equal(locked.calls.editing.length,0,'a read-only workspace opens nothing');
+ locked.api.addAccountRecord('Stock');locked.api.addRecord();
+ assert.deepEqual([locked.calls.assets.length,locked.calls.editing.length],[0,0],'a read-only workspace opens nothing');
+ assert.ok(assetRecordKinds.includes('Stock'));
 });
 
-test('a record added from Investments starts on a property, from Loans & debts on a mortgage, elsewhere on cash',()=>{
+test('a record added from Investments opens the Add asset flow, from Loans & debts a mortgage, elsewhere cash',()=>{
  const assets=forms();assets.api.addRecord();
- assert.equal(assets.calls.editing.at(-1).kind,'Property');assert.deepEqual(assets.calls.kinds.at(-1),assetRecordKinds);
+ assert.deepEqual([assets.calls.assets,assets.calls.editing],[[undefined],[]]);
  const loans=forms({section:'Loans & debts'});loans.api.addRecord();
  assert.equal(loans.calls.editing.at(-1).kind,'Mortgage');assert.deepEqual(loans.calls.kinds.at(-1),lendingRecordKinds);
  const other=forms({section:'Accounts'});other.api.addRecord();

@@ -132,8 +132,24 @@ test('the sample workspace starts from the backend and changes only its own copy
  assert.equal(ws().editing.kind, 'Cash');assert.ok(ws().recordKinds.includes('Stock'));
  ws().field('currency', 'EUR');r.update();
  assert.equal(ws().editing.currency, 'EUR');assert.equal(ws().editing.account_id, null);
+ ws().closeEditing();ws().addAccountRecord('Deposit');r.update();
+ assert.deepEqual(ws().recordKinds, ['Cash', 'Deposit']);
+ // Add holding is the Add asset flow on that kind; the sample workspace saves the record and its purchase to its own rows.
  ws().closeEditing();ws().addAccountRecord('Stock');r.update();
- assert.deepEqual(ws().recordKinds, ['Stock', 'Crypto']);
+ assert.equal(ws().editing, null);assert.deepEqual(ws().addingAsset, { preset: { kind: 'Stock', holdingAccountId: undefined, currency: undefined } });
+ ws().closeAsset();r.update();assert.equal(ws().addingAsset, null);
+ ws().startAsset();r.update();assert.deepEqual(ws().addingAsset, { preset: undefined });
+ const holding = { id: 'new-holding', name: 'AAPL', kind: 'Stock', currency: cash.currency, amount: 100, quantity: 0, cost: 0, rate: 0, date: today, frequency: 'Once', notes: '' };
+ const bought = { record: holding, purchase: { kind: 'buy', url: '/api/asset-movements', body: {}, account_id: cash.id, debit: 300, holding: { quantity: 3, cost: 100 } } };
+ const sent = requests.length;
+ await ws().assetSavers.saveRecord(holding);r.update();
+ await ws().assetSavers.savePurchase(bought.purchase, bought);r.update();
+ assert.equal(requests.length, sent, 'nothing is sent from the sample workspace');
+ assert.deepEqual((({ quantity, cost }) => [quantity, cost])(ws().rows.find(row => row.id === 'new-holding')), [3, 100]);
+ assert.equal(ws().rows.find(row => row.id === cash.id).amount, cash.amount - 300);
+ const savedBefore = shown.saved;
+ ws().assetSaved();r.update();
+ assert.equal(ws().addingAsset, null);assert.equal(shown.saved, savedBefore + 1);
  ws().quickExpense();r.update();assert.equal(ws().editing.kind, 'Other expense');
  ws().reviewRecurring(expense);r.update();assert.equal(ws().editing.id, expense.id);
  ws().recordFromSource({ id: 'src', kind: 'Salary', currency: 'USD', amount: 100, mode: 'fixed', frequency: 'Monthly', start_date: '2026-01-01' });r.update();
@@ -299,6 +315,20 @@ test('signed in, settings and records are read, and every change is sent and rea
  assert.equal(ws().editingPayment.id, 'pay5');assert.equal(ws().editing, formBefore);
  ws().setEditingPayment(null);r.update();
  ws().setStopping(record);r.update();await ws().stopRecord('2030-01-01');
+ // Add asset, signed in: the record and its purchase are two requests, and the price is read from the market.
+ ws().startAsset({ kind: 'Crypto' });r.update();
+ assert.equal(ws().addingAsset.preset.kind, 'Crypto');
+ const coin = { ...record, id: 'coin', kind: 'Crypto', name: 'Bitcoin (BTC)', currency: 'USD', amount: 0, quantity: 0 };
+ const purchase = { kind: 'buy', url: '/api/asset-movements', body: { id: 'move', kind: 'buy' }, account_id: 'acc', debit: 10 };
+ const before = requests.length;
+ await ws().assetSavers.saveRecord(coin);await ws().assetSavers.savePurchase(purchase, { record: coin, purchase });r.update();
+ assert.deepEqual(requests.slice(before).filter(request => request.method === 'POST').map(request => [request.url, request.body.id]), [['/api/records', 'coin'], ['/api/asset-movements', 'move']]);
+ server.fail['POST /api/asset-movements'] = 'Insufficient balance or holding quantity.';
+ await assert.rejects(ws().assetSavers.savePurchase(purchase, { record: coin, purchase }), error => error.message === 'Insufficient balance or holding quantity.' && error.confirmedFailure === true);
+ delete server.fail['POST /api/asset-movements'];
+ marketReply = { quotes: { 'Crypto:BTC': { usd: 65000 } }, errors: {}, rates: { USD: 1 } };
+ assert.equal(await ws().assetQuote(coin), 65000);
+ ws().assetSaved();r.update();assert.equal(ws().addingAsset, null);
  // Fetching a price fills the holding's amount, or says why it could not.
  ws().setEditing({ ...record, kind: 'Crypto', name: 'Bitcoin (BTC)', amount: 0 });r.update();
  marketReply = { quotes: {}, errors: {}, rates: { USD: 1 } };

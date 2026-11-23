@@ -4,7 +4,7 @@ import { projectGoal } from './goal-projection';
 import { convertAmount, marketRates } from './market';
 import type { MarketData } from './market';
 import { assets, interestKinds, liabilities, income, expenses } from './finance';
-import { formatDateTime, formatNumber } from './format';
+import { formatDateTime, formatNumber, formatRate } from './format';
 import { isCurrency, currencyLabel } from './currencies';
 import type { Language } from './languages';
 import { runningSchedule, upcomingPayments, type Goal, type Occurrence, type PlanningData } from './planning';
@@ -69,7 +69,7 @@ function ratesTable(r:Report){
   const mixed=cbu&&c!=='USD'&&reporting!=='USD';
   const source=rate===null?na:cbu?market!.fx!.source+(mixed?' + ExchangeRate-API':''):market?.ratesDate?'ExchangeRate-API':na;
   const rateDate=mixed?date(market!.fx!.date)+' / '+date(market?.ratesDate):date(cbu?market!.fx!.date:market?.ratesDate);
-  return [`${c} -> ${reporting}`,rate===null?na:formatNumber(rate,r.locale,8),source,rate===null?na:rateDate];
+  return [`${c} -> ${reporting}`,rate===null?na:formatRate(rate,r.locale),source,rate===null?na:rateDate];
  }),[.22,.2,.3,.28],[1]);
 }
 

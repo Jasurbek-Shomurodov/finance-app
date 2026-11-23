@@ -9,7 +9,7 @@ import { Area, CartesianGrid, ComposedChart, ResponsiveContainer, Tooltip, XAxis
 import { useLanguage } from '@/components/language-provider';
 import { formatDate, formatMoney } from '@/lib/format';
 import { ChartGradient, EndLabelTick, chartAxis, chartEndAxis, chartGrid, chartLine, chartTooltip, chartValueAxis, endLabelMoney, endLabelWidth, leadArea, distinctMoneyTick } from '@/components/presentation-foundation/chart';
-import { flooredAxis, niceAxis, spreadLabels } from '@/lib/chart-scale';
+import { evenTimeTicks, flooredAxis, niceAxis, spreadLabels } from '@/lib/chart-scale';
 import { historyChartDate } from '@/lib/investment-history';
 
 type Series={key:string;label:string;color:string;dash?:string;primary?:boolean};
@@ -33,6 +33,10 @@ function timeDomain(first:number|undefined,last:number|undefined,view:Window):[n
  if(first===undefined||last===undefined)return ['dataMin','dataMax'];
  return [first,last===first?first+86400000:last];
 }
+
+/** The days the time axis labels: evenly spread over what is shown, so the first two never share the left edge; the
+ * chart then drops any that would still touch at its width (`interval`, `minTickGap`). A lone day is one label. */
+const dayTicks=(first:number|undefined,last:number|undefined,view:Window,count:number)=>first===undefined||last===undefined?undefined:view?evenTimeTicks(view.start,view.end,count):evenTimeTicks(first,last,count);
 
 /** The history a chart can move through: none for a lone day. */
 const extentOf=(all:Drawn[])=>all.length>1?{start:all[0].timestamp,end:all.at(-1)!.timestamp}:null;
@@ -85,7 +89,7 @@ export function InvestmentValueChart({points,series,currency,tooltip,onPointSele
   }} margin={{top:15,right:15,left:5,bottom:20}}>
   <ChartGradient id={id}/>
   <CartesianGrid {...chartGrid}/>
-  <XAxis dataKey="timestamp" type="number" scale="time" domain={timeDomain(first,last,view)} allowDataOverflow={!!view} ticks={single?[first!]:undefined} tickFormatter={date=>formatDate(historyChartDate(Number(date)),locale)} minTickGap={80} {...chartAxis}/>
+  <XAxis dataKey="timestamp" type="number" scale="time" domain={timeDomain(first,last,view)} allowDataOverflow={!!view} ticks={dayTicks(first,last,view,mobile?3:5)} interval="preserveStartEnd" tickFormatter={date=>formatDate(historyChartDate(Number(date)),locale)} minTickGap={32} {...chartAxis}/>
   <YAxis domain={axis.domain} ticks={axis.ticks} allowDataOverflow tickFormatter={distinctMoneyTick(axis.ticks,currency,locale)} {...chartValueAxis}/>
   {ends.length>0&&<YAxis yAxisId="ends" domain={axis.domain} ticks={ends.map(item=>item.at)} width={endLabelWidth(ends)} tick={<EndLabelTick labels={ends}/>} {...chartEndAxis}/>}
   <Tooltip {...chartTooltip} position={mobile?{x:0,y:40}:undefined} offset={{x:0,y:20}} allowEscapeViewBox={{x:false,y:true}} content={tapOpensDetails?noTooltip:tooltip} labelFormatter={date=>formatDate(historyChartDate(Number(date)),locale)} formatter={amount=>money(Number(amount))} wrapperStyle={{zIndex:20,pointerEvents:'auto',maxWidth:'100%',...(mobile?{width:'100%',whiteSpace:'normal' as const}:{})}}/>

@@ -19,6 +19,16 @@ test('single point has a bounded axis without fabricating another balance',()=>{
  assert.equal(axis.props.domain[1]-axis.props.domain[0],86400000);
  assert.equal(axis.props.ticks.length,1);assert.equal(result.props.data.length,1);
 });
+test('the date axis labels evenly spread days and lets the chart drop any that would still touch',()=>{
+ const at=date=>Date.parse(date+'T00:00:00Z');
+ const points=['2026-01-01','2026-01-02','2026-01-03','2026-06-01','2026-11-23'].map((date,index)=>({date,actual:100+index}));
+ const axis=chart(points).props.children.find(child=>child.type==='XAxis');
+ // Left to itself the chart labelled the first day and the next round timestamp, which could be the day after.
+ assert.equal(axis.props.ticks.length,5);assert.equal(axis.props.ticks[0],at('2026-01-01'));assert.equal(axis.props.ticks.at(-1),at('2026-11-23'));
+ assert.ok(axis.props.ticks[1]-axis.props.ticks[0]>60*86400000,'the second label is far from the first');
+ assert.equal(axis.props.interval,'preserveStartEnd');assert.ok(axis.props.minTickGap>=24);
+ assert.equal(axis.props.tickFormatter(at('2026-06-01')),'1 June 2026');
+});
 
 test('chart scales only displayed series and preserves gaps in observations',()=>{
  const result=chart([{date:'2026-09-17',actual:100,hidden:999999},{date:'2026-09-18',actual:null},{date:'2026-09-19',actual:120}]);
@@ -66,6 +76,7 @@ test('full screen: a zoomed chart draws only the days in view and fits both axes
   assert.deepEqual(result.props.data.map(point=>point.date),['2026-09-05','2026-09-10','2026-09-15','2026-09-20']);
   const axis=result.props.children.find(child=>child.type==='XAxis');
   assert.deepEqual(axis.props.domain,[viewport.view.start,viewport.view.end]);assert.equal(axis.props.allowDataOverflow,true);
+  assert.equal(axis.props.ticks[0],viewport.view.start);assert.equal(axis.props.ticks.at(-1),viewport.view.end);
   // The value axis starts at the lowest value drawn (SPY's 150 here), not the floor of the whole period, so no line is cut off.
   const values=result.props.children.find(child=>child.type==='YAxis'&&!child.props.yAxisId);
   assert.equal(values.props.domain[0],150);

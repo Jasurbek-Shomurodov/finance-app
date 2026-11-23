@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { currencyLabel, currencyMatches, maxPreferredCurrencies, movePreferredCurrency, replacePreferredCurrency, togglePreferredCurrency } from '@/lib/currencies';
-import { formatNumber } from '@/lib/format';
+import { formatNumber, formatRate } from '@/lib/format';
 import { quotedPair } from '@/lib/market';
 
 type Rates = number | Record<string, number> | undefined;
@@ -52,7 +52,7 @@ export function PreferredCurrencies({ currencies, onChange, rates, labelId, chil
 function PairRate({ primary, code, rates, locale }: { primary: string; code: string; rates: Rates; locale: string }) {
  const pair = quotedPair(primary, code, rates);
  if (!pair) return null;
- return <span className="preferred-currency-rate" dir="ltr">{formatNumber(1, locale, 0)} {pair.from} = {formatNumber(pair.rate, locale, pair.rate >= 100 ? 0 : 4)} {pair.to}</span>;
+ return <span className="preferred-currency-rate" dir="ltr">{formatNumber(1, locale, 0)} {pair.from} = {formatRate(pair.rate, locale)} {pair.to}</span>;
 }
 
 /** The full fiat catalogue, searchable by code or name; it lives only in Settings. */
