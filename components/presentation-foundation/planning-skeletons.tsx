@@ -14,8 +14,13 @@ function GoalRow() {
 }
 
 /** Goals: on a phone the tabs and Add goal the page opens with (its `PageHeader` loads with the page); the goal list with its view switch, the chosen goal (figure, projection, four figures, when it is reached and
- * its action), and what is available for goals under the list. */
-export function GoalsSkeleton({ label }: { label: string }) {
+ * its action), and what is available for goals under the list. With `empty` (the workspace has no goals) the list's
+ * empty state alone. */
+export function GoalsSkeleton({ label, empty = false }: { label: string; empty?: boolean }) {
+  // With no goals the page is the list's panel alone, its title over the empty state's icon, words and Add goal.
+  if (empty) return <Loading label={label} heading="/goals"><div className="goals-split"><section className="panel goals-list"><Heading width={110}/>
+    <div className="empty"><Skeleton className="size-10 rounded-xl"/><Skeleton className="h-5 w-56 max-w-full"/><Skeleton className="h-4 w-72 max-w-full"/><Skeleton className="h-4 w-56 max-w-full"/><Skeleton className="h-10 w-28 rounded-lg"/></div>
+  </section></div></Loading>;
   return <Loading label={label} heading="/goals">
     <div className="goals-split">
       <section className="panel goals-list"><Heading width={110} aside={168}/><ul className="goal-rows">{times(3).map(row => <GoalRow key={row}/>)}</ul></section>

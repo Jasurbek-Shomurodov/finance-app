@@ -93,6 +93,10 @@ it instead of styling a page on its own.
   `presentation-foundation/loading-placeholder.tsx`, and any panel's own loading state. When records arrive nothing
   may jump, appear from nowhere or vanish. Check it in the browser: capture the shimmer (a drawer tap) and the loaded
   page at the same width and compare them block for block. `tests/screen-shimmer.mjs` pins the order for Cash flow.
+  A block that only some workspaces show (Loans' side column, Goals' list or empty state, Accounts' ⋯) follows a hint
+  the workspace already knows before the records (`lib/shimmer-hints.ts`); an unknown hint keeps the usual shape. The
+  page's actions row is reserved when they will not fit the top bar (`pageHeadings`, widths measured in English), and
+  `e2e/screens.spec.mjs` pictures every shimmer beside its loaded screen.
 - Every chart takes its look from the chart kit, `presentation-foundation/chart.tsx`: spread
   `chartGrid`, `chartAxis` / `chartValueAxis`, `chartTooltip`, `chartBar` (`groupedBar`, `stackTop`),
   `plannedBar` for anything scheduled or estimated (legend swatch `.chart-planned-key`), `sideBar` / `sideGrid` for bars drawn sideways from zero and `toneColor` for a gain or loss, `leadLine` /

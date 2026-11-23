@@ -78,10 +78,11 @@ export function WorkspaceSkeleton({ label, columns = defaultDashboardSkeleton }:
 }
 
 /** Accounts while records load, in the loaded page's shape: on a phone the tabs and actions the page opens with (its `PageHeader` loads with the page), the Total tile, one account group with its cards, and the selected account's card beside it. */
-export function AccountsSkeleton({ label, filters = false }: { label: string; filters?: boolean }) {
+export function AccountsSkeleton({ label, filters = false, menu = false }: { label: string; filters?: boolean; /** The page opens with ⋯ (owners or businesses to edit). */ menu?: boolean }) {
+  const heading = pageHeadings['/accounts'];
   return <div role="status" aria-busy="true" className="overview-content-loading">
     <span className="sr-only">{label}</span>
-    <div aria-hidden="true" className="contents"><PageHeadingSkeleton {...pageHeadings['/accounts']}/></div>
+    <div aria-hidden="true" className="contents"><PageHeadingSkeleton {...heading} actions={menu ? [42, ...heading.actions ?? []] : heading.actions}/></div>
     <div aria-hidden="true" className="accounts-hero"><div className="accounts-hero-figure"><Skeleton className="h-5 w-44"/><Skeleton className="h-10 w-52 max-w-full"/></div>
       {filters && <div className="accounts-hero-tools"><Skeleton className="h-11 w-44 rounded-xl"/><Skeleton className="h-11 w-36 rounded-xl"/></div>}</div>
     <div aria-hidden="true" className="panel accounts-mix"><Skeleton className="h-2.5 w-full"/><Skeleton className="mt-3 h-5 w-64 max-w-full"/></div>

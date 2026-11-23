@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { ShimmerHints } from '@/lib/shimmer-hints';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AccountsSkeleton, CashFlowReportSkeleton, CashflowPreviewSkeleton, SankeySkeleton, SkeletonRows, StatTilesSkeleton, WorkspaceSkeleton } from './loading-placeholder';
 import { Bar, Figures, Heading, Loading, Merchant, Switches, Tiles, Toolbar, Track, times } from './skeleton-kit';
@@ -150,20 +151,19 @@ export function RecurringSkeleton({ label, view = 'list' }: { label: string; vie
 }
 
 type DashboardColumns = { left: readonly string[]; right: readonly string[] };
-/** What the workspace already knows about a destination's records, so its shimmer draws only the blocks the page will. */
-type ShimmerHints = { /** Whether any debt is owed: Loans shows its side column only then. Unknown counts as yes. */ debts?: boolean };
+
 
 /** Every drawer destination's loading shape, by route; the dashboard's follows the person's saved card order. */
 export const screenSkeletons: Record<string, (label: string, dashboard?: DashboardColumns, hints?: ShimmerHints) => ReactNode> = {
   '/': (label, dashboard) => <WorkspaceSkeleton label={label} columns={dashboard}/>,
   '/assistant': label => <AssistantSkeleton label={label}/>,
-  '/accounts': label => <AccountsSkeleton label={label}/>,
+  '/accounts': (label, _dashboard, hints) => <AccountsSkeleton label={label} menu={hints?.accountsMenu}/>,
   '/transactions': label => <TransactionsSkeleton label={label}/>,
   '/income-expenses': label => <CashFlowSkeleton label={label} monthBar/>,
   '/reports': label => <ReportsSkeleton label={label} heading/>,
   '/budget': label => <BudgetSkeleton label={label} heading/>,
   '/upcoming': label => <RecurringSkeleton label={label}/>,
-  '/goals': label => <GoalsSkeleton label={label}/>,
+  '/goals': (label, _dashboard, hints) => <GoalsSkeleton label={label} empty={hints?.goals === false}/>,
   '/assets': label => <InvestmentsSkeleton label={label} heading/>,
   '/loans-debts': (label, _dashboard, hints) => <LoansSkeleton label={label} heading side={hints?.debts ?? true}/>,
   '/recently-deleted': label => <RecentlyDeletedSkeleton label={label}/>,

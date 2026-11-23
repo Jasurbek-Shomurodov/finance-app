@@ -6,7 +6,8 @@ import { LanguageProvider, useLanguage } from '@/components/language-provider';
 import { LoadingPlaceholder } from '@/components/presentation-foundation/loading-placeholder';
 import { NavigationShimmer } from '@/components/presentation-foundation/screen-skeletons';
 import { savedDashboardColumns } from '@/lib/dashboard-layout';
-import { liabilities } from '@/lib/finance';
+import { sharedWorkspace } from '@/lib/household';
+import { shimmerHints } from '@/lib/shimmer-hints';
 import { LandingPage, OnboardingScreen, SignInScreen, TelegramPanel } from '@/components/workspace/workspace-lazy';
 import { useVisitor } from '@/components/visitor-context';
 import { SidebarProvider } from '@/components/ui/sidebar';
@@ -28,7 +29,7 @@ function WorkspaceShell({ children }: { children: ReactNode }) {
  const { t } = useLanguage();
  const arrivals = useArrivalMarks<HTMLElement>();
  usePointerGlow();
- const { ready, user, demo, preview, pathname, busy, configured, error, login, startDemo, overdueCount, onboardingNeeded, navigate: openPath, settingsLoading, preferencesData, savePreferences, applyPreferences, planning, saveTrackingStart, household, workspacePreferences } = useWorkspace();
+ const { ready, user, demo, preview, pathname, busy, configured, error, login, startDemo, overdueCount, onboardingNeeded, navigate: openPath, settingsLoading, preferencesData, savePreferences, applyPreferences, planning, saveTrackingStart, household, workspacePreferences, businessList } = useWorkspace();
  // A drawer tap shows its destination immediately; the routed screen replaces it once it arrives.
  const [pending, setPending] = useState<PendingNavigation | null>(null);
  const destination = pendingDestination(pending, pathname);
@@ -60,6 +61,8 @@ function WorkspaceShell({ children }: { children: ReactNode }) {
  const account = demo
   ? { initial: 'D', title: t("Demo workspace"), detail: t("Sample data") }
   : { initial: (preferencesData.display_name?.trim() || user!).replace(/^\+/, '').slice(0, 1).toUpperCase(), title: t("Personal account"), detail: user! };
+ // What the destination's shimmer can know ahead of its records, so it draws only the blocks the page will.
+ const hints = shimmerHints({ loading: planning.loading, records: planning.data.records, goals: planning.data.goals, shared: sharedWorkspace(household.state), businesses: businessList.length });
  // Your own finances first, then each household you belong to.
  const homes = household.state;
  const workspaces = homes ? [{ id: homes.me, label: t('My finances') }, ...homes.memberships.map(item => ({ id: item.owner_id, label: t('Household of {name}', { name: item.name ?? t('Partner') }) }))] : [];
@@ -68,7 +71,7 @@ function WorkspaceShell({ children }: { children: ReactNode }) {
   <TopBarSlotProvider><main className="workspace" ref={arrivals}>
    <DatabaseStatus owner={user} demo={demo}/>
    <TopBar pendingSection={destination && sectionFor(destination)}/>
-   {destination ? <NavigationShimmer label={t("Loading records…")} path={destination} dashboard={savedDashboardColumns(workspacePreferences.data.preferences)} hints={{ debts: planning.loading ? undefined : planning.data.records.some(record => liabilities.includes(record.kind) && record.amount > 0) }}/> : children}
+   {destination ? <NavigationShimmer label={t("Loading records…")} path={destination} dashboard={savedDashboardColumns(workspacePreferences.data.preferences)} hints={hints}/> : children}
   </main></TopBarSlotProvider>
   <WorkspaceDialogs/>
   <CommandMenu onNavigate={go}/>
