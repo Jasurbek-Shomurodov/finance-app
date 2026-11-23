@@ -233,3 +233,6 @@ input,select,textarea{min-height:44px!important;background:var(--field)!importan
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .error{padding:12px 16px;border:1px solid color-mix(in srgb,var(--negative) 30%,transparent);border-radius:12px;background:color-mix(in srgb,var(--negative) 12%,var(--card));color:var(--negative);margin:12px 0;font-size:var(--type-small);line-height:1.5}
 .error [data-slot=button]{margin-inline-start:8px}
+/* A figure kept on one line and shrunk to its box (`fitFigure`, components/presentation-foundation/fit-figure.ts):
+   about `--fit-room` over its character count, never above `--fit-max`. Its box is a size container. */
+.fit-figure{white-space:nowrap;font-size:min(var(--fit-max),calc(var(--fit-room) / var(--chars, 6)))}

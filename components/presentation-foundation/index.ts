@@ -17,6 +17,7 @@ export { GroupedPicker, type PickerItem } from './grouped-picker';
 export { Count } from './count';
 export { EmptyState } from './empty-state';
 export { InlineError } from './inline-error';
+export { fitFigure } from './fit-figure';
 export { ResourceState } from './resource-state';
 export { LoadingPlaceholder, SkeletonRows, WorkspaceSkeleton, ChartSkeleton, SankeySkeleton, NetWorthBodySkeleton, StatTilesSkeleton, PanelSkeleton, CashflowPreviewSkeleton, CashFlowReportSkeleton, AccountsSkeleton } from './loading-placeholder';
 export { NavigationShimmer, screenSkeletons, TransactionsSkeleton, ReportsSkeleton, CashFlowSkeleton, CashFlowTabSkeleton, BudgetSkeleton, RecurringSkeleton } from './screen-skeletons';

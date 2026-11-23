@@ -509,3 +509,14 @@ test('phone top bar: the title has a row of its own under the controls, and wrap
  assert.match(css,/\.topbar-location\{display:contents\}\.drawer-toggle\{grid-area:toggle\}\.topbar-page-title,\.topbar-title\{grid-area:title;min-width:0\}/);
  assert.match(css,/\.topbar-location>span\.topbar-title\{white-space:normal;/,'the fallback title wraps like the page title');
 });
+
+test('a figure in a fixed box stays on one line and shrinks to fit: donut total, Settings font preview (23 November 2026)', async () => {
+ const css=stylesheet();
+ // The Arabic screenshot (e2e/screens.spec.mjs, settings rtl) caught "1,234,567 U / S$" broken inside the font tiles.
+ assert.match(css,/\.fit-figure\{white-space:nowrap;font-size:min\(var\(--fit-max\),calc\(var\(--fit-room\) \/ var\(--chars, 6\)\)\)\}/);
+ assert.match(css,/\.choice-card:has\(\.choice-card-figure\)\{container-type:inline-size\}/);
+ assert.doesNotMatch(css,/\.choice-card-figure\{[^}]*overflow-wrap:anywhere/,'a preview amount never breaks mid-word');
+ assert.match(fs.readFileSync('components/settings/appearance-choices.tsx','utf8'),/className="choice-card-figure fit-figure" style=\{fitFigure\(figure\)\}/);
+ const {fitFigure}=await loadTS('components/presentation-foundation/fit-figure.ts');
+ assert.deepEqual(fitFigure('1,234,567 US$'),{'--chars':13});
+});

@@ -140,7 +140,10 @@
 .workspace .content .preferences-card .choice-card-title input:checked{border:5px solid var(--primary)}
 .workspace .content .preferences-card .choice-card-title input:focus-visible{outline:none}
 .choice-card-caption{font-size:var(--type-small);color:var(--muted-foreground)}
-.choice-card-figure{font-size:var(--type-stat);font-weight:600;line-height:1.2;letter-spacing:-.02em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+/* The preview figure stays on one line: a fit figure across the tile's width, never above the stat size, so a long
+   form such as Arabic's "1,234,567 US$" gets smaller instead of breaking mid-word. */
+.choice-card:has(.choice-card-figure){container-type:inline-size}
+.choice-card-figure{--fit-max:var(--type-stat);--fit-room:165cqi;font-weight:600;line-height:1.2;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 /* A small picture of the app in each theme. It must show the other theme too, so it carries that theme's own colours. */
 .theme-preview{order:-1;display:flex;gap:6px;height:56px;padding:8px;border:1px solid var(--preview-line);border-radius:8px;background:var(--preview-page);overflow:hidden}
 .theme-preview>i{display:block;border-radius:4px}

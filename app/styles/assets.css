@@ -25,11 +25,10 @@
 @container content (max-width:640px){.portfolio-allocation-body{grid-template-columns:minmax(0,1fr)}.allocation-donut{margin-inline:auto}}
 .allocation-donut{position:relative;width:200px;height:200px;container-type:inline-size}
 .allocation-donut .donut-slice{cursor:pointer;outline:none}
-/* The total stays inside the hole (58% of the donut). Compact amounts keep their parts together with no-break spaces,
-   so a longer form, such as Arabic's "17.9 ألف US$", gets a smaller size instead: about half the donut's width over
-   its character count (`--chars`, set by AllocationDonut), never above the title size. */
+/* The total stays inside the hole (58% of the donut): a fit figure filling about half its width, never above the
+   title size, so a longer form such as Arabic's "17.9 ألف US$" gets smaller instead of running over the ring. */
 .allocation-donut-total{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding-inline:23%;text-align:center;pointer-events:none}
-.allocation-donut-total strong{font-size:min(var(--type-title),calc(88cqi / var(--chars, 6)));font-weight:600;letter-spacing:-.02em;white-space:nowrap;font-variant-numeric:tabular-nums}
+.allocation-donut-total strong{--fit-max:var(--type-title);--fit-room:88cqi;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .allocation-donut-total span{font-size:var(--type-caption);color:var(--muted-foreground)}
 .portfolio-summary-allocation .overview-list{display:grid;grid-template-columns:minmax(0,1fr);column-gap:32px}
 /* A long list of kinds takes two columns rather than running far below the donut. */

@@ -2,8 +2,8 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { useLanguage } from '@/components/language-provider';
 import { chartDonut, chartTooltip } from '@/components/presentation-foundation/chart';
+import { fitFigure } from '@/components/presentation-foundation/fit-figure';
 import { categoryColor } from '@/lib/category-colors';
-import type { CSSProperties } from 'react';
 import { formatCompactMoney, formatMoney, formatPercent } from '@/lib/format';
 
 /** `color` and `label` override the kind's own, for a grouped row such as Other. */
@@ -21,7 +21,7 @@ export function AllocationDonut({ slices, total, currency, onSelect }: { slices:
    </Pie>
    <Tooltip {...chartTooltip} formatter={(value, kind) => [`${formatMoney(Number(value), currency, locale)} · ${formatPercent(total > 0 ? Number(value) / total * 100 : 0, locale)}`, shown.find(slice => slice.kind === kind)?.label ?? t(String(kind))]}/>
   </PieChart></ResponsiveContainer>
-  {/* The total's length sizes it to the hole (assets.css): a long compact form, such as Arabic's, cannot wrap. */}
-  <div className="allocation-donut-total" aria-hidden="true"><strong style={{ '--chars': totalLabel.length } as CSSProperties}>{totalLabel}</strong><span>{t('Total assets')}</span></div>
+  {/* The total is sized to the hole (assets.css): a long compact form, such as Arabic's, cannot wrap. */}
+  <div className="allocation-donut-total" aria-hidden="true"><strong className="fit-figure" style={fitFigure(totalLabel)}>{totalLabel}</strong><span>{t('Total assets')}</span></div>
  </div>;
 }

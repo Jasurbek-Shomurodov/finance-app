@@ -3,6 +3,7 @@ import { useId, type ReactNode } from 'react';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/components/language-provider';
 import { fonts, type Font } from '@/lib/fonts';
+import { fitFigure } from '@/components/presentation-foundation/fit-figure';
 
 type CardProps = { name: string; value: string; checked: boolean; onChoose: () => void; label: string; font?: Font; children?: ReactNode };
 
@@ -18,7 +19,7 @@ function ChoiceCard({ name, value, checked, onChoose, label, font, children }: C
 export function FontChoices({ value, onChange, caption, figure, labelId }: { value: Font; onChange: (font: Font) => void; caption: string; figure: string; labelId: string }) {
  const name = useId();
  return <div className="choice-cards" role="radiogroup" aria-labelledby={labelId}>{fonts.map(font => <ChoiceCard key={font.id} name={name} value={font.id} checked={value === font.id} onChoose={() => onChange(font.id)} label={font.name} font={font.id}>
-  <span className="choice-card-caption" aria-hidden="true">{caption}</span><span className="choice-card-figure" aria-hidden="true">{figure}</span>
+  <span className="choice-card-caption" aria-hidden="true">{caption}</span><span className="choice-card-figure fit-figure" style={fitFigure(figure)} aria-hidden="true">{figure}</span>
  </ChoiceCard>)}</div>;
 }
 

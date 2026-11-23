@@ -14,7 +14,7 @@ test('the allocation donut draws each kind with a value, names every share and s
  assert.match(html,/aria-label="Asset allocation: Property 73%, Business 27%"/);
  assert.match(html,/data-kinds="Property,Business"/,'a kind worth nothing has no slice');
  // The total carries its length, which sizes it to the hole (a long compact form, such as Arabic's, cannot wrap).
- assert.match(html,/<strong style=\"--chars:5\">\$363K<\/strong><span>Total assets<\/span>/);
+ assert.match(html,/<strong class=\"fit-figure\" style=\"--chars:5\">\$363K<\/strong><span>Total assets<\/span>/);
 });
 
 test('a tap on a slice opens its kind',()=>{
