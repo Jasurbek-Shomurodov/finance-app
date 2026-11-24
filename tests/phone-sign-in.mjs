@@ -89,6 +89,9 @@ test('the phone country starts on the visitor\'s country, and the list opens ful
  assert.deepEqual(await ask('uz'),{country:'UZ'});
  assert.deepEqual(await ask('XX'),{country:''},'an unknown code is not a country');
  assert.deepEqual(await ask(),{country:''});
+ const zone='c'.repeat(40),behind=async headers=>{process.env.CLOUDFLARE_ORIGIN_SECRET=zone;try{return await(await GET(new Request('http://x/api/visitor-country',{headers:{'x-vercel-ip-country':'DE','cf-ipcountry':'UZ',...headers}}))).json();}finally{delete process.env.CLOUDFLARE_ORIGIN_SECRET;}};
+ assert.deepEqual(await behind({'x-origin-secret':zone}),{country:'UZ'},'through Cloudflare the country is the visitor\'s, not the Cloudflare site\'s');
+ assert.deepEqual(await behind({}),{country:'DE'},'a request that skipped Cloudflare cannot name its own country');
  const form=fs.readFileSync('components/phone-sign-in.tsx','utf8');
  assert.match(form,/if \(chosen\) return;[\s\S]{0,120}fetch\('\/api\/visitor-country'\)/,'the estimate never overrides a country the person picked');
  const field=fs.readFileSync('components/phone-number-field.tsx','utf8');

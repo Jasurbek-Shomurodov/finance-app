@@ -3,14 +3,16 @@
 // Without the key, or when the database cannot count, requests are let through: a limiter must never lock
 // everyone out, and local development needs no service key.
 import { createHmac } from 'node:crypto';
+import { cloudflareHeader } from '@/lib/cloudflare';
 import { serviceDatabase, type ServiceDatabase } from '@/lib/service-role';
 
 export type Limit = { max: number; seconds: number };
-/** The visitor's address as the host reports it. Vercel sets these headers itself and overwrites what a client sends;
- * behind another proxy they may be client-controlled, so keep the app on Vercel or set them at that proxy. */
-export function clientIp(req: Request) {
+/** The visitor's address as the host reports it. Vercel sets these headers itself and overwrites what a client sends.
+ * Behind Cloudflare they hold Cloudflare's address, so a request that proves it came through our zone is read from
+ * cf-connecting-ip instead (lib/cloudflare.ts); behind any other proxy they may be client-controlled. */
+export function clientIp(req: Request, cloudflareSecret = process.env.CLOUDFLARE_ORIGIN_SECRET) {
  const first = (value: string | null) => value?.split(',')[0]?.trim() || null;
- return first(req.headers.get('x-real-ip')) ?? first(req.headers.get('x-vercel-forwarded-for')) ?? first(req.headers.get('x-forwarded-for')) ?? 'unknown';
+ return cloudflareHeader(req, 'cf-connecting-ip', cloudflareSecret) ?? first(req.headers.get('x-real-ip')) ?? first(req.headers.get('x-vercel-forwarded-for')) ?? first(req.headers.get('x-forwarded-for')) ?? 'unknown';
 }
 const hashed = (secret: string, value: string) => createHmac('sha256', secret).update(value).digest('base64url').slice(0, 32);
 
