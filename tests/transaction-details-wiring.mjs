@@ -142,3 +142,23 @@ test('the details open the Tracker of the account and the business and Transacti
  sample.r.mount(React.createElement(sample.parts.WorkspaceTransactionDetails));
  assert.equal(details(sample).props.opens.account, undefined);
 });
+
+test('a payment opens the schedule it paid: a recurring bill its form, a loan its Tracker, nothing for a reader', () => {
+ const rent = entry('rent', 'Rent', 'Living expense', { frequency: 'Monthly' }), paid = entry('x', 'Rent', 'Living expense', { occurrence_record_id: 'rent' });
+ const view = open(paid, { records: [home, wallet, rent] });
+ view.r.mount(React.createElement(view.parts.WorkspaceTransactionDetails));
+ assert.equal(details(view).props.schedule.name, 'Rent');
+ details(view).props.schedule.onOpen();
+ assert.deepEqual(view.calls.at(-1), ['edit', 'rent']);
+ assert.equal(details(view).props.opens.tagHref('a b'), '/transactions?tag=a%20b');
+ const loan = open(entry('y', 'Home', 'Other expense', { occurrence_record_id: 'm' }));
+ loan.r.mount(React.createElement(loan.parts.WorkspaceTransactionDetails));
+ details(loan).props.schedule.onOpen();
+ assert.deepEqual(loan.calls.at(-1), ['tracking', 'm']);
+ const reader = open(paid, { records: [rent], readOnly: true });
+ reader.r.mount(React.createElement(reader.parts.WorkspaceTransactionDetails));
+ assert.deepEqual([details(reader).props.schedule.name, details(reader).props.schedule.onOpen], ['Rent', undefined]);
+ const plain = open(entry('z', 'Lunch', 'Living expense'));
+ plain.r.mount(React.createElement(plain.parts.WorkspaceTransactionDetails));
+ assert.equal(details(plain).props.schedule, undefined);
+});

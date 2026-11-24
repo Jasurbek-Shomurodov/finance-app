@@ -7,7 +7,7 @@ import { useWorkspace } from '@/components/workspace/workspace-provider';
 import { useMortgagePaymentSource } from '@/hooks/use-mortgage-payment-source';
 import { nextPaletteColor } from '@/lib/business';
 import { showError } from '@/lib/feedback';
-import { income, type Entry } from '@/lib/finance';
+import { expenses, income, type Entry } from '@/lib/finance';
 import { ownerOf, workspaceOwners } from '@/lib/household';
 import { isLinkedTransaction, linkedSourceLabel } from '@/lib/linked-transactions';
 import { propertyOf } from '@/lib/property-totals';
@@ -21,6 +21,20 @@ import { useEffect } from 'react';
 
 /** What Split takes, as the records table offers it: a recorded transaction that no other action wrote. */
 const splittable = (record: Entry) => isTransactionHistory(record) && !isLinkedTransaction(record);
+
+/** Where a transaction's details lead: its account, property and business each open their Tracker where they have one
+ * (never in the sample workspace), its category and tags open Transactions with them in view, and a payment of a
+ * schedule (named by `occurrence_record_id` alone) opens that schedule: a recurring income or bill its form, a loan or
+ * mortgage its Tracker. */
+function detailLinks(viewing: Entry, accountId: string | null | undefined, workspace: { data: { records: readonly Entry[]; closed?: readonly Entry[] }; demo?: boolean; readOnly?: boolean; leave: (open: () => void) => void; setTracking: (record: Entry) => void; editRecord: (record: Entry) => void }) {
+ const { data, demo, readOnly, leave, setTracking, editRecord } = workspace, records = data.records;
+ const track = (record?: Entry) => record && !demo && trackedKinds.includes(record.kind) ? () => leave(() => setTracking(record)) : undefined;
+ const account = recordAmong(accountId, data), property = propertyOf(viewing, records);
+ const paid = records.find(record => record.id === viewing.occurrence_record_id);
+ const edit = paid && !readOnly ? () => leave(() => editRecord(paid)) : undefined;
+ const schedule = paid && { name: paid.name, onOpen: income.includes(paid.kind) || expenses.includes(paid.kind) ? edit : track(paid) };
+ return { account, property, schedule, opens: { account: track(account), property: track(property), business: (id: string) => track(records.find(record => record.id === id)), categoryHref: (category: string) => transactionsHref({ category }), tagHref: (tag: string) => `/transactions?tag=${encodeURIComponent(tag)}` } };
+}
 
 /** The transaction any screen opened (`viewing`), with everything that changes right in its details: category,
  * business, tags and receipts. A transaction written by a larger action names where it came from; a mortgage payment
@@ -39,20 +53,17 @@ export function WorkspaceTransactionDetails() {
  const accountId = viewing.account_id ?? payment?.source?.account_id;
  const owners = workspaceOwners(household.state, { shared: t('Shared'), unnamed: t('Partner') });
  const source = linkedSourceLabel(viewing);
- const account = recordAmong(accountId, planning.data), property = propertyOf(viewing, records);
- /** Leaves the details for a record's own page, its Tracker, where it has one to open. */
- const track = (record?: Entry) => record && !demo && trackedKinds.includes(record.kind) ? () => { close(); setTracking(record); } : undefined;
+ const links = detailLinks(viewing, accountId, { data: planning.data, demo, readOnly, leave: open => { close(); open(); }, setTracking, editRecord });
  const origin = viewing.mortgage_payment_id
   ? { label: t('Payment on {name}', { name: mortgage?.name ?? viewing.name }), openLabel: t('Open mortgage'), onOpen: mortgage ? () => { close(); setTracking(mortgage); } : undefined }
   : source ? { label: `${t(source)}. ${t('To change the amount or date, delete it and record it again.')}` } : undefined;
  return <TransactionDetailsDialog key={viewing.id} record={viewing} incoming={income.includes(viewing.kind)} categoryName={planning.data.categories.find(c => c.id === viewing.custom_category_id)?.name}
   businesses={businessList} onBusiness={business => assignTransactionsBusiness([viewing.id], business)}
   categoryEditing={!readOnly && canRecategorize(viewing, transactionTools.data.splits) ? { categories: planning.data.categories, removed: removedCategories.kinds, onChange: choice => categorize([viewing.id], choice) } : undefined}
-  origin={origin}
+  origin={origin} schedule={links.schedule}
   tagging={{ tags: tags.data.tags, tagIds: tags.data.links.filter(link => link.record_id === viewing.id).map(link => link.tag_id), onTags: (add, remove) => tags.change([viewing.id], add, remove),
    onCreateTag: async name => { const id = crypto.randomUUID(); await tags.save({ id, name, color: nextPaletteColor(tags.data.tags.map(tag => tag.color)) }); return id; } }}
-  accountName={account?.name} propertyName={property?.name}
-  opens={{ account: track(account), property: track(property), business: id => track(records.find(record => record.id === id)), categoryHref: category => transactionsHref({ category }) }}
+  accountName={links.account?.name} propertyName={links.property?.name} opens={links.opens}
   ownerName={owners.find(owner => owner.id === ownerOf(viewing, household.state!))?.name}
   onSplit={splittable(viewing) && !transactionTools.loading && !transactionTools.error ? leaveTo(setSplitting) : undefined}
   attachments={<RecordAttachments recordId={viewing.id} available={attachments.available} onChange={attachments.refresh}/>}

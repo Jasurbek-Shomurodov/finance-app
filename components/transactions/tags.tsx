@@ -1,6 +1,7 @@
 "use client";
 import { useState } from 'react';
-import { Check, ChevronDown, Plus, Tag as TagIcon } from 'lucide-react';
+import { ArrowUpRight, Check, ChevronDown, Plus, Tag as TagIcon } from 'lucide-react';
+import { DrawerLink } from '@/components/presentation-foundation/drawer-link';
 import { useLanguage } from '@/components/language-provider';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { TagChip } from '@/components/presentation-foundation/tag-chip';
@@ -29,8 +30,9 @@ export function TagFilter({ tags, value, match, onChange }: { tags: readonly Tag
   </PopoverContent>
  </Popover>;
 }
-/** Tags to switch on and off, and a quick way to create one. `onCreate` resolves to the new tag's id. */
-export function TagSelector({ tags, selected, onToggle, onCreate }: { tags: readonly Tag[]; selected: readonly string[]; onToggle: (id: string) => void; onCreate?: (name: string) => Promise<string> }) {
+/** Tags to switch on and off, and a quick way to create one. `onCreate` resolves to the new tag's id. With `hrefFor`
+ * a tag that is on also links to its own page (Transactions with the tag in view); `onOpen` runs as the link is followed. */
+export function TagSelector({ tags, selected, onToggle, onCreate, hrefFor, onOpen }: { tags: readonly Tag[]; selected: readonly string[]; onToggle: (id: string) => void; onCreate?: (name: string) => Promise<string>; hrefFor?: (id: string) => string; onOpen?: () => void }) {
  const { t } = useLanguage();
  const [name, setName] = useState(''), [busy, setBusy] = useState(false), [error, setError] = useState('');
  async function create() {
@@ -42,7 +44,7 @@ export function TagSelector({ tags, selected, onToggle, onCreate }: { tags: read
   try { onToggle(await onCreate(value)); setName(''); } catch (reason) { setError(t((reason as Error).message)); } finally { setBusy(false); }
  }
  return <div className="tag-selector">
-  {tags.length ? <ul aria-label={t('Tags')}>{tags.map(tag => <li key={tag.id}><button type="button" aria-pressed={selected.includes(tag.id)} onClick={() => onToggle(tag.id)}><TagChip name={tag.name} color={tag.color}>{selected.includes(tag.id) && <Check size={13} aria-hidden="true"/>}</TagChip></button></li>)}</ul> : <p className="muted">{t('No tags yet.')}</p>}
+  {tags.length ? <ul aria-label={t('Tags')}>{tags.map(tag => <li key={tag.id}><button type="button" aria-pressed={selected.includes(tag.id)} onClick={() => onToggle(tag.id)}><TagChip name={tag.name} color={tag.color}>{selected.includes(tag.id) && <Check size={13} aria-hidden="true"/>}</TagChip></button>{hrefFor && selected.includes(tag.id) && <DrawerLink className="tag-selector-open" href={hrefFor(tag.id)} aria-label={t('Open {name}', { name: tag.name })} title={t('Open {name}', { name: tag.name })} onClick={onOpen}><ArrowUpRight size={14} aria-hidden="true"/></DrawerLink>}</li>)}</ul> : <p className="muted">{t('No tags yet.')}</p>}
   {onCreate && <div className="tag-selector-new"><Input placeholder={t('New tag')} aria-label={t('New tag')} maxLength={60} value={name} disabled={busy} onChange={event => setName(event.currentTarget.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void create(); } }}/><Button type="button" size="sm" variant="outline" disabled={busy || !name.trim()} onClick={() => void create()}><Plus size={15} aria-hidden="true"/>{t('Add')}</Button></div>}
   {error && <p className="form-error" role="alert">{error}</p>}
  </div>;

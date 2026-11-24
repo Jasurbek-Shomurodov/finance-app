@@ -97,6 +97,11 @@
 .tag-selector li>button{border-radius:999px;opacity:.62}
 .tag-selector li>button[aria-pressed=true]{opacity:1;box-shadow:0 0 0 1.5px var(--tag-ring,var(--ring))}
 .tag-selector li>button:focus-visible{outline:2px solid var(--ring);outline-offset:1px}
+.tag-selector li{display:flex;align-items:center;gap:2px}
+.tag-selector-open{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;color:var(--muted-foreground);transition:background-color var(--motion-quick) var(--ease-out),color var(--motion-quick) var(--ease-out)}
+.tag-selector-open:focus-visible{outline:2px solid var(--ring);outline-offset:1px}
+@media(hover:hover){.tag-selector-open:hover{background:color-mix(in srgb,var(--foreground) 6%,transparent);color:var(--primary)}}
+[dir=rtl] .tag-selector-open>svg{transform:scaleX(-1)}
 .tag-selector-new{display:flex;gap:6px}
 .business-filter-trigger{display:inline-flex;align-items:center;gap:8px;height:44px;max-width:260px;padding:0 12px;border:1px solid var(--input);border-radius:var(--radius-control);background:var(--field);font-size:var(--type-body)}
 .business-filter-trigger>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

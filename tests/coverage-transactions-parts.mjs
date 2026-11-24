@@ -29,7 +29,7 @@ const typed=value=>({currentTarget:{value}});
 
 const host=name=>Object.defineProperty(props=>React.createElement(name,props),'name',{value:name});
 const t=(key,vars={})=>key.replace(/\{(\w+)\}/g,(_,name)=>String(vars[name]));
-const icons=Object.fromEntries(['Check','ChevronDown','Plus','Tag','Trash2'].map(name=>[name,()=>null]));
+const icons=Object.fromEntries(['ArrowUpRight','Check','ChevronDown','Plus','Tag','Trash2'].map(name=>[name,()=>null]));
 const Confirm=props=>React.createElement('ConfirmDialog',props,props.open?[props.title,'|',props.description,'|',props.error,'|',props.confirmLabel]:null);
 const Panel=props=>React.createElement('PanelTitle',props,props.title,props.count,props.children);
 const {formatDate,formatMoney,formatSignedMoney}=loadTS('lib/format.ts');
@@ -37,6 +37,7 @@ const flush=()=>new Promise(resolve=>setImmediate(resolve));
 const overrides={
  react:fakeReact,'lucide-react':icons,
  '@/components/language-provider':{useLanguage:()=>({t,locale:'en'})},
+ '@/components/presentation-foundation/drawer-link':{DrawerLink:host('a')},
  '@/components/presentation-foundation/category-icon':{CategoryIcon:host('CategoryIcon')},
  // The day total rolls in the app; here it is its final text.
  '@/components/presentation-foundation/rolling-text':{RollingText:({text})=>text},
@@ -641,4 +642,13 @@ test('Closed Transactions dialogs load on demand, each from its own module',asyn
  const lazy=loadTS('components/transactions/lazy.tsx',{'next/dynamic':{__esModule:true,default:load=>({load})},
   '@/components/transactions/bulk-edit-sheet':{BulkEditSheet:'sheet'},'@/components/transactions/rule-dialog':{RuleDialog:'rule'},'@/components/transactions/rules-list':{RulesDialog:'rules'}});
  assert.deepEqual(await Promise.all([lazy.BulkEditSheet.load(),lazy.RuleDialog.load(),lazy.RulesDialog.load()]),['sheet','rule','rules']);
+});
+
+test('TagSelector links a tag that is on to its own page, and only when it is given one',()=>{
+ let opened=0;
+ const tree=expand(h(page.TagSelector,{tags,selected:['t1'],onToggle(){},hrefFor:id=>'/transactions?tag='+id,onOpen:()=>opened++}),'links');
+ const links=findAll(tree,n=>n.type==='a');
+ assert.deepEqual(links.map(n=>[n.props.href,n.props['aria-label']]),[['/transactions?tag=t1','Open Trip']]);
+ links[0].props.onClick();assert.equal(opened,1);
+ assert.equal(findAll(expand(h(page.TagSelector,{tags,selected:['t1'],onToggle(){}}),'plain'),n=>n.type==='a').length,0);
 });

@@ -26,7 +26,7 @@ export type CategoryEditing={categories:readonly Category[];removed?:readonly st
 /** Where a transaction written by a larger action came from: a line naming it, and for a mortgage payment a button that opens the mortgage. */
 export type TransactionOrigin={label:string;openLabel?:string;onOpen?:()=>void};
 /** Where the details lead: the account's, the property's and a business's own page, and Transactions with one category in view. Each is offered only where there is a page to open. */
-export type TransactionOpens={account?:()=>void;property?:()=>void;business?:(id:string)=>(()=>void)|undefined;categoryHref?:(category:string)=>string};
+export type TransactionOpens={/** Transactions with one tag in view. */tagHref?:(tag:string)=>string;account?:()=>void;property?:()=>void;business?:(id:string)=>(()=>void)|undefined;categoryHref?:(category:string)=>string};
 /** A field that opens what it names. A plain name is the link itself; a value that also changes in place (`children`) keeps its own press and gets the arrow beside it. */
 function Opens({name,onOpen,href,children}:{name:string;onOpen?:()=>void;href?:string;children?:ReactNode}){
  const {t}=useLanguage();
@@ -36,7 +36,7 @@ function Opens({name,onOpen,href,children}:{name:string;onOpen?:()=>void;href?:s
  return <span className="transaction-details-open">{children}{href?<DrawerLink href={href} {...props}>{body}</DrawerLink>:<button type="button" {...props}>{body}</button>}</span>;
 }
 /** A transaction at a glance: the amount first, then its fields in two columns, with attachments and Split as cards. Its category, business, tags and receipts change right here; Edit opens its form and the bin, at the footer's start, moves it to Recently deleted after a confirmation; the dialog's own × closes it. The account, business, property and category each open their own page (`opens`). */
-export function TransactionDetailsDialog({record:initial,incoming,categoryName,businesses,onBusiness,tagging,accountName,propertyName,ownerName,attachments,editable,onEdit,onSplit,onDelete,onClose,categoryEditing,origin,opens={}}:{categoryEditing?:CategoryEditing;opens?:TransactionOpens;origin?:TransactionOrigin;record:Entry;incoming:boolean;categoryName?:string;businesses:readonly BusinessOption[];onBusiness:(business:string|null)=>Promise<number>;tagging:TagProps;accountName?:string;/** The property it was paid for or received from. */propertyName?:string;/** Who it belongs to, in a shared household. */ownerName?:string;attachments?:ReactNode;editable:boolean;onEdit:()=>void;/** Opens Split transaction, when this one can be split. */onSplit?:()=>void;onDelete?:()=>void;onClose:()=>void}) {
+export function TransactionDetailsDialog({record:initial,incoming,categoryName,businesses,onBusiness,tagging,accountName,propertyName,ownerName,attachments,editable,onEdit,onSplit,onDelete,onClose,categoryEditing,origin,schedule,opens={}}:{/** The recurring income or bill this payment belongs to, and its own form where it has one. */schedule?:{name:string;onOpen?:()=>void};categoryEditing?:CategoryEditing;opens?:TransactionOpens;origin?:TransactionOrigin;record:Entry;incoming:boolean;categoryName?:string;businesses:readonly BusinessOption[];onBusiness:(business:string|null)=>Promise<number>;tagging:TagProps;accountName?:string;/** The property it was paid for or received from. */propertyName?:string;/** Who it belongs to, in a shared household. */ownerName?:string;attachments?:ReactNode;editable:boolean;onEdit:()=>void;/** Opens Split transaction, when this one can be split. */onSplit?:()=>void;onDelete?:()=>void;onClose:()=>void}) {
  const {t,locale}=useLanguage();
  const [record,setRecord]=useState(initial),[tagIds,setTagIds]=useState<readonly string[]>(tagging.tagIds);
  const business=businesses.find(item=>item.id===record.business_id);
@@ -56,6 +56,7 @@ export function TransactionDetailsDialog({record:initial,incoming,categoryName,b
  const badges=<span key="c" className="flex flex-wrap gap-1"><CategoryBadge kind={record.kind} label={t(record.payment_type==='bonus'?'Bonus':record.kind)}/>{customName&&record.custom_category_id&&<CategoryBadge kind={record.custom_category_id} label={customName}/>}</span>;
  const categoryLabel=customName??t(record.kind),categoryHref=opens.categoryHref?.(record.custom_category_id??record.kind);
  rows.push([t('Category'),<Opens key="co" name={categoryLabel} href={categoryHref} onOpen={categoryHref?onClose:undefined}>{categoryEditing?<CategoryPicker key="c" record={record} categories={categoryEditing.categories} removed={categoryEditing.removed} onChange={choice=>void changeCategory(choice)}>{badges}</CategoryPicker>:badges}</Opens>]);
+ if(schedule)rows.push([t('Recurring'),<Opens key="so" name={schedule.name} onOpen={schedule.onOpen}/>]);
  if(origin)rows.push([t('Source'),<span key="o" className="transaction-details-origin"><span>{origin.label}</span>{origin.onOpen&&origin.openLabel&&<Button type="button" size="sm" variant="outline" onClick={origin.onOpen}>{origin.openLabel}</Button>}</span>,true]);
  if(ownerName)rows.push([t('Owner'),ownerName]);
  // A one-time transaction has no frequency worth a row; a schedule names its own.
@@ -68,7 +69,7 @@ export function TransactionDetailsDialog({record:initial,incoming,categoryName,b
  else if(business)rows.push([t('Business'),<Opens key="bo" name={business.name} onOpen={openBusiness}/>]);
  if(propertyName)rows.push([t('Property'),<Opens key="po" name={propertyName} onOpen={opens.property}/>]);
  if(record.account_currency&&record.account_currency!==record.currency&&record.account_exchange_rate)rows.push([t('Exchange rate'),`1 ${record.account_currency} = ${formatRate(record.account_exchange_rate,locale)} ${record.currency}`]);
- if(canTag(record))rows.push([t('Tags'),<TagSelector key="t" tags={tagging.tags} selected={tagIds} onToggle={id=>void toggleTag(id)} onCreate={tagging.onCreateTag}/>,true]);
+ if(canTag(record))rows.push([t('Tags'),<TagSelector key="t" tags={tagging.tags} selected={tagIds} onToggle={id=>void toggleTag(id)} onCreate={tagging.onCreateTag} hrefFor={opens.tagHref} onOpen={onClose}/>,true]);
  if(record.notes)rows.push([t('Notes'),<span key="n" className="whitespace-pre-wrap break-words">{record.notes}</span>,true]);
  return <Dialog open onOpenChange={open=>{if(!open)onClose();}}><DialogContent className="transaction-details" onOpenAutoFocus={event=>{/* Reading comes first: focus the dialog, not its tag field. */event.preventDefault();(event.currentTarget as HTMLElement).focus();}}>
   <div className="transaction-details-head"><CategoryIcon kind={record.custom_category_id&&customName?customName:record.kind}/><DialogTitle>{shownName(record, t)}</DialogTitle></div>

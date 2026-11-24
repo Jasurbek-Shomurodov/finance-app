@@ -151,3 +151,15 @@ test('the account, property, business and category open their own pages, each on
  assert.equal(bare.r.all(node=>node.props?.className==='transaction-details-link').length,0);
  assert.equal(text(bare.value('Account')),'Everyday checking');
 });
+
+test('a payment of a schedule names it and opens it, and tags link through the selector',()=>{
+ let opened=0;
+ const view=open({schedule:{name:'Rent',onOpen:()=>opened++},opens:{tagHref:id=>'/transactions?tag='+id}});
+ assert.deepEqual(view.rows(),['Amount','Date','Category','Recurring','Tags']);
+ view.r.fire(view.r.find(node=>node.props?.['aria-label']==='Open Rent'),'onClick');
+ assert.equal(opened,1);
+ const selector=view.r.find(node=>node.type==='TagSelector');
+ assert.equal(selector.props.hrefFor('keep'),'/transactions?tag=keep');
+ selector.props.onOpen();assert.equal(view.calls.closed,1);
+ assert.equal(text(open({schedule:{name:'Rent'}}).value('Recurring')),'Rent','with nothing to open the schedule is still named');
+});
