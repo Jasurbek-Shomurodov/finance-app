@@ -38,7 +38,7 @@ export function SettingsScreen() {
    telegram={<TelegramPanel demo={demo}/>}
    household={<HouseholdPanel household={household} demo={demo}/>}
    benchmarks={<InvestmentComparisonSettings demo={demo} currencies={preferencesData.currencies}/>}
-   security={<AccountAccessPanel settings onSignedOut={clearLocalSession}/>}
+   security={<AccountAccessPanel onSignedOut={clearLocalSession}/>}
    categories={<TransactionToolsPanel plans={plans} preferences={workspacePreferences} owner={demo?null:user} demo={demo} onDeleted={refreshRecords} categories={planning.data.categories} loading={planning.loading} error={planning.error} onRetry={refreshRecords} icons={categoryIcons} removed={removedCategories} saveCategory={async (name,direction,existing)=>{const id=existing??crypto.randomUUID();await planning.save('category',{id,name,direction});return id;}}/>}
    businesses={<BusinessSettings businesses={businessList} records={planning.data.records} preferences={workspacePreferences} owner={demo?null:user} demo={demo} onEdit={editRecord} onDelete={requestDelete} onSetup={() => setSettingUpBusinesses(true)} onGuide={() => setSettingUpBusinesses('guide')}/>}
    tags={<TagSettings tags={tags} preferences={workspacePreferences} owner={demo?null:user} demo={demo}/>}

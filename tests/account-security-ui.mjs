@@ -55,8 +55,8 @@ test('unconfigured deletion stays visible but cannot submit',()=>{
 });
 
 function renderCard(intent,sent=''){
- // useState is called in a fixed order: email, password, repeat, busy, error, sent.
- const order=['email','password','repeat','busy','error','sent'];let call=0;
+ // useState is called in a fixed order: email, then the new password's own three, busy, error, sent.
+ const order=['email','password','repeat','left','busy','error','sent'];let call=0;
  const {AccountAccessCard}=loadTS('components/account-access-card.tsx',{
   react:{...React,useState(initial){const key=order[call++%order.length];return [key==='sent'?sent:initial,()=>{}];}},
   'next/link':{__esModule:true,default:({children})=>React.createElement('a',null,children)},
@@ -85,9 +85,10 @@ test('Create account is the sign-in card: Google, phone, the email form and a wa
  assert.equal((signup.match(/<button/g)||[]).length,2,'the eye that shows both passwords, and the button');
  assert.match(signup,/aria-label="Show password"/);assert.match(signup,/<button[^>]*type="submit"[^>]*>Create account<\/button>/,'the button says what it does');
  // What is wrong is said under its field, never by a switched-off button or a browser bubble.
- const source=fs.readFileSync('components/account-access-card.tsx','utf8');
- assert.match(source,/if \(short\) \{ setPasswordChecked\(true\); passwordField\.current\?\.focus\(\); return; \}/);
- assert.match(source,/if \(mismatch\) \{ setChecked\(true\); repeatField\.current\?\.focus\(\); return; \}/);
+ const source=fs.readFileSync('components/new-password-fields.tsx','utf8')+fs.readFileSync('components/account-access-card.tsx','utf8');
+ assert.match(source,/if \(short\) \{ onLeave\('password'\); passwordField\.current\?\.focus\(\); return false; \}/);
+ assert.match(source,/if \(mismatch\) \{ onLeave\('repeat'\); repeatField\.current\?\.focus\(\); return false; \}/);
+ assert.match(source,/if \(busy \|\| !next\.check\(\)\) return;/);
  assert.match(source,/<FieldError id="access-password-error"/);assert.match(source,/<FieldError id="access-repeat-error"/);
  assert.doesNotMatch(source,/minLength=|disabled=\{busy \|\|/);
 });
@@ -107,6 +108,39 @@ test('Forgot password asks for the email alone, without providers, sign-up or th
  assert.match(fs.readFileSync('components/sign-in-screen.tsx','utf8'),/<Link href=\{recoverPath\} onClick=\{event => carryRecoverEmail\(/);
  assert.match(fs.readFileSync('components/account-access-card.tsx','utf8'),/subtitle=\{signup \? undefined : 'Enter your email and we will send you a link to reset your password\.'\}/);
  assert.equal((html.match(/<button/g)||[]).length,1);
+});
+test('an emailed link lands in the sign-in card: a press uses it, a reset link then asks for the new password',()=>{
+ const card=(tokenHash,step='verify')=>{
+  const {EmailLinkCard}=loadTS('components/email-link-card.tsx',{
+   react:{...React,useState(initial){return [initial==='verify'?step:initial,()=>{}];}},
+   'next/link':{__esModule:true,default:({children,href})=>React.createElement('a',{href},children)},
+   'next/navigation':{useRouter:()=>({})},
+   '@/components/language-provider':{useLanguage:()=>({t:key=>key})},
+   'lucide-react':{Eye:()=>null,EyeOff:()=>null},
+   '@/components/ui/button':{Button:({asChild,children,...props})=>asChild?children:React.createElement('button',props,children)},
+   '@/components/ui/input':{Input:props=>React.createElement('input',props)},
+   '@/components/presentation-foundation/error-popup':{ErrorPopup:()=>null},
+   '@/components/theme-provider':{ThemeToggle:()=>null},
+   '@/components/auth-card':{AuthPage:({title,subtitle,children})=>React.createElement('main',null,React.createElement('h1',null,title),subtitle&&React.createElement('p',null,subtitle),children)},
+   './sign-in-screen.module.css':new Proxy({},{get:(_,key)=>String(key)}),
+  });
+  return renderToStaticMarkup(React.createElement(EmailLinkCard,{brand:null,tokenHash,tokenType:'recovery'}));
+ };
+ const verify=card('a'.repeat(40));
+ assert.ok(verify.includes('<h1>Account access</h1>'));assert.ok(verify.includes('Links expire and can only be used once.'));
+ assert.match(verify,/<button[^>]*type="submit"[^>]*>Verify email link<\/button>/);assert.ok(!verify.includes('type="password"'),'no password is asked before the link is used');
+ const reset=card('a'.repeat(40),'reset');
+ assert.ok(reset.includes('<h1>Change password</h1>'));assert.equal((reset.match(/type="password"/g)||[]).length,2);
+ assert.ok(reset.includes('aria-label="Show password"'));assert.ok(reset.includes('Use a unique password with at least 8 characters.'));
+ assert.match(reset,/<button[^>]*type="submit"[^>]*>Change password<\/button>/);
+ const missing=card('');
+ assert.ok(missing.includes('This link is invalid or expired. Request a new email.'));assert.ok(missing.includes('href="/auth/access?mode=recover"'));assert.ok(!missing.includes('<form'),'nothing to press without a link');
+ for(const html of [verify,reset,missing])assert.ok(html.includes('href="/sign-in"'),'a way back to sign in');
+ const source=fs.readFileSync('components/email-link-card.tsx','utf8');
+ assert.match(source,/if \(step === 'reset'\) \{ next\.clear\(\); router\.replace\(signInPath\); \}/,'a changed password goes to sign in with it');
+ assert.match(fs.readFileSync('app/auth/confirm/page.tsx','utf8'),/<EmailLinkCard brand=\{<Brand\/>\} tokenHash=\{query\.get\('token_hash'\)\?\?''\}/);
+ const english=JSON.parse(fs.readFileSync('lib/locales/en.json','utf8'));
+ for(const [,key] of source.matchAll(/(?:t\(|title=|subtitle=\{reset \? undefined : )'([^']+)'/g))assert.ok(english[key],`translated: ${key}`);
 });
 test('the sign-in links open the matching account page',()=>{
  const source=fs.readFileSync('components/sign-in-screen.tsx','utf8');

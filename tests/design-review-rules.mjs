@@ -341,7 +341,7 @@ test('the 9 October 2026 full review fixes stay fixed (SCR-097…SCR-104, HEAD-0
  assert.match(read('components/import-history.tsx'),/batch\.result\.added>0&&<Button type="button" disabled=\{busy\}/,'an import that added nothing offers no Undo');
  // Full-screen steppers start on the step's question, and a standalone access page has its one h1.
  for(const file of ['components/planning/goal-setup-flow.tsx','components/business-setup-flow.tsx'])assert.match(read(file),/onOpenAutoFocus=\{focusStep\}[\s\S]*ref=\{stepRef\}/,file);
- assert.match(read('components/account-access-panel.tsx'),/const Heading=settings\?'h2':'h1';/);
+ assert.match(read('components/email-link-card.tsx'),/<AuthPage brand=\{brand\} preferences=\{preferences\} title=\{reset \? 'Change password' : 'Account access'\}/,'the emailed-link page has its one h1, from the sign-in frame');assert.match(read('components/account-access-panel.tsx'),/<h2>\{t\(mode==='add_email'/);
  assert.doesNotMatch(read('components/onboarding-screen.tsx'),/htmlFor="onboarding-target"/,'the target amount keeps its wrapping label');
 });
 

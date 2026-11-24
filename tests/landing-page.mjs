@@ -62,7 +62,7 @@ test('signed-out visitors get the tour at the main page and the sign-in card on 
  const {loginRedirect}=loadTS('lib/google-auth.ts');
  assert.equal(loginRedirect('https://app.example','google_failed').headers.get('location'),'https://app.example/sign-in?auth_error=google_failed');
  assert.equal(loginRedirect('https://app.example').headers.get('location'),'https://app.example/');
- for(const file of ['app/auth/telegram/page.tsx','app/connect/telegram/page.tsx','components/account-access-panel.tsx'])assert.ok(fs.readFileSync(file,'utf8').includes('signInPath'),file);
+ for(const file of ['app/auth/telegram/page.tsx','app/connect/telegram/page.tsx','components/email-link-card.tsx'])assert.ok(fs.readFileSync(file,'utf8').includes('signInPath'),file);
 });
 
 test('the server renders the public pages for visitors without session cookies, in their browser language',()=>{

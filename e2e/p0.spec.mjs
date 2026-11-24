@@ -68,6 +68,18 @@ test.describe('signed out', () => {
     await expect(page.getByLabel('Email address')).toHaveValue('new-person@example.test');
     await expect(page.getByRole('button', { name: 'Send reset link', exact: true })).toBeVisible();
   });
+
+  test('An emailed link lands in the sign-in card: a bad link is refused, and no link offers a new one', async ({ page }) => {
+    await page.goto(`/auth/confirm?token_hash=${'a'.repeat(40)}&type=recovery`);
+    await expect(page.getByRole('heading', { name: 'Account access' })).toBeVisible();
+    await page.getByRole('button', { name: 'Verify email link', exact: true }).click();
+    await expect(page.getByText('This link is invalid or expired. Request a new email.').first()).toBeVisible();
+    await expect(page.getByLabel('New password')).toHaveCount(0);
+    await page.goto('/auth/confirm');
+    await expect(page.getByText('This link is invalid or expired. Request a new email.')).toBeVisible();
+    await page.getByRole('link', { name: 'Forgot password?' }).click();
+    await expect(page.getByRole('heading', { name: 'Forgot password' })).toBeVisible();
+  });
 });
 
 test('SHELL-001 every drawer link opens its page with its title', async ({ page }) => {
