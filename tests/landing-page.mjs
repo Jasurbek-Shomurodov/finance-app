@@ -90,7 +90,8 @@ test('the server renders the public pages for visitors without session cookies, 
 test('the pillars show the real app in its sample workspace, not a drawing of it',()=>{
  assert.match(render(),/Compare your returns with other investments/);
  const source=fs.readFileSync('components/landing-page.tsx','utf8');
- assert.match(source,/<div className=\{styles\.heroReplay\}><LandingHeroDemo\/><\/div>/,'the hero plays its own short demo');
+ assert.match(source,/<Reveal><LandingHeroDemo\/><\/Reveal>/,'the short demo plays in its own section');
+ assert.ok(source.indexOf('id="features"')<source.indexOf('<LandingHeroDemo/>'),'the app itself comes first, straight under the headline');
  assert.equal((source.match(/<AppPreview /g)||[]).length,1,'only the pillars shrink the whole app into a window');
  assert.match(source,/<AppPreview path=\{pillarPaths\[active\.key\]\}\/>/,'each pillar opens its own screen');
  assert.match(source,/const pillarPaths: Record<Pillar, string> = \{ track: '\/', budget: '\/budget', plan: '\/goals', invest: '\/assets' \};/);
@@ -126,7 +127,9 @@ test('the hero demo is one looping story told with sample data through the share
  const html=render();
  assert.match(html,/role="img" aria-label="A short demo: adding a Groceries expense updates the day’s total and the Groceries budget\."/);
  assert.match(html,/aria-hidden="true"/);
- for(const text of ['Add transaction','Groceries','Budget','$86','of $400','$70','$214'])assert.ok(html.includes(text),text);
+ assert.ok(!/styles\.(line|tile|dot)\b/.test(fs.readFileSync('components/landing-hero-demo.tsx','utf8')),'every row is a real one: no grey stand-ins');
+ assert.equal(demo.heroSample.dayBefore,25+45,'the day total is the sum of the rows under it');
+ for(const text of ['Add transaction','Groceries','Budget','$86','of $400','$70','$214','Transport','Shopping','Utilities','$242','Upcoming payments','Dashboard','Cash flow'])assert.ok(html.includes(text),text);
  const {formatDate}=loadTS('lib/format.ts');const {depositToday}=loadTS('lib/deposit-interest.ts');
  assert.ok(html.includes(formatDate(depositToday(),'en-US')),'the day is written by the date formatter');
  assert.ok(!html.includes('<iframe'),'a demo, not the whole app shrunk into a box');

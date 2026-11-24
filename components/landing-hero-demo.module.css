@@ -1,19 +1,16 @@
 /* The landing hero's product demo: a tinted frame with a cropped Transactions window pinned to its inline-start corner,
-   running off the inline-end and bottom edges. Real words only where the story is; grey lines everywhere else.
+   running off the inline-end and bottom edges. Every row is a real one with sample figures, as the app shows it.
    Motion is transform and opacity only: arrivals take 280ms on one ease-out curve, exits are quicker. */
-.stage{--ease:cubic-bezier(.22,1,.36,1);--inset:clamp(24px,5vw,56px);--bleed:160px;--row:52px;--ghost:color-mix(in srgb,var(--foreground) 9%,transparent);container-type:inline-size;position:relative;width:100%;height:clamp(360px,44vw,500px);overflow:hidden;border-radius:24px;background:var(--secondary);text-align:start;user-select:none;-webkit-user-select:none}
+.stage{--ease:cubic-bezier(.22,1,.36,1);--inset:clamp(24px,5vw,56px);--bleed:160px;--row:52px;container-type:inline-size;position:relative;width:100%;height:clamp(360px,44vw,500px);overflow:hidden;border-radius:24px;background:var(--secondary);text-align:start;user-select:none;-webkit-user-select:none}
 /* The window runs off the inline-end edge by its last column, a stand-in panel of which only a sliver shows. */
 .window{position:absolute;inset-block-start:clamp(28px,4vw,48px);inset-inline-start:var(--inset);display:grid;grid-template-columns:184px minmax(0,1fr);width:calc(100% - var(--inset) + var(--bleed) - 40px);height:640px;border:1px solid var(--border);border-radius:14px;background:var(--background);box-shadow:0 24px 60px -28px rgb(0 0 0 / 35%),var(--shadow-card);overflow:hidden;font-size:var(--type-small);line-height:1.4}
-.line{display:block;flex-shrink:0;width:var(--w);height:8px;border-radius:4px;background:var(--ghost)}
-.tile{display:block;flex-shrink:0;width:28px;height:28px;border-radius:8px;background:var(--ghost)}
 
-/* The drawer: a mark and a column of stand-in destinations, the current one tinted. */
+/* The drawer: the mark and the app's first destinations, the current one tinted. */
 .rail{display:flex;flex-direction:column;gap:6px;padding:16px 12px;border-inline-end:1px solid var(--hairline);background:var(--sidebar)}
-.rail span{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px}
-.rail span[data-current]{background:color-mix(in srgb,var(--primary) 12%,transparent)}
-.rail span[data-current] .line{background:color-mix(in srgb,var(--primary) 45%,transparent)}
-.mark{display:block;width:30px;height:30px;margin-block-end:12px;margin-inline-start:8px;border-radius:9px;background:var(--mark-bg)}
-.dot{display:block;flex-shrink:0;width:14px;height:14px;border-radius:4px;background:var(--ghost)}
+.rail span{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;color:var(--muted-foreground);font-size:var(--type-caption);font-weight:500;white-space:nowrap}
+.rail span svg{flex-shrink:0}
+.rail span[data-current]{background:color-mix(in srgb,var(--primary) 12%,transparent);color:var(--foreground)}
+.mark{display:grid;place-items:center;width:30px;height:30px;margin-block-end:12px;margin-inline-start:8px;border-radius:9px;background:var(--mark-bg);color:var(--mark-fg);font-style:normal;font-weight:700;line-height:1}
 
 .main{display:flex;flex-direction:column;gap:16px;min-width:0;padding-block:16px;padding-inline:22px 0}
 .bar{display:flex;align-items:center;gap:16px;min-height:36px}
@@ -28,8 +25,9 @@
 .dayHead{display:flex;align-items:center;justify-content:space-between;gap:12px;height:38px;padding-inline:16px;background:color-mix(in srgb,var(--foreground) 3%,var(--card));font-size:var(--type-caption);font-weight:600}
 .figure{font-variant-numeric:tabular-nums;font-weight:600}
 .row{display:flex;align-items:center;gap:12px;height:var(--row);padding-inline:16px;border-block-start:1px solid var(--hairline);box-sizing:border-box}
-.name{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0}
+.name{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;white-space:nowrap}
 .name b{font-weight:500;line-height:1.1}
+.name small{font-size:var(--type-micro);line-height:1.1;color:var(--muted-foreground)}
 .amount{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
 .newRow{opacity:0;transform:translateY(10px);transition:opacity .16s ease-in,transform .16s ease-in}
 .below{position:relative;z-index:1;background:var(--card);transform:translateY(calc(-1 * var(--row)));transition:transform .22s cubic-bezier(.4,0,.2,1) .04s}
@@ -40,18 +38,16 @@
 .stage[data-hover] .bin{opacity:1;background:var(--muted);color:var(--foreground)}
 .bin[data-pressed]{transform:scale(.88)}
 
-/* The budget card: the Groceries line follows the new expense; the others are stand-ins. */
-.panelTitle{display:block;padding:14px 16px 4px;font-size:var(--type-compact);font-weight:600}
+/* The budget card: the Groceries line follows the new expense; the others stand still. */
+.panelTitle{display:block;white-space:nowrap;padding:14px 16px 4px;font-size:var(--type-compact);font-weight:600}
 .budgetRow{display:flex;flex-direction:column;gap:6px;padding:12px 16px}
 .budgetRow+.budgetRow{border-block-start:1px solid var(--hairline)}
 .budgetLine{display:flex;align-items:center;gap:10px}
 .budgetLine b{flex:1;min-width:0;font-weight:500}
-.budgetLine .line:first-of-type{flex:0 1 auto;margin-inline-end:auto}
 .budgetRow small{font-size:var(--type-micro);color:var(--muted-foreground);text-align:end}
 .track{display:block;height:6px;border-radius:3px;background:var(--muted);overflow:hidden}
 .fill{display:block;height:100%;border-radius:inherit;background:var(--primary);transform-origin:0 50%;transition:transform .6s var(--ease)}
 [dir=rtl] .fill{transform-origin:100% 50%}
-.fill[data-quiet]{background:color-mix(in srgb,var(--foreground) 18%,transparent)}
 
 /* One cursor: a zero-size point that travels in a shallow arc (across fast, down eased in and out), pressing with a small scale-down.
    The arrow keeps its shape in right-to-left pages, as a real pointer does. */

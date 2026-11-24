@@ -151,7 +151,6 @@ export function LandingPage({ brand, preferences, busy, error, onDemo }: Props) 
         <p className={styles.lead}>{t('From your next payday to your long-term investments.')} {t('Keep your financial life in one place.')}</p>
         <div className={styles.actions}>{getStarted}{demo}</div>
         {error ? <p className={styles.error} role="alert">{t(error)}</p> : <p className={styles.note}>{t('No account needed. Just sample data.')}</p>}
-        <div className={styles.heroReplay}><LandingHeroDemo/></div>
       </section>
 
       <section id="features" className={styles.pillars} aria-labelledby="pillars-heading">
@@ -167,6 +166,12 @@ export function LandingPage({ brand, preferences, busy, error, onDemo }: Props) 
           </button>)}</div>
           <div className={styles.pillarSample} style={{ '--pillar-order': pillars.indexOf(active) * 2 + 1 } as CSSProperties}><AppPreview path={pillarPaths[active.key]}/></div>
         </Reveal>
+      </section>
+
+      {/* The app at work: one expense goes in and the figures it changes follow. */}
+      <section aria-labelledby="demo-heading">
+        <Reveal className={styles.sectionHeading}><h2 id="demo-heading">{t('Record it once. Every figure follows.')}</h2></Reveal>
+        <Reveal><LandingHeroDemo/></Reveal>
       </section>
 
       <section className={styles.features} aria-label={t('Features')}>

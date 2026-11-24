@@ -5,11 +5,14 @@ import { Plus, Trash2 } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { AnimatedMoney } from '@/components/presentation-foundation/animated-money';
 import { CategoryIcon } from '@/components/presentation-foundation/category-icon';
+import { sections } from '@/components/workspace/navigation';
+import { shiftDay } from '@/lib/calendar-days';
 import { depositToday } from '@/lib/deposit-interest';
 import { formatDate, formatMoney } from '@/lib/format';
 import styles from './landing-hero-demo.module.css';
 
 // Sample data only, in one sample currency: a grocery expense joins the day's list and the Groceries budget.
+// `dayBefore` is the day's other spending (the `today` rows below).
 export const heroSample = { currency: 'USD', amount: 86, dayBefore: 70, budget: 400, spentBefore: 214 } as const;
 
 /** What the scene shows at one moment. The loop starts and ends on `heroStart`; `heroPayoff` is the still frame. */
@@ -99,16 +102,23 @@ function useHeroScript(stage: RefObject<HTMLDivElement | null>, refs: Record<'ad
  return { scene, cursor };
 }
 
-/** A grey stand-in for text the story does not need: it reads as a full app without asking to be read. */
-const Line = ({ w }: { w: number }) => <i className={styles.line} style={{ '--w': `${w}px` } as CSSProperties}/>;
-
-function PlaceholderRow({ name, meta, amount }: { name: number; meta: number; amount: number }) {
- return <div className={styles.row}><i className={styles.tile}/><span className={styles.name}><Line w={name}/><Line w={meta}/></span><Line w={amount}/></div>;
+/** One spending row as Transactions shows it: the category on its tile, where the money came from, the amount. */
+function SpendingRow({ kind, emoji, amount }: { kind: string; emoji?: string; amount: number }) {
+ const { t, locale } = useLanguage();
+ return <div className={styles.row}><CategoryIcon kind={kind} emoji={emoji} size="sm"/><span className={styles.name}><b>{t(kind)}</b><small>{t('Cash')}</small></span>
+  <span className={styles.amount} dir="ltr" suppressHydrationWarning>{formatMoney(amount, heroSample.currency, locale)}</span></div>;
 }
 
-const firstDay = [[92, 58, 44], [118, 70, 38]] as const;
-const secondDay = [[104, 64, 52], [76, 50, 40], [128, 72, 46], [96, 60, 36]] as const;
-const budgetRows = [[84, .62], [110, .38], [70, .85]] as const;
+// What surrounds the story, all of it sample data: the drawer's first destinations, the day's other spending (it adds
+// up to `dayBefore`), the day before, the other budgets and the payments coming up. Categories a person would have
+// added themselves carry the icon they would have picked.
+const icons = { Transport: '🚌', Shopping: '🛍️', Utilities: '💡', Fuel: '⛽', Pharmacy: '💊', Clothing: '👕', Subscriptions: '📺' } as const;
+const rail = sections.slice(0, 7);
+const today = [{ kind: 'Transport', emoji: icons.Transport, amount: 25 }, { kind: 'Shopping', emoji: icons.Shopping, amount: 45 }] as const;
+const yesterday = [{ kind: 'Utilities', emoji: icons.Utilities, amount: 120 }, { kind: 'Fuel', emoji: icons.Fuel, amount: 40 }, { kind: 'Pharmacy', emoji: icons.Pharmacy, amount: 18 }, { kind: 'Clothing', emoji: icons.Clothing, amount: 64 }] as const;
+const budgets = [{ kind: 'Transport', emoji: icons.Transport, spent: 95, budget: 250 }, { kind: 'Shopping', emoji: icons.Shopping, spent: 140, budget: 220 }, { kind: 'Utilities', emoji: icons.Utilities, spent: 170, budget: 200 }] as const;
+const upcoming: readonly { kind: string; emoji?: string; amount: number }[] = [{ kind: 'Rent expense', amount: 900 }, { kind: 'Subscriptions', emoji: icons.Subscriptions, amount: 15 }, { kind: 'Mortgage', amount: 640 }];
+const sum = (rows: readonly { amount: number }[]) => rows.reduce((total, row) => total + row.amount, 0);
 
 /** The landing hero's product demo: a cropped window of the Transactions screen where a cursor adds a grocery
  * expense, the day's total and the Groceries budget follow, and the cursor deletes it again, in a seamless loop. */
@@ -122,21 +132,21 @@ export function LandingHeroDemo() {
  const groceries = t('Groceries');
  return <div ref={stage} className={styles.stage} role="img" aria-label={t('A short demo: adding a {category} expense updates the day’s total and the {category} budget.', { category: groceries })} data-added={scene.added || undefined} data-hover={scene.hover || undefined}>
   <div className={styles.window} aria-hidden="true">
-   <div className={styles.rail}><i className={styles.mark}/>{[64, 82, 56, 74, 60, 88, 52].map((w, index) => <span key={index} data-current={index === 2 || undefined}><i className={styles.dot}/><Line w={w}/></span>)}</div>
+   <div className={styles.rail}><i className={styles.mark}>h.</i>{rail.map(({ name, label, icon: Icon }) => <span key={name} data-current={name === 'Transactions' || undefined}><Icon size={15}/>{t(label)}</span>)}</div>
    <div className={styles.main}>
     <div className={styles.bar}><strong>{t('Transactions')}</strong><span ref={add} className={styles.add} data-pressed={scene.pressed === 'add' || undefined}><Plus size={15}/>{t('Add transaction')}</span></div>
     <div className={styles.columns}>
      <section className={styles.panel}>
       <div className={styles.dayHead}><span suppressHydrationWarning>{formatDate(depositToday(), locale)}</span><span className={styles.figure} dir="ltr" suppressHydrationWarning><AnimatedMoney value={day} currency={currency}/></span></div>
       <div className={styles.newRow}>
-       <div className={styles.row}><CategoryIcon kind="Groceries" size="sm"/><span className={styles.name}><b>{groceries}</b><Line w={64}/></span>
+       <div className={styles.row}><CategoryIcon kind="Groceries" size="sm"/><span className={styles.name}><b>{groceries}</b><small>{t('Cash')}</small></span>
         <span ref={bin} className={styles.bin} data-pressed={scene.pressed === 'bin' || undefined}><Trash2 size={14}/></span>
         <span className={styles.amount} dir="ltr" suppressHydrationWarning>{formatMoney(heroSample.amount, currency, locale)}</span></div>
       </div>
       <div className={styles.below}>
-       {firstDay.map(([name, meta, amount]) => <PlaceholderRow key={name} name={name} meta={meta} amount={amount}/>)}
-       <div className={styles.dayHead}><Line w={120}/><Line w={48}/></div>
-       {secondDay.map(([name, meta, amount]) => <PlaceholderRow key={name} name={name} meta={meta} amount={amount}/>)}
+       {today.map(row => <SpendingRow key={row.kind} {...row}/>)}
+       <div className={styles.dayHead}><span suppressHydrationWarning>{formatDate(shiftDay(depositToday(), -1), locale)}</span><span className={styles.figure} dir="ltr" suppressHydrationWarning>{formatMoney(sum(yesterday), currency, locale)}</span></div>
+       {yesterday.map(row => <SpendingRow key={row.kind} {...row}/>)}
       </div>
      </section>
      <section className={`${styles.panel} ${styles.budget}`}>
@@ -146,9 +156,13 @@ export function LandingHeroDemo() {
        <small suppressHydrationWarning>{t('of {amount}', { amount: formatMoney(heroSample.budget, currency, locale) })}</small>
        <span className={styles.track}><span className={styles.fill} style={{ transform: `scaleX(${share})` }}/></span>
       </div>
-      {budgetRows.map(([w, fill]) => <div key={w} className={styles.budgetRow}><div className={styles.budgetLine}><i className={styles.tile}/><Line w={w}/><Line w={44}/></div><span className={styles.track}><span className={styles.fill} data-quiet style={{ transform: `scaleX(${fill})` }}/></span></div>)}
+      {budgets.map(row => <div key={row.kind} className={styles.budgetRow}>
+       <div className={styles.budgetLine}><CategoryIcon kind={row.kind} emoji={row.emoji} size="sm"/><b>{t(row.kind)}</b><span className={styles.figure} dir="ltr" suppressHydrationWarning>{formatMoney(row.spent, currency, locale)}</span></div>
+       <small suppressHydrationWarning>{t('of {amount}', { amount: formatMoney(row.budget, currency, locale) })}</small>
+       <span className={styles.track}><span className={styles.fill} style={{ transform: `scaleX(${row.spent / row.budget})` }}/></span>
+      </div>)}
      </section>
-     <section className={`${styles.panel} ${styles.aside}`}><div className={styles.dayHead}><Line w={90}/></div>{firstDay.map(([name, meta, amount]) => <PlaceholderRow key={name} name={name} meta={meta} amount={amount}/>)}</section>
+     <section className={`${styles.panel} ${styles.aside}`}><strong className={styles.panelTitle}>{t('Upcoming payments')}</strong>{upcoming.map(row => <SpendingRow key={row.kind} {...row}/>)}</section>
     </div>
    </div>
   </div>
