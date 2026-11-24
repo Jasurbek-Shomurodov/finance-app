@@ -24,7 +24,8 @@ export function BusinessSankeyChart({ data, pnl, names, currency, onDrill }: { d
  const fill = (node: SankeyNode | undefined) => node?.kind === 'savings' ? 'var(--positive)' : node?.kind === 'loss' ? 'var(--negative)' : color(node?.owner ?? null);
  const netOf = (node: SankeyNode | undefined) => node?.kind === 'business' ? pnl.businesses.find(business => business.id === node.owner)?.net : undefined;
  const label = (name: string, value: number) => `${name} · ${formatMoney(value, currency, locale)}`;
- const owners = [...new Set(data.nodes.map(node => node.owner))];
+ // The household first, then each business in the report's order.
+ const owners = [...new Set(data.nodes.map(node => node.owner))].sort((a, b) => (a === null ? -1 : pnl.businesses.findIndex(business => business.id === a)) - (b === null ? -1 : pnl.businesses.findIndex(business => business.id === b)));
  const kept = data.nodes.find(node => node.kind === 'savings' && node.owner === null);
  // Each side gets exactly the room its longest label needs; the chart scrolls only when that and its columns do not fit.
  const room = sankeyLabelMargins(data, label, measureLabel);
@@ -34,9 +35,9 @@ export function BusinessSankeyChart({ data, pnl, names, currency, onDrill }: { d
    {owners.map(owner => <li key={owner ?? HOUSEHOLD} style={{ '--flow': color(owner) } as CSSProperties}>{names.business(owner)}</li>)}
    {kept && <li style={{ '--flow': 'var(--positive)' } as CSSProperties}>{kept.name}</li>}
   </ul>
-  {/* Drawn straight away, with room above and below for a business's two-line label at either edge, so it is measured from the start (the dialog Sankey shows a skeleton until it is). */}
+  {/* Nodes arrive largest first and keep that order (sort={false}). Drawn straight away, with room above and below for a business's two-line label at either edge, so it is measured from the start (the dialog Sankey shows a skeleton until it is). */}
   <div className="cash-flow-sankey" data-measured><ResponsiveContainer width="100%" minWidth={sankeyMinWidth(data, room)} height={Math.max(300, data.nodes.length * 32)}>
-   <Sankey data={data} {...chartSankey} margin={{ top: 18, right: room.right, bottom: 18, left: room.left }}
+   <Sankey data={data} {...chartSankey} sort={false} margin={{ top: 18, right: room.right, bottom: 18, left: room.left }}
     link={({ sourceX, targetX, sourceY, targetY, sourceControlX, targetControlX, linkWidth, index }: LinkProps) => {
      const link = data.links[index], drill = link && (data.nodes[link.target]?.drill ?? data.nodes[link.source]?.drill);
      return <path className="sankey-link" data-tone={link && sankeyFlowTone(data.nodes[link.source]?.kind, data.nodes[link.target]?.kind)} d={`M${sourceX},${sourceY} C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}`} strokeWidth={Math.max(1, linkWidth)} onClick={drill ? () => onDrill(drill) : undefined} data-clickable={!!drill || undefined}/>;

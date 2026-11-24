@@ -161,8 +161,20 @@ export function businessSankey(pnl: ProfitAndLoss, labels: { category: (key: str
  }
  const used = new Set(links.filter(link => link.value > 0).flatMap(link => [link.source, link.target]));
  nameEachOnce(nodes, used, (name, business) => labels.inBusiness(name, labels.business(business)));
- const index = new Map([...nodes.keys()].filter(key => used.has(key)).map((key, position) => [key, position]));
- return { nodes: nodes.filter((_, key) => used.has(key)), links: links.filter(link => link.value > 0).map(link => ({ source: index.get(link.source)!, target: index.get(link.target)!, value: link.value })) };
+ const flowing = links.filter(link => link.value > 0), order = sankeyOrder([...nodes.keys()].filter(key => used.has(key)), flowing);
+ const index = new Map(order.map((key, position) => [key, position]));
+ return { nodes: order.map(key => nodes[key]), links: flowing.map(link => ({ source: index.get(link.source)!, target: index.get(link.target)!, value: link.value })) };
+}
+
+/** The order a Sankey draws its nodes in (the chart keeps it, `sort={false}`): sources largest first, then every later
+ * node under the node most of its money comes from, largest first beside its siblings, so flows barely cross. */
+function sankeyOrder(keys: readonly number[], links: BusinessSankey['links']) {
+ const size = (key: number) => Math.max(...(['source', 'target'] as const).map(end => links.reduce((total, link) => link[end] === key ? total + link.value : total, 0)));
+ const parent = (key: number) => links.filter(link => link.target === key).sort((a, b) => b.value - a.value)[0]?.source;
+ const bySize = (a: number, b: number) => size(b) - size(a);
+ const order: number[] = [], place = (key: number) => { order.push(key); for (const child of keys.filter(item => parent(item) === key).sort(bySize)) place(child); };
+ for (const key of keys.filter(item => parent(item) === undefined).sort(bySize)) place(key);
+ return order;
 }
 
 /** The business whose loss pulled the period's net income down the most, or null when none made a loss. */

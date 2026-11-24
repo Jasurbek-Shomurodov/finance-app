@@ -66,6 +66,12 @@ test('the Sankey feeds a profit into household income, and household income cove
  assert.ok(link('sales', 'candles'), 'a business the household covers shows its own income, so it is never a source of money it did not earn');
  const into = name => data.links.filter(item => item.target === index(name)).reduce((sum, item) => sum + item.value, 0), out = name => data.links.filter(item => item.source === index(name)).reduce((sum, item) => sum + item.value, 0);
  assert.equal(into('candles'), out('candles'), 'what a loss-making business spends is its income plus what the household covered');
+ // Each node's flows read largest first, grouped under the node they come from (the chart keeps this order).
+ const sizeAt = key => Math.max(into(data.nodes[key].name), out(data.nodes[key].name));
+ for (const parent of data.nodes.keys()) {
+  const children = data.links.filter(item => item.source === parent && data.links.filter(other => other.target === item.target).sort((a, b) => b.value - a.value)[0].source === parent).map(item => item.target).sort((a, b) => a - b);
+  assert.deepEqual(children.map(sizeAt), children.map(sizeAt).sort((a, b) => b - a), `${data.nodes[parent].name}'s flows read largest first`);
+ }
  // A business with no income at all is fed by the household alone (the Solar Panel case).
  const idle = businessSankey({ household: { income: [{ key: 'Salary', amount: 900 }], incomeTotal: 900, expenses: [], expenseTotal: 0 }, businesses: [{ id: 'solar', income: [], expenses: [{ key: 'Other expense', amount: 42 }], grossIncome: 0, totalExpenses: 42, net: -42 }], totalIncome: 858, net: 858 }, labels);
  const at = name => idle.nodes.findIndex(item => item.name === name);
