@@ -20,12 +20,12 @@ export const propertyPaymentsFilter = (from: string) => ({
  or: `(and(frequency.neq.Once,or(kind.eq.Rent income,property_id.not.is.null)),and(frequency.eq.Once,date.gte.${from},or(kind.eq.Rent income,property_id.not.is.null,occurrence_record_id.not.is.null)))`,
 });
 
-/** The name of the property a payment belongs to, for its details; undefined when it names none we know. */
-export function propertyNameOf(entry: Entry, records: readonly Entry[]): string | undefined {
+/** The property a payment belongs to, for its details; undefined when it names none we know. */
+export function propertyOf(entry: Entry, records: readonly Entry[]): Entry | undefined {
  const byId = new Map(records.map(record => [record.id, record]));
  const id = paymentProperty(entry, byId);
  const property = id ? byId.get(id) : undefined;
- return property?.kind === 'Property' ? property.name : undefined;
+ return property?.kind === 'Property' ? property : undefined;
 }
 
 /** Rent received and costs paid for each property from `from` through `to`, in `currency`. Only recorded one-time

@@ -10,11 +10,11 @@ const home = entry('m', 'Home', 'Mortgage'), wallet = entry('w', 'Wallet', 'Cash
 const source = { id: 'p', mortgage_id: 'm', principal: 4, interest: 6, date: '2026-11-11', notes: '', account_id: 'w' };
 
 /** The two workspace pieces over a stubbed workspace; `calls` records what they asked it to do. */
-function open(viewing, { editingPayment = null, readOnly = false, load = async () => source, records = [home, wallet] } = {}) {
+function open(viewing, { editingPayment = null, readOnly = false, demo = false, load = async () => source, records = [home, wallet] } = {}) {
  const r = createRenderer(), calls = [], errors = [];
  const state = { viewing, editingPayment };
  const workspace = () => ({
-  ...state, readOnly, planning: { data: { records, categories: [{ id: 'c', name: 'Housing', direction: 'expense' }] } }, removedCategories: { kinds: ['Charity'] },
+  ...state, readOnly, demo, planning: { data: { records, categories: [{ id: 'c', name: 'Housing', direction: 'expense' }] } }, removedCategories: { kinds: ['Charity'] },
   businessList: [], tags: { data: { tags: [], links: [{ record_id: viewing?.id, tag_id: 'tag' }] }, change: async () => {}, save: async () => {} }, attachments: { available: true, refresh() {} },
   transactionTools: { data: { splits: [] }, loading: false, error: '' }, household: { state: null },
   setViewing: value => { state.viewing = value; calls.push(['viewing', value]); }, setSplitting: record => calls.push(['split', record.id]), setTracking: record => calls.push(['tracking', record.id]),
@@ -126,4 +126,19 @@ test('the workspace\'s not-found route renders that page inside the shell', () =
  const page = r.load('app/(workspace)/not-found.tsx', { '@/components/not-found-page': { NotFoundPage: host('not-found') } });
  r.mount(React.createElement(page.default));
  assert.equal(r.all(node => node.type === 'not-found').length, 1);
+});
+
+test('the details open the Tracker of the account and the business and Transactions for the category; the sample workspace has no Tracker to open', () => {
+ const shop = entry('b', 'Corner shop', 'Business'), sale = entry('s', 'Sale', 'Business income', { account_id: 'w', business_id: 'b' });
+ const view = open(sale, { records: [home, wallet, shop] });
+ view.r.mount(React.createElement(view.parts.WorkspaceTransactionDetails));
+ const { opens } = details(view).props;
+ opens.account();opens.business('b')();
+ assert.deepEqual(view.calls.filter(call => call[0] === 'tracking'), [['tracking', 'w'], ['tracking', 'b']]);
+ assert.equal(view.calls.filter(call => call[0] === 'viewing').length, 2, 'the details close first');
+ assert.equal(opens.business('missing'), undefined);assert.equal(opens.property, undefined);
+ assert.equal(opens.categoryHref('Business income'), '/transactions?category=Business+income');
+ const sample = open(sale, { records: [home, wallet, shop], demo: true });
+ sample.r.mount(React.createElement(sample.parts.WorkspaceTransactionDetails));
+ assert.equal(details(sample).props.opens.account, undefined);
 });

@@ -42,7 +42,7 @@ test('the sample workspace\'s rentals pay for their condo and studio', () => {
 });
 
 test('a transaction names the property it was paid for or received from, by id, also through its schedule',()=>{
- const {propertyNameOf}=loadTS('lib/property-totals.ts');
+ const {propertyOf}=loadTS('lib/property-totals.ts'),propertyNameOf=(entry,records)=>propertyOf(entry,records)?.name;
  const row=(id,kind,extra={})=>({id,name:id,kind,amount:1,currency:'USD',frequency:'Once',date:'2026-10-01',notes:'',quantity:1,cost:0,rate:0,...extra});
  const condo=row('condo','Property',{name:'Lakeside condo'}),records=[condo,row('bill','Other expense',{frequency:'Monthly',property_id:'condo'}),row('car','Vehicle')];
  assert.equal(propertyNameOf(row('fix','Other expense',{property_id:'condo'}),records),'Lakeside condo');

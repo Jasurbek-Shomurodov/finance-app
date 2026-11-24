@@ -10,7 +10,9 @@ import { showError } from '@/lib/feedback';
 import { income, type Entry } from '@/lib/finance';
 import { ownerOf, workspaceOwners } from '@/lib/household';
 import { isLinkedTransaction, linkedSourceLabel } from '@/lib/linked-transactions';
-import { propertyNameOf } from '@/lib/property-totals';
+import { propertyOf } from '@/lib/property-totals';
+import { trackedKinds } from '@/lib/investment-history';
+import { transactionsHref } from '@/lib/transaction-list';
 import { isTransactionHistory } from '@/lib/transaction-history';
 import { canRecategorize } from '@/lib/transaction-rules';
 import { planPayment } from '@/lib/payment-plan';
@@ -25,7 +27,7 @@ const splittable = (record: Entry) => isTransactionHistory(record) && !isLinkedT
  * opens its mortgage and its own Edit. */
 export function WorkspaceTransactionDetails() {
  const { t } = useLanguage();
- const { viewing, setViewing, setSplitting, setTracking, planning, businessList, tags, attachments, assignTransactionsBusiness, categorize, transactionTools, household, readOnly, removedCategories,
+ const { viewing, setViewing, setSplitting, setTracking, planning, businessList, tags, attachments, assignTransactionsBusiness, categorize, transactionTools, household, readOnly, removedCategories, demo,
   editRecord, requestDelete, mortgagePaymentSource } = useWorkspace();
  const payment = useMortgagePaymentSource(viewing, mortgagePaymentSource);
  if (!viewing) return null;
@@ -37,6 +39,9 @@ export function WorkspaceTransactionDetails() {
  const accountId = viewing.account_id ?? payment?.source?.account_id;
  const owners = workspaceOwners(household.state, { shared: t('Shared'), unnamed: t('Partner') });
  const source = linkedSourceLabel(viewing);
+ const account = recordAmong(accountId, planning.data), property = propertyOf(viewing, records);
+ /** Leaves the details for a record's own page, its Tracker, where it has one to open. */
+ const track = (record?: Entry) => record && !demo && trackedKinds.includes(record.kind) ? () => { close(); setTracking(record); } : undefined;
  const origin = viewing.mortgage_payment_id
   ? { label: t('Payment on {name}', { name: mortgage?.name ?? viewing.name }), openLabel: t('Open mortgage'), onOpen: mortgage ? () => { close(); setTracking(mortgage); } : undefined }
   : source ? { label: `${t(source)}. ${t('To change the amount or date, delete it and record it again.')}` } : undefined;
@@ -46,7 +51,8 @@ export function WorkspaceTransactionDetails() {
   origin={origin}
   tagging={{ tags: tags.data.tags, tagIds: tags.data.links.filter(link => link.record_id === viewing.id).map(link => link.tag_id), onTags: (add, remove) => tags.change([viewing.id], add, remove),
    onCreateTag: async name => { const id = crypto.randomUUID(); await tags.save({ id, name, color: nextPaletteColor(tags.data.tags.map(tag => tag.color)) }); return id; } }}
-  accountName={recordAmong(accountId, planning.data)?.name} propertyName={propertyNameOf(viewing, records)}
+  accountName={account?.name} propertyName={property?.name}
+  opens={{ account: track(account), property: track(property), business: id => track(records.find(record => record.id === id)), categoryHref: category => transactionsHref({ category }) }}
   ownerName={owners.find(owner => owner.id === ownerOf(viewing, household.state!))?.name}
   onSplit={splittable(viewing) && !transactionTools.loading && !transactionTools.error ? leaveTo(setSplitting) : undefined}
   attachments={<RecordAttachments recordId={viewing.id} available={attachments.available} onChange={attachments.refresh}/>}

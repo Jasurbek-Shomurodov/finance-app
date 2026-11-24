@@ -10,7 +10,7 @@ function open(props={}){
  const {TransactionDetailsDialog}=r.load('components/transaction-details-dialog.tsx',{
   '@/components/language-provider':{useLanguage:()=>({locale:'en-US',t})},
   '@/components/ui/dialog':{Dialog:host('dialog'),DialogContent:host('content'),DialogTitle:host('h2'),DialogDescription:host('p')},
-  '@/components/ui/button':{Button:host('button')},'lucide-react':{Pencil:host('pencil'),Paperclip:host('paperclip'),Split:host('split'),ChevronRight:host('chevron')},
+  '@/components/ui/button':{Button:host('button')},'@/components/presentation-foundation/drawer-link':{DrawerLink:host('a')},'lucide-react':{ArrowUpRight:host('arrow'),Pencil:host('pencil'),Paperclip:host('paperclip'),Split:host('split'),ChevronRight:host('chevron')},
   '@/components/presentation-foundation/category-icon':{CategoryIcon:host('CategoryIcon')},
   '@/components/presentation-foundation/delete-button':{DeleteButton:host('DeleteButton')},
   '@/components/presentation-foundation/category-badge':{CategoryBadge:host('CategoryBadge')},
@@ -125,4 +125,29 @@ test('the category changes right in the details, and a transaction written by a 
  const failed=open({record,categoryEditing:{categories,onChange:async()=>{throw Error('');}}});
  await failed.r.fireAsync(failed.r.find(node=>node.type==='CategoryPicker'),'onChange',{kind:'Charity',category_id:null});
  assert.deepEqual(failed.feedback,['error: Could not save changes.']);
+});
+
+test('the account, property, business and category open their own pages, each only where there is one to open',()=>{
+ const opened=[];
+ const businesses=[{id:'shop',name:'Corner shop'},{id:'cafe',name:'Café'}];
+ const opens={account:()=>opened.push('account'),property:()=>opened.push('property'),business:id=>id==='shop'?()=>opened.push('business '+id):undefined,categoryHref:category=>'/transactions?category='+category};
+ const view=open({opens,businesses,accountName:'Everyday checking',propertyName:'Lakeside condo',record:{business_id:'shop'}});
+ const link=name=>view.r.find(node=>node.props?.className==='transaction-details-link'&&node.props['aria-label']==='Open '+name);
+ assert.equal(text(link('Everyday checking')),'Everyday checking','a plain name is the link itself');
+ for(const name of ['Everyday checking','Lakeside condo','Corner shop'])view.r.fire(link(name),'onClick');
+ assert.deepEqual(opened,['account','property','business shop']);
+ // The business still changes in place: its picker stays beside the arrow.
+ assert.equal(view.r.all(node=>node.type==='BusinessPicker').length,1);
+ const category=link('Living expense');
+ assert.deepEqual([category.type,category.props.href],['a','/transactions?category=Living expense']);
+ view.r.fire(category,'onClick');
+ assert.equal(view.calls.closed,1,'following the category link closes the details');
+ const custom=open({opens,categoryName:'Cafés',record:{custom_category_id:'c1'}});
+ assert.equal(custom.r.find(node=>node.props?.['aria-label']==='Open Cafés').props.href,'/transactions?category=c1');
+ // Nothing to open: no page for this business, and no opens at all.
+ const none=open({opens,businesses,record:{business_id:'cafe'}});
+ assert.equal(none.r.all(node=>node.props?.['aria-label']==='Open Café').length,0);
+ const bare=open({accountName:'Everyday checking'});
+ assert.equal(bare.r.all(node=>node.props?.className==='transaction-details-link').length,0);
+ assert.equal(text(bare.value('Account')),'Everyday checking');
 });

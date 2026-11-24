@@ -102,6 +102,14 @@ label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 .transaction-details-fields>div{display:flex;flex-direction:column;gap:4px;min-width:0}
 .transaction-details-fields>[data-wide]{grid-column:1/-1}
 .transaction-details-origin{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.transaction-details-open{display:flex;align-items:center;gap:6px;min-width:0}
+.transaction-details-link{display:inline-flex;align-items:center;gap:4px;min-width:0;min-height:28px;margin-block:-4px;padding:4px 6px;border:0;border-radius:8px;background:none;color:inherit;font:inherit;text-align:start;text-decoration:none;cursor:pointer;transition:background-color var(--motion-quick) var(--ease-out)}
+.transaction-details-link:first-child{margin-inline-start:-6px}
+.transaction-details-link>span{min-width:0;overflow-wrap:break-word;text-decoration:underline;text-decoration-color:var(--border);text-underline-offset:3px}
+.transaction-details-link>svg{flex:none;color:var(--muted-foreground);transition:color var(--motion-quick) var(--ease-out)}
+.transaction-details-link:focus-visible{outline:2px solid var(--ring);outline-offset:1px}
+@media(hover:hover){.transaction-details-link:hover{background:color-mix(in srgb,var(--foreground) 6%,transparent)}.transaction-details-link:hover>svg{color:var(--primary)}}
+[dir=rtl] .transaction-details-link>svg{transform:scaleX(-1)}
 .transaction-details-fields dt{color:var(--muted-foreground);font-size:var(--type-caption);font-weight:500}
 .transaction-details-fields dd{margin:0;overflow-wrap:break-word}
 .transaction-details-amount{font-size:var(--type-stat);font-weight:600;letter-spacing:-.025em;line-height:1.15;font-variant-numeric:tabular-nums}
