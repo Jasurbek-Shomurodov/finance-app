@@ -14,9 +14,9 @@
 .sankey-link[data-tone=income]{stroke:color-mix(in srgb,var(--positive) 24%,transparent)}
 .sankey-link[data-tone=savings]{stroke:color-mix(in srgb,var(--positive) 34%,transparent)}
 .sankey-link[data-tone=loss]{stroke:color-mix(in srgb,var(--negative) 28%,transparent)}
-/* Expense flows read amber. The light theme's --caution is a dark brown-amber that turns tan on white, so light mode
-   draws a brighter amber, a little stronger, to read as amber rather than peach. */
-.sankey-link{--flow-expense:color-mix(in srgb,var(--caution) 32%,transparent);--flow-expense-hover:color-mix(in srgb,var(--caution) 55%,transparent)}
+/* Expense flows read amber. The theme's --caution turns tan on white and brown on the dark card once thinned, so the
+   flows draw a brighter amber, strong enough to read as amber on either background. */
+.sankey-link{--flow-expense:color-mix(in srgb,#f59e0b 46%,transparent);--flow-expense-hover:color-mix(in srgb,#f59e0b 70%,transparent)}
 :root[data-theme=light] .sankey-link{--flow-expense:color-mix(in srgb,#f59e0b 42%,transparent);--flow-expense-hover:color-mix(in srgb,#f59e0b 65%,transparent)}
 .sankey-link[data-tone=expense]{stroke:var(--flow-expense)}
 .sankey-link[data-tone=income][data-clickable]:hover,.sankey-link[data-tone=savings][data-clickable]:hover{stroke:color-mix(in srgb,var(--positive) 50%,transparent)}
