@@ -122,10 +122,10 @@ test('quoted holdings come with their past closes; a feed that fails leaves the 
   if(path.includes('kind=in.(')&&path.includes('Valuables'))return Response.json([{id:'btc',kind:'Crypto',name:'BTC',currency:'USD'},{id:'aapl',kind:'Stock',name:'AAPL',currency:'USD'}]);
   return Response.json([]);
  });
- closes=async(series,start,end)=>{asked.push([series,start,end]);if(series==='stock:AAPL')throw Error('feed down');return [{date:'2026-03-01',close:60000}];};
+ closes=async(series,start,end)=>{asked.push([series,start,end]);if(series==='shares:AAPL')throw Error('feed down');return [{date:'2026-03-01',close:60000}];};
  try{
   const result=await(await GET()).json();
-  assert.deepEqual(asked.sort(),[['crypto:BTC','2026-03-01','2026-09-30'],['stock:AAPL','2026-04-01','2026-09-30']]);
+  assert.deepEqual(asked.sort(),[['crypto:BTC','2026-03-01','2026-09-30'],['shares:AAPL','2026-04-01','2026-09-30']]);
   assert.deepEqual(result.prices,{'crypto:BTC':[{date:'2026-03-01',close:60000}]});
   assert.equal(result.events.length,2);
  }finally{closes=async()=>[];}

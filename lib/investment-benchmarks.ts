@@ -1,28 +1,30 @@
 import type { InvestmentPortfolioInput } from './investment-portfolio';
 import type { PlanningData } from './planning';
 import { accountRepaymentEvents, assetIncomePayouts, benchmarkExpenseFunding } from './investment-benchmarks-funding';
-import type { BenchmarkData } from './benchmark-data';
+import type { BenchmarkData, PricePoint } from './benchmark-data';
+import { priceScale } from './holding-prices';
 import type { DiversifiedPortfolio } from './diversified-portfolio';
 import type { HistoryEvent } from './investment-history';
 import { compareInvestments, convertHistorical, type CashFlow, type WealthPoint } from './investment-comparison';
 import { isInvestmentRecord } from './comparison-profile';
 import { liabilities, value } from './finance';
 import { convertAmount, marketEntry, marketRates } from './market';
-import { validDay } from './benchmark-data';
+import { marketHistoryStart, validDay } from './benchmark-data';
 import { shiftDay } from './calendar-days';
 
 export type FundingScope='investments'|'expenses';
 export type ComparisonMethod={mode:'purchases'|'date';date:string;scope?:FundingScope};
 export type BenchmarkMovement=NonNullable<PlanningData['movements']>[number]&{created_at?:string};
 export type FundingDetail={id:string;date:string;name:string;amount:number;currency:string;reused:number;principal?:number;source?:'investment'|'expense'|'opening';kind?:string;/** Part of a purchase paid from income the investments already paid out: earnings staying invested, not new money. */fromIncome?:number};
-export type DecisionInput=InvestmentPortfolioInput&{movements?:BenchmarkMovement[];method:ComparisonMethod};
+/** `prices` are each quoted holding's past closes by record (`pricesByRecord`): between two snapshots its value follows them, as the net worth line does. */
+export type DecisionInput=InvestmentPortfolioInput&{movements?:BenchmarkMovement[];method:ComparisonMethod;prices?:ReadonlyMap<string,readonly PricePoint[]>};
 /** Money entering or leaving investments: a purchase or principal repayment funds benchmarks; a payout is proceeds or income paid out (`income` for earnings, not proceeds). */
 export {accountRepaymentEvents,benchmarkExpenseFunding};
 export type {ExpenseFunding,AccountRepayment} from './investment-benchmarks-funding';
 export type ActivityItem={id:string;date:string;recordId:string;name:string;amount:number;currency:string;reused:number;principal?:number;payout?:boolean;income?:boolean};
 type Records=InvestmentPortfolioInput['records'];
 /** Market and exchange-rate history is requested from this day at the earliest. */
-export const benchmarkHistoryStart='2016-01-01';
+export const benchmarkHistoryStart=marketHistoryStart;
 // Cash is never an investment holding here, even when marked for investments: its
 // balance moves with salary and spending, which would appear as gains and losses.
 export const benchmarkInvestment=(record:Records[number])=>record.kind!=='Cash'&&isInvestmentRecord(record);
@@ -231,6 +233,9 @@ export function investmentDecisionComparison(input:DecisionInput,data:BenchmarkD
   return cost*used/converted;
  };
  const openings=openingFunding(input.records,input.events,input.today);
+ // A quoted holding is carried from its latest snapshot by its price, exactly as the net worth history carries it:
+ // a benchmark line is net worth with these holdings swapped out, so both must value them alike on every day.
+ const scale=priceScale(input.prices??new Map());
  const opening=new Map<string,HistoryEvent>(),firstBalance=new Map<string,HistoryEvent>();
  for(const e of events){
   if(!opening.has(e.record_id))opening.set(e.record_id,e);
@@ -254,7 +259,7 @@ export function investmentDecisionComparison(input:DecisionInput,data:BenchmarkD
     // Value recorded without a purchase: benchmarks receive the same amount on the same day.
     const first=openings.get(e.id);
     if(first){observed.add(e.record_id);fund(first.id,first.date,first.name,first.amount,first.currency,0,undefined,undefined,true);}
-    balances.set(e.record_id,balance);
+    balances.set(e.record_id,balance);scale.anchor(e.record_id,e.occurred_on);
    }else if(!balances.has(e.record_id)&&['contribution','withdrawal'].includes(e.event_type)){
     // Bought but not yet valued: carry the money put in until the first recorded value.
     cost.set(e.record_id,Math.max(0,(cost.get(e.record_id)??0)+(e.event_type==='contribution'?1:-1)*Number(e.amount)));
@@ -270,7 +275,7 @@ export function investmentDecisionComparison(input:DecisionInput,data:BenchmarkD
   if(date<start)continue;
   let total=0;
   for(const r of assets){
-   const balance=balances.get(r.id)??cost.get(r.id);
+   const recorded=balances.get(r.id),balance=recorded===undefined?cost.get(r.id):recorded*scale.factor(r.id,date);
    if(balance===undefined){if(!absentBefore(r.id,date))missing=true;continue;}
    const live=date===input.today?marketEntry(r,r.currency,input.market):null;
    total+=usd(live?value(live):balance,r.currency,date);
@@ -283,13 +288,21 @@ export function investmentDecisionComparison(input:DecisionInput,data:BenchmarkD
  if(missing)return null;
  const compared=compareInvestments(0,flows,points,{...data,start},'USD',true,portfolio);
  // Each day also carries `invested`: the money put in up to that day, for splitting a period's change into returns and new money.
- own.sort((a,b)=>a.date.localeCompare(b.date));
- let ownIndex=0,ownTotal=0;
- const result={...compared,points:compared.points.map(point=>{while(ownIndex<own.length&&own[ownIndex].date<=point.date)ownTotal+=own[ownIndex++].amount;return {...point,invested:ownTotal};})};
  const rates=marketRates(input.market)??{};
  if(convertAmount(1,'USD',input.currency,rates)===null)return null;
  // Each day leaves USD at that day's rate, the one it entered at: a UZS deposit shown in UZS only grows,
  // instead of moving with today's dollar. Today's live rate covers a day the feed has no rate for.
- const shown=(amount:number,date:string)=>convertHistorical(amount,'USD',input.currency,date,data.fx)??convertAmount(amount,'USD',input.currency,rates);
- return {missingPurchases:[...observed].map(id=>byId.get(id)!.name),details,result:{...result,points:result.points.map(point=>Object.fromEntries(Object.entries(point).map(([key,amount])=>[key,key==='date'||amount===null?amount:shown(Number(amount),point.date)])) as typeof point)}};
+ const shown=(amount:number,date:string)=>convertHistorical(amount,'USD',input.currency,date,data.fx)??convertAmount(amount,'USD',input.currency,rates)!;
+ // Money put in is a sum of dated amounts: each counts at its own day's rate and never moves afterwards, so a change in
+ // the exchange rate is not read as new money. `contributed` is all benchmark funding, `invested` the part from outside.
+ const running=(list:CashFlow[])=>{
+  const sorted=list.filter(flow=>flow.date<=data.end).sort((a,b)=>a.date.localeCompare(b.date));
+  let index=0,total=0;
+  return (date:string)=>{while(index<sorted.length&&sorted[index].date<=date){total+=shown(sorted[index].amount,sorted[index].date);index++;}return total;};
+ };
+ const contributedBy=running(flows),investedBy=running(own);
+ const shownPoints=compared.points.map(point=>({...Object.fromEntries(Object.entries(point).map(([key,amount])=>[key,key==='date'||amount===null?amount:shown(Number(amount),point.date)])),contributed:contributedBy(point.date),invested:investedBy(point.date)}) as typeof point&{invested:number});
+ // The starting value adds every holding, so it reads in the display currency like any other total.
+ const shownDetails=details.map(detail=>detail.id==='opening'?{...detail,amount:shown(detail.amount,detail.date),currency:input.currency}:detail);
+ return {missingPurchases:[...observed].map(id=>byId.get(id)!.name),details:shownDetails,result:{...compared,points:shownPoints}};
 }

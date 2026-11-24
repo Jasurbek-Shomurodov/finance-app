@@ -1,5 +1,5 @@
-// The daily price feeds behind every kept price series (lib/price-history-cache.ts): Twelve Data for USD-listed stocks,
-// Coinbase then Bitfinex for coins. The benchmark comparison and the net worth history's past prices both read through here.
+// The daily price feeds behind every kept price series (lib/price-history-cache.ts): Twelve Data for USD-listed stocks
+// and gold, Coinbase then Bitfinex for coins. The benchmark comparison and the net worth history's past prices both read through here.
 import { dateMillis, dayMillis, shiftDay, validDay, type PricePoint } from './benchmark-data';
 import { depositToday } from './deposit-interest';
 
@@ -25,13 +25,25 @@ async function read(url: string, fresh = false): Promise<unknown> {
  throw new Error('feed_unavailable');
 }
 const positive = (value: unknown) => (typeof value === 'number' || typeof value === 'string') && Number.isFinite(Number(value)) && Number(value) > 0;
-export async function stockHistory(symbol: string, start: string, end: string, key: string): Promise<PricePoint[]> {
- const params = new URLSearchParams({ symbol, interval: '1day', start_date: shiftDay(start, -10), end_date: end, outputsize: '5000', order: 'asc', adjust: 'all', apikey: key });
- const result = await read('https://api.twelvedata.com/time_series?' + params) as { meta?: { symbol?: string; currency?: string }; values?: { datetime: string; close: string }[] };
- if (result.meta?.symbol !== symbol || result.meta?.currency !== 'USD' || !Array.isArray(result.values)) throw Error('Unavailable');
+type SeriesMeta = { symbol?: string; currency?: string; currency_quote?: string };
+/** Twelve Data's daily closes for `symbol` in US dollars, from ten days before `start` (so a weekend or holiday start has
+ * a close before it) through `end`. `inDollars` reads the reply's own description: a series in another currency is refused. */
+async function dailyCloses(symbol: string, start: string, end: string, key: string, { adjust, inDollars }: { adjust: 'all' | 'splits'; inDollars: (meta: SeriesMeta) => boolean }): Promise<PricePoint[]> {
+ const params = new URLSearchParams({ symbol, interval: '1day', start_date: shiftDay(start, -10), end_date: end, outputsize: '5000', order: 'asc', adjust, apikey: key });
+ const result = await read('https://api.twelvedata.com/time_series?' + params) as { meta?: SeriesMeta; values?: { datetime: string; close: string }[] };
+ if (result.meta?.symbol !== symbol || !inDollars(result.meta) || !Array.isArray(result.values)) throw Error('Unavailable');
  const prices = result.values.filter(row => validDay(row.datetime) && positive(row.close) && row.datetime <= end).map(row => ({ date: row.datetime, close: Number(row.close) })).sort((a,b) => a.date.localeCompare(b.date));
  if (!prices.some(row => row.date <= start) || !prices.some(row => row.date >= shiftDay(end, -7))) throw Error('Incomplete history');
  return prices;
+}
+/** A USD-listed stock's daily closes. `adjust` is 'all' for a benchmark (splits and dividends, as if every dividend were
+ * reinvested) and 'splits' for a holding, whose dividends are paid out as income and must not lift its value as well. */
+export function stockHistory(symbol: string, start: string, end: string, key: string, adjust: 'all' | 'splits' = 'all'): Promise<PricePoint[]> {
+ return dailyCloses(symbol, start, end, key, { adjust, inDollars: meta => meta.currency === 'USD' });
+}
+/** A metal's daily spot price per fine troy ounce in US dollars (`XAU` reads XAU/USD). */
+export function metalHistory(symbol: string, start: string, end: string, key: string): Promise<PricePoint[]> {
+ return dailyCloses(`${symbol}/USD`, start, end, key, { adjust: 'all', inDollars: meta => meta.currency_quote === 'US Dollar' });
 }
 async function cryptoProviderHistory(start: string, end: string, provider: 'coinbase' | 'bitfinex', symbol = 'BTC'): Promise<PricePoint[]> {
  const rows = new Map<string, PricePoint>();

@@ -106,3 +106,23 @@ test('migration 157 is in setup.sql, safe to re-run, and keeps the table to the 
   await d.exec('SET ROLE authenticated');await assert.rejects(d.query('SELECT * FROM price_history'),/permission denied/);
  }finally{await d.close();}
 });
+
+test('migration 169 lets held shares and gold be kept, and a metal series is cut like a stock’s, without weekly re-reads',async()=>{
+ const setup=fs.readFileSync('database/setup.sql','utf8'),migration=fs.readFileSync('migrations/169_held_price_series.sql','utf8');
+ assert.ok(setup.endsWith(migration));
+ const d=new PGlite();
+ try{
+  await d.exec(`CREATE ROLE anon;CREATE ROLE authenticated;CREATE ROLE service_role;CREATE SCHEMA auth;CREATE TABLE auth.users(id uuid PRIMARY KEY);CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;GRANT USAGE ON SCHEMA auth TO authenticated;`);
+  await d.exec(setup);await d.exec(migration);
+  assert.equal((await d.query('SELECT finance_capabilities() AS c')).rows[0].c.schema_version,169);
+  for(const series of ['shares:AAPL','metal:XAU','stock:SPY','crypto:BTC'])await d.query(`INSERT INTO price_history(series,points,first_day,checked_to) VALUES($1,'[]','2026-01-01','2026-01-02')`,[series]);
+  for(const series of ['fund:SPY','metal:xau','shares:'])await assert.rejects(d.query(`INSERT INTO price_history(series,points,first_day,checked_to) VALUES($1,'[]','2026-01-01','2026-01-02')`,[series]),/check/i,series);
+ }finally{await d.close();}
+ // Gold has no close on some days: the period starts from the close before it, as a stock's does. Its closes are never
+ // rebased, so a week-old row reads only its last days again.
+ const gold=database([row('metal:XAU',days('2025-10-20','2026-10-29'),{fetched:historyFreshForMs+1,full:stockFullEveryMs+1})]),spot=feed(),later=[];
+ const points=await keptHistory('metal:XAU','2026-01-01','2026-10-29',spot.live,{db:gold.db,now:()=>NOW,later:work=>later.push(work)});
+ assert.equal(points[0].date,shiftDay('2026-01-01',-10));
+ for(const work of later)await work();
+ assert.deepEqual(spot.asked,[['2026-10-26','2026-10-29']]);
+});

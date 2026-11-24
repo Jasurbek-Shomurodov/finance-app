@@ -36,6 +36,15 @@ export function netWorthComparison(points: readonly ComparisonPoint[], history: 
  });
 }
 
+// The chart's days: the comparison on the net worth scale, led by net worth alone for the recorded days before the
+// comparison starts (cash and debts tracked before the first investment). The headline's change counts those days, so
+// the chart draws them; benchmarks begin where there is something to compare.
+export function netWorthChart(points: readonly ComparisonPoint[], history: readonly { date: string; net: number; parts?: Record<string, number> }[], keys: readonly string[]): ComparisonPoint[] {
+ const first = points[0]?.date;
+ const lead = first ? netWorthLine(history.filter(point => point.date < first)).map(point => ({ ...point, ...Object.fromEntries(keys.map(key => [key, null])) })) : [];
+ return [...lead, ...netWorthComparison(points, history, keys)];
+}
+
 // Net worth alone, one point per recorded day: what the chart draws while the benchmarks are still loading, or when
 // they cannot be worked out (no price history, a missing exchange rate). The main line never waits for them.
 export function netWorthLine(history: readonly { date: string; net: number; parts?: Record<string, number> }[]): ComparisonPoint[] {

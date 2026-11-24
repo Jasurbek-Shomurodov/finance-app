@@ -1,4 +1,5 @@
-// Kept daily price history (migration 157). One row keeps one series' daily closes (`stock:SPY`, `crypto:BTC`) for every
+// Kept daily price history (migrations 157 and 169). One row keeps one series' daily closes (`stock:SPY`, `shares:AAPL`,
+// `metal:XAU`, `crypto:BTC`) for every
 // workspace. A comparison is answered from the row when it already reaches the period; only the last few days are asked
 // again, after the reply once the row is an hour old. A stock series is read in full once a week, and at once when its
 // last days come back on another basis, because adjusted closes change with every dividend or split. A feed that fails leaves the kept closes standing when they still reach
@@ -39,6 +40,10 @@ function period(points: PricePoint[], start: string, end: string, stock: boolean
  const opening = latest && latest < start ? latest : start;
  return upTo.filter(point => point.date >= opening);
 }
+/** Every series but a coin's has days without a close (weekends, holidays). */
+const gapped = (series: string) => !series.startsWith('crypto:');
+/** A stock's closes, for a benchmark or a holding, move to a new basis with a split (and a benchmark's with a dividend). */
+const adjusted = (series: string) => series.startsWith('stock:') || series.startsWith('shares:');
 const reaches = (kept: Kept | null, start: string, end: string) => !!kept && kept.first_day <= start && kept.checked_to >= end;
 /** Kept closes still worth showing when a feed fails: they start in time and end within a week of `end`. */
 const standsIn = (kept: Kept | null, start: string, end: string) => !!kept && kept.first_day <= start && kept.checked_to >= shiftDay(end, -7);
@@ -55,7 +60,7 @@ function rebased(kept: PricePoint[], tail: PricePoint[]) {
  * the days since it was last asked, from a few days before, laid over the kept closes. */
 type Ask = { series: string; start: string; end: string; live: LiveHistory; now: number };
 async function refreshed(kept: Kept | null, { series, start, end, live, now }: Ask): Promise<Kept> {
- const stock = series.startsWith('stock:'), stamp = new Date(now).toISOString();
+ const stock = adjusted(series), stamp = new Date(now).toISOString();
  if (!kept || kept.first_day > start || (stock && now - Date.parse(kept.full_at) >= stockFullEveryMs)) {
   // The whole kept span is read again with the period, so a stock's closes share one adjustment.
   const from = kept && kept.first_day < start ? kept.first_day : start;
@@ -74,7 +79,7 @@ async function refreshed(kept: Kept | null, { series, start, end, live, now }: A
 /** The closes of `series` for a comparison of `start`–`end`, from the kept row when it reaches the period, otherwise
  * from the feeds (`live`), which are then kept. */
 export async function keptHistory(series: string, start: string, end: string, live: LiveHistory, deps: HistoryCacheDeps = {}): Promise<PricePoint[]> {
- const db = deps.db === undefined ? serviceDatabase() : deps.db, now = (deps.now ?? Date.now)(), stock = series.startsWith('stock:');
+ const db = deps.db === undefined ? serviceDatabase() : deps.db, now = (deps.now ?? Date.now)(), stock = adjusted(series), gaps = gapped(series);
  const kept = db ? await readKept(db, series) : null;
  const ask = { series, start, end, live, now };
  const stale = !kept || now - Date.parse(kept.fetched_at) >= historyFreshForMs || (stock && now - Date.parse(kept.full_at) >= stockFullEveryMs);
@@ -83,14 +88,14 @@ export async function keptHistory(series: string, start: string, end: string, li
    const work = async () => { try { await keep(db, await refreshed(kept, ask)); } catch { /* Read again next time. */ } };
    if (deps.later) deps.later(work); else void work();
   }
-  return period(kept.points, start, end, stock);
+  return period(kept.points, start, end, gaps);
  }
  try {
   const row = await refreshed(kept, ask);
   if (deps.later) deps.later(() => keep(db, row)); else await keep(db, row);
-  return period(row.points, start, end, stock);
+  return period(row.points, start, end, gaps);
  } catch (error) {
-  if (kept && standsIn(kept, start, end)) return period(kept.points, start, end, stock);
+  if (kept && standsIn(kept, start, end)) return period(kept.points, start, end, gaps);
   throw error;
  }
 }

@@ -352,3 +352,32 @@ test('unspent earnings carry to the next purchase, income events count as earnin
  assert.equal(result.result.points.at(-1).contributed,1300);
  assert.equal(result.result.points.at(-1).actual,1400+300+200-300);
 });
+
+test('a quoted holding follows its past closes between snapshots, so a benchmark line does not move with it',()=>{
+ const {portfolioHistory}=loadTS('lib/portfolio-history.ts'),{netWorthComparison}=loadTS('lib/hypothetical-net-worth.ts');
+ const closes=[100,150,200,200].map((close,index)=>({date:'2026-09-0'+(index+1),close}));
+ const records=[record('cash','Cash',5000),{...record('nvda','Stock',2000),name:'NVDA'}];
+ const events=[event('c','cash','2026-09-01','baseline',0,5000),event('p','nvda','2026-09-01','contribution',1000,1000)];
+ const input={...base,records,events,market:{quotes:{'Stock:NVDA':{usd:2000,source:'t',fetchedAt:''}},rates:{USD:1}},prices:new Map([['nvda',closes]])};
+ const result=investmentDecisionComparison(input,data).result;
+ assert.deepEqual(result.points.map(point=>point.actual),[1000,1500,2000,2000]);
+ const net=portfolioHistory(records,events,{currency:'USD',rates:{USD:1},today:'2026-09-04',includePartial:true,prices:input.prices}).points;
+ const drawn=netWorthComparison(result.points,net,['depositUSD']);
+ assert.deepEqual(drawn.map(point=>Math.round(point.actual)),[6000,6500,7000,7000]);
+ assert.deepEqual(drawn.map(point=>Math.round(point.depositUSD)),[6000,6000,6000,6001],'the deposit line is the cash plus 1,000 on deposit with its interest, whatever NVDA did');
+ // Without closes the holding keeps its recorded value until today's live price, as before.
+ assert.deepEqual(investmentDecisionComparison({...input,prices:undefined},data).result.points.map(point=>point.actual),[1000,1000,1000,2000]);
+});
+
+test('money put in counts at its own day’s rate: a moving exchange rate is not new money, and the starting value reads in the display currency',()=>{
+ const fx=[{date:'2026-09-01',rates:{UZS:10000}},{date:'2026-09-03',rates:{UZS:12000}}];
+ const input={...base,currency:'UZS',market:{quotes:{},rates:{USD:1,UZS:12000}}};
+ const result=investmentDecisionComparison(input,{...data,fx});
+ assert.deepEqual(result.result.points.map(point=>point.contributed),[10000000,10000000,10000000,10000000]);
+ assert.deepEqual(result.result.points.map(point=>point.invested),[10000000,10000000,10000000,10000000]);
+ assert.deepEqual(result.result.points.map(point=>point.actual),[10000000,10000000,12000000,12000000],'values still read at each day’s rate');
+ const later=investmentDecisionComparison({...input,events:[...base.events,event('q','asset','2026-09-03','contribution',500,1500)]},{...data,fx});
+ assert.deepEqual(later.result.points.map(point=>point.contributed),[10000000,10000000,16000000,16000000]);
+ const dated=investmentDecisionComparison({...input,method:{mode:'date',date:'2026-09-03'}},{...data,start:'2026-09-03',fx,prices:{BTC:data.prices.BTC.filter(point=>point.date>='2026-09-03')}});
+ assert.deepEqual(dated.details[0],{id:'opening',date:'2026-09-03',name:'Starting investment value',amount:12000000,currency:'UZS',reused:0});
+});

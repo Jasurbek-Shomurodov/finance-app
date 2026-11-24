@@ -1,5 +1,5 @@
 import { portfolioAssets, portfolioAssetKey, portfolioAssetCurrency, type DiversifiedPortfolio } from './diversified-portfolio';
-import { historicalRate, latestOn, type BenchmarkData, type FxPoint, type PricePoint } from './benchmark-data';
+import { depositBenchmarks, historicalRate, latestOn, type BenchmarkData, type FxPoint, type PricePoint } from './benchmark-data';
 import { daysBetween, shiftDay } from './calendar-days';
 import { convertMoney } from './money';
 
@@ -39,7 +39,7 @@ export function compareInvestments(starting: number, flows: CashFlow[], actual: 
   if (units.get(key) === null) unavailable.add(key);
  }
  // Deposits compound daily at an annual effective rate; additions earn only after their date.
- const deposits = [...(portfolio?.assets?portfolioAssets(portfolio).filter(asset=>!['stock','crypto'].includes(asset.kind)).map(asset=>({key:portfolioAssetKey(asset,portfolio),currency:portfolioAssetCurrency(asset),rate:asset.kind==='cash'?0:asset.rate/100})):[]),{key:'depositUZS',currency:'UZS',rate:.21},{key:'depositUSD',currency:'USD',rate:.08}];
+ const deposits = [...(portfolio?.assets?portfolioAssets(portfolio).filter(asset=>!['stock','crypto'].includes(asset.kind)).map(asset=>({key:portfolioAssetKey(asset,portfolio),currency:portfolioAssetCurrency(asset),rate:asset.kind==='cash'?0:asset.rate/100})):[]),...depositBenchmarks.map(deposit=>({key:deposit.key as string,currency:deposit.currency as string,rate:deposit.rate/100}))];
  for (const deposit of deposits) {
   units.set(deposit.key, convertHistorical(starting,currency,deposit.currency,data.start,data.fx));
   if (units.get(deposit.key) === null) unavailable.add(deposit.key);
