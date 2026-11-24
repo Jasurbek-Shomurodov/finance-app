@@ -53,18 +53,25 @@ test('profit and loss rolls each business net income into total income beside ho
  assert.deepEqual(filterLines(lines, ['household']).map(line => line.business), filterLines(lines, ['household']).map(() => null));
 });
 
-test('the Sankey feeds a profit into household income and shows a loss leaving the household', () => {
+test('the Sankey feeds a profit into household income, and household income covers a loss by flowing into the business', () => {
  const { lines } = reportLedger({ records, investmentLinks: [] }, [], range, 'USD', today, { USD: 1, UZS: 12500 });
  const labels = { category: key => key, business: id => id, total: 'Income', savings: 'Savings', profit: 'Net profit', loss: name => `${name} net loss`, otherIncome: 'All other income', otherExpense: 'All other expenses', inBusiness: (name, business) => `${business}: ${name}` };
  const data = businessSankey(profitAndLoss(lines, ['candles', 'rentals'], line => line.category, true), labels);
  const index = name => data.nodes.findIndex(node => node.name === name);
  const link = (from, to) => data.links.find(item => item.source === index(from) && item.target === index(to));
  assert.equal(link('rentals', 'Income').value, 1900);
- assert.equal(link('Income', 'candles net loss').value, 300.5);
- assert.equal(data.nodes[index('candles net loss')].kind, 'loss');
+ assert.equal(link('Income', 'candles').value, 300.5);
+ assert.equal(index('candles net loss'), -1, 'the loss is not drawn twice');
  assert.ok(link('candles', 'supplies'));
- assert.equal(index('sales'), -1, 'a business with one kind of income is its own source');
- assert.equal(index('Rent income'), -1);
+ assert.ok(link('sales', 'candles'), 'a business the household covers shows its own income, so it is never a source of money it did not earn');
+ const into = name => data.links.filter(item => item.target === index(name)).reduce((sum, item) => sum + item.value, 0), out = name => data.links.filter(item => item.source === index(name)).reduce((sum, item) => sum + item.value, 0);
+ assert.equal(into('candles'), out('candles'), 'what a loss-making business spends is its income plus what the household covered');
+ // A business with no income at all is fed by the household alone (the Solar Panel case).
+ const idle = businessSankey({ household: { income: [{ key: 'Salary', amount: 900 }], incomeTotal: 900, expenses: [], expenseTotal: 0 }, businesses: [{ id: 'solar', income: [], expenses: [{ key: 'Other expense', amount: 42 }], grossIncome: 0, totalExpenses: 42, net: -42 }], totalIncome: 858, net: 858 }, labels);
+ const at = name => idle.nodes.findIndex(item => item.name === name);
+ assert.deepEqual(idle.links.filter(item => item.target === at('solar')).map(item => [idle.nodes[item.source].name, item.value]), [['Income', 42]]);
+ assert.equal(idle.nodes.some(item => item.kind === 'loss'), false);
+ assert.equal(index('Rent income'), -1, 'a profitable business with one kind of income is its own source');
  assert.equal(data.links.some(item => item.target === index('rentals')), false);
  const names = data.nodes.map(node => node.name);
  assert.equal(new Set(names).size, names.length, 'every node has a name of its own');
@@ -83,8 +90,8 @@ test('each Sankey node knows whose money it is, and the loss that pulled net inc
  const pnl = profitAndLoss(lines, ['candles', 'rentals'], line => line.category, true);
  const data = businessSankey(pnl, labels), owner = name => data.nodes.find(node => node.name === name).owner;
  assert.deepEqual([owner('candles'), owner('supplies'), owner('rentals'), owner('Income'), owner('Salary')], ['candles', 'candles', 'rentals', null, null]);
- // A flow takes its source's owner: the rentals' profit is the rentals' colour, the household covering a loss is the household's.
- assert.equal(data.nodes[data.links.find(link => data.nodes[link.target].kind === 'loss').source].owner, null);
+ // The household covering a loss is the household's money flowing into the business.
+ assert.equal(data.nodes[data.links.find(link => data.nodes[link.source].kind === 'total' && data.nodes[link.target].kind === 'business').source].owner, null);
  assert.equal(largestLoss(pnl).id, 'candles');
  assert.equal(largestLoss({ businesses: [{ id: 'a', net: 10 }] }), null, 'no loss, nothing named');
  assert.equal(largestLoss({ businesses: [{ id: 'a', net: -10 }, { id: 'b', net: -40 }] }).id, 'b', 'the larger loss');

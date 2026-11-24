@@ -125,7 +125,7 @@ function nameEachOnce(nodes: SankeyNode[], used: ReadonlySet<number>, inBusiness
 export type SankeyNode = { name: string; kind: 'income' | 'total' | 'expense' | 'savings' | 'business' | 'loss'; drill: Drill | null; owner: string | null };
 export type BusinessSankey = { nodes: SankeyNode[]; links: Array<{ source: number; target: number; value: number }> };
 /** Where money came from and went, with a layer for each business: its income flows into it and its expenses out of
- * it (a business with one kind of income is its own source); a profit then flows into household income, while a loss leaves the household like any other expense. Without
+ * it (a business with one kind of income is its own source); a profit then flows into household income, while household income covers a loss by flowing into the business. Without
  * the household, a business's profit or loss stands on its own. Small flows merge into "Other". */
 export function businessSankey(pnl: ProfitAndLoss, labels: { category: (key: string) => string; business: (id: string) => string; total: string; savings: string; profit: string; loss: (name: string) => string; otherIncome: string; otherExpense: string; inBusiness: (name: string, business: string) => string }, limit = 7): BusinessSankey {
  const nodes: SankeyNode[] = [], links: BusinessSankey['links'] = [];
@@ -144,11 +144,14 @@ export function businessSankey(pnl: ProfitAndLoss, labels: { category: (key: str
   const owner = business.id, hub = node({ name, kind: 'business', drill: { business: owner }, owner });
   // A business with a single kind of income is its own source: a node named only "Business income" would say less
   // than the business's name and repeat beside every other business.
-  if (business.income.length > 1) for (const item of top(business.income, labels.otherIncome, 'income', business.id)) links.push({ source: node({ name: item.name, kind: 'income', drill: item.drill, owner }), target: hub, value: item.amount });
+  // With the household, a loss is the household's money covering the business: household income flows into the business,
+  // so the business's own income must be drawn too, or the business would stand as a source of money it never earned.
+  const covered = household && business.net < 0;
+  if (business.income.length > 1 || covered) for (const item of top(business.income, labels.otherIncome, 'income', business.id)) links.push({ source: node({ name: item.name, kind: 'income', drill: item.drill, owner }), target: hub, value: item.amount });
   for (const item of top(business.expenses, labels.otherExpense, 'expense', business.id)) links.push({ source: hub, target: node({ name: item.name, kind: 'expense', drill: item.drill, owner }), value: item.amount });
   if (business.net > 0) links.push({ source: hub, target: household ? total : node({ name: labels.profit, kind: 'savings', drill: { business: owner }, owner }), value: business.net });
   else if (business.net < 0) {
-   if (household) links.push({ source: total, target: node({ name: labels.loss(name), kind: 'loss', drill: { business: owner }, owner }), value: -business.net });
+   if (covered) links.push({ source: total, target: hub, value: -business.net });
    else links.push({ source: node({ name: labels.loss(name), kind: 'loss', drill: { business: owner }, owner }), target: hub, value: -business.net });
   }
  }

@@ -10,8 +10,12 @@
 .sankey-link[data-clickable]:hover{stroke:color-mix(in srgb,var(--mark-bg) 38%,transparent)}
 .sankey-node[data-clickable]:hover .sankey-label{text-decoration:underline}
 .sankey-node[data-clickable]:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
-.sankey-link[data-owner]{stroke:color-mix(in srgb,var(--flow) 30%,transparent)}
-.sankey-link[data-owner][data-clickable]:hover{stroke:color-mix(in srgb,var(--flow) 55%,transparent)}
+/* A flow's tone is which way the money moves; spending keeps the neutral grey above. */
+.sankey-link[data-tone=income]{stroke:color-mix(in srgb,var(--positive) 24%,transparent)}
+.sankey-link[data-tone=savings]{stroke:color-mix(in srgb,var(--positive) 34%,transparent)}
+.sankey-link[data-tone=loss]{stroke:color-mix(in srgb,var(--negative) 28%,transparent)}
+.sankey-link[data-tone=income][data-clickable]:hover,.sankey-link[data-tone=savings][data-clickable]:hover{stroke:color-mix(in srgb,var(--positive) 50%,transparent)}
+.sankey-link[data-tone=loss][data-clickable]:hover{stroke:color-mix(in srgb,var(--negative) 50%,transparent)}
 .sankey-net{fill:var(--muted-foreground)}
 .sankey-net[data-tone=negative]{fill:var(--negative)}
 .sankey-legend{display:flex;flex-wrap:wrap;gap:6px 20px;margin:0 0 12px;padding:0;list-style:none;font-size:var(--type-caption);font-weight:500;color:var(--muted-foreground)}

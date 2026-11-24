@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { ResponsiveContainer, Sankey, Tooltip } from 'recharts';
 import type { LinkProps } from 'recharts/types/chart/Sankey';
 import { useLanguage } from '@/components/language-provider';
-import { chartColors, chartSankey, chartTooltip, sankeyNodeRadius } from '@/components/presentation-foundation/chart';
+import { chartColors, chartSankey, chartTooltip, sankeyFlowTone, sankeyNodeRadius } from '@/components/presentation-foundation/chart';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { SankeySkeleton } from '@/components/presentation-foundation/loading-placeholder';
@@ -45,7 +45,7 @@ export function FlowSankey({ flows, currency, onOpen, canOpen }: { flows: Flows;
  return <div className="cash-flow-sankey" data-measured={measured || undefined}>{!measured && <SankeySkeleton height={height}/>}<ResponsiveContainer width="100%" minWidth={sankeyMinWidth(flows, room)} height={height} onResize={measure}>
   <Sankey data={{ nodes: [...flows.nodes], links: flows.links }} {...chartSankey} margin={{ top: 8, right: room.right, bottom: 8, left: room.left }} link={({ sourceX, targetX, sourceY, targetY, sourceControlX, targetControlX, linkWidth, index }: LinkProps) => {
    const node = flowTarget(index);
-   return <path className="sankey-link" d={`M${sourceX},${sourceY} C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}`} strokeWidth={Math.max(1, linkWidth)} onClick={node === null ? undefined : () => onOpen!(node)} data-clickable={node === null ? undefined : true}/>;
+   return <path className="sankey-link" data-tone={sankeyFlowTone(flows.nodes[flows.links[index]?.source]?.kind, flows.nodes[flows.links[index]?.target]?.kind)} d={`M${sourceX},${sourceY} C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}`} strokeWidth={Math.max(1, linkWidth)} onClick={node === null ? undefined : () => onOpen!(node)} data-clickable={node === null ? undefined : true}/>;
   }} node={({ x, y, width, height, index, payload }: { x: number; y: number; width: number; height: number; index: number; payload: { name: string; value: number } }) => {
    const kind = flows.nodes[index]?.kind ?? 'expense', left = !flows.links.some(link => link.target === index);
    const open = opens(index) ? () => onOpen!(index) : undefined;

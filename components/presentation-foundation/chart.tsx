@@ -85,6 +85,17 @@ export const chartDonut = { innerRadius: '58%', outerRadius: '92%', paddingAngle
 /** A Sankey of flows: thin nodes with rounded ends, grey links. */
 export const chartSankey = { nodePadding: 16, nodeWidth: 10 } as const;
 export const sankeyNodeRadius = 3;
+/** A flow's colour says which way the money moves: income green, spending grey, what was kept green and a loss red.
+ * Node kinds are the Sankeys' own (`income`, `total`, `expense`, `savings`, `loss`, `business`, accounts…). */
+export type SankeyTone = 'income' | 'expense' | 'savings' | 'loss';
+export function sankeyFlowTone(source: string | undefined, target: string | undefined): SankeyTone | undefined {
+ if (target === 'savings') return 'savings';
+ // Household income flowing into a business covers that business's loss.
+ if (source === 'loss' || target === 'loss' || (source === 'total' && target === 'business')) return 'loss';
+ if (target === 'expense') return 'expense';
+ if (source === 'income' || target === 'total') return 'income';
+ return undefined;
+}
 
 /** Tick and tooltip labels through the shared formatters. */
 export const moneyTick = (currency: string, locale: string) => (value: unknown) => formatCompactMoney(Number(value), currency, locale);

@@ -87,14 +87,13 @@ test('pressing or tapping a node narrows the transactions to it', () => {
  assert.deepEqual(drills, [data.nodes[5].drill, data.nodes[5].drill, data.nodes[5].drill]);
 });
 
-test('a flow is coloured by its source\'s earner and opens its target, or its source when the target has no drill', () => {
+test('a flow is coloured by which way the money moves and opens its target, or its source when the target has no drill', () => {
  const { sankey, drills } = chart();
  const draw = index => sankey().link({ sourceX: 10, targetX: 90, sourceY: 5, targetY: 25, sourceControlX: 40, targetControlX: 60, linkWidth: 0.2, index }).props;
  const supplies = draw(1);
  assert.equal(supplies.d, 'M10,5 C40,5 60,25 90,25');
  assert.equal(supplies.strokeWidth, 1, 'a thin flow stays visible');
- assert.equal(supplies.style['--flow'], 'color:business:bakery');
- assert.equal(draw(3).style['--flow'], 'color:business:household');
+ assert.deepEqual([0, 1, 2, 3, 4, 5].map(index => draw(index)['data-tone']), ['income', 'expense', 'income', 'income', 'expense', 'savings']);
  supplies.onClick();
  // Bakery → Total income: the total has no drill, so the flow opens the bakery.
  draw(2).onClick();
