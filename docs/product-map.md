@@ -43,6 +43,7 @@ pins the built rows).
 | Budget card | Budget | One compact card on the Dashboard (share used and three categories) | Done |
 | Upcoming payments | Recurring | Dashboard "Upcoming payments" card; each row opens that payment (`payLink`) | Done |
 | Money flow diagram | Cash flow (this month) and Reports (any period) | Budget and Recurring link to `/income-expenses#flow` | Done |
+| Where net income went | Cash flow (Left over) | Reports opens the same dialog from Net income for its period, with the whole household in view | Done |
 | Spending pace | One chart with last month and budget lines (`SpendingPaceChart`) | Dashboard and Budget share it | Done |
 | Ranked bars | One piece (`rankedBar` in `components/cash-flow/flow-bars.tsx`) | Cash flow, Reports and the Dashboard's Where it is going | Done |
 | Recent transactions | Transactions | Dashboard card; Cash flow dropped its table | Done |

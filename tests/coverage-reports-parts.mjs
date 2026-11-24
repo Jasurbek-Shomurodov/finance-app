@@ -41,8 +41,8 @@ test('report names translate built-in categories, keep custom names, and call no
 // The screen with its tabs, against stand-ins for the workspace, the charts and the data reads.
 const r = createRenderer();
 const ui = stubs();
-const sankeys = [];
-const workspace = { user: { id: 'me' }, demo: true, reload() {}, currency: 'USD', market: null, transactionTools: { data: { splits: [] }, retry() {} }, businessList: [], workspacePreferences: { data: { preferences: [] }, save: async preference => saved.push(preference) }, setViewing: record => viewed.push(record.id), setSankey: request => sankeys.push(request.title), storedRecord: record => record, household: { state: null }, planning: { data: null, loading: false, error: '' }, budget: { state: { categories: [] } }, readOnly: false, setSettingUpBusinesses: () => setups.push(true) };
+const sankeys = [], requests = [];
+const workspace = { user: { id: 'me' }, demo: true, reload() {}, currency: 'USD', market: null, transactionTools: { data: { splits: [] }, retry() {} }, businessList: [], workspacePreferences: { data: { preferences: [] }, save: async preference => saved.push(preference) }, setViewing: record => viewed.push(record.id), setSankey: request => { sankeys.push(request.title); requests.push(request); }, storedRecord: record => record, household: { state: null }, planning: { data: null, loading: false, error: '' }, budget: { state: { categories: [] } }, readOnly: false, setSettingUpBusinesses: () => setups.push(true) };
 const setups = [];
 const saved = [], viewed = [];
 let search = '', range = { data: null, loading: false, error: '', retry() { range.retried = true; } };
@@ -110,11 +110,20 @@ test('a chart click narrows the transactions, and changing a filter shows them a
  assert.notEqual(r.find(byType('ReportTransactions')).key, first, 'a second press on the same part answers again');
  r.fire(r.find(byType('BusinessSankeyChart')), 'onDrill', { business: 'b1' });
  assert.deepEqual(sankeys, [], 'a chart click only narrows: the list below is its history, no Sankey opens');
+ // Net income is the one part with no transactions of its own: it opens where the money went, for the report's period.
+ r.fire(r.find(byType('BusinessSankeyChart')), 'onDrill', { savings: 3500 });
+ assert.deepEqual(requests.at(-1) && { ...requests.at(-1), months: requests.at(-1).months.length }, { target: { side: 'savings' }, title: 'Net income', month: today.slice(0, 7), months: Number(today.slice(5, 7)), period: requests.at(-1).period, savings: 3500 });
+ assert.ok(requests.at(-1).period, 'a year names its range');
+ assert.notEqual(r.find(byType('ReportTransactions')).props.label, 'Net income', 'the list keeps what it showed');
+ sankeys.length = 0;
  r.fire(r.find(byType('ReportTransactions')), 'onOpen', list.lines[0]);
  assert.deepEqual(viewed, ['f']);
  r.fire(r.find(byType('BusinessFilter')), 'onChange', ['b1']);
  list = r.find(byType('ReportTransactions')).props;
  assert.equal(list.label, null);assert.deepEqual(list.lines.map(line => line.id), ['b']);
+ // One business in view: the workspace's flows would not add up to its figure, so Net income lists what made it.
+ r.fire(r.find(byType('BusinessSankeyChart')), 'onDrill', { savings: 900 });
+ assert.deepEqual(sankeys, []);assert.equal(r.find(byType('ReportTransactions')).props.label, 'Net income');
  assert.equal(tile('Income').value, '$900');
  r.fire(r.find(byType('ReportTransactions')), 'onClear');
 });

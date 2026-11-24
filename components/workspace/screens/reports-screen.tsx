@@ -9,13 +9,14 @@ import { Segmented } from '@/components/presentation-foundation/segmented';
 import { AttributeTab } from '@/components/reports/attribute-tab';
 import { CashFlowTab } from '@/components/reports/cash-flow-tab';
 import { ReportFilters } from '@/components/reports/report-filters';
+import { rangeText } from '@/components/reports/report-labels';
 import { TaxTab } from '@/components/reports/tax-tab';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
 import { useReportLink } from '@/hooks/use-report-link';
 import { useRangeData } from '@/hooks/use-report-data';
 import { budgetCategories } from '@/lib/budget';
 import { HOUSEHOLD } from '@/lib/business';
-import { drillMatches, filterLines, linesOn, periodOf, reportLedger, shiftPeriod, trendWindow, unconvertedCount, type Drill, type Interval, type LedgerLine, type ReportBasis, type UnconvertedLine } from '@/lib/business-report';
+import { drillMatches, filterLines, linesOn, periodOf, rangeMonths, reportLedger, shiftPeriod, trendWindow, unconvertedCount, type Drill, type Interval, type LedgerLine, type ReportBasis, type UnconvertedLine } from '@/lib/business-report';
 import { ownedPercent } from '@/lib/finance';
 import { depositToday } from '@/lib/deposit-interest';
 import { inOwnerFilter, ownerOf, SHARED, workspaceOwners } from '@/lib/household';
@@ -31,8 +32,8 @@ const tabLabels: Record<ReportTab, string> = { cash_flow: 'Cash flow', spending:
 /** Reports: cash flow, spending and income for the household and each business, with breakdowns, trends and a
  * profit and loss table, and business tax prep. Every chart narrows the transactions below it. */
 export function ReportsScreen() {
- const { t } = useLanguage();
- const { currency, market, budget, transactionTools, businessList, workspacePreferences, setViewing, storedRecord, household, setSettingUpBusinesses, readOnly } = useWorkspace();
+ const { t, locale } = useLanguage();
+ const { currency, market, budget, transactionTools, businessList, workspacePreferences, setViewing, setSankey, storedRecord, household, setSettingUpBusinesses, readOnly } = useWorkspace();
  // In a shared household, reports narrow to what one person owns or to what is shared.
  const homes = household.state;
  const owners = workspaceOwners(homes, { shared: t('Shared'), unnamed: t('Partner') });
@@ -70,8 +71,13 @@ export function ReportsScreen() {
  const names = reportNames(data.categories, businessList, t);
  const [drill, setDrill] = useState<{ drill: Drill; label: string; turn: number } | null>(null);
  // A row narrows the transactions below to what it counts: its history for the report's period.
+ // Net income is not a list of transactions: with the whole household in view it opens where that money went (accounts,
+ // investments, loan principal), as Cash flow's Left over does. Narrowed to a business, a person or the whole of a
+ // part-owned business, the workspace's flows would not add up to the figure, so it lists what made it instead.
+ const everything = !businesses.length && !ownerFilter.length && (basis === 'mine' || !shares.size);
+ const whereItWent = (savings: number) => setSankey({ target: { side: 'savings' }, title: t('Net income'), month: period.to.slice(0, 7), months: rangeMonths(period), period: interval === 'month' ? undefined : rangeText(period, locale), savings });
  // Each press counts (`turn`), so the list answers a second press on the same part too.
- const narrow = (next: Drill) => setDrill(current => ({ drill: next, label: describeDrill(next, names, t), turn: (current?.turn ?? 0) + 1 }));
+ const narrow = (next: Drill) => next.savings !== undefined && everything ? whereItWent(next.savings) : setDrill(current => ({ drill: next, label: describeDrill(next, names, t), turn: (current?.turn ?? 0) + 1 }));
  // Changing what the page shows starts again from every transaction.
  const reset = <T,>(set: (value: T) => void) => (value: T) => { set(value); setDrill(null); };
  const open = (line: LedgerLine) => line.record && setViewing(storedRecord(line.record));
