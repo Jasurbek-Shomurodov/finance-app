@@ -322,3 +322,18 @@ test('BTC windows of closed days may come from the fetch cache; only the newest 
   assert.ok(windows.filter(item=>item!==newest).every(item=>!item.fresh&&item.revalidate===3600),'closed windows are cacheable');
  }finally{globalThis.fetch=original;}
 });
+
+test('a held stock asks for split-only closes and gold for its dollar spot series; another currency is refused',async()=>{
+ const original=globalThis.fetch,asked=[];
+ try{
+  globalThis.fetch=async raw=>{
+   const url=new URL(raw),symbol=url.searchParams.get('symbol');asked.push([symbol,url.searchParams.get('adjust')]);
+   const values=[{datetime:'2026-09-14',close:'100'},{datetime:'2026-09-17',close:'110'}];
+   return Response.json(symbol==='XAU/USD'?{meta:{symbol,currency_quote:'US Dollar'},values}:symbol==='XAG/USD'?{meta:{symbol,currency_quote:'Euro'},values}:{meta:{symbol,currency:'USD'},values});
+  };
+  assert.deepEqual(await feeds.stockHistory('KO','2026-09-14','2026-09-17','k','splits'),[{date:'2026-09-14',close:100},{date:'2026-09-17',close:110}]);
+  assert.deepEqual((await feeds.metalHistory('XAU','2026-09-14','2026-09-17','k')).map(point=>point.close),[100,110]);
+  await assert.rejects(feeds.metalHistory('XAG','2026-09-14','2026-09-17','k'),/Unavailable/);
+  assert.deepEqual(asked,[['KO','splits'],['XAU/USD','all'],['XAG/USD','all']]);
+ }finally{globalThis.fetch=original;}
+});

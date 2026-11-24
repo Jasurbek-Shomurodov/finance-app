@@ -9,13 +9,13 @@ import { benchmarkFx } from '@/lib/benchmark-fx';
 import { keptHistory } from '@/lib/price-history-cache';
 import { cryptoHistory, stockHistory } from '@/lib/price-feeds';
 import { afterResponse } from '@/lib/after-response';
-import { shiftDay, validDay, type BenchmarkData, type PricePoint } from '@/lib/benchmark-data';
+import { marketHistoryStart, shiftDay, validDay, type BenchmarkData, type PricePoint } from '@/lib/benchmark-data';
 
 async function loadBenchmarks(req: Request) {
  try {
   const params = new URL(req.url).searchParams;
   const start = params.get('start') ?? '', end = params.get('end') ?? '', custom = params.get('symbol') ?? '';
-  if (!validDay(start) || !validDay(end) || start > end || end > depositToday() || start < '2016-01-01' || (custom && !/^[A-Z][A-Z0-9.-]{0,14}$/.test(custom))) return Response.json({ error: 'Choose valid dates ending today or earlier.' }, { status: 400 });
+  if (!validDay(start) || !validDay(end) || start > end || end > depositToday() || start < marketHistoryStart || (custom && !/^[A-Z][A-Z0-9.-]{0,14}$/.test(custom))) return Response.json({ error: 'Choose valid dates ending today or earlier.' }, { status: 400 });
   const data: BenchmarkData = { start, end, prices: {}, fx: [], errors: {} };
   const selected=(params.get('benchmarks')??'SPY,HYG,BTC,depositUZS,depositUSD,CUSTOM').split(',');
   if(!benchmarkSelectionSchema.safeParse(selected).success)return Response.json({error:'Check the comparison settings.'},{status:400});

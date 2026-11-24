@@ -4,6 +4,7 @@ import type { HistoryEvent } from './investment-history';
 import { convertAmount } from './market';
 import type { FxPoint, PricePoint } from './benchmark-data';
 import { dayRates } from './history-rates';
+import { priceScale } from './holding-prices';
 
 /** The income the Overview's income chart reads: the receipts among the cash flows, then the income schedules. The sample
  * workspace's history names its own `incomeRecords`, which are kept. */
@@ -55,29 +56,6 @@ function earlyOpenings(included: Entry[], firstBalances: ReadonlyMap<string, His
   if (!first || !openedOn || !/^\d{4}-\d{2}-\d{2}$/.test(openedOn) || !(openedOn < first.occurred_on) || !Number.isFinite(balance) || prices.has(record.id)) return [];
   return [{ id: record.id, openedOn, balance }];
  }).sort((a, b) => a.openedOn.localeCompare(b.openedOn));
-}
-/** How far each quoted holding's price has moved since its latest snapshot. A stock or coin is saved with the value it
- * had when it was last edited; between two snapshots its quantity is unchanged (a purchase, a sale or an edit writes a
- * snapshot), so its value on a day is that snapshot carried by the price: `close that day / close on the snapshot's day`.
- * Days are asked in ascending order. A holding without closes, or with none by its snapshot's day, keeps its recorded value. */
-function priceScale(prices: ReadonlyMap<string, readonly PricePoint[]>) {
- const cursor = new Map<string, number>(), anchors = new Map<string, number | null>();
- const closeOn = (id: string, date: string) => {
-  const points = prices.get(id);
-  if (!points) return null;
-  let index = cursor.get(id) ?? -1;
-  while (index + 1 < points.length && points[index + 1].date <= date) index++;
-  cursor.set(id, index);
-  return index < 0 ? null : points[index].close;
- };
- return {
-  /** A snapshot taken on `date`: later days are measured from its close. */
-  anchor: (id: string, date: string) => { if (prices.has(id)) anchors.set(id, closeOn(id, date)); },
-  factor: (id: string, date: string) => {
-   const from = anchors.get(id), now = from ? closeOn(id, date) : null;
-   return from && now ? now / from : 1;
-  },
- };
 }
 /** The days a quoted holding's price is known after its first snapshot: each is drawn, so its line follows the market. */
 function addPriceDays(byDay: Map<string, DayChanges>, sorted: HistoryEvent[], prices: ReadonlyMap<string, readonly PricePoint[]>, today: string) {

@@ -104,3 +104,13 @@ test('net worth alone is drawn from its own history, without any benchmark data'
  assert.deepEqual(netWorthLine([]),[]);
  assert.deepEqual(netWorthLine([{date:'2026-10-01',net:Number.NaN}]),[],'a day without a usable figure is left out');
 });
+
+test('recorded days before the comparison starts are drawn as net worth alone, then the comparison takes over',()=>{
+ const {netWorthChart}=loadTS('lib/hypothetical-net-worth.ts');
+ const history=[{date:'2026-01-10',net:500},{date:'2026-06-01',net:700},{date:'2026-09-01',net:1700},{date:'2026-09-02',net:1800}];
+ const points=[{date:'2026-09-01',actual:1000,contributed:1000,SPY:1000},{date:'2026-09-02',actual:1100,contributed:1000,SPY:1050}];
+ const chart=netWorthChart(points,history,['SPY']);
+ assert.deepEqual(chart.map(point=>[point.date,point.actual,point.SPY]),[['2026-01-10',500,null],['2026-06-01',700,null],['2026-09-01',1700,1700],['2026-09-02',1800,1750]]);
+ assert.deepEqual(netWorthChart(points,history.slice(2),['SPY']).map(point=>point.date),['2026-09-01','2026-09-02'],'nothing recorded earlier, nothing added');
+ assert.deepEqual(netWorthChart([],history,['SPY']),[]);
+});

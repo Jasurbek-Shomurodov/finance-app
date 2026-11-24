@@ -45,9 +45,9 @@ test('the sample workspace loads sample benchmarks, draws the chart from the win
  assert.deepEqual(s.legend().map(text),['Net worth','Bitcoin · BTC','S&P 500 · SPY','US Treasury bills · BIL','USD deposit · 8%']);
  assert.ok(s.legend().every(button=>button.props['aria-pressed']===true&&!button.props.disabled));
  const chart=s.r.find(byType('InvestmentValueChart'));
- assert.deepEqual(chart.props.points.map(point=>point.date),['2026-09-10','2026-09-20'],'points before the window are cut');
+ assert.deepEqual(chart.props.points.map(point=>point.date),['2026-08-01','2026-09-10','2026-09-20'],'comparison points before the window are cut; net worth recorded before the comparison leads the line');
  assert.equal(chart.props.series.find(series=>series.key==='actual').primary,true);
- assert.deepEqual(chart.props.points.map(point=>[point.actual,point.BTC]),[[40,60],[40,60]],'the main line is net worth, and Bitcoin keeps its distance from it');
+ assert.deepEqual(chart.props.points.map(point=>[point.actual,point.BTC]),[[40,null],[40,60],[40,60]],'the main line is net worth, and Bitcoin keeps its distance from it once it starts');
  assert.equal(chart.props.label,'Net worth');
  assert.equal(chart.props.floor,40,'the axis starts at net worth on the first shown day');
  assert.ok(s.notes().includes('Sample portfolio compared with real BTC and SPY price history. SPY tracks the S&P 500; deposits use assumed annual rates.'));

@@ -3,7 +3,7 @@ import { pastDatePresets } from '@/lib/date-picker-calendar';
 import { DatePicker } from '@/components/presentation-foundation/date-picker';
 import { Segmented } from '@/components/presentation-foundation/segmented';
 import { HypotheticalNetWorthCards } from '@/components/hypothetical-net-worth';
-import { hypotheticalNetWorth, netWorthComparison, netWorthLine } from '@/lib/hypothetical-net-worth';
+import { hypotheticalNetWorth, netWorthChart, netWorthLine } from '@/lib/hypothetical-net-worth';
 import { periodGrowth,type PeriodGrowth } from '@/lib/period-growth';
 import { benchmarkMethodStorageKey, readBenchmarkScope, investmentComparisonCoverage, investmentDecisionComparison, purchaseComparisonStart, comparisonMethod, type ComparisonMethod, type BenchmarkMovement, type FundingScope } from '@/lib/investment-benchmarks';
 import { showError } from '@/lib/feedback';
@@ -23,8 +23,9 @@ import { formatDate,formatPercent } from '@/lib/format';
 import { type Entry } from '@/lib/finance';
 import { type MarketData } from '@/lib/market';
 import { type HistoryEvent } from '@/lib/investment-history';
-import { type BenchmarkData, type FxPoint } from '@/lib/benchmark-data';
+import { depositBenchmarks, type BenchmarkData, type FxPoint } from '@/lib/benchmark-data';
 import { mergeFx } from '@/lib/history-rates';
+import { pricesByRecord, type HoldingPrices } from '@/lib/holding-prices';
 import { benchmarkColor,defaultBenchmarkColor,defaultComparisonPreferences,isInvestmentRecord,type ComparisonProfile } from '@/lib/comparison-profile';
 import Link from 'next/link';
 import { DrawerLink } from '@/components/presentation-foundation/drawer-link';
@@ -33,7 +34,7 @@ import { ChartNoAxesCombined } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
 
-type History={movements?:BenchmarkMovement[];records:Entry[];events:HistoryEvent[];cashflows?:Entry[]};
+type History={movements?:BenchmarkMovement[];records:Entry[];events:HistoryEvent[];cashflows?:Entry[];/** Past closes of quoted holdings, by series. */prices?:HoldingPrices};
 export function InvestmentComparison({fx,allPoints,periodPick,onViewMove,history,today,currency,market,demo,windowStart,points,summary,profile,profileError,trackingStart,onTrackingStartChange,onGrowth,chartHeight}:{/** The rates the net worth line converts each day with; the comparison converts with the same ones. */fx?:FxPoint[];/** Net worth over the whole tracked history: in full screen the chart holds all of it and the period only sets its zoom. */allPoints?:{date:string;net:number}[];/** Changes each time a period is chosen, so choosing one again zooms back to it. */periodPick?:number;/** The person dragged or zoomed the full-screen chart away from the chosen period. */onViewMove?:()=>void;/** The chart's height when its card fills the window; the usual height otherwise. */chartHeight?:number;onGrowth?:(growth:PeriodGrowth|null)=>void;windowStart:string;points:{date:string;net:number}[];summary?:ReactNode|((fx:FxPoint[]|undefined,scope:FundingScope)=>ReactNode);history:History;today:string;currency:string;market:MarketData|null;demo:boolean;profile:ComparisonProfile|null;profileError:string;trackingStart:string|null;onTrackingStartChange:(date:string|null)=>Promise<void>}){
  const {t,locale}=useLanguage();
  const [data,setData]=useState<BenchmarkData|null>(null),[error,setError]=useState(''),[retry,setRetry]=useState(0),[loadedKey,setLoadedKey]=useState('');
@@ -99,8 +100,10 @@ export function InvestmentComparison({fx,allPoints,periodPick,onViewMove,history
  const ready=useMemo(()=>loaded?{...loaded,fx:mergeFx(loaded.fx,fx)}:null,[loaded,fx]);
  // The period summary converts with the same dated rates as the chart, so their funding totals agree.
  const summaryNode=typeof summary==='function'?summary(ready?.fx,scope):summary;
- const decision=useMemo(()=>ready?investmentDecisionComparison({records:history.records,events:history.events,cashflows:history.cashflows,movements:history.movements,market,currency,today,method},ready,activeDiversified):null,[ready,history,market,currency,today,method,activeDiversified]);
- const definitions=[{key:'actual',label:t('Net worth'),color:'var(--primary)',dash:undefined,quotes:undefined},...stockBenchmarks(profile?.preferences.benchmarks??[]).map(item=>({key:item.id,label:item.symbol,color:defaultBenchmarkColor(item.id),dash:'12 4',quotes:[{key:item.id,symbol:item.symbol}]})),{key:'BTC',label:'Bitcoin · BTC',color:defaultBenchmarkColor('BTC'),dash:undefined,quotes:[{key:'BTC',symbol:'BTC'}]},{key:'SPY',label:'S&P 500 · SPY',color:defaultBenchmarkColor('SPY'),dash:'7 3',quotes:[{key:'SPY',symbol:'SPY'}]},{key:'HYG',label:t('High-yield bonds · HYG'),color:defaultBenchmarkColor('HYG'),dash:'9 3 2 3',quotes:[{key:'HYG',symbol:'HYG'}]},{key:'BIL',label:t('US Treasury bills · BIL'),color:defaultBenchmarkColor('BIL'),dash:'4 2',quotes:[{key:'BIL',symbol:'BIL'}]},{key:'depositUZS',label:t('{currency} deposit · {rate}',{currency:'UZS',rate:formatPercent(21,locale)}),color:defaultBenchmarkColor('depositUZS'),dash:'5 5'},{key:'depositUSD',label:t('{currency} deposit · {rate}',{currency:'USD',rate:formatPercent(8,locale)}),color:defaultBenchmarkColor('depositUSD'),dash:'2 4'},{key:'CUSTOM',label:symbol,color:defaultBenchmarkColor('CUSTOM'),dash:'12 4',quotes:[{key:'CUSTOM',symbol}]},{key:'PORTFOLIO',label:t('Diversified portfolio'),color:defaultBenchmarkColor('PORTFOLIO'),dash:'8 3 2 3',quotes:activeDiversified?portfolioQuotes(activeDiversified):undefined}];
+ // Quoted holdings follow the same past closes as the net worth line, so a benchmark line never moves with them.
+ const holdingCloses=useMemo(()=>pricesByRecord(history.records,history.prices),[history.records,history.prices]);
+ const decision=useMemo(()=>ready?investmentDecisionComparison({records:history.records,events:history.events,cashflows:history.cashflows,movements:history.movements,market,currency,today,method,prices:holdingCloses},ready,activeDiversified):null,[ready,history,market,currency,today,method,activeDiversified,holdingCloses]);
+ const definitions=[{key:'actual',label:t('Net worth'),color:'var(--primary)',dash:undefined,quotes:undefined},...stockBenchmarks(profile?.preferences.benchmarks??[]).map(item=>({key:item.id,label:item.symbol,color:defaultBenchmarkColor(item.id),dash:'12 4',quotes:[{key:item.id,symbol:item.symbol}]})),{key:'BTC',label:'Bitcoin · BTC',color:defaultBenchmarkColor('BTC'),dash:undefined,quotes:[{key:'BTC',symbol:'BTC'}]},{key:'SPY',label:'S&P 500 · SPY',color:defaultBenchmarkColor('SPY'),dash:'7 3',quotes:[{key:'SPY',symbol:'SPY'}]},{key:'HYG',label:t('High-yield bonds · HYG'),color:defaultBenchmarkColor('HYG'),dash:'9 3 2 3',quotes:[{key:'HYG',symbol:'HYG'}]},{key:'BIL',label:t('US Treasury bills · BIL'),color:defaultBenchmarkColor('BIL'),dash:'4 2',quotes:[{key:'BIL',symbol:'BIL'}]},...depositBenchmarks.map(deposit=>({key:deposit.key as string,label:t('{currency} deposit · {rate}',{currency:deposit.currency,rate:formatPercent(deposit.rate,locale)}),color:defaultBenchmarkColor(deposit.key),dash:deposit.key==='depositUZS'?'5 5':'2 4',quotes:undefined})),{key:'CUSTOM',label:symbol,color:defaultBenchmarkColor('CUSTOM'),dash:'12 4',quotes:[{key:'CUSTOM',symbol}]},{key:'PORTFOLIO',label:t('Diversified portfolio'),color:defaultBenchmarkColor('PORTFOLIO'),dash:'8 3 2 3',quotes:activeDiversified?portfolioQuotes(activeDiversified):undefined}];
  const colors=profile?.preferences.colors;
  const displayed=definitions.filter(item=>item.key==='actual'||selected.includes(item.key)).map(item=>item.key==='actual'?item:{...item,color:benchmarkColor(item.key,colors)});
  const visibleSeries=displayed.filter(item=>overviewSeriesVisible(overviewKeys,item.key));
@@ -111,7 +114,7 @@ export function InvestmentComparison({fx,allPoints,periodPick,onViewMove,history
  // The chart draws net worth, debts subtracted, and each benchmark as the net worth it would have led to. The
  // comparison's own points keep the investment value, which the period's growth and funding totals read.
  const benchmarkKeys=displayed.filter(item=>item.key!=='actual').map(item=>item.key);
- const shownPoints=netWorthComparison(chartPoints,points,benchmarkKeys);
+ const shownPoints=netWorthChart(chartPoints,points,benchmarkKeys);
  // In full screen the chart holds the whole history, as a trading chart does: the period picks where it opens, and
  // dragging or zooming out reaches every earlier day. Its value axis fits the days in view.
  const navigable=chartHeight!==undefined;
@@ -122,7 +125,7 @@ export function InvestmentComparison({fx,allPoints,periodPick,onViewMove,history
  const lineAlone=scope==='investments'&&nothingInvested&&points.length>1;
  // Net worth needs no benchmark data: while comparisons load, or when they cannot be worked out, its line is drawn alone.
  const wholeHistory=navigable&&allPoints?allPoints:null;
- const chartData=overviewResult&&!lineAlone?wholeHistory?netWorthComparison(overviewResult.points,wholeHistory,benchmarkKeys):shownPoints:netWorthLine(wholeHistory??points);
+ const chartData=overviewResult&&!lineAlone?wholeHistory?netWorthChart(overviewResult.points,wholeHistory,benchmarkKeys):shownPoints:netWorthLine(wholeHistory??points);
  const detailPoint=chartData.find(point=>point.date===detailDate);
  // The axis starts at net worth on the first shown day, so its line opens in the bottom-left corner. A later dip
  // below that value lowers the floor to it: the main line is never cut off, only benchmarks below it are.
