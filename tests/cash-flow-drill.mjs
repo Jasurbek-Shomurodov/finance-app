@@ -734,6 +734,14 @@ test('a Money flow Sankey opens over the page for its month, a transaction in it
  const Probe = () => { useCashFlowData({ owner: 'me', demo: false, revision: 0, provided: { records: [] }, month: '2026-10', today: '2026-10-20', linked: '2025-06' }); return null; };
  r.mount(React.createElement(Probe));
  assert.deepEqual(read, ['/api/planning?scope=budget&month=2026-10&from=2025-01', '/api/goal-tools'], 'signed in, it reads the budget read for the bars and the goals’ history');
+ // A page that has already read these months (Reports) hands them over: the planning read is switched off, so the dialog opens at once.
+ const enabled = [], handed = { records: [{ id: 'kept' }] };
+ const { useCashFlowData: useReady } = loadTS('components/cash-flow-data.ts', { react: r.react, '@/hooks/use-owner-resource': { useOwnerResource: (url, owner, on) => { enabled.push([url.split('?')[0], on]); return { data: { records: [], events: [] } }; } } });
+ let result;
+ const Ready = () => { result = useReady({ owner: 'me', demo: false, revision: 0, provided: { records: [] }, month: '2026-10', today: '2026-10-20', ready: { data: handed, throughToday: false } }); return null; };
+ r.mount(React.createElement(Ready));
+ assert.deepEqual(enabled, [['/api/planning', false], ['/api/goal-tools', true]]);
+ assert.deepEqual([result.data, result.throughToday], [handed, false], 'it shows the data it was handed, and says whether that runs to today');
 });
 
 test('a recent transaction on the dashboard opens its details by click, Enter or Space; without a handler it stays plain', () => {

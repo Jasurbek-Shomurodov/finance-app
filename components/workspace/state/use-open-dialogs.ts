@@ -5,12 +5,14 @@ import type { Entry } from '@/lib/finance';
 import type { HistoryUpdateType } from '@/lib/investment-history';
 import type { DrillScope, DrillTarget } from '@/lib/cash-flow-drill-types';
 import type { PaymentPlan } from '@/lib/payment-plan';
+import type { PlanningData } from '@/lib/planning';
 
 /** A Sankey to open over the page: what, its title, the month it is for, and what its schedule's details open. */
 export type SankeyRequest = { target: DrillTarget; title: string; month: string; onDetails?: () => void;
  /** Several months (a year on Budget) with their label; otherwise `month` alone. */ months?: string[]; period?: string;
  /** What was saved in the period, for a Savings Sankey (where it went). */ savings?: number;
- /** A report narrowed to some businesses or people: only their own income and spending count. */ scope?: DrillScope };
+ /** A report narrowed to some businesses or people: only their own income and spending count. */ scope?: DrillScope;
+ /** What the opening page has already read for these months, and whether it runs to today: the dialog reads nothing again. */ ready?: { data: PlanningData; throughToday: boolean } };
 
 /** Which of the shell's dialogs is open, and for which record: ending a schedule, splitting, viewing, a Money flow
  * Sankey, tracking a holding, Record payment, changing a recorded mortgage payment, an income source, or business setup (`guide` reopens only its closing guide,

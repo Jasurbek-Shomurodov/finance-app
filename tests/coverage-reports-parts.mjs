@@ -112,7 +112,8 @@ test('a chart click narrows the transactions, and changing a filter shows them a
  assert.deepEqual(sankeys, [], 'a chart click only narrows: the list below is its history, no Sankey opens');
  // Net income is the one part with no transactions of its own: it opens where the money went, for the report's period.
  r.fire(r.find(byType('BusinessSankeyChart')), 'onDrill', { savings: 3500 });
- assert.deepEqual(requests.at(-1) && { ...requests.at(-1), months: requests.at(-1).months.length }, { target: { side: 'savings' }, title: 'Net income', month: today.slice(0, 7), months: Number(today.slice(5, 7)), period: requests.at(-1).period, savings: 3500, scope: undefined });
+ assert.deepEqual(requests.at(-1) && { ...requests.at(-1), months: requests.at(-1).months.length }, { target: { side: 'savings' }, title: 'Net income', month: today.slice(0, 7), months: Number(today.slice(5, 7)), period: requests.at(-1).period, savings: 3500, scope: undefined, ready: requests.at(-1).ready });
+ assert.equal(requests.at(-1).ready.throughToday, true, 'the dialog opens from what the report has read, which runs to today');
  assert.ok(requests.at(-1).period, 'a year names its range');
  assert.notEqual(r.find(byType('ReportTransactions')).props.label, 'Net income', 'the list keeps what it showed');
  assert.equal(requests.at(-1).scope, undefined, 'the whole household: every flow counts');

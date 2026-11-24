@@ -22,7 +22,7 @@ function Drill({ request, onClose }: { request: SankeyRequest; onClose: () => vo
  // A schedule opened where its history is not at hand (the dashboard) shows it on Recurring.
  const router = useRouter();
  const today = depositToday();
- const { live, data, remote, goalEvents, throughToday } = useCashFlowData({ owner: user, demo, revision: reload, provided: planning.data, month: today.slice(0, 7), today, linked: request.months?.[0] ?? request.month });
+ const { live, data, remote, goalEvents, throughToday } = useCashFlowData({ owner: user, demo, revision: reload, provided: planning.data, month: today.slice(0, 7), today, linked: request.months?.[0] ?? request.month, ready: request.ready });
  const categoryName = (key: string) => data.categories.find(category => category.id === key)?.name ?? t(key);
  return <CashFlowDrillDialog target={request.target} title={request.title} period={request.period ?? formatMonthYear(request.month, locale)} savings={request.savings ?? 0} loading={live && remote.initialLoading}
   context={{ data, splits: transactionTools.data.splits, months: request.months ?? [request.month], currency, today, rates: marketRates(market), t, label: categoryName, locale, throughToday: throughToday && !request.scope, goalEvents, scope: request.scope }}

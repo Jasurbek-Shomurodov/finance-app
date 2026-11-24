@@ -36,7 +36,7 @@ test('the screens still ask for those addresses, starting from those defaults', 
  const transactions = source('components/workspace/screens/transactions-screen.tsx');
  assert.match(transactions, /useState<TransactionPeriod \| 'custom'>\('three_months'\)/);
  assert.match(transactions, /`\/api\/planning\?scope=budget&month=\$\{range\.to\.slice\(0, 7\)\}&from=\$\{range\.from\.slice\(0, 7\)\}`, user, live, reload,/);
- assert.match(source('components/cash-flow-data.ts'), /`\/api\/planning\?scope=budget&month=\$\{readTo\}&from=\$\{first\}`, owner, live, revision,/);
+ assert.match(source('components/cash-flow-data.ts'), /`\/api\/planning\?scope=budget&month=\$\{readTo\}&from=\$\{first\}`, owner, live && !ready, revision,/);
  const reports = source('components/workspace/screens/reports-screen.tsx');
  assert.match(reports, /useState<Interval>\('month'\)/); assert.match(reports, /useState\(today\)/);
  assert.match(source('hooks/use-report-data.ts'), /`\/api\/planning\?scope=budget&month=\$\{read\.to\.slice\(0, 7\)\}&from=\$\{read\.from\.slice\(0, 7\)\}`, user, live && enabled, reload,/);

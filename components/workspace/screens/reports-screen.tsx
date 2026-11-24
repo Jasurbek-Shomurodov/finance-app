@@ -78,7 +78,8 @@ export function ReportsScreen() {
  // the whole of a part-owned business, only the lines in view count (`scope`): transfers belong to no business or
  // person, so it shows the accounts that money landed in, and its title says whose it is.
  const whole = shares.size > 0 && basis === 'whole', everything = !businesses.length && !ownerFilter.length && !whole;
- const request = { month: period.to.slice(0, 7), months: rangeMonths(period), period: interval === 'month' ? undefined : rangeText(period, locale) };
+ // The dialog opens from what this page has read (the period and the months before it), without reading it again.
+ const request = { month: period.to.slice(0, 7), months: rangeMonths(period), period: interval === 'month' ? undefined : rangeText(period, locale), ready: { data, throughToday: period.to.slice(0, 7) >= today.slice(0, 7) } };
  // A business's own Net profit (drawn when the household is not in view) is that business's lines alone.
  const whereItWent = ({ savings = 0, business }: Drill) => {
   const narrowedTo = [...(business === undefined ? businesses : [business]).map(id => names.business(id)), ...owners.filter(owner => ownerFilter.includes(owner.id)).map(owner => owner.name), ...(whole ? [t('Whole business')] : [])];
