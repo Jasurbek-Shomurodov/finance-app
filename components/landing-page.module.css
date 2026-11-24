@@ -66,10 +66,11 @@
 .facts svg{color:var(--primary)}
 .sectionHeading{display:flex;flex-direction:column;align-items:center;gap:14px;max-width:720px;margin:0 auto clamp(28px,4vw,48px);text-align:center}
 
-/* What it is: the four pillars beside the app itself */
+/* What it is: the four pillars as a row of tabs over the app itself, which takes the block's whole width so its
+   charts are large enough to read. */
 .page .pillars{animation:rise .8s cubic-bezier(.2,.7,.2,1) both;max-width:calc(var(--landing-width) + 96px);padding:clamp(32px,5vw,64px) clamp(16px,4vw,48px);border-radius:28px;background:var(--accent)}
-.pillarGrid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:clamp(16px,3vw,40px);align-items:center}
-.pillarList{display:flex;flex-direction:column;gap:8px}
+.pillarGrid{display:flex;flex-direction:column;gap:clamp(16px,2.4vw,28px)}
+.pillarList{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .pillarList button{display:flex;flex-direction:column;gap:6px;padding:18px 20px;border:1px solid transparent;border-radius:16px;background:none;color:inherit;font:inherit;text-align:start;transition:background .2s,border-color .2s,box-shadow .2s}
 .pillarList button:hover{background:color-mix(in srgb,var(--card) 50%,transparent)}
 .pillarList button[aria-pressed=true]{background:var(--card);border-color:var(--hairline);box-shadow:var(--shadow-card)}
@@ -122,6 +123,7 @@
 
 @media(max-width:900px){
  .nav nav{display:none}
+ .pillarList{grid-template-columns:repeat(2,minmax(0,1fr))}
  /* One tile a row, text beside its sample while there is room for both. */
  .feature,.feature[data-wide],.feature:nth-child(4)+.feature[data-wide]{grid-column:span 6;flex-direction:row;align-items:center}
  .feature>*{flex:1 1 0}
