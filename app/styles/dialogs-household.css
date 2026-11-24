@@ -14,8 +14,10 @@
 .sankey-link[data-tone=income]{stroke:color-mix(in srgb,var(--positive) 24%,transparent)}
 .sankey-link[data-tone=savings]{stroke:color-mix(in srgb,var(--positive) 34%,transparent)}
 .sankey-link[data-tone=loss]{stroke:color-mix(in srgb,var(--negative) 28%,transparent)}
+.sankey-link[data-tone=expense]{stroke:color-mix(in srgb,var(--caution) 32%,transparent)}
 .sankey-link[data-tone=income][data-clickable]:hover,.sankey-link[data-tone=savings][data-clickable]:hover{stroke:color-mix(in srgb,var(--positive) 50%,transparent)}
 .sankey-link[data-tone=loss][data-clickable]:hover{stroke:color-mix(in srgb,var(--negative) 50%,transparent)}
+.sankey-link[data-tone=expense][data-clickable]:hover{stroke:color-mix(in srgb,var(--caution) 55%,transparent)}
 .sankey-net{fill:var(--muted-foreground)}
 .sankey-net[data-tone=negative]{fill:var(--negative)}
 .sankey-legend{display:flex;flex-wrap:wrap;gap:6px 20px;margin:0 0 12px;padding:0;list-style:none;font-size:var(--type-caption);font-weight:500;color:var(--muted-foreground)}
