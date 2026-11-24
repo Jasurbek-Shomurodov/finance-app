@@ -17,7 +17,9 @@ import { useRangeData } from '@/hooks/use-report-data';
 import { budgetCategories } from '@/lib/budget';
 import { HOUSEHOLD } from '@/lib/business';
 import { drillMatches, filterLines, linesOn, periodOf, rangeMonths, reportLedger, shiftPeriod, trendWindow, unconvertedCount, type Drill, type Interval, type LedgerLine, type ReportBasis, type UnconvertedLine } from '@/lib/business-report';
+import { savingsEnds } from '@/lib/cash-flow-drill';
 import { ownedPercent } from '@/lib/finance';
+import { lineScope } from '@/lib/net-income-flows';
 import { depositToday } from '@/lib/deposit-interest';
 import { inOwnerFilter, ownerOf, SHARED, workspaceOwners } from '@/lib/household';
 import { describeDrill, groupFinder, reportNames, reportTabs, reportTransactionsLink, tabLines, type ReportTab } from '@/lib/report-view';
@@ -76,16 +78,17 @@ export function ReportsScreen() {
  // the whole of a part-owned business, only the lines in view count (`scope`): transfers belong to no business or
  // person, so it shows the accounts that money landed in, and its title says whose it is.
  const whole = shares.size > 0 && basis === 'whole', everything = !businesses.length && !ownerFilter.length && !whole;
+ const request = { month: period.to.slice(0, 7), months: rangeMonths(period), period: interval === 'month' ? undefined : rangeText(period, locale) };
  // A business's own Net profit (drawn when the household is not in view) is that business's lines alone.
  const whereItWent = ({ savings = 0, business }: Drill) => {
-  const own = business === undefined ? lines : lines.filter(line => line.business === business);
-  const records = new Set(own.map(line => line.record?.id)), loose = new Set(own.filter(line => !line.record).map(line => line.id));
   const narrowedTo = [...(business === undefined ? businesses : [business]).map(id => names.business(id)), ...owners.filter(owner => ownerFilter.includes(owner.id)).map(owner => owner.name), ...(whole ? [t('Whole business')] : [])];
-  setSankey({ target: { side: 'savings' }, title: [t(business === undefined ? 'Net income' : 'Net profit'), ...narrowedTo].join(' · '), month: period.to.slice(0, 7), months: rangeMonths(period), period: interval === 'month' ? undefined : rangeText(period, locale), savings,
-   scope: everything && business === undefined ? undefined : { keep: (record, id) => record ? records.has(record.id) : loose.has(id), whole } });
+  setSankey({ ...request, target: { side: 'savings' }, title: [t(business === undefined ? 'Net income' : 'Net profit'), ...narrowedTo].join(' · '), savings,
+   scope: everything && business === undefined ? undefined : lineScope(business === undefined ? lines : lines.filter(line => line.business === business), whole) });
  };
+ // The flow chart draws the same answer after its Net income: the accounts, holdings and debts that money reached.
+ const destinations = (net: number) => savingsEnds(net, { data, splits, months: request.months, currency, today, rates, t, scope: everything ? undefined : lineScope(lines, whole) });
  // Each press counts (`turn`), so the list answers a second press on the same part too.
- const narrow = (next: Drill) => next.savings !== undefined ? whereItWent(next) : setDrill(current => ({ drill: next, label: describeDrill(next, names, t), turn: (current?.turn ?? 0) + 1 }));
+ const narrow = (next: Drill) => next.open ? setSankey({ ...request, ...next.open }) : next.savings !== undefined ? whereItWent(next) : setDrill(current => ({ drill: next, label: describeDrill(next, names, t), turn: (current?.turn ?? 0) + 1 }));
  // Changing what the page shows starts again from every transaction.
  const reset = <T,>(set: (value: T) => void) => (value: T) => { set(value); setDrill(null); };
  const open = (line: LedgerLine) => line.record && setViewing(storedRecord(line.record));
@@ -98,7 +101,7 @@ export function ReportsScreen() {
   {shownTab === 'tax' ? (businessList.length ? <TaxTab preferences={workspacePreferences.data.preferences} save={workspacePreferences.save} saving={workspacePreferences.loading} onOpen={open}/>
     : <section className="panel"><EmptyState icon={<Briefcase/>} title={t('No businesses yet.')} description={t('Add a business to prepare its tax figures here.')}>{!readOnly && <Button onClick={() => setSettingUpBusinesses(true)}><Plus size={16} aria-hidden="true"/>{t('Set up business tracking')}</Button>}</EmptyState></section>)
    : error ? <InlineError message={t(error)} onRetry={retry}/> : loading ? <ReportsSkeleton label={t('Loading records…')} donut={shownTab !== 'cash_flow'}/> : <ReportBody tab={shownTab} lines={lines} names={names} currency={currency} drill={drill} onClear={() => setDrill(null)} unconverted={unconverted} fileName={`${shownTab.replace('_', '-')}-${period.from}-${period.to}`} href={transactionsHref(reportTransactionsLink(shownTab, drill?.drill ?? null, period, businesses))} onOpen={open}>
-    {shownTab === 'cash_flow' ? <CashFlowTab {...tabProps} shares={shares} lines={lines} includeHousehold={!businesses.length || businesses.includes(HOUSEHOLD)} businessIds={businessList.map(item => item.id).filter(id => businesses.includes(id) || (!businesses.length && (cashMode === 'trends' ? trendLines : lines).some(line => line.business === id)))} view={cashView} onView={setCashView} mode={cashMode} onMode={setCashMode}/>
+    {shownTab === 'cash_flow' ? <CashFlowTab {...tabProps} destinations={destinations} shares={shares} lines={lines} includeHousehold={!businesses.length || businesses.includes(HOUSEHOLD)} businessIds={businessList.map(item => item.id).filter(id => businesses.includes(id) || (!businesses.length && (cashMode === 'trends' ? trendLines : lines).some(line => line.business === id)))} view={cashView} onView={setCashView} mode={cashMode} onMode={setCashMode}/>
      : <AttributeTab {...tabProps} key={shownTab} direction={shownTab === 'spending' ? 'expense' : 'income'} lines={tabLines(shownTab, lines)} trendLines={tabLines(shownTab, trendLines)} hasBusinesses={businessList.length > 0}/>}
    </ReportBody>}
  </div>;

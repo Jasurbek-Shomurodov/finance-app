@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { ResponsiveContainer, Sankey, Tooltip } from 'recharts';
 import type { LinkProps } from 'recharts/types/chart/Sankey';
 import { useLanguage } from '@/components/language-provider';
-import { chartColors, chartSankey, chartTooltip, sankeyFlowTone, sankeyNodeRadius } from '@/components/presentation-foundation/chart';
+import { chartSankey, chartTooltip, sankeyFills, sankeyFlowTone, sankeyNodeRadius } from '@/components/presentation-foundation/chart';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { SankeySkeleton } from '@/components/presentation-foundation/loading-placeholder';
@@ -26,7 +26,7 @@ import { measureLabel, sankeyLabelMargins, sankeyMinWidth } from '@/lib/sankey-l
 
 type Kind = 'income' | 'total' | 'expense' | 'savings' | 'account' | 'holding' | 'debt' | 'untraced';
 type Flows = { nodes: ReadonlyArray<{ name: string; kind: Kind }>; links: Array<{ source: number; target: number; value: number }> };
-const fills: Record<Kind, string> = { income: chartColors.income, savings: chartColors.income, total: 'var(--mark-bg)', account: 'var(--mark-bg)', holding: chartColors.holding, expense: chartColors.expense, debt: 'var(--caution)', untraced: chartColors.other };
+const fills: Record<Kind, string> = sankeyFills;
 
 /** A Cash flow Sankey. With `onOpen`, a node it returns true for is a button (click, Enter or Space) that opens its own
  * Sankey, and a tap on a flow opens the node it leads to (or, from a node that cannot open, the one it comes from). */

@@ -3,6 +3,7 @@ import { monthEnd, shiftMonth } from './calendar-days';
 import { HOUSEHOLD, inBusinessFilter, type BusinessFilter } from './business';
 import { budgetKey, ownAmount, type Entry } from './finance';
 import { convertAmount } from './market';
+import type { DrillTarget } from './cash-flow-drill-types';
 import type { Money } from './money';
 import type { Share } from './cash-flow-report';
 import type { PlanningData } from './planning';
@@ -106,7 +107,8 @@ export function profitAndLoss(lines: readonly LedgerLine[], businessIds: readonl
 
 /** What a click on a chart narrows the transactions to. */
 /** `savings` is the period's net income, or with `business` that business's net profit: it opens where that money went. */
-export type Drill = { direction?: Direction; category?: string; categories?: readonly string[]; business?: string | null; merchant?: string; savings?: number };
+/** `open` is one account, holding or debt the net income went to: it opens that one's own Sankey for the period. */
+export type Drill = { direction?: Direction; category?: string; categories?: readonly string[]; business?: string | null; merchant?: string; savings?: number; open?: { target: DrillTarget; title: string } };
 export const drillMatches = <L extends UnconvertedLine>(drill: Drill | null, line: L, keyOf: (line: L) => string = line => line.category) => !drill || (
  (drill.direction === undefined || line.direction === drill.direction) && (drill.category === undefined || keyOf(line) === drill.category) && (drill.categories === undefined || drill.categories.includes(line.category))
  && (drill.business === undefined || line.business === drill.business) && (drill.merchant === undefined || line.name === drill.merchant));
@@ -122,7 +124,7 @@ function nameEachOnce(nodes: SankeyNode[], used: ReadonlySet<number>, inBusiness
 }
 
 /** `owner` is whose money the node is: a business's id, or null for the household. A flow takes its source's owner. */
-export type SankeyNode = { name: string; kind: 'income' | 'total' | 'expense' | 'savings' | 'business' | 'loss'; drill: Drill | null; owner: string | null };
+export type SankeyNode = { name: string; kind: 'income' | 'total' | 'expense' | 'savings' | 'business' | 'loss' | 'account' | 'holding' | 'debt' | 'untraced'; drill: Drill | null; owner: string | null };
 export type BusinessSankey = { nodes: SankeyNode[]; links: Array<{ source: number; target: number; value: number }> };
 /** What a click on a flow opens: the end that names the money. Income opens its source (Salary, not the total it joins),
  * as does a loss and a business's profit joining the total; every other flow opens where the money went. */

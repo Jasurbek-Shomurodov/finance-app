@@ -53,7 +53,7 @@ export function ReportsSkeleton({ label, donut = false, heading = false }: { lab
     {donut ? <Tiles count={2} columns="auto"/> : <Tiles count={4}/>}
     <section className="panel"><div className="panel-title-skeleton"><Bar className="h-7" width={220}/><Switches widths={donut ? [190, 170, 150] : [260]}/></div>{donut
       ? <div className="portfolio-allocation-body"><Skeleton className="size-48 justify-self-center rounded-full"/><SkeletonRows rows={4}/></div>
-      : <SankeySkeleton height={300}/>}</section>
+      : <SankeySkeleton height={380}/>}</section>
     <div className="transactions-layout">
       <section className="panel report-transactions"><Heading width={150} link/><SkeletonRows rows={5}/></section>
       <aside className="panel transactions-summary"><Heading width={110}/><Figures rows={donut ? 6 : 7}/><Skeleton className="h-9 w-full rounded-lg"/></aside>

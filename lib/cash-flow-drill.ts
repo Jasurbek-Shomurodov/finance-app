@@ -111,25 +111,33 @@ export function accountChanges(context: DrillContext) {
  return { changes, missing };
 }
 
+export type SavingsEnd = { node: DrillNode; value: number };
 /** Where the period's savings went: the accounts and holdings that grew and the debts paid down, fed by the savings and by
  * any account that shrank. What the records cannot explain (transfer fees, exchange differences, a flow in a currency
- * without a rate) is shown as "Not traced", never spread over the accounts. */
-function savingsFlows(savings: number, context: DrillContext): DrillFlows {
+ * without a rate) is shown as "Not traced", never spread over the accounts. `left` is what fed them beside the savings
+ * (accounts drawn down), `right` where the money is now. */
+export function savingsEnds(savings: number, context: DrillContext) {
  const { data, t } = context, byId = new Map((data.records as Entry[]).map(record => [record.id, record]));
  const { changes, missing } = accountChanges(context);
  // Scoped, an account opens its page: its own Sankey would show every flow, not the scope's.
  const node = (key: string): DrillNode => { const found = accountNode(key, byId, t); return context.scope ? { ...found, open: pageOf(found.kind) } : found; };
- const whole: DrillTarget | undefined = context.scope ? undefined : { side: 'cashflow' };
  const sinks = [...changes].filter(([, value]) => value >= .5).sort((a, b) => b[1] - a[1]);
  const sources = [...changes].filter(([, value]) => value <= -.5).sort((a, b) => a[1] - b[1]);
  const into = sinks.reduce((sum, [, value]) => sum + value, 0), out = savings + sources.reduce((sum, [, value]) => sum - value, 0);
  const gap = out - into;
- const left: Array<{ node: DrillNode; value: number }> = [...sources.map(([key, value]) => ({ node: node(key), value: -value }))];
- const right: Array<{ node: DrillNode; value: number }> = sinks.map(([key, value]) => ({ node: node(key), value }));
- // Not traced opens the fees and exchange differences behind it; Cash flow opens the period's income and spending.
+ const left: SavingsEnd[] = [...sources.map(([key, value]) => ({ node: node(key), value: -value }))];
+ const right: SavingsEnd[] = sinks.map(([key, value]) => ({ node: node(key), value }));
+ // Not traced opens the fees and exchange differences behind it.
  const notTraced: DrillNode = { name: t('Not traced'), kind: 'untraced', open: { side: 'untraced' } };
  if (gap >= .5) right.push({ node: notTraced, value: gap });
  if (gap <= -.5) left.push({ node: notTraced, value: -gap });
+ return { left, right, missing };
+}
+
+/** The Sankey of where the savings went; Cash flow and Savings open the period's income and spending. */
+function savingsFlows(savings: number, context: DrillContext): DrillFlows {
+ const { t } = context, { left, right, missing } = savingsEnds(savings, context);
+ const whole: DrillTarget | undefined = context.scope ? undefined : { side: 'cashflow' };
  // Savings sit in the middle: the period's cash flow and any account drawn down feed it; it flows out to where the money is now.
  const middle: DrillNode = { name: t('Savings'), kind: 'savings', open: whole };
  const feeds = left.length ? [{ node: { name: t('Cash flow'), kind: 'income', open: whole } as DrillNode, value: savings }, ...left] : [];

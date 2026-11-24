@@ -85,6 +85,8 @@ export const chartDonut = { innerRadius: '58%', outerRadius: '92%', paddingAngle
 /** A Sankey of flows: thin nodes with rounded ends, grey links. */
 export const chartSankey = { nodePadding: 16, nodeWidth: 10 } as const;
 export const sankeyNodeRadius = 3;
+/** A node's colour by what it is: income and what was kept green, an account in the mark colour, a holding lighter, a debt in the caution colour. */
+export const sankeyFills = { income: chartColors.income, savings: chartColors.income, total: 'var(--mark-bg)', account: 'var(--mark-bg)', holding: chartColors.holding, expense: chartColors.expense, debt: 'var(--caution)', untraced: chartColors.other } as const;
 /** A flow's colour says which way the money moves: income green, spending grey, what was kept green and a loss red.
  * Node kinds are the Sankeys' own (`income`, `total`, `expense`, `savings`, `loss`, `business`, accounts…). */
 export type SankeyTone = 'income' | 'expense' | 'savings' | 'loss';

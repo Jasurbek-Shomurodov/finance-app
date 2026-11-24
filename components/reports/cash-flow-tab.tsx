@@ -8,8 +8,9 @@ import { Segmented } from '@/components/presentation-foundation/segmented';
 import { StatTile, StatTiles } from '@/components/presentation-foundation/stat-tile';
 import { signTone } from '@/components/presentation-foundation/tone';
 import { HOUSEHOLD } from '@/lib/business';
-import { businessKey, businessSankey, cashFlowTrend, intervalOf, largestLoss, linesIn, netTrendBy, previousPeriod, profitAndLoss, rangeMonths, yearToDate, type BusinessPnl, type LedgerLine } from '@/lib/business-report';
+import { businessKey, businessSankey, cashFlowTrend, intervalOf, largestLoss, linesIn, netTrendBy, previousPeriod, profitAndLoss, rangeMonths, yearToDate, type BusinessPnl, type LedgerLine, type ProfitAndLoss } from '@/lib/business-report';
 import { formatMoney, formatPercent, formatSignedMoney } from '@/lib/format';
+import { netIncomeFlows, type NetIncomeEnds } from '@/lib/net-income-flows';
 import { BusinessSankeyChart } from './business-sankey';
 import { ProfitLossTable, type PnlColumn } from './profit-loss-table';
 import { rangeText, type TabProps } from './report-labels';
@@ -67,10 +68,17 @@ function CashFlowSwitches({ shown, onShown, stacked, onStacked, series, onSeries
  </div>;
 }
 
+/** The flow chart: income into the household's total and out to spending, with Net income opened up in the chart itself
+ * into what it bought, paid off or left in which account (`destinations`). */
+function flowChart(pnl: ProfitAndLoss, names: TabProps['names'], hasBusinesses: boolean, destinations: (net: number) => NetIncomeEnds, t: (key: string, values?: Record<string, string | number>) => string) {
+ const flows = businessSankey(pnl, { category: names.category, business: id => names.business(id), total: t(hasBusinesses ? 'Household income' : 'Income'), savings: t('Net income'), profit: t('Net profit'), loss: name => t('{name} net loss', { name }), otherIncome: t('All other income'), otherExpense: t('All other expenses'), inBusiness: (name, business) => t('{business}: {name}', { business, name }) });
+ return netIncomeFlows(flows, pnl.net, destinations(pnl.net), { principal: name => t('{business}: {name}', { business: name, name: t('Principal') }), other: t('Other'), accounts: t('Accounts') });
+}
+
 /** Cash flow: the period's totals, then where the money went as a flow coloured by who earned it, a profit and loss
  * table beside the period before and the year to date, or its trend over time. */
 /** `missing` counts the period's amounts no rate converts; the totals above the breakdown then read — (MONEY-008). */
-export function CashFlowTab({ shares, period, lines, trendLines, trendRange, interval, includeHousehold, businessIds, names, groupOf, currency, view, onView, mode, onMode: setMode, onDrill, missing = 0, trendMissing = 0 }: TabProps & { /** Each part-owned business's share, in percent. */ shares?: ReadonlyMap<string, number>; includeHousehold: boolean; businessIds: string[]; view: 'sankey' | 'pnl'; onView: (view: 'sankey' | 'pnl') => void; mode: 'breakdown' | 'trends'; onMode: (mode: 'breakdown' | 'trends') => void }) {
+export function CashFlowTab({ shares, period, lines, trendLines, trendRange, interval, includeHousehold, businessIds, names, groupOf, currency, view, onView, mode, onMode: setMode, onDrill, destinations, missing = 0, trendMissing = 0 }: TabProps & { /** Where a net income went: the accounts, holdings and debts it reached, and the accounts drawn down beside it. */ destinations: (net: number) => NetIncomeEnds; /** Each part-owned business's share, in percent. */ shares?: ReadonlyMap<string, number>; includeHousehold: boolean; businessIds: string[]; view: 'sankey' | 'pnl'; onView: (view: 'sankey' | 'pnl') => void; mode: 'breakdown' | 'trends'; onMode: (mode: 'breakdown' | 'trends') => void }) {
  const { t, locale } = useLanguage();
  const [breakdown, setBreakdown] = useState<Rows>('category');
  const [stacked, setStacked] = useState(false);
@@ -79,12 +87,12 @@ export function CashFlowTab({ shares, period, lines, trendLines, trendRange, int
  const pnl = useMemo(() => pnlOf(lines), [pnlOf, lines]);
  const totals = lines.reduce((sum, line) => line.direction === 'income' ? { ...sum, income: sum.income + line.amount } : { ...sum, expenses: sum.expenses + line.amount }, { income: 0, expenses: 0 });
  const loss = largestLoss(pnl);
- const sankey = businessSankey(pnl, { category: names.category, business: id => names.business(id), total: t(businessIds.length ? 'Household income' : 'Income'), savings: t('Net income'), profit: t('Net profit'), loss: name => t('{name} net loss', { name }), otherIncome: t('All other income'), otherExpense: t('All other expenses'), inBusiness: (name, business) => t('{business}: {name}', { business, name }) });
+ const shown: View = mode === 'trends' ? 'trends' : view === 'pnl' ? 'pnl' : 'flow';
+ const sankey = shown === 'flow' ? flowChart(pnl, names, businessIds.length > 0, destinations, t) : null;
  const trend = cashFlowTrend(trendLines, trendRange, interval);
  // Net income of the household and of each business, side by side or stacked, so businesses can be compared.
  const netKeys = [...(includeHousehold ? [HOUSEHOLD] : []), ...businessIds];
  const byBusiness = series === 'business' && businessIds.length > 0;
- const shown: View = mode === 'trends' ? 'trends' : view === 'pnl' ? 'pnl' : 'flow';
  const choose = (next: View) => { setMode(next === 'trends' ? 'trends' : 'breakdown'); if (next !== 'trends') onView(next === 'flow' ? 'sankey' : 'pnl'); };
  // The period, the one before and (unless the period is a year) the year so far; an unconverted amount in the trend
  // window blanks the sums of the earlier columns, which read from it.
@@ -103,7 +111,7 @@ export function CashFlowTab({ shares, period, lines, trendLines, trendRange, int
    </PanelTitle>
    {shown === 'trends' && byBusiness ? <TrendChart key="business" rows={netTrendBy(trendLines, trendRange, interval, businessKey, netKeys)} interval={interval} currency={currency} stacked={stacked} series={netKeys.map(key => ({ key, label: names.business(key), color: attributeColor('business', key, names) }))}/>
     : shown === 'trends' ? <TrendChart key="totals" rows={stacked ? trend.map(row => ({ period: row.period, income: row.income, expenses: -row.expenses, net: row.net })) : trend} interval={interval} currency={currency} stacked={stacked} line={{ key: 'net', label: t('Net') }} series={[{ key: 'income', label: t('Income'), color: 'var(--positive)' }, { key: 'expenses', label: t('Expenses'), color: 'color-mix(in srgb, var(--foreground) 55%, transparent)' }]}/>
-    : shown === 'flow' ? <BusinessSankeyChart data={sankey} pnl={pnl} names={names} currency={currency} onDrill={onDrill}/>
+    : sankey ? <BusinessSankeyChart data={sankey} pnl={pnl} names={names} currency={currency} onDrill={onDrill}/>
     : <ProfitLossTable shares={shares} columns={columns} breakdown={breakdown} names={names} groupOf={groupOf} currency={currency} onDrill={onDrill}/>}
    {shown === 'trends' && <TrendFoot rows={trend} months={rangeMonths(trendRange).length} missing={trendMissing} totals={!byBusiness} currency={currency}/>}
   </section>

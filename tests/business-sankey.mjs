@@ -45,7 +45,7 @@ test('the legend names each earner in its colour and what was kept in green', ()
  const legend = r.all(element => element.type === 'li').map(item => [item.children.join(''), item.props.style['--flow']]);
  assert.deepEqual(legend, [['Household', 'color:business:household'], ['Bakery shop', 'color:business:bakery'], ['Kept', 'var(--positive)']], 'the household first, then each business');
  const container = chartPart(r, 'ResponsiveContainer').props;
- assert.equal(container.height, 300, 'a short chart keeps its minimum height');
+ assert.equal(container.height, 380, 'a short chart keeps its minimum height');
  assert.ok(container.minWidth > 0);
 });
 

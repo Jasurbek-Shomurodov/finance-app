@@ -5,7 +5,7 @@ import type { LinkProps } from 'recharts/types/chart/Sankey';
 import { ReceiptText } from 'lucide-react';
 import { attributeColor, type ReportNames } from '@/components/business-reports';
 import { useLanguage } from '@/components/language-provider';
-import { chartSankey, chartTooltip, sankeyFlowTone, sankeyNodeRadius } from '@/components/presentation-foundation/chart';
+import { chartSankey, chartTooltip, sankeyFills, sankeyFlowTone, sankeyNodeRadius } from '@/components/presentation-foundation/chart';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
 import { HOUSEHOLD } from '@/lib/business';
 import { flowDrill, type BusinessSankey, type Drill, type ProfitAndLoss, type SankeyNode } from '@/lib/business-report';
@@ -21,7 +21,12 @@ export function BusinessSankeyChart({ data, pnl, names, currency, onDrill }: { d
  const { t, locale } = useLanguage();
  if (!data.links.length) return <EmptyState icon={<ReceiptText/>} description={t('Nothing recorded in this period.')}/>;
  const color = (owner: string | null) => attributeColor('business', owner ?? HOUSEHOLD, names);
- const fill = (node: SankeyNode | undefined) => node?.kind === 'savings' ? 'var(--positive)' : node?.kind === 'loss' ? 'var(--negative)' : color(node?.owner ?? null);
+ // Where the net income went takes the colours of the Cash flow drill-down: an account, a holding, a debt.
+ const fill = (node: SankeyNode | undefined) => node?.kind === 'savings' ? 'var(--positive)' : node?.kind === 'loss' ? 'var(--negative)' : node && (node.kind === 'account' || node.kind === 'holding' || node.kind === 'debt' || node.kind === 'untraced') ? sankeyFills[node.kind] : color(node?.owner ?? null);
+ // With Net income opened up, spending stays in Net income's column and only where the net income went comes after it, so no flow runs behind a bar.
+ const opened = data.nodes.some(node => node.kind === 'account' || node.kind === 'holding' || node.kind === 'debt' || node.kind === 'untraced');
+ // Net income reads its own figure even when an account drawn down flows through it too.
+ const amount = (node: SankeyNode | undefined, value: number) => node === kept && pnl.net > 0 ? pnl.net : value;
  const netOf = (node: SankeyNode | undefined) => node?.kind === 'business' ? pnl.businesses.find(business => business.id === node.owner)?.net : undefined;
  const label = (name: string, value: number) => `${name} · ${formatMoney(value, currency, locale)}`;
  // The household first, then each business in the report's order.
@@ -36,18 +41,18 @@ export function BusinessSankeyChart({ data, pnl, names, currency, onDrill }: { d
    {kept && <li style={{ '--flow': 'var(--positive)' } as CSSProperties}>{kept.name}</li>}
   </ul>
   {/* Nodes arrive largest first and keep that order (sort={false}). Drawn straight away, with room above and below for a business's two-line label at either edge, so it is measured from the start (the dialog Sankey shows a skeleton until it is). */}
-  <div className="cash-flow-sankey" data-measured><ResponsiveContainer width="100%" minWidth={sankeyMinWidth(data, room)} height={Math.max(300, data.nodes.length * 32)}>
-   <Sankey data={data} {...chartSankey} sort={false} margin={{ top: 18, right: room.right, bottom: 18, left: room.left }}
+  <div className="cash-flow-sankey" data-measured><ResponsiveContainer width="100%" minWidth={sankeyMinWidth(data, room)} height={Math.max(380, data.nodes.length * 34)}>
+   <Sankey data={data} {...chartSankey} sort={false} align={opened ? 'left' : 'justify'} margin={{ top: 18, right: room.right, bottom: 18, left: room.left }}
     link={({ sourceX, targetX, sourceY, targetY, sourceControlX, targetControlX, linkWidth, index }: LinkProps) => {
      const link = data.links[index], drill = link && flowDrill(data.nodes[link.source], data.nodes[link.target]);
-     return <path className="sankey-link" data-tone={link && sankeyFlowTone(data.nodes[link.source]?.kind, data.nodes[link.target]?.kind)} d={`M${sourceX},${sourceY} C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}`} strokeWidth={Math.max(1, linkWidth)} onClick={drill ? () => onDrill(drill) : undefined} data-clickable={!!drill || undefined}/>;
+     return <path className="sankey-link" data-tone={link && (data.nodes[link.source]?.kind === 'savings' ? 'savings' : sankeyFlowTone(data.nodes[link.source]?.kind, data.nodes[link.target]?.kind))} d={`M${sourceX},${sourceY} C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}`} strokeWidth={Math.max(1, linkWidth)} onClick={drill ? () => onDrill(drill) : undefined} data-clickable={!!drill || undefined}/>;
     }}
     node={({ x, y, width, height, index, payload }: { x: number; y: number; width: number; height: number; index: number; payload: { name: string; value: number } }) => {
      const node = data.nodes[index], left = !data.links.some(link => link.target === index), drill = node?.drill, net = netOf(node);
      const textX = left ? x - 8 : x + width + 8, anchor = left ? 'end' : 'start';
-     return <g className="sankey-node" onClick={drill ? () => onDrill(drill) : undefined} onKeyDown={press(drill)} data-clickable={!!drill || undefined} tabIndex={drill ? 0 : undefined} role={drill ? 'button' : undefined} aria-label={drill ? label(payload.name, payload.value) : undefined}>
+     return <g className="sankey-node" onClick={drill ? () => onDrill(drill) : undefined} onKeyDown={press(drill)} data-clickable={!!drill || undefined} tabIndex={drill ? 0 : undefined} role={drill ? 'button' : undefined} aria-label={drill ? label(payload.name, amount(node, payload.value)) : undefined}>
       <rect x={x} y={y} width={width} height={Math.max(2, height)} rx={sankeyNodeRadius} fill={fill(node)}/>
-      <text x={textX} y={y + height / 2} dy={net === undefined ? '0.35em' : '-0.25em'} textAnchor={anchor} className="sankey-label">{label(payload.name, payload.value)}</text>
+      <text x={textX} y={y + height / 2} dy={net === undefined ? '0.35em' : '-0.25em'} textAnchor={anchor} className="sankey-label">{label(payload.name, amount(node, payload.value))}</text>
       {net !== undefined && <text x={textX} y={y + height / 2} dy="1.05em" textAnchor={anchor} className="sankey-label sankey-net" data-tone={net < 0 ? 'negative' : undefined}>{t('Net {amount}', { amount: formatSignedMoney(net, currency, locale) })}</text>}
      </g>;
     }}>

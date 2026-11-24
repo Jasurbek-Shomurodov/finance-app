@@ -867,10 +867,10 @@ test('a Budget row opens its category’s details; Money flow covers the month o
  assert.deepEqual([dialog.period, dialog.context.months, dialog.onDetails], ['2026', ['2026-01', '2026-02', '2026-08'], sankey.onDetails], 'the year to date, labelled by its year');
 });
 
-test('a Reports row narrows the transactions below and opens no Sankey; only Net income opens where it went', () => {
+test('a Reports row narrows the transactions below and opens no Sankey; only Net income and where it went open one', () => {
  const screen = fs.readFileSync('components/workspace/screens/reports-screen.tsx', 'utf8');
- assert.match(screen, /const narrow = \(next: Drill\) => next\.savings !== undefined \? whereItWent\(next\) : setDrill\(current => \(\{ drill: next, label: describeDrill\(next, names, t\), turn: \(current\?\.turn \?\? 0\) \+ 1 \}\)\);/);
- assert.equal(screen.match(/setSankey\(/g).length, 1, 'the one Sankey a report opens is Net income\'s');
+ assert.match(screen, /const narrow = \(next: Drill\) => next\.open \? setSankey\(\{ \.\.\.request, \.\.\.next\.open \}\) : next\.savings !== undefined \? whereItWent\(next\) : setDrill\(current => \(\{ drill: next, label: describeDrill\(next, names, t\), turn: \(current\?\.turn \?\? 0\) \+ 1 \}\)\);/);
+ assert.equal(screen.match(/setSankey\(/g).length, 2, 'a report opens only Net income\'s Sankey and the Sankey of an account that income reached');
  assert.match(screen, /const open = \(line: LedgerLine\) => line\.record && setViewing\(storedRecord\(line\.record\)\);/, 'a transaction in the list opens its details');
 });
 
