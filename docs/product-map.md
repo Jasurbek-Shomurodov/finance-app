@@ -43,7 +43,7 @@ pins the built rows).
 | Budget card | Budget | One compact card on the Dashboard (share used and three categories) | Done |
 | Upcoming payments | Recurring | Dashboard "Upcoming payments" card; each row opens that payment (`payLink`) | Done |
 | Money flow diagram | Cash flow (this month) and Reports (any period) | Budget and Recurring link to `/income-expenses#flow` | Done |
-| Where net income went | Cash flow (Left over) | Reports opens the same dialog from Net income (or a business's Net profit) for its period; narrowed to a business, a person or the whole business it counts only those lines and stops at the accounts they landed in. The Reports flow chart also draws it after Net income: each account that grew, holding bought and debt principal paid, with any account drawn down feeding it; each opens its own Sankey | Done |
+| Where net income went | Cash flow (Left over) | Reports opens the same dialog from Net income (or a business's Net profit) for its period; narrowed to a business, a person or the whole business it counts only those lines and stops at the accounts they landed in. The Reports flow chart draws it in place of Net income, beside the spending on the right: each account the money stayed in, holding bought and debt principal paid; an account drawn down is a source on the left beside the income; each opens its own Sankey | Done |
 | Spending pace | One chart with last month and budget lines (`SpendingPaceChart`) | Dashboard and Budget share it | Done |
 | Ranked bars | One piece (`rankedBar` in `components/cash-flow/flow-bars.tsx`) | Cash flow, Reports and the Dashboard's Where it is going | Done |
 | Recent transactions | Transactions | Dashboard card; Cash flow dropped its table | Done |

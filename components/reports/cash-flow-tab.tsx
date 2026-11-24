@@ -68,11 +68,11 @@ function CashFlowSwitches({ shown, onShown, stacked, onStacked, series, onSeries
  </div>;
 }
 
-/** The flow chart: income into the household's total and out to spending, with Net income opened up in the chart itself
- * into what it bought, paid off or left in which account (`destinations`). */
+/** The flow chart: income into the household's total on the left; on the right spending and, in place of one Net income,
+ * what the rest bought, paid off or which account it stayed in (`destinations`). */
 function flowChart(pnl: ProfitAndLoss, names: TabProps['names'], hasBusinesses: boolean, destinations: (net: number) => NetIncomeEnds, t: (key: string, values?: Record<string, string | number>) => string) {
  const flows = businessSankey(pnl, { category: names.category, business: id => names.business(id), total: t(hasBusinesses ? 'Household income' : 'Income'), savings: t('Net income'), profit: t('Net profit'), loss: name => t('{name} net loss', { name }), otherIncome: t('All other income'), otherExpense: t('All other expenses'), inBusiness: (name, business) => t('{business}: {name}', { business, name }) });
- return netIncomeFlows(flows, pnl.net, destinations(pnl.net), { principal: name => t('{business}: {name}', { business: name, name: t('Principal') }), other: t('Other'), accounts: t('Accounts') });
+ return netIncomeFlows(flows, destinations(pnl.net), { principal: name => t('{business}: {name}', { business: name, name: t('Principal') }), other: t('Other') });
 }
 
 /** Cash flow: the period's totals, then where the money went as a flow coloured by who earned it, a profit and loss
