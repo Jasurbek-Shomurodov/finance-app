@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import React from 'react';
 import { loadTS } from './helpers/load-ts.mjs';
 import { createRenderer, hostModule, language, text } from './helpers/component-tree.mjs';
-const { drillFlows, accountChanges } = loadTS('lib/cash-flow-drill.ts');
+const { drillFlows, accountChanges, drillTransactions: scopedTransactions } = loadTS('lib/cash-flow-drill.ts');
 const { cashFlowReport, sankeyFlows } = loadTS('lib/cash-flow-report.ts');
 
 const record = (id, name, kind, amount, date, extra = {}) => ({ id, name, kind, currency: 'USD', amount, quantity: 1, cost: 0, rate: 0, date, frequency: 'Once', notes: '', ...extra });
@@ -58,6 +58,22 @@ test('savings flow to the accounts that grew and the debts paid down, fed by any
  assert.deepEqual(flows.nodes.map(node => node.kind), ['income', 'account', 'untraced', 'savings', 'account', 'debt', 'debt']);
  const into = flows.links.filter(link => link.target === 3).reduce((sum, link) => sum + link.value, 0), out = flows.links.filter(link => link.source === 3).reduce((sum, link) => sum + link.value, 0);
  assert.equal(into, out, 'the middle node balances');
+});
+
+test('a scoped Savings Sankey counts only the scope\'s income and spending and stops at the accounts they touched', () => {
+ // The shop's sales land on the card and its supplies are paid from savings; the salary and a transfer are not the shop's.
+ const records = [record('sale', 'Stall', 'Business income', 900, '2026-08-05', { account_id: 'card', business_id: 'shop' }), record('wax', 'Wax', 'Other expense', 200, '2026-08-06', { account_id: 'save', business_id: 'shop' }), record('pay', 'EPAM', 'Salary', 3000, '2026-08-07', { account_id: 'card' })];
+ const moved = [{ id: 't', action: 'transfer', account_id: 'card', target_id: 'save', amount: 500, received: 500, occurred_on: '2026-08-10', notes: '', before_balance: 0, after_balance: 0 }];
+ const scope = { keep: found => found?.business_id === 'shop' }, ctx = context(records, moved, { scope });
+ const flows = drillFlows({ side: 'savings' }, 'Net income', 700, ctx);
+ assert.deepEqual(shape(flows), [['Cash flow', 'Savings', 700], ['Savings account', 'Savings', 200], ['Savings', 'Card', 900]], 'the transfer and the salary stay out, so it adds up to the shop\'s net');
+ assert.deepEqual(flows.nodes.map(node => node.open?.side), [undefined, 'link', undefined, 'link'], 'an account opens its page; the household\'s cash flow is not the scope\'s');
+ assert.deepEqual(scopedTransactions({ side: 'savings' }, ctx).map(item => item.id), ['wax', 'sale'], 'and it lists only what it counted');
+ assert.deepEqual([...accountChanges(context(records, moved)).changes], [['card', 3400], ['save', 300]], 'unscoped, everything counts as before');
+ // The whole of a part-owned business: each amount in full.
+ const half = [record('sale', 'Stall', 'Business income', 900, '2026-08-05', { account_id: 'card', business_id: 'shop', business_share: 50, amount_basis: 'whole' })];
+ assert.deepEqual([...accountChanges(context(half, [], { scope: { keep: () => true } })).changes], [['card', 450]]);
+ assert.deepEqual([...accountChanges(context(half, [], { scope: { keep: () => true, whole: true } })).changes], [['card', 900]]);
 });
 
 test('savings with nothing moved stay where they were earned; a gap the records cannot explain is shown as Not traced', () => {
@@ -851,10 +867,10 @@ test('a Budget row opens its category’s details; Money flow covers the month o
  assert.deepEqual([dialog.period, dialog.context.months, dialog.onDetails], ['2026', ['2026-01', '2026-02', '2026-08'], sankey.onDetails], 'the year to date, labelled by its year');
 });
 
-test('a Reports row narrows the transactions below and opens no Sankey', () => {
+test('a Reports row narrows the transactions below and opens no Sankey; only Net income opens where it went', () => {
  const screen = fs.readFileSync('components/workspace/screens/reports-screen.tsx', 'utf8');
- assert.match(screen, /const narrow = \(next: Drill\) => setDrill\(\{ drill: next, label: describeDrill\(next, names, t\) \}\);/);
- assert.doesNotMatch(screen, /setSankey/);
+ assert.match(screen, /const narrow = \(next: Drill\) => next\.savings !== undefined \? whereItWent\(next\) : setDrill\(current => \(\{ drill: next, label: describeDrill\(next, names, t\), turn: \(current\?\.turn \?\? 0\) \+ 1 \}\)\);/);
+ assert.equal(screen.match(/setSankey\(/g).length, 1, 'the one Sankey a report opens is Net income\'s');
  assert.match(screen, /const open = \(line: LedgerLine\) => line\.record && setViewing\(storedRecord\(line\.record\)\);/, 'a transaction in the list opens its details');
 });
 

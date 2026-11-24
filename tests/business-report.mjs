@@ -86,6 +86,8 @@ test('the Sankey feeds a profit into household income, and household income cove
  assert.ok(data.links.every(item => item.value > 0 && data.nodes[item.source] && data.nodes[item.target]));
  const alone = businessSankey(profitAndLoss(filterLines(lines, ['candles']), ['candles'], line => line.category, false), labels);
  assert.equal(alone.nodes[alone.links.find(item => alone.nodes[item.source].kind === 'loss').target].name, 'candles', 'without the household, the loss covers the business');
+ const earning = profitAndLoss(filterLines(lines, ['rentals']), ['rentals'], line => line.category, false), profit = businessSankey(earning, labels).nodes.find(node => node.name === 'Net profit');
+ assert.deepEqual(profit.drill, { savings: earning.businesses[0].net, business: 'rentals' }, 'a business\'s own profit opens where it went, for that business');
  const net = businessSankey(profitAndLoss([{ id: 'p', record: null, name: 'Pay', date: '2026-10-01', direction: 'income', amount: 900, category: 'Salary', business: null }, { id: 'f', record: null, name: 'Food', date: '2026-10-02', direction: 'expense', amount: 300, category: 'Living expense', business: null }], [], line => line.category, true), labels);
  assert.deepEqual(net.nodes.find(node => node.name === 'Savings').drill, { savings: 600 }, 'Net income carries what was saved, to open where it went');
  const totalNode = net.nodes.find(node => node.kind === 'total'), salary = net.nodes.find(node => node.name === 'Salary'), food = net.nodes.find(node => node.kind === 'expense');

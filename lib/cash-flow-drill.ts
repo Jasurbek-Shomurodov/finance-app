@@ -4,7 +4,7 @@ import type { PlanningData } from './planning';
 import type { DrillContext, DrillFlows, DrillNode, DrillTarget } from './cash-flow-drill-types';
 import { accountNode, accountOf, add, categoryNode, merchantOf, pageOf, span, transactionsOf, type Item } from './cash-flow-drill-base';
 import { categoryGroup, groupFlows, groupTransactions } from './cash-flow-group';
-import { cashFlowItems, spendingAmount, transferAmount } from './spending';
+import { cashFlowItems, spendingAmount, transferAmount, wholeScale } from './spending';
 import { ratesOf, type DatedRecord, type DayTable } from './transaction-rates';
 
 export type { DrillContext, DrillFlows, DrillNode, DrillTarget } from './cash-flow-drill-types';
@@ -59,10 +59,23 @@ function moveInvestment(link: NonNullable<PlanningData['investmentLinks']>[numbe
  if (amount < 0) move(cash, holding, -amount, unit); else move(holding, cash, amount, unit);
 }
 
+/** The period's income into the account it was recorded against and its spending out of it by category: all of it, or
+ * only what a scope keeps, in full for a part-owned business when the scope reads the whole business. */
+function moveTransactions(context: DrillContext, { from, to }: { from: string; to: string }, move: Mover) {
+ const { data, splits, scope, t } = context;
+ const activityAccount = new Map((data.activity ?? []).map(row => [row.id, row.account_id]));
+ for (const item of cashFlowItems(data.records as Entry[], from, to, { splits, investmentLinks: data.investmentLinks })) {
+  if (scope && !scope.keep(item.record, item.id)) continue;
+  const account = { account: accountOf(item, activityAccount) }, scale = scope?.whole ? wholeScale(item.record, item.amount) : 1;
+  if (item.income) move({ income: item.record?.custom_category_id ?? item.record?.kind ?? 'Other income', payer: merchantOf(item, t) }, account, item.amount * scale, item.currency, item.dated);
+  else for (const part of item.parts) move(account, { expense: part.category }, part.amount * scale, item.currency, item.dated);
+ }
+}
+
 /** Every flow of the period in `currency`: income into the account it was recorded against, spending out of it by
  * category, account operations, and cash moved into or out of investments. A flow without a rate is counted as missing. */
 export function periodFlows(context: DrillContext) {
- const { data, splits, months, currency, today, rates } = context, { from, to } = span(months, today);
+ const { data, months, currency, today, rates } = context, { from, to } = span(months, today);
  const records = data.records as Entry[], byId = new Map(records.map(record => [record.id, record]));
  const flows: Flow[] = [];
  let missing = 0;
@@ -74,12 +87,9 @@ export function periodFlows(context: DrillContext) {
   flows.push({ from: source, to: target, value });
   return true;
  };
- const activityAccount = new Map((data.activity ?? []).map(row => [row.id, row.account_id]));
- for (const item of cashFlowItems(records, from, to, { splits, investmentLinks: data.investmentLinks })) {
-  const account = { account: accountOf(item, activityAccount) };
-  if (item.income) move({ income: item.record?.custom_category_id ?? item.record?.kind ?? 'Other income', payer: merchantOf(item, context.t) }, account, item.amount, item.currency, item.dated);
-  else for (const part of item.parts) move(account, { expense: part.category }, part.amount, item.currency, item.dated);
- }
+ moveTransactions(context, { from, to }, move);
+ // What moved between accounts afterwards belongs to no business or person: a scoped view stops where the money landed.
+ if (context.scope) return { flows, missing, byId };
  // A transfer, repayment or purchase converts at the rates of its own day, as a transaction does.
  const onDay = (row: { day_rates?: DayTable | null }): Recorder => {
   const day = row.day_rates === undefined ? null : { currency: '', day_rates: row.day_rates };
@@ -107,7 +117,9 @@ export function accountChanges(context: DrillContext) {
 function savingsFlows(savings: number, context: DrillContext): DrillFlows {
  const { data, t } = context, byId = new Map((data.records as Entry[]).map(record => [record.id, record]));
  const { changes, missing } = accountChanges(context);
- const node = (key: string) => accountNode(key, byId, t);
+ // Scoped, an account opens its page: its own Sankey would show every flow, not the scope's.
+ const node = (key: string): DrillNode => { const found = accountNode(key, byId, t); return context.scope ? { ...found, open: pageOf(found.kind) } : found; };
+ const whole: DrillTarget | undefined = context.scope ? undefined : { side: 'cashflow' };
  const sinks = [...changes].filter(([, value]) => value >= .5).sort((a, b) => b[1] - a[1]);
  const sources = [...changes].filter(([, value]) => value <= -.5).sort((a, b) => a[1] - b[1]);
  const into = sinks.reduce((sum, [, value]) => sum + value, 0), out = savings + sources.reduce((sum, [, value]) => sum - value, 0);
@@ -119,8 +131,8 @@ function savingsFlows(savings: number, context: DrillContext): DrillFlows {
  if (gap >= .5) right.push({ node: notTraced, value: gap });
  if (gap <= -.5) left.push({ node: notTraced, value: -gap });
  // Savings sit in the middle: the period's cash flow and any account drawn down feed it; it flows out to where the money is now.
- const middle: DrillNode = { name: t('Savings'), kind: 'savings', open: { side: 'cashflow' } };
- const feeds = left.length ? [{ node: { name: t('Cash flow'), kind: 'income', open: { side: 'cashflow' } } as DrillNode, value: savings }, ...left] : [];
+ const middle: DrillNode = { name: t('Savings'), kind: 'savings', open: whole };
+ const feeds = left.length ? [{ node: { name: t('Cash flow'), kind: 'income', open: whole } as DrillNode, value: savings }, ...left] : [];
  const nodes = [...feeds.map(item => item.node), middle, ...right.map(item => item.node)];
  const hub = feeds.length;
  const links = [...feeds.map((item, index) => ({ source: index, target: hub, value: item.value })), ...right.map((item, index) => ({ source: hub, target: hub + 1 + index, value: item.value }))];
@@ -230,7 +242,7 @@ export function drillTransactions(target: DrillTarget, context: DrillContext): E
   return target.side === 'account' && (accountOf(item, activityAccount) === target.key || (!!item.record && paidDebt.get(item.record.id) === target.key));
  };
  const found: Entry[] = [];
- for (const item of cashFlowItems(data.records as Entry[], from, to, { splits, investmentLinks: data.investmentLinks })) if (item.record && matches(item)) found.push(item.record);
+ for (const item of cashFlowItems(data.records as Entry[], from, to, { splits, investmentLinks: data.investmentLinks })) if (item.record && matches(item) && (!context.scope || context.scope.keep(item.record, item.id))) found.push(item.record);
  return found.sort((a, b) => b.date.localeCompare(a.date) || a.id.localeCompare(b.id));
 }
 

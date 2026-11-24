@@ -1,12 +1,12 @@
 import { monthsBetween } from './budget';
 import { monthEnd, shiftMonth } from './calendar-days';
 import { HOUSEHOLD, inBusinessFilter, type BusinessFilter } from './business';
-import { budgetKey, ownAmount, wholeAmount, type Entry } from './finance';
+import { budgetKey, ownAmount, type Entry } from './finance';
 import { convertAmount } from './market';
 import type { Money } from './money';
 import type { Share } from './cash-flow-report';
 import type { PlanningData } from './planning';
-import { cashFlowItems, isMortgagePayment } from './spending';
+import { cashFlowItems, isMortgagePayment, wholeScale } from './spending';
 import type { TransactionSplit } from './transaction-tools';
 import { ratesOf } from './transaction-rates';
 
@@ -51,7 +51,7 @@ export function reportLedger(data: Pick<PlanningData, 'records' | 'investmentLin
   // Spending carries its parts; a split income is read the same way, and otherwise stands in its own category.
   const parts = !item.income ? item.parts : split.length ? split.map(part => ({ category: part.category_id, amount: ownAmount(record!, Number(part.amount)) })) : [{ category: budgetKey(record!), amount: item.amount }];
   // Each part is the owner's share already (`cashFlowItems`); the whole business's figure is worked back from what was entered.
-  const scale = record && item.amount > 0 && !isMortgagePayment(record) ? wholeAmount(record) / ownAmount(record) : 1;
+  const scale = wholeScale(record, item.amount);
   const base = { name: record ? record.name.trim() || record.kind : asset?.name ?? 'Other expense', date: item.date, direction: (item.income ? 'income' : 'expense') as Direction, record, business: record ? record.business_id ?? null : assetBusiness(asset) };
   const converted = parts.map((part, index) => ({ ...base, id: split.length ? `${item.id}:${index}` : item.id, category: part.category, part, value: item.currency === null ? null : convertAmount(part.amount, item.currency, currency, ratesOf(item.dated, rates)) }));
   if (converted.some(line => line.value === null || !Number.isFinite(line.value))) {
@@ -105,7 +105,7 @@ export function profitAndLoss(lines: readonly LedgerLine[], businessIds: readonl
 }
 
 /** What a click on a chart narrows the transactions to. */
-/** `savings` is the period's net income: it narrows nothing and opens where that money went. */
+/** `savings` is the period's net income, or with `business` that business's net profit: it opens where that money went. */
 export type Drill = { direction?: Direction; category?: string; categories?: readonly string[]; business?: string | null; merchant?: string; savings?: number };
 export const drillMatches = <L extends UnconvertedLine>(drill: Drill | null, line: L, keyOf: (line: L) => string = line => line.category) => !drill || (
  (drill.direction === undefined || line.direction === drill.direction) && (drill.category === undefined || keyOf(line) === drill.category) && (drill.categories === undefined || drill.categories.includes(line.category))
@@ -156,7 +156,7 @@ export function businessSankey(pnl: ProfitAndLoss, labels: { category: (key: str
   const covered = household && business.net < 0;
   if (business.income.length > 1 || covered) for (const item of top(business.income, labels.otherIncome, 'income', business.id)) links.push({ source: node({ name: item.name, kind: 'income', drill: item.drill, owner }), target: hub, value: item.amount });
   for (const item of top(business.expenses, labels.otherExpense, 'expense', business.id)) links.push({ source: hub, target: node({ name: item.name, kind: 'expense', drill: item.drill, owner }), value: item.amount });
-  if (business.net > 0) links.push({ source: hub, target: household ? total : node({ name: labels.profit, kind: 'savings', drill: { business: owner }, owner }), value: business.net });
+  if (business.net > 0) links.push({ source: hub, target: household ? total : node({ name: labels.profit, kind: 'savings', drill: { savings: business.net, business: owner }, owner }), value: business.net });
   else if (business.net < 0) {
    if (covered) links.push({ source: total, target: hub, value: -business.net });
    else links.push({ source: node({ name: labels.loss(name), kind: 'loss', drill: { business: owner }, owner }), target: hub, value: -business.net });

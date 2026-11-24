@@ -71,13 +71,21 @@ export function ReportsScreen() {
  const names = reportNames(data.categories, businessList, t);
  const [drill, setDrill] = useState<{ drill: Drill; label: string; turn: number } | null>(null);
  // A row narrows the transactions below to what it counts: its history for the report's period.
- // Net income is not a list of transactions: with the whole household in view it opens where that money went (accounts,
- // investments, loan principal), as Cash flow's Left over does. Narrowed to a business, a person or the whole of a
- // part-owned business, the workspace's flows would not add up to the figure, so it lists what made it instead.
- const everything = !businesses.length && !ownerFilter.length && (basis === 'mine' || !shares.size);
- const whereItWent = (savings: number) => setSankey({ target: { side: 'savings' }, title: t('Net income'), month: period.to.slice(0, 7), months: rangeMonths(period), period: interval === 'month' ? undefined : rangeText(period, locale), savings });
+ // Net income is not a list of transactions: it opens where that money went, as Cash flow's Left over does. With the
+ // whole household in view that is every account, investment and loan principal. Narrowed to a business, a person or
+ // the whole of a part-owned business, only the lines in view count (`scope`): transfers belong to no business or
+ // person, so it shows the accounts that money landed in, and its title says whose it is.
+ const whole = shares.size > 0 && basis === 'whole', everything = !businesses.length && !ownerFilter.length && !whole;
+ // A business's own Net profit (drawn when the household is not in view) is that business's lines alone.
+ const whereItWent = ({ savings = 0, business }: Drill) => {
+  const own = business === undefined ? lines : lines.filter(line => line.business === business);
+  const records = new Set(own.map(line => line.record?.id)), loose = new Set(own.filter(line => !line.record).map(line => line.id));
+  const narrowedTo = [...(business === undefined ? businesses : [business]).map(id => names.business(id)), ...owners.filter(owner => ownerFilter.includes(owner.id)).map(owner => owner.name), ...(whole ? [t('Whole business')] : [])];
+  setSankey({ target: { side: 'savings' }, title: [t(business === undefined ? 'Net income' : 'Net profit'), ...narrowedTo].join(' · '), month: period.to.slice(0, 7), months: rangeMonths(period), period: interval === 'month' ? undefined : rangeText(period, locale), savings,
+   scope: everything && business === undefined ? undefined : { keep: (record, id) => record ? records.has(record.id) : loose.has(id), whole } });
+ };
  // Each press counts (`turn`), so the list answers a second press on the same part too.
- const narrow = (next: Drill) => next.savings !== undefined && everything ? whereItWent(next.savings) : setDrill(current => ({ drill: next, label: describeDrill(next, names, t), turn: (current?.turn ?? 0) + 1 }));
+ const narrow = (next: Drill) => next.savings !== undefined ? whereItWent(next) : setDrill(current => ({ drill: next, label: describeDrill(next, names, t), turn: (current?.turn ?? 0) + 1 }));
  // Changing what the page shows starts again from every transaction.
  const reset = <T,>(set: (value: T) => void) => (value: T) => { set(value); setDrill(null); };
  const open = (line: LedgerLine) => line.record && setViewing(storedRecord(line.record));

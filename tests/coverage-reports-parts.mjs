@@ -112,18 +112,27 @@ test('a chart click narrows the transactions, and changing a filter shows them a
  assert.deepEqual(sankeys, [], 'a chart click only narrows: the list below is its history, no Sankey opens');
  // Net income is the one part with no transactions of its own: it opens where the money went, for the report's period.
  r.fire(r.find(byType('BusinessSankeyChart')), 'onDrill', { savings: 3500 });
- assert.deepEqual(requests.at(-1) && { ...requests.at(-1), months: requests.at(-1).months.length }, { target: { side: 'savings' }, title: 'Net income', month: today.slice(0, 7), months: Number(today.slice(5, 7)), period: requests.at(-1).period, savings: 3500 });
+ assert.deepEqual(requests.at(-1) && { ...requests.at(-1), months: requests.at(-1).months.length }, { target: { side: 'savings' }, title: 'Net income', month: today.slice(0, 7), months: Number(today.slice(5, 7)), period: requests.at(-1).period, savings: 3500, scope: undefined });
  assert.ok(requests.at(-1).period, 'a year names its range');
  assert.notEqual(r.find(byType('ReportTransactions')).props.label, 'Net income', 'the list keeps what it showed');
+ assert.equal(requests.at(-1).scope, undefined, 'the whole household: every flow counts');
  sankeys.length = 0;
  r.fire(r.find(byType('ReportTransactions')), 'onOpen', list.lines[0]);
  assert.deepEqual(viewed, ['f']);
  r.fire(r.find(byType('BusinessFilter')), 'onChange', ['b1']);
  list = r.find(byType('ReportTransactions')).props;
  assert.equal(list.label, null);assert.deepEqual(list.lines.map(line => line.id), ['b']);
- // One business in view: the workspace's flows would not add up to its figure, so Net income lists what made it.
+ // One business in view: only its own income and spending count, and the title says whose net income it is.
  r.fire(r.find(byType('BusinessSankeyChart')), 'onDrill', { savings: 900 });
- assert.deepEqual(sankeys, []);assert.equal(r.find(byType('ReportTransactions')).props.label, 'Net income');
+ assert.deepEqual(sankeys, ['Net income · Bakery']);
+ const { scope } = requests.at(-1);
+ assert.deepEqual([scope.keep(sale, 'b'), scope.keep(salary, 's'), scope.keep(null, 'loose'), scope.whole], [true, false, false, false]);
+ // The business's own Net profit node: that business alone, whatever else is in view.
+ r.fire(r.find(byType('BusinessFilter')), 'onChange', []);
+ r.fire(r.find(byType('BusinessSankeyChart')), 'onDrill', { savings: 900, business: 'b1' });
+ assert.equal(sankeys.at(-1), 'Net profit · Bakery');
+ assert.deepEqual([requests.at(-1).scope.keep(sale, 'b'), requests.at(-1).scope.keep(salary, 's')], [true, false]);
+ r.fire(r.find(byType('BusinessFilter')), 'onChange', ['b1']);
  assert.equal(tile('Income').value, '$900');
  r.fire(r.find(byType('ReportTransactions')), 'onClear');
 });

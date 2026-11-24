@@ -1,3 +1,4 @@
+import type { Entry } from './finance';
 import type { GoalEvent } from './goal-funding';
 import type { PlanningData } from './planning';
 import type { TransactionSplit } from './transaction-tools';
@@ -47,4 +48,8 @@ export type DrillFlows = { nodes: DrillNode[]; links: Array<{ source: number; ta
 type Rates = number | Record<string, number> | undefined;
 /** `label` names a category key (an added category's id or a built-in kind); `locale` writes the dates of payments. */
 /** `throughToday` is false when the data stops before today, so an account's balance at the period's end cannot be told. */
-export type DrillContext = { /** Every goal's history (`/api/goal-tools`). */goalEvents?: GoalEvent[]; throughToday?: boolean; data: Pick<PlanningData, 'records' | 'activity' | 'investmentLinks' | 'movements'> & Partial<Pick<PlanningData, 'goals' | 'categories'>>; splits: TransactionSplit[]; months: string[]; currency: string; today: string; rates: Rates; t: (key: string) => string; label?: (key: string) => string; locale?: string };
+/** A report narrowed to some businesses or people: only its own income and spending count (`keep`, by a transaction's
+ * record or, without one, its id), in full for a part-owned business when `whole`. Transfers, repayments and purchases
+ * belong to no business or person, so a scoped view stops at the accounts the money landed in or was paid from. */
+export type DrillScope = { keep: (record: Entry | null, id: string) => boolean; whole?: boolean };
+export type DrillContext = { scope?: DrillScope; /** Every goal's history (`/api/goal-tools`). */goalEvents?: GoalEvent[]; throughToday?: boolean; data: Pick<PlanningData, 'records' | 'activity' | 'investmentLinks' | 'movements'> & Partial<Pick<PlanningData, 'goals' | 'categories'>>; splits: TransactionSplit[]; months: string[]; currency: string; today: string; rates: Rates; t: (key: string) => string; label?: (key: string) => string; locale?: string };

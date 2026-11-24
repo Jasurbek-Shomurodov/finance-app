@@ -1,4 +1,4 @@
-import { expenses, income, ownAmount, type Entry } from './finance';
+import { expenses, income, ownAmount, wholeAmount, type Entry } from './finance';
 import type { DatedRecord, DayTable } from './transaction-rates';
 
 // The one definition of "spending", shared by Cash flow, Transactions, the
@@ -13,6 +13,8 @@ type SpendingRow = Pick<Entry, 'kind' | 'amount'> & Partial<Pick<Entry, 'mortgag
 
 /** True for a saved mortgage payment copy, whose amount is principal plus interest. */
 export const isMortgagePayment = (row: Pick<SpendingRow, 'mortgage_payment_id'>) => !!row.mortgage_payment_id;
+/** What turns a cash flow item's amount (the owner's share) into the whole business's figure: 1 outside a part-owned business. */
+export const wholeScale = (record: Entry | null | undefined, amount: number) => record && amount > 0 && !isMortgagePayment(record) ? wholeAmount(record) / ownAmount(record) : 1;
 
 /** The part of a record that is spending, in the record's own currency. Zero for income and holdings. */
 export function spendingAmount(row: SpendingRow): number {
