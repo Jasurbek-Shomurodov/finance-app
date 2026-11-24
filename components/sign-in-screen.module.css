@@ -9,8 +9,8 @@
 .card{width:100%;max-width:420px;margin:auto;background:var(--card);border:1px solid var(--hairline);border-radius:20px;padding:32px;box-shadow:var(--shadow-card);min-width:0}
 .cardHeading{margin-bottom:24px;text-align:center}.cardHeading h1{font-size:var(--type-display);letter-spacing:-.02em;font-weight:600;line-height:1.25;margin:0 0 8px}.cardHeading p{font-size:var(--type-small);color:var(--muted-foreground);line-height:1.6;margin:0}
 .card form{margin:0}
-/* Google and phone: square icon buttons side by side, named by their aria-label and tooltip. */
-.providers{display:flex;justify-content:center;gap:12px}.card .provider{width:56px;height:52px;padding:0;background:var(--background);color:var(--foreground);border-color:var(--border);border-radius:var(--radius-control)}.provider svg{flex-shrink:0;width:22px;height:22px}
+/* Google and phone: named buttons sharing the row; one alone takes all of it, and long names wrap to a row each. */
+.providers{display:flex;flex-wrap:wrap;gap:10px}.providers>*{flex:1 1 150px;min-width:0}.card .provider{width:100%;height:auto;min-height:44px;gap:10px;padding:8px 12px;white-space:normal;background:var(--background);color:var(--foreground);border-color:var(--border);border-radius:var(--radius-control);font-size:var(--type-small);font-weight:500}.provider svg{flex-shrink:0;width:20px;height:20px}
 .divider{display:flex;align-items:center;gap:12px;color:var(--muted-foreground);font-size:var(--type-caption);margin:22px 0}.divider::before,.divider::after{content:"";height:1px;background:var(--border);flex:1}
 /* Fields stay at 16px so phones do not zoom in when one is focused. */
 .card .form{display:flex;flex-direction:column;gap:8px}.form label{font-size:var(--type-small);font-weight:500;margin:0;color:var(--foreground)}.card .form input{height:44px;width:100%;border-radius:var(--radius-control);background:var(--field);border:1px solid var(--input);font-size:var(--type-body);color:var(--foreground);padding:10px 12px}.form input::placeholder{color:var(--muted-foreground);opacity:.8}

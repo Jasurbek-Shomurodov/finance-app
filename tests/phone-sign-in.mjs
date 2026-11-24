@@ -99,6 +99,6 @@ test('the phone country starts on the visitor\'s country, and the list opens ful
  assert.match(css,/\.countrySheet\{[^}]*height:100dvh/);assert.match(css,/\.countrySheet \.countryList\{flex:1;max-height:none/);
  assert.match(fs.readFileSync('lib/legal.ts','utf8'),/estimates from your connection; that estimate is not stored/,'the privacy policy says so');
  const card=fs.readFileSync('components/auth-card.tsx','utf8');
- assert.match(card,/className=\{styles\.provider\}[^>]*aria-label=\{t\('Continue with Google'\)\}/,'Google is an icon button with a name');
- assert.match(card,/className=\{styles\.provider\} aria-label=\{t\('Continue with phone'\)\}/,'so is phone');
+ assert.match(card,/className=\{styles\.provider\}[^>]*aria-label=\{t\('Continue with Google'\)\}>.*<\/svg>Google<\/Button>/,'Google is a button that shows its name');
+ assert.match(card,/className=\{styles\.provider\} onClick=\{\(\) => setByPhone\(true\)\}><Smartphone [^>]*\/>\{t\('Phone number'\)\}<\/Button>/,'so is phone');
 });

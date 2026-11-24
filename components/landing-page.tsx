@@ -50,7 +50,7 @@ const transactionRows = [{ kind: 'Salary', amount: 4200, income: true }, { kind:
 const recurringRows = [{ kind: 'Rent expense', amount: 900 }, { kind: 'Mortgage', amount: 640 }, { kind: 'Family support', amount: 300 }] as const;
 
 /** Fades its content in the first time it scrolls into view. */
-function Reveal({ children, className }: { children: ReactNode; className?: string }) {
+function Reveal({ children, className, wide }: { children: ReactNode; className?: string; wide?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [shown, setShown] = useState(false);
   useEffect(() => {
@@ -60,7 +60,7 @@ function Reveal({ children, className }: { children: ReactNode; className?: stri
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
-  return <div ref={ref} className={[styles.reveal, className].filter(Boolean).join(' ')} data-shown={shown}>{children}</div>;
+  return <div ref={ref} className={[styles.reveal, className].filter(Boolean).join(' ')} data-shown={shown} data-wide={wide || undefined}>{children}</div>;
 }
 
 
@@ -120,10 +120,12 @@ function TelegramSample() {
 // Each pillar opens its own screen of the real app, in the sample workspace.
 const pillarPaths: Record<Pillar, string> = { track: '/', budget: '/budget', plan: '/goals', invest: '/assets' };
 
-function Feature({ eyebrow, title, text, sample, flip }: { eyebrow: string; title: string; text: string; sample: ReactNode; flip?: boolean }) {
-  return <Reveal className={styles.feature}>
-    <div className={styles.featureText} data-flip={flip || undefined}><p className={styles.eyebrow}>{eyebrow}</p><h3>{title}</h3><p>{text}</p></div>
-    <div className={styles.featureSample}>{sample}</div>
+/** One tile of the feature grid: what it does in a line and a sentence, over a sample of it. A `wide` tile spans the
+ * row and sets the two side by side. */
+function Feature({ title, text, sample, wide }: { title: string; text: string; sample: ReactNode; wide?: boolean }) {
+  return <Reveal className={styles.feature} wide={wide}>
+    <div className={styles.featureText}><h3>{title}</h3><p>{text}</p></div>
+    {sample}
   </Reveal>;
 }
 
@@ -152,15 +154,13 @@ export function LandingPage({ brand, preferences, busy, error, onDemo }: Props) 
         <div className={styles.heroReplay}><LandingHeroDemo/></div>
       </section>
 
-      <Reveal className={styles.statement}>
-        <p className={styles.eyebrow}>{t('WHAT IS HOGGISH?')}</p>
-        <h2>{t('One calm place for all your money')}</h2>
-        <p>{t('Hoggish brings your accounts, spending, debts and investments into one clear view, so you always know where your money is, where it goes and what comes next.')}</p>
-        <ul className={styles.facts}><li><Globe size={16} aria-hidden="true"/>{t('30 languages')}</li><li><Wallet size={16} aria-hidden="true"/>{t('Multiple currencies')}</li><li><EyeOff size={16} aria-hidden="true"/>{t('No ads, no tracking')}</li></ul>
-      </Reveal>
-
       <section id="features" className={styles.pillars} aria-labelledby="pillars-heading">
-        <Reveal className={styles.sectionHeading}><h2 id="pillars-heading">{t('Everything you need, in one app')}</h2><p>{t('Add your accounts once, then track, budget, plan and invest from the same place.')}</p></Reveal>
+        <Reveal className={styles.sectionHeading}>
+          <p className={styles.eyebrow}>{t('WHAT IS HOGGISH?')}</p>
+          <h2 id="pillars-heading">{t('One calm place for all your money')}</h2>
+          <p>{t('Hoggish brings your accounts, spending, debts and investments into one clear view, so you always know where your money is, where it goes and what comes next.')}</p>
+          <ul className={styles.facts}><li><Globe size={16} aria-hidden="true"/>{t('30 languages')}</li><li><Wallet size={16} aria-hidden="true"/>{t('Multiple currencies')}</li><li><EyeOff size={16} aria-hidden="true"/>{t('No ads, no tracking')}</li></ul>
+        </Reveal>
         <Reveal className={styles.pillarGrid}>
           <div className={styles.pillarList}>{pillars.map((item, index) => <button key={item.key} type="button" aria-pressed={item.key === pillar} onClick={() => setPillar(item.key)} style={{ '--pillar-order': index * 2 } as CSSProperties}>
             <span className={styles.eyebrow}><item.icon size={15} aria-hidden="true"/>{t(item.label)}</span><strong>{t(item.title)}</strong><span>{t(item.text)}</span>
@@ -169,12 +169,12 @@ export function LandingPage({ brand, preferences, busy, error, onDemo }: Props) 
         </Reveal>
       </section>
 
-      <section className={styles.features}>
-        <Feature eyebrow={t('Accounts')} title={t('All your accounts, in one place')} text={t('Cash, deposits, loans and investments sit side by side, grouped by type, each in its own currency.')} sample={<AccountsSample/>}/>
-        <Feature flip eyebrow={t('Transactions')} title={t('Every transaction in one list')} text={t('Search, filter and review income and spending in a single list, with a category on every row.')} sample={<TransactionsSample/>}/>
-        <Feature eyebrow={t('Recurring')} title={t('Never miss a payment')} text={t('Rent, subscriptions and loan payments show up before they are due, month by month.')} sample={<RecurringSample/>}/>
-        {botUsername && <Feature flip eyebrow={t('Telegram')} title={t('Add an expense from a chat')} text={t('Send the amount to the Hoggish bot and it is recorded. Reminders arrive before payments are due.')} sample={<TelegramSample/>}/>}
-        <Feature flip={!botUsername} eyebrow={t('Language')} title={t('Your language, your currencies')} text={t('Thirty interface languages, right-to-left included, and the currencies you choose. Totals in different currencies are never mixed.')} sample={<LanguagesSample/>}/>
+      <section className={styles.features} aria-label={t('Features')}>
+        <Feature title={t('All your accounts, in one place')} text={t('Cash, deposits, loans and investments sit side by side, grouped by type, each in its own currency.')} sample={<AccountsSample/>}/>
+        <Feature title={t('Every transaction in one list')} text={t('Search, filter and review income and spending in a single list, with a category on every row.')} sample={<TransactionsSample/>}/>
+        <Feature title={t('Never miss a payment')} text={t('Rent, subscriptions and loan payments show up before they are due, month by month.')} sample={<RecurringSample/>}/>
+        {botUsername && <Feature title={t('Add an expense from a chat')} text={t('Send the amount to the Hoggish bot and it is recorded. Reminders arrive before payments are due.')} sample={<TelegramSample/>}/>}
+        <Feature wide title={t('Your language, your currencies')} text={t('Thirty interface languages, right-to-left included, and the currencies you choose. Totals in different currencies are never mixed.')} sample={<LanguagesSample/>}/>
       </section>
 
       <section id="how-it-works" className={styles.steps} aria-labelledby="steps-heading">

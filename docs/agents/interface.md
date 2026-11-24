@@ -158,9 +158,13 @@ it instead of styling a page on its own.
 ## Landing and sign-in
 
 - Signed-out visitors see `LandingPage` (`components/landing-page.tsx`) at `/`: the
-public product tour (floating nav, hero over a
-product window, feature rows, closing band). Sign-in is its own page at
-`signInPath` (`lib/sign-in-path.ts`), a single centred card. The shell picks
+public product tour (floating nav, a hero short enough that the
+product window shows under its buttons on a laptop, one tinted "what is it" block with the
+app itself, a grid of feature tiles, closing band). Say a thing once: no second heading
+repeating the one above it. Sign-in is its own page at
+`signInPath` (`lib/sign-in-path.ts`), a single centred card. Its other ways in (Google, phone) are
+buttons that show their names, and a form there never switches its button off to say something is
+wrong: the reason goes under the field (`FieldError`), as in the workspace. The shell picks
 between them; link to `signInPath`, never to `/`, when someone needs to sign in.
 Landing figures are sample data through the shared formatters, and every claim
 on it must match the privacy policy and a feature that exists.

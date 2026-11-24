@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { MailCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/components/language-provider';
 import { ErrorPopup } from '@/components/presentation-foundation/error-popup';
+import { FieldError } from '@/components/presentation-foundation/field-error';
 import { AuthPage, ProviderChoices } from '@/components/auth-card';
 import { requestAccountAccess } from '@/lib/account-access-request';
 import { showNotice } from '@/lib/feedback';
@@ -20,7 +21,12 @@ export function AccountAccessCard({ brand, intent }: { brand: React.ReactNode; i
   const { t } = useLanguage();
   const [email, setEmail] = useState(''), [password, setPassword] = useState(''), [repeat, setRepeat] = useState('');
   const [busy, setBusy] = useState(false), [error, setError] = useState(''), [sent, setSent] = useState('');
+  // A repeated password that differs is said under its field once the person has tried to continue or left the field.
+  const [checked, setChecked] = useState(false);
+  const repeatField = useRef<HTMLInputElement>(null);
   const signup = intent === 'signup';
+  const mismatch = signup && password !== repeat;
+  const repeatError = mismatch && checked ? 'Passwords do not match.' : undefined;
   const back = <p className={styles.register}>{signup && <>{t('Already have an account?')} </>}<Link href={signInPath}>{t(signup ? 'Sign in' : 'Back to sign in')}</Link></p>;
   // The form gives way to a plain confirmation, so a sent email is never mistaken for nothing happening.
   if (sent) return <AuthPage brand={brand} title="Check your email">
@@ -31,6 +37,7 @@ export function AccountAccessCard({ brand, intent }: { brand: React.ReactNode; i
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
+    if (mismatch) { setChecked(true); repeatField.current?.focus(); return; }
     setBusy(true); setError('');
     try {
       const result = await requestAccountAccess({ action: intent, email, password });
@@ -44,9 +51,10 @@ export function AccountAccessCard({ brand, intent }: { brand: React.ReactNode; i
     {signup && <>
       <div className={styles.passwordLabel}><label htmlFor="access-password">{t('New password')}</label></div><Input id="access-password" type="password" placeholder={t('Create a password')} autoComplete="new-password" minLength={minPasswordLength} maxLength={maxPasswordLength} required value={password} onChange={event => setPassword(event.target.value)}/>
       <p className={styles.hint}>{t('Use a unique password with at least 8 characters.')}</p>
-      <div className={styles.passwordLabel}><label htmlFor="access-repeat">{t('Confirm password')}</label></div><Input id="access-repeat" type="password" placeholder={t('Repeat your password')} autoComplete="new-password" required value={repeat} onChange={event => setRepeat(event.target.value)}/>
+      <div className={styles.passwordLabel}><label htmlFor="access-repeat">{t('Confirm password')}</label></div><Input ref={repeatField} id="access-repeat" type="password" placeholder={t('Repeat your password')} autoComplete="new-password" required aria-invalid={repeatError ? true : undefined} aria-describedby={repeatError ? 'access-repeat-error' : undefined} value={repeat} onChange={event => setRepeat(event.target.value)} onBlur={() => { if (repeat) setChecked(true); }}/>
+      <FieldError id="access-repeat-error" message={repeatError}/>
     </>}
-    <Button type="submit" className={styles.submit} disabled={busy || (signup && password !== repeat)}>{t(busy ? 'Saving…' : 'Continue')}</Button>
+    <Button type="submit" className={styles.submit} disabled={busy}>{t(busy ? 'Saving…' : 'Continue')}</Button>
   </form>;
   return <AuthPage brand={brand} title={signup ? 'Create account' : 'Forgot password'}>
     {signup ? <ProviderChoices disabled={busy} footer={<><p className={styles.consent}>{t('By creating an account, you agree to the terms of use and privacy policy.')} <Link href={legalPaths.terms}>{t('Terms of use')}</Link> · <Link href={legalPaths.privacy}>{t('Privacy policy')}</Link></p>{back}</>}>{form}</ProviderChoices> : <>{form}{back}</>}
