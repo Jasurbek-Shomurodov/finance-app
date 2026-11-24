@@ -16,9 +16,10 @@ const blanked = Object.fromEntries(envFiles.flatMap(file => fs.readFileSync(file
 export default defineConfig({
   testDir: 'e2e',
   testMatch: /.*\.spec\.mjs/,
-  // One database for the run, restored from a snapshot before each test, so tests run one at a time.
+  // One database for the run, restored from a snapshot before each test, so tests run one at a time. Every test
+  // stands alone, so CI splits them test by test across machines (`--shard`), each with its own database.
   workers: 1,
-  fullyParallel: false,
+  fullyParallel: true,
   retries: process.env.CI ? 1 : 0,
   timeout: 60_000,
   expect: { timeout: 15_000 },

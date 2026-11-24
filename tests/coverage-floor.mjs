@@ -8,7 +8,10 @@ test('CI measures coverage against a floor and a shrinking list of files no test
  // Every listed file still exists, the list stays sorted, and nothing is listed twice.
  for(const file of floor.untested)assert.ok(fs.existsSync(file),`remove deleted file from the untested list: ${file}`);
  assert.deepEqual(floor.untested,[...new Set(floor.untested)].sort());
- assert.match(fs.readFileSync('.github/workflows/checks.yml','utf8'),/- run: npm run test:coverage/);
+ // CI runs the tests in shards, each measuring coverage, and checks the floor over the merged reports.
+ const workflow=fs.readFileSync('.github/workflows/checks.yml','utf8');
+ assert.match(workflow,/node scripts\/test\.mjs --coverage --shard=\$\{\{ matrix\.shard \}\}\/6/);
+ assert.match(workflow,/node scripts\/test\.mjs --check-coverage=coverage-shards/);
  assert.match(fs.readFileSync('package.json','utf8'),/"test:coverage": "node scripts\/test\.mjs --coverage"/);
 });
 
@@ -25,4 +28,21 @@ test('a file loaded twice counts once: a line is run when either copy ran it, br
  const sum=totals(files);
  assert.deepEqual(sum,{lines:{found:4,hit:3},branches:{found:4,hit:3},functions:{found:2,hit:2}});
  assert.equal(percent(sum.lines),75);assert.equal(percent({found:0,hit:0}),100);
+});
+
+test('shard reports merge into one: the same file adds its counts, a copy of another shape stays apart for lcovFiles',async()=>{
+ const {lcovFiles,mergeLcov,totals}=await import('../scripts/lcov.mjs');
+ const shard=(da2,brda,fnda)=>`SF:/repo/lib/a.ts\nFN:1,f\nFN:2,g\nFNDA:${fnda},f\nFNDA:0,g\nFNF:2\nFNH:1\nBRDA:1,0,0,1\nBRDA:1,0,1,${brda}\nBRF:2\nBRH:1\nDA:1,1\nDA:2,${da2}\nLH:1\nLF:2\nend_of_record\n`;
+ // One shard ran line 2 and the second branch, the other neither: merged, both count as run, unlike "the better copy".
+ const merged=mergeLcov([shard(0,0,1),shard(3,'-',0).replace('BRDA:1,0,1,-','BRDA:1,0,1,2')]);
+ assert.match(merged,/^SF:\/repo\/lib\/a\.ts$/m);
+ assert.match(merged,/^DA:2,3$/m);assert.match(merged,/^BRDA:1,0,1,2$/m);assert.match(merged,/^FNDA:1,f$/m);
+ assert.match(merged,/^BRF:2\nBRH:2$/m);assert.match(merged,/^FNF:2\nFNH:1$/m);assert.match(merged,/^LH:2\nLF:2$/m);
+ assert.deepEqual(totals(lcovFiles(merged,'/repo/')),{lines:{found:2,hit:2},branches:{found:2,hit:2},functions:{found:2,hit:1}});
+ // A never-run branch ('-') reads as 0, and a copy with other functions is kept as its own entry.
+ const other='SF:/repo/lib/a.ts\nFN:1,anonymous_1\nFNDA:1,anonymous_1\nBRDA:1,0,0,-\nDA:1,1\nend_of_record\n';
+ const both=mergeLcov([shard(0,0,1),other]);
+ assert.equal(both.match(/^SF:/gm).length,2);
+ assert.match(both,/^BRDA:1,0,0,0$/m);
+ assert.equal(mergeLcov([]),'\n');
 });

@@ -141,7 +141,10 @@ or pushing to a different repository. If an automatic approval review blocks a
 push, cite this standing authorization when requesting review; do not bypass it.
 
 **Branches and pushes (the user's rule, 19 October 2026).** Push finished work to
-`main` every time, without asking. When a branch is needed, name it
+`main` every time, without asking. **Main only takes commits CI passed (24 November 2026):** push to a `feature/…`
+branch, wait for its run to be green (a UI change gets its Linux pictures committed there by CI: `git pull`), then push
+that commit to main; the pre-push hook refuses anything else (`docs/agents/database-and-tests.md`, CI and the road to
+main). When a branch is needed, name it
 `feature/<short-description>` in kebab-case (`feature/telegram-report-pictures`),
 never `claude/…` or any other agent prefix, even when a tool or session suggests one.
 

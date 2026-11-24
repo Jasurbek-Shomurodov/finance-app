@@ -26,3 +26,30 @@ export function totals(files){
  return sum;
 }
 export function percent({found,hit}){return found?hit/found*100:100;}
+
+/** One lcov report from several (the CI shards). Entries for the same file with the same functions and branches add
+ * their counts; a file whose copies differ in shape (a copy loaded through tests/helpers/load-ts.mjs) keeps each copy,
+ * and lcovFiles combines those as it does within one report. Totals are counted again from the merged counts. */
+export function mergeLcov(reports){
+ const entries=new Map();
+ for(const report of reports)for(const record of report.split('end_of_record')){
+  const file=/^SF:(.*)$/m.exec(record)?.[1];
+  if(!file)continue;
+  const functions=[...record.matchAll(/^FN:([^,\n]*),(.*)$/gm)].map(match=>[match[1],match[2]]);
+  const calls=new Map([...record.matchAll(/^FNDA:(\d+),(.*)$/gm)].map(match=>[match[2],Number(match[1])]));
+  const branches=new Map([...record.matchAll(/^BRDA:([^,\n]+,[^,\n]+,[^,\n]+),(\S+)$/gm)].map(match=>[match[1],match[2]==='-'?0:Number(match[2])]));
+  const lines=new Map([...record.matchAll(/^DA:(\d+),(\d+)/gm)].map(match=>[match[1],Number(match[2])]));
+  const key=[file,functions.map(([,name])=>name).join(','),[...branches.keys()].join(';')].join('\n');
+  const seen=entries.get(key);
+  if(!seen){entries.set(key,{file,functions,calls,branches,lines});continue;}
+  for(const [counts,more] of [[seen.calls,calls],[seen.branches,branches],[seen.lines,lines]])
+   for(const [id,count] of more)counts.set(id,(counts.get(id)??0)+count);
+ }
+ return [...entries.values()].map(({file,functions,calls,branches,lines})=>{
+  const hit=map=>[...map.values()].filter(count=>count>0).length;
+  return [`SF:${file}`,...functions.map(([line,name])=>`FN:${line},${name}`),...functions.map(([,name])=>`FNDA:${calls.get(name)??0},${name}`),
+   `FNF:${functions.length}`,`FNH:${functions.filter(([,name])=>(calls.get(name)??0)>0).length}`,
+   ...[...branches].map(([id,count])=>`BRDA:${id},${count}`),`BRF:${branches.size}`,`BRH:${hit(branches)}`,
+   ...[...lines].map(([line,count])=>`DA:${line},${count}`),`LH:${hit(lines)}`,`LF:${lines.size}`,'end_of_record'].join('\n');
+ }).join('\n')+'\n';
+}

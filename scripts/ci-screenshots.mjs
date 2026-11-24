@@ -1,7 +1,8 @@
-// Takes the Linux pictures of the screenshot tests (e2e/screens.spec.mjs) from CI. CI draws on Linux, whose fonts
-// differ from a Mac's, so its pictures can only come from a CI run: when its e2e job fails on a missing or changed
-// picture, it uploads what it drew (`-actual.png` in the playwright-report artifact). This copies those into
-// e2e/<spec>-snapshots/ as the new -linux pictures. Look at each one before committing it.
+// Takes the Linux pictures of the screenshot tests (e2e/screens.spec.mjs) from a CI run. A push to a feature branch
+// no longer needs it: CI redraws the changed Linux pictures and commits them to the branch itself (the `pictures` job
+// in .github/workflows/checks.yml). This is for a strict run (main, a pull request) that failed on a picture: it
+// copies what that run drew (`-actual.png` in its playwright-report-* artifacts) into e2e/<spec>-snapshots/ as the
+// new -linux pictures. Look at each one before committing it.
 //
 //   npm run screenshots:ci            the latest failed run of this branch
 //   npm run screenshots:ci -- <id>    a given run
@@ -17,7 +18,7 @@ if (!run) throw new Error(`No failed CI run on ${branch} to take pictures from.`
 
 const folder = mkdtempSync(path.join(tmpdir(), 'ci-screenshots-'));
 try {
-  gh('run', 'download', run, '--name', 'playwright-report', '--dir', folder);
+  gh('run', 'download', run, '--pattern', 'playwright-report*', '--dir', folder);
   const walk = dir => readdirSync(dir).flatMap(name => { const file = path.join(dir, name); return statSync(file).isDirectory() ? walk(file) : [file]; });
   const specs = readdirSync('e2e').filter(name => name.endsWith('.spec.mjs')).map(name => name.slice(0, -'.spec.mjs'.length));
   const copied = walk(folder).filter(file => file.endsWith('-actual.png')).map(file => {
