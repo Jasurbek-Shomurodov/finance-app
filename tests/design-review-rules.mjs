@@ -350,7 +350,7 @@ test('the 9 October 2026 follow-up stays fixed (THEME-009, MOT-001, MOT-005, A11
  // The theme follows the device until the person picks one with the toggle.
  assert.match(read('components/theme-provider.tsx'),/defaultTheme="system" enableSystem storageKey="hoggish-theme"/);
  // The landing hero and pillar buttons stand still under reduced motion.
- assert.match(read('components/landing-page.module.css'),/@media\(prefers-reduced-motion:reduce\)\{[^@]*\.heroReplay\{animation:none\}\.pillarList button\{transition:none\}/);
+ assert.match(read('components/landing-page.module.css'),/@media\(prefers-reduced-motion:reduce\)\{[^@]*\.page \.pillars\{animation:none\}\.pillarList button\{transition:none\}/);
  // Every P&L drill button is named after its row (and its business), through ids safe for category names with spaces.
  const reports=read('components/reports/profit-loss-table.tsx');
  assert.match(reports,/rowId = \(key: string\) => `\$\{idBase\}\$\{encodeURIComponent\(key\)\}`/);
