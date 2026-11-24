@@ -36,6 +36,21 @@
 @keyframes row-glow{from{background-color:color-mix(in srgb,var(--primary) 14%,transparent)}}
 [data-arrived]{animation:row-arrive var(--motion-settle) var(--ease-out) backwards,row-glow 1.4s var(--ease-out) var(--motion-settle) backwards}
 
+/* A press on a part of a Reports chart narrows the transactions below it. The list answers the press where the eye has
+   to go next: a ring in the brand colour fades off the panel, the chip naming the filter pops, and the rows fade up in
+   turn. The heading scrolls into view first when it is off screen (`ReportTransactions`). */
+@keyframes panel-ring{from{opacity:.7}to{opacity:0}}
+@keyframes chip-pop{from{opacity:0;transform:scale(.86)}}
+.report-transactions>:first-child{scroll-margin-block:84px 220px}
+.report-transactions[data-narrowed]{position:relative}
+.report-transactions[data-narrowed]::after{content:"";position:absolute;inset:-1px;border:2px solid var(--mark-bg);border-radius:inherit;opacity:0;pointer-events:none;animation:panel-ring 1.2s var(--ease-out) backwards}
+.report-transactions[data-narrowed] .report-drill{animation:chip-pop var(--motion-settle) var(--ease-out) backwards}
+.report-transactions[data-narrowed] .report-transaction-list>li{--rise:0ms;animation:tab-in var(--motion-settle) var(--ease-out) var(--rise) backwards}
+.report-transactions[data-narrowed] .report-transaction-list>li:nth-child(2){--rise:30ms}
+.report-transactions[data-narrowed] .report-transaction-list>li:nth-child(3){--rise:60ms}
+.report-transactions[data-narrowed] .report-transaction-list>li:nth-child(4){--rise:90ms}
+.report-transactions[data-narrowed] .report-transaction-list>li:nth-child(n+5){--rise:120ms}
+
 /* Dialogs, menus, popovers and tooltips stay on screen while they leave: they arrive with the soft landing and
    leave sooner, accelerating away. Radix keeps them mounted until the exit ends; tw-animate draws both. */
 :is([data-slot=dialog-content],[data-slot=alert-dialog-content]){--tw-enter-scale:.97;--tw-enter-translate-y:8px;--tw-exit-scale:.98;--tw-exit-translate-y:4px}
@@ -83,6 +98,8 @@ html[data-theme-switch]::view-transition-new(root){animation:theme-reveal .52s v
  .workspace .content>*,.stat-tiles>.stat-tile,.dashboard-grid>*,[data-arrived]{animation:fade-only .15s linear backwards;transition:none}
  .workspace [data-settled][data-swapped]{animation:fade-only .12s linear backwards!important}
  .asset-flow-step{animation:fade-only .12s linear backwards}
+ .report-transactions[data-narrowed] .report-drill,.report-transactions[data-narrowed] .report-transaction-list>li{animation:fade-only .15s linear backwards}
+ .report-transactions[data-narrowed]::after{animation:none}
  .stat-tile-bar>i,.progress-track>*,.budget-progress>div,.asset-card-share i,.allocation-share>span,.stat-tile-link{animation:none;transition:none}
  .stat-tile-link:hover{transform:none}
  html[data-theme-switch]::view-transition-new(root){animation:none}

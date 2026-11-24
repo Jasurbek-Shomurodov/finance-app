@@ -68,9 +68,10 @@ export function ReportsScreen() {
  const groups = useMemo(() => new Map(budgetCategories(data.categories, budget.state.categories).map(category => [category.key, category.group])), [data.categories, budget.state.categories]);
  const groupOf = groupFinder(groups, data.categories);
  const names = reportNames(data.categories, businessList, t);
- const [drill, setDrill] = useState<{ drill: Drill; label: string } | null>(null);
+ const [drill, setDrill] = useState<{ drill: Drill; label: string; turn: number } | null>(null);
  // A row narrows the transactions below to what it counts: its history for the report's period.
- const narrow = (next: Drill) => setDrill({ drill: next, label: describeDrill(next, names, t) });
+ // Each press counts (`turn`), so the list answers a second press on the same part too.
+ const narrow = (next: Drill) => setDrill(current => ({ drill: next, label: describeDrill(next, names, t), turn: (current?.turn ?? 0) + 1 }));
  // Changing what the page shows starts again from every transaction.
  const reset = <T,>(set: (value: T) => void) => (value: T) => { set(value); setDrill(null); };
  const open = (line: LedgerLine) => line.record && setViewing(storedRecord(line.record));
@@ -90,7 +91,7 @@ export function ReportsScreen() {
 }
 
 /** A report tab's chart, then the transactions it narrows to, largest first with a link to the same list on Transactions, beside their summary. */
-function ReportBody({ tab, lines, names, currency, drill, onClear, unconverted, fileName, href, onOpen, children }: { tab: ReportTab; lines: LedgerLine[]; names: ReportNames; currency: string; drill: { drill: Drill; label: string } | null; onClear: () => void; unconverted: UnconvertedLine[]; fileName: string; href: string; onOpen: (line: LedgerLine) => void; children: ReactNode }) {
+function ReportBody({ tab, lines, names, currency, drill, onClear, unconverted, fileName, href, onOpen, children }: { tab: ReportTab; lines: LedgerLine[]; names: ReportNames; currency: string; drill: { drill: Drill; label: string; turn: number } | null; onClear: () => void; unconverted: UnconvertedLine[]; fileName: string; href: string; onOpen: (line: LedgerLine) => void; children: ReactNode }) {
  const { t } = useLanguage();
  const shown = tabLines(tab, lines).filter(line => drillMatches(drill?.drill ?? null, line));
  const missing = unconvertedCount(tabLines(tab, unconverted).filter(line => drillMatches(drill?.drill ?? null, line)));
@@ -98,7 +99,7 @@ function ReportBody({ tab, lines, names, currency, drill, onClear, unconverted, 
   {children}
   {missing > 0 && <p className="muted">{t('{count} transactions in other currencies are left out until exchange rates load.', { count: missing })}</p>}
   <div className="transactions-layout">
-   <ReportTransactions key={drill?.label ?? 'all'} lines={shown} drill={drill?.drill ?? null} label={drill?.label ?? null} names={names} href={href} onClear={onClear} onOpen={onOpen}/>
+   <ReportTransactions key={drill ? `${drill.label}:${drill.turn}` : 'all'} lines={shown} drill={drill?.drill ?? null} label={drill?.label ?? null} names={names} href={href} onClear={onClear} onOpen={onOpen}/>
    <ReportSummary lines={shown} missing={missing} mixed={tab === 'cash_flow'} names={names} currency={currency} fileName={fileName}/>
   </div>
  </>;

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Bar, CartesianGrid, Cell, ComposedChart, Legend, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Download, ReceiptText, X } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
@@ -9,6 +9,7 @@ import { BusinessMark } from '@/components/presentation-foundation/business-mark
 import type { BusinessOption } from '@/components/presentation-foundation/business-filter';
 import { CategoryIcon } from '@/components/presentation-foundation/category-icon';
 import { DrawerLink } from '@/components/presentation-foundation/drawer-link';
+import { scrollBehavior } from '@/hooks/scroll-behavior';
 import { Count } from '@/components/presentation-foundation/count';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
 import { Pagination } from '@/components/presentation-foundation/pagination';
@@ -96,7 +97,11 @@ export function ReportTransactions({ lines: given, drill, label, names, href, on
  const [paging, setPaging] = useState({ key: listKey, page: 1 });
  const pageCount = Math.max(1, Math.ceil(lines.length / reportLinesPerPage));
  const page = paging.key === listKey ? Math.min(paging.page, pageCount) : 1;
- return <section className="panel report-transactions" aria-label={t('Transactions')}>
+ // A press on a chart part remounts the list narrowed: its heading and first rows come into view (only as far as
+ // needed, so the chart stays put when they already are) and the stylesheet answers the press (`data-narrowed`).
+ const panel = useRef<HTMLElement>(null), narrowed = !!(drill && label);
+ useEffect(() => { if (narrowed) panel.current?.firstElementChild?.scrollIntoView?.({ block: 'nearest', behavior: scrollBehavior() }); }, [narrowed]);
+ return <section ref={panel} className="panel report-transactions" data-narrowed={narrowed || undefined} aria-label={t('Transactions')}>
   <PanelTitle title={t('Transactions')} count={<Count value={new Set(lines.map(line => line.record?.id ?? line.id)).size}/>}>{drill && label && <span className="report-drill">{label}<button type="button" aria-label={t('Clear filter')} onClick={onClear}><X size={14} aria-hidden="true"/></button></span>}{href && given.length > 0 && <DrawerLink href={href} className="panel-link">{t('Open in Transactions')}</DrawerLink>}</PanelTitle>
   {lines.length ? <ul className="report-transaction-list">{lines.slice((page - 1) * reportLinesPerPage, page * reportLinesPerPage).map(line => {
    const cells = <>

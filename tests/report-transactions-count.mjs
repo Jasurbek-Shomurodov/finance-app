@@ -27,3 +27,16 @@ test('the transactions read largest first, with one link to the same list on Tra
  r.mount(React.createElement(ReportTransactions, { lines: [], drill: null, label: null, names, href: '/transactions', onClear() {} }));
  assert.equal(r.all(byType('DrawerLink')).length, 0, 'an empty list links nowhere');
 });
+
+test('a list narrowed by a chart press brings its heading into view and marks itself for the stylesheet; the whole list stays still', () => {
+ const scrolls = [], heading = { scrollIntoView: options => scrolls.push(options) };
+ const narrowed = createRenderer({ attach: node => node.type === 'section' ? { firstElementChild: heading } : null });
+ const loaded = narrowed.load('components/business-reports.tsx', { ...ui.modules, 'lucide-react': hostModule(), 'recharts': hostModule(), '@/components/presentation-foundation/count': { Count }, ...Object.fromEntries(['category-icon', 'pagination', 'chart', 'drawer-link', 'panel-title'].map(name => ['@/components/presentation-foundation/' + name, hostModule()])) });
+ const lines = [line('m:1', market, 40, 'Living expense')];
+ narrowed.mount(React.createElement(loaded.ReportTransactions, { lines, drill: { direction: 'income' }, label: 'Income', names, onClear() {} }));
+ assert.equal(narrowed.find(byType('section')).props['data-narrowed'], true);
+ assert.deepEqual(scrolls, [{ block: 'nearest', behavior: 'smooth' }], 'only as far as needed, so a list already in view does not move');
+ narrowed.mount(React.createElement(loaded.ReportTransactions, { lines, drill: null, label: null, names, onClear() {} }));
+ assert.equal(narrowed.find(byType('section')).props['data-narrowed'], undefined);
+ assert.equal(scrolls.length, 1, 'every transaction, nothing pressed: no scroll');
+});
