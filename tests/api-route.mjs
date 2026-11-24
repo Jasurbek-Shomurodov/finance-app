@@ -75,6 +75,13 @@ test('rate limits count hashed addresses and identifiers, refuse over the limit 
  assert.equal(clientIp(req({'x-vercel-forwarded-for':'203.0.113.7, 10.0.0.1'})),'203.0.113.7');
  assert.equal(clientIp(req({'x-forwarded-for':'198.51.100.1, 10.0.0.2'})),'198.51.100.1');
  assert.equal(clientIp(req()),'unknown');
+ const zone='c'.repeat(40),viaCloudflare={'x-real-ip':'172.70.0.1','cf-connecting-ip':'203.0.113.44'};
+ assert.equal(clientIp(req({...viaCloudflare,'x-origin-secret':zone}),zone),'203.0.113.44','through Cloudflare the visitor is the address Cloudflare names');
+ assert.equal(clientIp(req(viaCloudflare),zone),'172.70.0.1','a request that skipped Cloudflare cannot name its own address');
+ assert.equal(clientIp(req({...viaCloudflare,'x-origin-secret':'guess'}),zone),'172.70.0.1','a wrong secret is not believed');
+ assert.equal(clientIp(req({...viaCloudflare,'x-origin-secret':zone}),undefined),'172.70.0.1','without the setting Vercel\'s headers stand');
+ assert.equal(clientIp(req({...viaCloudflare,'x-origin-secret':'short'}),'short'),'172.70.0.1','a short secret is refused');
+ assert.equal(clientIp(req({'x-real-ip':'172.70.0.1','x-origin-secret':zone}),zone),'172.70.0.1','no Cloudflare address: fall back');
  const calls=[];let answer=true,status=200;
  const db={write:async(path,init)=>{calls.push({path,body:JSON.parse(init.body)});return status===200?Response.json(answer):new Response(null,{status});}};
  const limits=[{max:5,seconds:60},{max:20,seconds:3600}];

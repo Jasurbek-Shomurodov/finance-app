@@ -21,6 +21,9 @@
   `/api/closing?id=`.
 - Abuse limits: `rateLimited` from `lib/rate-limit.ts` (Postgres-backed, migration
   106). Every new sign-in, code-sending or paid-API route needs one.
+- The visitor's address or country: `clientIp` (`lib/rate-limit.ts`) and `cloudflareHeader`
+  (`lib/cloudflare.ts`), never a forwarding header read in a route. Behind Cloudflare
+  (`docs/cloudflare.md`) Vercel's headers name Cloudflare, not the visitor.
 - Day and month arithmetic: `lib/calendar-days.ts` (`shiftDay`, `daysBetween`,
   `shiftMonth`, `monthEnd`); "today" is `depositToday()`, never
   `new Date().toISOString()`.
