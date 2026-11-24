@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadTS } from './helpers/load-ts.mjs';
-const { reportLedger, filterLines, profitAndLoss, businessSankey, cashFlowTrend, attributeTrend, readableRange, intervalOf, periodOf, shiftPeriod, trendWindow, drillMatches, sharesBy, largestLoss, previousPeriod, yearToDate, linesIn } = loadTS('lib/business-report.ts');
+const { reportLedger, filterLines, profitAndLoss, businessSankey, flowDrill, cashFlowTrend, attributeTrend, readableRange, intervalOf, periodOf, shiftPeriod, trendWindow, drillMatches, sharesBy, largestLoss, previousPeriod, yearToDate, linesIn } = loadTS('lib/business-report.ts');
 const { reportTransactionsLink } = loadTS('lib/report-view.ts');
 const { transactionsHref, transactionsQuery } = loadTS('lib/transaction-list.ts');
 const { taxSheet, defaultTaxLine, taxLineFor, taxPeriodRange, taxExportRows, defaultTaxSettings } = loadTS('lib/business-tax.ts');
@@ -88,6 +88,15 @@ test('the Sankey feeds a profit into household income, and household income cove
  assert.equal(alone.nodes[alone.links.find(item => alone.nodes[item.source].kind === 'loss').target].name, 'candles', 'without the household, the loss covers the business');
  const net = businessSankey(profitAndLoss([{ id: 'p', record: null, name: 'Pay', date: '2026-10-01', direction: 'income', amount: 900, category: 'Salary', business: null }, { id: 'f', record: null, name: 'Food', date: '2026-10-02', direction: 'expense', amount: 300, category: 'Living expense', business: null }], [], line => line.category, true), labels);
  assert.deepEqual(net.nodes.find(node => node.name === 'Savings').drill, { savings: 600 }, 'Net income carries what was saved, to open where it went');
+ const totalNode = net.nodes.find(node => node.kind === 'total'), salary = net.nodes.find(node => node.name === 'Salary'), food = net.nodes.find(node => node.kind === 'expense');
+ assert.deepEqual(totalNode.drill, { direction: 'income', business: null }, 'the income total opens income only, never the spending beside it');
+ assert.deepEqual(flowDrill(salary, totalNode), salary.drill, 'an income flow opens its source, not the total it joins');
+ assert.deepEqual(flowDrill(totalNode, food), food.drill, 'a spending flow opens where the money went');
+ const hub = { name: 'Shop', kind: 'business', drill: { business: 'shop' }, owner: 'shop' };
+ assert.deepEqual(flowDrill(hub, totalNode), hub.drill, 'a profit joining the total opens the business');
+ assert.deepEqual(flowDrill(totalNode, hub), hub.drill, 'a covered loss opens the business');
+ assert.deepEqual(flowDrill({ ...salary, drill: null }, totalNode), totalNode.drill, 'an end without a drill falls back to the other');
+ assert.equal(flowDrill(undefined, undefined), null);
 });
 
 test('each Sankey node knows whose money it is, and the loss that pulled net income down is named', () => {

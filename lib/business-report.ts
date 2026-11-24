@@ -124,6 +124,12 @@ function nameEachOnce(nodes: SankeyNode[], used: ReadonlySet<number>, inBusiness
 /** `owner` is whose money the node is: a business's id, or null for the household. A flow takes its source's owner. */
 export type SankeyNode = { name: string; kind: 'income' | 'total' | 'expense' | 'savings' | 'business' | 'loss'; drill: Drill | null; owner: string | null };
 export type BusinessSankey = { nodes: SankeyNode[]; links: Array<{ source: number; target: number; value: number }> };
+/** What a click on a flow opens: the end that names the money. Income opens its source (Salary, not the total it joins),
+ * as does a loss and a business's profit joining the total; every other flow opens where the money went. */
+export function flowDrill(source: SankeyNode | undefined, target: SankeyNode | undefined): Drill | null {
+ const fromSource = source?.kind === 'income' || source?.kind === 'loss' || target?.kind === 'total';
+ return (fromSource ? source?.drill ?? target?.drill : target?.drill ?? source?.drill) ?? null;
+}
 /** Where money came from and went, with a layer for each business: its income flows into it and its expenses out of
  * it (a business with one kind of income is its own source); a profit then flows into household income, while household income covers a loss by flowing into the business. Without
  * the household, a business's profit or loss stands on its own. Small flows merge into "Other". */
@@ -136,7 +142,8 @@ export function businessSankey(pnl: ProfitAndLoss, labels: { category: (key: str
   return [...named.map(item => ({ name: labels.category(item.key), amount: item.amount, drill: { direction, category: item.key, business } as Drill })), ...(rest.length ? [{ name: other, amount: sum(rest), drill: { direction, business } as Drill }] : [])];
  };
  const household = pnl.household;
- const total = household ? node({ name: labels.total, kind: 'total', drill: { business: null }, owner: null }) : -1;
+ // The total is the household's income: opening it lists what came in, not the spending that flows out of it.
+ const total = household ? node({ name: labels.total, kind: 'total', drill: { direction: 'income', business: null }, owner: null }) : -1;
  if (household) for (const item of top(household.income, labels.otherIncome, 'income', null)) links.push({ source: node({ name: item.name, kind: 'income', drill: item.drill, owner: null }), target: total, value: item.amount });
  for (const business of pnl.businesses) {
   if (!business.grossIncome && !business.totalExpenses) continue;

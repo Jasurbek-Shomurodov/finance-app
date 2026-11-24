@@ -15,7 +15,7 @@ const data = {
  nodes: [
   node('Sales', 'income', 'bakery', { direction: 'income', category: 'Sales', business: 'bakery' }), node('Bakery', 'business', 'bakery', { business: 'bakery' }),
   node('Supplies', 'expense', 'bakery', { direction: 'expense', category: 'Supplies', business: 'bakery' }), node('Salary', 'income', null, { direction: 'income', category: 'Salary', business: null }),
-  node('Total income', 'total', null), node('Rent', 'expense', null, { direction: 'expense', category: 'Rent', business: null }), node('Kept', 'savings', null, { savings: 1100 }),
+  node('Total income', 'total', null, { direction: 'income', business: null }), node('Rent', 'expense', null, { direction: 'expense', category: 'Rent', business: null }), node('Kept', 'savings', null, { savings: 1100 }),
  ],
  links: [{ source: 0, target: 1, value: 900 }, { source: 1, target: 2, value: 300 }, { source: 1, target: 4, value: 600 }, { source: 3, target: 4, value: 2000 }, { source: 4, target: 5, value: 1500 }, { source: 4, target: 6, value: 1100 }],
 };
@@ -70,10 +70,16 @@ test('a business node carries its net on a second line; a source labels to its l
 test('a loss reads in red and a node without a drill is not a button', () => {
  const losing = chart({ pnl: { ...pnl, businesses: [{ id: 'bakery', net: -250 }] } });
  assert.equal(svgText(losing.drawNode(1))[1].props['data-tone'], 'negative');
- const total = losing.drawNode(4).props;
+ const total = chart({ data: { ...data, nodes: data.nodes.map(item => item.kind === 'total' ? { ...item, drill: null } : item) } }).drawNode(4).props;
  assert.deepEqual([total.role, total.tabIndex, total.onClick, total['aria-label']], [undefined, undefined, undefined, undefined]);
  const loss = chart({ data: { nodes: [node('Sales', 'income', 'bakery'), node('Loss', 'loss', 'bakery')], links: [{ source: 0, target: 1, value: 10 }] } });
  assert.equal(loss.drawNode(1).props.children[0].props.fill, 'var(--negative)');
+});
+
+test('the income total opens the income that came in, not every transaction', () => {
+ const { drills, drawNode } = chart();
+ drawNode(4).props.onClick();
+ assert.deepEqual(drills, [{ direction: 'income', business: null }]);
 });
 
 test('pressing or tapping a node narrows the transactions to it', () => {
@@ -87,7 +93,7 @@ test('pressing or tapping a node narrows the transactions to it', () => {
  assert.deepEqual(drills, [data.nodes[5].drill, data.nodes[5].drill, data.nodes[5].drill]);
 });
 
-test('a flow is coloured by which way the money moves and opens its target, or its source when the target has no drill', () => {
+test('a flow is coloured by which way the money moves and opens the end that names the money', () => {
  const { sankey, drills } = chart();
  const draw = index => sankey().link({ sourceX: 10, targetX: 90, sourceY: 5, targetY: 25, sourceControlX: 40, targetControlX: 60, linkWidth: 0.2, index }).props;
  const supplies = draw(1);
@@ -95,9 +101,9 @@ test('a flow is coloured by which way the money moves and opens its target, or i
  assert.equal(supplies.strokeWidth, 1, 'a thin flow stays visible');
  assert.deepEqual([0, 1, 2, 3, 4, 5].map(index => draw(index)['data-tone']), ['income', 'expense', 'income', 'income', 'expense', 'savings']);
  supplies.onClick();
- // Bakery → Total income: the total has no drill, so the flow opens the bakery.
- draw(2).onClick();
- assert.deepEqual(drills, [data.nodes[2].drill, data.nodes[1].drill]);
+ // Bakery → Total income opens the bakery; Salary → Total income opens the salary, not every household transaction.
+ draw(2).onClick(); draw(3).onClick(); draw(0).onClick(); draw(5).onClick();
+ assert.deepEqual(drills, [data.nodes[2].drill, data.nodes[1].drill, data.nodes[3].drill, data.nodes[0].drill, data.nodes[6].drill]);
  assert.equal(draw(1)['data-clickable'], true);
 });
 
