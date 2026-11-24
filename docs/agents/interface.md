@@ -163,7 +163,9 @@ block with the app itself, which is the selling point and stays first (the user'
 a short demo of one expense going in, a grid of feature tiles, closing band). Nothing on it is a
 grey stand-in: every row a visitor sees is a real one with sample figures. Say a thing once: no second heading
 repeating the one above it. Sign-in is its own page at
-`signInPath` (`lib/sign-in-path.ts`), a single centred card. Its other ways in (Google, phone) are
+`signInPath` (`lib/sign-in-path.ts`), a single centred card beside a wider showcase panel that holds the app itself
+(`AuthShowcase`), laid out wide enough that the dashboard's net worth chart comes first and shows in full; no chart
+there is drawn by hand. Its other ways in (Google, phone) are
 buttons that show their names, and a form there never switches its button off to say something is
 wrong: the reason goes under the field (`FieldError`), as in the workspace. The shell picks
 between them; link to `signInPath`, never to `/`, when someone needs to sign in.

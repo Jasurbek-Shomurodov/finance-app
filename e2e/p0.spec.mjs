@@ -35,6 +35,28 @@ test.describe('signed out', () => {
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await expect(page.getByRole('heading', { name: /^Welcome( back)?, E2E Tester!$/ })).toBeVisible();
   });
+
+  test('Create account says what is wrong under the field, and the eye shows both passwords', async ({ page }) => {
+    await page.goto('/auth/access?mode=signup');
+    const password = page.getByLabel('New password'), repeat = page.getByLabel('Confirm password');
+    const create = page.getByRole('button', { name: 'Create account', exact: true });
+    await page.getByLabel('Email address').fill('new-person@example.test');
+    await password.fill('abc');
+    await repeat.fill('abc');
+    await create.click();
+    await expect(page.getByRole('alert').filter({ hasText: 'Use a unique password with at least 8 characters.' })).toBeVisible();
+    await expect(password).toBeFocused();
+    await password.fill('sample-pass-1');
+    await repeat.fill('sample-pass-2');
+    await create.click();
+    await expect(page.getByRole('alert').filter({ hasText: 'Passwords do not match.' })).toBeVisible();
+    await expect(repeat).toBeFocused();
+    await expect(create).toBeEnabled();
+    await page.getByRole('button', { name: 'Show password' }).click();
+    await expect(password).toHaveAttribute('type', 'text');
+    await expect(repeat).toHaveAttribute('type', 'text');
+    await expect(page).toHaveURL(/mode=signup/);
+  });
 });
 
 test('SHELL-001 every drawer link opens its page with its title', async ({ page }) => {

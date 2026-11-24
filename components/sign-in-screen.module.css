@@ -1,6 +1,6 @@
-/* Two halves on wide screens: the form side (brand, one card, the legal footer) and a showcase panel in the brand
-   colour. Below 960px the showcase steps aside and the brand sits on a band of that colour above a sheet-like card. */
-.page{--auth-accent:var(--mark-bg);min-height:100svh;background:var(--background);color:var(--foreground);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);gap:20px;padding:20px}
+/* Two sides on wide screens: the form side (brand, one card, the legal footer) and a wider showcase panel in the brand
+   colour, which holds the app itself. Below 960px the showcase steps aside and the brand sits on a band of that colour above a sheet-like card. */
+.page{--auth-accent:var(--mark-bg);min-height:100svh;background:var(--background);color:var(--foreground);display:grid;grid-template-columns:minmax(440px,.8fr) minmax(0,1.2fr);gap:20px;padding:20px}
 .formSide{display:flex;flex-direction:column;gap:28px;min-width:0;padding:12px clamp(16px,4vw,56px)}
 .header{display:flex;align-items:center;justify-content:space-between;gap:24px}
 .preferences{flex-shrink:0}
@@ -26,37 +26,16 @@
 .showcase{position:relative;display:flex;flex-direction:column;justify-content:center;gap:clamp(16px,2.6vh,28px);min-height:calc(100svh - 40px);overflow:hidden;padding:clamp(28px,3.5vw,56px) clamp(20px,2.5vw,40px);border-radius:28px;background:radial-gradient(120% 90% at 100% 0%,color-mix(in srgb,#fff 16%,var(--auth-accent)) 0%,var(--auth-accent) 45%,color-mix(in srgb,#000 22%,var(--auth-accent)) 100%);color:#fff}
 .showcase::before{content:"";position:absolute;inset-block-start:-120px;inset-inline-start:-120px;width:320px;height:320px;border:1px solid rgb(255 255 255/.14);border-radius:50%}
 .showcaseTitle{position:relative;max-width:15ch;margin:0 auto;text-align:center;font-size:clamp(30px,3.1vw,46px);font-weight:600;line-height:1.12;letter-spacing:-.025em}
-/* The app itself, then two of its charts and the features that set it apart, stacked in one centred column. */
-.preview,.tiles,.features{position:relative;width:min(100%,640px);margin:0 auto}
-.tiles{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px}
-/* The app is as wide as the height leaves room for, so the charts below it always fit. */
-.preview{width:min(100%,640px,calc((100svh - 600px) * 1.5))}
-.tile{display:flex;flex-direction:column;gap:8px;min-width:0;padding:14px 16px;border-radius:16px;background:var(--card);color:var(--foreground);box-shadow:0 18px 44px rgb(0 0 0/.18)}
-.tileLabel{display:flex;align-items:center;gap:6px;margin:0;color:var(--muted-foreground);font-size:var(--type-caption);font-weight:500}
-.tileLabel svg{color:var(--auth-accent)}
-.tileFigure{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 8px;margin:0}.tileFigure strong{font-size:var(--type-title);font-weight:600;font-variant-numeric:tabular-nums}.tileFigure small{color:var(--caution);font-size:var(--type-caption);font-weight:500}
-.chartAxis{display:flex;justify-content:space-between;gap:8px;color:var(--muted-foreground);font-size:var(--type-micro)}
-.showcase [data-series]{flex-shrink:0}
-.showcase [data-series=portfolio]{color:var(--auth-accent)}.showcase [data-series=spy]{color:var(--caution)}.showcase [data-series=btc]{color:color-mix(in srgb,var(--muted-foreground) 70%,var(--card))}
-.benchLegend{display:flex;flex-wrap:wrap;gap:4px 12px;color:var(--muted-foreground);font-size:var(--type-micro)}
-.benchLegend>span{display:inline-flex;align-items:center;gap:5px}
-.benchLegend i{width:7px;height:7px;border-radius:50%;background:currentColor}
-.benchLegend b{color:var(--foreground);font-weight:600;font-variant-numeric:tabular-nums}
-.benchChart{display:block;width:100%;height:72px;overflow:visible}
-.benchChart path{fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-.benchChart path[data-series=btc]{stroke-width:1.75;stroke-dasharray:4 4}
-.benchChart .benchArea{fill:color-mix(in srgb,var(--auth-accent) 14%,transparent);stroke:none}
-.cashChart{display:block;width:100%;height:56px;overflow:visible}
-.cashChart path{fill:none;stroke:var(--auth-accent);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-.cashChart circle{fill:var(--card);stroke:var(--caution);stroke-width:2.5}
-.features{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;padding:0;list-style:none}
+/* The app itself, as wide as the panel and the window's height leave room for, then the features that set it apart. */
+.preview,.features{position:relative;margin:0 auto}
+.preview{width:min(100%,860px,calc((100svh - 380px) * 1.6))}
+.features{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;width:min(100%,640px);padding:0;list-style:none}
 .features li{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid rgb(255 255 255/.22);border-radius:999px;background:rgb(255 255 255/.1);font-size:var(--type-caption);font-weight:500}
-/* Short windows keep the app and the charts; the feature pills go first, then the charts. */
-@media(max-height:940px){.features{display:none}.preview{width:min(100%,640px,calc((100svh - 500px) * 1.5))}}
-@media(max-height:680px){.tiles{display:none}.preview{width:min(100%,640px,calc((100svh - 260px) * 1.5))}}
+/* Short windows keep the app; the feature pills step aside. */
+@media(max-height:800px){.features{display:none}.preview{width:min(100%,860px,calc((100svh - 280px) * 1.6))}}
 
-/* Narrow windows: the brand on a band of the accent colour and the card rising over it, centred, with the feature
-   cards below it on the page itself. On phones the card becomes a full-width sheet and stands alone. */
+/* Narrow windows: the brand on a band of the accent colour and the card rising over it, centred, with the app and its
+   features below it on the page itself. On phones the card becomes a full-width sheet and stands alone. */
 @media(max-width:959px){
  .page{display:flex;flex-direction:column;gap:24px;padding:0}
  .formSide{display:contents}
@@ -71,8 +50,6 @@
  .showcase>*+*{margin-top:16px}
  .showcase .preview{width:100%}
  .showcase .features{display:flex;width:100%}
- .showcase .tiles{display:grid;width:100%}
- .tile{border:1px solid var(--hairline);box-shadow:var(--shadow-card)}
  .features li{border-color:var(--border);background:var(--card);color:var(--foreground)}
  .footer{order:3;margin-top:auto;padding:8px 20px calc(16px + env(safe-area-inset-bottom))}
 }

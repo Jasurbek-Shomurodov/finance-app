@@ -11,7 +11,7 @@ function render(settings,deletion=false,mode,googleOnly=false){
   'next/navigation':{useRouter:()=>({})},
   'next/link':{__esModule:true,default:({children})=>React.createElement('a',null,children)},
   '@/components/language-provider':{useLanguage:()=>({t:(key,values={})=>key.replace(/\{(\w+)\}/g,(_,name)=>values[name]??name)})},
-  'lucide-react':{MailCheck:()=>React.createElement('svg',{className:'mail'}),Trash2:()=>React.createElement('svg',{className:'bin'})},
+  'lucide-react':{Eye:()=>React.createElement('svg',{className:'eye'}),EyeOff:()=>React.createElement('svg',{className:'eye-off'}),MailCheck:()=>React.createElement('svg',{className:'mail'}),Trash2:()=>React.createElement('svg',{className:'bin'})},
   '@/components/ui/button':{Button:props=>React.createElement('button',props)},
   '@/components/ui/input':{Input:props=>React.createElement('input',props)},
  });
@@ -61,10 +61,11 @@ function renderCard(intent,sent=''){
   react:{...React,useState(initial){const key=order[call++%order.length];return [key==='sent'?sent:initial,()=>{}];}},
   'next/link':{__esModule:true,default:({children})=>React.createElement('a',null,children)},
   '@/components/language-provider':{useLanguage:()=>({t:(key,values={})=>key.replace(/\{(\w+)\}/g,(_,name)=>values[name]??name)})},
-  'lucide-react':{MailCheck:()=>React.createElement('svg',{className:'mail'}),Trash2:()=>React.createElement('svg',{className:'bin'})},
+  'lucide-react':{Eye:()=>React.createElement('svg',{className:'eye'}),EyeOff:()=>React.createElement('svg',{className:'eye-off'}),MailCheck:()=>React.createElement('svg',{className:'mail'}),Trash2:()=>React.createElement('svg',{className:'bin'})},
   '@/components/ui/button':{Button:props=>React.createElement('button',props)},
   '@/components/ui/input':{Input:props=>React.createElement('input',props)},
   '@/components/presentation-foundation/error-popup':{ErrorPopup:()=>null},
+  '@/components/theme-provider':{ThemeToggle:()=>null},
   '@/components/auth-card':{AuthPage:({title,children})=>React.createElement('main',null,React.createElement('h1',null,title),children),ProviderChoices:({children,footer})=>React.createElement('div',null,children,'[Google][Phone]',footer),SampleInvite:()=>React.createElement('aside',null,'[Sample workspace]')},
   './sign-in-screen.module.css':new Proxy({},{get:(_,key)=>String(key)}),
  });
@@ -81,7 +82,14 @@ test('Create account is the sign-in card: Google, phone, the email form and a wa
  assert.ok(signup.includes('type="email"'));
  assert.ok(signup.includes('unique password'));
  assert.ok(signup.includes('By creating an account, you agree'));
- assert.equal((signup.match(/<button/g)||[]).length,1);
+ assert.equal((signup.match(/<button/g)||[]).length,2,'the eye that shows both passwords, and the button');
+ assert.match(signup,/aria-label="Show password"/);assert.match(signup,/<button[^>]*type="submit"[^>]*>Create account<\/button>/,'the button says what it does');
+ // What is wrong is said under its field, never by a switched-off button or a browser bubble.
+ const source=fs.readFileSync('components/account-access-card.tsx','utf8');
+ assert.match(source,/if \(short\) \{ setPasswordChecked\(true\); passwordField\.current\?\.focus\(\); return; \}/);
+ assert.match(source,/if \(mismatch\) \{ setChecked\(true\); repeatField\.current\?\.focus\(\); return; \}/);
+ assert.match(source,/<FieldError id="access-password-error"/);assert.match(source,/<FieldError id="access-repeat-error"/);
+ assert.doesNotMatch(source,/minLength=|disabled=\{busy \|\|/);
 });
 test('Forgot password asks for the email alone, without providers, sign-up or the sample workspace',()=>{
  const html=renderCard('recover');
@@ -161,9 +169,11 @@ test('the account pages pair the card with the real app in its sample workspace'
  const english=JSON.parse(fs.readFileSync('lib/locales/en.json','utf8'));
  assert.match(card,/<div className=\{styles\.formSide\}>[\s\S]*<\/div>\n    <AuthShowcase\/>/,'one frame for sign-in, create account and forgot password');
  assert.match(showcase,/<AppPreview tour=\{showcaseTour\} size=\{showcaseSize\}\/>/,'the panel shows the app itself, not a drawing of it');
- // Under it, two charts with sample figures through the shared formatters, then the features that set the app apart.
- assert.match(showcase,/AppPreview[\s\S]*label=\{t\('Benchmarks'\)\}[\s\S]*label=\{t\('Lowest balance ahead'\)\}[\s\S]*className=\{styles\.features\}/);
- assert.match(showcase,/formatMoney\(forecast\[dip\], sampleCurrency, locale\)/);assert.match(showcase,/formatPercent\(/);assert.match(showcase,/formatMonthShort\(/);
+ // Nothing beside it is drawn by hand: the app's own charts are in the window, laid out wide enough that the
+ // dashboard sets its net worth chart first, and the features that set the app apart follow.
+ assert.match(showcase,/AppPreview[\s\S]*className=\{styles\.features\}/);assert.doesNotMatch(showcase,/<svg|<path/);
+ assert.match(showcase,/showcaseTour = \['\/',/,'the dashboard opens the tour');
+ const {width}=Function(`return ${showcase.match(/showcaseSize = (\{[^}]*\})/)[1]}`)();assert.ok(width>=1280,'wide enough for the chart beside the tiles');
  assert.doesNotMatch(showcase,/toLocaleString|toFixed|Intl\./);
  for(const key of [...showcase.matchAll(/label: '([^']+)'/g)].map(match=>match[1]).filter(key=>!key.includes('·')))assert.ok(english[key],`translated: ${key}`);
  for(const key of [...showcase.matchAll(/t\('([^']+)'\)/g)].map(match=>match[1]))assert.ok(english[key],`translated: ${key}`);
