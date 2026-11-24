@@ -19,6 +19,8 @@
   "Create a password": "Gumawa ng password",
   "Repeat your password": "Ulitin ang password",
   "Passwords do not match.": "Hindi magkatugma ang mga password.",
+  "Send reset link": "Ipadala ang link",
+  "Enter your email and we will send you a link to reset your password.": "Ilagay ang iyong email at padadalhan ka namin ng link para i-reset ang password.",
   "Enter your phone number": "Ilagay ang numero ng telepono",
   "Enter the code": "Ilagay ang code",
   "Signing in…": "Nagsa-sign in…",

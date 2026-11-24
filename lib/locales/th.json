@@ -19,6 +19,8 @@
   "Create a password": "สร้างรหัสผ่าน",
   "Repeat your password": "ใส่รหัสผ่านอีกครั้ง",
   "Passwords do not match.": "รหัสผ่านไม่ตรงกัน",
+  "Send reset link": "ส่งลิงก์รีเซ็ต",
+  "Enter your email and we will send you a link to reset your password.": "กรอกอีเมลของคุณ แล้วเราจะส่งลิงก์สำหรับรีเซ็ตรหัสผ่านให้",
   "Enter your phone number": "ใส่หมายเลขโทรศัพท์",
   "Enter the code": "ใส่รหัส",
   "Signing in…": "กำลังลงชื่อเข้าใช้…",

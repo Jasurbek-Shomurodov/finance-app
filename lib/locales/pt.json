@@ -19,6 +19,8 @@
   "Create a password": "Crie uma senha",
   "Repeat your password": "Repita sua senha",
   "Passwords do not match.": "As senhas não coincidem.",
+  "Send reset link": "Enviar link",
+  "Enter your email and we will send you a link to reset your password.": "Digite seu e-mail e enviaremos um link para redefinir sua senha.",
   "Enter your phone number": "Digite seu número de telefone",
   "Enter the code": "Digite o código",
   "Signing in…": "Entrando…",

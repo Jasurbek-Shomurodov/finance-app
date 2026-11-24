@@ -19,6 +19,8 @@
   "Create a password": "Vytvořte heslo",
   "Repeat your password": "Zopakujte heslo",
   "Passwords do not match.": "Hesla se neshodují.",
+  "Send reset link": "Poslat odkaz",
+  "Enter your email and we will send you a link to reset your password.": "Zadejte svůj e-mail a pošleme vám odkaz pro obnovení hesla.",
   "Enter your phone number": "Zadejte telefonní číslo",
   "Enter the code": "Zadejte kód",
   "Signing in…": "Přihlašování…",

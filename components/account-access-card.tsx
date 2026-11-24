@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import Link from 'next/link';
 import { Eye, EyeOff, MailCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { requestAccountAccess } from '@/lib/account-access-request';
 import { showNotice } from '@/lib/feedback';
 import { legalPaths } from '@/lib/legal';
 import { maxPasswordLength, minPasswordLength } from '@/lib/password-policy';
-import { signInPath } from '@/lib/sign-in-path';
+import { signInPath, takeRecoverEmail } from '@/lib/sign-in-path';
 import styles from './sign-in-screen.module.css';
 
 const passwordHint = 'Use a unique password with at least 8 characters.';
@@ -47,6 +47,8 @@ export function AccountAccessCard({ brand, intent }: { brand: React.ReactNode; i
   const passwordError = short && passwordChecked ? passwordHint : undefined;
   const repeatError = mismatch && checked ? 'Passwords do not match.' : undefined;
   const preferences = <div className="preferences"><ThemeToggle/></div>;
+  // Forgot password starts with the email typed on sign-in, when there was one.
+  useEffect(() => { if (signup) return; const carried = takeRecoverEmail(); if (carried) queueMicrotask(() => setEmail(current => current || carried)); }, [signup]);
   const back = <p className={styles.register}>{signup && <>{t('Already have an account?')} </>}<Link href={signInPath}>{t(signup ? 'Sign in' : 'Back to sign in')}</Link></p>;
   // The form gives way to a plain confirmation, so a sent email is never mistaken for nothing happening.
   if (sent) return <AuthPage brand={brand} preferences={preferences} title="Check your email">
@@ -68,11 +70,11 @@ export function AccountAccessCard({ brand, intent }: { brand: React.ReactNode; i
     finally { setBusy(false); }
   }
   const form = <form className={styles.form} onSubmit={submit} aria-busy={busy}>
-    <label htmlFor="access-email">{t('Email address')}</label><Input id="access-email" type="email" placeholder="you@example.com" autoComplete="email" autoCapitalize="none" spellCheck={false} required value={email} onChange={event => setEmail(event.target.value)}/>
+    <label htmlFor="access-email">{t('Email address')}</label><Input id="access-email" type="email" placeholder="you@example.com" autoComplete="email" autoCapitalize="none" spellCheck={false} required autoFocus={!signup} value={email} onChange={event => setEmail(event.target.value)}/>
     {signup && <NewPasswordFields password={password} repeat={repeat} onPassword={setPassword} onRepeat={setRepeat} passwordError={passwordError} repeatError={repeatError} onLeave={leave} passwordField={passwordField} repeatField={repeatField}/>}
-    <Button type="submit" className={styles.submit} disabled={busy}>{t(busy ? 'Saving…' : signup ? 'Create account' : 'Continue')}</Button>
+    <Button type="submit" className={styles.submit} disabled={busy}>{t(busy ? 'Saving…' : signup ? 'Create account' : 'Send reset link')}</Button>
   </form>;
-  return <AuthPage brand={brand} preferences={preferences} title={signup ? 'Create account' : 'Forgot password'}>
+  return <AuthPage brand={brand} preferences={preferences} title={signup ? 'Create account' : 'Forgot password'} subtitle={signup ? undefined : 'Enter your email and we will send you a link to reset your password.'}>
     {signup ? <ProviderChoices disabled={busy} footer={<><p className={styles.consent}>{t('By creating an account, you agree to the terms of use and privacy policy.')} <Link href={legalPaths.terms}>{t('Terms of use')}</Link> · <Link href={legalPaths.privacy}>{t('Privacy policy')}</Link></p>{back}</>}>{form}</ProviderChoices> : <>{form}{back}</>}
     <ErrorPopup message={error}/>
   </AuthPage>;

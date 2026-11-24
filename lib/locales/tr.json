@@ -19,6 +19,8 @@
   "Create a password": "Bir şifre oluşturun",
   "Repeat your password": "Şifrenizi tekrar girin",
   "Passwords do not match.": "Parolalar eşleşmiyor.",
+  "Send reset link": "Bağlantıyı gönder",
+  "Enter your email and we will send you a link to reset your password.": "E-postanızı girin, parolanızı sıfırlamanız için bir bağlantı gönderelim.",
   "Enter your phone number": "Telefon numaranızı girin",
   "Enter the code": "Kodu girin",
   "Signing in…": "Giriş yapılıyor…",

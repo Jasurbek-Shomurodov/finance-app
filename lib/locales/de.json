@@ -19,6 +19,8 @@
   "Create a password": "Passwort festlegen",
   "Repeat your password": "Passwort wiederholen",
   "Passwords do not match.": "Die Passwörter stimmen nicht überein.",
+  "Send reset link": "Link senden",
+  "Enter your email and we will send you a link to reset your password.": "Gib deine E-Mail-Adresse ein, und wir senden dir einen Link zum Zurücksetzen des Passworts.",
   "Enter your phone number": "Telefonnummer eingeben",
   "Enter the code": "Code eingeben",
   "Signing in…": "Anmeldung läuft…",

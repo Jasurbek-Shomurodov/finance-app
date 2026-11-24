@@ -19,6 +19,8 @@
   "Create a password": "Buat kata sandi",
   "Repeat your password": "Ulangi kata sandi",
   "Passwords do not match.": "Kata sandi tidak cocok.",
+  "Send reset link": "Kirim tautan",
+  "Enter your email and we will send you a link to reset your password.": "Masukkan email Anda, kami akan mengirim tautan untuk mengatur ulang kata sandi.",
   "Enter your phone number": "Masukkan nomor telepon",
   "Enter the code": "Masukkan kode",
   "Signing in…": "Sedang masuk…",

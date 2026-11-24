@@ -97,11 +97,20 @@ test('Forgot password asks for the email alone, without providers, sign-up or th
  assert.ok(!html.includes('Create account')&&!html.includes('[Google]')&&!html.includes('[Sample workspace]'));
  assert.ok(!html.includes('type="password"'));assert.ok(!html.includes('unique password'));
  assert.ok(html.includes('type="email"'));assert.ok(html.includes('<a>Back to sign in</a>'));
+ assert.match(html,/<button[^>]*type="submit"[^>]*>Send reset link<\/button>/,'the button says what it does');
+ // The email typed on sign-in comes along in the tab's own storage, never in the address, and is taken once.
+ const store=new Map();globalThis.sessionStorage={getItem:key=>store.get(key)??null,setItem:(key,value)=>store.set(key,value),removeItem:key=>store.delete(key)};
+ const {carryRecoverEmail,takeRecoverEmail,recoverPath}=loadTS('lib/sign-in-path.ts');
+ carryRecoverEmail('  ');assert.equal(takeRecoverEmail(),'');carryRecoverEmail(' person@example.test ');assert.equal(takeRecoverEmail(),'person@example.test');assert.equal(takeRecoverEmail(),'');
+ delete globalThis.sessionStorage;assert.equal(takeRecoverEmail(),'','no storage: the form starts empty');carryRecoverEmail('person@example.test');
+ assert.ok(!recoverPath.includes('email'));
+ assert.match(fs.readFileSync('components/sign-in-screen.tsx','utf8'),/<Link href=\{recoverPath\} onClick=\{event => carryRecoverEmail\(/);
+ assert.match(fs.readFileSync('components/account-access-card.tsx','utf8'),/subtitle=\{signup \? undefined : 'Enter your email and we will send you a link to reset your password\.'\}/);
  assert.equal((html.match(/<button/g)||[]).length,1);
 });
 test('the sign-in links open the matching account page',()=>{
  const source=fs.readFileSync('components/sign-in-screen.tsx','utf8');
- assert.match(source,/<Link href=\{recoverPath\}>\{t\('Forgot password\?'\)\}/);
+ assert.match(source,/<Link href=\{recoverPath\}[^>]*>.*\{t\('Forgot password\?'\)\}/);
  assert.match(source,/<Link href=\{signUpPath\}>\{t\('Create an account'\)/);
  const {recoverPath,signUpPath}=loadTS('lib/sign-in-path.ts');
  assert.equal(recoverPath,'/auth/access?mode=recover');assert.equal(signUpPath,'/auth/access?mode=signup');

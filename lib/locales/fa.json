@@ -19,6 +19,8 @@
   "Create a password": "یک رمز عبور بسازید",
   "Repeat your password": "رمز عبور را تکرار کنید",
   "Passwords do not match.": "گذرواژه‌ها یکسان نیستند.",
+  "Send reset link": "ارسال پیوند",
+  "Enter your email and we will send you a link to reset your password.": "ایمیل خود را وارد کنید تا پیوند بازنشانی گذرواژه را برایتان بفرستیم.",
   "Enter your phone number": "شماره تلفن خود را وارد کنید",
   "Enter the code": "کد را وارد کنید",
   "Signing in…": "در حال ورود…",

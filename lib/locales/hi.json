@@ -19,6 +19,8 @@
   "Create a password": "पासवर्ड बनाएं",
   "Repeat your password": "पासवर्ड दोबारा दर्ज करें",
   "Passwords do not match.": "पासवर्ड मेल नहीं खाते।",
+  "Send reset link": "लिंक भेजें",
+  "Enter your email and we will send you a link to reset your password.": "अपना ईमेल दर्ज करें, हम पासवर्ड रीसेट करने का लिंक भेज देंगे।",
   "Enter your phone number": "अपना फ़ोन नंबर दर्ज करें",
   "Enter the code": "कोड दर्ज करें",
   "Signing in…": "साइन इन हो रहा है…",

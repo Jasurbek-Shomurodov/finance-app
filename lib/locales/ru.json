@@ -19,6 +19,8 @@
   "Create a password": "Придумайте пароль",
   "Repeat your password": "Повторите пароль",
   "Passwords do not match.": "Пароли не совпадают.",
+  "Send reset link": "Отправить ссылку",
+  "Enter your email and we will send you a link to reset your password.": "Введите email, и мы отправим ссылку для сброса пароля.",
   "Enter your phone number": "Введите номер телефона",
   "Enter the code": "Введите код",
   "Signing in…": "Вход…",

@@ -57,6 +57,17 @@ test.describe('signed out', () => {
     await expect(repeat).toHaveAttribute('type', 'text');
     await expect(page).toHaveURL(/mode=signup/);
   });
+
+  test('Forgot password brings the email typed on sign-in, and says what it will do', async ({ page }) => {
+    await page.goto('/sign-in');
+    await page.getByLabel('Email address').fill('new-person@example.test');
+    await page.getByRole('link', { name: 'Forgot password?' }).click();
+    await expect(page.getByRole('heading', { name: 'Forgot password' })).toBeVisible();
+    await expect(page).toHaveURL(/\/auth\/access\?mode=recover$/);
+    await expect(page.getByText('Enter your email and we will send you a link to reset your password.')).toBeVisible();
+    await expect(page.getByLabel('Email address')).toHaveValue('new-person@example.test');
+    await expect(page.getByRole('button', { name: 'Send reset link', exact: true })).toBeVisible();
+  });
 });
 
 test('SHELL-001 every drawer link opens its page with its title', async ({ page }) => {

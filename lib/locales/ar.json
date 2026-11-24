@@ -19,6 +19,8 @@
   "Create a password": "أنشئ كلمة مرور",
   "Repeat your password": "أعد إدخال كلمة المرور",
   "Passwords do not match.": "كلمتا المرور غير متطابقتين.",
+  "Send reset link": "إرسال الرابط",
+  "Enter your email and we will send you a link to reset your password.": "أدخل بريدك الإلكتروني وسنرسل لك رابطًا لإعادة تعيين كلمة المرور.",
   "Enter your phone number": "أدخل رقم هاتفك",
   "Enter the code": "أدخل الرمز",
   "Signing in…": "جارٍ تسجيل الدخول…",

@@ -19,6 +19,8 @@
   "Create a password": "Parol yarating",
   "Repeat your password": "Parolni takrorlang",
   "Passwords do not match.": "Parollar mos kelmadi.",
+  "Send reset link": "Havolani yuborish",
+  "Enter your email and we will send you a link to reset your password.": "Emailingizni kiriting, parolni tiklash havolasini yuboramiz.",
   "Enter your phone number": "Telefon raqamingizni kiriting",
   "Enter the code": "Kodni kiriting",
   "Signing in…": "Kirilmoqda…",

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/components/language-provider';
 import { AuthPage, ProviderChoices, SampleInvite } from '@/components/auth-card';
-import { recoverPath, signUpPath } from '@/lib/sign-in-path';
+import { carryRecoverEmail, recoverPath, signUpPath } from '@/lib/sign-in-path';
 import styles from './sign-in-screen.module.css';
 
 type Props = {
@@ -31,7 +31,7 @@ export function SignInScreen({ brand, preferences, busy, configured, error, onLo
     </>}>
       <form className={styles.form} onSubmit={onLogin} aria-busy={busy}>
         <label htmlFor="signin-email">{t('Email address')}</label><Input id="signin-email" name="email" type="email" placeholder="you@example.com" required autoComplete="username" autoCapitalize="none" spellCheck={false}/>
-        <div className={styles.passwordLabel}><label htmlFor="signin-password">{t('Password')}</label><Link href={recoverPath}>{t('Forgot password?')}</Link></div>
+        <div className={styles.passwordLabel}><label htmlFor="signin-password">{t('Password')}</label><Link href={recoverPath} onClick={event => carryRecoverEmail(new FormData(event.currentTarget.closest('form') ?? undefined).get('email')?.toString() ?? '')}>{t('Forgot password?')}</Link></div>
         <div className={styles.password}><Input id="signin-password" name="password" type={showPassword ? 'text' : 'password'} placeholder={t('Enter your password')} required autoComplete="current-password"/><Button type="button" variant="ghost" size="icon" aria-label={t(showPassword ? 'Hide password' : 'Show password')} aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}</Button></div>
         {error && <p className={styles.error} role="alert">{t(error)}</p>}
         {!configured && <p className={styles.notice} role="status">{t('Account connection is awaiting setup. You can explore the sample workspace below.')}</p>}

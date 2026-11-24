@@ -19,6 +19,8 @@
   "Create a password": "একটি পাসওয়ার্ড তৈরি করুন",
   "Repeat your password": "পাসওয়ার্ডটি আবার লিখুন",
   "Passwords do not match.": "পাসওয়ার্ড দুটি মিলছে না।",
+  "Send reset link": "লিংক পাঠান",
+  "Enter your email and we will send you a link to reset your password.": "আপনার ইমেল লিখুন, আমরা পাসওয়ার্ড রিসেট করার লিংক পাঠাব।",
   "Enter your phone number": "আপনার ফোন নম্বর লিখুন",
   "Enter the code": "কোডটি লিখুন",
   "Signing in…": "সাইন ইন হচ্ছে…",

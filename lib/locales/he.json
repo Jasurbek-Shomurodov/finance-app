@@ -19,6 +19,8 @@
   "Create a password": "צרו סיסמה",
   "Repeat your password": "הקלידו שוב את הסיסמה",
   "Passwords do not match.": "הסיסמאות אינן תואמות.",
+  "Send reset link": "שליחת קישור",
+  "Enter your email and we will send you a link to reset your password.": "מזינים את כתובת האימייל ואנחנו שולחים קישור לאיפוס הסיסמה.",
   "Enter your phone number": "הזינו מספר טלפון",
   "Enter the code": "הזינו את הקוד",
   "Signing in…": "מתחבר…",

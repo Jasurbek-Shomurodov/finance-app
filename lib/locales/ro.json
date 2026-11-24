@@ -19,6 +19,8 @@
   "Create a password": "Creează o parolă",
   "Repeat your password": "Repetă parola",
   "Passwords do not match.": "Parolele nu coincid.",
+  "Send reset link": "Trimite linkul",
+  "Enter your email and we will send you a link to reset your password.": "Introdu adresa de e-mail și îți trimitem un link pentru resetarea parolei.",
   "Enter your phone number": "Introdu numărul de telefon",
   "Enter the code": "Introdu codul",
   "Signing in…": "Se conectează…",

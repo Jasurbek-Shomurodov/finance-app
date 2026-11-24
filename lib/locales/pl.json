@@ -19,6 +19,8 @@
   "Create a password": "Utwórz hasło",
   "Repeat your password": "Powtórz hasło",
   "Passwords do not match.": "Hasła nie są takie same.",
+  "Send reset link": "Wyślij link",
+  "Enter your email and we will send you a link to reset your password.": "Podaj swój e-mail, a wyślemy link do zresetowania hasła.",
   "Enter your phone number": "Wpisz numer telefonu",
   "Enter the code": "Wpisz kod",
   "Signing in…": "Logowanie…",

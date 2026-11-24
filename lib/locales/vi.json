@@ -19,6 +19,8 @@
   "Create a password": "Tạo mật khẩu",
   "Repeat your password": "Nhập lại mật khẩu",
   "Passwords do not match.": "Mật khẩu không khớp.",
+  "Send reset link": "Gửi liên kết đặt lại",
+  "Enter your email and we will send you a link to reset your password.": "Nhập email của bạn, chúng tôi sẽ gửi liên kết để đặt lại mật khẩu.",
   "Enter your phone number": "Nhập số điện thoại",
   "Enter the code": "Nhập mã",
   "Signing in…": "Đang đăng nhập…",

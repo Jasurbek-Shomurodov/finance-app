@@ -19,6 +19,8 @@
   "Create a password": "Cipta kata laluan",
   "Repeat your password": "Ulang kata laluan",
   "Passwords do not match.": "Kata laluan tidak sepadan.",
+  "Send reset link": "Hantar pautan",
+  "Enter your email and we will send you a link to reset your password.": "Masukkan e-mel anda dan kami akan menghantar pautan untuk menetapkan semula kata laluan.",
   "Enter your phone number": "Masukkan nombor telefon",
   "Enter the code": "Masukkan kod",
   "Signing in…": "Sedang log masuk…",
