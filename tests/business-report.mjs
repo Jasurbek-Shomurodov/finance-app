@@ -72,11 +72,18 @@ test('the Sankey feeds a profit into household income, and household income cove
   const children = data.links.filter(item => item.source === parent && data.links.filter(other => other.target === item.target).sort((a, b) => b.value - a.value)[0].source === parent).map(item => item.target).sort((a, b) => a - b);
   assert.deepEqual(children.map(sizeAt), children.map(sizeAt).sort((a, b) => b - a), `${data.nodes[parent].name}'s flows read largest first`);
  }
- // A business with no income at all is fed by the household alone (the Solar Panel case).
- const idle = businessSankey({ household: { income: [{ key: 'Salary', amount: 900 }], incomeTotal: 900, expenses: [], expenseTotal: 0 }, businesses: [{ id: 'solar', income: [], expenses: [{ key: 'Other expense', amount: 42 }], grossIncome: 0, totalExpenses: 42, net: -42 }], totalIncome: 858, net: 858 }, labels);
+ // A business with no income at all is fed by the household alone (the Solar Panel case). It only passes household money
+ // on, so its spending leaves household income directly, named for it: a node of its own stood alone in a middle column
+ // and its flow crossed every other one (dr 2026-11-25, the Sheep business).
+ const idle = businessSankey({ household: { income: [{ key: 'Salary', amount: 900 }], incomeTotal: 900, expenses: [{ key: 'Other expense', amount: 10 }], expenseTotal: 10 }, businesses: [{ id: 'solar', income: [], expenses: [{ key: 'Other expense', amount: 42 }], grossIncome: 0, totalExpenses: 42, net: -42 }], totalIncome: 858, net: 848 }, labels);
  const at = name => idle.nodes.findIndex(item => item.name === name);
- assert.deepEqual(idle.links.filter(item => item.target === at('solar')).map(item => [idle.nodes[item.source].name, item.value]), [['Income', 42]]);
+ assert.equal(at('solar'), -1, 'no business node between the total and its spending');
+ assert.deepEqual(idle.links.filter(item => item.target === at('solar: Other expense')).map(item => [idle.nodes[item.source].name, item.value]), [['Income', 42]]);
+ assert.deepEqual(idle.nodes[at('solar: Other expense')], { name: 'solar: Other expense', kind: 'expense', drill: { direction: 'expense', category: 'Other expense', business: 'solar' }, owner: 'solar' });
  assert.equal(idle.nodes.some(item => item.kind === 'loss'), false);
+ assert.equal(new Set(idle.nodes.map(item => item.name)).size, idle.nodes.length, 'named once, beside the household\'s own Other expense');
+ // Every node that spends sits one step from the total, so the chart keeps three columns.
+ assert.ok(idle.links.filter(item => idle.nodes[item.target].kind === 'expense').every(item => idle.nodes[item.source].kind === 'total'));
  assert.equal(index('Rent income'), -1, 'a profitable business with one kind of income is its own source');
  assert.equal(data.links.some(item => item.target === index('rentals')), false);
  const names = data.nodes.map(node => node.name);

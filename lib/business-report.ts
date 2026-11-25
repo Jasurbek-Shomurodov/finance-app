@@ -7,6 +7,7 @@ import type { DrillTarget } from './cash-flow-drill-types';
 import type { Money } from './money';
 import type { Share } from './cash-flow-report';
 import type { PlanningData } from './planning';
+import { businessFlows, type SankeyLabels, type TopFlow } from './business-sankey-layer';
 import { cashFlowItems, isMortgagePayment, wholeScale } from './spending';
 import type { TransactionSplit } from './transaction-tools';
 import { ratesOf } from './transaction-rates';
@@ -135,10 +136,10 @@ export function flowDrill(source: SankeyNode | undefined, target: SankeyNode | u
 /** Where money came from and went, with a layer for each business: its income flows into it and its expenses out of
  * it (a business with one kind of income is its own source); a profit then flows into household income, while household income covers a loss by flowing into the business. Without
  * the household, a business's profit or loss stands on its own. Small flows merge into "Other". */
-export function businessSankey(pnl: ProfitAndLoss, labels: { category: (key: string) => string; business: (id: string) => string; total: string; savings: string; profit: string; loss: (name: string) => string; otherIncome: string; otherExpense: string; inBusiness: (name: string, business: string) => string }, limit = 7): BusinessSankey {
+export function businessSankey(pnl: ProfitAndLoss, labels: SankeyLabels, limit = 7): BusinessSankey {
  const nodes: SankeyNode[] = [], links: BusinessSankey['links'] = [];
  const node = (item: SankeyNode) => nodes.push(item) - 1;
- const top = (items: PnlLine[], other: string, direction: Direction, business: string | null) => {
+ const top = (items: PnlLine[], other: string, direction: Direction, business: string | null): TopFlow[] => {
   const named = items.length <= limit ? items : items.slice(0, limit - 1);
   const rest = items.length <= limit ? [] : items.slice(limit - 1);
   return [...named.map(item => ({ name: labels.category(item.key), amount: item.amount, drill: { direction, category: item.key, business } as Drill })), ...(rest.length ? [{ name: other, amount: sum(rest), drill: { direction, business } as Drill }] : [])];
@@ -147,23 +148,8 @@ export function businessSankey(pnl: ProfitAndLoss, labels: { category: (key: str
  // The total is the household's income: opening it lists what came in, not the spending that flows out of it.
  const total = household ? node({ name: labels.total, kind: 'total', drill: { direction: 'income', business: null }, owner: null }) : -1;
  if (household) for (const item of top(household.income, labels.otherIncome, 'income', null)) links.push({ source: node({ name: item.name, kind: 'income', drill: item.drill, owner: null }), target: total, value: item.amount });
- for (const business of pnl.businesses) {
-  if (!business.grossIncome && !business.totalExpenses) continue;
-  const name = labels.business(business.id);
-  const owner = business.id, hub = node({ name, kind: 'business', drill: { business: owner }, owner });
-  // A business with a single kind of income is its own source: a node named only "Business income" would say less
-  // than the business's name and repeat beside every other business.
-  // With the household, a loss is the household's money covering the business: household income flows into the business,
-  // so the business's own income must be drawn too, or the business would stand as a source of money it never earned.
-  const covered = household && business.net < 0;
-  if (business.income.length > 1 || covered) for (const item of top(business.income, labels.otherIncome, 'income', business.id)) links.push({ source: node({ name: item.name, kind: 'income', drill: item.drill, owner }), target: hub, value: item.amount });
-  for (const item of top(business.expenses, labels.otherExpense, 'expense', business.id)) links.push({ source: hub, target: node({ name: item.name, kind: 'expense', drill: item.drill, owner }), value: item.amount });
-  if (business.net > 0) links.push({ source: hub, target: household ? total : node({ name: labels.profit, kind: 'savings', drill: { savings: business.net, business: owner }, owner }), value: business.net });
-  else if (business.net < 0) {
-   if (covered) links.push({ source: total, target: hub, value: -business.net });
-   else links.push({ source: node({ name: labels.loss(name), kind: 'loss', drill: { business: owner }, owner }), target: hub, value: -business.net });
-  }
- }
+ const draw = { node, links, top, labels, total };
+ for (const business of pnl.businesses) if (business.grossIncome || business.totalExpenses) businessFlows(business, draw);
  if (household) {
   for (const item of top(household.expenses, labels.otherExpense, 'expense', null)) links.push({ source: total, target: node({ name: item.name, kind: 'expense', drill: item.drill, owner: null }), value: item.amount });
   if (pnl.net > 0) links.push({ source: total, target: node({ name: labels.savings, kind: 'savings', drill: { savings: pnl.net }, owner: null }), value: pnl.net });
