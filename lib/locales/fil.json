@@ -2560,7 +2560,6 @@
   "A scheduled payment keeps its schedule.": "Nananatili sa iskedyul nito ang nakatakdang bayad.",
   "Lent from account (optional)": "Ipinahiram mula sa account (opsyonal)",
   "Not from an account": "Hindi mula sa account",
-  "No cash account in {currency}.": "Walang cash account sa {currency}.",
   "Restored": "Naibalik",
   "Import undone": "Na-undo ang pag-import",
   "Add recurring": "Magdagdag ng umuulit",

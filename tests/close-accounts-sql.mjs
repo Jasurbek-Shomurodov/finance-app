@@ -39,7 +39,7 @@ const functions=db=>db.query(`SELECT md5(string_agg(pg_get_functiondef(p.oid),''
 
 test('migration 168 is in setup.sql, moves the schema version, changes no existing row and is safe to re-run',{skip},async()=>{
  assert.ok(setup.includes(migration),'setup.sql includes migration 168');
- assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 169/);
+ assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 170/);
  const db=await database(setup.slice(0,setup.indexOf(migration)));
  const {rows,as,add}=kit(db);
  try{

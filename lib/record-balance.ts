@@ -48,17 +48,19 @@ export function withSavedRecord(rows: Entry[], saved: Entry): Entry[] {
  return rows.map(row => byId.get(row.id) ?? row);
 }
 
-/** The cash accounts money lent in `currency` can be paid from: only one in the loan's own currency. */
-export const lendingAccounts = (rows: readonly Entry[], currency: string) => rows.filter(row => row.kind === 'Cash' && row.currency === currency);
+/** The cash accounts money lent can be paid from: every one, its own currency first (another converts at the dated rate). */
+export const lendingAccounts = (rows: readonly Entry[], currency: string) => rows.filter(row => row.kind === 'Cash').sort((a, b) => Number(b.currency === currency) - Number(a.currency === currency));
 
-/** New money lent paid from a cash account (`lent_from`): the account loses the lent amount, as `lend_from_account`
- * does in the database (migration 121). The saved loan does not keep the account. */
+/** New money lent paid from a cash account (`lent_from`): the account loses the lent amount, converted at
+ * `lent_exchange_rate` when it is in another currency, as `lend_from_account` does in the database (migrations 121 and
+ * 170). The saved loan keeps neither the account nor the rate. */
 export function lendFromAccount(rows: Entry[], loan: Entry): { rows: Entry[]; loan: Entry } {
- const { lent_from, ...saved } = loan;
+ const { lent_from, lent_exchange_rate, ...saved } = loan;
  if (!lent_from) return { rows, loan: saved };
  const account = lendingAccounts(rows, loan.currency).find(row => row.id === lent_from);
- if (loan.kind !== 'Money lent' || !account) throw Error('Choose a cash account in the record currency.');
- const amount = Number(account.amount) - loan.amount;
+ if (loan.kind !== 'Money lent' || !account) throw Error('Choose one of your cash accounts.');
+ if (account.currency !== loan.currency && !lent_exchange_rate) throw Error('Historical exchange rates are unavailable.');
+ const amount = Number(account.amount) - accountAmount(loan.amount, account.currency === loan.currency ? 1 : lent_exchange_rate);
  if (!(loan.amount > 0) || amount < 0) throw Error('Not enough money in the selected cash account.');
  return { rows: rows.map(row => row.id === account.id ? { ...row, amount } : row), loan: saved };
 }

@@ -109,12 +109,14 @@ test('migration 157 is in setup.sql, safe to re-run, and keeps the table to the 
 
 test('migration 169 lets held shares and gold be kept, and a metal series is cut like a stock’s, without weekly re-reads',async()=>{
  const setup=fs.readFileSync('database/setup.sql','utf8'),migration=fs.readFileSync('migrations/169_held_price_series.sql','utf8');
- assert.ok(setup.endsWith(migration));
+ assert.ok(setup.includes(migration));
  const d=new PGlite();
  try{
   await d.exec(`CREATE ROLE anon;CREATE ROLE authenticated;CREATE ROLE service_role;CREATE SCHEMA auth;CREATE TABLE auth.users(id uuid PRIMARY KEY);CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;GRANT USAGE ON SCHEMA auth TO authenticated;`);
   await d.exec(setup);await d.exec(migration);
   assert.equal((await d.query('SELECT finance_capabilities() AS c')).rows[0].c.schema_version,169);
+  // Migrations after 169 move the version on again.
+  await d.exec(fs.readFileSync('migrations/170_lend_across_currencies.sql','utf8'));
   for(const series of ['shares:AAPL','metal:XAU','stock:SPY','crypto:BTC'])await d.query(`INSERT INTO price_history(series,points,first_day,checked_to) VALUES($1,'[]','2026-01-01','2026-01-02')`,[series]);
   for(const series of ['fund:SPY','metal:xau','shares:'])await assert.rejects(d.query(`INSERT INTO price_history(series,points,first_day,checked_to) VALUES($1,'[]','2026-01-01','2026-01-02')`,[series]),/check/i,series);
  }finally{await d.close();}

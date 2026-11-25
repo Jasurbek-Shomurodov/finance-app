@@ -2560,7 +2560,6 @@
   "A scheduled payment keeps its schedule.": "予定支払いの予定は変更できません。",
   "Lent from account (optional)": "貸し出し元の口座（任意）",
   "Not from an account": "口座からではない",
-  "No cash account in {currency}.": "{currency} の現金口座がありません。",
   "Restored": "復元しました",
   "Import undone": "インポートを取り消しました",
   "Add recurring": "定期項目を追加",

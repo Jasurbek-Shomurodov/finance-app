@@ -2560,7 +2560,6 @@
   "A scheduled payment keeps its schedule.": "Een geplande betaling houdt haar schema.",
   "Lent from account (optional)": "Uitgeleend van rekening (optioneel)",
   "Not from an account": "Niet van een rekening",
-  "No cash account in {currency}.": "Geen kasrekening in {currency}.",
   "Restored": "Hersteld",
   "Import undone": "Import ongedaan gemaakt",
   "Add recurring": "Terugkerend toevoegen",

@@ -2560,7 +2560,6 @@
   "A scheduled payment keeps its schedule.": "Un paiement planifié garde sa planification.",
   "Lent from account (optional)": "Prêté depuis le compte (facultatif)",
   "Not from an account": "Pas depuis un compte",
-  "No cash account in {currency}.": "Aucun compte de trésorerie en {currency}.",
   "Restored": "Restauré",
   "Import undone": "Importation annulée",
   "Add recurring": "Ajouter un récurrent",

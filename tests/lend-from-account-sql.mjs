@@ -53,3 +53,54 @@ test('a loan larger than the account balance is refused and nothing is saved',as
   assert.equal(await amount(d,20),null);
  }finally{await d.close();}
 });
+
+const across=fs.readFileSync('migrations/170_lend_across_currencies.sql','utf8');
+// Umurzoq borrows 1,300,000 UZS, handed over from a USD wallet at 12,000 UZS a dollar.
+async function lendAcross(d,{rate=12000,currency='UZS',amount=1300000}={}){
+ const lentOn=await lentDay(d);
+ const record={id:id(30),name:'Umurzoq',kind:'Money lent',currency,amount,quantity:1,cost:0,rate:0,date:null,lent_date:lentOn,frequency:'Once',notes:''};
+ return d.query('SELECT lend_from_account($1::jsonb,$2,$3,$4::date,$5,$6) AS saved',[JSON.stringify(record),id(11),rate,lentOn,'USD',currency]);
+}
+async function dollars(d,amount=1176){
+ await d.query("INSERT INTO finance_records(id,user_id,name,kind,currency,amount,date,opened_on) VALUES($1,$2,'Cash','Cash','USD',$3,'2026-01-01','2026-01-01')",[id(11),id(1),amount]);
+ await d.exec(`SET ROLE authenticated;SET request.jwt.claim.sub='${id(1)}';`);
+}
+
+test('migration 170 is in setup.sql, moves the schema version and is safe to re-run',async()=>{
+ assert.ok(setup.endsWith(across),'setup.sql ends with migration 170');
+ assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 170/);
+ const d=await db(setup.slice(0,setup.indexOf(across)));
+ try{await d.exec(across);await d.exec(across);assert.equal((await d.query('SELECT finance_capabilities() AS c')).rows[0].c.schema_version,170);}finally{await d.close();}
+});
+
+test('money lent in UZS from a USD account keeps its own amount and takes the converted dollars, once',async()=>{
+ const d=await db(setup);
+ try{
+  await dollars(d);
+  const saved=(await lendAcross(d)).rows[0].saved;
+  assert.equal(Number(saved[0].amount),1300000);
+  assert.equal(saved[0].currency,'UZS');
+  assert.equal(await amount(d,30),1300000);
+  assert.ok(Math.abs(await amount(d,11)-(1176-1300000/12000))<1e-9);
+  const link=(await d.query('SELECT exchange_rate,account_currency,record_currency FROM investment_account_links WHERE id=$1',[id(30)])).rows[0];
+  assert.deepEqual([Number(link.exchange_rate),link.account_currency,link.record_currency],[12000,'USD','UZS']);
+  // A retry after a lost response moves no more cash; a different rate is refused.
+  await lendAcross(d);
+  assert.ok(Math.abs(await amount(d,11)-(1176-1300000/12000))<1e-9);
+  await assert.rejects(lendAcross(d,{rate:11000}),/already saved with different details/);
+ }finally{await d.close();}
+});
+
+test('money lent across currencies beyond the balance, or with a mismatched currency, saves nothing',async()=>{
+ const d=await db(setup);
+ try{
+  await dollars(d,100);
+  await assert.rejects(lendAcross(d),/Not enough money in the selected cash account/);
+  assert.deepEqual([await amount(d,11),await amount(d,30)],[100,null]);
+  // The account's currency must be the one the rate was quoted for.
+  const lentOn=await lentDay(d),record={id:id(30),name:'Umurzoq',kind:'Money lent',currency:'UZS',amount:600000,quantity:1,cost:0,rate:0,date:null,lent_date:lentOn,frequency:'Once',notes:''};
+  await assert.rejects(d.query('SELECT lend_from_account($1::jsonb,$2,$3,$4::date,$5,$6)',[JSON.stringify(record),id(11),12000,lentOn,'EUR','UZS']),/Check the dated exchange rate/);
+  await assert.rejects(d.query('SELECT lend_from_account($1::jsonb,$2,$3,$4::date,$5,$6)',[JSON.stringify(record),id(11),12000,lentOn,'USD','EUR']),/Check the record fields/);
+  assert.equal(await amount(d,30),null);
+ }finally{await d.close();}
+});

@@ -33,14 +33,14 @@ async function workspace(){
 
 test('migration 164 is in setup.sql and changes nothing when applied again',{skip},async()=>{
  assert.ok(setup.includes(migration.trimEnd()));
- assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 169/);
+ assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 170/);
  const db=await database();
  try{
   const functions=()=>db.query(`SELECT md5(string_agg(pg_get_functiondef(p.oid),'' ORDER BY p.oid::regprocedure::text)) AS sum FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prokind='f'`).then(r=>r.rows[0].sum);
   const before=await functions();
   await db.exec(migration);
   // Applied again it rewrites only the capability version, which the next migration moves on.
-  for(const later of ['165_trigger_grants_and_reference_indexes.sql','166_ownership_and_counted_assets.sql','167_business_share_of_transactions.sql','168_close_accounts.sql','169_held_price_series.sql'])await db.exec(fs.readFileSync('migrations/'+later,'utf8'));
+  for(const later of ['165_trigger_grants_and_reference_indexes.sql','166_ownership_and_counted_assets.sql','167_business_share_of_transactions.sql','168_close_accounts.sql','169_held_price_series.sql','170_lend_across_currencies.sql'])await db.exec(fs.readFileSync('migrations/'+later,'utf8'));
   assert.equal(await functions(),before);
   const grants=(await db.query(`SELECT p.proname,has_function_privilege('authenticated',p.oid,'EXECUTE') AS run FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname IN ('edit_mortgage_payment','inherit_mortgage_payment_category') ORDER BY 1`)).rows;
   assert.deepEqual(grants.map(row=>[row.proname,row.run]),[['edit_mortgage_payment',true],['inherit_mortgage_payment_category',false]]);

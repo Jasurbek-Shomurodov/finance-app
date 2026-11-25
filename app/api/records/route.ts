@@ -5,6 +5,7 @@ import { requiresCashAccount, cashFlowAmountMissing } from '@/lib/cash-account-r
 import { resolveEarningSource,type EarningSource } from '@/lib/earning-sources';
 import { resolveIncomeSource } from '@/lib/income-sources';
 import { loadOfficialRate } from '@/lib/official-rate';
+import { lendExchange } from '@/lib/lend-exchange';
 import { depositForecasts } from '@/lib/deposit-forecasts';
 import { z } from 'zod';
 import { assetRecordKinds, interestKinds, type Entry } from '@/lib/finance';
@@ -53,12 +54,16 @@ if(parsed.data.account_id){
   Object.assign(payload,{account_exchange_rate:rate,account_rate_date:rateDate,account_currency:account.currency});
  }
 }
+// Money lent from an account in another currency carries the dated rate the database converts with (migration 170).
+const lent=parsed.data.lent_from?await lendExchange(parsed.data,s.token):{fx:null};
+if('error' in lent)return Response.json({error:lent.error},{status:lent.status});
+delete payload.lent_exchange_rate;
 const {revision,lent_from,...sent}=payload;
 // A saved payment keeps the schedule it was first saved with (migration 119 refuses a change), so an update leaves an
 // empty link out and the stored one stays as it is; one that named no schedule may name one now (migration 140).
 const record=revision==null?sent:Object.fromEntries(Object.entries(sent).filter(([key,value])=>key!=='occurrence_record_id'||value!=null)) as typeof sent;
 // Money lent paid from a cash account is saved together with the cash leaving that account.
-init={method:'POST',body:JSON.stringify({...(lent_from?{p_account:lent_from}:{p_expected_revision:revision??null}),p_record:{...record,business_id:payload.business_id || null,date:parsed.data.date || null,lent_date:parsed.data.kind==='Money lent'?parsed.data.lent_date:null,borrower_group:parsed.data.kind==='Money lent'&&parsed.data.borrower_group?parsed.data.borrower_group:null}})};path=lent_from?'/rest/v1/rpc/lend_from_account':'/rest/v1/rpc/save_finance_record';event={type:'record',created:revision==null,kind:parsed.data.kind,name:parsed.data.name,amount:parsed.data.amount,currency:parsed.data.currency,date:parsed.data.date||null,frequency:parsed.data.frequency,category_id:parsed.data.custom_category_id??null};}
+init={method:'POST',body:JSON.stringify({...(lent_from?{p_account:lent_from,...lent.fx}:{p_expected_revision:revision??null}),p_record:{...record,business_id:payload.business_id || null,date:parsed.data.date || null,lent_date:parsed.data.kind==='Money lent'?parsed.data.lent_date:null,borrower_group:parsed.data.kind==='Money lent'&&parsed.data.borrower_group?parsed.data.borrower_group:null}})};path=lent_from?'/rest/v1/rpc/lend_from_account':'/rest/v1/rpc/save_finance_record';event={type:'record',created:revision==null,kind:parsed.data.kind,name:parsed.data.name,amount:parsed.data.amount,currency:parsed.data.currency,date:parsed.data.date||null,frequency:parsed.data.frequency,category_id:parsed.data.custom_category_id??null};}
 // Every holding, so live prices and exchange rates can determine order before pagination; read beside the summary.
 const assetsRead=method==='GET' && new URL(req.url).searchParams.get('section')==='assets';
 const holdings=assetsRead?readAllPages<Entry>(range=>supa(pagePath('/rest/v1/finance_records?'+new URLSearchParams({select:'*',kind:`in.(${assetRecordKinds.join(',')})`,order:'id.asc'}),range),{},s.token)).catch(()=>null):null;

@@ -2560,7 +2560,6 @@
   "A scheduled payment keeps its schedule.": "O plată programată își păstrează programarea.",
   "Lent from account (optional)": "Împrumutat din contul (opțional)",
   "Not from an account": "Nu dintr-un cont",
-  "No cash account in {currency}.": "Niciun cont de numerar în {currency}.",
   "Restored": "Restaurat",
   "Import undone": "Importul a fost anulat",
   "Add recurring": "Adaugă recurent",

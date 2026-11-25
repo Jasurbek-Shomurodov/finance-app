@@ -2560,7 +2560,6 @@
   "A scheduled payment keeps its schedule.": "Запланований платіж зберігає свій графік.",
   "Lent from account (optional)": "Рахунок, з якого позичено (необов’язково)",
   "Not from an account": "Не з рахунку",
-  "No cash account in {currency}.": "Немає грошового рахунку в {currency}.",
   "Restored": "Відновлено",
   "Import undone": "Імпорт скасовано",
   "Add recurring": "Додати регулярний",

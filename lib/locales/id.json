@@ -2560,7 +2560,6 @@
   "A scheduled payment keeps its schedule.": "Pembayaran terjadwal tetap pada jadwalnya.",
   "Lent from account (optional)": "Dipinjamkan dari akun (opsional)",
   "Not from an account": "Bukan dari akun",
-  "No cash account in {currency}.": "Tidak ada akun kas dalam {currency}.",
   "Restored": "Dipulihkan",
   "Import undone": "Impor dibatalkan",
   "Add recurring": "Tambah berulang",

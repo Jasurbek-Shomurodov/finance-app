@@ -2560,7 +2560,6 @@
   "A scheduled payment keeps its schedule.": "निर्धारित भुगतान अपना शेड्यूल नहीं बदलता।",
   "Lent from account (optional)": "किस खाते से उधार दिया (वैकल्पिक)",
   "Not from an account": "किसी खाते से नहीं",
-  "No cash account in {currency}.": "{currency} में कोई नकद खाता नहीं।",
   "Restored": "पुनर्स्थापित किया गया",
   "Import undone": "आयात पूर्ववत किया गया",
   "Add recurring": "आवर्ती जोड़ें",

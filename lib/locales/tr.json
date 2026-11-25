@@ -2560,7 +2560,6 @@
   "A scheduled payment keeps its schedule.": "Planlı ödeme planını korur.",
   "Lent from account (optional)": "Ödünç verilen hesap (isteğe bağlı)",
   "Not from an account": "Bir hesaptan değil",
-  "No cash account in {currency}.": "{currency} cinsinden nakit hesabı yok.",
   "Restored": "Geri yüklendi",
   "Import undone": "İçe aktarma geri alındı",
   "Add recurring": "Düzenli ekle",

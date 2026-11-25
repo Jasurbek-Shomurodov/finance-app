@@ -33,7 +33,7 @@ export type RecordSaveInput = {
 export function useRecordSave(input: RecordSaveInput) {
     const { demo, rows, setRows, editing, setEditing, deleting, setDeleting, setBusy, setError, fail, planning } = input;
     /** The record as it is sent: a blank expense named, its exchange rate and income source filled in, a new debt dated. */
-    function recordToSave(editing: Entry, rate: number, converted: boolean) {
+    function recordToSave(editing: Entry, rate: number, converted: boolean, lentRate: number) {
         // A saved record carries its revision, also one opened from a screen with its own read (Transactions).
         const stored=savedRecord(editing.id,rows,planning.data.records,editing);
         const earningPatch=editing.earning_source_id?resolveEarningSource(editing,input.sources,stored):{};
@@ -44,7 +44,7 @@ export function useRecordSave(input: RecordSaveInput) {
         const lentFrom=editing.kind==='Money lent'&&!stored?editing.lent_from??null:null;
         // Signed in, the database names the schedule a source receipt or a salary pays; the sample workspace does it here.
         const link=demo?demoScheduleLink(editing,{...incomeSourcePatch,...earningPatch},input.sources,{records:planning.data.records,occurrences:planning.data.occurrences??[]}):{};
-        return {...editing,name,lent_from:lentFrom||undefined,account_exchange_rate:converted?rate:undefined,...opened,...incomeSourcePatch,...earningPatch,...link,...(demo?demoBusinessShare(editing,rows,stored):{})};
+        return {...editing,name,lent_from:lentFrom||undefined,lent_exchange_rate:lentFrom&&lentRate>0?lentRate:undefined,account_exchange_rate:converted?rate:undefined,...opened,...incomeSourcePatch,...earningPatch,...link,...(demo?demoBusinessShare(editing,rows,stored):{})};
     }
     async function save(e: React.FormEvent) {
         e.preventDefault(); if (!editing) return;
@@ -57,7 +57,7 @@ export function useRecordSave(input: RecordSaveInput) {
             const accountProblem=cashAccountProblem(editing,planning.data.records,!planning.loading&&!planning.error,rate);
             if(accountProblem)throw Error(accountProblem);
             const converted=!!editing.account_id&&planning.data.records.find(record=>record.id===editing.account_id)?.currency!==editing.currency;
-            const record=recordToSave(editing,rate,converted);
+            const record=recordToSave(editing,rate,converted,Number(new FormData(e.currentTarget as HTMLFormElement).get('lent_exchange_rate')));
             // An account that changes business takes its transactions along, so the business moves through set_account_business after the save.
             const move=businessMoveFrom(editing,planning.data.records.find(record=>record.id===editing.id)??rows.find(record=>record.id===editing.id));
             if(move)record.business_id=move.from;

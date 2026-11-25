@@ -2560,7 +2560,6 @@
   "A scheduled payment keeps its schedule.": "নির্ধারিত পেমেন্ট তার সময়সূচি বদলায় না।",
   "Lent from account (optional)": "যে অ্যাকাউন্ট থেকে ধার দেওয়া হয়েছে (ঐচ্ছিক)",
   "Not from an account": "কোনো অ্যাকাউন্ট থেকে নয়",
-  "No cash account in {currency}.": "{currency}-এ কোনো নগদ অ্যাকাউন্ট নেই।",
   "Restored": "পুনরুদ্ধার করা হয়েছে",
   "Import undone": "ইমপোর্ট বাতিল করা হয়েছে",
   "Add recurring": "পুনরাবৃত্ত যোগ করুন",
