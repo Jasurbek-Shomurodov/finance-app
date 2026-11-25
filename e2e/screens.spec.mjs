@@ -79,7 +79,7 @@ const dictionaries = { ar: JSON.parse(fs.readFileSync('lib/locales/ar.json', 'ut
 const wording = language => (key, params = {}) => Object.entries(params).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, value), (language && dictionaries[language][key]) || key);
 
 /** A transaction row opens its details, as on Transactions. */
-const openLunch = page => page.getByRole('listitem').getByText('E2E Lunch', { exact: true }).first().click();
+const openLunch = page => page.getByRole('row').getByText('E2E Lunch', { exact: true }).first().click();
 
 /** Every dialog by the screen it opens from and the steps that open it. `t` gives the app's wording in the test's
  * language; `role` is the dialog's own role where it is not `dialog`. */

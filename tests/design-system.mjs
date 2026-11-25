@@ -141,6 +141,8 @@ test('row lists keep their columns lined up from row to row',()=>{
  // The transactions ledger is a table, so every row shares its columns; amounts never wrap and sit at the end.
  assert.match(css,/\.transactions-table th\.num,\.transactions-table td\.num\{text-align:end\}/);
  assert.match(css,/\.transaction-amount\{[^}]*white-space:nowrap/);
+ // Recurring and Coming up rows still place their amount beside both lines on a phone (the table change once dropped it).
+ assert.match(css,/@container content \(max-width:600px\)\{\.transaction-amount\{grid-row:1\/3;grid-column:-2\}\}/);
  assert.match(css,/\.recurring-row\{display:grid;grid-template-columns:subgrid/,'recurring and subscription rows share one set of columns per list');
  assert.match(css,/\.recurring-list>ul,\.subscription-list\{display:grid;grid-template-columns:/);
 });

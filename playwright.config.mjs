@@ -43,7 +43,7 @@ export default defineConfig({
       env: { NODE_OPTIONS: fixedClock, E2E_SUPABASE_PORT: new URL(supabaseUrl).port, E2E_EMAIL: testAccount.email, E2E_PASSWORD: testAccount.password, E2E_USER_ID: testAccount.id },
     },
     {
-      command: `npx next start -p ${new URL(appUrl).port} -H ${new URL(appUrl).hostname}`,
+      command: `node node_modules/next/dist/bin/next start -p ${new URL(appUrl).port} -H ${new URL(appUrl).hostname}`,
       url: appUrl + '/sign-in',
       reuseExistingServer: false,
       timeout: 120_000,

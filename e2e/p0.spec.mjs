@@ -181,7 +181,7 @@ test('TX-019 TX-020 an expense needs an amount above zero and cannot be dated in
 test('TX-022 editing an expense moves its account once', async ({ page }) => {
   await page.goto('/transactions');
   // A row opens the transaction's details, never a Sankey.
-  await page.getByRole('listitem', { name: /View details for E2E Lunch/ }).getByText('E2E Lunch', { exact: true }).click();
+  await page.getByRole('row', { name: /View details for E2E Lunch/ }).getByText('E2E Lunch', { exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Edit E2E Lunch', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByPlaceholder('0').first().fill('30');
@@ -194,7 +194,7 @@ test('TX-022 editing an expense moves its account once', async ({ page }) => {
 test('TX-024 DEL-004 deleting an expense returns its money and restoring takes it again, exactly once', async ({ page }) => {
   // Cash flow no longer lists transactions; an expense is deleted from its details on Transactions.
   await page.goto('/transactions');
-  await page.getByRole('listitem', { name: /View details for E2E Lunch/ }).getByText('E2E Lunch', { exact: true }).click();
+  await page.getByRole('row', { name: /View details for E2E Lunch/ }).getByText('E2E Lunch', { exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Delete E2E Lunch', exact: true }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Delete record' }).click();
   await open(page, 'Accounts');
