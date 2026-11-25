@@ -27,29 +27,51 @@ export function totals(files){
 }
 export function percent({found,hit}){return found?hit/found*100:100;}
 
-/** One lcov report from several (the CI shards). Entries for the same file with the same functions and branches add
- * their counts; a file whose copies differ in shape (a copy loaded through tests/helpers/load-ts.mjs) keeps each copy,
- * and lcovFiles combines those as it does within one report. Totals are counted again from the merged counts. */
+/** One lcov report from several (the CI shards). Each shard measures only the code its own tests ran, so the copies of
+ * a file differ in shape: anonymous functions are numbered differently and branches inside functions a shard never
+ * called are missing. The copies are combined per line instead: lines add their counts; a function is matched by its
+ * line and name (an anonymous one by its place among the anonymous functions on that line) and counts as run when any
+ * copy ran it; the branches on a line are matched in order and add their counts. A file loaded both directly and
+ * through tests/helpers/load-ts.mjs has two copies whose functions sit on different lines; those stay apart (matched
+ * by the lines of their named functions) and lcovFiles takes the better one. Totals are counted again. */
 export function mergeLcov(reports){
- const entries=new Map();
+ const files=new Map();
  for(const report of reports)for(const record of report.split('end_of_record')){
   const file=/^SF:(.*)$/m.exec(record)?.[1];
   if(!file)continue;
-  const functions=[...record.matchAll(/^FN:([^,\n]*),(.*)$/gm)].map(match=>[match[1],match[2]]);
+  const declared=[...record.matchAll(/^FN:([^,\n]*),(.*)$/gm)].map(([,line,name])=>[line,name]);
+  const named=new Map(declared.filter(([,name])=>!/^anonymous_\d+$/.test(name)).map(([line,name])=>[name,line]));
+  if(!files.has(file))files.set(file,[]);
+  const copies=files.get(file);
+  const fits=copy=>{let shared=0;for(const [name,line] of named)if(copy.named.has(name)){if(copy.named.get(name)!==line)return false;shared++;}return shared>0||!named.size||!copy.named.size;};
+  let entry=copies.find(fits);
+  if(!entry){entry={named:new Map(),functions:new Map(),branches:new Map(),lines:new Map()};copies.push(entry);}
+  for(const [name,line] of named)entry.named.set(name,line);
   const calls=new Map([...record.matchAll(/^FNDA:(\d+),(.*)$/gm)].map(match=>[match[2],Number(match[1])]));
-  const branches=new Map([...record.matchAll(/^BRDA:([^,\n]+,[^,\n]+,[^,\n]+),(\S+)$/gm)].map(match=>[match[1],match[2]==='-'?0:Number(match[2])]));
-  const lines=new Map([...record.matchAll(/^DA:(\d+),(\d+)/gm)].map(match=>[match[1],Number(match[2])]));
-  const key=[file,functions.map(([,name])=>name).join(','),[...branches.keys()].join(';')].join('\n');
-  const seen=entries.get(key);
-  if(!seen){entries.set(key,{file,functions,calls,branches,lines});continue;}
-  for(const [counts,more] of [[seen.calls,calls],[seen.branches,branches],[seen.lines,lines]])
-   for(const [id,count] of more)counts.set(id,(counts.get(id)??0)+count);
+  const anonymous=new Map();
+  for(const [line,name] of declared){
+   const place=/^anonymous_\d+$/.test(name)?anonymous.set(line,(anonymous.get(line)??0)+1).get(line):0;
+   const key=`${line}\n${place?`#${place}`:name}`;
+   entry.functions.set(key,(entry.functions.get(key)??0)+(calls.get(name)??0));
+  }
+  const onLine=new Map();
+  for(const [,line,count] of record.matchAll(/^BRDA:([^,\n]+),[^,\n]+,[^,\n]+,(\S+)$/gm)){
+   if(!onLine.has(line))onLine.set(line,[]);
+   onLine.get(line).push(count==='-'?0:Number(count));
+  }
+  for(const [line,counts] of onLine){
+   const seen=entry.branches.get(line)??[];
+   entry.branches.set(line,counts.length>seen.length?counts.map((count,i)=>count+(seen[i]??0)):seen.map((count,i)=>count+(counts[i]??0)));
+  }
+  for(const [,line,count] of record.matchAll(/^DA:(\d+),(\d+)/gm))entry.lines.set(line,(entry.lines.get(line)??0)+Number(count));
  }
- return [...entries.values()].map(({file,functions,calls,branches,lines})=>{
-  const hit=map=>[...map.values()].filter(count=>count>0).length;
-  return [`SF:${file}`,...functions.map(([line,name])=>`FN:${line},${name}`),...functions.map(([,name])=>`FNDA:${calls.get(name)??0},${name}`),
-   `FNF:${functions.length}`,`FNH:${functions.filter(([,name])=>(calls.get(name)??0)>0).length}`,
-   ...[...branches].map(([id,count])=>`BRDA:${id},${count}`),`BRF:${branches.size}`,`BRH:${hit(branches)}`,
-   ...[...lines].map(([line,count])=>`DA:${line},${count}`),`LH:${hit(lines)}`,`LF:${lines.size}`,'end_of_record'].join('\n');
- }).join('\n')+'\n';
+ return [...files].flatMap(([file,copies])=>copies.map(({functions,branches,lines})=>{
+  const named=[...functions].map(([key,count],i)=>{const [line,name]=key.split('\n');return [line,name.startsWith('#')?`anonymous_${i}`:name,count];});
+  const brda=[...branches].flatMap(([line,counts])=>counts.map(count=>[line,count])).map(([line,count],block)=>`BRDA:${line},${block},0,${count}`);
+  const hit=values=>values.filter(count=>count>0).length;
+  return [`SF:${file}`,...named.map(([line,name])=>`FN:${line},${name}`),...named.map(([,name,count])=>`FNDA:${count},${name}`),
+   `FNF:${named.length}`,`FNH:${hit(named.map(([,,count])=>count))}`,
+   ...brda,`BRF:${brda.length}`,`BRH:${hit([...branches.values()].flat())}`,
+   ...[...lines].map(([line,count])=>`DA:${line},${count}`),`LH:${hit([...lines.values()])}`,`LF:${lines.size}`,'end_of_record'].join('\n');
+ })).join('\n')+'\n';
 }

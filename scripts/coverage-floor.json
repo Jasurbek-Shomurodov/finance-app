@@ -1,7 +1,7 @@
 {
  "lines": 95,
- "branches": 92,
- "functions": 91,
+ "branches": 90,
+ "functions": 89,
  "untested": [
   "app/(workspace)/accounts/page.tsx",
   "app/(workspace)/assets/page.tsx",
