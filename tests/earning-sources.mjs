@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {PGlite} from '@electric-sql/pglite';
 import {loadTS} from './helpers/load-ts.mjs';
-const {earningSourceSchema,sourceSchedule,selectEarningSource,resolveEarningSource}=loadTS('lib/earning-sources.ts');
+const {earningSourceSchema,sourceSchedule,selectEarningSource,resolveEarningSource,keepsRecordedPayments}=loadTS('lib/earning-sources.ts');
 const {monthly}=loadTS('lib/finance.ts');
 const id=n=>`53000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 const variable={id:id(20),name:'Freelance interviews',kind:'Other income',currency:'USD',mode:'variable',archived:false,amount:null,frequency:null,start_date:null,end_date:null,linked_record_id:null};
@@ -125,4 +125,14 @@ test('a new fixed source repeats monthly from today and passes the schema once n
  const variable = newEarningSource('USD', 'variable', '2026-10-07', '7b0d9a1e-2f4c-4c55-9b0a-1f2e3d4c5b6b');
  assert.equal(earningSourceSchema.safeParse({ ...variable, name: 'Freelance' }).success, true);
  assert.equal(variable.start_date, null);
+});
+
+test('an edit keeps recorded payments when a monthly source moves within its start month (migration 171)',()=>{
+ const paid={...fixed,start_date:'2026-09-28'};
+ assert.equal(keepsRecordedPayments(paid,{...paid,start_date:'2026-09-25',amount:6000,end_date:'2027-06-25'}),true);
+ assert.equal(keepsRecordedPayments(paid,{...paid,start_date:'2026-10-25'}),false,'another month is another start date');
+ assert.equal(keepsRecordedPayments(paid,{...paid,currency:'EUR'}),false);
+ assert.equal(keepsRecordedPayments(paid,{...paid,frequency:'Yearly'}),false);
+ const weekly={...paid,frequency:'Weekly'};
+ assert.equal(keepsRecordedPayments(weekly,{...weekly,start_date:'2026-09-29'}),false,'a weekly start date is its weekday');
 });

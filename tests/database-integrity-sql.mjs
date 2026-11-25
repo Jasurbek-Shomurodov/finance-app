@@ -28,6 +28,8 @@ test('text-patching migrations change nothing when applied again',async()=>{
    await d.exec(fs.readFileSync('migrations/'+name,'utf8'));
    // 128 writes finance_records_page in full, and 166 then patches it (counted assets): the two are re-applied in their order.
    if(name==='128_review_integrity.sql')await d.exec(fs.readFileSync('migrations/166_ownership_and_counted_assets.sql','utf8'));
+   // 134 writes save_income_source in full, and 171 then rewrites it (a monthly source moves its day).
+   if(name==='134_source_ids_and_plan_currency.sql')await d.exec(fs.readFileSync('migrations/171_income_source_day.sql','utf8'));
    assert.equal(await functions(d),before,name+' re-applied leaves every function as it was');
   }
  }finally{await d.close();}

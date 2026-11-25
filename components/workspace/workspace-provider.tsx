@@ -16,7 +16,7 @@ import { useCategoryIcons } from '@/hooks/use-category-icons';
 import { CategoryHueContext, CategoryIconsContext } from '@/components/category-icons-context';
 import { depositMonth, depositToday } from '@/lib/deposit-interest';
 import { useEarningSources } from '@/hooks/use-earning-sources';
-import { withAssetIncomePlans, legacyEarningSources, sourceSchedule } from '@/lib/earning-sources';
+import { withAssetIncomePlans, legacyEarningSources, sourceSchedule, keepsRecordedPayments } from '@/lib/earning-sources';
 import { approximateIncome } from '@/lib/monthly-income-cards';
 import { saveTrackingStartRequest } from '@/hooks/use-comparison-profile';
 import { marketRates } from '@/lib/market';
@@ -96,7 +96,7 @@ function useWorkspaceState() {
     const market = demo ? demoMarket : liveMarket;
     const quoteLabel = (entry: Entry) => describeQuote(entry, market, currency, t, locale);
     const earningSources=useEarningSources(user,demo,reload,refreshRecords,(source,original)=>{
-        if(original&&rows.some(row=>row.earning_source_id===source.id||row.income_source_id===source.schedule_id)&&['kind','currency','mode','frequency','recurrence_days','start_date','end_date','linked_record_id'].some(key=>original[key as keyof typeof original]!==source[key as keyof typeof source]))throw Error('Keep the type, currency and schedule compatible with recorded payments.');
+        if(original&&rows.some(row=>row.earning_source_id===source.id||row.income_source_id===source.schedule_id)&&!keepsRecordedPayments(original,source))throw Error('Keep the type, currency and schedule compatible with recorded payments.');
         const schedule=sourceSchedule(source);
         setRows(previous=>schedule?[...previous.filter(row=>row.id!==schedule.id),schedule]:previous.map(row=>row.id===source.schedule_id?{...row,source_paused:true}:row));
     },legacyEarningSources(rows));

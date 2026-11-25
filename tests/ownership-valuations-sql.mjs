@@ -22,7 +22,7 @@ test('migrations 166 and 167 are in setup.sql, move the schema version and are s
  assert.ok(setup.includes(m166),'setup.sql includes migration 166');
  assert.ok(setup.includes(m167),'setup.sql includes migration 167');
  assert.ok(setup.indexOf(m166)<setup.indexOf(m167));
- assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 170/);
+ assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 171/);
  const db=await database(setup.slice(0,setup.indexOf(m166)));
  try{
   // A record from before the migration: a property that somehow kept a share, and a business at 40%.

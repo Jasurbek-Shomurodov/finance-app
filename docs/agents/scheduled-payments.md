@@ -54,6 +54,11 @@ name, amount or date that happens to match (migration 119).
   workspace does the same through `onScheduleDays`. The amount and the currency may
   change after payments (they count at the day's rate, migration 120); the kind and
   the cadence may not. `tests/schedule-day-sql.mjs` covers this.
+- A fixed income source follows the same rule (migration 171): its dialog locks a saved source's start date and
+  offers Day of the month for a monthly one; `save_income_source` lets a source with payments move to another day
+  of its start month and change its end date, and `move_schedule_day` moves its receipts' `earning_due_on` too.
+  `keepsRecordedPayments` (`lib/earning-sources.ts`) is the same check for the sample workspace.
+  `tests/income-source-day-sql.mjs` covers this.
 - A loan's month is settled by a payment dated in it, whichever way it was recorded: Recurring's Record payment
   (`account_activity`, action `repayment`) or Loans › Record payment (an `investment_history` withdrawal), joined by
   `withTrackerRepayments` (`lib/planning.ts`), deduped by id, for the planning read, the bot and the PDF. Rent and

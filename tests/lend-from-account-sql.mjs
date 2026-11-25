@@ -67,8 +67,8 @@ async function dollars(d,amount=1176){
 }
 
 test('migration 170 is in setup.sql, moves the schema version and is safe to re-run',async()=>{
- assert.ok(setup.endsWith(across),'setup.sql ends with migration 170');
- assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 170/);
+ assert.ok(setup.includes(across),'setup.sql includes migration 170');
+ assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 171/);
  const d=await db(setup.slice(0,setup.indexOf(across)));
  try{await d.exec(across);await d.exec(across);assert.equal((await d.query('SELECT finance_capabilities() AS c')).rows[0].c.schema_version,170);}finally{await d.close();}
 });
