@@ -70,7 +70,7 @@ test('a row keeps its balance in the display currency and its monthly payment as
 });
 
 test('a due date within two weeks is marked with the days left, and a past one as overdue', () => {
- const { html, words } = list();
+ const { html } = list();
  assert.match(html(), /<td data-label="Due date" class="loan-due"><span class="caution">20 November 2026<\/span><small class="caution">in 6 days<\/small><\/td>/);
  assert.match(html(), /<span class="negative">1 October 2026<\/span><small class="negative">Overdue<\/small>/);
  assert.match(html(), /<span>1 January 2030<\/span><\/td>/, 'a far due date carries no countdown');
