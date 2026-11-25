@@ -43,7 +43,7 @@ export function SettingsScreen() {
    businesses={<BusinessSettings businesses={businessList} records={planning.data.records} preferences={workspacePreferences} owner={demo?null:user} demo={demo} onEdit={editRecord} onDelete={requestDelete} onSetup={() => setSettingUpBusinesses(true)} onGuide={() => setSettingUpBusinesses('guide')}/>}
    tags={<TagSettings tags={tags} preferences={workspacePreferences} owner={demo?null:user} demo={demo}/>}
    /* Rules have one home, Transactions, where their effect shows; this section is the way there. */
-   rules={<section className="panel tools-panel"><PanelTitle title={t('Rules')} hint={t('A rule sets the category, business or tags of transactions whose name contains its words. New bank statement imports follow your rules too.')}><Button asChild><DrawerLink href={rulesLink}><Wand2 size={16} aria-hidden="true"/>{t('Open in Transactions')}</DrawerLink></Button></PanelTitle></section>}
+   rules={<section className="panel tools-panel"><PanelTitle title={t('Rules')} hint={t('A rule sets the category, business or tags of transactions whose name contains its words. New bank statement imports follow your rules too.')}><Button variant="outline" asChild><DrawerLink href={rulesLink}><Wand2 size={16} aria-hidden="true"/>{t('Open in Transactions')}</DrawerLink></Button></PanelTitle></section>}
    data-tools={<><DataTools owner={user} currency={currency} market={market} preferences={workspacePreferences} records={planning.data.records} onSaved={refreshRecords} demo={demo} sample={demo?()=>sampleBackup(planning.data,transactionTools.data.splits,categoryIcons):undefined}/><ImportHistory owner={user} demo={demo} revision={reload} onSaved={refreshRecords}/><DatabaseHealth demo={demo}/></>}
   />
  </div>;

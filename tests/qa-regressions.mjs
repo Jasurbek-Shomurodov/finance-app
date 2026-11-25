@@ -291,6 +291,27 @@ test('transaction labels never narrow below a word',()=>{
  assert.doesNotMatch(css,/\.transactions-table[^{]*\{[^}]*(?:word-break:break-all|overflow-wrap:anywhere)/);
 });
 
+// dr 2026-11-25: the Transactions panel has no padding, so the padded-panel reset that zeroes a table's edge cells put
+// the payee icons and the amounts against the card's border. The table keeps its own 20px edges.
+test('the Transactions table keeps its edge padding inside its unpadded panel',()=>{
+ const css=stylesheet();
+ assert.match(css,/\.transactions-list\{padding:0/);
+ assert.match(css,/\.transactions-table :is\(th,td\):first-child\{[^}]*padding-inline-start:20px/);
+ assert.match(css,/\.transactions-table :is\(th,td\):last-child\{padding-inline-end:20px\}/);
+ const resets=css.match(/[^{}]*\.table-scroll[^{}]*:is\(th,td\):(?:first|last)-child\{padding-inline-(?:start|end):0\}/g) ?? [];
+ assert.equal(resets.length,2);
+ for (const rule of resets)
+  assert.match(rule,/table:not\([^)]*\.transactions-table/,rule.trim());
+});
+
+// dr 2026-11-25: `.tools-panel a` painted a button link's label in the button's own fill (Settings › Rules "Open in
+// Transactions" read as an empty pill). Link styling skips anything drawn as a button.
+test('panel link colours never reach a link drawn as a button',()=>{
+ const css=stylesheet();
+ assert.doesNotMatch(css,/\.tools-panel a\{/);
+ assert.match(css,/\.tools-panel a:not\(\[data-slot=button\]\)\{color:var\(--primary\)/);
+});
+
 // 7 October 2026: a transaction opened from the list can be deleted, not only edited.
 test('the transaction details dialog offers a bin to delete and Edit, with no Close button beside the ×',()=>{
  const dialog=fs.readFileSync('components/transaction-details-dialog.tsx','utf8');

@@ -14,9 +14,10 @@ tbody tr:last-child td{border-bottom:0}
 .records :is(th,td):first-child{position:sticky;inset-inline-start:0;z-index:1;min-width:13rem;padding-inline-start:24px;background:var(--card)}
 .workspace .content .records tbody tr:is(:hover,:focus-within)>td:first-child{background:color-mix(in srgb,var(--accent) 35%,var(--card))}
 .records :is(th,td):last-child{padding-inline-end:24px}
-/* The profit and loss table indents its rows by level, so it keeps its own start padding. */
-.panel:not(.records) .table-scroll table:not(.pnl-table) :is(th,td):first-child{padding-inline-start:0}
-.panel:not(.records) .table-scroll :is(th,td):last-child{padding-inline-end:0}
+/* A table in a padded panel lines up with the panel title. The profit and loss table indents its rows by level, and the
+ * Transactions table fills an unpadded panel, so both keep their own edge padding. */
+.panel:not(.records) .table-scroll table:not(.pnl-table,.transactions-table) :is(th,td):first-child{padding-inline-start:0}
+.panel:not(.records) .table-scroll table:not(.transactions-table) :is(th,td):last-child{padding-inline-end:0}
 .record-name{display:flex;gap:12px;align-items:center;min-width:0}
 .record-name>div{min-width:0}
 /* Names and their detail line wrap at spaces rather than ellipsise (LIST-007, LIST-019). Not `overflow-wrap:anywhere`: that lets a table

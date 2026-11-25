@@ -9,7 +9,7 @@
 .tools-panel .tracker-fields{grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));align-items:end;margin-block:16px}
 .tools-panel .tracker-fields>label{margin:0}
 .tools-panel .tracker-fields>p{grid-column:1/-1;margin:0}
-.tools-panel a{color:var(--primary);text-decoration:underline;text-underline-offset:3px}
+.tools-panel a:not([data-slot=button]){color:var(--primary);text-decoration:underline;text-underline-offset:3px}
 .review-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px;margin-block:16px}
 .review-grid>article{display:flex;flex-direction:column;gap:6px;min-width:0;padding:16px;border:1px solid var(--border);border-radius:14px;background:color-mix(in srgb,var(--muted) 45%,transparent)}
 .review-grid>article h3{margin:0;font-size:var(--type-caption);font-weight:500;color:var(--muted-foreground)}
