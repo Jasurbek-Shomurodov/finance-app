@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "Prix du marché indisponibles. Les prix enregistrés sont affichés.",
   "Loading your workspace…": "Chargement de votre espace…",
   "Date lent": "Date du prêt",
+  "Due date": "Échéance",
   "Due date (optional)": "Échéance (facultatif)",
   "Lent: {date}": "Prêté le : {date}",
   "Due: {date}": "Échéance : {date}",

@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "Bozor narxlari mavjud emas. Saqlangan narxlar ko‘rsatilgan.",
   "Loading your workspace…": "Ish maydoningiz yuklanmoqda…",
   "Date lent": "Qarz berilgan sana",
+  "Due date": "Qaytarish sanasi",
   "Due date (optional)": "Qaytarish sanasi (ixtiyoriy)",
   "Lent: {date}": "Berilgan: {date}",
   "Due: {date}": "Qaytarish: {date}",

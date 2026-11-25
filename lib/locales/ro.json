@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "Prețurile de piață nu sunt disponibile. Se afișează prețurile salvate.",
   "Loading your workspace…": "Se încarcă spațiul tău de lucru…",
   "Date lent": "Data împrumutului",
+  "Due date": "Data scadenței",
   "Due date (optional)": "Data scadenței (opțional)",
   "Lent: {date}": "Împrumutat: {date}",
   "Due: {date}": "Scadent: {date}",

@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "ไม่มีราคาตลาด แสดงราคาที่บันทึกไว้",
   "Loading your workspace…": "กำลังโหลดพื้นที่ทำงานของคุณ…",
   "Date lent": "วันที่ให้ยืม",
+  "Due date": "วันครบกำหนด",
   "Due date (optional)": "วันครบกำหนด (ไม่บังคับ)",
   "Lent: {date}": "ให้ยืมเมื่อ: {date}",
   "Due: {date}": "ครบกำหนด: {date}",

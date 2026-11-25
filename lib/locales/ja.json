@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "市場価格を取得できません。保存済みの価格を表示しています。",
   "Loading your workspace…": "ワークスペースを読み込み中…",
   "Date lent": "貸付日",
+  "Due date": "返済期日",
   "Due date (optional)": "返済期日（任意）",
   "Lent: {date}": "貸付日：{date}",
   "Due: {date}": "期日：{date}",

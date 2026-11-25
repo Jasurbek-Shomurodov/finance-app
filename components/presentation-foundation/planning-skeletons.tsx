@@ -56,14 +56,18 @@ export function InvestmentsSkeleton({ label, heading = false }: { label: string;
   </Loading>;
 }
 
-/** A lending row on the list's own grid: icon and name, the paid-off bar, the balance and the actions. */
+/** A loans table row: icon and name, rate, start and due dates, the paid-off bar, monthly payment, balance and actions. */
 function LoanRow({ row }: { row: number }) {
-  return <li className="loan-row">
-    <div className="loan-row-name"><Skeleton className="size-11 shrink-0 rounded-xl"/><div className="grid gap-1.5"><Bar width={110 + (row % 3) * 30}/><Skeleton className="h-3 w-40 max-w-full"/><Skeleton className="h-3 w-28"/></div></div>
-    <div className="loan-row-progress"><Track/><Skeleton className="h-3 w-32"/></div>
-    <div className="loan-row-amount"><Skeleton className="ms-auto h-5 w-20"/></div>
-    <div className="row-actions"><Skeleton className="h-9 w-16 rounded-lg"/></div>
-  </li>;
+  return <tr className="loan-row">
+    <td><div className="record-name"><Skeleton className="size-11 shrink-0 rounded-xl"/><div className="grid gap-1.5"><Bar width={110 + (row % 3) * 30}/><Skeleton className="h-3 w-20"/></div></div></td>
+    <td data-label=""><Skeleton className="h-4 w-12"/></td>
+    <td data-label=""><Skeleton className="h-4 w-28"/></td>
+    <td data-label=""><Skeleton className="h-4 w-28"/></td>
+    <td data-label="" className="loan-progress"><Track/><Skeleton className="mt-1.5 h-3 w-32"/></td>
+    <td data-label="" className="num"><Skeleton className="ms-auto h-4 w-20"/></td>
+    <td className="num loan-balance"><Skeleton className="ms-auto h-5 w-20"/></td>
+    <td><div className="row-actions"><Skeleton className="h-9 w-16 rounded-lg"/></div></td>
+  </tr>;
 }
 
 /** The payoff plan card beside the loans: its method, the balance chart, two facts and the link to the planner. */
@@ -82,13 +86,13 @@ export function LoansSkeleton({ label, side = true, plan = side, heading = false
       <section className="panel loans-list">
         <Heading width={220} aside={142}/>
         <div className="record-filters"><div className="grid flex-1 gap-2"><Skeleton className="h-4 w-24"/><Skeleton className="h-11 w-full rounded-xl"/></div><Skeleton className="h-11 w-24 rounded-xl"/></div>
-        <ul className="loan-rows">
-          <li className="loan-rows-head"><span/><span><Skeleton className="h-4 w-28"/></span><span><Skeleton className="ms-auto h-4 w-16"/></span></li>
-          {[3, 2].flatMap((rows, group) => [
-            <li className="loan-group" key={'g' + group}><Skeleton className="h-5 w-36"/><Skeleton className="h-5 w-16"/></li>,
+        <div className="table-scroll"><table className="loans-table">
+          <thead><tr>{[48, 40, 72, 64, 56, 112, 56].map((width, column) => <th key={column} className={column > 4 ? 'num' : undefined}><Skeleton className={column > 4 ? 'ms-auto h-3' : 'h-3'} style={{ width }}/></th>)}<th/></tr></thead>
+          <tbody>{[3, 2].flatMap((rows, group) => [
+            <tr className="table-group-row loan-group" key={'g' + group}><th colSpan={6}><Skeleton className="h-5 w-36"/></th><th className="num"><Skeleton className="ms-auto h-5 w-16"/></th><th/></tr>,
             ...times(rows).map(row => <LoanRow key={group + '-' + row} row={row}/>),
-          ])}
-        </ul>
+          ])}</tbody>
+        </table></div>
       </section>
       {side && <div className="loans-side">
         <section className="panel owed-breakdown"><Heading width={140}/><div className="owed-breakdown-lead"><Skeleton className="size-32 rounded-full"/><div className="grid gap-2"><Skeleton className="h-4 w-20"/><Skeleton className="h-8 w-28"/></div></div><Figures rows={3} className="owed-breakdown-list"/></section>

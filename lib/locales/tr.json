@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "Piyasa fiyatları kullanılamıyor. Kayıtlı fiyatlar gösteriliyor.",
   "Loading your workspace…": "Çalışma alanınız yükleniyor…",
   "Date lent": "Borç verme tarihi",
+  "Due date": "Vade tarihi",
   "Due date (optional)": "Vade tarihi (isteğe bağlı)",
   "Lent: {date}": "Verilen: {date}",
   "Due: {date}": "Vade: {date}",

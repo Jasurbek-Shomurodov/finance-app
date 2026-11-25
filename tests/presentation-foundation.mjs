@@ -126,7 +126,7 @@ test('every drawer destination shimmers in its own layout',()=>{
   '/upcoming':['recurring-summary','recurring-bar','recurring-left','recurring-layout','recurring-main','recurring-list-tools','transaction-day-heading','recurring-row','row-actions','recurring-side','recurring-coming'],
   '/goals':['goals-split','goals-list','goal-row','goal-row-main','goal-detail','goal-detail-head','goal-detail-chart','stat-tiles','goal-funding-panel','goal-funding-figures'],
   '/assets':['portfolio-summary','portfolio-summary-metrics','portfolio-allocation-body','asset-account-section','asset-card-grid','asset-card-details','asset-holdings','asset-card-grid'],
-  '/loans-debts':['data-columns="4"','loans-layout','panel loans-list','record-filters','loan-rows-head','loan-group','loan-row','loans-side','owed-breakdown','payoff-plan-card'],
+  '/loans-debts':['data-columns="4"','loans-layout','panel loans-list','record-filters','loans-table','loan-group','loan-row','loans-side','owed-breakdown','payoff-plan-card'],
   '/recently-deleted':['recovery-layout','recovery-tools','recovery-day','recovery-row','recovery-side','recovery-detail'],'/settings':['settings-columns','settings-nav','settings-nav-group','settings-sections','preferences-card','setting-label','setting-control']};
  for(const path of paths){
   const html=render(NavigationShimmer,{label:'Loading records…',path});

@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "市场价格不可用，显示已保存的价格。",
   "Loading your workspace…": "正在加载您的工作区…",
   "Date lent": "出借日期",
+  "Due date": "到期日",
   "Due date (optional)": "到期日（可选）",
   "Lent: {date}": "出借：{date}",
   "Due: {date}": "到期：{date}",

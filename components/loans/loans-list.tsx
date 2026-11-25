@@ -3,7 +3,7 @@ import { Fragment, useState } from 'react';
 import { Plus, Wallet } from 'lucide-react';
 import { useDisplayMoney } from '@/components/display-money';
 import { useLanguage } from '@/components/language-provider';
-import { LoanRow } from '@/components/loans/loan-row';
+import { LoanRow, loanColumns } from '@/components/loans/loan-row';
 import { Count } from '@/components/presentation-foundation/count';
 import { EmptyState } from '@/components/presentation-foundation/empty-state';
 import { InlineError } from '@/components/presentation-foundation/inline-error';
@@ -14,7 +14,6 @@ import { Segmented } from '@/components/presentation-foundation/segmented';
 import { RecordFilters, emptyRecordFilters } from '@/components/record-filters';
 import { Button } from '@/components/ui/button';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
-import { useColumnsFit } from '@/hooks/use-columns-fit';
 import { depositToday } from '@/lib/deposit-interest';
 import { debtProgress } from '@/lib/debt-plan';
 import { lendingRecordKinds, liabilities, value, type Entry } from '@/lib/finance';
@@ -35,7 +34,6 @@ export function LoansList({ events }: { events: readonly HistoryEvent[] }) {
  const [grouping, setGrouping] = useState<Grouping>('month');
  const { filters, setFilters, filtersActive, visible, totalRecords, tableLoading, planning, demo, currency, money, storedRecord, refreshRecords,
   addRecord, editRecord, requestDelete, setTracking, openPayment } = useWorkspace();
- const list = useColumnsFit<HTMLUListElement>('.loan-row', 220);
  const today = depositToday();
  const row = (shown: Entry) => {
   const saved = storedRecord(shown), name = shownName(shown, t);
@@ -49,7 +47,11 @@ export function LoansList({ events }: { events: readonly HistoryEvent[] }) {
     { label: t('Delete'), deletes: true, onSelect: () => requestDelete(shown) },
    ]}/>;
  };
- const heading = (key: string, label: string, rows: readonly Entry[], level: 'group' | 'borrower', signed = false) => <li key={key} className="loan-group" data-level={level}><span>{label}<Count value={rows.length}/></span><span><RollingText text={showSum(total(rows, signed))}/></span></li>;
+ // A group's heading spans the columns up to Balance, where its total sits.
+ const heading = (key: string, label: string, rows: readonly Entry[], level: 'group' | 'borrower', signed = false) => <tr key={key} className="table-group-row loan-group" data-level={level}>
+  <th scope="colgroup" colSpan={loanColumns.length - 1}><span>{label}<Count value={rows.length}/></span></th>
+  <th className="num"><RollingText text={showSum(total(rows, signed))}/></th><th/>
+ </tr>;
  // Loans to the same borrower group sit under one heading with what they owe together.
  const items = (sequence: LendingItem<Entry>[]) => sequence.map(item => 'row' in item ? row(item.row) : <Fragment key={'borrower:' + item.borrower}>{heading('borrower:' + item.borrower, item.borrower, item.rows, 'borrower')}{item.rows.map(row)}</Fragment>);
  const sides = () => [['You owe', visible.filter(entry => liabilities.includes(entry.kind))] as const, ['Owed to you', visible.filter(entry => entry.kind === 'Money lent')] as const]
@@ -64,10 +66,10 @@ export function LoansList({ events }: { events: readonly HistoryEvent[] }) {
   </PanelTitle>
   <RecordFilters value={filters} onChange={setFilters} categories={[]} kinds={lendingRecordKinds}/>
   {planning.error && <InlineError message={t(planning.error)} onRetry={refreshRecords}/>}
-  {tableLoading ? <LoadingPlaceholder label={t('Loading records…')}/> : visible.length ? <ul className="loan-rows" ref={list}>
-   <li className="loan-rows-head" aria-hidden="true"><span/><span>{t('Paid off')}</span><span>{t('Balance')}</span><span/></li>
-   {grouping === 'side' ? sides() : months()}
-  </ul> : planning.error ? null : <EmptyState icon={<Wallet/>} title={t(filtersActive ? 'No matching records' : 'A fresh start')} description={t(filtersActive ? 'Try another search or clear the filters.' : 'Add a record in {currency} to start building your overview.', { currency })}>
+  {tableLoading ? <LoadingPlaceholder label={t('Loading records…')}/> : visible.length ? <div className="table-scroll"><table className="loans-table">
+   <thead><tr>{loanColumns.map(column => <th key={column} scope="col" className={column === 'Monthly payment' || column === 'Balance' ? 'num' : undefined}>{t(column)}</th>)}<th scope="col"><span className="sr-only">{t('Actions')}</span></th></tr></thead>
+   <tbody>{grouping === 'side' ? sides() : months()}</tbody>
+  </table></div> : planning.error ? null : <EmptyState icon={<Wallet/>} title={t(filtersActive ? 'No matching records' : 'A fresh start')} description={t(filtersActive ? 'Try another search or clear the filters.' : 'Add a record in {currency} to start building your overview.', { currency })}>
    {filtersActive && <Button variant="outline" onClick={() => setFilters(emptyRecordFilters)}>{t('Clear filters')}</Button>}<Button variant="outline" onClick={addRecord}><Plus/>{t('Add your first record')}</Button>
   </EmptyState>}
  </section>;

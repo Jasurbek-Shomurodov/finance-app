@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "Ринкові ціни недоступні. Показано збережені ціни.",
   "Loading your workspace…": "Завантаження вашого робочого простору…",
   "Date lent": "Дата надання в борг",
+  "Due date": "Строк повернення",
   "Due date (optional)": "Строк повернення (необов’язково)",
   "Lent: {date}": "Надано: {date}",
   "Due: {date}": "Строк: {date}",

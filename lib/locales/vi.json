@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "Không có giá thị trường. Đang hiển thị giá đã lưu.",
   "Loading your workspace…": "Đang tải không gian làm việc…",
   "Date lent": "Ngày cho vay",
+  "Due date": "Ngày đến hạn",
   "Due date (optional)": "Ngày đến hạn (tùy chọn)",
   "Lent: {date}": "Cho vay: {date}",
   "Due: {date}": "Đến hạn: {date}",

@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "Marktpreise nicht verfügbar. Gespeicherte Preise werden angezeigt.",
   "Loading your workspace…": "Ihr Arbeitsbereich wird geladen…",
   "Date lent": "Verleihdatum",
+  "Due date": "Fälligkeitsdatum",
   "Due date (optional)": "Fälligkeitsdatum (optional)",
   "Lent: {date}": "Verliehen: {date}",
   "Due: {date}": "Fällig: {date}",

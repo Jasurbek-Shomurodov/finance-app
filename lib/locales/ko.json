@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "시장 가격을 사용할 수 없어요. 저장된 가격을 표시해요.",
   "Loading your workspace…": "워크스페이스를 불러오는 중…",
   "Date lent": "대여일",
+  "Due date": "만기일",
   "Due date (optional)": "만기일 (선택)",
   "Lent: {date}": "대여: {date}",
   "Due: {date}": "만기: {date}",

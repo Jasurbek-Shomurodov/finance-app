@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "বাজারের দাম অনুপলব্ধ। সংরক্ষিত দাম দেখানো হচ্ছে।",
   "Loading your workspace…": "আপনার ওয়ার্কস্পেস লোড হচ্ছে…",
   "Date lent": "ধার দেওয়ার তারিখ",
+  "Due date": "নির্ধারিত তারিখ",
   "Due date (optional)": "নির্ধারিত তারিখ (ঐচ্ছিক)",
   "Lent: {date}": "ধার দেওয়া: {date}",
   "Due: {date}": "নির্ধারিত: {date}",

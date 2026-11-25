@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "Harga pasar tidak tersedia. Harga tersimpan ditampilkan.",
   "Loading your workspace…": "Memuat ruang kerja Anda…",
   "Date lent": "Tanggal dipinjamkan",
+  "Due date": "Tanggal jatuh tempo",
   "Due date (optional)": "Tanggal jatuh tempo (opsional)",
   "Lent: {date}": "Dipinjamkan: {date}",
   "Due: {date}": "Jatuh tempo: {date}",

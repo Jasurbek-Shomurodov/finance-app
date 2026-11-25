@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "Рыночные цены недоступны. Показаны сохранённые цены.",
   "Loading your workspace…": "Загрузка вашего пространства…",
   "Date lent": "Дата выдачи",
+  "Due date": "Срок возврата",
   "Due date (optional)": "Срок возврата (необязательно)",
   "Lent: {date}": "Выдано: {date}",
   "Due: {date}": "Возврат: {date}",

@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "Tržní ceny nejsou dostupné. Zobrazeny jsou uložené ceny.",
   "Loading your workspace…": "Načítání vašeho prostoru…",
   "Date lent": "Datum zapůjčení",
+  "Due date": "Datum splatnosti",
   "Due date (optional)": "Datum splatnosti (volitelné)",
   "Lent: {date}": "Půjčeno: {date}",
   "Due: {date}": "Splatnost: {date}",

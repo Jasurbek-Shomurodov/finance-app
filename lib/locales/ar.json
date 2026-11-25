@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "أسعار السوق غير متاحة. تُعرض الأسعار المحفوظة.",
   "Loading your workspace…": "جارٍ تحميل مساحة عملك…",
   "Date lent": "تاريخ الإقراض",
+  "Due date": "تاريخ الاستحقاق",
   "Due date (optional)": "تاريخ الاستحقاق (اختياري)",
   "Lent: {date}": "تاريخ الإقراض: {date}",
   "Due: {date}": "الاستحقاق: {date}",

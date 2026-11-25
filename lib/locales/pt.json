@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "Preços de mercado indisponíveis. Os preços salvos estão sendo exibidos.",
   "Loading your workspace…": "Carregando seu espaço de trabalho…",
   "Date lent": "Data do empréstimo",
+  "Due date": "Data de vencimento",
   "Due date (optional)": "Data de vencimento (opcional)",
   "Lent: {date}": "Emprestado em: {date}",
   "Due: {date}": "Vencimento: {date}",

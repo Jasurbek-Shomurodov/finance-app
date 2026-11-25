@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "Ceny rynkowe niedostępne. Wyświetlane są zapisane ceny.",
   "Loading your workspace…": "Wczytywanie obszaru roboczego…",
   "Date lent": "Data pożyczenia",
+  "Due date": "Termin zwrotu",
   "Due date (optional)": "Termin zwrotu (opcjonalnie)",
   "Lent: {date}": "Pożyczono: {date}",
   "Due: {date}": "Termin: {date}",

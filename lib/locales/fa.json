@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "قیمت‌های بازار در دسترس نیستند. قیمت‌های ذخیره‌شده نمایش داده می‌شوند.",
   "Loading your workspace…": "در حال بارگذاری فضای کاری شما…",
   "Date lent": "تاریخ قرض دادن",
+  "Due date": "تاریخ سررسید",
   "Due date (optional)": "تاریخ سررسید (اختیاری)",
   "Lent: {date}": "قرض داده‌شده: {date}",
   "Due: {date}": "سررسید: {date}",

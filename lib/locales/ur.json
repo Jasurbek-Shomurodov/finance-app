@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "مارکیٹ کی قیمتیں دستیاب نہیں ہیں۔ محفوظ شدہ قیمتیں دکھائی گئی ہیں۔",
   "Loading your workspace…": "آپ کا ورک اسپیس لوڈ ہو رہا ہے…",
   "Date lent": "قرض دینے کی تاریخ",
+  "Due date": "ادائیگی کی آخری تاریخ",
   "Due date (optional)": "ادائیگی کی آخری تاریخ (اختیاری)",
   "Lent: {date}": "دیا گیا: {date}",
   "Due: {date}": "آخری تاریخ: {date}",

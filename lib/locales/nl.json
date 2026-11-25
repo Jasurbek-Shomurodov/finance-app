@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "Marktprijzen niet beschikbaar. Opgeslagen prijzen worden getoond.",
   "Loading your workspace…": "Uw werkruimte wordt geladen…",
   "Date lent": "Uitleendatum",
+  "Due date": "Vervaldatum",
   "Due date (optional)": "Vervaldatum (optioneel)",
   "Lent: {date}": "Uitgeleend: {date}",
   "Due: {date}": "Vervalt: {date}",

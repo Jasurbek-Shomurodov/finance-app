@@ -37,8 +37,7 @@ function list(overrides = {}, events = []) {
   '@/components/presentation-foundation/inline-error': { InlineError: ({ message, onRetry }) => h('p', { role: 'alert', 'data-retry': !!onRetry }, message) },
   '@/components/presentation-foundation/empty-state': { EmptyState: ({ title }) => h('p', { className: 'empty' }, title) },
   '@/components/presentation-foundation/segmented': { Segmented: ({ options, onChange }) => h('nav', null, options.map(option => h('button', { key: option.value, 'data-group': option.value, onClick: () => onChange(option.value) }, option.label))) },
-  '@/hooks/use-columns-fit': { useColumnsFit: () => null },
-  '@/lib/deposit-interest': { depositToday: () => '2026-11-14' },
+   '@/lib/deposit-interest': { depositToday: () => '2026-11-14' },
  };
  modules['@/components/loans/loan-row'] = r.load('components/loans/loan-row.tsx', modules);
  const { LoansList } = r.load('components/loans/loans-list.tsx', modules);
@@ -58,23 +57,25 @@ test('grouped by type, what you owe and what you are owed are two groups with th
  assert.ok(words.includes(`You owe2${usd(12300)}`), words);
  assert.ok(words.includes(`Owed to you2${usd(1000)}`), words);
  assert.ok(words.includes(`Family2${usd(1000)}`), words);
- // One icon tile and the kind in the facts line: no category column, and sentence-case headings.
- assert.ok(words.includes('Paid off') && words.includes('Balance') && !words.includes('Category'), words);
- assert.ok(words.includes('Mortgage · 12% · Due: 1 January 2030'), words);
- assert.ok(words.includes('Money lent · Lent: 5 February 2026 · No due date'), words);
+ // A table: sentence-case column headings in order, the kind under the name, then each figure in its column.
+ assert.ok(ascending(order(words, 'Name', 'Rate', 'Start date', 'Due date', 'Paid off', 'Monthly payment', 'Balance')) && !words.includes('Category'), words);
+ assert.ok(words.includes('FlatMortgage12%10 March 20251 January 2030'), words);
+ assert.ok(words.includes('AliMoney lent—5 February 2026No due date'), words);
 });
 
 test('a row keeps its balance in the display currency and its monthly payment as entered', () => {
  const words = list().words();
- assert.ok(words.includes(usd(10000)) && words.includes(`${formatMoney(2400000, 'UZS', 'en-US')} per month`), words);
- assert.ok(!words.includes(`${usd(200)} per month`), words);
+ assert.ok(words.includes(usd(10000)) && words.includes(`—${formatMoney(2400000, 'UZS', 'en-US')}${usd(10000)}`), words);
+ assert.ok(!words.includes(usd(200)), words);
 });
 
 test('a due date within two weeks is marked with the days left, and a past one as overdue', () => {
  const { html, words } = list();
- assert.match(html(), /<span class="caution">Due: 20 November 2026 · in 6 days<\/span>/);
- assert.match(html(), /<span class="negative">Overdue · Due: 1 October 2026<\/span>/);
- assert.ok(!words().includes('1 January 2030 · in'), 'a far due date carries no countdown');
+ assert.match(html(), /<td data-label="Due date" class="loan-due"><span class="caution">20 November 2026<\/span><small class="caution">in 6 days<\/small><\/td>/);
+ assert.match(html(), /<span class="negative">1 October 2026<\/span><small class="negative">Overdue<\/small>/);
+ assert.match(html(), /<span>1 January 2030<\/span><\/td>/, 'a far due date carries no countdown');
+ // A figure a record does not have is a dash in the table and left out of its phone card.
+ assert.match(html(), /<td data-label="Rate" data-empty="true"><span class="muted" aria-hidden="true">—<\/span><\/td>/);
 });
 
 test('a paid-off bar appears only for a record with a recorded starting balance, in the record\'s own currency', () => {

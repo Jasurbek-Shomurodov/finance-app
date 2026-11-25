@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "Harga pasaran tidak tersedia. Harga yang disimpan dipaparkan.",
   "Loading your workspace…": "Memuatkan ruang kerja anda…",
   "Date lent": "Tarikh dipinjamkan",
+  "Due date": "Tarikh akhir",
   "Due date (optional)": "Tarikh akhir (pilihan)",
   "Lent: {date}": "Dipinjamkan: {date}",
   "Due: {date}": "Akhir: {date}",

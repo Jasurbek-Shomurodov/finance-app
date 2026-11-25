@@ -150,6 +150,7 @@
   "Market prices unavailable. Saved prices are shown.": "מחירי השוק אינם זמינים. מוצגים המחירים השמורים.",
   "Loading your workspace…": "טוען את סביבת העבודה…",
   "Date lent": "תאריך ההלוואה",
+  "Due date": "תאריך יעד",
   "Due date (optional)": "תאריך יעד (אופציונלי)",
   "Lent: {date}": "הושאל: {date}",
   "Due: {date}": "יעד: {date}",

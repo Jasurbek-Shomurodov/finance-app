@@ -4,42 +4,59 @@
 .loans-main,.loans-side{display:flex;flex-direction:column;gap:16px;min-width:0}
 @container content (max-width:980px){.loans-layout{grid-template-columns:minmax(0,1fr)}}
 
-/* One row per record on a shared grid, so Paid off and Balance line up down the list and under their headings. */
-.loan-rows{display:grid;grid-template-columns:minmax(0,1fr) minmax(9rem,11rem) auto auto;column-gap:16px;margin:0;padding:0;list-style:none}
-.loan-rows>li{display:grid;grid-template-columns:subgrid;grid-column:1/-1;align-items:center}
-.loan-rows-head{padding:4px 12px 6px;color:var(--muted-foreground);font-size:var(--type-caption);font-weight:600}
-.loan-rows-head>:nth-child(3){text-align:end}
-.loan-rows>.loan-group{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 16px;margin-top:12px;padding:10px 12px;border-radius:var(--radius-control);background:var(--muted);font-size:var(--type-compact);font-weight:600}
-.loan-rows-head+.loan-group{margin-top:0}
-.loan-group>span:first-child{display:inline-flex;align-items:center;gap:8px}
-.loan-group>span:last-child{font-variant-numeric:tabular-nums}
+/* Loans & debts as a table: the name column stays in view while a wide table scrolls sideways (at least 13rem),
+ * groups head their rows with the total under Balance, and on a phone each record is a card. */
+.loans-table :is(th,td){vertical-align:middle;text-align:start}
+.loans-table th.num,.loans-table td.num{text-align:end;font-variant-numeric:tabular-nums}
+.loans-table :is(th,td):first-child{position:sticky;inset-inline-start:0;z-index:1;min-width:13rem;background:var(--card);white-space:normal}
+.workspace .content .loans-table tbody tr.loan-row:is(:hover,:focus-within)>td:first-child{background:color-mix(in srgb,var(--accent) 35%,var(--card))}
+.loans-table .record-name strong{font-size:var(--type-compact)}
+.loans-table .muted{color:var(--muted-foreground)}
+.loans-table .table-group-row th{padding-inline:0 16px;font-variant-numeric:tabular-nums}
+.loans-table .table-group-row th:first-child{padding-inline-start:0}
+.loans-table .table-group-row th>span{display:inline-flex;align-items:center;gap:8px}
 .loan-group .count{margin:0}
-.loan-group[data-level=borrower]{margin-top:4px;padding-block:6px;background:transparent;font-size:var(--type-small)}
-.loan-row{padding:14px 12px;border-radius:var(--radius-control);cursor:pointer}
-.loan-row+.loan-row{border-top:1px solid var(--hairline)}
-.loan-row-name{display:flex;align-items:center;gap:14px;min-width:0}
-.loan-row-name>div{display:grid;gap:3px;min-width:0}
-.loan-row-name strong{font-size:var(--type-compact);font-weight:600;overflow-wrap:anywhere}
-.loan-row-name small,.loan-row-progress small,.loan-row-amount small{color:var(--muted-foreground);font-size:var(--type-caption);line-height:1.45}
+.loan-group[data-level=borrower] th{padding-block:10px 4px;font-size:var(--type-small)}
+.loan-row{cursor:pointer}
 .loan-row .caution{color:var(--pill-caution);font-weight:600}
 .loan-row .negative{font-weight:600}
-.loan-row-progress{display:grid;gap:6px;min-width:0}
-.loan-row-progress small{font-variant-numeric:tabular-nums}
-.loan-row-progress b{color:var(--foreground);font-weight:600}
+.loan-due small{display:block;margin-top:2px;font-size:var(--type-caption)}
+.loan-progress{min-width:10rem}
+.loan-progress .progress-track{display:block}
+.loan-progress .progress-track>*{display:block;height:100%}
+.loan-progress small{display:block;margin-top:6px;color:var(--muted-foreground);font-size:var(--type-caption);font-variant-numeric:tabular-nums}
+.loan-progress b{color:var(--foreground);font-weight:600}
 .progress-track[data-tone=debt]>*{background:var(--primary)}
-.loan-row-amount{display:grid;gap:3px;justify-items:end;text-align:end;white-space:nowrap}
-.loan-row-amount strong{font-size:var(--type-compact);font-weight:600;font-variant-numeric:tabular-nums}
+.loan-balance strong{font-size:var(--type-compact);font-weight:600}
 .loan-row .row-actions{flex-wrap:nowrap;justify-content:flex-end}
-/* Record payment waits for the pointer or the keyboard; a touch screen has neither, so it stays. */
+/* Record payment waits for the pointer or the keyboard; touch screens always show it. */
 @media(hover:hover){.loan-row:not(:hover,:focus-within) .loan-row-pay{opacity:0}}
 .loan-row-pay[aria-disabled=true]{opacity:.5;cursor:not-allowed}
-.loan-rows[data-layout=stacked]{grid-template-columns:minmax(0,1fr) auto}
-.loan-rows[data-layout=stacked]>.loan-row{row-gap:10px}
-.loan-rows[data-layout=stacked] .loan-row-name{grid-area:1/1/2/-1}
-.loan-rows[data-layout=stacked] .loan-row-amount{grid-area:2/1;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;text-align:start;white-space:normal}
-.loan-rows[data-layout=stacked] .row-actions{grid-area:2/2}
-.loan-rows[data-layout=stacked] .loan-row-progress{grid-area:3/1/4/-1}
-.loan-rows[data-layout=stacked] .loan-row-progress:empty,.loan-rows[data-layout=stacked]>.loan-rows-head{display:none}
+/* On a phone each record is a card: name and balance on the first line, then each figure beside its column label;
+ * a figure it does not have is left out. */
+@container content (max-width:560px){
+ .loans-table thead{position:absolute;display:block;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+ .loans-table,.loans-table tbody{display:block;white-space:normal}
+ .loans-table tbody tr{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding:14px 0;border-bottom:1px solid var(--hairline)}
+ .loans-table tbody tr:last-child{border-bottom:0}
+ .loans-table tbody :is(td,th){display:block;padding:0;border:0}
+ .loans-table tbody td:first-child{position:static;flex:1 1 max(12rem,calc(100% - 10rem));min-width:0;background:none}
+ .loans-table td.loan-balance{order:-1;flex:none;margin-inline-start:auto}
+ .loans-table td:first-child{order:-2}
+ .loans-table td[data-label]{flex:1 1 100%;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:baseline;gap:4px 8px;font-size:var(--type-caption);text-align:end}
+ /* The label holds the start; the figure (and a due date's note beside it) keeps to the end. */
+ .loans-table td[data-label]::before{content:attr(data-label);margin-inline-end:auto;color:var(--muted-foreground);text-align:start}
+ .loans-table td.loan-due small{margin-top:0}
+ .loans-table td[data-label].loan-progress{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center}
+ .loans-table td.loan-progress small{grid-column:1/-1;margin-top:0;text-align:end}
+ .loans-table td[data-empty]{display:none}
+ .loans-table td:last-child{flex:1 0 100%}
+ .loans-table td:last-child .row-actions{justify-content:flex-end}
+ .loans-table tbody tr.table-group-row{padding:16px 0 4px;border-bottom:0}
+ .loans-table tbody tr.table-group-row th:first-child{flex:1;position:static;min-width:0;background:none}
+ .loans-table tbody tr.table-group-row th:last-child{display:none}
+ .loans-table tbody tr.table-group-row th{padding:0}
+}
 .loans-list .panel-title .segmented{flex:none}
 
 /* What you owe: the donut beside this month's interest, then each debt with its rate. */
