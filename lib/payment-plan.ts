@@ -85,12 +85,12 @@ function requestPlan(request: PaymentRequest, data: Data, today: string): Paymen
  * `interest` on top of it. `due` is the schedule date it settles and `date` the day it was paid. */
 export type PaymentDraft = { id: string; account_id: string; due: string; date: string; amount: number; principal: number; interest: number; notes: string; currency?: string; category?: CategoryChoice };
 
-/** The draft a plan opens on. A scheduled payment is dated its due date, never ahead of today; a mortgage starts as a
+/** The draft a plan opens on. A scheduled payment is dated today, the day it is recorded, while `due` keeps the date it settles; a mortgage starts as a
  * normal month (the estimated payment split into interest and principal). */
 export function paymentDraft(plan: PaymentPlan, id: string, accountId: string, today: string): PaymentDraft {
  if (plan.editing) { const { principal, interest } = plan.editing; return { id: plan.editing.id, account_id: plan.editing.account_id ?? '', due: plan.date, date: plan.editing.date, amount: decimalSum([principal, interest]), principal, interest, notes: plan.editing.notes }; }
  const base = { id, account_id: accountId, due: plan.date, notes: '' };
- if (plan.kind === 'schedule') return { ...base, date: [plan.date, today].sort()[0], amount: plan.amount, principal: 0, interest: 0 };
+ if (plan.kind === 'schedule') return { ...base, date: today, amount: plan.amount, principal: 0, interest: 0 };
  const split = plan.kind === 'mortgage' ? typicalMortgagePayment(plan.target) : null;
  return { ...base, date: plan.date, amount: split ? split.principal + split.interest : 0, principal: split?.principal ?? 0, interest: split?.interest ?? 0 };
 }

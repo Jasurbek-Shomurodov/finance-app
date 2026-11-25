@@ -84,7 +84,7 @@ is opened from (the user's redesign, 23 November 2026). Do not add another payme
   (`/api/mortgage-payments`, the same `planning_action` the old Recurring form reached), and changing a recorded one
   is `editMortgagePayment`. `withTrackerRepayments` counts both kinds of repayment once.
 - **Kept behaviour:** a zero scheduled payment is a real one; a part payment leaves the rest for a later payment
-  (`extra`) which starts at what is still to come; a payment before its due date is dated the day it was paid; an open
+  (`extra`) which starts at what is still to come; a scheduled payment opens dated today (the day it is recorded, also for a past due date; the user's rule of 25 November 2026) and Scheduled payment names the due date it settles; an open
   row offers every open due date of its schedule; a scheduled payment may be typed in the schedule's, the account's or
   a preferred currency, and any but the account's sends the day's rate; a loan month carried from an earlier month is
   dated on its own due date; the account starts as the one that last paid the obligation (`suggestedPaymentAccount`).

@@ -15,18 +15,18 @@ const sentBefore = {
  repaymentCarried: 'repayment {"id":"ID","account_id":"c1","target_id":"l1","date":"DUE","amount":450,"fee":0,"notes":"","received":0}',
  repaymentFx: 'repayment {"id":"ID","account_id":"c2","target_id":"l1","date":"TODAY","amount":450,"fee":0,"notes":"","exchange_rate":2,"received":0}',
  lent: 'repayment {"id":"ID","account_id":"c1","target_id":"lent","date":"TODAY","amount":300,"fee":15,"notes":"","received":0}',
- occurrence: 'occurrence {"id":"ID","account_id":"c1","target_id":"epam","date":"DUE","paid_on":"DUE","amount":3450,"fee":0,"notes":"","received":0}',
- occurrencePart: 'occurrence {"id":"ID","account_id":"c1","target_id":"epam","date":"DUE","paid_on":"DUE","amount":1000,"fee":0,"notes":"First half","received":0}',
- occurrenceZero: 'occurrence {"id":"ID","account_id":"c1","target_id":"epam","date":"DUE","paid_on":"DUE","amount":0,"fee":0,"notes":"","received":0}',
- occurrenceFx: 'occurrence {"id":"ID","account_id":"sum","target_id":"epam","date":"DUE","paid_on":"DUE","amount":3450,"fee":0,"notes":"","exchange_rate":0.0001,"received":0}',
- occurrenceInAccountCurrency: 'occurrence {"id":"ID","account_id":"sum","target_id":"epam","date":"DUE","paid_on":"DUE","amount":30155000,"fee":0,"notes":"","currency":"UZS","received":0}',
- occurrenceOtherCurrency: 'occurrence {"id":"ID","account_id":"c1","target_id":"epam","date":"DUE","paid_on":"DUE","amount":13320000,"fee":0,"notes":"","currency":"UZS","exchange_rate":10000,"received":0}',
+ occurrence: 'occurrence {"id":"ID","account_id":"c1","target_id":"epam","date":"DUE","paid_on":"TODAY","amount":3450,"fee":0,"notes":"","received":0}',
+ occurrencePart: 'occurrence {"id":"ID","account_id":"c1","target_id":"epam","date":"DUE","paid_on":"TODAY","amount":1000,"fee":0,"notes":"First half","received":0}',
+ occurrenceZero: 'occurrence {"id":"ID","account_id":"c1","target_id":"epam","date":"DUE","paid_on":"TODAY","amount":0,"fee":0,"notes":"","received":0}',
+ occurrenceFx: 'occurrence {"id":"ID","account_id":"sum","target_id":"epam","date":"DUE","paid_on":"TODAY","amount":3450,"fee":0,"notes":"","exchange_rate":0.0001,"received":0}',
+ occurrenceInAccountCurrency: 'occurrence {"id":"ID","account_id":"sum","target_id":"epam","date":"DUE","paid_on":"TODAY","amount":30155000,"fee":0,"notes":"","currency":"UZS","received":0}',
+ occurrenceOtherCurrency: 'occurrence {"id":"ID","account_id":"c1","target_id":"epam","date":"DUE","paid_on":"TODAY","amount":13320000,"fee":0,"notes":"","currency":"UZS","exchange_rate":10000,"received":0}',
  occurrenceEarly: 'occurrence {"id":"ID","account_id":"c1","target_id":"epam","date":"AHEAD","paid_on":"TODAY","amount":3450,"fee":0,"notes":"","received":0}',
  // The Tracker's repayment form, as Loans, the records table and the expense form opened it.
  tracked: '/api/investment-history {"id":"ID","record_id":"l1","type":"withdrawal","date":"TODAY","amount":450,"balance":null,"notes":"Part","account_id":"c1"}',
  trackedFx: '/api/investment-history/exchange {"id":"ID","record_id":"l1","type":"withdrawal","date":"TODAY","amount":450,"balance":null,"notes":"","account_id":"c2","exchange_rate":2}',
  trackedLent: '/api/investment-history {"id":"ID","record_id":"lent","type":"withdrawal","date":"TODAY","amount":300,"balance":null,"notes":"","account_id":"c1"}',
- occurrenceExtra: 'occurrence {"id":"ID","account_id":"c1","target_id":"epam","date":"DUE","paid_on":"DUE","amount":450,"fee":0,"notes":"","extra":true,"received":0}',
+ occurrenceExtra: 'occurrence {"id":"ID","account_id":"c1","target_id":"epam","date":"DUE","paid_on":"TODAY","amount":450,"fee":0,"notes":"","extra":true,"received":0}',
 };
 
 const { depositToday } = loadTS('lib/deposit-interest.ts');
@@ -548,4 +548,13 @@ test('no screen keeps a payment form of its own: every entry point goes through 
  for (const screen of ['components/planning/upcoming-page.tsx', 'components/loans/loans-list.tsx', 'components/workspace/records-table.tsx', 'components/monthly-mortgage-payments.tsx'])
   assert.doesNotMatch(read(screen), /components\/payments|MortgagePaymentDialog|AccountOperation|InvestmentTracker/, screen + ' opens payments through the workspace only');
  assert.doesNotMatch(read('components/workspace/state/use-open-dialogs.ts'), /debtPayment|payingMortgage/);
+});
+
+test('a past scheduled payment opens dated today and still settles its own due date', () => {
+ const plan = plans.planPayment({ item: item(due) }, data, today);
+ const draft = plans.paymentDraft(plan, 'x', 'c1', today);
+ assert.equal(draft.date, today);
+ assert.equal(draft.due, due);
+ const ahead = plans.paymentDraft(plans.planPayment({ item: item(shiftDay(today, 4)) }, data, today), 'x', 'c1', today);
+ assert.equal(ahead.date, today);
 });
