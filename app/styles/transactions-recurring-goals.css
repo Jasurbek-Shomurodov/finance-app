@@ -11,28 +11,15 @@
 .transaction-day+.transaction-day{border-top:1px solid var(--hairline)}
 .transaction-day-heading{display:flex;justify-content:space-between;gap:12px;padding:10px 16px;background:var(--muted);font-size:var(--type-caption);font-weight:500;color:var(--muted-foreground);font-variant-numeric:tabular-nums}
 .transaction-day-heading h3{margin:0;font-size:var(--type-caption);font-weight:500}
-.transaction-day ul{margin:0;padding:0;list-style:none}
 /* The ledger: a day's heading is quiet text with no band, and the heading row and every row share one set of columns (payee, category, account, amount). */
 .transactions-list .transaction-day-heading{padding:14px 20px 6px;background:none;font-weight:600;color:var(--foreground)}
 .transactions-list .transaction-day-heading h3{font-weight:600}
 .transactions-list .transaction-day-heading>span:not(.positive){color:var(--muted-foreground)}
-.transaction-columns-heading,.transaction-row{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(min-content,1fr) minmax(min-content,1fr) minmax(8.5rem,.4fr);align-items:center;gap:12px;padding:10px 20px}
-.transaction-columns-heading[data-selecting],.transaction-row:has(>input){grid-template-columns:16px minmax(0,1.5fr) minmax(min-content,1fr) minmax(min-content,1fr) minmax(8.5rem,.4fr)}
-.transaction-columns-heading{padding-block:12px;border-bottom:1px solid var(--hairline);color:var(--muted-foreground);font-size:var(--type-caption);font-weight:600}
-.transaction-columns-heading>:first-child{padding-inline-start:50px}
-.transaction-columns-heading[data-selecting]>:first-child{grid-column:2}
-.transaction-columns-heading>:last-child{text-align:end}
-.transaction-row{min-height:58px;cursor:pointer;font-size:var(--type-small)}
-.transaction-columns{display:contents;color:var(--muted-foreground)}
-.transaction-columns>span{min-width:0}
 /* The category's text, not its pill's padding, lines up under the Category heading; the pill may be wider than its cell by what it was pulled back, or a shrink-to-fit cell (the phone's stacked row) would squeeze the name. */
-.transaction-columns .transaction-category-button{margin-inline-start:-11px;max-width:calc(100% + 11px)}
-.transaction-columns>span>.transaction-category{margin-inline-start:-6px;max-width:calc(100% + 6px)}
+.transaction-category-cell .transaction-category-button{margin-inline-start:-11px;max-width:calc(100% + 11px)}
+.transaction-category-cell>.transaction-category{margin-inline-start:-6px;max-width:calc(100% + 6px)}
 .transaction-account{overflow-wrap:break-word}
 .transaction-chip{display:inline-flex;align-items:center;gap:5px;padding:1px 8px;border-radius:999px;background:var(--muted);color:var(--muted-foreground);font-size:var(--type-micro);font-weight:600;line-height:1.6;white-space:nowrap}
-.transaction-row+.transaction-row{border-top:1px solid var(--hairline)}
-.transaction-row[data-selected]{background:color-mix(in srgb,var(--mark-bg) 8%,transparent)}
-.transaction-row>input{accent-color:var(--mark-bg);width:16px;height:16px}
 .transaction-merchant{display:flex;align-items:center;gap:12px;min-width:0}
 .transaction-merchant>span:last-child{display:flex;flex-direction:column;min-width:0}
 .transaction-merchant strong{overflow-wrap:break-word;font-weight:500}
@@ -88,7 +75,6 @@
 .rule-arrow{color:var(--muted-foreground)}
 /* The summary sits beside the list only when the list keeps room for owner, category and business chips in full (about 800px); below that it moves above (LIST-018). */
 @container content (max-width:1100px){.transactions-layout{grid-template-columns:minmax(0,1fr)}.transactions-summary{position:static;order:-1}.transactions-summary .budget-left-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(8rem,1fr));gap:12px 16px}.transactions-summary .budget-left-summary>div{flex-direction:column;justify-content:flex-start;gap:2px}.transactions-summary .budget-left-summary dd{font-size:var(--type-compact);font-weight:500}.transactions-summary .budget-left-total{padding-top:0;border-top:0}.transactions-aside{display:contents}.transactions-aside>.transactions-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));align-items:end;gap:16px 24px}.transactions-aside>.transactions-summary>:is(.panel-title,dl,[role=status]){grid-column:1/-1}}
-@container content (max-width:600px){.transaction-columns-heading{display:none}.transactions-list .transaction-day-heading{padding-inline:16px}.transaction-row{grid-template-columns:minmax(0,1fr) auto;row-gap:2px;padding-inline:16px}.transaction-row:has(>input){grid-template-columns:auto minmax(0,1fr) auto}.transaction-row>.transaction-columns{display:flex;flex-wrap:wrap;align-items:center;gap:0 8px;grid-column:-3/-2;grid-row:2;padding-inline-start:50px;font-size:var(--type-caption)}.transaction-row:has(>input)>.transaction-columns{grid-column:2}.transaction-amount{grid-row:1/3;grid-column:-2}}
 
 /* Recurring: the month's three tiles, a dated list with Income and Bills inside a day, a calendar whose day opens beside it, and Coming up. */
 .recurring-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;width:100%}
@@ -427,3 +413,4 @@ button.goal-available:focus-visible,.surplus-link:focus-visible{outline:2px soli
 .goal-dialog-title{display:flex;align-items:center;gap:8px}
 .record-dialog.goal-funding-dialog{max-width:880px!important}
 .goal-funding-dialog .goal-funding-editors{grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));margin-top:4px}
+

@@ -1,0 +1,38 @@
+/* The transactions ledger is a table: Payee, Category, Account and Amount, each day a row group headed by its date with the
+ * day's total under Amount. The Payee column stays in view (at least 13rem) when the table scrolls sideways. */
+.transactions-table{white-space:normal}
+.transactions-table th.num,.transactions-table td.num{text-align:end}
+.transactions-table :is(th,td){vertical-align:middle}
+.transactions-table thead th{text-align:start}
+.transactions-table thead th.num{text-align:end}
+.transactions-table :is(th,td):first-child{position:sticky;inset-inline-start:0;z-index:1;min-width:13rem;padding-inline-start:20px;background:var(--card)}
+.transactions-table :is(th,td):last-child{padding-inline-end:20px}
+.workspace .content .transactions-table tbody tr.transaction-row:is(:hover,:focus-within)>td:first-child{background:color-mix(in srgb,var(--accent) 35%,var(--card))}
+.transactions-table td{padding-block:10px;font-size:var(--type-small)}
+.transactions-table td:not(:first-child){color:var(--muted-foreground)}
+.transactions-table td.num{color:inherit}
+.transaction-row{cursor:pointer}
+.transaction-row[data-selected]>td{background:color-mix(in srgb,var(--mark-bg) 8%,var(--card))}
+.transaction-merchant>input{flex:none;accent-color:var(--mark-bg);width:16px;height:16px}
+.transaction-day-row th{padding:18px 16px 6px;border-bottom:1px solid var(--hairline);color:var(--foreground);font-size:var(--type-small);font-weight:600;letter-spacing:0;text-transform:none;text-align:start;font-variant-numeric:tabular-nums}
+.transaction-day-row th.num{text-align:end;color:var(--muted-foreground)}
+.transaction-day-row th.num.positive{color:var(--positive)}
+.transaction-day-row th small{display:block;font-size:var(--type-caption);font-weight:500}
+/* On a phone each transaction is a card: payee and amount on the first line, category and account under the payee. */
+@container content (max-width:600px){
+ .transactions-table thead{position:absolute;display:block;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+ .transactions-table,.transactions-table tbody{display:block}
+ .transactions-table tbody tr{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;padding:10px 16px}
+ .transactions-table tbody tr.transaction-row+tr.transaction-row{border-top:1px solid var(--hairline)}
+ .transactions-table tbody :is(td,th){display:block;padding:0;border:0;background:none}
+ .transactions-table tbody td:first-child{position:static;flex:1 1 0;min-width:0;order:0}
+ .transactions-table tbody td.num{order:1;flex:none;margin-inline-start:auto}
+ /* A full-width break after the amount, so category and account share the second line, under the payee's name. */
+ .transactions-table tbody tr.transaction-row::after{content:"";order:1;flex-basis:100%;height:0}
+ .transactions-table tbody td.transaction-category-cell{order:2;min-width:0;margin-inline-start:50px;font-size:var(--type-caption)}
+ .transactions-table tbody td.transaction-account{order:3;font-size:var(--type-caption)}
+ .transactions-table tbody td.transaction-account:empty{display:none}
+ .transactions-table tbody tr.transaction-day-row{padding:14px 16px 6px;border-bottom:1px solid var(--hairline)}
+ .transactions-table tbody tr.transaction-day-row th:first-child{position:static;flex:1;min-width:0}
+ .transactions-table tbody tr.transaction-day-row th{padding:0;border:0}
+}

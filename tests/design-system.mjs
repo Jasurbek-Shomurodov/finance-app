@@ -129,7 +129,7 @@ test('row lists keep their columns lined up from row to row',()=>{
  const css=stylesheet();
  const template=selector=>css.match(new RegExp(selector.replace(/[.*+?^${}()|[\]\\>]/g,'\\$&')+'\\{[^}]*?grid-template-columns:([^;}]+)'))?.[1];
  // Each of these rows is its own grid, so a bare `auto` column would size to that row's own amount and shift its neighbours.
- for(const row of ['.report-transaction-list>li>*','.transaction-row','.account-holding-row','.tax-transactions li>button']){
+ for(const row of ['.report-transaction-list>li>*','.account-holding-row','.tax-transactions li>button']){
   const columns=template(row);
   assert.ok(columns,`${row} has a column template`);
   assert.match(columns,/minmax\((?:max-content|[\d.]+rem),[\d.]+fr\)/,`${row}: its amount column takes a share of the row, not just its own width (${columns})`);
@@ -138,11 +138,9 @@ test('row lists keep their columns lined up from row to row',()=>{
  // widens the amount column for all rows alike and no row shifts against its neighbours.
  assert.match(css,/\.flow-bars\{display:grid;grid-template-columns:[^;}]*max-content[;}]/);
  assert.match(css,/\.flow-bars>li,\.flow-bar-row\{display:grid;grid-column:1\/-1;grid-template-columns:subgrid\}/);
- // A long amount (UZS 3,000,000) must not widen its own row: transactions keep a fixed minimum, and category and account sit in equal columns.
- assert.match(template('.transaction-row'),/minmax\([\d.]+rem,[\d.]+fr\)$/);
- // Equal columns that never narrow below their longest word, so a label wraps between words (QA 2026-10-06: "Transpor t").
- assert.match(template('.transaction-row'),/^minmax\(0,[\d.]+fr\) minmax\(min-content,1fr\) minmax\(min-content,1fr\) /);
- assert.match(css,/\.transaction-columns\{display:contents;/,'category and account are columns of the row itself');
+ // The transactions ledger is a table, so every row shares its columns; amounts never wrap and sit at the end.
+ assert.match(css,/\.transactions-table th\.num,\.transactions-table td\.num\{text-align:end\}/);
+ assert.match(css,/\.transaction-amount\{[^}]*white-space:nowrap/);
  assert.match(css,/\.recurring-row\{display:grid;grid-template-columns:subgrid/,'recurring and subscription rows share one set of columns per list');
  assert.match(css,/\.recurring-list>ul,\.subscription-list\{display:grid;grid-template-columns:/);
 });

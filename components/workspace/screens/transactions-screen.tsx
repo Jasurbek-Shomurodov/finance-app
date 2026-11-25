@@ -179,26 +179,24 @@ export function TransactionsScreen() {
   {selecting && <BulkEditBar count={chosen.length} total={records.length} onAll={select => setSelected(new Set(select ? records.map(record => record.id) : []))} onEdit={() => setEditingMany(true)} onCancel={() => { setSelecting(false); setSelected(new Set()); }}/>}
   {error ? <InlineError message={t(error)} onRetry={live ? remote.retry : refreshRecords}/> : loading ? <TransactionsSkeleton label={t('Loading records…')} tools={false}/> : <div className="transactions-layout">
    <section className="panel transactions-list" aria-label={t('Transactions')}>
-    {days.length > 0 && <TransactionColumns selecting={selecting}/>}
-    {days.length ? days.map(day => <DayGroup key={day.date} date={day.date} total={day.total} principal={day.principal} count={day.count} currency={currency} today={today}>
+    {days.length ? <div className="table-scroll"><table className="transactions-table" data-selecting={selecting || undefined}><TransactionColumns/>{days.map(day => <DayGroup key={day.date} date={day.date} total={day.total} principal={day.principal} count={day.count} currency={currency} today={today}>
      {day.records.map(record => {
       const recordTags = tagsOf(record.id).map(id => tagById.get(id)).filter(tag => !!tag);
       const name = shownName(record, t, nameOf(record)), receipts = attachments.counts.get(record.id), account = record.account_id ? accounts.get(record.account_id) : undefined;
       // Each row says only what is new: its owner when everyone is listed and it is not the household's, its business when it has one.
       const owner = owners.length > 0 && !ownerFilter.length ? ownerOption(record) : null;
-      return <li key={record.id} className="transaction-row" data-selected={selected.has(record.id) || undefined} tabIndex={0} aria-label={transactionRowLabel(t('View details for {name}', { name }), record, nameOf(record), locale, enteredSigned(signedAmount(record), record.currency))} onClick={open(record)} onKeyDown={open(record)}>
-       {selecting && <input type="checkbox" aria-label={t('Select {name}', { name: record.name })} checked={selected.has(record.id)} onChange={() => toggle(record.id)}/>}
-       <span className="transaction-merchant"><CategoryIcon kind={record.custom_category_id ? nameOf(record) : record.kind}/><span>
+      return <tr key={record.id} className="transaction-row" data-selected={selected.has(record.id) || undefined} tabIndex={0} aria-label={transactionRowLabel(t('View details for {name}', { name }), record, nameOf(record), locale, enteredSigned(signedAmount(record), record.currency))} onClick={open(record)} onKeyDown={open(record)}>
+       <td><span className="transaction-merchant">{selecting && <input type="checkbox" aria-label={t('Select {name}', { name: record.name })} checked={selected.has(record.id)} onChange={() => toggle(record.id)}/>}<CategoryIcon kind={record.custom_category_id ? nameOf(record) : record.kind}/><span>
         <span className="transaction-name"><strong>{name}</strong>{receipts ? <Paperclip className="transaction-attachment-mark" size={13} role="img" aria-label={t('Attachments: {count}', { count: receipts })}/> : null}
          {record.business_id && businessList.length > 0 && <BusinessPicker record={record} businesses={businessList} disabled={selecting || readOnly || !businessMovable(record)} onChange={business => moveToBusiness(record, business)}/>}
          <RecurringChip record={record}/>
          {owner && owner.id !== SHARED && <OwnerPicker record={record} owner={owner} owners={owners} disabled={readOnly || selecting} onChange={next => void giveTo(record, next)}/>}</span>
-        <MortgageSplit record={record}/>{recordTags.length > 0 && <span className="transaction-tags">{recordTags.map(tag => <TagChip key={tag.id} name={tag.name} color={tag.color}/>)}</span>}</span></span>
-       <span className="transaction-columns"><span><CategoryPicker record={record} categories={data.categories} removed={removedCategories.kinds} disabled={!canRecategorize(record, splits) || selecting || readOnly} onChange={choice => change([record], choice)}/></span><span className="transaction-account">{account}</span></span>
-       <TransactionAmount record={record}/>
-      </li>;
+        <MortgageSplit record={record}/>{recordTags.length > 0 && <span className="transaction-tags">{recordTags.map(tag => <TagChip key={tag.id} name={tag.name} color={tag.color}/>)}</span>}</span></span></td>
+       <td className="transaction-category-cell"><CategoryPicker record={record} categories={data.categories} removed={removedCategories.kinds} disabled={!canRecategorize(record, splits) || selecting || readOnly} onChange={choice => change([record], choice)}/></td><td className="transaction-account">{account}</td>
+       <td className="num"><TransactionAmount record={record}/></td>
+      </tr>;
      })}
-    </DayGroup>) : <EmptyState icon={<ReceiptText/>} title={t('No transactions')} description={t(filtersTransactions(filter) || ownerFilter.length ? 'Nothing matches these filters in this period.' : 'Income and spending you record appear here, grouped by day.')}><AddTransactionMenu onAdd={addCashFlow}/></EmptyState>}
+    </DayGroup>)}</table></div> : <EmptyState icon={<ReceiptText/>} title={t('No transactions')} description={t(filtersTransactions(filter) || ownerFilter.length ? 'Nothing matches these filters in this period.' : 'Income and spending you record appear here, grouped by day.')}><AddTransactionMenu onAdd={addCashFlow}/></EmptyState>}
     <Pagination label={t('Transaction pages')} summary={t('Page {page} of {pages} · {count} transactions', { page: formatNumber(page, locale, 0), pages: formatNumber(pageCount, locale, 0), count: formatNumber(records.length, locale, 0) })} page={page} pageCount={pageCount} hasNext={page < pageCount} onPage={next => { setPaging({ key: listKey, page: next }); document.querySelector('.transactions-list')?.scrollIntoView({ block: 'start', behavior: scrollBehavior() }); }}/>
    </section>
    <TransactionsSummary title={period === 'custom' ? t('Summary') : t(transactionPeriodLabels[period])} summary={summary} average={dailyAverage(summary.spent, range)} top={top} currency={currency}/>

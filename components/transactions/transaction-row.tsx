@@ -13,10 +13,13 @@ import { signedAmount } from '@/lib/transaction-list';
 /** What a screen reader hears for a row: the action, then its amount (`shown`, the display-currency figure the row shows) and category. */
 export const transactionRowLabel = (action: string, record: Entry, category: string, locale: string, shown?: string) => [action, shown ?? formatSignedMoney(signedAmount(record), record.currency, locale), category].join(' · ');
 
-/** The ledger's one heading row: the columns every row below lines up under. Phones stack a row, so it hides there. */
-export function TransactionColumns({ selecting }: { selecting?: boolean }) {
+/** The ledger's columns, in order. Selecting puts each row's checkbox inside the Payee cell, so Payee stays first. */
+export const transactionColumns = ['Payee', 'Category', 'Account', 'Amount'] as const;
+
+/** The ledger table's heading row. A phone shows each row as a card, so the heading is kept only for screen readers there. */
+export function TransactionColumns() {
  const { t } = useLanguage();
- return <div className="transaction-columns-heading" data-selecting={selecting || undefined} aria-hidden="true"><span>{t('Payee')}</span><span>{t('Category')}</span><span>{t('Account')}</span><span>{t('Amount')}</span></div>;
+ return <thead><tr>{transactionColumns.map(column => <th key={column} scope="col" className={column === 'Amount' ? 'num' : undefined}>{t(column)}</th>)}</tr></thead>;
 }
 
 /** One day: its date in the heading, its transactions below. The day's net total shows only when the day has two or more
@@ -26,10 +29,12 @@ export function DayGroup({ date, total, principal, count, currency, today, child
  const { t, locale } = useLanguage();
  const yesterday = shiftDay(today, -1);
  const label = date === today ? t('Today') : date === yesterday ? t('Yesterday') : formatDate(date, locale);
- return <section className="transaction-day" aria-label={label}>
-  <div className="transaction-day-heading"><h3>{label}</h3>{count > 1 && <span className={total !== null && total > 0 ? 'positive' : undefined}>{total === null ? '—' : <RollingText text={formatSignedMoney(total, currency, locale)}/>}{!!principal && <> · {t('{amount} to principal', { amount: formatMoney(principal, currency, locale) })}</>}</span>}</div>
-  <ul>{children}</ul>
- </section>;
+ // The day is its own row group: the date heads the columns before Amount, the day's total sits under Amount.
+ return <tbody className="transaction-day" aria-label={label}>
+  <tr className="table-group-row transaction-day-row"><th scope="rowgroup" colSpan={transactionColumns.length - 1}>{label}</th>
+   <th className={total !== null && total > 0 ? 'num positive' : 'num'}>{count > 1 && <>{total === null ? '—' : <RollingText text={formatSignedMoney(total, currency, locale)}/>}{!!principal && <small>{t('{amount} to principal', { amount: formatMoney(principal, currency, locale) })}</small>}</>}</th></tr>
+  {children}
+ </tbody>;
 }
 
 /** Marks a row that paid a schedule (its `occurrence_record_id`, the one link of every scheduled payment). */

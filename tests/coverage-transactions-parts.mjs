@@ -341,36 +341,41 @@ test('BulkEditSheet collects category, business, owner and tag changes and saves
 });
 
 test('DayGroup names today and yesterday, formats other dates, and signs the total of a day with two or more rows',()=>{
- const day=(date,total,count=2)=>expand(h(page.DayGroup,{date,total,count,currency:'USD',today:'2026-10-04'},h('li',null,'row')),'d');
+ const day=(date,total,count=2,principal)=>expand(h(page.DayGroup,{date,total,principal,count,currency:'USD',today:'2026-10-04'},h('tr',null,'row')),'d');
+ // The day is a row group: its date heads the first three columns, its total sits under Amount.
+ const cells=tree=>findAll(tree,n=>n.type==='th');
+ const totalCell=tree=>cells(tree)[1];
  // One row already says its amount: the heading does not repeat it.
  assert.equal(text(day('2026-10-04',1200,1)),'Todayrow');
- assert.equal(findAll(day('2026-10-04',null,1),n=>n.type==='span').length,0);
+ assert.equal(text(totalCell(day('2026-10-04',null,1))),'');
  let tree=day('2026-10-04',1200);
+ assert.equal(tree.type,'tbody');
  assert.equal(tree.props['aria-label'],'Today');
+ assert.equal(cells(tree)[0].props.colSpan,3);
  assert.equal(text(tree),'Today+$1,200row');
- assert.equal(findAll(tree,n=>n.type==='span')[0].props.className,'positive');
+ assert.equal(totalCell(tree).props.className,'num positive');
  // A day with mortgage payments says what went to principal, which the total leaves out.
- assert.equal(text(expand(h(page.DayGroup,{date:'2026-10-04',total:-1200,principal:950,count:2,currency:'USD',today:'2026-10-04'},h('li',null,'row')),'d')),'Today−$1,200 · $950 to principalrow');
- assert.equal(text(expand(h(page.DayGroup,{date:'2026-10-04',total:-1200,principal:0,count:2,currency:'USD',today:'2026-10-04'},h('li',null,'row')),'d')),'Today−$1,200row');
+ assert.equal(text(day('2026-10-04',-1200,2,950)),'Today−$1,200$950 to principalrow');
+ assert.equal(text(day('2026-10-04',-1200,2,0)),'Today−$1,200row');
  tree=day('2026-10-03',-13.4);
- assert.equal(text(findAll(tree,n=>n.type==='h3')[0]),'Yesterday');
- assert.equal(text(findAll(tree,n=>n.type==='span')[0]),formatSignedMoney(-13.4,'USD','en'));
- assert.equal(text(findAll(tree,n=>n.type==='span')[0]),'−$13');
- assert.equal(findAll(tree,n=>n.type==='span')[0].props.className,undefined);
+ assert.equal(text(cells(tree)[0]),'Yesterday');
+ assert.equal(text(totalCell(tree)),formatSignedMoney(-13.4,'USD','en'));
+ assert.equal(text(totalCell(tree)),'−$13');
+ assert.equal(totalCell(tree).props.className,'num');
  tree=day('2026-09-30',null);
- assert.equal(text(findAll(tree,n=>n.type==='h3')[0]),formatDate('2026-09-30','en'));
- assert.equal(text(findAll(tree,n=>n.type==='h3')[0]),'30 September 2026');
- assert.equal(text(findAll(tree,n=>n.type==='span')[0]),'—');
- tree=day('2026-09-29',0);
- assert.equal(findAll(tree,n=>n.type==='span')[0].props.className,undefined);
+ assert.equal(text(cells(tree)[0]),formatDate('2026-09-30','en'));
+ assert.equal(text(cells(tree)[0]),'30 September 2026');
+ assert.equal(text(totalCell(tree)),'—');
+ assert.equal(totalCell(day('2026-09-29',0)).props.className,'num');
 });
 
 test('the heading row names the four columns once, and only a scheduled payment carries the Recurring chip',()=>{
  let tree=expand(h(page.TransactionColumns,{}),'c');
- assert.equal(tree.props.className,'transaction-columns-heading');
- assert.deepEqual(findAll(tree,n=>n.type==='span').map(text),['Payee','Category','Account','Amount']);
- assert.equal(tree.props['data-selecting'],undefined);
- assert.equal(expand(h(page.TransactionColumns,{selecting:true}),'c').props['data-selecting'],true);
+ assert.equal(tree.type,'thead');
+ const headings=findAll(tree,n=>n.type==='th');
+ assert.deepEqual(headings.map(text),['Payee','Category','Account','Amount']);
+ assert.deepEqual(headings.map(n=>n.props.scope),['col','col','col','col']);
+ assert.equal(headings[3].props.className,'num');
  assert.equal(expand(h(page.RecurringChip,{record:entry()}),'r'),null);
  tree=expand(h(page.RecurringChip,{record:entry({occurrence_record_id:'rent'})}),'r');
  assert.equal(tree.props.className,'transaction-chip');

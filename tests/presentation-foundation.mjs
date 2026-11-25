@@ -119,7 +119,7 @@ test('every drawer destination shimmers in its own layout',()=>{
  // stands where the records will.
  const shapes={'/':['stat-tiles','dashboard-grid','dashboard-column','overview-hero','dashboard-lead'],'/assistant':['assistant-layout','assistant-panel','assistant-log','assistant-form'],
   '/accounts':['accounts-hero','accounts-mix','accounts-master-detail','account-directory','account-selected-panel'],
-  '/transactions':['transactions-tools','transactions-layout','transaction-columns-heading','transaction-day-heading','transaction-row','transaction-columns','records-pagination','transactions-aside','transactions-summary','transactions-net','transactions-flow','transactions-top','tools-panel'],
+  '/transactions':['transactions-tools','transactions-layout','transactions-table','transaction-day-row','transaction-row','transaction-category-cell','records-pagination','transactions-aside','transactions-summary','transactions-net','transactions-flow','transactions-top','tools-panel'],
   '/income-expenses':['cashflow-month-bar','cashflow-summary','cash-flow-report-grid','cash-flow-trend','cash-flow-where','cashflow-income-preview','cashflow-still-to-come'],
   '/reports':['page-heading-actions','data-columns="4"','sankey-skeleton','report-transactions','transactions-summary'],
   '/budget':['budget-layout','budget-section','panel-title','budget-section-header','budget-category-row','budget-total-row','budget-side','budget-left','budget-left-figure','budget-pace','stat-tile'],

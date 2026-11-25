@@ -13,9 +13,9 @@ export { AllocationSkeleton, AssetCardsSkeleton, BudgetYearSkeleton, ForecastSke
 // its layout when the records arrive. The drawer shows the whole screen's shape; a screen that already drew its toolbar
 // asks for the rest. Change a screen, change its shape here with it (docs/agents/interface.md, Shimmer follows the screen).
 
-/** A transaction row on the list's grid: name, then category and account (`.transaction-columns`), then the amount. */
+/** A transactions table row: payee, category, account and amount, in the loaded table's cells. */
 function TransactionRow({ row }: { row: number }) {
-  return <li className="transaction-row"><Merchant width={110 + (row % 3) * 30}/><span className="transaction-columns"><span><Skeleton className="h-7 w-28 rounded-full"/></span><span className="transaction-account"><Skeleton className="h-4 w-24"/></span></span><span className="transaction-amount"><Skeleton className="ms-auto h-5 w-20"/></span></li>;
+  return <tr className="transaction-row"><td><Merchant width={110 + (row % 3) * 30}/></td><td className="transaction-category-cell"><Skeleton className="h-7 w-28 rounded-full"/></td><td className="transaction-account"><Skeleton className="h-4 w-24"/></td><td className="num"><Skeleton className="ms-auto h-5 w-20"/></td></tr>;
 }
 
 /** Transactions: the filters, the column names over the day groups and the pages, beside the Summary and Top categories. */
@@ -24,11 +24,13 @@ export function TransactionsSkeleton({ label, tools = true }: { label: string; t
     {tools && <Toolbar search controls={[176, 227]}/>}
     <div className="transactions-layout">
       <section className="panel transactions-list">
-        <div className="transaction-columns-heading">{[56, 64, 56, 56].map((width, index) => <span key={index}><Bar className={index === 3 ? 'ms-auto h-5' : 'h-5'} width={width}/></span>)}</div>
-        {[2, 5, 3].map((rows, day) => <section className="transaction-day" key={day}>
-          <div className="transaction-day-heading"><Skeleton className="h-4 w-32"/><Skeleton className="h-4 w-16"/></div>
-          <ul>{times(rows).map(row => <TransactionRow key={row} row={row}/>)}</ul>
-        </section>)}
+        <div className="table-scroll"><table className="transactions-table">
+          <thead><tr>{[56, 64, 56, 56].map((width, index) => <th key={index} className={index === 3 ? 'num' : undefined}><Bar className={index === 3 ? 'ms-auto h-3' : 'h-3'} width={width}/></th>)}</tr></thead>
+          {[2, 5, 3].map((rows, day) => <tbody className="transaction-day" key={day}>
+            <tr className="table-group-row transaction-day-row"><th colSpan={3}><Skeleton className="h-4 w-32"/></th><th className="num"><Skeleton className="ms-auto h-4 w-16"/></th></tr>
+            {times(rows).map(row => <TransactionRow key={row} row={row}/>)}
+          </tbody>)}
+        </table></div>
         <div className="records-pagination"><Skeleton className="h-4 w-44"/><Skeleton className="h-9 w-40 rounded-lg"/></div>
       </section>
       <div className="transactions-aside">

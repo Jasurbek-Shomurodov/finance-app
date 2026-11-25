@@ -32,7 +32,7 @@ const modules = {
  '@/lib/feedback': { showAction() {}, showError() {}, showNotice() {} },
 };
 const { TransactionsScreen } = r.load('components/workspace/screens/transactions-screen.tsx', modules);
-const row = () => r.find(node => node.type === 'li' && node.props.className === 'transaction-row');
+const row = () => r.find(node => node.type === 'tr' && node.props.className === 'transaction-row');
 const inside = (target = { closest: () => null }) => ({ target, currentTarget: { contains: () => true }, preventDefault() {} });
 
 test('tapping a Transactions row opens that transaction\'s details, not its Sankey', () => {

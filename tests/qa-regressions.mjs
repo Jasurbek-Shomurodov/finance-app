@@ -284,9 +284,11 @@ test('goal pickers, recurring categories and deposit benchmarks follow the perso
 
 test('transaction labels never narrow below a word',()=>{
  const css=stylesheet();
- // The ledger's category and account columns share the row equally and never narrow below their longest word; the heading row uses the same template, also while selecting.
- assert.match(css,/\.transaction-columns-heading,\.transaction-row\{display:grid;grid-template-columns:minmax\(0,1\.5fr\) minmax\(min-content,1fr\) minmax\(min-content,1fr\) minmax\(8\.5rem,\.4fr\)/);
- assert.match(css,/\.transaction-columns-heading\[data-selecting\],\.transaction-row:has\(>input\)\{grid-template-columns:16px minmax\(0,1\.5fr\) minmax\(min-content,1fr\) minmax\(min-content,1fr\)/);
+ // The ledger is a table: a cell never narrows below its longest word, the payee column keeps at least 13rem, and an
+ // account name wraps between words (QA 2026-10-06: "Transpor t"), never inside one.
+ assert.match(css,/\.transactions-table :is\(th,td\):first-child\{position:sticky;[^}]*min-width:13rem/);
+ assert.match(css,/\.transaction-account\{overflow-wrap:break-word\}/);
+ assert.doesNotMatch(css,/\.transactions-table[^{]*\{[^}]*(?:word-break:break-all|overflow-wrap:anywhere)/);
 });
 
 // 7 October 2026: a transaction opened from the list can be deleted, not only edited.
