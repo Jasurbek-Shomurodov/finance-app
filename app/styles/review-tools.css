@@ -26,6 +26,13 @@
 .tool-list li p{margin:2px 0 0;font-size:var(--type-caption);color:var(--muted-foreground)}
 .tool-list a{font-size:var(--type-small);font-weight:500;color:var(--primary)}
 .tool-list li>label{max-width:100px}
+/* Statement reconciliation (components/planning/statement-reconciliation.tsx): how far it is reconciled, and its figures. */
+.statement-status{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0;font-size:var(--type-small)}
+.statement-totals{display:grid;gap:8px;margin:0;font-size:var(--type-small)}
+.statement-totals>div{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.statement-totals dt{color:var(--muted-foreground)}
+.statement-totals dd{margin:0;font-variant-numeric:tabular-nums}
+.statement-totals>div:nth-child(3){border-top:1px solid var(--hairline);padding-top:8px}
 .tools-panel details>summary{cursor:pointer;min-height:44px;padding:12px 0;font-size:var(--type-small);font-weight:500;color:var(--muted-foreground)}
 .tools-panel details>summary:hover{color:var(--foreground)}
 .tools-panel details+details,.tools-panel .review-grid+details{border-top:1px solid var(--hairline)}

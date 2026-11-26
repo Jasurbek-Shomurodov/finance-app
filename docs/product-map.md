@@ -57,6 +57,7 @@ pins the built rows).
 | Transfer | `AssetMovementDialog` | The unused `AccountOperation` transfer branch is removed | Done |
 | Add an asset | One Add asset flow (`components/add-asset/`, opened with `startAsset`; rules in `lib/add-asset.ts`) | Investments › Add asset, an investment account's Add holding (Investments and Accounts) and ⌘K; editing a saved record keeps the record form | Done |
 | Close or delete an account or holding | One Close dialog and one delete confirmation (`components/closing/`, opened with `requestClose` / `requestDelete`) | Accounts and Investments menus; the Closed fold on both | Done |
+| Statement reconciliation | Accounts › an account card's Reconcile statement (`components/planning/statement-reconciliation.tsx`, figures in `lib/statement-reconciliation.ts`, migrations 066 and 172) | None; `reconciliation_status()` is ready for a data-health view | Done: cleared/pending/reconciled entries, next period and opening balance carried from the last reconciled statement, the app balance explained, a changed reconciled entry reopens its statement |
 | Record a payment (loan, mortgage, scheduled bill or income) | One Record payment dialog (`components/payments/`, opened with `openPayment`) | Loans, Recurring, Cash flow, Dashboard, the records table and the expense form's Debt / mortgage tab | Done (see `docs/agents/scheduled-payments.md`) |
 
 ## Oddly placed, and where it moves
