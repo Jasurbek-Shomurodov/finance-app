@@ -33,8 +33,8 @@ test('Accounts opens with ⋯ for a shared workspace or any business, never othe
 test('Investments draws as many account cards, allocation rows and asset cards as Holdings will, capped at a screen', () => {
  const record=(kind,extra={})=>({kind,amount:100,...extra});
  assert.deepEqual(shimmerHints(workspace).investments,{accounts:0,kinds:0,assets:0},'an empty workspace: no accounts line, no cards');
- const records=[record('Cash'),record('Stock',{holding_account_id:'broker'}),record('Crypto'),record('Property'),record('Loan')];
- assert.deepEqual(shimmerHints({...workspace,records,holdingAccounts:[{id:'broker',kind:'Stock'}]}).investments,{accounts:2,kinds:4,assets:2},'a share held in an account is that account\'s card');
+ const records=[record('Cash',{is_investment:true}),record('Cash'),record('Stock',{holding_account_id:'broker'}),record('Crypto'),record('Property'),record('Loan')];
+ assert.deepEqual(shimmerHints({...workspace,records,holdingAccounts:[{id:'broker',kind:'Stock'}]}).investments,{accounts:2,kinds:4,assets:2},'a share held in an account is that account\'s card; an everyday cash account is not an investment');
  const many=Array.from({length:9},(_,index)=>record(['Stock','Crypto','Property','Valuables','Business','Metal','Deposit'][index%7]));
  const hint=shimmerHints({...workspace,records:many}).investments;
  assert.ok(hint.accounts<=3&&hint.kinds<=6&&hint.assets<=6);

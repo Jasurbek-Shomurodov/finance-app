@@ -1,4 +1,5 @@
-import { assetRecordKinds, liabilities, type Entry } from '@/lib/finance';
+import { liabilities, type Entry } from '@/lib/finance';
+import { portfolioHoldings } from '@/lib/portfolio-performance';
 import type { Goal } from '@/lib/planning';
 
 /** What a drawer destination's shimmer can know before its records arrive, so it draws only the blocks the page will
@@ -14,7 +15,8 @@ type Workspace = { loading: boolean; records: readonly Entry[]; goals: readonly 
 const accountKinds = ['Cash', 'Deposit'];
 /** What Holdings will draw, as `AssetDashboard` groups it: a holding inside an investment account is that account's. */
 export function investmentsHint(records: readonly Entry[], holdingAccounts: readonly { id: string; kind: string }[]): InvestmentsHint {
- const held = records.filter(record => assetRecordKinds.includes(record.kind));
+ // Only investment holdings: an everyday cash account lives on Accounts, not here.
+ const held = portfolioHoldings(records);
  const grouped = (record: Entry) => holdingAccounts.some(account => account.id === record.holding_account_id && (record.kind === account.kind || record.kind === 'Cash'));
  const loose = held.filter(record => !grouped(record));
  return {
