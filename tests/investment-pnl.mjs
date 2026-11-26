@@ -208,3 +208,27 @@ test('a holding or an account reads its own result from the portfolio figures, a
  assert.equal(pnlOf(pnl,['missing']),null,'a holding with no figures falls back to what the card showed before');
  assert.equal(pnlOf(pnl,[]),null);
 });
+
+test('a reinvested dividend is income once and not new money; a split changes nothing',()=>{
+ // What record_corporate_event writes: the gross dividend as income, the withholding as a cost, and the reinvested
+ // part as a purchase of the same stock from the cash account, all on the payment day.
+ const events=[
+  event('buy','KO','contribution',1000,'2026-01-10',1000),
+  event('div','KO','income',100,'2026-06-10',null,{created_at:'2026-06-10T10:00:00Z'}),
+  event('tax','KO','expense',15,'2026-06-10',null,{created_at:'2026-06-10T10:00:01Z',notes:'Dividend withholding. '}),
+  event('drip','KO','contribution',80,'2026-06-10',1080,{created_at:'2026-06-10T10:00:02Z',notes:'Dividend reinvestment. '}),
+  event('split','KO','valuation',0,'2026-08-01',1080,{notes:'Stock split. 2 for 1'}),
+ ];
+ const pnl=run([record('KO','Stock',1080)],events);
+ const [holding]=pnl.holdings;
+ near(holding.invested,1000,'the reinvested dividend is not money put in');
+ near(holding.income,100);near(holding.costs,15);near(holding.unrealized,0);near(holding.total,85);near(holding.returnPercent,8.5);
+ const returns=investmentReturns(pnl,today,()=>1);
+ near(returns.days.reduce((sum,day)=>sum+day.pnl,0),85);
+ // The dividend day earned 85 on the 1,000 that was invested before it; the 80 put back is not fresh capital.
+ near(returns.timeWeighted,8.5);
+ assert.ok(returns.moneyWeighted>8.5,'85 earned on 1,000 in under a year is more than 8.5% a year');
+ // A note typed on an ordinary purchase is not enough to make it a reinvestment.
+ const typed=run([record('KO','Stock',1080)],[events[0],event('drip','KO','contribution',80,'2026-06-10',1080,{notes:'Dividend reinvestment. '})]);
+ near(typed.holdings[0].invested,1080);
+});

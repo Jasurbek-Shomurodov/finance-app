@@ -51,11 +51,32 @@ type State = {
  incomeL: number; incomeD: number; costsL: number; costsD: number; linkedL: number; investedD: number;
  opening: PnlFlow | null; trades: number; rebased: boolean;
 };
-type Ledger = { input: PnlInput; states: Map<string, State>; flows: PnlFlow[]; sales: RealizedSale[]; marks: ValueMark[]; carried: Map<string, { local: number; shown: number }>; capitalized: Map<string, number>; missing: number };
+type Ledger = { input: PnlInput; states: Map<string, State>; flows: PnlFlow[]; sales: RealizedSale[]; marks: ValueMark[]; carried: Map<string, { local: number; shown: number }>; capitalized: Map<string, number>; dividends: Map<string, number>; missing: number };
 
 const transferNote = 'Security transfer. ';
 const isTransfer = (event: HistoryEvent) => !event.account_link && event.notes.startsWith(transferNote);
 const transferKey = (event: HistoryEvent) => [event.occurred_on, Number(event.amount), event.notes].join('|');
+// record_corporate_event (migration 067) buys the reinvested part of a dividend from the cash account it was paid to.
+const reinvestmentNote = 'Dividend reinvestment. ';
+const dayKey = (event: Pick<HistoryEvent, 'record_id' | 'occurred_on'>) => event.record_id + '|' + event.occurred_on;
+
+/** The income each holding received on each day, which a dividend reinvestment that day can draw on. One transaction
+ * writes the dividend and its reinvestment with the same time, so their order on the day is not known. */
+function dividendsByDay(events: readonly HistoryEvent[]) {
+ const paid = new Map<string, number>();
+ for (const event of events) if (event.event_type === 'income') paid.set(dayKey(event), (paid.get(dayKey(event)) ?? 0) + Number(event.amount));
+ return paid;
+}
+
+/** A purchase paid for by that day's dividend from the same holding: earnings put back, not new money. A note typed on
+ * an ordinary purchase is not enough; the holding must have received at least that much income that day. */
+function reinvested(ledger: Ledger, event: HistoryEvent) {
+ if (event.account_link || !event.notes.startsWith(reinvestmentNote)) return false;
+ const amount = Number(event.amount), left = ledger.dividends.get(dayKey(event)) ?? 0;
+ if (left < amount - 1e-9 * Math.max(1, amount)) return false;
+ ledger.dividends.set(dayKey(event), left - amount);
+ return true;
+}
 
 function rateNow(input: PnlInput, currency: string) {
  return convertAmount(1, currency, input.currency, marketRates(input.market));
@@ -102,7 +123,7 @@ function withdraw(ledger: Ledger, state: State, event: HistoryEvent, after: numb
 function contribute(ledger: Ledger, state: State, event: HistoryEvent) {
  const moved = isTransfer(event) ? ledger.carried.get(transferKey(event)) : undefined;
  if (moved) { ledger.carried.delete(transferKey(event)); state.basisL += moved.local; state.basisD += moved.shown; return; }
- addFlow(ledger, state, { id: event.id, date: event.occurred_on, type: 'buy', local: Number(event.amount), name: state.record.name });
+ addFlow(ledger, state, { id: event.id, date: event.occurred_on, type: 'buy', local: Number(event.amount), name: state.record.name, ...(reinvested(ledger, event) && { reinvested: true }) });
  state.trades++;
 }
 
@@ -209,7 +230,7 @@ const eventOrder = (a: HistoryEvent, b: HistoryEvent) => a.occurred_on.localeCom
 export function investmentPnl(input: PnlInput): InvestmentPnl {
  // Money lent is a loan, followed in Loans & debts: it is not a holding here, as on the Holdings tab.
  const held = input.records.filter(record => benchmarkInvestment(record) && record.kind !== 'Money lent');
- const ledger: Ledger = { input, states: new Map(), flows: [], sales: [], marks: [], carried: new Map(), capitalized: new Map(), missing: 0 };
+ const ledger: Ledger = { input, states: new Map(), flows: [], sales: [], marks: [], carried: new Map(), capitalized: new Map(), dividends: dividendsByDay(input.events), missing: 0 };
  for (const row of input.movements ?? []) if (row.kind === 'interest') { const key = interestKey(row.target_id, row.occurred_on, Number(row.target_value)); ledger.capitalized.set(key, (ledger.capitalized.get(key) ?? 0) + 1); }
  for (const record of held) {
   if (rateNow(input, record.currency) === null) ledger.missing++;

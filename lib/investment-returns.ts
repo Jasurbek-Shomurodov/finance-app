@@ -18,14 +18,15 @@ export type InvestmentReturns = {
  maxDrawdown: number | null;
 };
 
-type DayMoney = { flow: number; income: number; costs: number };
+/** `flow` is money put in (less money taken out); `kept` is earnings put straight back, which the day's income already counts. */
+type DayMoney = { flow: number; kept: number; income: number; costs: number };
 const signs: Record<PnlFlow['type'], number> = { buy: -1, sell: 1, income: 1, cost: -1 };
 
 function moneyByDay(flows: readonly PnlFlow[]) {
  const days = new Map<string, DayMoney>();
  for (const flow of flows) {
-  const day = days.get(flow.date) ?? { flow: 0, income: 0, costs: 0 };
-  if (flow.type === 'buy') day.flow += flow.shown;
+  const day = days.get(flow.date) ?? { flow: 0, kept: 0, income: 0, costs: 0 };
+  if (flow.type === 'buy') day[flow.reinvested ? 'kept' : 'flow'] += flow.shown;
   if (flow.type === 'sell') day.flow -= flow.shown;
   if (flow.type === 'income') day.income += flow.shown;
   if (flow.type === 'cost') day.costs += flow.shown;
@@ -61,9 +62,10 @@ export function investmentReturns(pnl: Pick<InvestmentPnl, 'flows' | 'marks' | '
   while (cursor < pnl.marks.length && pnl.marks[cursor].date <= date) { const mark = pnl.marks[cursor++]; values.set(mark.recordId, mark); }
   // Today's total is the live one, so the last day agrees with the headline to the cent.
   const value = date === today ? pnl.totals.value : [...values.values()].reduce((sum, item) => sum + item.value * (rate(item.currency, date) ?? 0), 0);
-  const moved = money.get(date) ?? { flow: 0, income: 0, costs: 0 };
-  const earned = value - previous - moved.flow + moved.income - moved.costs;
-  // Money added that day was at work that day; money withdrawn was not.
+  const moved = money.get(date) ?? { flow: 0, kept: 0, income: 0, costs: 0 };
+  const earned = value - previous - moved.flow - moved.kept + moved.income - moved.costs;
+  // Money added that day was at work that day; money withdrawn was not. A reinvested dividend or interest is a return
+  // on what was already invested, so it does not enlarge the base it is measured against.
   const base = previous + Math.max(0, moved.flow);
   if (base > 0) index *= 1 + earned / base;
   peak = Math.max(peak, index);
