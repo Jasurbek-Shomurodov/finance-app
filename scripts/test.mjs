@@ -5,8 +5,10 @@ import { lcovFiles, mergeLcov, percent, totals } from './lcov.mjs';
 // node scripts/test.mjs                      every test
 // node scripts/test.mjs --integration        the integration test only
 // node scripts/test.mjs --coverage           every test, then the coverage check below
+// node scripts/test.mjs --coverage --concurrency=4
+//                                            the same, four test files at a time (CI passes one per core)
 // node scripts/test.mjs --coverage --shard=2/6
-//                                            one CI shard's share of the test files; writes coverage/lcov.info and
+//                                            one shard's share of the test files; writes coverage/lcov.info and
 //                                            leaves the check to the merge, since one shard runs only part of the code
 // node scripts/test.mjs --check-coverage=<folder>
 //                                            merges every lcov.info under the folder (the shards) and runs the check
@@ -18,6 +20,8 @@ const option=name=>process.argv.find(arg=>arg.startsWith(`--${name}=`))?.slice(n
 const integration=process.argv.includes('--integration');
 const coverage=process.argv.includes('--coverage');
 const shard=option('shard');
+// Test files run side by side, two at a time unless `--concurrency=n` says more (CI gives it one per core).
+const concurrency=Number(option('concurrency')??2);
 const merged=option('check-coverage');
 const folders=['lib','components','hooks','app'];
 // Third-party UI wrappers (components/ui) are library code, not app logic, so they are left out of the count.
@@ -28,7 +32,7 @@ function runTests(){
  if(coverage)mkdirSync('coverage',{recursive:true});
  const measured=coverage?['--enable-source-maps','--experimental-test-coverage',...folders.map(folder=>`--test-coverage-include=${folder}/**`),`--test-coverage-exclude=${excluded}/**`,'--test-reporter=spec','--test-reporter-destination=stdout','--test-reporter=lcov','--test-reporter-destination=coverage/lcov.info']:[];
  const sharded=shard?[`--test-shard=${shard}`]:[];
- const result=spawnSync(process.execPath,[...measured,'--experimental-strip-types','--experimental-specifier-resolution=node','--test','--test-concurrency=2',...sharded,...files],{stdio:'inherit',env:{...process.env,PGLITE_MODULE:process.env.PGLITE_MODULE??import.meta.resolve('@electric-sql/pglite')}});
+ const result=spawnSync(process.execPath,[...measured,'--experimental-strip-types','--experimental-specifier-resolution=node','--test',`--test-concurrency=${concurrency}`,...sharded,...files],{stdio:'inherit',env:{...process.env,PGLITE_MODULE:process.env.PGLITE_MODULE??import.meta.resolve('@electric-sql/pglite')}});
  if(result.error)throw result.error;
  return result.status??1;
 }

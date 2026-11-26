@@ -45,11 +45,12 @@ test('the pre-push hook warns about a red CI, refuses any branch but main and a 
  assert.ok(fs.statSync('.githooks/pre-push').mode & 0o111, 'the hook is executable');
 });
 
-test('CI shards the tests, skips a commit that already passed, and commits redrawn Linux pictures to main', () => {
+test('CI runs the browser tests in one job, one run per commit, and commits redrawn Linux pictures to main', () => {
  const workflow = fs.readFileSync('.github/workflows/checks.yml', 'utf8');
  assert.match(workflow, /group: checks-\$\{\{ github\.sha \}\}/);
- assert.match(workflow, /head_sha=\$GITHUB_SHA&status=success/);
- assert.match(workflow, /npx playwright test --shard=\$\{\{ matrix\.shard \}\}\/3/);
+ // About four jobs (the owner's ask, 26 November 2026): no shard matrix.
+ assert.doesNotMatch(workflow, /matrix/);
+ assert.match(workflow, /- run: npx playwright test \$\{\{/);
  assert.match(workflow, /REDRAW: \$\{\{ github\.event_name == 'push' \}\}/);
  assert.doesNotMatch(workflow, /github\.ref != 'refs\/heads\/main'/);
  assert.match(workflow, /--update-snapshots=changed/);

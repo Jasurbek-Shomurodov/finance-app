@@ -51,17 +51,18 @@ that asserts on markup:
 
 1. Mac: `npx playwright test e2e/screens.spec.mjs --update-snapshots` (`-g "SHOT budget"` for one screen) after `npm run build:production`, and
    look at every picture it wrote.
-2. Linux: push to main. Its e2e parts redraw the Linux pictures that changed (`--update-snapshots=changed`), the
+2. Linux: push to main. Its `e2e` job redraws the Linux pictures that changed (`--update-snapshots=changed`), the
    `pictures` job commits them to main ("e2e: the Linux pictures for …"), cancels the stale run and starts a strict
    one on the new commit. `git pull` to take that commit and look at the pictures in its diff. (`npm run
    screenshots:ci` is only for a strict run, on a pull request or a re-run, that failed on a picture.)
 
 ### CI on main
 
-`.github/workflows/checks.yml` runs on every push, in parallel jobs: `verify` (audit, lint, type check, integration
-test), `unit` (the unit tests in six shards, `node scripts/test.mjs --coverage --shard=i/6`), `coverage` (merges the
-shards' reports and checks `scripts/coverage-floor.json`) and `e2e` (three Playwright shards, each with its own build
-and database). A commit that already passed (started again, or pushed twice) is skipped by the `seen` job. A run takes about six minutes; it took 23 when everything ran in one job.
+`.github/workflows/checks.yml` runs on every push in four jobs, no more (the user's ask, 26 November 2026): `verify`
+(audit, lint, type check, production build, integration test), `unit` (every unit test with coverage and the
+`scripts/coverage-floor.json` check, `node scripts/test.mjs --coverage --concurrency=$(nproc)`, one test file per
+core), `e2e` (every Playwright test on one build and database) and `pictures` (commits what `e2e` redrew). The three
+test jobs run side by side, so a run takes as long as `e2e`. Don't bring back shard matrices to save minutes.
 
 **No branches (the user's rule, 26 November 2026, replacing the feature-branch flow of 24 November).** Commit on
 main and push to main; the pre-push hook refuses a push to any other branch and still refuses a failing type check.

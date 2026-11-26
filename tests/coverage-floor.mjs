@@ -8,10 +8,9 @@ test('CI measures coverage against a floor and a shrinking list of files no test
  // Every listed file still exists, the list stays sorted, and nothing is listed twice.
  for(const file of floor.untested)assert.ok(fs.existsSync(file),`remove deleted file from the untested list: ${file}`);
  assert.deepEqual(floor.untested,[...new Set(floor.untested)].sort());
- // CI runs the tests in shards, each measuring coverage, and checks the floor over the merged reports.
+ // CI runs every test in one job, measuring coverage, and checks the floor in the same run.
  const workflow=fs.readFileSync('.github/workflows/checks.yml','utf8');
- assert.match(workflow,/node scripts\/test\.mjs --coverage --shard=\$\{\{ matrix\.shard \}\}\/6/);
- assert.match(workflow,/node scripts\/test\.mjs --check-coverage=coverage-shards/);
+ assert.match(workflow,/- run: node scripts\/test\.mjs --coverage --concurrency=\$\(nproc\)\n/);
  assert.match(fs.readFileSync('package.json','utf8'),/"test:coverage": "node scripts\/test\.mjs --coverage"/);
 });
 

@@ -21,7 +21,7 @@ test('CI jobs have a time limit, audit shipped dependencies and pin every action
  const workflow=fs.readFileSync('.github/workflows/checks.yml','utf8');
  const jobs=workflow.slice(workflow.indexOf('\njobs:')).split(/\n  (?=[\w-]+:\n)/).slice(1);
  const names=jobs.map(job=>job.split(':')[0]);
- assert.deepEqual(names,['seen','verify','unit','coverage','e2e','pictures']);
+ assert.deepEqual(names,['verify','unit','e2e','pictures']);
  for(const job of jobs)assert.match(job,/\n    timeout-minutes: \d+\n/,job.split(':')[0]);
  assert.match(jobs[names.indexOf('verify')],/- run: npm ci\n(?:\s+#.*\n)?\s+- run: npm audit --omit=dev --audit-level=high\n/);
  const actions=[...workflow.matchAll(/uses: (\S+)/g)].map(match=>match[1]);

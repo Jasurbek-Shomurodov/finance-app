@@ -6,40 +6,19 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-# One run per commit at a time: a commit started again (by the pictures job, or pushed twice) waits for the first run,
-# and the second finds it passed and skips (the `seen` job).
+# One run per commit at a time: a commit started again waits for the first run to finish.
 concurrency:
   group: checks-${{ github.sha }}
   cancel-in-progress: false
+# Four jobs: verify, unit, e2e and pictures (which only commits what e2e redrew).
 jobs:
-  seen:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      actions: read
-    outputs:
-      passed: ${{ steps.check.outputs.passed }}
-    steps:
-      - id: check
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          count=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/checks.yml/runs?head_sha=$GITHUB_SHA&status=success&per_page=1" --jq '.total_count' || echo 0)
-          if [ "${count:-0}" -gt 0 ] && [ "$GITHUB_EVENT_NAME" != workflow_dispatch ]; then
-            echo "CI already passed $GITHUB_SHA; skipping the checks." >> "$GITHUB_STEP_SUMMARY"
-            echo passed=true >> "$GITHUB_OUTPUT"
-          else
-            echo passed=false >> "$GITHUB_OUTPUT"
-          fi
   # The quick checks, apart from the tests so a lint or type error shows in two minutes, then the integration test.
   verify:
-    needs: seen
-    if: needs.seen.outputs.passed != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 24
           cache: npm
@@ -51,109 +30,77 @@ jobs:
       # The integration test starts the production server, so it needs the build.
       - run: npm run build:production
       - run: npm run test:integration
-  # Every unit test, in six parts on six machines; each part measures its own coverage and `coverage` adds them up.
+  # Every unit test on one machine, one test file per core, then the coverage floor and the list of files no test runs
+  # yet (scripts/coverage-floor.json).
   unit:
-    needs: seen
-    if: needs.seen.outputs.passed != 'true'
-    name: unit (${{ matrix.shard }}/6)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2, 3, 4, 5, 6]
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: node scripts/test.mjs --coverage --shard=${{ matrix.shard }}/6
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: coverage-${{ matrix.shard }}
-          path: coverage/lcov.info
-          retention-days: 1
-  # The coverage floor and the list of files no test runs yet (scripts/coverage-floor.json), over all six parts.
-  coverage:
-    needs: unit
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: 24
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          pattern: coverage-*
-          path: coverage-shards
-      - run: node scripts/test.mjs --check-coverage=coverage-shards
-  # The P0 flows and the screenshot tests in a real browser, in three parts: a production build against
+      - run: node scripts/test.mjs --coverage --concurrency=$(nproc)
+  # The P0 flows and the screenshot tests in a real browser, one at a time: a production build against
   # e2e/fake-supabase.mjs (the app's schema in PGlite), on the fixed workspace in e2e/fixture.mjs. No real account or
   # service is reached. A push redraws the Linux pictures that changed and `pictures` commits them to main (work goes
   # straight to main, no branches); pull requests and the run that follows the pictures commit compare strictly.
   e2e:
-    needs: seen
-    if: needs.seen.outputs.passed != 'true'
-    name: e2e (${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2, 3]
+    timeout-minutes: 40
     env:
       REDRAW: ${{ github.event_name == 'push' }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 24
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run build:production
-      - run: npx playwright test --shard=${{ matrix.shard }}/3 ${{ env.REDRAW == 'true' && '--update-snapshots=changed' || '' }}
+      - run: npx playwright test ${{ env.REDRAW == 'true' && '--update-snapshots=changed' || '' }}
       - name: Collect the redrawn Linux pictures
         if: always() && env.REDRAW == 'true'
         run: |
           git ls-files --modified --others --exclude-standard -- 'e2e/*-snapshots/*-linux.png' | while read -r file; do
             mkdir -p "redrawn/$(dirname "$file")" && cp "$file" "redrawn/$file" && echo "redrawn: $file"
           done
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         if: always() && env.REDRAW == 'true'
         with:
-          name: pictures-${{ matrix.shard }}
+          name: pictures
           path: redrawn/
           if-no-files-found: ignore
           retention-days: 7
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         if: failure()
         with:
-          name: playwright-report-${{ matrix.shard }}
+          name: playwright-report
           path: |
             playwright-report/
             test-results/
           retention-days: 7
-  # Commits the pictures the e2e parts redrew to main, starts a strict run of that commit and cancels
+  # Commits the pictures e2e redrew to main, starts a strict run of that commit and cancels
   # this one.
   pictures:
-    needs: [seen, e2e]
-    if: ${{ !cancelled() && needs.seen.outputs.passed != 'true' && github.event_name == 'push' }}
+    needs: e2e
+    if: ${{ !cancelled() && github.event_name == 'push' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: write
       actions: write
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           ref: ${{ github.ref_name }}
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          pattern: pictures-*
+          # A pattern, so a run that redrew nothing (and uploaded nothing) finds none instead of failing.
+          pattern: pictures*
           merge-multiple: true
           path: ${{ runner.temp }}/redrawn
       - name: Commit the redrawn Linux pictures
