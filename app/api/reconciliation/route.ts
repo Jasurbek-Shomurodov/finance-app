@@ -2,14 +2,15 @@ import {z} from 'zod';
 import {session,sameOrigin,supa} from '@/lib/supabase';
 import {uuid,isoDate} from '@/lib/api-validation';
 import {crossSite,postgrestFailure,readJson,signInAgain} from '@/lib/api-route';
-const query=z.object({account:uuid,from:isoDate,to:isoDate});
+// Without dates the database picks the next period: the day after the last reconciled statement, through today.
+const query=z.union([z.object({account:uuid,from:isoDate,to:isoDate}),z.object({account:uuid}).strict()]);
 const amount=z.number().finite().min(-1e15).max(1e15);
 const schema=z.object({id:uuid,account_id:uuid,start_date:isoDate,end_date:isoDate,opening_balance:amount,closing_balance:amount,cleared:z.array(z.string().max(100)).max(5000),fingerprint:z.string().regex(/^[a-f0-9]{64}$/),status:z.enum(['draft','reconciled']),revision:z.number().int().positive().nullable().optional()});
 export async function GET(req:Request){try{
  const auth=await session();if(!auth)return signInAgain();
  const parsed=query.safeParse(Object.fromEntries(new URL(req.url).searchParams));if(!parsed.success)return Response.json({error:'Check the statement dates.'},{status:400});
- const {account,from,to}=parsed.data;
- const [state,saved]=await Promise.all([supa('/rest/v1/rpc/account_statement',{method:'POST',body:JSON.stringify({p_account:account,p_start:from,p_end:to})},auth.token),supa(`/rest/v1/account_reconciliations?account_id=eq.${account}&select=id,account_id,start_date,end_date,opening_balance,closing_balance,cleared,fingerprint,status,revision&order=end_date.desc,id&limit=50`,{},auth.token)]);
+ const {account}=parsed.data,from='from' in parsed.data?parsed.data.from:null,to='to' in parsed.data?parsed.data.to:null;
+ const [state,saved]=await Promise.all([supa('/rest/v1/rpc/statement_review',{method:'POST',body:JSON.stringify({p_account:account,p_start:from,p_end:to})},auth.token),supa(`/rest/v1/account_reconciliations?account_id=eq.${account}&select=id,account_id,start_date,end_date,opening_balance,closing_balance,cleared,fingerprint,status,revision&order=end_date.desc,id&limit=50`,{},auth.token)]);
  if(!state.ok||!saved.ok)return postgrestFailure(!state.ok?state:saved,'Could not load the statement.');
  return Response.json({...await state.json() as Record<string,unknown>,saved:await saved.json()},{headers:{'Cache-Control':'no-store'}});
 }catch{return Response.json({error:'Could not load the statement.'},{status:503});}}
