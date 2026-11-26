@@ -222,7 +222,6 @@ label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 .loading-line{height:14px;width:65%;max-width:240px}
 .loading-detail{height:10px;width:40%;max-width:160px;margin-top:10px}
 .loading-value{height:18px;width:18%;max-width:120px}
-.session-loading .loading-placeholder{max-width:360px}
 .chart-skeleton{width:100%;min-width:0;margin:16px 0;border-radius:12px;background:var(--accent)}
 .sankey-skeleton{width:100%;min-width:0;margin:8px 0}
 .sankey-skeleton svg{width:100%;height:100%;display:block}

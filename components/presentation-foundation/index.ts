@@ -47,6 +47,7 @@ export { ColorChoices } from './color-choices';
 export { PersonAvatar, OwnerAvatar } from './person-avatar';
 export { OwnerFilter, type OwnerOption } from './owner-filter';
 export { Brand } from './brand';
+export { BootChart } from './boot-chart';
 export { DrawerLink } from './drawer-link';
 export { PartialTotal } from './partial-total';
 export { AnimatedMoney } from './animated-money';

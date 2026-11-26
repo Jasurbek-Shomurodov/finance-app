@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Brand } from '@/components/presentation-foundation/brand';
 import { DatabaseStatus } from '@/components/database-status';
 import { LanguageProvider, useLanguage } from '@/components/language-provider';
-import { LoadingPlaceholder } from '@/components/presentation-foundation/loading-placeholder';
+import { BootChart } from '@/components/presentation-foundation/boot-chart';
 import { NavigationShimmer } from '@/components/presentation-foundation/screen-skeletons';
 import { savedDashboardColumns } from '@/lib/dashboard-layout';
 import { sharedWorkspace } from '@/lib/household';
@@ -54,7 +54,7 @@ function WorkspaceShell({ children }: { children: ReactNode }) {
  if (preview && user) return null;
  // Everything else waits: for the session, for the redirect off a page this visitor cannot use, or for the account's settings.
  if (!ready || !signedIn || pathname === signInPath || awaitingSettings({ user, demo, loading: settingsLoading }))
-  return <main className="session-loading" aria-busy="true"><Brand/><LoadingPlaceholder label={t("Loading your workspace…")} rows={3}/></main>;
+  return <main className="session-loading" aria-busy="true"><Brand/><BootChart label={t("Loading your workspace…")}/></main>;
  // A first sign-in answers a few setup questions before the drawer and screens appear.
  if (onboardingNeeded)
   return <OnboardingScreen brand={<Brand/>} initial={preferencesData} telegram={<TelegramPanel demo={false}/>} savePreferences={savePreferences} applyPreferences={applyPreferences} saveGoal={goal => planning.save('goal', goal)} saveTrackingStart={saveTrackingStart}/>;

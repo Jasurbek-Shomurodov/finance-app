@@ -62,12 +62,29 @@
 [data-slot=sheet-content][data-state=closed]{--tw-animation-duration:.2s;--tw-ease:var(--ease-in)}
 
 /* Waiting has a shape too. Opening the app, the mark arrives and sends out a slow ring while the session is checked;
-   the placeholder rows follow it, and their sheen travels down the rows instead of blinking in step. A tapped
+   a chart draws itself beneath it; elsewhere placeholder rows' sheen travels down the rows instead of blinking in step. A tapped
    destination draws a line along the top bar's edge that keeps growing until its route arrives. */
 @keyframes mark-ring{from{opacity:.55;transform:scale(1)}to{opacity:0;transform:scale(1.75)}}
 @keyframes route-progress{from{transform:scaleX(0)}55%{transform:scaleX(.72)}to{transform:scaleX(.94)}}
 .session-loading>.brand{animation:rise-in var(--motion-settle) var(--ease-out) backwards}
-.session-loading>.loading-placeholder{animation:rise-in var(--motion-settle) var(--ease-out) var(--motion-lead) backwards}
+.session-loading>.boot-chart{animation:rise-in var(--motion-settle) var(--ease-out) var(--motion-lead) backwards}
+/* The opening wait is a chart (`BootChart`): the line traces itself, its area and the latest point's dot follow, the
+   volume bars fill up in a wave, and the whole picture fades and draws again every 2.8s. */
+.boot-chart{width:min(320px,100%);display:grid;gap:10px}
+.boot-chart-plot{position:relative}
+.boot-chart-plot svg{display:block;width:100%;height:auto;overflow:visible}
+.boot-chart-grid{stroke:var(--border);stroke-width:1;stroke-dasharray:3 4}
+.boot-chart-fade-top{stop-color:var(--mark-bg);stop-opacity:.28}
+.boot-chart-fade-bottom{stop-color:var(--mark-bg);stop-opacity:0}
+.boot-chart-area{animation:boot-area 2.8s var(--ease-out) infinite}
+.boot-chart-line{fill:none;stroke:var(--mark-bg);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;animation:boot-line 2.8s var(--ease-out) infinite}
+.boot-chart-dot{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--mark-bg);box-shadow:0 0 0 4px color-mix(in srgb,var(--mark-bg) 22%,transparent);animation:boot-dot 2.8s var(--ease-out) infinite}
+.boot-chart-volume{display:flex;align-items:flex-end;gap:6px;height:28px}
+.boot-chart-volume>i{flex:1;border-radius:3px 3px 1px 1px;background:color-mix(in srgb,var(--muted-foreground) 22%,transparent);transform-origin:bottom;animation:boot-volume 2.8s var(--ease-out) infinite backwards}
+@keyframes boot-line{0%{stroke-dashoffset:1;opacity:1}45%{stroke-dashoffset:0}86%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+@keyframes boot-area{0%,30%{opacity:0}55%,86%{opacity:1}100%{opacity:0}}
+@keyframes boot-dot{0%,40%{opacity:0;transform:scale(0)}52%{opacity:1;transform:scale(1.25)}60%,86%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
+@keyframes boot-volume{0%{transform:scaleY(.12)}35%,80%{transform:scaleY(1)}100%{transform:scaleY(.12)}}
 .session-loading .mark{position:relative}
 .session-loading .mark::after{content:"";position:absolute;inset:0;border-radius:inherit;border:2px solid var(--mark-bg);pointer-events:none;animation:mark-ring 1.8s var(--ease-out) .3s infinite backwards}
 :is(.loading-row,.screen-skeleton>*):nth-child(2) .skeleton-sheen::after{animation-delay:.12s}
@@ -103,7 +120,10 @@ html[data-theme-switch]::view-transition-new(root){animation:theme-reveal .52s v
  .stat-tile-bar>i,.progress-track>*,.budget-progress>div,.asset-card-share i,.allocation-share>span,.stat-tile-link{animation:none;transition:none}
  .stat-tile-link:hover{transform:none}
  html[data-theme-switch]::view-transition-new(root){animation:none}
- .session-loading>.brand,.session-loading>.loading-placeholder,.session-loading .mark::after,.topbar[data-pending]::after{animation:none}
+ .session-loading>.brand,.session-loading>.boot-chart,.session-loading .mark::after,.topbar[data-pending]::after{animation:none}
+ /* The opening chart stands still, fully drawn. */
+ .boot-chart-line,.boot-chart-area,.boot-chart-dot,.boot-chart-volume>i{animation:none}
+ .boot-chart-line{stroke-dashoffset:0}
  .session-loading .mark::after{content:none}
  .topbar[data-pending]::after{transform:scaleX(.94);opacity:.5}
  :is([data-slot=dialog-content],[data-slot=alert-dialog-content],[data-slot=popover-content],[data-slot=dropdown-menu-content],[data-slot=dropdown-menu-sub-content],[data-slot=tooltip-content],[data-slot=sheet-content],[data-slot=dialog-overlay],[data-slot=alert-dialog-overlay],[data-slot=sheet-overlay])[data-state]{--tw-enter-scale:1;--tw-exit-scale:1;--tw-enter-translate-x:0;--tw-enter-translate-y:0;--tw-exit-translate-x:0;--tw-exit-translate-y:0;--tw-animation-duration:.12s;--tw-ease:linear}
