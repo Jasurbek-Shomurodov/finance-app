@@ -19,7 +19,7 @@ export function AllocationDonut({ slices, total, currency, onSelect }: { slices:
    <Pie data={shown} dataKey="amount" nameKey="kind" {...chartDonut} onClick={entry => { const kind = (entry.payload as Slice | undefined)?.kind; if (kind) onSelect?.(kind); }}>
     {shown.map(slice => <Cell key={slice.kind} fill={slice.color ?? categoryColor(slice.kind)} className="donut-slice"/>)}
    </Pie>
-   <Tooltip {...chartTooltip} formatter={(value, kind) => [`${formatMoney(Number(value), currency, locale)} · ${formatPercent(total > 0 ? Number(value) / total * 100 : 0, locale)}`, shown.find(slice => slice.kind === kind)?.label ?? t(String(kind))]}/>
+   <Tooltip {...chartTooltip} allowEscapeViewBox={{ x: true, y: true }} formatter={(value, kind) => [`${formatMoney(Number(value), currency, locale)} · ${formatPercent(total > 0 ? Number(value) / total * 100 : 0, locale)}`, shown.find(slice => slice.kind === kind)?.label ?? t(String(kind))]}/>
   </PieChart></ResponsiveContainer>
   {/* The total is sized to the hole (assets.css): a long compact form, such as Arabic's, cannot wrap. */}
   <div className="allocation-donut-total" aria-hidden="true"><strong className="fit-figure" style={fitFigure(totalLabel)}>{totalLabel}</strong><span>{t('Total assets')}</span></div>

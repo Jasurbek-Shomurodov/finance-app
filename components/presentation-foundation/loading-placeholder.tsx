@@ -92,10 +92,13 @@ export function AccountsSkeleton({ label, filters = false, menu = false }: { lab
         <div className="account-rows">{Array.from({ length: 5 }, (_, index) => <div className="account-sortable-row" key={index}><div className="account-list-row"><Skeleton className="size-[38px] rounded-[10px]"/><span className="account-list-name"><Skeleton className="h-5 w-36 max-w-full"/><Skeleton className="mt-1.5 h-[18px] w-24"/></span><span className="account-list-amount"><Skeleton className="h-6 w-24"/></span></div></div>)}</div>
       </div></section>
       <div className="account-selected-panel"><article className="panel account-card">
-        <header><Skeleton className="size-[38px] rounded-[10px]"/><Skeleton className="h-6 w-32"/></header>
-        <Skeleton className="h-9 w-40 max-w-full"/>
+        <header><Skeleton className="size-[38px] rounded-[10px]"/><Skeleton className="h-6 w-32"/><Skeleton className="ms-auto size-9 rounded-lg"/><Skeleton className="size-9 rounded-lg"/></header>
+        <div className="account-card-balance"><Skeleton className="h-4 w-16"/><Skeleton className="h-9 w-40 max-w-full"/></div>
         <Skeleton className="mt-1 h-[150px] w-full"/>
-        <div className="account-balance-facts"><Skeleton className="h-5 w-full"/><Skeleton className="h-5 w-full"/></div>
+        {/* Allocated to goals, Available, In and Out this month; then Recent activity with its newest three. */}
+        <div className="account-balance-facts">{[120, 80, 96, 104].map(width => <div key={width}><Skeleton className="h-4" style={{ width }}/><Skeleton className="h-4 w-16"/></div>)}</div>
+        <div className="account-card-activity"><header><Skeleton className="h-4 w-28"/><Skeleton className="h-4 w-14"/></header>
+          <div className="mt-1 grid">{[0, 1, 2].map(row => <div key={row} className="flex min-h-[52px] items-center gap-3"><Skeleton className="size-7 shrink-0 rounded-lg"/><span className="grid flex-1 gap-1.5"><Skeleton className="h-4 w-24"/><Skeleton className="h-3 w-20"/></span><Skeleton className="h-4 w-14"/></div>)}</div></div>
         <div className="account-card-actions"><Skeleton className="h-[42px] w-full"/><Skeleton className="h-[42px] w-full"/></div>
       </article></div>
     </div>
@@ -128,7 +131,7 @@ export function CashFlowReportSkeleton({ label }: { label?: string }) {
   const report = <div aria-hidden="true" className="cash-flow-report">
     <div className="cash-flow-report-grid">
       <section className="panel cash-flow-trend"><Skeleton className="mb-3 h-7 w-72 max-w-full"/><Skeleton className="mb-3 h-4 w-48"/><ChartSkeleton bars height={220}/><div className="cash-flow-totals"><Skeleton className="h-4 w-48"/></div></section>
-      <section className="panel cash-flow-where"><Skeleton className="mb-3 h-7 w-60 max-w-full"/><div className="mb-4 flex flex-wrap gap-2"><Skeleton className="h-10 w-44 rounded-xl"/><Skeleton className="h-10 w-36 rounded-xl"/></div><SkeletonRows rows={5}/></section>
+      <section className="panel cash-flow-where"><div className="panel-title"><Skeleton className="h-7 w-60 max-w-full"/><div className="cash-flow-switches"><Skeleton className="h-9 w-[7.5rem] rounded-xl"/><Skeleton className="h-9 w-[5.75rem] rounded-xl"/></div></div><SkeletonRows rows={5}/></section>
     </div>
   </div>;
   return label ? <div role="status" aria-busy="true"><span className="sr-only">{label}</span>{report}</div> : report;

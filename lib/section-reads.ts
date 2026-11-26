@@ -18,6 +18,13 @@ export function sectionReads(section: string, today: string): SectionRead[] {
   case 'Overview': return [{ url: '/api/planning?scope=review&month=' + month }, { url: '/api/portfolio-history' }, { url: '/api/comparison-profile', session: true, revision: 0 }];
   // Holdings shows each holding's result from the history, and Profit & loss and Payouts read nothing else.
   case 'Assets & investments': return [{ url: '/api/portfolio-history' }];
+  // Accounts draws its list only once the workspace's planning read is in, and only then asks for what is booked to the
+  // accounts and for the holdings' history; asked here, both are on their way beside the planning read.
+  case 'Accounts': return [{ url: '/api/planning?scope=account-activity' }, { url: '/api/portfolio-history' }];
+  // The paid-off bars read the same history.
+  case 'Loans & debts': return [{ url: '/api/portfolio-history' }];
+  // A savings goal's chart reads its contributions; Goals opens on the overview of the first goal.
+  case 'Savings goals': return [{ url: '/api/goal-tools' }];
   case 'Budget': { const { from, to } = budgetReadRange(month, 'month', []); return [{ url: budgetRead(from, to) }]; }
   case 'Transactions': { const { from, to } = periodDays('three_months', today); return [{ url: budgetRead(from.slice(0, 7), to.slice(0, 7)) }]; }
   case 'Income & expenses': { const { first, readTo } = readRange(month, today); return [{ url: budgetRead(first, readTo) }, { url: '/api/goal-tools' }]; }
