@@ -18,7 +18,6 @@ export const earningSourceSchema=z.object({
  if(!['Business income','Rent income'].includes(source.kind)&&source.linked_record_id)ctx.addIssue({code:'custom',message:'Choose a matching income source.'});
 });
 export type EarningSource=z.infer<typeof earningSourceSchema>&{schedule_id?:string|null};
-/** A blank source for the editor. A fixed one repeats monthly from `today`; a variable one has no schedule. */
 /** Whether an edit keeps a source's recorded payments valid (migration 171): the type, currency, pattern, cadence and
  * link stay, and the start date stays except that a monthly source may move to another day of its start month. */
 export function keepsRecordedPayments(original:EarningSource,source:EarningSource):boolean{
@@ -26,6 +25,7 @@ export function keepsRecordedPayments(original:EarningSource,source:EarningSourc
  const start=original.start_date===source.start_date||(original.frequency==='Monthly'&&!!original.start_date&&!!source.start_date&&original.start_date.slice(0,7)===source.start_date.slice(0,7));
  return same&&start;
 }
+/** A blank source for the editor. A fixed one repeats monthly from `today`; a variable one has no schedule. */
 export const newEarningSource=(currency:string,mode:EarningSource['mode'],today:string,id=crypto.randomUUID()):EarningSource=>({id,name:'',kind:'Other income',currency,mode,archived:false,linked_record_id:null,...(mode==='fixed'?{amount:0,frequency:'Monthly',recurrence_days:null,start_date:today,end_date:null,approx_monthly:null}:{amount:null,frequency:null,start_date:null,end_date:null})});
 export function sourceSchedule(source:EarningSource):Entry|null{
  if(source.mode!=='fixed'||source.archived)return null;

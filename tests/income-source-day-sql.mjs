@@ -36,7 +36,7 @@ test('a monthly income source with payments moves to another day: its schedule, 
   assert.equal((await d.query('SELECT date::text AS s FROM finance_records WHERE id=$1',[id(10)])).rows[0].s,'2026-09-25','the schedule moves with its source');
   assert.deepEqual(await occurrences(d),[['2026-09-25',id(20)],['2026-10-25',id(21)],['2026-11-25',null]]);
   assert.deepEqual(await receipt(d,21),{date:'2026-10-28',earning:'2026-10-25',occurrence:'2026-10-25'},'a receipt keeps the day it was received and pays the moved date');
-  // The 31st falls on the last day of a shorter month: September and November have 30 days.
+  // The 30th stays the 30th in every month here: September, October and November all have one.
   await save(d,{start_date:'2026-09-30'});
   assert.deepEqual(await occurrences(d),[['2026-09-30',id(20)],['2026-10-30',id(21)],['2026-11-30',null]]);
   // A new receipt is recorded on the new day.
