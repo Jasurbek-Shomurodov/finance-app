@@ -3,6 +3,7 @@ import { FormattedNumberInput } from '@/components/presentation-foundation/forma
 import { useLanguage } from '@/components/language-provider';
 import { formatMoney, formatNumber, formatPercent } from '@/lib/format';
 import { isCounted, ownedPercent, shareOf, valuedKinds, type Entry } from '@/lib/finance';
+import { coOwnedPercent, coOwnersOf, maxOwnPercent } from '@/lib/co-owners';
 
 /** What a value update of an owned asset adds to the tracker's draft: a counted asset's two numbers and a new share. */
 export type OwnedDraft = { quantity?: number; unit_value?: number; ownership?: number };
@@ -25,7 +26,8 @@ export function ownedBalance(record: Entry, draft: Draft, blank: boolean, curren
 /** Whether the owned part of the draft can be saved: a share above 0 up to 100, and for a counted asset both numbers in range. */
 export function ownedDraftReady(record: Entry, draft: Draft) {
  const share = draft.ownership ?? ownedPercent(record);
- if (sharedUpdate(record, draft.type) && !(share > 0 && share <= 100)) return false;
+ // Co-owners keep their shares, so the person's can grow only into what nobody holds.
+ if (sharedUpdate(record, draft.type) && !(share > 0 && share <= maxOwnPercent(record) + 1e-9)) return false;
  if (!countedUpdate(record, draft.type)) return true;
  const quantity = draft.quantity ?? 0, unit = draft.unit_value ?? 0;
  return quantity >= 0 && quantity <= 1e12 && unit >= 0 && unit <= 1e15 && quantity * unit <= 1e15;
@@ -60,7 +62,8 @@ export function CountedValueFields<D extends Draft>({ record, draft, setDraft, c
 export function OwnershipField<D extends Draft>({ record, draft, setDraft, full }: Omit<FieldsProps<D>, 'currentFull'> & { /** The whole value the update saves, to show the share of. */ full: number | null }) {
  const { t, locale } = useLanguage();
  const share = draft.ownership ?? ownedPercent(record);
- return <label>{t('Ownership (%)')}<FormattedNumberInput value={share} max={100} displayFractionDigits={8} onValueChange={ownership => setDraft({ ...draft, ownership })}/>
+ const others = coOwnedPercent(coOwnersOf(record));
+ return <label>{t('Ownership (%)')}<FormattedNumberInput value={share} max={maxOwnPercent(record)} maxMessage={others > 0 ? t('Co-owners hold {percent}. Change their shares in Edit first.', { percent: formatPercent(others, locale, 8) }) : undefined} displayFractionDigits={8} onValueChange={ownership => setDraft({ ...draft, ownership })}/>
   {full !== null && share > 0 && share < 100 && <small className="muted" aria-live="polite">{t('You own {percent} · your share {amount}', { percent: formatPercent(share, locale, 8), amount: formatMoney(shareOf(full, share), record.currency, locale) })}</small>}
  </label>;
 }

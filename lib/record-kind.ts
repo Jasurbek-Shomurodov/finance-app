@@ -21,6 +21,7 @@ export function changeRecordKind(entry: Entry, kind: Entry['kind'], today: strin
   // A share and a count belong to assets valued by hand; the unit name is cleared only where it was set.
   ownership_percentage: valuedKinds.includes(kind) ? entry.ownership_percentage : 100,
   unit_label: valuedKinds.includes(kind) ? entry.unit_label : entry.unit_label == null ? undefined : null,
+  co_owners: valuedKinds.includes(kind) ? entry.co_owners : entry.co_owners == null ? undefined : [],
   estimated_monthly_income: kind === 'Property' || kind === 'Business' ? entry.estimated_monthly_income : 0,
   estimated_monthly_payment: kind === 'Mortgage' ? entry.estimated_monthly_payment : 0,
   is_investment: kind === 'Cash' ? entry.is_investment : false,

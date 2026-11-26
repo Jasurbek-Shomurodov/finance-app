@@ -1,5 +1,6 @@
 import type { AssetMovement } from './asset-movements';
 import { assetRecordKinds, fullValue, ownedPercent, shareOf, simpleInterestKinds, unitPricedKinds, valuedKinds, type Entry } from './finance';
+import { coOwnersProblem } from './co-owners';
 import { changeHoldingCost, holdingCostStart, shownHoldingTotal, type HoldingCost, type HoldingCostField } from './holding-cost';
 import { instrumentFor } from './market';
 import { changeRecordKind } from './record-kind';
@@ -103,6 +104,7 @@ function ownedProblems(entry: Entry): AssetProblems {
  if (entry.unit_label != null && !positive(entry.quantity)) problems.units = need('Enter a quantity greater than zero.');
  if (entry.unit_label != null && !entry.unit_label.trim()) problems.unit = need('Enter a unit name.');
  if (!(share > 0 && share <= 100)) problems.ownership = need('Enter a share above 0 and up to 100.');
+ else if (coOwnersProblem(entry)) problems.ownership = need(coOwnersProblem(entry));
  return problems;
 }
 /** A bill or a bond runs from a purchase date that has come to a maturity date after it. */

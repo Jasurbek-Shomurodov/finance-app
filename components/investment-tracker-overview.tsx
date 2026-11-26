@@ -17,7 +17,9 @@ import { categoryColor } from '@/lib/category-colors';
 import { historyChartDate, historyPerformance, historySeries, historyValueLabel, isLendingKind, linkedPaymentKinds, type HistoryEvent, type TrackerEvent } from '@/lib/investment-history';
 import { depositInterest, depositProjection, depositToday } from '@/lib/deposit-interest';
 import { isHolding } from '@/lib/asset-movements';
-import { interestCompounding, interestKinds, isCounted, type Entry } from '@/lib/finance';
+import { fullValue, interestCompounding, interestKinds, isCounted, ownedPercent, type Entry } from '@/lib/finance';
+import { isShared, ownershipParts, type OwnershipPart } from '@/lib/co-owners';
+import { OwnershipBreakdown } from '@/components/presentation-foundation/ownership-breakdown';
 import type { MovementDraft } from '@/components/planning/asset-movement-dialog';
 
 type Point=ReturnType<typeof historySeries>['points'][number];
@@ -45,12 +47,33 @@ function TrackerTiles({record,events}:{record:Entry;events:TrackerEvent[]}){
  const lead=lending||record.kind==='Cash'||interestKinds.includes(record.kind)?historyValueLabel(record.kind):'Latest tracked value (your share)';
  const shared=!lending&&stats.fullBalance!==null&&stats.ownership<100;
  const performs=tracksReturn(record.kind);
+ // One value is a starting point: change and return need a second one, so the dash says what it waits for.
+ const waiting=performance.change===null&&stats.balance!==null?<p>{t('Add a second value to see this.')}</p>:null;
  return <StatTiles columns="auto">
   <StatTile label={t(lead)} value={money(stats.balance)}>{isCounted(record)&&stats.quantity!==null&&stats.unitValue!==null&&<p>{t('{quantity} {unit} × {value}',{quantity:formatNumber(stats.quantity,locale,8),unit:record.unit_label??'',value:money(stats.unitValue)})}</p>}{shared&&<p>{t('Full value {amount} · you own {percent}',{amount:money(stats.fullBalance),percent:formatPercent(stats.ownership,locale)})}</p>}</StatTile>
-  {performs&&<StatTile label={t('Value change')} value={signed(performance.change)} tone={signTone(performance.change)}>{performance.changePercent!==null&&performance.firstDate&&<p>{t('{percent} since {date}',{percent:formatSignedPercent(performance.changePercent,locale),date:formatDate(performance.firstDate,locale)})}</p>}</StatTile>}
-  {performs&&<StatTile label={t('Total return')} value={signed(performance.result)} tone={signTone(performance.result)} hint={<p>{t('Value change plus income received, minus expenses paid and net contributions, since the first tracked value.')}</p>}/>}
+  {performs&&<StatTile label={t('Value change')} value={signed(performance.change)} tone={signTone(performance.change)} hint={waiting}>{performance.changePercent!==null&&performance.firstDate&&<p>{t('{percent} since {date}',{percent:formatSignedPercent(performance.changePercent,locale),date:formatDate(performance.firstDate,locale)})}</p>}</StatTile>}
+  {performs&&<StatTile label={t('Total return')} value={signed(performance.result)} tone={signTone(performance.result)} hint={<><p>{t('Value change plus income received, minus expenses paid and net contributions, since the first tracked value.')}</p>{waiting}</>}/>}
   {historyTotals(record.kind,stats).map(([label,amount])=><StatTile key={label} label={t(label)} value={money(amount)}/>)}
  </StatTiles>;
+}
+
+/** Who owns the asset and what each share is worth, when it is shared: the bar, then a row per owner with the value
+ * of their share and, once income or costs are tracked, their part of the net. The tracked income and costs are the
+ * person's own share, so a co-owner's part is that net scaled by their share against the person's. */
+function TrackerOwners({record,events}:{record:Entry;events:TrackerEvent[]}){
+ const {t,locale}=useLanguage();
+ if(!isShared(record))return null;
+ const stats=historySeries(events);
+ const full=stats.fullBalance??fullValue(record);
+ const parts=ownershipParts(record,full);
+ const mine=ownedPercent(record);
+ const net=stats.receipts===null?null:stats.receipts-stats.expenses;
+ const money=(amount:number)=>formatMoney(amount,record.currency,locale);
+ const netOf=(part:OwnershipPart)=>net===null||mine<=0?'—':formatSignedMoney(part.role==='you'?net:net*part.percentage/mine,record.currency,locale);
+ return <section className="tracker-owners" aria-labelledby={`owners-${record.id}`}>
+  <h3 id={`owners-${record.id}`}>{t('Owners')}<InfoHint><p>{t('Each share of the latest full value. Net income is income received minus expenses paid, split in proportion to the shares.')}</p></InfoHint></h3>
+  <OwnershipBreakdown parts={parts} money={money} extra={net!==null&&(stats.receipts!==0||stats.expenses!==0)?{label:t('Net income'),value:netOf}:undefined}/>
+ </section>;
 }
 
 /** A deposit's interest estimate; how it is worked out sits behind its ⓘ. */
@@ -119,9 +142,10 @@ function TrackerActions({record,busy,onMovement,onPayment,onAddEntry}:{record:En
 }
 
 /** The Overview while the history loads: the kind's tiles and the chart with its legend, in their loaded places. */
-function OverviewSkeleton({kind,label}:{kind:string;label:string}){
+function OverviewSkeleton({kind,label,owners}:{kind:string;label:string;/** Rows of the Owners table, 0 when the asset is not shared. */owners:number}){
  return <div role="status" aria-busy="true" className="tracker-overview"><span className="sr-only">{label}</span>
   <div className="stat-tiles" data-columns="auto" aria-hidden="true">{times(tileCount(kind)).map(tile=><article className="stat-tile" key={tile}><Skeleton className="h-[18px] w-24"/><Skeleton className={tile?'h-[18px] w-20 max-w-full':'h-[30px] w-40 max-w-full'}/></article>)}</div>
+  {owners>0&&<div className="tracker-owners" aria-hidden="true"><Skeleton className="h-[18px] w-20"/><div className="ownership-breakdown"><Skeleton className="h-2 w-full rounded-full"/>{times(owners+1).map(row=><Skeleton key={row} className="h-[18px] w-full"/>)}</div></div>}
   <div className="tracker-chart" aria-hidden="true"><ChartSkeleton height={chartHeight.compact}/><div className="comparison-legend"><Skeleton className="h-8 w-36 rounded-full"/></div></div>
  </div>;
 }
@@ -133,8 +157,9 @@ export function TrackerOverview({record,events,loading,busy,onMovement,onPayment
  const {t}=useLanguage();
  const stats=historySeries(events);
  return <>
-  {loading?<OverviewSkeleton kind={record.kind} label={t('Loading history…')}/>:<div className="tracker-overview">
+  {loading?<OverviewSkeleton kind={record.kind} label={t('Loading history…')} owners={isShared(record)?ownershipParts(record,null).length:0}/>:<div className="tracker-overview">
    <TrackerTiles record={record} events={events}/>
+   <TrackerOwners record={record} events={events}/>
    {interestKinds.includes(record.kind)&&<DepositEstimate record={record} events={events}/>}
    {stats.missing&&<p className="muted">{t('Exchange rate unavailable.')}</p>}
    {stats.points.length>0&&<TrackerChart record={record} points={stats.points}/>}

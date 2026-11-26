@@ -300,3 +300,30 @@ label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 .payment-summary>span{display:grid;gap:2px;min-width:0}
 .payment-summary small{font-size:var(--type-small);color:var(--muted-foreground)}
 .payment-form .ownership-summary{margin-top:0}
+
+/* Who owns an asset: a stacked bar (the person in the mark colour, co-owners from the palette, the unassigned rest
+   hatched), its table, and the co-owner rows of the record form (migration 173). */
+.ownership-bar{display:flex;gap:2px;inline-size:100%;block-size:8px;border-radius:999px;overflow:hidden;background:repeating-linear-gradient(135deg,var(--border) 0 3px,transparent 3px 6px)}
+.ownership-bar[data-size="sm"]{block-size:5px;margin-block-start:8px}
+.ownership-bar>i{display:block;flex:none;min-inline-size:3px;background:var(--part)}
+.ownership-bar>i[data-role="unassigned"]{flex:1 1 auto;background:transparent}
+.ownership-swatch{display:inline-block;flex:none;inline-size:10px;block-size:10px;border-radius:3px;margin-inline-end:8px;background:var(--part)}
+.ownership-swatch[data-role="unassigned"]{background:repeating-linear-gradient(135deg,var(--muted-foreground) 0 2px,transparent 2px 4px)}
+.ownership-breakdown{display:grid;gap:10px;min-inline-size:0}
+.ownership-breakdown table{inline-size:100%;border-collapse:collapse;font-size:var(--type-compact);font-variant-numeric:tabular-nums}
+.ownership-breakdown :is(th,td){padding:7px 0 7px 12px;text-align:end;font-weight:400;white-space:nowrap}
+.ownership-breakdown :is(th,td):first-child{padding-inline-start:0;text-align:start;white-space:normal;overflow-wrap:anywhere}
+.ownership-breakdown thead th{padding-block:0 4px;color:var(--muted-foreground);font-size:var(--type-caption)}
+.ownership-breakdown tbody th{font-weight:600;font-size:inherit;text-transform:none;letter-spacing:normal;color:inherit}
+.ownership-breakdown tbody tr{border-block-start:1px solid var(--hairline)}
+.ownership-breakdown tr[data-role="unassigned"]{color:var(--muted-foreground)}
+.ownership-breakdown tr[data-role="unassigned"] th{font-weight:400}
+.tracker-owners{display:grid;gap:10px;padding:14px 16px;border:1px solid var(--border);border-radius:var(--radius-card);background:var(--card)}
+.tracker-owners h3{display:flex;align-items:center;gap:4px;margin:0;font-size:var(--type-compact);font-weight:600}
+.co-owners{display:grid;gap:10px;min-inline-size:0;margin:0;padding:0;border:0}
+.co-owners legend{display:flex;align-items:center;gap:4px;margin-block-end:8px;padding:0;font-size:var(--type-compact);font-weight:600}
+.co-owner-list{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.co-owner-row{display:grid;grid-template-columns:auto auto minmax(0,1fr) minmax(5.5rem,7.5rem) auto;align-items:center;gap:8px}
+.co-owner-row>.ownership-swatch{margin:0}
+.co-owner-share{display:flex;align-items:center;gap:4px}
+.co-owner-add{justify-self:start}

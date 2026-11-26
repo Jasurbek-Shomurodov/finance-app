@@ -152,6 +152,14 @@ Built 23 November 2026 (migrations 166 and 167 are files; the owner applies them
   and the Telegram digests follow. History keeps the share each value was recorded at
   (`balance × ownership_percentage / 100` per event), so changing the share is a dated update and never rewrites the
   days before it.
+- **Co-owners** (migration 173, 26 November 2026). A valued asset can name who owns the rest: `co_owners` is a list of
+  `{id, name, percentage}` in the person's order (drag to reorder), at most 12, and the person's share plus theirs is at
+  most 100; what is left reads "Not assigned". They are labels, not users: `ownership_percentage` stays the person's
+  share and the only figure totals, history and reports read. `lib/co-owners.ts` holds the rules; the record form and Add
+  asset edit the list (`CoOwnerFields`), the asset card shows a stacked bar and a Co-owners line, and the Tracker's
+  Overview has an Owners table (each share of the latest full value, and each part of the tracked net income, which is
+  the person's share scaled by the shares). Not built: dated co-owner history (a change of their shares rewrites the
+  split for all dates), co-owners in reports, the assistant or the bot, and linking a co-owner to a household member.
 - **Counted assets.** A valued asset with a unit name (`unit_label`, "sheep") is counted: `quantity` is how many and
   `amount` is the value of ONE unit, so the whole asset is `amount × quantity` (`isCounted`, `fullValue`). Without a
   unit name the quantity column means nothing and the record reads as before. A value update of a counted asset is

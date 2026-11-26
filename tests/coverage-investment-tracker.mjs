@@ -523,8 +523,9 @@ test('value change and total return are measured from the first tracked value, s
  assert.ok(tile(loss.view, 'Total return').endsWith(`<strong class="negative">${signed(-400)}</strong></article>`));
  // One dated value: nothing to compare yet, so no figure and no tone.
  const single = await open(record('Stock'), [event('b', 'baseline', '2026-01-01', { balance: 2000 }), event('i', 'income', '2026-02-10', { amount: 100 })]);
- assert.equal(tile(single.view, 'Value change'), '<h3>Value change</h3><strong>—</strong></article>');
- assert.ok(tile(single.view, 'Total return').endsWith('<strong>—</strong></article>'));
+ // The ⓘ says what the dash waits for.
+ assert.equal(tile(single.view, 'Value change'), '<h3>Value change<i data-hint="Add a second value to see this."></i></h3><strong>—</strong></article>');
+ assert.ok(tile(single.view, 'Total return').endsWith('since the first tracked value.Add a second value to see this."></i></h3><strong>—</strong></article>'));
  // A payment no rate converts: the value change is known, what it returned is not.
  const unknown = await open(record('Property'), [event('b', 'baseline', '2026-01-01', { balance: 5000 }), event('p', 'income', '2026-02-01', { amount: null, entered: { amount: 500000, currency: 'UZS', name: 'Rent' } }), event('v', 'valuation', '2026-03-01', { balance: 6000 })]);
  assert.ok(tile(unknown.view, 'Value change').startsWith(`<h3>Value change</h3><strong class="positive">${signed(1000)}</strong>`));
@@ -744,4 +745,23 @@ test('a foreign cash account without a quote shows no conversion, and amounts be
  html = lent.view.html();
  assert.ok(html.includes(`Outstanding balance after update: ${money(2e15 + 100)}`));
  assert.equal(lent.saveButton().props.disabled, true);
+});
+
+test('a shared asset lists every owner with the value of their share and their part of the net', async () => {
+ const money = value => formatMoney(value, 'USD', 'en-US'), signed = value => formatSignedMoney(value, 'USD', 'en-US');
+ const owners = [{ id: '17300000-0000-4000-8000-000000000001', name: 'Aziz', percentage: 30 }, { id: '17300000-0000-4000-8000-000000000002', name: 'Dilshod', percentage: 20 }];
+ const cafe = await open(record('Business', { amount: 42000, quantity: 1, ownership_percentage: 50, co_owners: owners }), [
+  event('b', 'baseline', '2026-01-01', { balance: 42000, ownership_percentage: 50 }),
+  event('i', 'income', '2026-02-01', { amount: 1000 }),
+  event('e', 'expense', '2026-02-05', { amount: 200 }),
+ ]);
+ const html = cafe.view.html();
+ assert.match(html, /<section class="tracker-owners"/);
+ assert.match(html, /role="img" aria-label="You 50%, Aziz 30%, Dilshod 20%"/);
+ // The tracked income and costs are the person's own share: 800 net at 50% is 480 for 30% and 320 for 20%.
+ for (const [name, share, value, net] of [['You', '50%', 21000, 800], ['Aziz', '30%', 12600, 480], ['Dilshod', '20%', 8400, 320]])
+  assert.ok(html.includes(`${name}</th><td>${share}</td><td>${money(value)}</td><td>${signed(net)}</td>`), name);
+ // Owned in full with nobody named: no Owners section.
+ const alone = await open(record('Business', { amount: 42000, quantity: 1, ownership_percentage: 100 }), [event('b', 'baseline', '2026-01-01', { balance: 42000 })]);
+ assert.doesNotMatch(alone.view.html(), /tracker-owners/);
 });

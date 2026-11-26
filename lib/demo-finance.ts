@@ -64,7 +64,7 @@ export function demoRecords(today: string): Entry[] {
   record('condo', 'Lakeside rental condo', 'Property', 285000, { estimated_monthly_income: 2100, date: shiftDay(today, -1500), business_id: 'demo-biz-rentals' }),
   record('studio', 'Downtown studio', 'Property', 168000, { estimated_monthly_income: 1250, date: shiftDay(today, -700), business_id: 'demo-biz-rentals' }),
   // Other assets
-  record('business', 'Neighborhood café', 'Business', 120000, { ownership_percentage: 25, estimated_monthly_income: 900, business_structure: 'partnership', business_color: 'amber' }),
+  record('business', 'Neighborhood café', 'Business', 120000, { ownership_percentage: 25, co_owners: [{ id: 'd0c0a000-0000-4000-8000-000000000001', name: 'Maya', percentage: 50 }, { id: 'd0c0a000-0000-4000-8000-000000000002', name: 'Daniel', percentage: 25 }], estimated_monthly_income: 900, business_structure: 'partnership', business_color: 'amber' }),
   // Businesses tracked beside the household: a side business and the rentals.
   record('biz-candles', 'Coastal Candle Co.', 'Business', 0, { business_structure: 'llc', business_color: 'teal', notes: 'Hand-poured candles sold online and at markets.' }),
   record('biz-rentals', 'Lakeside Rentals LLC', 'Business', 0, { business_structure: 'rental_property', business_color: 'violet' }),

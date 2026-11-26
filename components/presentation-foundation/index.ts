@@ -68,3 +68,4 @@ export { ConfirmDialog } from './confirm-dialog';
 export { ErrorPopup } from './error-popup';
 export { SortableList, SortableItem, sortableAccessibility, useSortableSensors } from './sortable';
 export { signTone } from './tone';
+export { OwnershipBar, OwnershipBreakdown, partColor, usePartName } from './ownership-breakdown';

@@ -74,7 +74,7 @@ function ValuedFields({ draft, change, problems, disabled }: StepProps) {
  return <>
   <Field name="value" label={`${t(entry.unit_label != null ? 'Value per unit' : 'Current value')} (${entry.currency})`} problem={problems.value}>{aria => <FormattedNumberInput value={entry.amount} invalid={aria.invalid} describedBy={aria.describedBy} onValueChange={amount => setEntry({ ...entry, amount })}/>}</Field>
   <div className="asset-owned" data-field={problems.units ? 'units' : problems.unit ? 'unit' : 'ownership'}>
-   <OwnershipFields editing={entry} setEditing={setEntry} disabled={disabled}/>
+   <OwnershipFields editing={entry} setEditing={setEntry} disabled={disabled} inlineProblem={false}/>
    {problem && <small role="alert" className="field-error">{t(problem.message)}</small>}
   </div>
  </>;

@@ -1,4 +1,5 @@
 import { cashFlowAmountMissing, requiresCashAccount } from './cash-account-required';
+import { coOwnersProblem } from './co-owners';
 import { depositToday } from './deposit-interest';
 import { isBusinessAccount } from './business';
 import { expenses, income, liabilities, ownedPercent, simpleInterestKinds, type Entry } from './finance';
@@ -40,6 +41,8 @@ export function recordSaveProblem(editing: Entry) {
   : !editing.date ? 'Date is required.' : simpleInterestKinds.includes(editing.kind) && editing.opened_on && editing.date < editing.opened_on ? 'The maturity date cannot be before the purchase date.' : '';
  if (dateProblem) return dateProblem;
  if (cashFlowAmountMissing(editing)) return 'Enter an amount greater than zero.';
+ const shares = coOwnersProblem(editing);
+ if (shares) return shares;
  if (requiresCashAccount(editing) && editing.date > today()) return 'Actual income and expenses cannot be dated in the future.';
  return '';
 }

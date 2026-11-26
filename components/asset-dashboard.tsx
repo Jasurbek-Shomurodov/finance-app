@@ -19,6 +19,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useLanguage } from '@/components/language-provider';
 import { categoryColor } from '@/lib/category-colors';
 import { formatConvertedQuote, formatDate, formatMoney, formatNumber, formatPercent } from '@/lib/format';
+import { coOwnersOf, isShared, ownershipParts } from '@/lib/co-owners';
+import { OwnershipBar } from '@/components/presentation-foundation/ownership-breakdown';
 import { assetRecordKinds, fullValue, interestKinds, isCounted, ownedPercent, unitPricedKinds, value, totalValue, type Entry, type estimatedCashFlow } from '@/lib/finance';
 import { sortAssetsByWorth } from '@/lib/asset-sort';
 import { portfolioHoldings } from '@/lib/portfolio-performance';
@@ -89,14 +91,18 @@ function cardFact(record: Entry, earned: PnlTotals | null, shown: (amount: numbe
  * value. Nothing for an asset owned in full and not counted. */
 function OwnedNote({ record, shown }: { record: Entry; shown: (amount: number) => string }) {
  const { t, locale } = useLanguage();
- const percent = ownedPercent(record), counted = isCounted(record);
- if (!counted && percent >= 100) return null;
+ const percent = ownedPercent(record), counted = isCounted(record), shared = isShared(record);
+ if (!counted && !shared) return null;
  return <small className="asset-owned-note">
   {counted && t('{quantity} {unit} × {value}', { quantity: formatNumber(record.quantity, locale, 8), unit: record.unit_label ?? '', value: shown(record.amount) })}
-  {counted && percent < 100 && ' · '}
-  {percent < 100 && t('You own {percent} of {amount}', { percent: formatPercent(percent, locale, 8), amount: shown(fullValue(record)) })}
+  {counted && shared && ' · '}
+  {shared && t('You own {percent} of {amount}', { percent: formatPercent(percent, locale, 8), amount: shown(fullValue(record)) })}
+  {shared && <OwnershipBar parts={ownershipParts(record, null)} size="sm"/>}
  </small>;
 }
+
+/** The co-owners in the card's details, each with their share. */
+const coOwnerLine = (record: Entry, locale: string) => coOwnersOf(record).map(owner => `${owner.name} ${formatPercent(owner.percentage, locale, 8)}`).join(' · ');
 
 /** What a holding brings in, in its details once profit and loss has taken the card's fact line. */
 function EarningFacts({ record, shown }: { record: Entry; shown: (amount: number) => string }) {
@@ -166,7 +172,7 @@ export function AssetDashboard({ excludedCurrencies=[], accounts, accountsLoadin
      note={converted ? <OwnedNote record={record} shown={shown}/> : <small>{t('Exchange rate unavailable.')}</small>}
      menu={<DropdownMenu><DropdownMenuTrigger asChild><Button size="icon" variant="ghost" aria-label={t('Actions for {name}', { name: original.name })}><Ellipsis size={18}/></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => onEdit(original)}>{t('Edit {name}', { name: original.name })}</DropdownMenuItem>{!demo && <DropdownMenuItem onSelect={() => onTrack(original)}>{t('Open Tracker for {name}', { name: original.name })}</DropdownMenuItem>}{onClose && <DropdownMenuItem onSelect={() => onClose(original)}>{t('Close {name}', { name: original.name })}</DropdownMenuItem>}{!original.history_event_id && <DropdownMenuItem variant="destructive" onSelect={() => onDelete(original)}><Trash2 aria-hidden="true"/>{t('Delete {name}', { name: original.name })}</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>}
      detailsLabel={t(isAccount?'Account details':'Asset details')}
-     details={<dl><div><dt>{t('Date / due date')}</dt><dd>{formatDate(original.date, locale)}</dd></div>{(record.kind === 'Business' || ownedPercent(record) < 100) && <div><dt>{t('Ownership')}</dt><dd>{formatPercent(ownedPercent(record), locale, 8)}</dd></div>}{earned && <EarningFacts record={record} shown={shown}/>}{hasQuote && <><div><dt>{t('Quantity')}</dt><dd>{formatNumber(record.quantity, locale)}</dd></div><div><dt>{t('Price per unit')}</dt><dd>{quote}</dd></div><div><dt>{t('Price source')}</dt><dd>{quoteLabel(record)}</dd></div></>}{original.kind === 'Property' && <PropertyYear totals={propertyTotals?.get(original.id)} money={money}/>}{original.currency !== currency && <div><dt>{t('Saved value')}</dt><dd>{money(value(original), original.currency)}</dd></div>}{original.notes && <div><dt>{t('Notes')}</dt><dd>{original.notes}</dd></div>}</dl>}/>;
+     details={<dl><div><dt>{t('Date / due date')}</dt><dd>{formatDate(original.date, locale)}</dd></div>{(record.kind === 'Business' || ownedPercent(record) < 100) && <div><dt>{t('Ownership')}</dt><dd>{formatPercent(ownedPercent(record), locale, 8)}</dd></div>}{coOwnersOf(record).length > 0 && <div><dt>{t('Co-owners')}</dt><dd>{coOwnerLine(record, locale)}</dd></div>}{earned && <EarningFacts record={record} shown={shown}/>}{hasQuote && <><div><dt>{t('Quantity')}</dt><dd>{formatNumber(record.quantity, locale)}</dd></div><div><dt>{t('Price per unit')}</dt><dd>{quote}</dd></div><div><dt>{t('Price source')}</dt><dd>{quoteLabel(record)}</dd></div></>}{original.kind === 'Property' && <PropertyYear totals={propertyTotals?.get(original.id)} money={money}/>}{original.currency !== currency && <div><dt>{t('Saved value')}</dt><dd>{money(value(original), original.currency)}</dd></div>}{original.notes && <div><dt>{t('Notes')}</dt><dd>{original.notes}</dd></div>}</dl>}/>;
    };
 
  return <div className="asset-dashboard" aria-busy={loading}>
