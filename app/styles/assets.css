@@ -25,6 +25,10 @@
 @container content (max-width:640px){.portfolio-allocation-body{grid-template-columns:minmax(0,1fr)}.allocation-donut{margin-inline:auto}}
 .allocation-donut{position:relative;width:200px;height:200px;container-type:inline-size}
 .allocation-donut .donut-slice{cursor:pointer;outline:none}
+/* A slice's tooltip stands over the total in the hole (which comes later in the page), on one line, free to run past the
+   donut's small box rather than wrap into a narrow column over the ring. */
+.allocation-donut .recharts-tooltip-wrapper{z-index:2 !important;max-width:none}
+.allocation-donut .recharts-default-tooltip{white-space:nowrap !important}
 /* The total stays inside the hole (58% of the donut): a fit figure filling about half its width, never above the
    title size, so a longer form such as Arabic's "17.9 ألف US$" gets smaller instead of running over the ring. */
 .allocation-donut-total{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding-inline:23%;text-align:center;pointer-events:none}

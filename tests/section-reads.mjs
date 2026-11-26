@@ -27,6 +27,9 @@ test('each screen warms what it reads when it opens as it opens by default (PERF
  assert.deepEqual(sectionReads('Recently deleted', today), [{ url: '/api/deleted-items?page=1', session: true, revision: 0 }]);
  assert.deepEqual(urls('Overview'), ['/api/planning?scope=review&month=2026-11', '/api/portfolio-history', '/api/comparison-profile']);
  assert.deepEqual(urls('Assets & investments'), ['/api/portfolio-history'], 'Investments starts its history beside the workspace reads');
+ assert.deepEqual(urls('Accounts'), ['/api/planning?scope=account-activity', '/api/portfolio-history'], 'Accounts no longer waits for the planning read before asking');
+ assert.deepEqual(urls('Loans & debts'), ['/api/portfolio-history']);
+ assert.deepEqual(urls('Savings goals'), ['/api/goal-tools']);
  assert.deepEqual(sectionReads('Assistant', today), [], 'a screen with no read of its own warms nothing');
 });
 
@@ -42,6 +45,9 @@ test('the screens still ask for those addresses, starting from those defaults', 
  assert.match(reports, /useState<Interval>\('month'\)/); assert.match(reports, /useState\(today\)/);
  assert.match(source('hooks/use-report-data.ts'), /`\/api\/planning\?scope=budget&month=\$\{read\.to\.slice\(0, 7\)\}&from=\$\{read\.from\.slice\(0, 7\)\}`, user, live && enabled, reload,/);
  assert.match(source('components/workspace/screens/upcoming-screen.tsx'), /useState<RecurringView>\('list'\)/);
+ assert.match(source('components/planning/accounts/use-account-story.ts'), /useOwnerResource\('\/api\/planning\?scope=account-activity', owner, live, revision,/);
+ assert.match(source('components/loans/loans-overview.tsx'), /usePortfolioHistory\(user, demo, reload\)/);
+ assert.match(source('components/planning/goals-page.tsx'), /useOwnerResource\('\/api\/goal-tools',owner,/);
  assert.match(source('components/workspace/screens/upcoming-screen.tsx'), /view === 'subscriptions'\)/, 'the Subscriptions read waits for its view');
  assert.match(source('components/recently-deleted.tsx'), /useSessionResource\('\/api\/deleted-items\?page='\+page\+narrowed,!demo,reload,/);
  // The whole bin (no tab, no search) adds nothing to the address, so it is the one the warm-up read.
