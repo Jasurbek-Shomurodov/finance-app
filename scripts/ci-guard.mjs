@@ -3,8 +3,6 @@
 //                                              which jobs and steps, so the push that follows can carry the fix;
 //   node scripts/ci-guard.mjs watch <sha>      started in the background after the hook's checks, waits for the run of
 //                                              that commit and raises a desktop notification when it fails.
-//   node scripts/ci-guard.mjs main-ready <sha> run for a push to main: refuses a commit CI has not passed yet, so main
-//                                              only receives commits that were green on their feature branch.
 // It reads GitHub through the `gh` login already used for pushing. Without `gh` (or offline) it says so and never
 // blocks a push: CI itself stays the judge.
 import { execFileSync, spawn } from 'node:child_process';
@@ -55,46 +53,6 @@ function status(branch) {
  console.warn('  Read it with: gh run view ' + last.databaseId + ' --log-failed\n  Fix CI before (or with) this push.\n');
 }
 
-const docsOnly = files => files.length > 0 && files.every(file => /^docs\/|\.md$/.test(file));
-
-/** Whether a commit may go to main, and if not, what to say. `facts` reads git and GitHub, so the rule tests alone:
- *  runs(sha) the CI runs of a commit (null when GitHub cannot be read), onMain(sha) whether origin/main already holds it,
- *  parents(sha) its parents, changed(sha) the files it changes against origin/main. */
-export function mainReadiness(sha, facts) {
- const runs = facts.runs(sha);
- if (runs === null) return { ok: true, note: 'ci-guard: could not read CI (gh missing, signed out or offline); not checking that this commit passed.' };
- if (runs.some(run => run.conclusion === 'success')) return { ok: true, note: 'ci-guard: CI passed this commit; it may go to main.' };
- if (docsOnly(facts.changed(sha))) return { ok: true, note: 'ci-guard: documentation only; it may go to main.' };
- // A merge of a green branch into a newer main: each side is either main already or a commit CI passed.
- const parents = facts.parents(sha);
- if (parents.length > 1 && parents.every(parent => facts.onMain(parent) || (facts.runs(parent) ?? []).some(run => run.conclusion === 'success')))
-  return { ok: true, note: 'ci-guard: a merge of commits CI passed; it may go to main.' };
- const running = runs.find(run => run.status !== 'completed');
- const short = sha.slice(0, 8);
- if (running) return { ok: false, note: `ci-guard: CI is still running for ${short} (gh run watch ${running.databaseId}). Push to main once it is green.` };
- if (runs.some(run => run.conclusion === 'cancelled') && !runs.some(run => run.conclusion === 'failure'))
-  return { ok: false, note: `ci-guard: CI stopped for ${short}, usually because CI committed redrawn Linux pictures on top of it. git pull, then push the newer commit once its run is green.` };
- const failed = runs.find(run => run.status === 'completed');
- if (failed) return { ok: false, note: `ci-guard: CI ${failed.conclusion === 'failure' ? 'failed' : failed.conclusion} for ${short} (gh run view ${failed.databaseId} --log-failed). Fix it on the feature branch first.` };
- return { ok: false, note: `ci-guard: CI has not run ${short} yet. Main only takes commits CI passed:\n  1. git push -u origin HEAD:feature/<short-description>\n  2. wait for the run to go green; a UI change gets its Linux pictures committed to the branch by CI, then a second run\n  3. git pull (to take the pictures commit), then git push origin HEAD:main` };
-}
-
-function gitLines(args) {
- try { return execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).split('\n').filter(Boolean); } catch { return []; }
-}
-
-function mainReady(sha) {
- const facts = {
-  runs: commit => gh(['run', 'list', '--workflow', workflow, '--commit', commit, '--limit', '10', '--json', 'databaseId,status,conclusion']),
-  onMain: commit => { try { execFileSync('git', ['merge-base', '--is-ancestor', commit, 'origin/main'], { stdio: 'ignore' }); return true; } catch { return false; } },
-  parents: commit => gitLines(['rev-list', '--parents', '-n', '1', commit]).join(' ').split(' ').slice(1),
-  changed: commit => gitLines(['diff', '--name-only', 'origin/main', commit]),
- };
- const { ok, note } = mainReadiness(sha, facts);
- (ok ? console.log : console.error)(note);
- return ok;
-}
-
 function notify(title, text) {
  if (process.platform !== 'darwin') return;
  const quote = value => JSON.stringify(value);
@@ -123,6 +81,5 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
  if (command === 'status') status(value || 'main');
  else if (command === 'watch') await watch(value);
  else if (command === 'spawn-watch') spawnWatch(value);
- else if (command === 'main-ready') process.exit(mainReady(value) ? 0 : 1);
- else { console.error('usage: ci-guard.mjs status <branch> | watch <sha> | spawn-watch <sha> | main-ready <sha>'); process.exit(2); }
+ else { console.error('usage: ci-guard.mjs status <branch> | watch <sha> | spawn-watch <sha>'); process.exit(2); }
 }

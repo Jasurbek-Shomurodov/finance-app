@@ -46,25 +46,23 @@ that asserts on markup:
 
 1. Mac: `npx playwright test e2e/screens.spec.mjs --update-snapshots` (`-g "SHOT budget"` for one screen) after `npm run build:production`, and
    look at every picture it wrote.
-2. Linux: push to a `feature/…` branch. Its e2e parts redraw the Linux pictures that changed
-   (`--update-snapshots=changed`), the `pictures` job commits them to the branch ("e2e: the Linux pictures for …"),
-   cancels the stale run and starts a strict one on the new commit. `git pull` to take that commit, look at the
-   pictures in its diff, and push to main once the strict run is green. (`npm run screenshots:ci` is only for a strict
-   run, on main or a pull request, that failed on a picture.)
+2. Linux: push to main. Its e2e parts redraw the Linux pictures that changed (`--update-snapshots=changed`), the
+   `pictures` job commits them to main ("e2e: the Linux pictures for …"), cancels the stale run and starts a strict
+   one on the new commit. `git pull` to take that commit and look at the pictures in its diff. (`npm run
+   screenshots:ci` is only for a strict run, on a pull request or a re-run, that failed on a picture.)
 
-### CI and the road to main
+### CI on main
 
 `.github/workflows/checks.yml` runs on every push, in parallel jobs: `verify` (audit, lint, type check, integration
 test), `unit` (the unit tests in six shards, `node scripts/test.mjs --coverage --shard=i/6`), `coverage` (merges the
 shards' reports and checks `scripts/coverage-floor.json`) and `e2e` (three Playwright shards, each with its own build
-and database). A commit that already passed (the same commit pushed to its branch and then to main) is skipped by the
-`seen` job. A run takes about six minutes; it took 23 when everything ran in one job.
+and database). A commit that already passed (started again, or pushed twice) is skipped by the `seen` job. A run takes about six minutes; it took 23 when everything ran in one job.
 
-**Main only takes commits CI passed (the user's rule, 24 November 2026).** Push work to `feature/<short-description>`
-first, wait for green (and for CI's pictures commit after a UI change), then push that same commit to main. The
-pre-push hook refuses a push to main of a commit with no green run (`scripts/ci-guard.mjs main-ready`); a docs-only
-change and a merge of green commits into a newer main pass. Never skip the hook with `--no-verify`. Run the tests that
-cover your change locally before the first push, so the branch run is green the first time.
+**No branches (the user's rule, 26 November 2026, replacing the feature-branch flow of 24 November).** Commit on
+main and push to main; the pre-push hook refuses a push to any other branch and still refuses a failing type check.
+Never skip the hook with `--no-verify`. Main has no gate before CI any more, so run the tests that cover your change
+locally before pushing, watch the run that follows, and fix a red main at once (after a UI change, `git pull` for CI's
+pictures commit).
 
 Loading shimmers are pictured too, in light and at phone width: `shimmer-data-<screen>` holds a fresh visit's data
 requests (everything but the session's) so the screen keeps its own skeleton, and `shimmer-drawer-<screen>` holds a

@@ -1,6 +1,6 @@
 #!/bin/sh
-# Before a push: say when CI is already red, refuse the push when the type check fails, refuse a push to main of a
-# commit CI has not passed, then watch the CI run of what is pushed and raise a desktop notification if it fails
+# Before a push: say when CI is already red, refuse a push to any branch but main (work goes straight to main, the
+# user's rule of 26 November 2026), refuse the push when the type check fails, then watch the CI run of what is pushed and raise a desktop notification if it fails
 # (scripts/ci-guard.mjs). The full test suite and the browser tests stay in CI, sharded across machines.
 # A post-commit hook could not help here: CI runs on push, so there is nothing to check yet after a commit.
 branch=$(git rev-parse --abbrev-ref HEAD)
@@ -9,18 +9,20 @@ node scripts/ci-guard.mjs status "$branch"
 # The commits being pushed arrive on stdin as "<local ref> <local sha> <remote ref> <remote sha>".
 pushed=$(cat)
 
+# No branches: only main (and tags) take commits. Deleting a branch (an all-zero local sha) is allowed.
+echo "$pushed" | while read -r _ local_sha remote_ref _; do
+  case "$local_sha" in 0000000000000000000000000000000000000000|"") continue ;; esac
+  case "$remote_ref" in refs/heads/main|refs/tags/*) ;; *)
+    echo "pre-push: $remote_ref refused. Work goes straight to main, never to a branch: git push origin HEAD:main" >&2
+    exit 1 ;;
+  esac
+done || exit 1
+
 echo "pre-push: running npm run typecheck"
 if ! npm run typecheck --silent; then
   echo "pre-push: type check failed, push aborted. Fix the errors above and push again." >&2
   exit 1
 fi
-
-# Main only takes commits that were green on their feature branch (docs/agents/database-and-tests.md, CI).
-git fetch --quiet origin main 2>/dev/null
-echo "$pushed" | while read -r _ local_sha remote_ref _; do
-  case "$local_sha" in 0000000000000000000000000000000000000000|"") continue ;; esac
-  if [ "$remote_ref" = "refs/heads/main" ]; then node scripts/ci-guard.mjs main-ready "$local_sha" || exit 1; fi
-done || exit 1
 
 echo "$pushed" | while read -r _ local_sha _ _; do
   case "$local_sha" in 0000000000000000000000000000000000000000|"") ;; *) node scripts/ci-guard.mjs spawn-watch "$local_sha" ;; esac

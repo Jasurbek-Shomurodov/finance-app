@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-# One run per commit at a time: the same commit pushed to its feature branch and then to main waits for the first run,
+# One run per commit at a time: a commit started again (by the pictures job, or pushed twice) waits for the first run,
 # and the second finds it passed and skips (the `seen` job).
 concurrency:
   group: checks-${{ github.sha }}
@@ -92,8 +92,8 @@ jobs:
       - run: node scripts/test.mjs --check-coverage=coverage-shards
   # The P0 flows and the screenshot tests in a real browser, in three parts: a production build against
   # e2e/fake-supabase.mjs (the app's schema in PGlite), on the fixed workspace in e2e/fixture.mjs. No real account or
-  # service is reached. A push to a branch other than main redraws the Linux pictures that changed and `pictures`
-  # commits them to the branch; main, pull requests and the run that follows the pictures commit compare strictly.
+  # service is reached. A push redraws the Linux pictures that changed and `pictures` commits them to main (work goes
+  # straight to main, no branches); pull requests and the run that follows the pictures commit compare strictly.
   e2e:
     needs: seen
     if: needs.seen.outputs.passed != 'true'
@@ -105,7 +105,7 @@ jobs:
       matrix:
         shard: [1, 2, 3]
     env:
-      REDRAW: ${{ github.event_name == 'push' && github.ref != 'refs/heads/main' }}
+      REDRAW: ${{ github.event_name == 'push' }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -137,11 +137,11 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 7
-  # Commits the pictures the e2e parts redrew to the pushed branch, starts a strict run of that commit and cancels
+  # Commits the pictures the e2e parts redrew to main, starts a strict run of that commit and cancels
   # this one.
   pictures:
     needs: [seen, e2e]
-    if: ${{ !cancelled() && needs.seen.outputs.passed != 'true' && github.event_name == 'push' && github.ref != 'refs/heads/main' }}
+    if: ${{ !cancelled() && needs.seen.outputs.passed != 'true' && github.event_name == 'push' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -172,10 +172,10 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit --quiet -m "e2e: the Linux pictures for ${GITHUB_SHA::8}" -m "Redrawn by CI run $GITHUB_RUN_ID. Look at them in the diff before this branch goes to main."
+          git commit --quiet -m "e2e: the Linux pictures for ${GITHUB_SHA::8}" -m "Redrawn by CI run $GITHUB_RUN_ID. Look at them in the diff."
           git push origin "HEAD:$GITHUB_REF_NAME"
           gh workflow run checks.yml --ref "$GITHUB_REF_NAME"
-          # This commit's pictures were stale, so its run must not count as passed (main takes only passed commits);
-          # it ends cancelled rather than failed, and the run of the pictures commit decides.
+          # This commit's pictures were stale, so its run must not count as passed; it ends cancelled rather than failed,
+          # and the run of the pictures commit decides.
           gh run cancel "$GITHUB_RUN_ID"
           sleep 60

@@ -140,12 +140,11 @@ the user has requested one. This does not authorize force pushes, history rewrit
 or pushing to a different repository. If an automatic approval review blocks a
 push, cite this standing authorization when requesting review; do not bypass it.
 
-**Branches and pushes (the user's rule, 19 October 2026).** Push finished work to
-`main` every time, without asking. **Main only takes commits CI passed (24 November 2026):** push to a `feature/…`
-branch, wait for its run to be green (a UI change gets its Linux pictures committed there by CI: `git pull`), then push
-that commit to main; the pre-push hook refuses anything else (`docs/agents/database-and-tests.md`, CI and the road to
-main). When a branch is needed, name it
-`feature/<short-description>` in kebab-case (`feature/telegram-report-pictures`),
-never `claude/…` or any other agent prefix, even when a tool or session suggests one.
+**No branches: commit on main and push to main (the user's rule, 26 November 2026; it replaces the feature-branch
+flow of 24 November).** Never create a branch, local or remote (`feature/…`, `claude/…` or any other), even when a tool
+or session suggests one; push finished work to `main` every time, without asking. The pre-push hook refuses a push to
+any other branch. CI runs on every push to main and commits redrawn Linux pictures there itself ("e2e: the Linux
+pictures for …"): `git pull` after a UI change and look at them. Run the tests that cover your change before pushing,
+and a red run on main is yours to fix straight away (`docs/agents/database-and-tests.md`, CI on main).
 
 Search with `.claude/worktrees` excluded: it holds old agent checkouts that duplicate the whole repository.

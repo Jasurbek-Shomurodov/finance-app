@@ -1,6 +1,6 @@
-// Takes the Linux pictures of the screenshot tests (e2e/screens.spec.mjs) from a CI run. A push to a feature branch
-// no longer needs it: CI redraws the changed Linux pictures and commits them to the branch itself (the `pictures` job
-// in .github/workflows/checks.yml). This is for a strict run (main, a pull request) that failed on a picture: it
+// Takes the Linux pictures of the screenshot tests (e2e/screens.spec.mjs) from a CI run. A push to main no longer
+// needs it: CI redraws the changed Linux pictures and commits them to main itself (the `pictures` job in
+// .github/workflows/checks.yml). This is for a strict run (a pull request, a re-run) that failed on a picture: it
 // copies what that run drew (`-actual.png` in its playwright-report-* artifacts) into e2e/<spec>-snapshots/ as the
 // new -linux pictures. Look at each one before committing it.
 //
