@@ -16,7 +16,11 @@ const tailDays = 3;
 type Kept = { series: string; points: PricePoint[]; first_day: string; checked_to: string; fetched_at: string; full_at: string };
 /** Reads a series' closes from `from` through `to` from the feeds, with the feed's own completeness checks. */
 export type LiveHistory = (from: string, to: string) => Promise<PricePoint[]>;
-export type HistoryCacheDeps = { db?: ServiceDatabase | null; now?: () => number; later?: (work: () => Promise<void>) => void };
+export type HistoryCacheDeps = { db?: ServiceDatabase | null; now?: () => number; later?: (work: () => Promise<void>) => void;
+ /** Answer at once from kept closes that end within a week of the period's end, and read the missing days after the
+  * reply. The net worth history asks this: its holdings' latest values come from live quotes, so a few days' old close
+  * is no loss, while a feed asked before replying holds the whole page up. A comparison leaves it off and waits. */
+ answerStale?: boolean };
 
 async function readKept(db: ServiceDatabase, series: string): Promise<Kept | null> {
  // Before migration 157 nothing is kept, and every series is read from the feeds as before.
@@ -83,8 +87,9 @@ export async function keptHistory(series: string, start: string, end: string, li
  const kept = db ? await readKept(db, series) : null;
  const ask = { series, start, end, live, now };
  const stale = !kept || now - Date.parse(kept.fetched_at) >= historyFreshForMs || (stock && now - Date.parse(kept.full_at) >= stockFullEveryMs);
- if (kept && reaches(kept, start, end)) {
-  if (stale) {
+ const reached = reaches(kept, start, end);
+ if (kept && (reached || (deps.answerStale && standsIn(kept, start, end)))) {
+  if (stale || !reached) {
    const work = async () => { try { await keep(db, await refreshed(kept, ask)); } catch { /* Read again next time. */ } };
    if (deps.later) deps.later(work); else void work();
   }

@@ -17,8 +17,9 @@ import { usePropertyTotals } from '@/hooks/use-property-totals';
 import { PerformanceView } from '@/components/performance/performance-view';
 import { PayoutsAlertsView } from '@/components/performance/payouts-alerts-view';
 import { useLocationSearch } from '@/hooks/use-location-search';
-import { assetRecordKinds } from '@/lib/finance';
+import { assetRecordKinds, type Entry } from '@/lib/finance';
 import { assetKindOf } from '@/lib/overview';
+import { investmentsHint } from '@/lib/shimmer-hints';
 
 /** What was closed among the holdings and investment accounts, folded under the cards with the way back. */
 function ClosedHoldings() {
@@ -26,6 +27,8 @@ function ClosedHoldings() {
  const closed = (planning.data.closed ?? []).filter(record => assetRecordKinds.includes(record.kind));
  return <ClosedFold records={closed} accounts={planning.data.closedAccounts} onReopen={reopenRecord} onReopenAccount={reopenAccount} onDelete={requestDelete}/>;
 }
+
+const holdingsHint = ({ loading, error, data }: { loading: boolean; error: unknown; data: { records: Entry[]; holdingAccounts?: { id: string; kind: string }[] } }) => loading || error ? undefined : investmentsHint(data.records, data.holdingAccounts ?? []);
 
 export function AssetsScreen() {
  const { t } = useLanguage();
@@ -40,12 +43,14 @@ export function AssetsScreen() {
  // holding's result from it, and the Profit & loss tab breaks it down.
  // The Dashboard's allocation rows link to one kind (`allocationHref`): Holdings opens filtered to it.
  const openKind = assetKindOf(useLocationSearch(), assetRecordKinds);
+ // What the in-screen shimmer draws, once the planning read knows the holdings (lib/shimmer-hints.ts).
+ const hint = holdingsHint(planning);
  const earned = useInvestmentPnl({ owner: user, demo, revision: reload, records: rows, currency, market });
  return <>
   <div data-page="Assets & investments" className="content assets-content">
    <PageHeader title={t('Investments')} tabs={<Segmented className="page-tabs" as="nav" label={t('Investments')} options={[{ value: 'holdings', label: t('Holdings') }, { value: 'pnl', label: t('Profit & loss') }, { value: 'payouts', label: t('Payouts & alerts') }, { value: 'allocation', label: t('Target allocation') }] as const} value={view} onChange={setView}/>}><Button onClick={() => startAsset()}><Plus size={17} aria-hidden="true"/>{t("Add asset")}</Button></PageHeader>
    <ScreenNotices/>
-   {view === 'holdings' && (workspaceLoading ? <InvestmentsSkeleton label={t("Loading your workspace…")}/> : <><AssetDashboard excludedCurrencies={excludedCurrencies} accounts={planning.data.holdingAccounts??[]} accountsLoading={planning.loading} accountsError={planning.error} onRetryAccounts={refreshRecords} onAddHolding={addAccountRecord} records={open} currency={currency} market={market} netWorth={netWorth} debt={totalDebt} forecast={forecast} forecastReady={forecastReady} loading={tableLoading} demo={demo} onAdd={() => startAsset()} onEdit={editRecord} onTrack={setTracking} onInvest={investIn} onDelete={requestDelete} onClose={requestClose} quoteLabel={quoteLabel} propertyTotals={properties} pnl={earned.pnl} pnlError={earned.error} onShowPnl={() => setView('pnl')} openKind={openKind}/><ClosedHoldings/></>)}
+   {view === 'holdings' && (workspaceLoading ? <InvestmentsSkeleton label={t("Loading your workspace…")} hint={hint}/> : <><AssetDashboard excludedCurrencies={excludedCurrencies} accounts={planning.data.holdingAccounts??[]} accountsLoading={planning.loading} accountsError={planning.error} onRetryAccounts={refreshRecords} onAddHolding={addAccountRecord} records={open} currency={currency} market={market} netWorth={netWorth} debt={totalDebt} forecast={forecast} forecastReady={forecastReady} loading={tableLoading} demo={demo} onAdd={() => startAsset()} onEdit={editRecord} onTrack={setTracking} onInvest={investIn} onDelete={requestDelete} onClose={requestClose} quoteLabel={quoteLabel} propertyTotals={properties} pnl={earned.pnl} pnlError={earned.error} onShowPnl={() => setView('pnl')} openKind={openKind}/><ClosedHoldings/></>)}
   </div>
   {view === 'pnl' && <div className="content review-content" key={'pnl:' + (user ?? 'demo')}>{workspaceLoading ? <PerformanceSkeleton label={t('Loading your workspace…')}/> : <PerformanceView history={earned.history} rate={earned.rate} error={earned.error} onRetry={earned.retry} currency={currency} market={market} accounts={planning.data.holdingAccounts ?? []}/>}</div>}
   {view === 'payouts' && <div className="content review-content" key={'payouts:' + (user ?? 'demo')}>{workspaceLoading ? <PayoutsAlertsSkeleton label={t('Loading your workspace…')}/> : <PayoutsAlertsView history={earned.history} error={earned.error} onRetry={earned.retry} currency={currency} market={market} preferences={workspacePreferences} demo={demo}/>}</div>}

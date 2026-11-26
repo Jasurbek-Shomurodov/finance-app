@@ -75,7 +75,7 @@ Official references: [Supabase SSR email confirmation](https://supabase.com/docs
 
 | Work | Required next step |
 | --- | --- |
-| Dated statement reconciliation and cleared/pending/reconciled states | Build an account ledger covering cashflow, transfer, investment, mortgage and correction legs; invalidate reconciliations when relevant history changes. The existing balance correction is not statement reconciliation. |
+| Statement reconciliation, what is left | Done (migrations 066 and 172): one ledger of account legs, cleared/pending/reconciled states, dated statements carried forward, and a statement reopens only when an entry it reconciled is edited, deleted or dated after it. Still open: refusing overlapping statements, locking or warning before a reconciled entry is edited, a reconciled marker on Transactions and the account card, and an audited adjustment for a difference left unexplained. |
 | Available-to-spend | Integrate reconciled balances, account-specific obligations, budgets and goal reserves without subtracting the same commitment twice. Current forecasts are not a verified spending allowance. |
 | Complete backup restore | Versioned preview, owner-bound relationship validation, explicit restore semantics, atomic application and a disaster-recovery exercise. JSON export alone is not recovery. |
 | Import matching and bulk review | Transfer/refund matching, pending-to-posted replacement, bulk categories and additional statement formats. |

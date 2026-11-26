@@ -16,6 +16,8 @@ export function sectionReads(section: string, today: string): SectionRead[] {
  const month = today.slice(0, 7);
  switch (section) {
   case 'Overview': return [{ url: '/api/planning?scope=review&month=' + month }, { url: '/api/portfolio-history' }, { url: '/api/comparison-profile', session: true, revision: 0 }];
+  // Holdings shows each holding's result from the history, and Profit & loss and Payouts read nothing else.
+  case 'Assets & investments': return [{ url: '/api/portfolio-history' }];
   case 'Budget': { const { from, to } = budgetReadRange(month, 'month', []); return [{ url: budgetRead(from, to) }]; }
   case 'Transactions': { const { from, to } = periodDays('three_months', today); return [{ url: budgetRead(from.slice(0, 7), to.slice(0, 7)) }]; }
   case 'Income & expenses': { const { first, readTo } = readRange(month, today); return [{ url: budgetRead(first, readTo) }, { url: '/api/goal-tools' }]; }

@@ -43,6 +43,8 @@ Build a reusable account ledger projection covering cashflows, transfers, invest
 
 Compare a statement balance with cleared activity through its date. Show unmatched items and the difference. Treat a balance adjustment as an explicit, audited operation rather than silently hiding the difference. Editing, deleting, restoring or undoing activity in a reconciled period must invalidate or explicitly reopen the affected reconciliation.
 
+Status (26 November 2026, migration 172): the ledger, the three states, the carried-forward period and opening balance, the difference breakdown and reopening on a changed reconciled entry are built; see `docs/roadmap-implementation.md` for what is left.
+
 Acceptance: month-end statements, imported/manual duplicates, backdated edits, deleted/restored transactions, both transfer legs, fees, multi-currency accounts, same-day ordering, concurrent changes and owner isolation. A matched period must remain explainable from its ledger.
 
 [Actual Budget's reconciliation workflow](https://actualbudget.org/docs/accounts/reconciliation/) provides a useful reference for statement matching, cleared balances and locked transactions. Our historical-ledger requirements are codebase-specific recommendations.

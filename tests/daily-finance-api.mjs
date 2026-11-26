@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {loadTS} from './helpers/load-ts.mjs';
 const id=n=>`67000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
-function route(path){let owner=true,fail=false;const calls=[];const api=loadTS(path,{'@/lib/supabase':{session:async()=>owner?{token:'owner-token'}:null,sameOrigin:r=>r.headers.get('origin')==='https://local',supa:async(path,init,token)=>{calls.push({path,body:init.body?JSON.parse(init.body):null,token});return fail?Response.json({code:'P0001',message:'Changed. Reload.'},{status:409}):Response.json(path.includes('account_statement')?{entries:[],fingerprint:'a'.repeat(64)}:path.includes('reconciliations?')?[]:{ok:true});}}});return {...api,calls,setOwner:v=>owner=v,setFail:v=>fail=v};}
+function route(path){let owner=true,fail=false;const calls=[];const api=loadTS(path,{'@/lib/supabase':{session:async()=>owner?{token:'owner-token'}:null,sameOrigin:r=>r.headers.get('origin')==='https://local',supa:async(path,init,token)=>{calls.push({path,body:init.body?JSON.parse(init.body):null,token});return fail?Response.json({code:'P0001',message:'Changed. Reload.'},{status:409}):Response.json(path.includes('statement_review')?{entries:[],fingerprint:'a'.repeat(64)}:path.includes('reconciliations?')?[]:{ok:true});}}});return {...api,calls,setOwner:v=>owner=v,setFail:v=>fail=v};}
 const request=(body,origin='https://local')=>new Request('https://local',{method:'POST',headers:{origin},body:JSON.stringify(body)});
 test('reconciliation rejects anonymous, cross-origin and malformed writes; stale state stays an error',async()=>{
  const r=route('app/api/reconciliation/route.ts');const input={id:id(1),account_id:id(2),start_date:'2026-09-01',end_date:'2026-09-24',opening_balance:100,closing_balance:100,cleared:[],fingerprint:'a'.repeat(64),status:'reconciled'};
@@ -10,6 +10,16 @@ test('reconciliation rejects anonymous, cross-origin and malformed writes; stale
  for(const patch of [{start_date:'2026-02-30'},{closing_balance:null},{fingerprint:'fake'},{status:'anything'}])assert.equal((await r.POST(request({...input,...patch}))).status,400);
  assert.equal(r.calls.length,0);assert.equal((await r.POST(request(input))).status,200);assert.equal(r.calls[0].token,'owner-token');assert.deepEqual(r.calls[0].body,{p_data:input});
  r.setFail(true);assert.equal((await r.POST(request(input))).status,409);
+});
+test('a statement review reads the next period without dates, or the period asked for, and refuses half a period',async()=>{
+ const r=route('app/api/reconciliation/route.ts'),read=query=>r.GET(new Request('https://local/api/reconciliation?'+query));
+ assert.equal((await read(`account=${id(2)}`)).status,200);
+ assert.deepEqual(r.calls[0].body,{p_account:id(2),p_start:null,p_end:null});
+ assert.match(r.calls[1].path,/account_reconciliations\?account_id=eq\./);
+ assert.equal((await read(`account=${id(2)}&from=2026-10-01&to=2026-10-31`)).status,200);
+ assert.deepEqual(r.calls[2].body,{p_account:id(2),p_start:'2026-10-01',p_end:'2026-10-31'});
+ for(const query of [`account=${id(2)}&from=2026-10-01`,`account=${id(2)}&to=2026-10-31`,'account=nope',`account=${id(2)}&from=2026-02-30&to=2026-03-01`])assert.equal((await read(query)).status,400,query);
+ r.setOwner(false);assert.equal((await read(`account=${id(2)}`)).status,401);
 });
 test('investment event API keeps validation and authorization ahead of financial writes',async()=>{
  const r=route('app/api/corporate-events/route.ts');const input={id:id(1),record_id:id(2),target_id:id(3),revision:1,target_revision:1,kind:'dividend',date:'2026-09-24',gross:10,withholding:2,reinvest_amount:5,quantity:.05,numerator:0,denominator:0,notes:''};

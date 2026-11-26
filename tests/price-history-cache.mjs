@@ -42,6 +42,19 @@ test('a period ending after the kept row reads the missing days before replying,
  assert.equal(writes[0].row.checked_to,'2026-10-29');assert.equal(writes[0].row.first_day,'2026-01-01');
 });
 
+test('the net worth history answers from closes kept within a week and reads the missing days after the reply (PERF)',async()=>{
+ const {db,writes}=database([row('shares:AAPL',days('2026-01-01','2026-10-26'))]),{asked,live}=feed((from,to)=>days(from,to)),later=[];
+ const points=await keptHistory('shares:AAPL','2026-10-01','2026-10-29',live,{db,now:()=>NOW,later:work=>later.push(work),answerStale:true});
+ assert.equal(asked.length,0,'no feed is asked before replying');
+ assert.equal(points.at(-1).date,'2026-10-26');
+ assert.equal(later.length,1);for(const work of later)await work();
+ assert.deepEqual(asked,[['2026-10-23','2026-10-29']]);assert.equal(writes[0].row.checked_to,'2026-10-29');
+ // Older than a week, the reply still waits for the feed, as without the option.
+ const old=database([row('shares:MSFT',days('2026-01-01','2026-10-10'))]),slow=feed((from,to)=>days(from,to));
+ const fresh=await keptHistory('shares:MSFT','2026-10-01','2026-10-29',slow.live,{db:old.db,now:()=>NOW,later:()=>{},answerStale:true});
+ assert.equal(slow.asked.length,1);assert.equal(fresh.at(-1).date,'2026-10-29');
+});
+
 test('a period starting before the kept row, or a stock row a week old, reads the whole span again',async()=>{
  const {db}=database([row('crypto:SOL',days('2026-06-01','2026-10-29'))]),{asked,live}=feed();
  await keptHistory('crypto:SOL','2026-01-01','2026-10-29',live,{db,now:()=>NOW,later:()=>{}});
