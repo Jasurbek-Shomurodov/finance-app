@@ -606,3 +606,15 @@ test('value-axis money ticks never read the same: compact first, then more digit
  assert.deepEqual(read([1400000,1425000,1450000,1475000]),['$1.4M','$1.43M','$1.45M','$1.48M']);
  assert.deepEqual(read([1400000,1405000,1410000]),['$1,400,000','$1,405,000','$1,410,000']);
 });
+
+test('the opening loader is a busy status that names itself and draws a left-to-right chart with twelve volume bars', () => {
+ const { BootChart } = load('boot-chart.tsx');
+ const html = render(BootChart, { label: 'Loading your workspace…' });
+ assert.match(html, /^<div role="status" aria-busy="true" class="boot-chart"><span class="sr-only">Loading your workspace…<\/span>/);
+ assert.match(html, /class="boot-chart-plot" dir="ltr"/);
+ assert.match(html, /<path class="boot-chart-line" d="M0 70 L[^"]+ L240 20" pathLength="1"><\/path>/);
+ assert.equal((html.match(/<line class="boot-chart-grid"/g) ?? []).length, 3);
+ assert.equal((html.match(/<i style="height:/g) ?? []).length, 12);
+ // The dot sits on the last point of the line.
+ assert.match(html, /class="boot-chart-dot" style="left:100%;top:20\.8333/);
+});
