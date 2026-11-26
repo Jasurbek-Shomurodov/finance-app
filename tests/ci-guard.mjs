@@ -40,6 +40,8 @@ test('the pre-push hook warns about a red CI, refuses any branch but main and a 
  // Work goes straight to main (the user's rule, 26 November 2026): any other branch is refused, deleting one is not.
  assert.match(hook, /0{40}\|""\) continue ;;[\s\S]*refs\/heads\/main\|refs\/tags\/\*\) ;; \*\)[\s\S]*exit 1 ;;[\s\S]*done \|\| exit 1/);
  assert.doesNotMatch(hook, /main-ready/);
+ // Every migration is on the live database before a push (the user's rule, 26 November 2026).
+ assert.match(hook, /check-migrations\.mjs --strict[\s\S]*exit 1/);
  assert.ok(fs.statSync('.githooks/pre-push').mode & 0o111, 'the hook is executable');
 });
 

@@ -147,4 +147,11 @@ any other branch. CI runs on every push to main and commits redrawn Linux pictur
 pictures for …"): `git pull` after a UI change and look at them. Run the tests that cover your change before pushing,
 and a red run on main is yours to fix straight away (`docs/agents/database-and-tests.md`, CI on main).
 
+**Apply migrations before pushing (the user's rule, 26 November 2026).** A push that adds or changes a file in
+`migrations/` applies it to the live Supabase database first (the Supabase connector's `apply_migration`, or the SQL
+editor), in number order, and checks `finance_capabilities()` reports its `schema_version`; only then push. The app
+needs the new schema the moment main deploys; the pre-push hook refuses a push while the database named in `.env` is
+behind (`scripts/check-migrations.mjs --strict`). Never run `database/setup.sql` on an existing database. If it cannot be
+applied (no access, an error), do not push: say so to the user.
+
 Search with `.claude/worktrees` excluded: it holds old agent checkouts that duplicate the whole repository.

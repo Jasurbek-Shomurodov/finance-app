@@ -8,6 +8,11 @@ Keep all incremental SQL migrations in the root `migrations/` folder. Name them 
 (`npm run migrations:check`), which reads that version from the database named in `.env` / `.env.local` and
 lists the migration files not yet applied (a warning; `MIGRATIONS_CHECK=strict` refuses the commit instead).
 
+**Apply a new migration to the live database before pushing it (the user's rule, 26 November 2026).** Main deploys
+straight away, so a migration reaches Supabase first (the connector's `apply_migration`, named after the file, or the
+SQL editor), in number order, and `select finance_capabilities()` shows its `schema_version` before the push. If it
+cannot be applied, the push waits and the user hears why.
+
 A migration that changes a function older migrations patch by text keeps that function's signature and the patched
 text in place: tests re-apply older migrations to the finished schema (`tests/database-integrity-sql.mjs`,
 `tests/more-asset-kinds.mjs`, `tests/asset-payment-links-sql.mjs`) and expect them to change nothing. Add a parameter

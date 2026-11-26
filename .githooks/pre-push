@@ -18,6 +18,14 @@ echo "$pushed" | while read -r _ local_sha remote_ref _; do
   esac
 done || exit 1
 
+# Main deploys at once, so every migration is applied to the live database before the push (the user's rule,
+# 26 November 2026). Skipped when .env names no database or it cannot be reached.
+echo "pre-push: checking the live database has every migration"
+if ! node scripts/check-migrations.mjs --strict; then
+  echo "pre-push: push aborted. Apply the migrations above to Supabase first (docs/agents/database-and-tests.md)." >&2
+  exit 1
+fi
+
 echo "pre-push: running npm run typecheck"
 if ! npm run typecheck --silent; then
   echo "pre-push: type check failed, push aborted. Fix the errors above and push again." >&2

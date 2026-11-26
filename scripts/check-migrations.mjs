@@ -62,7 +62,7 @@ export async function check({ env = readEnv(['.env', '.env.local']), names = fs.
  catch (error) { warn(`migrations: could not read the database schema version (${error.message}); skipped the check.`); return 0; }
  const result = report({ applied, names, required: requiredVersion(source) });
  for (const line of result.lines) (result.behind ? warn : log)(line);
- if (result.behind && strict) { warn('migrations: MIGRATIONS_CHECK=strict, commit refused until the migrations above are applied.'); return 1; }
+ if (result.behind && strict) { warn('migrations: strict check, refused until the migrations above are applied.'); return 1; }
  return 0;
 }
 

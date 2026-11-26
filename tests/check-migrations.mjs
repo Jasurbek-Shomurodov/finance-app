@@ -47,7 +47,7 @@ test('check warns by default, refuses only in strict mode, and lets a commit thr
  assert.ok(io.err.some(line => line.includes('138_delete_category_into_built_in.sql')), 'unapplied migrations are named on stderr');
  io = capture();
  assert.equal(await check({ env, names, source, fetcher: behind, strict: true, ...io }), 1);
- assert.ok(io.err.at(-1).includes('commit refused'));
+ assert.ok(io.err.at(-1).includes('refused until the migrations above are applied'));
  io = capture();
  assert.equal(await check({ env, names, source, fetcher: async () => reply(200, { schema_version: 139 }), strict: true, ...io }), 0);
  assert.deepEqual(io.err, []);
