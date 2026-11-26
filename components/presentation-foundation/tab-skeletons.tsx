@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { assetRecordKinds } from '@/lib/finance';
 import { ChartSkeleton } from './loading-placeholder';
-import { Bar, Figures, Heading, Loading, Tiles, Toolbar, times } from './skeleton-kit';
+import { Bar, Heading, Loading, Tiles, Toolbar, times } from './skeleton-kit';
 
 // The loading shapes of the views behind a screen's tabs and of the panels that load after their screen, block for block
 // as each loaded view draws them. Change a view, change its shape here with it (docs/agents/interface.md, Shimmer follows
@@ -54,12 +55,16 @@ export function IncomeEstimatesSkeleton({ label }: { label: string }) {
  </section></Loading>;
 }
 
-/** A holding or account card: icon, name and line, menu; its worth, a fact, the share line and the details row. */
+/** A holding or account card in the loaded `AssetCard`'s own classes, so a grid lays it on the same rows: icon, name over
+ * its kind badge, menu; its worth; its one fact; the share line; then the open details with their rows. */
 export function AssetCardSkeleton() {
- return <article className="panel asset-card asset-card-skeleton">
-  <header className="asset-card-header"><Skeleton className="size-10 shrink-0 rounded-xl"/><div className="grid flex-1 gap-1.5"><Skeleton className="h-4 w-32"/><Skeleton className="h-3 w-24"/></div><Skeleton className="size-8 rounded-lg"/></header>
-  <Skeleton className="h-8 w-36"/><Skeleton className="h-4 w-48 max-w-full"/><Skeleton className="h-1 w-full rounded-full"/>
-  <div className="asset-card-details"><Skeleton className="h-10 w-full rounded-lg"/><Figures rows={3}/></div>
+ return <article className="asset-card">
+  <header className="asset-card-header"><span className="asset-card-icon"><Skeleton className="size-10 rounded-xl"/></span><div><Bar width={112}/><Skeleton className="h-5 w-16 rounded-full"/></div><span className="shrink-0"><Skeleton className="size-8 rounded-lg"/></span></header>
+  <div className="asset-card-worth"><Skeleton className="h-8 w-32 max-w-full"/></div>
+  <div className="asset-card-facts"><div><Skeleton className="h-4 w-20"/><Skeleton className="h-4 w-24"/></div></div>
+  <div className="asset-card-share"/>
+  <div className="asset-card-details"><div className="flex min-h-10 items-center justify-between gap-2.5"><Skeleton className="h-4 w-24"/><Skeleton className="size-4"/></div>
+   <div className="grid gap-2 pt-1 pb-3">{[84, 60, 72].map(width => <div key={width} className="flex justify-between gap-3.5"><Skeleton className="h-4" style={{ width }}/><Skeleton className="h-4 w-16"/></div>)}</div></div>
  </article>;
 }
 
@@ -68,21 +73,32 @@ export function AssetCardsSkeleton({ label, cards = 3, layout }: { label?: strin
  return <Part label={label}><div className={layout ? 'asset-card-grid asset-layout-' + layout : 'asset-card-grid'}>{times(cards).map(card => <AssetCardSkeleton key={card}/>)}</div></Part>;
 }
 
-/** Investments' Profit & loss: the total with its period switch and lines, two charts side by side, then the monthly
- * result beside the drawdown (`PerformanceCharts`). */
+/** A holdings list row as `perf-list` draws it: the icon tile, the name over its line, then what sits at the end. */
+const perfRow = (row: number, end: ReactNode) => <li key={row}><Skeleton className="size-9 shrink-0 rounded-[10px]"/><span className="grid gap-1.5"><Bar width={[120, 96, 140][row % 3]}/><Skeleton className="h-3 w-24"/></span>{end}</li>;
+
+/** Investments' Profit & loss, as `PerformanceView` draws it: the total with its return badge, the period switch over
+ * today's value, the five lines and the four return tiles; two charts side by side, then the monthly result beside the
+ * drawdown (`PerformanceCharts`); Where it came from with its grouping switch over the holdings table; Realized gains. */
 export function PerformanceSkeleton({ label }: { label: string }) {
  return <Loading label={label}><div className="performance">
   <section className="panel performance-hero">
-   <header className="performance-hero-head"><div className="grid gap-2"><Skeleton className="h-4 w-28"/><Skeleton className="h-10 w-48 max-w-full"/><Skeleton className="h-4 w-56 max-w-full"/></div><div className="performance-hero-aside"><Skeleton className="h-10 w-72 max-w-full rounded-xl"/><Skeleton className="h-5 w-36"/></div></header>
-   <ul className="performance-lines">{times(4).map(line => <li key={line}><Skeleton className="h-4 w-24"/><Skeleton className="h-5 w-20"/></li>)}</ul>
+   <header className="performance-hero-head"><div className="grid gap-2"><Skeleton className="h-4 w-28"/><Skeleton className="h-10 w-40 max-w-full"/><div className="flex items-center gap-2"><Skeleton className="h-7 w-20 rounded-full"/><Skeleton className="h-4 w-32"/></div></div>
+    <div className="performance-hero-aside"><Skeleton className="h-11 w-80 max-w-full rounded-xl"/><div className="grid justify-items-end gap-1.5"><Skeleton className="h-4 w-20"/><Skeleton className="h-6 w-24"/></div></div></header>
+   <ul className="performance-lines">{times(5).map(line => <li key={line}><Skeleton className="h-4 w-24"/><Skeleton className="h-5 w-16"/></li>)}</ul>
+   <Tiles count={4} columns="auto"/>
   </section>
-  <div className="performance-columns">{[200, 210].map(width => <section className="panel" key={width}><Heading width={width}/><ChartSkeleton height={260}/></section>)}</div>
-  <div className="performance-columns">{[180, 90].map((width, index) => <section className="panel" key={width}><Heading width={width}/><ChartSkeleton bars={index === 0} height={260}/></section>)}</div>
+  <div className="performance-columns">{[230, 230].map((width, index) => <section className="panel" key={index}><Heading width={width}/><ChartSkeleton height={260}/></section>)}</div>
+  <div className="performance-columns">{[230, 140].map((width, index) => <section className="panel" key={width}><Heading width={width}/><ChartSkeleton bars={index === 0} height={260}/></section>)}</div>
+  <section className="panel"><Heading width={200} aside={290}/>
+   <div className="table-scroll"><table className="perf-table">
+    <thead><tr>{[44, 40, 56, 72, 60, 110, 84, 44].map((width, column) => <th key={column}><Bar className="h-3" width={width}/></th>)}</tr></thead>
+    <tbody>{times(3).map(row => <tr key={row}><th><span className="perf-name"><Skeleton className="size-10 shrink-0 rounded-xl"/><span className="grid gap-1.5"><Bar width={[64, 88, 52][row]}/><Skeleton className="h-3 w-12"/></span></span></th>{times(7).map(column => <td key={column}><Bar className="ms-auto h-4" width={48}/></td>)}</tr>)}</tbody>
+   </table></div>
+  </section>
+  <section className="panel"><Heading width={170}/><ul className="perf-list">{times(2).map(row => perfRow(row, <Bar width={64}/>))}</ul></section>
  </div></Loading>;
 }
 
-/** A holdings list row as `perf-list` draws it: the icon tile, the name over its line, then what sits at the end. */
-const perfRow = (row: number, end: ReactNode) => <li key={row}><Skeleton className="size-9 shrink-0 rounded-[10px]"/><span className="grid gap-1.5"><Bar width={[120, 96, 140][row % 3]}/><Skeleton className="h-3 w-24"/></span>{end}</li>;
 
 /** Investments' Payouts & alerts: Expected payouts (its months, the first one open) beside Price alerts (the alerts,
  * then the add form), as `PayoutsAlertsView` draws them. The Bitcoin panels below come only with a Bitcoin holding. */
@@ -103,15 +119,21 @@ export function PayoutsAlertsSkeleton({ label }: { label: string }) {
  </div></Loading>;
 }
 
-/** Investments' Target allocation: the heading, the target fields and the weights table. */
+/** A labelled field as the allocation form lays it out: the label over the input. */
+const Field = ({ width }: { width: number }) => <label><Skeleton className="mb-2 h-4" style={{ width }}/><Skeleton className="h-11 w-full rounded-xl"/></label>;
+
+/** Investments' Target allocation, as `PortfolioAllocationPlan` draws it: the heading; the target net worth, its
+ * currency and date; a weight field a kind and the cash to allocate; the weights total; the drift table; Save targets. */
 export function AllocationSkeleton({ label }: { label: string }) {
- return <Loading label={label}><section className="panel tools-panel"><Bar className="h-6" width={170}/>
-  <div className="tracker-fields">{times(6).map(field => <label key={field}><Skeleton className="mb-2 h-4 w-28"/><Skeleton className="h-11 w-full rounded-xl"/></label>)}</div>
-  <Skeleton className="h-10 w-28 rounded-lg"/>
+ return <Loading label={label}><section className="panel tools-panel"><Bar className="h-6" width={150}/>
+  <div className="tracker-fields"><div className="allocation-net-worth-target">{[110, 70, 90].map(width => <Field key={width} width={width}/>)}</div>
+   {times(assetRecordKinds.length + 1).map(field => <Field key={field} width={[70, 96, 84, 120][field % 4]}/>)}</div>
+  <Bar width={160}/>
   <div className="table-scroll"><table className="label-table">
    <thead><tr>{[64, 96, 92, 120, 150].map((width, column) => <th key={column}><Bar className="h-3" width={width}/></th>)}</tr></thead>
-   <tbody>{times(4).map(row => <tr key={row}>{[96, 48, 48, 72, 72].map((width, column) => <td key={column}><Bar width={width}/></td>)}</tr>)}</tbody>
+   <tbody>{times(2).map(row => <tr key={row}><td><Skeleton className="h-6 w-20 rounded-full"/></td>{[48, 48, 40, 40].map((width, column) => <td key={column}><Bar className="ms-auto h-4" width={width}/></td>)}</tr>)}</tbody>
   </table></div>
+  <Skeleton className="h-11 w-28 rounded-lg"/>
  </section></Loading>;
 }
 

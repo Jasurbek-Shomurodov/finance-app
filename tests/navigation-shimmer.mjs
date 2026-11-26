@@ -24,7 +24,7 @@ test('the workspace layout and its banner stay on first load only', () => {
 test('the navigation shimmer is the destination layout, never the workspace banner', () => {
  const shimmer = placeholders.slice(placeholders.indexOf('export function NavigationShimmer'));
  assert.match(shell, /<NavigationShimmer label=\{t\("Loading records…"\)\} path=\{destination\} dashboard=\{savedDashboardColumns\(workspacePreferences\.data\.preferences\)\} hints=\{hints\}\/>/, 'the shimmer is drawn for the tapped destination, the dashboard in its saved order');
- assert.match(shell, /const hints = shimmerHints\(\{ loading: planning\.loading, records: planning\.data\.records, goals: planning\.data\.goals, shared: sharedWorkspace\(household\.state\), businesses: businessList\.length \}\);/);
+ assert.match(shell, /const hints = shimmerHints\(\{ loading: planning\.loading, records: planning\.data\.records, goals: planning\.data\.goals, shared: sharedWorkspace\(household\.state\), businesses: businessList\.length, holdingAccounts: planning\.data\.holdingAccounts \}\);/);
  // Goals without an active goal is its empty state alone; Accounts opens with ⋯ only when it has owners or businesses.
  assert.match(placeholders, /'\/goals': \(label, _dashboard, hints\) => <GoalsSkeleton label=\{label\} empty=\{hints\?\.goals === false\}\/>/);
  assert.match(placeholders, /'\/accounts': \(label, _dashboard, hints\) => <AccountsSkeleton label=\{label\} menu=\{hints\?\.accountsMenu\}\/>/);

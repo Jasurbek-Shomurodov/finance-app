@@ -12,5 +12,6 @@ export function keptSeries(series: string, start: string, end: string): Promise<
  const live = (from: string, to: string) => kind === 'crypto' ? cryptoHistory(from, to, symbol)
   : kind === 'metal' ? metalHistory(symbol, from, to, key!)
   : stockHistory(symbol, from, to, key!, kind === 'shares' ? 'splits' : 'all');
- return keptHistory(series, start, end, live, { later: afterResponse });
+ // Closes kept up to a week ago answer at once; the days since are read after the reply (`answerStale`).
+ return keptHistory(series, start, end, live, { later: afterResponse, answerStale: true });
 }

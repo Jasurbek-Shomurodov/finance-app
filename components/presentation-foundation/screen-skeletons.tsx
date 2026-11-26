@@ -166,7 +166,7 @@ export const screenSkeletons: Record<string, (label: string, dashboard?: Dashboa
   '/budget': label => <BudgetSkeleton label={label} heading/>,
   '/upcoming': label => <RecurringSkeleton label={label}/>,
   '/goals': (label, _dashboard, hints) => <GoalsSkeleton label={label} empty={hints?.goals === false}/>,
-  '/assets': label => <InvestmentsSkeleton label={label} heading/>,
+  '/assets': (label, _dashboard, hints) => <InvestmentsSkeleton label={label} heading hint={hints?.investments}/>,
   '/loans-debts': (label, _dashboard, hints) => <LoansSkeleton label={label} heading side={hints?.debts ?? true}/>,
   '/recently-deleted': label => <RecentlyDeletedSkeleton label={label}/>,
   '/settings': label => <SettingsSkeleton label={label}/>,

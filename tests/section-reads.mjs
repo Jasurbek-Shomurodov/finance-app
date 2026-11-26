@@ -26,6 +26,7 @@ test('each screen warms what it reads when it opens as it opens by default (PERF
  assert.deepEqual(urls('Upcoming payments'), [], 'Recurring opens on the list, which reads nothing of its own');
  assert.deepEqual(sectionReads('Recently deleted', today), [{ url: '/api/deleted-items?page=1', session: true, revision: 0 }]);
  assert.deepEqual(urls('Overview'), ['/api/planning?scope=review&month=2026-11', '/api/portfolio-history', '/api/comparison-profile']);
+ assert.deepEqual(urls('Assets & investments'), ['/api/portfolio-history'], 'Investments starts its history beside the workspace reads');
  assert.deepEqual(sectionReads('Assistant', today), [], 'a screen with no read of its own warms nothing');
 });
 

@@ -252,7 +252,6 @@ label.hinted-label>.info-hint{grid-row:1;grid-column:2;justify-self:start}
 .goal-row-skeleton-body>div{display:flex;justify-content:space-between;gap:12px}
 .goal-row-skeleton{gap:12px;padding:12px 16px}
 .goal-row-skeleton-body{display:grid;flex:1;gap:6px;min-width:0}
-.asset-card-skeleton{display:grid;gap:16px}
 /* Skeleton rows wrap by themselves: the name keeps 10rem and the figures move under it when the row runs out of room. */
 :is(li,div).skeleton-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:10px 16px}
 .skeleton-row>:first-child{flex:1 1 10rem;min-width:0}

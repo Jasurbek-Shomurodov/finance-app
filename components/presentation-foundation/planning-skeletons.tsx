@@ -1,5 +1,7 @@
+import type { ReactNode } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChartSkeleton, SkeletonRows } from './loading-placeholder';
+import type { InvestmentsHint } from '@/lib/shimmer-hints';
+import { ChartSkeleton } from './loading-placeholder';
 import { Bar, Figures, Heading, Loading, Tiles, Track, times } from './skeleton-kit';
 import { AssetCardsSkeleton } from './tab-skeletons';
 
@@ -37,21 +39,36 @@ export function GoalsSkeleton({ label, empty = false }: { label: string; empty?:
   </Loading>;
 }
 
-/** Investments' Holdings (`heading`: the drawer's shimmer also reserves the phone's tabs and Add asset): the total with its three figures and profit and loss beside the allocation donut, the accounts,
- * then the holdings with their layout switch and category filter. */
-export function InvestmentsSkeleton({ label, heading = false }: { label: string; heading?: boolean }) {
+/** A summary figure as `portfolio-summary-metrics` lays it: its label over the figure (the loaded page's own loading bar). */
+const Metric = ({ width, children }: { width: number; children?: ReactNode }) => <div><Bar className="h-3.5" width={width}/><Skeleton className="h-7 w-28 max-w-full"/>{children}</div>;
+
+/** Investments' Holdings, in the loaded `AssetDashboard`'s classes (`heading`: the drawer's shimmer also reserves the
+ * phone's tabs and Add asset). The summary: Your holdings with its count over the total, then Net worth, Outstanding debt
+ * and Profit & loss (its return badge and View all); Asset allocation as the donut beside a row a kind (dot, name,
+ * amount, share, bar); Accounts with Manage accounts over its cards or the "No accounts yet." line; then Other assets
+ * with the layout switch, the category filter and the cards. `hint` (lib/shimmer-hints.ts) says how many of each the
+ * workspace will draw; without one the usual shape is drawn. */
+export function InvestmentsSkeleton({ label, heading = false, hint }: { label: string; heading?: boolean; hint?: InvestmentsHint }) {
+  const { accounts = 2, kinds = 3, assets = 3 } = hint ?? {};
+  const count = <Skeleton className="h-5 w-6 rounded-full"/>;
   return <Loading label={label} heading={heading ? '/assets' : undefined}>
     <div className="asset-dashboard">
       <section className="portfolio-summary">
-        <div className="portfolio-summary-main"><div className="portfolio-summary-total"><Skeleton className="h-4 w-32"/><Skeleton className="mt-2 h-10 w-44 max-w-full"/></div>
-          <div className="portfolio-summary-metrics">{times(4).map(metric => <div key={metric}><Skeleton className="h-4 w-24"/><Skeleton className="h-8 w-32"/></div>)}</div></div>
-        <div className="portfolio-summary-allocation"><Skeleton className="mb-4 h-6 w-40"/><div className="portfolio-allocation-body"><Skeleton className="size-48 justify-self-center rounded-full"/><SkeletonRows rows={5}/></div></div>
+        <div className="portfolio-summary-main">
+          <div className="portfolio-summary-total"><div className="flex items-center gap-2"><Bar className="h-4" width={96}/>{count}</div><div className="portfolio-summary-value"><Skeleton className="h-10 w-44 max-w-full"/></div></div>
+          <div className="portfolio-summary-metrics"><Metric width={64}/><Metric width={110}/>
+            <Metric width={80}><Skeleton className="h-6 w-20 rounded-full"/><Bar className="h-3.5" width={48}/></Metric></div>
+        </div>
+        <div className="portfolio-summary-allocation"><h3><Bar className="h-5" width={130}/></h3>
+          <div className="portfolio-allocation-body">{kinds > 0 && <div className="allocation-donut grid place-items-center"><Skeleton className="size-[176px] rounded-full"/></div>}
+            <ul className="overview-list">{times(Math.max(kinds, 1)).map(row => <li key={row}><div className="allocation-option"><Skeleton className="size-2 rounded-full"/><Bar width={[72, 96, 60][row % 3]}/><Bar width={56}/><Bar className="h-3.5" width={36}/><span className="allocation-share"/></div></li>)}</ul></div>
+        </div>
       </section>
-      <section className="asset-account-section"><div className="asset-holdings-heading"><Skeleton className="h-8 w-32"/><Skeleton className="h-5 w-28"/></div>
-        <AssetCardsSkeleton/></section>
-      <section className="asset-holdings"><div className="asset-holdings-heading"><Skeleton className="h-8 w-36"/><Skeleton className="h-9 w-20 rounded-lg"/></div>
-        <Skeleton className="h-11 w-80 max-w-full rounded-xl"/>
-        <AssetCardsSkeleton layout="grid"/></section>
+      <section className="asset-account-section"><div className="asset-holdings-heading"><div className="flex items-center gap-2"><Bar className="h-7" width={110}/>{count}</div><Bar width={120}/></div>
+        {accounts ? <AssetCardsSkeleton cards={accounts}/> : <Bar width={130}/>}</section>
+      <section className="asset-holdings"><div className="asset-holdings-heading"><div className="flex items-center gap-2"><Bar className="h-7" width={130}/>{count}</div><Skeleton className="h-11 w-[78px] rounded-xl"/></div>
+        <Skeleton className="asset-category-filters h-11 w-56 max-w-full rounded-xl"/>
+        {assets ? <AssetCardsSkeleton cards={assets} layout="grid"/> : <div className="empty"><Skeleton className="size-10 rounded-xl"/><Skeleton className="h-5 w-40"/><Skeleton className="h-4 w-72 max-w-full"/><Skeleton className="h-10 w-44 rounded-lg"/></div>}</section>
     </div>
   </Loading>;
 }

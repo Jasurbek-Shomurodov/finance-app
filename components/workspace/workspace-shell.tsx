@@ -62,7 +62,7 @@ function WorkspaceShell({ children }: { children: ReactNode }) {
   ? { initial: 'D', title: t("Demo workspace"), detail: t("Sample data") }
   : { initial: (preferencesData.display_name?.trim() || user!).replace(/^\+/, '').slice(0, 1).toUpperCase(), title: t("Personal account"), detail: user! };
  // What the destination's shimmer can know ahead of its records, so it draws only the blocks the page will.
- const hints = shimmerHints({ loading: planning.loading, records: planning.data.records, goals: planning.data.goals, shared: sharedWorkspace(household.state), businesses: businessList.length });
+ const hints = shimmerHints({ loading: planning.loading, records: planning.data.records, goals: planning.data.goals, shared: sharedWorkspace(household.state), businesses: businessList.length, holdingAccounts: planning.data.holdingAccounts });
  // Your own finances first, then each household you belong to.
  const homes = household.state;
  const workspaces = homes ? [{ id: homes.me, label: t('My finances') }, ...homes.memberships.map(item => ({ id: item.owner_id, label: t('Household of {name}', { name: item.name ?? t('Partner') }) }))] : [];
