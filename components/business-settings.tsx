@@ -33,7 +33,7 @@ export function BusinessSettings({ businesses, records, preferences, owner, demo
  const { t, locale } = useLanguage(), router = useRouter();
  const order = useDisplayOrder('business_order', businesses, preferences, owner, demo);
  return <section className="panel tools-panel business-settings">
-  <PanelTitle title={t('Businesses')} count={<Count value={businesses.length}/>} hint={t('A business keeps the money of a side business, freelance work or a rental apart from your household. Link transactions and accounts to it, and Reports shows its own profit and loss.')}>
+  <PanelTitle title={t('Businesses')} description={t('Keep a side business, freelance work or a rental apart from household money.')} count={<Count value={businesses.length}/>} hint={t('Track a side business, freelance work or rentals beside your household. Each business has its own profit and loss in Reports.')}>
    {businesses.length > 0 && <Button variant="outline" onClick={onGuide}>{t('Setup guide')}</Button>}
    <Button onClick={onSetup}><Plus size={16} aria-hidden="true"/>{t(businesses.length ? 'Add business' : 'Set up business tracking')}</Button>
   </PanelTitle>
@@ -86,7 +86,7 @@ export function TagSettings({ tags, preferences, owner, demo }: { tags: TagsReso
   try { await tags.remove(deleting.id); setDeleting(null); } catch (reason) { setError(t((reason as Error).message)); } finally { setBusy(false); }
  }
  return <section className="panel tools-panel tag-settings">
-  <PanelTitle title={t('Tags')} count={<Count value={tags.data.tags.length}/>} hint={t('A tag is an extra label on top of the category, such as a trip, a project or receipts to keep. A transaction can have several tags or none, so one tag can gather money from many categories. Rules can add tags automatically.')}>
+  <PanelTitle title={t('Tags')} description={t('Extra labels that group transactions across categories, such as a trip.')} count={<Count value={tags.data.tags.length}/>} hint={t('Tags label transactions across categories and businesses, such as a trip or receipts to keep. Rules can add them automatically.')}>
    <Button variant="outline" onClick={() => setEditing({ id: crypto.randomUUID(), name: '', color: nextPaletteColor(tags.data.tags.map(tag => tag.color)) })}><Plus size={16} aria-hidden="true"/>{t('Add tag')}</Button>
   </PanelTitle>
   {tags.error ? <InlineError message={t(tags.error)} onRetry={tags.retry}/> : order.items.length ? <SortableList id="tag-order" items={order.items.map(item => item.id)} nameOf={id => tags.data.tags.find(item => item.id === id)?.name ?? ''} onMove={(moved, over) => void order.reorder(moved, over)} disabled={order.disabled}>

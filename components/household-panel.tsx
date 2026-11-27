@@ -37,7 +37,7 @@ export function HouseholdPanel({ household, demo }: { household: Household; demo
  };
  const people = state ? 1 + state.members.length : 1;
  return <section className="panel household-panel" aria-label={t('Household sharing')}>
-  <PanelTitle title={t('Household sharing')} count={state ? <Count value={people}/> : undefined} hint={t('Share your finances with a partner or family. People who can edit add and change records; people who can view only look. Accounts and transactions can belong to one person or be shared. Each person keeps their own sign-in, preferences, Telegram and backups.')}>
+  <PanelTitle title={t('Household sharing')} description={t('Share this workspace with a partner or family.')} count={state ? <Count value={people}/> : undefined} hint={t('Share your finances with a partner or family. People who can edit add and change records; people who can view only look. Accounts and transactions can belong to one person or be shared. Each person keeps their own sign-in, preferences, Telegram and backups.')}>
    {!demo && state && <Button disabled={people + state.invites.length >= householdLimit} onClick={() => setInviting(true)}><UserPlus size={16} aria-hidden="true"/>{t('Invite someone')}</Button>}
   </PanelTitle>
   {/* The sample household is there to try owners and their filters; it has no invites. */}
