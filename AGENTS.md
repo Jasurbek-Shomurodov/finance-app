@@ -155,3 +155,9 @@ behind (`scripts/check-migrations.mjs --strict`). Never run `database/setup.sql`
 applied (no access, an error), do not push: say so to the user.
 
 Search with `.claude/worktrees` excluded: it holds old agent checkouts that duplicate the whole repository.
+
+# Commit author and where work runs (the user's rule, 27 November 2026)
+
+- **Commits carry the user's name, never Claude's.** Every commit is authored and committed by this checkout's own git identity (`git config user.name` / `user.email`: Jasurbek, `dangerhoggish@gmail.com`). Never commit as `Claude <noreply@anthropic.com>`, never pass `--author`, and never set `GIT_AUTHOR_*` / `GIT_COMMITTER_*`. A `Co-Authored-By:` trailer is fine; do not add a `Claude-Session:` trailer.
+- Before every push, check `git log --format='%h %an <%ae>' @{u}..HEAD`. If one of *your own* unpushed commits shows Claude as author, fix it with `git commit --amend --no-edit --reset-author` (or a rebase of only those commits). Run `git log -1` first: never amend a commit someone else (a scheduled task, the user) made on top of yours. Pushed history is not rewritten.
+- **Work runs on the user's Mac only**, in `/Users/Jasurbek_Shomurodov/Desktop/<repo>`. Do not start cloud sessions (claude.ai/code, `target: "cloud"`, move-to-cloud) or cloud routines/reminders (`RemoteTrigger`); anything scheduled is a local scheduled task on this Mac. If you find yourself running anywhere else (the working directory is not under `/Users/Jasurbek_Shomurodov/`, or `CLAUDE_CODE_REMOTE` is set), make no commits or pushes: stop and tell the user to run the task locally.
