@@ -304,13 +304,10 @@ test('INV-053 tapping a property card records money invested from cash, and the 
   await page.goto('/assets');
   const card = page.locator('.asset-card', { hasText: 'E2E Flat' });
   const dialog = page.getByRole('dialog');
-  const details = card.locator('details');
-  await expect(details).toHaveJSProperty('open', true);
+  // Its details always show, with no toggle to hide them.
+  await expect(card.locator('.asset-card-details')).toContainText('Asset details');
+  await expect(card.locator('details, summary')).toHaveCount(0);
   await expect(card.getByRole('button', { name: 'Add investment' })).toHaveCount(0);
-  await card.locator('summary').click();
-  await expect(details).toHaveJSProperty('open', false);
-  await card.locator('summary').click();
-  await expect(details).toHaveJSProperty('open', true);
   await card.getByRole('button', { name: 'Actions for E2E Flat' }).click();
   await expect(page.getByRole('menuitem', { name: 'Edit E2E Flat' })).toBeVisible();
   await page.keyboard.press('Escape');
