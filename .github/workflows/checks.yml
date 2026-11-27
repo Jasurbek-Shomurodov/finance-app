@@ -84,10 +84,11 @@ jobs:
             test-results/
           retention-days: 7
   # Commits the pictures e2e redrew to main, starts a strict run of that commit and cancels
-  # this one.
+  # this one. Only after e2e passed: cancelling a run whose flows failed would hide the failure
+  # (run 46024993784 ended "cancelled" with INV-053 red), and pictures of a broken build are no reference.
   pictures:
     needs: e2e
-    if: ${{ !cancelled() && github.event_name == 'push' }}
+    if: ${{ !cancelled() && github.event_name == 'push' && needs.e2e.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
