@@ -212,3 +212,13 @@ test('kept rates are read by currency from the day tables, in windows read toget
  assert.ok(older.length>=57&&older.length<=58,'about one a week before that');
  assert.equal(thinned.at(-1).date,daily.at(-1).date);
 });
+test('each read asks the paid price feed, so a person over their limit is refused before any read (API-002)',async()=>{
+ const asked=[];
+ const GET=loadTS('app/api/portfolio-history/route.ts',{
+  '@/lib/supabase':{session:async()=>({token:'t',user:{id:'me'}}),supa:async()=>{throw Error('must not read');}},
+  '@/lib/rate-limit':{limits:{market:[]},rateLimited:async(req,name,limits,key,options)=>{asked.push([name,key,options.perIp]);return true;}},
+  '@/lib/holding-price-reader':{keptSeries:async()=>{throw Error('must not ask the feed');}},
+ }).GET;
+ const response=await GET(new Request('http://localhost/api/portfolio-history'));
+ assert.equal(response.status,429);assert.deepEqual(asked,[['history-user','me',false]]);
+});

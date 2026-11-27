@@ -49,7 +49,7 @@ export async function POST(req: Request) {
   const data = await planning.json() as PlanningData, records = openOnly(data.records.map(normalizeEntry));
   // Holdings are worth their live quotes, as the Net worth card shows them, so the feed is read only when there is a symbol to quote.
   const symbols = marketSymbols(records), quoted = symbols.crypto.length + symbols.stocks.length + symbols.metals.length > 0;
-  const [history, splits, market] = await Promise.all([readHistory().then(reply => reply.ok ? reply.json() as Promise<PnlHistory> : null, () => null), readOwnerRows<Parameters<typeof normalizeSplits>[0][number]>('transaction_splits', auth.token, { order: 'record_id.asc,position.asc' }).then(normalizeSplits), quoted ? cachedMarket({ fx: true, rates: true, ...symbols, stockAccess: true, metalAccess: true }, { later: afterResponse }) : null]);
+  const [history, splits, market] = await Promise.all([readHistory(req).then(reply => reply.ok ? reply.json() as Promise<PnlHistory> : null, () => null), readOwnerRows<Parameters<typeof normalizeSplits>[0][number]>('transaction_splits', auth.token, { order: 'record_id.asc,position.asc' }).then(normalizeSplits), quoted ? cachedMarket({ fx: true, rates: true, ...symbols, stockAccess: true, metalAccess: true }, { later: afterResponse }) : null]);
   const spoken = isLanguage(language) ? language : 'en';
   // What the investments earned, from the history Investments › Profit & loss reads; left out when it cannot be read.
   const pnl = history ? historyPnl(history, { market: market ?? keptMarket({}, rates), currency, today }) : null;
