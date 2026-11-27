@@ -118,7 +118,7 @@ export function AddAssetFlow(props: AddAssetProps) {
  const { draft, name, last, saving } = flow, saves = last && name !== 'kind';
  const action = saving.busy ? 'Saving…' : saving.partial ? 'Retry' : !saves ? 'Continue' : props.demo ? 'Save in demo' : 'Save';
  return <><Dialog open onOpenChange={open => { if (!open) flow.close(); }}>
-  <DialogContent className="goal-setup asset-flow top-0 left-0 flex h-[100dvh] w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-0 p-0 sm:max-w-none" showCloseButton={false} onOpenAutoFocus={focusStep}>
+  <DialogContent className="goal-setup asset-flow" size="full" showCloseButton={false} onOpenAutoFocus={focusStep}>
    <form className="asset-flow-form" noValidate onSubmit={flow.next}>
     <FlowBar flow={flow} onClose={flow.close}/>
     <div className="goal-setup-body" ref={stepRef}><FlowStep flow={flow} props={props}/></div>

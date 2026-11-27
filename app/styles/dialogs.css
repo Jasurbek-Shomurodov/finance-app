@@ -1,0 +1,75 @@
+/* The one dialog shell (components/ui/dialog.tsx, alert-dialog.tsx): every dialog, question and sheet shares this surface,
+   its size scale, the scrolling body between a fixed Close and a footer kept in reach, and on a phone a bottom sheet.
+   A dialog's own class styles only what is inside it; never its width, padding, radius, height or scroll. */
+:root{--dialog-pad:28px;--dialog-gap:16px;--dialog-radius:20px;--dialog-edge:16px;--overlay:rgb(24 22 19 / 42%);--shadow-dialog:0 2px 6px rgb(34 32 29 / 6%),0 28px 64px -24px rgb(34 32 29 / 34%)}
+:root:not([data-theme="light"]){--overlay:rgb(0 0 0 / 58%);--shadow-dialog:0 2px 6px rgb(0 0 0 / 30%),0 28px 64px -20px rgb(0 0 0 / 70%)}
+
+:is([data-slot=dialog-overlay],[data-slot=alert-dialog-overlay],[data-slot=sheet-overlay]){position:fixed;inset:0;z-index:50;background:var(--overlay);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+
+/* The surface: centred, sized by `data-size`, never wider or taller than the screen. */
+:is([data-slot=dialog-content],[data-slot=alert-dialog-content]){--dialog-width:560px;position:fixed;z-index:50;top:50%;left:50%;translate:-50% -50%;display:flex;flex-direction:column;width:calc(100vw - 2 * var(--dialog-edge));max-width:var(--dialog-width);max-height:calc(100dvh - 2 * var(--dialog-edge));overflow:hidden;border:1px solid var(--border);border-radius:var(--dialog-radius);background:var(--background);color:var(--foreground);box-shadow:var(--shadow-dialog);outline:none}
+:is([data-slot=dialog-content],[data-slot=alert-dialog-content])[data-size=sm]{--dialog-width:420px}
+[data-slot=dialog-content][data-size=lg]{--dialog-width:760px}
+[data-slot=dialog-content][data-size=xl]{--dialog-width:960px}
+[data-slot=dialog-content][data-size=full]{inset:0;translate:none;width:100%;max-width:none;height:100dvh;max-height:none;border:0;border-radius:0;box-shadow:none}
+
+/* The body scrolls on its own, so Close and the footer stay put; a focused field is never left under the footer. */
+[data-slot=dialog-body]{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:minmax(0,1fr);align-content:start;gap:var(--dialog-gap);padding:var(--dialog-pad);overflow-y:auto;overscroll-behavior:contain;scroll-padding-block:16px 112px}
+:is([data-size=full],[data-size=palette])>[data-slot=dialog-body]{display:contents}
+
+/* Heading: the title in the cards' serif, the description close under it, both clear of Close. */
+:is([data-slot=dialog-title],[data-slot=alert-dialog-title]){margin:0;font-family:var(--font-display);font-size:var(--type-display);font-weight:500;letter-spacing:-.02em;line-height:1.15;overflow-wrap:anywhere}
+[data-slot=alert-dialog-title]{font-size:var(--type-stat);line-height:1.2}
+:is([data-slot=dialog-description],[data-slot=alert-dialog-description]){margin:0;color:var(--muted-foreground);font-size:var(--type-compact);line-height:1.55}
+[data-slot=dialog-body]>:is([data-slot=dialog-title],[data-slot=alert-dialog-title],[data-slot=dialog-header])+:is([data-slot=dialog-description],[data-slot=alert-dialog-description]){margin-top:calc(8px - var(--dialog-gap))}
+[data-slot=dialog-header]{display:grid;gap:8px;text-align:start}
+[data-slot=dialog-content]:has(>[data-slot=dialog-close]) [data-slot=dialog-body]>:is([data-slot=dialog-title],[data-slot=dialog-header]):first-of-type{padding-inline-end:36px}
+
+/* Close: a round button at the end edge in either direction, 36px, 44px on touch (DLG-033). It never scrolls away. */
+[data-slot=dialog-content]>[data-slot=dialog-close]{position:absolute;top:18px;inset-inline-end:18px;z-index:3;display:grid;place-items:center;width:36px;height:36px;border-radius:50%;color:var(--muted-foreground);background:color-mix(in srgb,var(--background) 80%,transparent);transition:background-color var(--motion-quick),color var(--motion-quick)}
+[data-slot=dialog-content]>[data-slot=dialog-close]:hover{background:var(--muted);color:var(--foreground)}
+[data-slot=dialog-content]>[data-slot=dialog-close]:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+[data-slot=dialog-content]>[data-slot=dialog-close] svg{width:18px;height:18px;pointer-events:none}
+@media(pointer:coarse){[data-slot=dialog-content]>[data-slot=dialog-close]{width:44px;height:44px;top:12px;inset-inline-end:12px}}
+
+/* The footer (FormFooter, DialogFooter, a question's buttons, and the details and Customize rows): Cancel, then the main action, at the end; it stays at the bottom of the dialog while the body scrolls,
+   with a hairline over what passes under it (DLG-021, DLG-026, DLG-027). */
+[data-slot=dialog-body] :is(.record-form-footer,[data-slot=dialog-footer],[data-slot=alert-dialog-footer],.transaction-details-actions,.customize-footer){position:sticky;bottom:calc(-1 * var(--dialog-pad));z-index:2;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:12px;margin:8px calc(-1 * var(--dialog-pad)) calc(-1 * var(--dialog-pad));padding:16px var(--dialog-pad) var(--dialog-pad);border-top:1px solid var(--border);background:var(--background)}
+[data-slot=dialog-body] [data-slot=alert-dialog-footer]{border-top:0;margin-top:4px;padding-top:8px}
+:is(.record-form-footer,[data-slot=dialog-footer],[data-slot=alert-dialog-footer]) :is(button,a)[data-slot=button]{min-height:44px;border-radius:10px;padding-inline:22px}
+[data-slot=dialog-body] .record-form-footer .primary{min-width:160px;order:1}
+.record-form-footer .form-blocked-reason{order:-2;flex-basis:100%;margin:0;text-align:end;font-size:var(--type-small);line-height:1.4;color:var(--muted-foreground)}
+.record-form-footer :is(.delete-button,.delete-button-reason){order:-1;margin-inline-end:auto}
+
+/* A question that deletes or cannot be undone leads with a tinted mark above its title (ConfirmDialog). */
+.confirm-dialog-mark{display:grid;place-items:center;width:44px;height:44px;margin-bottom:14px;border-radius:50%;background:color-mix(in srgb,var(--negative) 12%,transparent);color:var(--negative)}
+.confirm-dialog-mark svg{width:20px;height:20px}
+
+/* The grab handle only shows on a phone sheet. */
+[data-slot=dialog-handle]{display:none}
+
+/* Phones: every dialog but a full-screen one is a sheet from the bottom edge, full width, rising above the keyboard; it
+   follows a pull on its handle and closes past a point (components/ui/dialog-sheet.ts). Buttons share the width. */
+@media(max-width:640px){
+ :is([data-slot=dialog-content],[data-slot=alert-dialog-content]):not([data-size=full],[data-size=palette]){--dialog-pad:20px;top:auto;bottom:var(--keyboard-inset,0px);left:0;translate:none;width:100%;max-width:none;max-height:calc(100dvh - var(--keyboard-inset,0px) - max(env(safe-area-inset-top),24px));border-width:1px 0 0;border-radius:var(--dialog-radius) var(--dialog-radius) 0 0;transition:transform var(--motion-settle) var(--ease-out)}
+ :is([data-slot=dialog-content],[data-slot=alert-dialog-content]):not([data-size=full],[data-size=palette])[data-dragging]{transition:none}
+ :is([data-slot=dialog-content],[data-slot=alert-dialog-content]):not([data-size=full],[data-size=palette])>[data-slot=dialog-body]{padding-top:28px;padding-bottom:calc(var(--dialog-pad) + env(safe-area-inset-bottom))}
+ [data-slot=dialog-body] :is(.record-form-footer,[data-slot=dialog-footer],[data-slot=alert-dialog-footer],.transaction-details-actions,.customize-footer){margin-bottom:calc(-1 * var(--dialog-pad) - env(safe-area-inset-bottom));padding-bottom:calc(var(--dialog-pad) + env(safe-area-inset-bottom));bottom:calc(-1 * var(--dialog-pad) - env(safe-area-inset-bottom))}
+ [data-slot=dialog-handle]{position:absolute;top:0;left:50%;translate:-50% 0;z-index:3;display:grid;place-items:center;width:96px;height:24px;touch-action:none;cursor:grab}
+ [data-slot=dialog-handle]>span{width:36px;height:5px;border-radius:999px;background:color-mix(in srgb,var(--muted-foreground) 45%,transparent)}
+ [data-slot=dialog-content]>[data-slot=dialog-close]{top:14px;inset-inline-end:12px}
+ :is(.record-form-footer,[data-slot=dialog-footer]) :is(button,a)[data-slot=button]{flex:1 1 0;min-width:0;height:auto;padding-inline:12px;white-space:normal;text-wrap:balance}
+ [data-slot=dialog-body] .record-form-footer .primary{min-width:0}
+ /* With three buttons (Cancel, Save and add another, Save) the main one takes a row of its own under the others. */
+ [data-slot=dialog-content] .record-form-footer:has(>button:nth-of-type(3)) .primary{flex-basis:100%}
+ /* A question's buttons stack full width, the action on top. */
+ [data-slot=alert-dialog-footer]{flex-direction:column-reverse;align-items:stretch}
+ [data-slot=alert-dialog-footer]>*{width:100%}
+}
+@media(max-width:640px) and (prefers-reduced-motion:no-preference){
+ :is([data-slot=dialog-content],[data-slot=alert-dialog-content]):not([data-size=full],[data-size=palette]){--tw-enter-scale:1;--tw-exit-scale:1;--tw-enter-translate-y:100%;--tw-exit-translate-y:100%;--tw-enter-opacity:1}
+ :is([data-slot=dialog-content],[data-slot=alert-dialog-content]):not([data-size=full],[data-size=palette],[data-state=closed]){--tw-animation-duration:.34s}
+}
+
+/* Popovers and menus share one surface: the popover colour, a hairline, the card radius and a soft lift. */
+:is([data-slot=popover-content],[data-slot=dropdown-menu-content],[data-slot=dropdown-menu-sub-content]){border-color:var(--border);border-radius:var(--radius-card);box-shadow:var(--shadow-dialog)}

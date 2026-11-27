@@ -62,7 +62,7 @@ function CurrencyCatalogue({ currencies, onToggle }: { currencies: string[]; onT
  const matches = currencyMatches(query, locale);
  return <Dialog open={open} onOpenChange={next => { setOpen(next); if (!next) setQuery(''); }}>
   <DialogTrigger asChild><Button type="button" variant="outline" size="sm" className="currency-search-trigger"><Plus size={16} aria-hidden="true"/>{t(currencies.length < maxPreferredCurrencies ? 'Add currency' : 'Change currencies')}</Button></DialogTrigger>
-  <DialogContent className="currency-search-dialog sm:max-w-xl" showCloseButton={false}>
+  <DialogContent className="currency-search-dialog" showCloseButton={false}>
    <DialogHeader><DialogTitle>{t('Preferred currencies')}</DialogTitle><DialogDescription>{t('Choose one or two currencies. The primary currency opens by default.')}</DialogDescription></DialogHeader>
    <Input aria-label={t('Search currencies')} placeholder={t('Search currencies')} value={query} onChange={event => setQuery(event.target.value)}/>
    <div className="currency-catalogue">{matches.map(code => <label key={code}><input type="checkbox" checked={currencies.includes(code)} onChange={() => onToggle(code)}/><span>{currencyLabel(code, locale)}</span></label>)}{!matches.length && <p className="muted currency-search-empty" role="status">{t('No matching currencies.')}</p>}</div>

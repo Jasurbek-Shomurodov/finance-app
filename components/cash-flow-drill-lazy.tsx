@@ -17,5 +17,5 @@ export const FlowDialog = dynamic(() => import('@/components/flow-dialog').then(
 /** While the chart code arrives, the dialog is already open with its Sankey and rows shimmering in place. */
 function DrillDialogLoading() {
  const { t } = useLanguage();
- return <Dialog open><DialogContent className="record-dialog cash-flow-drill-dialog" aria-describedby={undefined}><DialogTitle className="sr-only">{t('Loading chart…')}</DialogTitle><SankeySkeleton label={t('Loading chart…')} rows={4}/></DialogContent></Dialog>;
+ return <Dialog open><DialogContent className="record-dialog cash-flow-drill-dialog" size="xl" aria-describedby={undefined}><DialogTitle className="sr-only">{t('Loading chart…')}</DialogTitle><SankeySkeleton label={t('Loading chart…')} rows={4}/></DialogContent></Dialog>;
 }

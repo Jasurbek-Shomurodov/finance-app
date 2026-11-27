@@ -4,7 +4,7 @@
 /* Wide dialogs, ordered Settings lists, tax prep, the rule dialog and household sharing. */
 
 /* Wide screens: a wider dialog with the accounts in a grid of bordered cells, so long lists need less scrolling. */
-@media (min-width:1024px){.record-dialog.account-businesses-dialog{max-width:min(1180px,calc(100vw - 96px))!important}.account-businesses-dialog ul{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:8px 12px}.account-businesses-dialog li{grid-template-columns:auto minmax(0,1fr) minmax(0,10rem);padding:8px 12px;border:1px solid var(--hairline);border-radius:var(--radius-control)}}
+@media (min-width:1024px){.account-businesses-dialog{--dialog-width:1180px}.account-businesses-dialog ul{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:8px 12px}.account-businesses-dialog li{grid-template-columns:auto minmax(0,1fr) minmax(0,10rem);padding:8px 12px;border:1px solid var(--hairline);border-radius:var(--radius-control)}}
 .sankey-link{fill:none;stroke:color-mix(in srgb,var(--foreground) 13%,transparent);transition:stroke .15s}
 .sankey-link[data-clickable],.sankey-node[data-clickable]{cursor:pointer}
 .sankey-link[data-clickable]:hover{stroke:color-mix(in srgb,var(--mark-bg) 38%,transparent)}
@@ -28,7 +28,6 @@
 .sankey-legend>li{display:inline-flex;align-items:center;gap:8px}
 .sankey-legend>li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--flow)}
 /* A tapped Cash flow Sankey node opens its own Sankey: wide enough for three columns and their labels. */
-.record-dialog.cash-flow-drill-dialog{max-width:min(960px,calc(100vw - 32px))!important}
 .cash-flow-drill-back{justify-self:start;margin-inline-start:-8px}
 .cash-flow-drill-details{justify-self:start}
 .trend-legend[data-hidden]{opacity:.4;text-decoration:line-through}
@@ -140,9 +139,8 @@ summary.tax-line-heading>svg{flex-shrink:0;color:var(--muted-foreground);transit
 @container content (max-width:640px){.tax-category{grid-template-columns:minmax(0,1fr) auto}.tax-move{grid-column:1/-1}.tax-prep .tax-export{margin-inline-start:0}}
 .tax-move{display:block;min-width:0;margin:0}
 .tax-move [data-slot=native-select-wrapper],.tax-move select{width:100%}
-/* The rule dialog scrolls inside the window; with room (desktops) conditions and actions sit side by side. */
-.rule-dialog{width:calc(100vw - 32px);max-height:calc(100dvh - 32px);overflow-y:auto}
-@media(min-width:960px){.rule-dialog{max-width:880px!important}.rule-columns{grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:28px}}
+/* The rule dialog: with room (desktops) conditions and actions sit side by side. */
+@media(min-width:960px){.rule-columns{grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:28px}}
 .rule-columns{display:grid;gap:16px;align-items:start}
 .rule-column{display:flex;flex-direction:column;gap:16px;min-width:0}
 .rule-dialog [data-slot=native-select-wrapper]{width:100%}

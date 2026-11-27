@@ -48,7 +48,7 @@ export function PhoneNumberField({ id, country, national, onChange }: { id: stri
       </PopoverContent>
     </Popover>
     {mobile && <Dialog open={open} onOpenChange={toggle}>
-      <DialogContent className={styles.countrySheet}><DialogTitle className={styles.countrySheetTitle}>{t('Country code')}</DialogTitle>{picker}</DialogContent>
+      <DialogContent className={styles.countrySheet} size="full"><DialogTitle className={styles.countrySheetTitle}>{t('Country code')}</DialogTitle>{picker}</DialogContent>
     </Dialog>}
     <Input id={id} name="phone" type="tel" placeholder={t('Enter your phone number')} dir="ltr" required autoComplete="tel-national" inputMode="tel" autoFocus value={national} onChange={event => type(event.target.value)}/>
   </div>;

@@ -225,7 +225,9 @@ test('pages and dialogs never grow wider than the screen, and fit short screens 
  assert.match(css,/\.asset-dashboard\{[^}]*display:grid;grid-template-columns:minmax\(0,1fr\)/);
  assert.match(css,/\.segmented\.asset-category-filters\{flex-wrap:wrap;overflow:visible\}/);
  // Every dialog: one column that cannot outgrow it, a height within the screen, and its own scroll (Customize was cut off on phones).
- assert.match(dialog,/grid w-full grid-cols-\[minmax\(0,1fr\)\] max-w-\[calc\(100%-2rem\)\] max-h-\[calc\(100dvh-2rem\)\] overflow-y-auto/);
+ assert.match(dialog,/<div data-slot="dialog-body">\{children\}<\/div>/);
+ assert.match(css,/\{--dialog-width:560px;position:fixed;[^}]*width:calc\(100vw - 2 \* var\(--dialog-edge\)\);max-width:var\(--dialog-width\);max-height:calc\(100dvh - 2 \* var\(--dialog-edge\)\);overflow:hidden;/);
+ assert.match(css,/\[data-slot=dialog-body\]\{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:minmax\(0,1fr\);[^}]*overflow-y:auto;/);
  assert.match(css,/\.expense-mode-tabs>\[data-slot="tabs-list"\]\{[^}]*height:auto;[^}]*flex-wrap:wrap/,'Plan, Expense and Debt or mortgage wrap at 280px');
  assert.match(fs.readFileSync('components/sign-in-screen.module.css','utf8'),/\.legal\{display:flex;flex-wrap:wrap/,'Terms and Privacy wrap in German at 280px');
  assert.match(fs.readFileSync('components/sign-in-screen.module.css','utf8'),/\.header>:first-child\{min-width:0\}\.header :global\(\.brand small\.block\)\{white-space:normal\}/,'the theme toggle stays on a 280px screen');
@@ -236,7 +238,7 @@ test('pages and dialogs never grow wider than the screen, and fit short screens 
  assert.match(css,/\[data-slot=dialog-content\] \[data-slot="native-select-wrapper"\]\{width:100%;min-width:0\}/);
  assert.match(css,/\[data-slot=dialog-content\] form :is\(div,label\):not\(\[class\*="min-w-"\]\)\{min-width:0\}/);
  assert.match(css,/\[data-slot=dialog-content\] :is\(\[data-variant=link\],\.panel-link\)\{max-width:100%;height:auto;white-space:normal/);
- assert.match(css,/\.customize-footer\{display:flex;flex-wrap:wrap;/);
+ assert.match(css,/\.customize-footer\)\{position:sticky;[^}]*display:flex;flex-wrap:wrap;/);
  // Net worth and debt sit side by side only while both figures fit (Arabic at 280px cut "202,800 US$").
  assert.match(css,/\.portfolio-summary-metrics\{display:flex;/);
  assert.match(fs.readFileSync('components/ui/sidebar.tsx','utf8'),/SIDEBAR_WIDTH_MOBILE = "min\(18rem, 85vw\)"/);
@@ -427,8 +429,9 @@ test('phone goal rows, transaction labels, square icon buttons, dialog Close and
  // An icon button stays square when a min-height raises it (month arrows 36×42, Send 36×40).
  assert.match(css,/\[data-slot="button"\]\[data-size\^="icon"\] \{ width: auto; aspect-ratio: 1; \}/);
  // Dialog Close: logical end edge, 44px square on touch, and the title keeps clear of it.
- assert.match(css,/\[data-slot=dialog-content\]>\[data-slot=dialog-close\]\{right:auto;inset-inline-end:16px\}/);
- assert.match(css,/@media\(pointer:coarse\)\{\[data-slot=dialog-content\]>\[data-slot=dialog-close\]\{display:grid;place-items:center;min-width:44px;min-height:44px;/);
+ assert.match(css,/\[data-slot=dialog-content\]>\[data-slot=dialog-close\]\{position:absolute;top:18px;inset-inline-end:18px;/);
+ assert.match(css,/@media\(pointer:coarse\)\{\[data-slot=dialog-content\]>\[data-slot=dialog-close\]\{width:44px;height:44px;/);
+ assert.match(css,/:has\(>\[data-slot=dialog-close\]\) \[data-slot=dialog-body\]>:is\(\[data-slot=dialog-title\],\[data-slot=dialog-header\]\):first-of-type\{padding-inline-end:36px\}/);
  // A label's ⓘ keeps its own track (it sat past the dialog edge at 320 px: Add loan or debt scrolled sideways).
  assert.match(css,/label\.hinted-label\{grid-template-columns:minmax\(0,max-content\) auto;/);
  assert.match(css,/\.business-filter-popover\{width:max-content;min-width:280px;max-width:min\(360px,calc\(100vw - 32px\)\);/);
@@ -524,7 +527,7 @@ test('a figure in a fixed box stays on one line and shrinks to fit: donut total,
 test('phone dialog footers: with three buttons the main one takes its own row (23 November 2026)', () => {
  // The phone dialog screenshot (e2e/screens.spec.mjs, add-expense phone) caught "Save and add another" running
  // under "Save expense": three buttons were held to one row at 390px.
- assert.match(stylesheet(),/@media\(max-width:480px\)\{[^}]*\{[^}]*\}[^@]*\[data-slot=dialog-content\] \.record-form-footer:has\(>button:nth-of-type\(3\)\) \.primary\{flex-basis:100%\}/);
+ assert.match(stylesheet(),/@media\(max-width:640px\)\{[^}]*\{[^}]*\}[^@]*\[data-slot=dialog-content\] \.record-form-footer:has\(>button:nth-of-type\(3\)\) \.primary\{flex-basis:100%\}/);
 });
 
 test('a drawer shimmer reserves the page actions row when they will not fit the bar (23 November 2026)', () => {
@@ -535,4 +538,33 @@ test('a drawer shimmer reserves the page actions row when they will not fit the 
  assert.match(source,/useSyncExternalStore\(subscribe, \(\) => !!bar && actionsOverflow\(bar, heading\), \(\) => false\)/,'measured while rendering, so the first frame has the row');
  assert.match(source,/'\/transactions': \{ tabs: \[25, 57, 73\], actions: \[87, 132, 162\], hint: true \}/);
  assert.match(stylesheet(),/\.entry-actions>\.page-action-skeleton\{flex:1 1 auto\}/,'phone action blocks wrap at their widths, as the buttons do');
+});
+
+test('every dialog shares one shell: a size scale, a scrolling body, a footer in reach and phone sheets (27 November 2026)', () => {
+ const css = stylesheet(), dialog = fs.readFileSync('components/ui/dialog.tsx', 'utf8'), alert = fs.readFileSync('components/ui/alert-dialog.tsx', 'utf8');
+ // The width scale (DLG-025): questions 420, forms 560, several editors 760, tables 960; a dialog's own class never sets them.
+ assert.match(css, /\[data-size=sm\]\{--dialog-width:420px\}/);
+ assert.match(css, /\[data-slot=dialog-content\]\[data-size=lg\]\{--dialog-width:760px\}/);
+ assert.match(css, /\[data-slot=dialog-content\]\[data-size=xl\]\{--dialog-width:960px\}/);
+ assert.match(dialog, /size = "md"/); assert.match(alert, /size = "sm"/);
+ const callers = fs.readdirSync('components', { recursive: true }).filter(file => /\.tsx$/.test(file)).map(file => fs.readFileSync('components/' + file, 'utf8'));
+ assert.deepEqual(callers.filter(source => /<(Alert)?DialogContent[^>]*className="[^"]*\b(sm:max-w|max-w-|h-\[100dvh\]|translate-x-0)/.test(source)).length, 0, 'sizes come from size, not Tailwind classes');
+ assert.doesNotMatch(css, /\.record-dialog[^{]*\{[^}]*max-width:[^}]*!important/);
+ // The footer stays at the bottom of the dialog while the body scrolls (DLG-021, DLG-026).
+ assert.match(css, /\[data-slot=dialog-body\] :is\(\.record-form-footer,\[data-slot=dialog-footer\],\[data-slot=alert-dialog-footer\][^)]*\)\{position:sticky;/);
+ // Phones: a bottom sheet above the keyboard (DLG-028), its question buttons stacked with the action on top.
+ assert.match(css, /@media\(max-width:640px\)\{\n :is\(\[data-slot=dialog-content\],\[data-slot=alert-dialog-content\]\):not\(\[data-size=full\],\[data-size=palette\]\)\{[^}]*bottom:var\(--keyboard-inset,0px\);left:0;translate:none;width:100%;/);
+ assert.match(css, /\[data-slot=alert-dialog-footer\]\{flex-direction:column-reverse;align-items:stretch\}/);
+});
+
+test('a phone sheet closes when pulled far or fast enough, and not on a nudge (27 November 2026)', () => {
+ const { dragCloses, PHONE_SHEET_QUERY } = loadTS('components/ui/dialog-sheet.ts', { react: React });
+ assert.equal(PHONE_SHEET_QUERY, '(max-width: 640px)');
+ assert.equal(dragCloses(0, 100, 600), false);
+ assert.equal(dragCloses(-80, 50, 600), false, 'pulling up never closes');
+ assert.equal(dragCloses(20, 10, 600), false, 'a quick nudge stays');
+ assert.equal(dragCloses(100, 1000, 600), false, 'a slow pull short of the mark settles back');
+ assert.equal(dragCloses(140, 1000, 800), true, 'past 140px it closes');
+ assert.equal(dragCloses(80, 1000, 300), true, 'a short sheet closes past a quarter of its height');
+ assert.equal(dragCloses(60, 60, 600), true, 'a flick closes');
 });

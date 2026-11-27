@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useExitGhost } from "@/components/ui/exit-ghost"
 import { useReturnFocus } from "@/components/ui/return-focus"
+import { useKeyboardInset, useSheetDrag } from "@/components/ui/dialog-sheet"
 import { useUiLabel } from "@/components/ui/ui-label"
 
 function Dialog({
@@ -42,7 +43,7 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
+        "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
         className
       )}
       {...props}
@@ -50,40 +51,57 @@ function DialogOverlay({
   )
 }
 
+/** The dialog width scale (DLG-025): `sm` questions and short forms 420px, `md` forms 560px, `lg` several editors or
+ * details 760px, `xl` tables and side-by-side editors 960px; `full` covers the screen (steppers, phone pickers) and
+ * `palette` is the command menu. On a phone every size but `full` and `palette` is a bottom sheet. */
+type DialogSize = "sm" | "md" | "lg" | "xl" | "full" | "palette"
+
+/** The grab handle at the top of a phone sheet; pulling it down closes the dialog. Hidden on wider screens. */
+function SheetHandle() {
+  const drag = useSheetDrag()
+  return <div data-slot="dialog-handle" aria-hidden="true" {...drag}><span /></div>
+}
+
+/** One shell for every dialog: the surface with its size, a body that scrolls on its own between a fixed Close and a
+ * footer that stays in reach (`FormFooter`, `DialogFooter`), and on a phone a bottom sheet with a grab handle that rises
+ * above the keyboard. Styles: app/styles/dialogs.css. */
 function DialogContent({
   className,
   children,
   showCloseButton = true,
+  size = "md",
   onCloseAutoFocus,
   onOpenAutoFocus,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
+  size?: DialogSize
 }) {
   const returnFocus = useReturnFocus(onCloseAutoFocus, onOpenAutoFocus)
   const exit = useExitGhost<HTMLDivElement>()
   const label = useUiLabel()
+  useKeyboardInset()
+  const sheet = size !== "full" && size !== "palette"
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
       <DialogPrimitive.Content
         ref={exit}
         data-slot="dialog-content"
+        data-size={size}
         className={cn(
-          "fixed top-[50%] left-[50%] z-50 grid w-full grid-cols-[minmax(0,1fr)] max-w-[calc(100%-2rem)] max-h-[calc(100dvh-2rem)] overflow-y-auto translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
+          "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
           className
         )}
         {...props}
         onOpenAutoFocus={returnFocus.onOpenAutoFocus}
         onCloseAutoFocus={returnFocus.onCloseAutoFocus}
       >
-        {children}
+        {sheet && <SheetHandle />}
+        <div data-slot="dialog-body">{children}</div>
         {showCloseButton && (
-          <DialogPrimitive.Close
-            data-slot="dialog-close"
-            className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
-          >
-            <XIcon />
+          <DialogPrimitive.Close data-slot="dialog-close">
+            <XIcon aria-hidden="true" />
             <span className="sr-only">{label("Close")}</span>
           </DialogPrimitive.Close>
         )}
@@ -93,15 +111,10 @@ function DialogContent({
 }
 
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="dialog-header"
-      className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
-      {...props}
-    />
-  )
+  return <div data-slot="dialog-header" className={className} {...props} />
 }
 
+/** A dialog's closing row of buttons. Like `FormFooter`, it stays at the bottom of the dialog while the body scrolls. */
 function DialogFooter({
   className,
   showCloseButton = false,
@@ -110,19 +123,13 @@ function DialogFooter({
 }: React.ComponentProps<"div"> & {
   showCloseButton?: boolean
 }) {
+  const label = useUiLabel()
   return (
-    <div
-      data-slot="dialog-footer"
-      className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-        className
-      )}
-      {...props}
-    >
+    <div data-slot="dialog-footer" className={className} {...props}>
       {children}
       {showCloseButton && (
         <DialogPrimitive.Close asChild>
-          <Button variant="outline">Close</Button>
+          <Button variant="outline">{label("Close")}</Button>
         </DialogPrimitive.Close>
       )}
     </div>
@@ -136,7 +143,7 @@ function DialogTitle({
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn("text-lg leading-none font-semibold", className)}
+      className={className}
       {...props}
     />
   )
@@ -149,11 +156,13 @@ function DialogDescription({
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      className={cn("text-sm text-muted-foreground", className)}
+      className={className}
       {...props}
     />
   )
 }
+
+export type { DialogSize }
 
 export {
   Dialog,

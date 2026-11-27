@@ -93,7 +93,7 @@ export function CustomizeDashboardDialog({ layout, onChange, onRearrange, onClos
  const { t } = useLanguage();
  const { shown, context } = useCardDrag(layout, onChange, useSortableSensors());
  return <Dialog open onOpenChange={open => { if (!open) onClose(); }}>
-  <DialogContent className="customize-dialog sm:max-w-2xl">
+  <DialogContent className="customize-dialog" size="lg">
    <DialogTitle>{t('Customize dashboard')}</DialogTitle>
    <DndContext id="customize-dashboard" {...context}>
     <div className="customize-grid">{dashboardColumnIds.map(column => <DropColumn key={column} id={column} cards={shown.columns[column]} className="customize-column">

@@ -27,6 +27,7 @@ const buttonsWith=(tree,content)=>findAll(tree,node=>(node.type==='button'||node
 const button=(tree,content)=>{const matches=buttonsWith(tree,content),clickable=matches.filter(node=>typeof node.props.onClick==='function'),found=clickable.length?clickable:matches;assert.ok(found.length,'no button with '+content);return found[0];};
 const typed=value=>({currentTarget:{value}});
 
+let discardAsked=0;
 const host=name=>Object.defineProperty(props=>React.createElement(name,props),'name',{value:name});
 const t=(key,vars={})=>key.replace(/\{(\w+)\}/g,(_,name)=>String(vars[name]));
 const icons=Object.fromEntries(['ArrowUpRight','Check','ChevronDown','Plus','Tag','Trash2'].map(name=>[name,()=>null]));
@@ -45,7 +46,8 @@ const overrides={
  '@/components/presentation-foundation/segmented':{Segmented:host('Segmented')},
  '@/components/presentation-foundation/tag-chip':{TagChip:props=>React.createElement('TagChip',props,props.name,props.children)},
  '@/components/presentation-foundation/person-avatar':{OwnerAvatar:host('OwnerAvatar')},
- '@/components/ui/sheet':{Sheet:host('Sheet'),SheetContent:host('SheetContent'),SheetHeader:host('SheetHeader'),SheetTitle:host('SheetTitle')},
+ // Closing Edit multiple with a change made asks first (DLG-010); the stand-in counts the questions.
+ '@/components/discard-changes':{useDiscardChanges:(dirty,onClose,busy)=>({close:()=>{if(busy)return;if(dirty)discardAsked++;else onClose();},confirmation:null})},
  '@/components/presentation-foundation/confirm-dialog':{ConfirmDialog:Confirm},
  '@/components/presentation-foundation/count':{Count:props=>React.createElement('Count',props,String(props.value))},
  '@/components/presentation-foundation/panel-title':{PanelTitle:Panel},
@@ -323,9 +325,13 @@ test('BulkEditSheet collects category, business, owner and tag changes and saves
  await findAll(render(),n=>n.type==='form')[0].props.onSubmit({preventDefault(){}});
  assert.deepEqual(saves,[{choice:{kind:'Charity',category_id:null,name:'Charity',custom:false},business:'b2',owner:'o2',add:['t2'],remove:['t1']}]);
  assert.equal(closed,1);
- // Closing by the overlay closes, but not while saving.
- findAll(render(),n=>n.type==='Sheet')[0].props.onOpenChange(true);
- findAll(render(),n=>n.type==='Sheet')[0].props.onOpenChange(false);
+ // Closing by the overlay with changes still made asks before dropping them; nothing closes while saving.
+ discardAsked=0;
+ findAll(render(),n=>n.type==='Dialog')[0].props.onOpenChange(true);
+ findAll(render(),n=>n.type==='Dialog')[0].props.onOpenChange(false);
+ assert.deepEqual([closed,discardAsked],[1,1]);
+ const untouched=mount(h(page.BulkEditSheet,{records,categories,businesses:[],tags,tagsOf:()=>[],onSave(){},onClose:()=>closed++}));
+ findAll(untouched(),n=>n.type==='Dialog')[0].props.onOpenChange(false);
  assert.equal(closed,2);
  let finish;
  const slow=mount(h(page.BulkEditSheet,{records,categories,businesses:[],tags,tagsOf:()=>[],onSave:()=>new Promise(resolve=>{finish=resolve;}),onClose:()=>closed++}));
@@ -334,8 +340,8 @@ test('BulkEditSheet collects category, business, owner and tag changes and saves
  tree=slow();
  assert.equal(button(tree,'Saving…').props.disabled,true);
  assert.equal(findAll(tree,n=>n.type==='fieldset')[0].props.disabled,true);
- findAll(tree,n=>n.type==='Sheet')[0].props.onOpenChange(false);
- assert.equal(closed,2);
+ findAll(tree,n=>n.type==='Dialog')[0].props.onOpenChange(false);
+ assert.deepEqual([closed,discardAsked],[2,1]);
  finish();await pending;
  assert.equal(closed,3);
 });

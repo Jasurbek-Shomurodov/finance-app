@@ -78,6 +78,14 @@ it instead of styling a page on its own.
   A failed load is `InlineError` with its Retry callback; a fetched resource's
   loading, failed and ready states are `ResourceState`. Confirmations use
   `ConfirmDialog`; dialog forms close with `FormFooter`.
+- Every dialog is the one shell in `components/ui/dialog.tsx` / `alert-dialog.tsx`, styled only in
+  `app/styles/dialogs.css`: pick its width with `size` (`sm` 420 for questions and short forms, `md` 560 forms,
+  `lg` 760 several editors or details, `xl` 960 tables, `full` steppers and phone pickers), never with a class. The
+  body scrolls between a fixed Close and the footer (`FormFooter`, `DialogFooter`, a question's buttons), which stays
+  in reach at the bottom. On a phone (640px and below) every dialog but `full` is a bottom sheet that rises above the
+  keyboard, with a grab handle that closes it when pulled down (through Escape, so busy dialogs stay and unsaved
+  input asks first); a question's buttons stack full width with the action on top. A dialog's own class styles what is
+  inside it, never its width, padding, radius, height or scroll.
 - A form says what is wrong under the field it belongs to, never only in a toast: `FieldError`
   (`presentation-foundation/field-error.tsx`) under the control, which carries `aria-invalid` and `aria-describedby`
   (`AmountCurrencyFields`, `GroupedPicker`, `CashAccountField` and `RecordNameInput` take the message as a prop). The

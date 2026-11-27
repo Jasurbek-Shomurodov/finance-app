@@ -232,7 +232,6 @@
 .dashboard-grid[data-arranging] .dashboard-card[data-dragging]>.panel{animation:none}
 @keyframes card-wiggle{from{rotate:-.45deg}to{rotate:.45deg}}
 @media (prefers-reduced-motion:reduce){.dashboard-grid[data-arranging] .dashboard-card>.panel{animation:none}}
-.customize-dialog{max-width:720px}
 .switch{display:inline-flex;flex-shrink:0;align-items:center;width:36px;height:20px;padding:2px;border:0;border-radius:999px;background:var(--input);cursor:pointer;transition:background .15s}
 .switch[data-state=checked]{background:var(--primary)}
 .switch:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
@@ -246,7 +245,7 @@
 .customize-row{position:relative;display:flex;align-items:center;gap:8px;min-height:44px;padding:4px 0;background:var(--background);user-select:none}
 .customize-row[data-dragging]{z-index:5;border-radius:var(--radius-control);box-shadow:0 8px 24px rgb(0 0 0 / .14)}
 .customize-row label{display:block;flex:1;margin:0;font-size:var(--type-small);cursor:pointer}
-.customize-footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin-top:8px}
+[data-slot=dialog-body] .customize-footer{justify-content:space-between;gap:8px}
 @media (max-width:560px){.customize-grid{grid-template-columns:minmax(0,1fr)}}
 
 /* Goal detail: the selected goal beside the list. Head, saved of target, its projection, four figures, the day it lands. */
@@ -413,6 +412,5 @@ button.goal-available:focus-visible,.surplus-link:focus-visible{outline:2px soli
 .goal-activity-list>li>div{display:flex;flex-direction:column;gap:2px;min-width:0}
 .goal-activity-list small{font-size:var(--type-caption);color:var(--muted-foreground)}
 .goal-dialog-title{display:flex;align-items:center;gap:8px}
-.record-dialog.goal-funding-dialog{max-width:880px!important}
 .goal-funding-dialog .goal-funding-editors{grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));margin-top:4px}
 

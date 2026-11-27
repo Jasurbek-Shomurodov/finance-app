@@ -153,7 +153,7 @@ export function CashFlowDrillDialog({ target, title, period, savings, context, l
   if (open.side === 'record') { const found = record(open.key); if (found) onOpenRecord?.(found); return; }
   setTrail([...trail, { target: open, title: name }]);
  }
- return <Dialog open onOpenChange={open => { if (!open) onClose(); }}><DialogContent className="record-dialog cash-flow-drill-dialog" aria-describedby={undefined}>
+ return <Dialog open onOpenChange={open => { if (!open) onClose(); }}><DialogContent className="record-dialog cash-flow-drill-dialog" size="xl" aria-describedby={undefined}>
   {trail.length > 1 && <Button type="button" variant="ghost" size="sm" className="cash-flow-drill-back" onClick={() => setTrail(trail.slice(0, -1))}><ArrowLeft aria-hidden="true"/>{t('Back')}</Button>}
   {/* The details of what it was opened for, also when its Sankey has nothing to draw this month. */}
   {onDetails && trail.length === 1 && <Button type="button" variant="outline" size="sm" className="cash-flow-drill-details" onClick={onDetails}>{t('Details')}</Button>}

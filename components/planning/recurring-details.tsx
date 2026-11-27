@@ -45,7 +45,7 @@ export function RecurringDetails({ item, data, today, onClose }: Props) {
  const points = track.points;
  const income = direction === 'income';
  const done = t(income ? 'Received' : 'Paid'), fill = income ? 'var(--positive)' : 'var(--foreground)';
- return <Dialog open onOpenChange={open => { if (!open) onClose(); }}><DialogContent className="recurring-details sm:max-w-2xl">
+ return <Dialog open onOpenChange={open => { if (!open) onClose(); }}><DialogContent className="recurring-details" size="lg">
   <header className="recurring-details-head"><CategoryIcon kind={record.kind}/><div><DialogTitle>{record.name}</DialogTitle><DialogDescription>{[t(frequencyLabels[item.installment ? 'Monthly' : record.frequency]), t(record.kind), money(item.amount)].join(' · ')}</DialogDescription></div></header>
   <StatTiles columns={3} label={t('Summary')}>
    <StatTile label={t(income ? 'Received in this period' : 'Paid in this period')} value={money(track.recorded)} tone={income && track.recorded > 0 ? 'positive' : undefined}>{track.percent !== null && <p>{t('{percent} of {amount}', { percent: formatPercent(track.percent, locale, 0), amount: money(track.scheduled) })}</p>}</StatTile>

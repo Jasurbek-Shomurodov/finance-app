@@ -43,6 +43,6 @@ export function CountryCombobox({ id, label, value, onChange }: { id: string; la
    </Button></PopoverTrigger>
    <PopoverContent align="start" collisionPadding={16} className="country-popover">{picker}</PopoverContent>
   </Popover>
-  {mobile && <Dialog open={open} onOpenChange={toggle}><DialogContent className="country-sheet"><DialogTitle>{label}</DialogTitle>{picker}</DialogContent></Dialog>}
+  {mobile && <Dialog open={open} onOpenChange={toggle}><DialogContent className="country-sheet" size="full"><DialogTitle>{label}</DialogTitle>{picker}</DialogContent></Dialog>}
  </>;
 }

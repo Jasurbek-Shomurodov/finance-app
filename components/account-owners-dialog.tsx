@@ -39,7 +39,7 @@ export function AccountOwnersDialog({ records, accounts, market, household, owne
   finally { setBusy(null); }
  }
  return <Dialog open onOpenChange={open => { if (!open && !busy) onClose(); }}>
-  <DialogContent className="record-dialog account-businesses-dialog">
+  <DialogContent className="record-dialog account-businesses-dialog" size="xl">
    <DialogTitle>{t('Edit owners')}</DialogTitle>
    <DialogDescription className="sr-only">{t('Transactions and holdings follow the owner of their account.')}</DialogDescription>
    {groups.map(([label, items]) => items.length > 0 && <section key={label}><h3>{t(label)}</h3><ul>{items.map(row => <li key={row.id}>

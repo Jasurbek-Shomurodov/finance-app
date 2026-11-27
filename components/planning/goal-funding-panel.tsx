@@ -94,7 +94,7 @@ export function GoalFundingPanel({ data, currency, surplus, surplusParts, today,
    </dl>
    {plan.shortfall !== null && plan.shortfall > 0 && <p className="goal-funding-notice negative" role="status">{t('Your funding plan exceeds your monthly surplus by {amount}.', { amount: money(plan.shortfall) })}</p>}
    {!plan.complete && <p className="goal-funding-notice" role="status">{t('Enter each enabled goal’s monetary budget and provide all exchange rates to complete the plan.')}</p>}
-   <Dialog open={planning} onOpenChange={setPlanning}><DialogContent className="record-dialog goal-funding-dialog">
+   <Dialog open={planning} onOpenChange={setPlanning}><DialogContent className="record-dialog goal-funding-dialog" size="xl">
     <DialogTitle className="goal-dialog-title">{t('Priorities and monthly funding')}<InfoHint>{t('Lower priority numbers are funded first. Include only separate commitments so the same money is not planned twice.')}</InfoHint></DialogTitle>
     <div className="goal-funding-editors">{activeGoals.map(goal => <FundingEditor key={JSON.stringify(goal)} goal={goal} today={today} busy={busy || demo} save={save}/>)}</div>
    </DialogContent></Dialog>
@@ -104,7 +104,7 @@ export function GoalFundingPanel({ data, currency, surplus, surplusParts, today,
     {shown && <Button type="button" variant="outline" size="sm" className="goal-history-filter" aria-label={`${shown.name} · ${t('Clear filter')}`} onClick={onShowAll}>{shown.name}<X size={14} aria-hidden="true"/></Button>}
     {activeSavings.length > 0 && <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => setActivityOpen(true)}><Plus size={16} aria-hidden="true"/>{t('Record')}</Button>}
    </PanelTitle>
-   {activeSavings.length > 0 && <Dialog open={activityOpen} onOpenChange={setActivityOpen}><DialogContent className="record-dialog sm:max-w-2xl">
+   {activeSavings.length > 0 && <Dialog open={activityOpen} onOpenChange={setActivityOpen}><DialogContent className="record-dialog" size="lg">
     <DialogTitle>{t('Record goal activity')}</DialogTitle>
     {demo && <p className="goal-funding-notice" role="status">{t('Sign in to record cash goal activity.')}</p>}
     <ResourceState loading={activityOpen&&incomeHistory.loading} error={activityOpen?incomeHistory.error:null} onRetry={incomeHistory.retry}><GoalActivityForm data={demo||!activityOpen?data:{...data,records:incomeHistory.data.records}} goals={activeSavings} today={today} busy={busy || demo} save={save}/></ResourceState>

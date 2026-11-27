@@ -72,7 +72,7 @@ export function BusinessSetupFlow({ businesses, records, newBusiness, saveBusine
  const guidance = setupGuide(trackedBefore, hasTags);
 
  return <Dialog open onOpenChange={open => { if (!open && !busy) onClose(); }}>
-  <DialogContent className="goal-setup business-setup top-0 left-0 flex h-[100dvh] w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-0 p-0 sm:max-w-none" showCloseButton={false} onOpenAutoFocus={focusStep}>
+  <DialogContent className="goal-setup business-setup" size="full" showCloseButton={false} onOpenAutoFocus={focusStep}>
    <header className="goal-setup-bar">
     {step && name !== 'done' ? <Button variant="ghost" size="icon" disabled={busy} aria-label={t('Back')} onClick={() => setStep(step - 1)}><ArrowLeft size={18} aria-hidden="true"/></Button> : <span className="goal-setup-spacer"/>}
     <DialogTitle className="sr-only">{t('Set up business tracking')}</DialogTitle><DialogDescription className="sr-only">{t(stepLabels[name])}</DialogDescription>

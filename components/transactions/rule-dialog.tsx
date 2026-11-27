@@ -78,7 +78,7 @@ export function RuleDialog({ rule, records, categories, removed, businesses, acc
   try { await onSave(next, apply); onClose(); } catch (reason) { setError(t((reason as Error).message)); } finally { setBusy(false); }
  }
  return <Dialog open onOpenChange={value => { if (!value && !busy) onClose(); }}>
-  <DialogContent className="budget-dialog rule-dialog">
+  <DialogContent className="budget-dialog rule-dialog" size="xl">
    <DialogTitle>{t('Rule')}</DialogTitle>
    <form onSubmit={event => { event.preventDefault(); return save(); }}>
     <fieldset disabled={busy} className="budget-dialog-fields">

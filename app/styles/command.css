@@ -8,7 +8,7 @@
 @container topbar (max-width:900px){.command-search{width:38px;padding:0}.command-search>:is(span,kbd){display:none}}
 @media(pointer:coarse){.command-search kbd{display:none}}
 
-[data-slot=dialog-content].command-menu{top:min(16vh,150px);--tw-translate-y:0;gap:0;padding:0;width:min(640px,calc(100vw - 24px));max-width:none;max-height:min(560px,calc(100dvh - 32vh));overflow:hidden;border-radius:16px;border-color:color-mix(in srgb,var(--foreground) 12%,var(--border));background:color-mix(in srgb,var(--popover) 92%,transparent);backdrop-filter:saturate(1.6) blur(22px);box-shadow:0 32px 80px -24px rgb(0 0 0 / 45%),0 0 0 1px rgb(255 255 255 / 4%) inset}
+[data-slot=dialog-content].command-menu{top:min(16vh,150px);translate:-50% 0;width:min(640px,calc(100vw - 24px));max-width:none;max-height:min(560px,calc(100dvh - 32vh));overflow:hidden;border-radius:16px;border-color:color-mix(in srgb,var(--foreground) 12%,var(--border));background:color-mix(in srgb,var(--popover) 92%,transparent);backdrop-filter:saturate(1.6) blur(22px);box-shadow:0 32px 80px -24px rgb(0 0 0 / 45%),0 0 0 1px rgb(255 255 255 / 4%) inset}
 .command-menu [data-slot=command]{background:transparent;border-radius:0}
 .command-menu [data-slot=command-input-wrapper]{height:56px;gap:12px;padding-inline:18px;border-bottom:1px solid var(--hairline)}
 .command-menu [data-slot=command-input-wrapper] svg{width:18px;height:18px}

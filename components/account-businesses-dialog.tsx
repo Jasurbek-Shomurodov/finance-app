@@ -29,7 +29,7 @@ export function AccountBusinessesDialog({ records, market, businesses, onChange,
   finally { setBusy(null); }
  }
  return <Dialog open onOpenChange={open => { if (!open && !busy) onClose(); }}>
-  <DialogContent className="record-dialog account-businesses-dialog">
+  <DialogContent className="record-dialog account-businesses-dialog" size="xl">
    <DialogTitle>{t('Edit businesses')}</DialogTitle>
    <DialogDescription className="sr-only">{t('Transactions follow the business of their account.')}</DialogDescription>
    {businessAccountGroups.map(([label, matches]) => {

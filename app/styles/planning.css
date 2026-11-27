@@ -246,9 +246,10 @@
 .investment-target-row .goal-card-values{margin:0}
 
 /* Keep goal actions reachable while additional holdings scroll independently. */
-.record-dialog.goal-dialog{display:flex;flex-direction:column;overflow:hidden}
+/* The goal and expense forms scroll their fields themselves, with their actions and error under them. */
+:is(.goal-dialog,.expense-dialog)>[data-slot=dialog-body]{display:flex;flex-direction:column;overflow:hidden}
 .goal-dialog .record-form{display:flex;flex-direction:column;min-height:0;overflow:hidden}
-.goal-dialog>[data-slot="dialog-title"],.goal-dialog>[data-slot="dialog-description"]{flex-shrink:0}
+:is(.goal-dialog,.expense-dialog)>[data-slot=dialog-body]>:is([data-slot=dialog-title],[data-slot=dialog-description]){flex-shrink:0}
 .goal-dialog-scroll{min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px;scroll-padding-block:4px}
 .goal-dialog-actions{flex-shrink:0}
 .goal-dialog-actions .error{margin:0 0 12px}
@@ -324,8 +325,6 @@ input[type="checkbox"] {width:18px!important;height:18px!important;min-width:18p
 .status-badge.is-overdue{background:color-mix(in srgb,var(--negative) 12%,transparent);color:var(--pill-negative)}
 
 
-.record-dialog.expense-dialog{display:flex;flex-direction:column;overflow:hidden}
-.expense-dialog>[data-slot="dialog-title"],.expense-dialog>[data-slot="dialog-description"]{flex-shrink:0}
 .expense-dialog .expense-form{display:flex;flex-direction:column;min-height:0;overflow:hidden;gap:16px}
 .expense-form-scroll{display:grid;gap:20px;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px}
 .expense-form-actions{flex-shrink:0}

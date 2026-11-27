@@ -103,8 +103,7 @@ test('selectors that once had a later override keep one rule with the value that
   ['.record-dialog textarea','width:100%;resize:vertical;min-height:80px!important;max-height:180px'],
   ['.category-settings .category-rows','display:grid;list-style:none;padding:0;margin:0'],
  ])assert.deepEqual(rules(selector),[body],selector);
- assert.deepEqual(rules('.portfolio-editor-dialog').length,1);
- assert.match(rules('.portfolio-editor-dialog')[0],/scrollbar-gutter:auto/);
+ assert.deepEqual(rules('.portfolio-editor-dialog'),[],'the dialog shell sizes and scrolls it');
  assert.deepEqual(rules('.budget-year thead th:first-child'),[],'the header corner takes the header tint from .budget-year thead th');
  assert.doesNotMatch(rules('.budget-year th[scope=row],.budget-year thead th:first-child')[0],/background/);
  assert.match(rules('.budget-year thead th')[0],/background:var\(--muted\)/);

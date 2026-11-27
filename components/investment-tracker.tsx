@@ -81,7 +81,7 @@ export function InvestmentTracker({inline=false,onDraftState,initialType,startTa
  if(movement)return <AssetMovementDialog initial={movement} records={accounts.some(account=>account.id===record.id)?accounts:[...accounts,record]} save={saveMovement} onClose={()=>setMovement(null)}/>;
  const about=t(trackerAbout(record.kind));
  const help=tab==='history'?historyHelp(record.kind,t):tab==='update'?trackerFormHelp(record,t):[];
- return <><Dialog open onOpenChange={open=>{if(!open&&!busy)guard.close();}}><DialogContent className="record-dialog investment-tracker" showCloseButton={!busy}>
+ return <><Dialog open onOpenChange={open=>{if(!open&&!busy)guard.close();}}><DialogContent className="record-dialog investment-tracker" size="xl" showCloseButton={!busy}>
   <DialogTitle>{record.name} · {t('Tracker')}<InfoHint>{[about,...help].map(text=><p key={text}>{text}</p>)}</InfoHint></DialogTitle>
   <DialogDescription className="sr-only">{about}</DialogDescription>
   <Segmented className="tracker-tabs" label={t('Tracker')} options={[{value:'overview',label:t('Overview')},{value:'history',label:t('History')},{value:'update',label:t('Add update')}]} value={tab} onChange={setTab}/>

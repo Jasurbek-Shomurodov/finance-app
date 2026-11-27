@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useExitGhost } from "@/components/ui/exit-ghost"
 import { useReturnFocus } from "@/components/ui/return-focus"
+import { useKeyboardInset } from "@/components/ui/dialog-sheet"
 
 function AlertDialog({
   ...props
@@ -30,7 +31,7 @@ function AlertDialogOverlay({
     <AlertDialogPrimitive.Overlay
       data-slot="alert-dialog-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
+        "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
         className
       )}
       {...props}
@@ -38,17 +39,22 @@ function AlertDialogOverlay({
   )
 }
 
+/** A question before an action, in the same shell as every dialog (app/styles/dialogs.css): 420px wide (`md` gives a
+ * longer question 560px), a body that scrolls, and on a phone a bottom sheet with its buttons full width, the action on
+ * top. It has no grab handle: it closes only by its buttons or Escape. */
 function AlertDialogContent({
   className,
-  size = "default",
+  children,
+  size = "sm",
   onCloseAutoFocus,
   onOpenAutoFocus,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Content> & {
-  size?: "default" | "sm"
+  size?: "sm" | "md"
 }) {
   const returnFocus = useReturnFocus(onCloseAutoFocus, onOpenAutoFocus)
   const exit = useExitGhost<HTMLDivElement>()
+  useKeyboardInset()
   return (
     <AlertDialogPortal>
       <AlertDialogOverlay />
@@ -57,13 +63,15 @@ function AlertDialogContent({
         data-slot="alert-dialog-content"
         data-size={size}
         className={cn(
-          "group/alert-dialog-content fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 data-[size=sm]:max-w-xs data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[size=default]:sm:max-w-lg",
+          "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
           className
         )}
         {...props}
         onOpenAutoFocus={returnFocus.onOpenAutoFocus}
         onCloseAutoFocus={returnFocus.onCloseAutoFocus}
-      />
+      >
+        <div data-slot="dialog-body">{children}</div>
+      </AlertDialogPrimitive.Content>
     </AlertDialogPortal>
   )
 }
@@ -72,45 +80,21 @@ function AlertDialogFooter({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="alert-dialog-footer"
-      className={cn(
-        "flex flex-col-reverse gap-2 group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2 sm:flex-row sm:justify-end",
-        className
-      )}
-      {...props}
-    />
-  )
+  return <div data-slot="alert-dialog-footer" className={className} {...props} />
 }
 
 function AlertDialogTitle({
   className,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Title>) {
-  return (
-    <AlertDialogPrimitive.Title
-      data-slot="alert-dialog-title"
-      className={cn(
-        "text-lg font-semibold sm:group-data-[size=default]/alert-dialog-content:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2",
-        className
-      )}
-      {...props}
-    />
-  )
+  return <AlertDialogPrimitive.Title data-slot="alert-dialog-title" className={className} {...props} />
 }
 
 function AlertDialogDescription({
   className,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Description>) {
-  return (
-    <AlertDialogPrimitive.Description
-      data-slot="alert-dialog-description"
-      className={cn("text-sm text-muted-foreground", className)}
-      {...props}
-    />
-  )
+  return <AlertDialogPrimitive.Description data-slot="alert-dialog-description" className={className} {...props} />
 }
 
 function AlertDialogAction({

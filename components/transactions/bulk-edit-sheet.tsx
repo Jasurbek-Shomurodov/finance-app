@@ -5,7 +5,8 @@ import type { BusinessOption } from '@/components/presentation-foundation/busine
 import { OwnerAvatar } from '@/components/presentation-foundation/person-avatar';
 import type { OwnerOption } from '@/components/presentation-foundation/owner-filter';
 import { FormFooter } from '@/components/presentation-foundation/form-footer';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { useDiscardChanges } from '@/components/discard-changes';
 import { Button } from '@/components/ui/button';
 import type { Entry } from '@/lib/finance';
 import { formatNumber } from '@/lib/format';
@@ -15,8 +16,9 @@ import type { Tag } from '@/lib/tags';
 import { BusinessChoiceButton, CategoryChoiceButton, ChoiceButton, OwnerList } from './pickers';
 import { TagSelector } from './tags';
 
-/** Edit multiple drawer: change the category, the business, the owner and the tags of the selected transactions together.
- * Fields left as they are stay unchanged on every transaction. */
+/** Edit multiple: change the category, the business, the owner and the tags of the selected transactions together, in a
+ * small dialog (a bottom sheet on a phone). Fields left as they are stay unchanged on every transaction; closing with a
+ * change made asks before dropping it (DLG-010). */
 export function BulkEditSheet({ records, categories, removed, businesses, owners = [], tags, tagsOf, onCreateTag, onSave, onClose }: { records: Entry[]; categories: readonly Category[]; removed?: readonly string[]; businesses: readonly BusinessOption[]; /** The household's owners, in a shared workspace. */ owners?: readonly OwnerOption[]; tags: readonly Tag[]; tagsOf: (id: string) => readonly string[]; onCreateTag?: (name: string) => Promise<string>; onSave: (change: { choice: CategoryChoice | null; business: string | null | undefined; owner: string | undefined; add: string[]; remove: string[] }) => Promise<void>; onClose: () => void }) {
  const { t, locale } = useLanguage();
  const directions = new Set(records.map(record => directionOf(record.kind)));
@@ -30,14 +32,15 @@ export function BulkEditSheet({ records, categories, removed, businesses, owners
  const changed = !!choice || business !== undefined || owner !== undefined || add.length > 0 || remove.length > 0;
  const chosenOwner = owners.find(item => item.id === owner);
  const businessName = business === undefined ? t('Leave unchanged') : business === null ? t('Household') : businesses.find(item => item.id === business)?.name ?? '';
+ const guard = useDiscardChanges(changed, onClose, busy);
  async function save() {
   if (!changed) return;
   setBusy(true); setError('');
   try { await onSave({ choice, business, owner, add, remove }); onClose(); } catch (reason) { setError(t((reason as Error).message || 'Could not save changes.')); } finally { setBusy(false); }
  }
- return <Sheet open onOpenChange={open => { if (!open && !busy) onClose(); }}>
-  <SheetContent className="bulk-edit-sheet" aria-describedby={undefined}>
-   <SheetHeader><SheetTitle>{t('Edit {count} transactions', { count: formatNumber(records.length, locale, 0) })}</SheetTitle></SheetHeader>
+ return <Dialog open onOpenChange={open => { if (!open) guard.close(); }}>
+  <DialogContent className="bulk-edit-dialog" size="sm" showCloseButton={!busy} aria-describedby={undefined}>
+   <DialogTitle>{t('Edit {count} transactions', { count: formatNumber(records.length, locale, 0) })}</DialogTitle>
    <form className="bulk-edit-form" onSubmit={event => { event.preventDefault(); return save(); }}>
     <fieldset disabled={busy}>
      <div className="budget-dialog-label">{t('Category')}
@@ -51,8 +54,9 @@ export function BulkEditSheet({ records, categories, removed, businesses, owners
      {shared.length > 0 && <div className="budget-dialog-label">{t('Remove tags')}<TagSelector tags={tags.filter(tag => shared.includes(tag.id))} selected={remove} onToggle={id => { setRemove(list => list.includes(id) ? list.filter(item => item !== id) : [...list, id]); setAdd(list => list.filter(item => item !== id)); }}/></div>}
      {error && <p className="form-error" role="alert">{error}</p>}
     </fieldset>
-    <FormFooter busy={busy} onCancel={onClose}><Button disabled={busy || !changed}>{t(busy ? 'Saving…' : 'Apply changes')}</Button></FormFooter>
+    <FormFooter busy={busy} onCancel={guard.close}><Button disabled={busy || !changed}>{t(busy ? 'Saving…' : 'Apply changes')}</Button></FormFooter>
    </form>
-  </SheetContent>
- </Sheet>;
+  </DialogContent>
+  {guard.confirmation}
+ </Dialog>;
 }

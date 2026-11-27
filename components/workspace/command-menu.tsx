@@ -75,7 +75,7 @@ export function CommandMenu({ onNavigate }: { onNavigate: (path: string) => void
  };
  const search = query.trim();
  return <Dialog open={open} onOpenChange={change}>
-  <DialogContent className="command-menu" showCloseButton={false}>
+  <DialogContent className="command-menu" size="palette" showCloseButton={false}>
    <DialogTitle className="sr-only">{t('Command menu')}</DialogTitle><DialogDescription className="sr-only">{t('Search or jump to…')}</DialogDescription>
    <Command shouldFilter={false} loop>
     <CommandInput aria-label={t('Search or jump to…')} placeholder={t('Search or jump to…')} value={query} onValueChange={setQuery} maxLength={120}/>

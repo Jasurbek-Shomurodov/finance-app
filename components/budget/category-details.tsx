@@ -32,7 +32,7 @@ export function CategoryDetailsDialog({ row, history, data, splits, bills, month
  const accounts = useMemo(() => new Map(data.records.map(record => [record.id, record.name])), [data.records]);
  const points = history.months.map(item => ({ month: item.month, recorded: item.amount, scheduled: item.planned ?? 0 }));
  const label = (payee: string) => payee || name(row);
- return <Dialog open onOpenChange={open => { if (!open) onClose(); }}><DialogContent className="recurring-details budget-details sm:max-w-2xl">
+ return <Dialog open onOpenChange={open => { if (!open) onClose(); }}><DialogContent className="recurring-details budget-details" size="lg">
   <header className="recurring-details-head"><CategoryIcon kind={row.custom ? row.name : row.key}/><div><DialogTitle>{name(row)}</DialogTitle><DialogDescription>{[formatMonthYear(month, locale), t(row.group)].join(' · ')}</DialogDescription></div></header>
   <Summary row={row} history={history} money={money} income={income}/>
   {details.payees.length > 0 && <section className="recurring-details-history" aria-label={t(income ? 'Where the money came from' : 'Where the money went')}>

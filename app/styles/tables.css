@@ -147,7 +147,6 @@ roll-strip>roll-char{display:block;height:1lh}
  .label-table tbody td[data-label]::before{content:attr(data-label);color:var(--muted-foreground);font-size:var(--type-caption);text-align:start}
 }
 
-.record-dialog{max-height:90svh;overflow:auto}
 .record-dialog form{margin-top:5px}
 .record-dialog label{margin-bottom:15px}
 @media(max-width:1200px){.content{padding:28px 24px}.workspace .content{padding:24px 24px 0}.topbar{padding-inline:24px}}

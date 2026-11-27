@@ -99,7 +99,7 @@ test('the phone country starts on the visitor\'s country, and the list opens ful
  assert.match(field,/\{mobile && <Dialog open=\{open\}[\s\S]{0,200}className=\{styles\.countrySheet\}/);
  assert.match(field,/<CommandInput aria-label=\{t\('Search countries'\)\}/);
  const css=fs.readFileSync('components/sign-in-screen.module.css','utf8');
- assert.match(css,/\.countrySheet\{[^}]*height:100dvh/);assert.match(css,/\.countrySheet \.countryList\{flex:1;max-height:none/);
+ assert.match(field,/className=\{styles\.countrySheet\} size="full"/,'the dialog shell makes it full screen');assert.match(css,/\.countrySheet \.countryList\{flex:1;max-height:none/);
  assert.match(fs.readFileSync('lib/legal.ts','utf8'),/estimates from your connection; that estimate is not stored/,'the privacy policy says so');
  const card=fs.readFileSync('components/auth-card.tsx','utf8');
  assert.match(card,/className=\{styles\.provider\}[^>]*aria-label=\{t\('Continue with Google'\)\}>.*<\/svg>Google<\/Button>/,'Google is a button that shows its name');

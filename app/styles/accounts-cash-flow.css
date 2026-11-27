@@ -1,6 +1,5 @@
 /* Budget use, the Accounts directory, Settings cards, exchange rates and Cash flow. */
 
-.chart-point-details{max-height:85dvh;overflow-y:auto;overscroll-behavior:contain}
 .chart-point-details .portfolio-tooltip{width:100%;max-width:none;box-shadow:none}
 .chart-point-details .portfolio-tooltip-body{max-height:none;overflow:visible}
 
@@ -107,8 +106,8 @@
 .country-option[data-chosen]{color:var(--primary);font-weight:600}
 :is(.country-popover,.country-sheet) [data-slot="command-input"],:is(.country-popover,.country-sheet) [data-slot="command-input"]:focus-visible{border-color:transparent!important;box-shadow:none!important;background:transparent!important}
 /* Phones: the list fills the screen; its search stays on top and the list scrolls above the keyboard. */
-.country-sheet{inset:0;top:0;left:0;translate:none;transform:none;display:flex;flex-direction:column;gap:0;width:100%;max-width:none;height:100dvh;padding:0;border:0;border-radius:0;background:var(--popover);animation:none}
-.country-sheet>[data-slot=dialog-title]{flex-shrink:0;padding-block:18px 10px;padding-inline:16px 56px;font-size:var(--type-title);font-weight:600}
+.country-sheet{background:var(--popover);animation:none}
+.country-sheet [data-slot=dialog-title]{flex-shrink:0;padding-block:18px 10px;padding-inline:16px 56px;font-size:var(--type-title);font-weight:600}
 .country-sheet .country-command{flex:1;min-height:0;border-radius:0}
 .country-sheet .country-list{flex:1;max-height:none;padding:4px 8px calc(16px + env(safe-area-inset-bottom))}
 /* Preferred currencies: an ordered list whose first row is the primary currency. */

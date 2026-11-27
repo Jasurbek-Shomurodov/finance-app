@@ -161,7 +161,7 @@ export function InvestmentComparison({fx,allPoints,periodPick,onViewMove,history
    <p className="comparison-note"><DrawerLink href={benchmarksLink}>{t('Investment benchmarks')}</DrawerLink></p>
    {demo&&<p className="comparison-note">{t("Sample portfolio compared with real BTC and SPY price history. SPY tracks the S&P 500; deposits use assumed annual rates.")}</p>}
   </details>}
-  <Dialog open={!!detailPoint} onOpenChange={open=>{if(!open)setDetailDate(null);}}><DialogContent className="chart-point-details sm:max-w-xl"><DialogHeader><DialogTitle>{t('Activity and investments')}</DialogTitle><DialogDescription>{detailDate?formatDate(detailDate,locale):''}</DialogDescription></DialogHeader>
+  <Dialog open={!!detailPoint} onOpenChange={open=>{if(!open)setDetailDate(null);}}><DialogContent className="chart-point-details"><DialogHeader><DialogTitle>{t('Activity and investments')}</DialogTitle><DialogDescription>{detailDate?formatDate(detailDate,locale):''}</DialogDescription></DialogHeader>
    {detailPoint&&<>
     <BenchmarkTooltip linked marketHistory={ready} fundingDetails={decision?.details} active payload={[{payload:detailPoint}]} receipts={[]} currency={currency} series={chartSeries}/>
    </>}

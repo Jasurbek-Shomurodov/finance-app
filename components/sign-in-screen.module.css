@@ -74,7 +74,7 @@
 :is(.countryPopover,.countrySheet) [data-slot="command-input"]{font-size:var(--type-body)}:is(.countryPopover,.countrySheet) [data-slot="command-input"],:is(.countryPopover,.countrySheet) [data-slot="command-input"]:focus-visible{border-color:transparent!important;box-shadow:none!important;background:transparent}
 .countryList{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 /* Phones: the country list fills the screen; its search stays on top and the list scrolls above the keyboard. */
-.countrySheet{inset:0;top:0;left:0;translate:none;transform:none;display:flex;flex-direction:column;gap:0;width:100%;max-width:none;height:100dvh;padding:0;border:0;border-radius:0;background:var(--popover);animation:none}
+.countrySheet{background:var(--popover);animation:none}
 .countrySheetTitle{flex-shrink:0;padding:18px 56px 10px 16px;font-size:var(--type-title);font-weight:600}
 .countrySheet .countryCommand{flex:1;min-height:0;border-radius:0}
 .countrySheet [data-slot="command-input-wrapper"]{flex-shrink:0;height:52px;padding-inline:16px}
