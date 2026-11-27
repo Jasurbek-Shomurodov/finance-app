@@ -23,11 +23,24 @@ export const escapeHtml=(text:string)=>text.replace(/&/g,'&amp;').replace(/</g,'
 export type SendOutcome='sent'|'blocked'|'failed';
 /** Telegram's 403s are all permanent (blocked, deactivated, kicked, never started); of its 400s only a missing chat is. */
 const goneChat=/chat not found/i;
-/** Calls one Bot API method and says how it ended. */
+/** How long to wait before the one retry of a send Telegram turned away for now (429 or 5xx): its own retry_after,
+ * capped at three seconds so a webhook reply or a cron run is not held up, or half a second. Null: do not retry. */
+async function retryDelay(response:Response):Promise<number|null>{
+ if(response.status!==429&&response.status<500)return null;
+ const body=await response.clone().json().catch(()=>null) as {parameters?:{retry_after?:unknown}}|null;
+ const after=Number(body?.parameters?.retry_after);
+ return Number.isFinite(after)&&after>=0?Math.min(after,3)*1000:500;
+}
+/** Calls one Bot API method and says how it ended. A 429 or 5xx is tried once more: the daily digest runs once, so a
+ * passing Telegram outage would otherwise lose that day's message. A timeout is not retried, since Telegram may have
+ * delivered it. */
 async function deliver(config:TelegramConfig|null,method:string,init:{headers?:Record<string,string>;body:string|FormData},fetcher:typeof fetch,timeout=10000):Promise<SendOutcome>{
  if(!config)return 'failed';
  try{
-  const response=await fetcher(`https://api.telegram.org/bot${config.token}/${method}`,{method:'POST',...init,cache:'no-store',signal:AbortSignal.timeout(timeout)});
+  const send=()=>fetcher(`https://api.telegram.org/bot${config.token}/${method}`,{method:'POST',...init,cache:'no-store',signal:AbortSignal.timeout(timeout)});
+  let response=await send();
+  const delay=await retryDelay(response);
+  if(delay!==null){await new Promise(resolve=>setTimeout(resolve,delay));response=await send();}
   if(response.ok)return 'sent';
   if(response.status===403)return 'blocked';
   if(response.status!==400)return 'failed';

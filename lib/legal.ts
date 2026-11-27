@@ -4,7 +4,7 @@
 // When the operator becomes a company, change `legalOperator` and `legalUpdated`.
 export const legalOperator='Jasurbek Shomurodov';
 export const legalContact='dangerhoggish@gmail.com';
-export const legalUpdated='2026-10-09';
+export const legalUpdated='2026-11-27';
 export type LegalSection={heading:string;paragraphs:string[];items?:string[]};
 export type LegalDocument={kind:'terms'|'privacy';sections:LegalSection[]};
 export const legalPaths={terms:'/terms',privacy:'/privacy'} as const;
@@ -57,6 +57,7 @@ export const privacyPolicy:LegalDocument={kind:'privacy',sections:[
  {heading:'How we use it',paragraphs:['We use your data to:'],items:[
   'provide Hoggish: store your records, calculate totals and forecasts, and show them back to you;',
   'send the Telegram messages you have turned on, such as the morning digest, weekly summary and milestone messages;',
+  'answer the questions you ask the assistant;',
   'sign you in, keep your account secure and prevent abuse;',
   'answer you when you contact us.',
  ]},
@@ -68,6 +69,7 @@ export const privacyPolicy:LegalDocument={kind:'privacy',sections:[
   'Vercel: hosting of the app and its servers.',
   'Telegram: delivering bot messages, if you connect the bot.',
   'Google: sign-in, if you choose Sign in with Google.',
+  'Anthropic: answering your questions, if you use the assistant. Each question is sent with a summary of your records; Anthropic does not use it to train its models.',
   'Cloudflare R2: encrypted backups of the database.',
   'Market and exchange-rate services (Twelve Data, gold-api.com, Coinbase, Kraken, Bitfinex, ExchangeRate-API): we send them only ticker symbols and currency codes, never your personal data.',
  ]},

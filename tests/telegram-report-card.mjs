@@ -174,6 +174,17 @@ test('a photo is uploaded as multipart with its caption and keyboard, and its ou
  assert.equal(plain.get('caption'),null);assert.equal(plain.get('reply_markup'),null);
  assert.equal(await deliverTelegramPhoto({chat_id:7,photo:new Uint8Array([1]),filename:'p.png'},config,async()=>Response.json({description:'Forbidden: bot was blocked by the user'},{status:403})),'blocked');
  assert.equal(await deliverTelegramPhoto({chat_id:7,photo:new Uint8Array([1]),filename:'p.png'},config,async()=>{throw Error('offline');}),'failed');
+ // A send Telegram turns away for now (429, 5xx) is tried once more; a second refusal is a failure, a timeout is not retried.
+ const {deliverTelegramMessage}=loadTS('lib/telegram.ts');
+ const replies=list=>{const calls=[];return {calls,fetcher:async(url,init)=>{calls.push(init.body);return list[calls.length-1];}};};
+ let flaky=replies([Response.json({ok:false,parameters:{retry_after:0}},{status:429}),Response.json({ok:true})]);
+ assert.equal(await deliverTelegramMessage({chat_id:7,text:'hi'},config,flaky.fetcher),'sent');assert.equal(flaky.calls.length,2);assert.equal(flaky.calls[0],flaky.calls[1]);
+ flaky=replies([new Response(null,{status:503}),new Response(null,{status:502})]);
+ assert.equal(await deliverTelegramMessage({chat_id:7,text:'hi'},config,flaky.fetcher),'failed');assert.equal(flaky.calls.length,2);
+ flaky=replies([Response.json({description:'Bad Request: message is too long'},{status:400})]);
+ assert.equal(await deliverTelegramMessage({chat_id:7,text:'hi'},config,flaky.fetcher),'failed');assert.equal(flaky.calls.length,1,'a refusal for good is not retried');
+ let thrown=0;
+ assert.equal(await deliverTelegramMessage({chat_id:7,text:'hi'},config,async()=>{thrown++;throw Error('timeout');}),'failed');assert.equal(thrown,1);
 });
 
 test('a report goes as its picture, as text where the language has none, and as text only when the render fails',async()=>{
