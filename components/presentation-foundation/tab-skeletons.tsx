@@ -56,14 +56,14 @@ export function IncomeEstimatesSkeleton({ label }: { label: string }) {
 }
 
 /** A holding or account card in the loaded `AssetCard`'s own classes, so a grid lays it on the same rows: icon, name over
- * its kind badge, menu; its worth; its one fact; the share line; then the open details with their rows. */
+ * its kind badge, menu; its worth; its one fact; the share line; then its details heading and rows, always shown. */
 export function AssetCardSkeleton() {
  return <article className="asset-card">
   <header className="asset-card-header"><span className="asset-card-icon"><Skeleton className="size-10 rounded-xl"/></span><div><Bar width={112}/><Skeleton className="h-5 w-16 rounded-full"/></div><span className="shrink-0"><Skeleton className="size-8 rounded-lg"/></span></header>
   <div className="asset-card-worth"><Skeleton className="h-8 w-32 max-w-full"/></div>
   <div className="asset-card-facts"><div><Skeleton className="h-4 w-20"/><Skeleton className="h-4 w-24"/></div></div>
   <div className="asset-card-share"/>
-  <div className="asset-card-details"><div className="flex min-h-10 items-center justify-between gap-2.5"><Skeleton className="h-4 w-24"/><Skeleton className="size-4"/></div>
+  <div className="asset-card-details"><div className="asset-card-details-head"><Skeleton className="h-4 w-24"/></div>
    <div className="grid gap-2 pt-1 pb-3">{[84, 60, 72].map(width => <div key={width} className="flex justify-between gap-3.5"><Skeleton className="h-4" style={{ width }}/><Skeleton className="h-4 w-16"/></div>)}</div></div>
  </article>;
 }

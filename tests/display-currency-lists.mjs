@@ -238,7 +238,7 @@ test('a schedule’s details show its totals, payments and chart in the currency
  assert.ok(r.all(node => node.props?.['data-bar']).length > 0);
 });
 
-test('tapping any card in Other assets opens the Tracker on Money invested; its details start open, the sample workspace and accounts keep their tap', () => {
+test('tapping any card in Other assets opens the Tracker on Money invested; details always show, the sample workspace and accounts keep their tap', () => {
  const invested = [];
  const cards = [];
  const Spy = Object.assign(props => { cards.push(props); return React.createElement('article', { 'data-id': props.record.id }, props.children); }, { displayName: 'AssetCard' });
@@ -247,19 +247,17 @@ test('tapping any card in Other assets opens the Tracker on Money invested; its 
  const mount = demo => { cards.length = 0; const r = createRenderer(), ui = stubs(); const { AssetDashboard } = r.load('components/asset-dashboard.tsx', { ...ui.modules, ...inEuros, ...assetModules, '@/components/presentation-foundation/asset-card': { AssetCard: Spy }, '@/components/asset-accounts': hostModule() }); r.mount(React.createElement(AssetDashboard, { ...props, records, demo })); return r; };
  const r = mount(false);
  const other = id => cards.find(card => card.record.id === id);
- assert.deepEqual(['Flat', 'Club', 'Car'].map(id => [other(id).detailsOpen, other(id).openLabel]), [[true, 'Open Tracker for Flat'], [true, 'Open Tracker for Club'], [true, 'Open Tracker for Car']]);
+ assert.deepEqual(['Flat', 'Club', 'Car'].map(id => other(id).openLabel), ['Open Tracker for Flat', 'Open Tracker for Club', 'Open Tracker for Car']);
+ assert.ok(cards.every(card => !('detailsOpen' in card) && card.details), 'every card shows its details, with no switch to hide them');
  ['Flat', 'Club', 'Car'].forEach(id => other(id).onOpen());
  assert.deepEqual(invested, ['Flat', 'Club', 'Car']);
  assert.equal(other('Term').onOpen, undefined, 'a deposit stays in Accounts and keeps opening its details');
- assert.equal(other('Term').detailsOpen, true, 'its details start open too');
  assert.ok(!text(r.tree).includes('Add investment'), 'the button is gone');
  r.find(node => node.props?.['aria-label'] === 'Compact view').props.onClick();
  r.update();
- assert.equal(cards.findLast(card => card.record.id === 'Flat').detailsOpen, false, 'compact view stays one line per holding');
- assert.equal(cards.findLast(card => card.record.id === 'Term').detailsOpen, true, 'the layout switch belongs to Other assets, not to Accounts');
+ assert.ok(cards.every(card => !('detailsOpen' in card) && card.details), 'compact view shows the details too');
  mount(true);
  assert.equal(other('Flat').onOpen, undefined, 'the sample workspace has no Tracker');
- assert.equal(other('Flat').detailsOpen, true);
 });
 
 test('a part-owned asset card gives the whole value under the owned figure, and a counted one keeps its count line', () => {

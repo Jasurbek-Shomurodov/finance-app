@@ -889,7 +889,7 @@ test('a Loans & debts row opens its details, ready to edit, never a Sankey', () 
  assert.match(table, /editRecord\(r\);\}\}\}\)\}>/, 'and by Enter or Space');
 });
 
-test('a holdings Sankey shows what bought them; an Investments card tap opens its own details', () => {
+test('a holdings Sankey shows what bought them; an Investments card always shows its details', () => {
  const vt = record('vt', 'VT', 'Stock', 120, '2026-01-01', { frequency: 'Monthly', quantity: 5, cost: 100, holding_account_id: 'broker' });
  const btc = record('btc', 'Bitcoin', 'Crypto', 60000, '2026-01-01', { frequency: 'Monthly', quantity: 0.01, holding_account_id: 'broker' });
  const movement = (id, kind, source_id, target_id, value, occurred_on) => ({ id, kind, source_id, target_id, sent: value, received: value, source_value: value, target_value: value, fee: 0, occurred_on, notes: '', realized_gain: null });
@@ -904,35 +904,27 @@ test('a holdings Sankey shows what bought them; an Investments card tap opens it
  const { AssetCard } = r.load('components/presentation-foundation/asset-card.tsx', { '@/components/language-provider': language('en-US'), 'lucide-react': hostModule(), '@/components/presentation-foundation/asset-icon': hostModule(), '@/components/presentation-foundation/category-badge': hostModule() });
  r.mount(React.createElement(AssetCard, { record: vt, label: 'Stock', worth: '$600', share: 50, detailsLabel: 'Details', details: null }));
  const card = r.find(node => node.type === 'article').props;
- assert.equal(card['aria-label'], 'View details for VT');
- assert.equal(r.find(node => node.type === 'details').props.open, true, 'a card starts with its details open');
- const details = { open: false }, summary = { parentElement: details, closest: () => null };
- const inCard = { contains: () => true, querySelector: () => summary };
- card.onClick({ target: { closest: () => null }, currentTarget: inCard });
- assert.equal(details.open, true, 'a tap on the card opens its details');
- card.onClick({ target: { closest: () => ({}) }, currentTarget: inCard });
- assert.equal(details.open, true, 'one on its menu, details or buttons does only that');
- card.onKeyDown({ key: ' ', target: inCard, currentTarget: inCard, preventDefault() {} });
- assert.equal(details.open, false, 'Space closes them again');
+ assert.equal(card.onClick, undefined, 'without onOpen the card is not clickable');
+ assert.equal(card.tabIndex, undefined);
+ assert.equal(r.all(node => node.type === 'details' || node.type === 'summary').length, 0, 'no toggle to hide the details');
+ const section = r.find(node => node.type === 'section' && node.props.className === 'asset-card-details');
+ assert.equal(text(section), 'Details', 'the details heading always shows');
  const screen = fs.readFileSync('components/workspace/screens/assets-screen.tsx', 'utf8');
  assert.doesNotMatch(screen, /setSankey|onOpen=\{|onOpenAccount/);
 });
 
-test('a card with onOpen runs it on a tap instead of toggling, and its own controls do not', () => {
+test('a card with onOpen runs it on a tap, and its own controls do not', () => {
  const r = createRenderer();
  const { AssetCard } = r.load('components/presentation-foundation/asset-card.tsx', { '@/components/language-provider': language('en-US'), 'lucide-react': hostModule(), '@/components/presentation-foundation/asset-icon': hostModule(), '@/components/presentation-foundation/category-badge': hostModule() });
  let opened = 0;
- r.mount(React.createElement(AssetCard, { record: { id: 'flat', name: 'Flat', kind: 'Property' }, label: 'Property', worth: '$600', share: 50, detailsLabel: 'Details', details: null, onOpen: () => { opened += 1; }, openLabel: 'Open Tracker for Flat', detailsOpen: true }));
+ r.mount(React.createElement(AssetCard, { record: { id: 'flat', name: 'Flat', kind: 'Property' }, label: 'Property', worth: '$600', share: 50, detailsLabel: 'Details', details: null, onOpen: () => { opened += 1; }, openLabel: 'Open Tracker for Flat' }));
  const card = r.find(node => node.type === 'article').props;
  assert.equal(card['aria-label'], 'Open Tracker for Flat');
- assert.equal(r.find(node => node.type === 'details').props.open, true);
- const details = { open: true }, summary = { parentElement: details, closest: () => null };
- const inCard = { contains: () => true, querySelector: () => summary };
+ const inCard = { contains: () => true };
  card.onClick({ target: { closest: () => null }, currentTarget: inCard });
  assert.equal(opened, 1);
- assert.equal(details.open, true, 'the tap leaves the details as they are');
  card.onClick({ target: { closest: () => ({}) }, currentTarget: inCard });
- assert.equal(opened, 1, 'the menu and the details toggle do only their own thing');
+ assert.equal(opened, 1, 'the menu and buttons do only their own thing');
  card.onKeyDown({ key: 'Enter', target: inCard, currentTarget: inCard, preventDefault() {} });
  assert.equal(opened, 2);
 });
