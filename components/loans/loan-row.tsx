@@ -10,6 +10,7 @@ import { daysBetween } from '@/lib/calendar-days';
 import type { debtProgress } from '@/lib/debt-plan';
 import { liabilities, type Entry } from '@/lib/finance';
 import { formatDate, formatNumber, formatPercent } from '@/lib/format';
+import { settled } from '@/lib/lending-groups';
 
 /** A due date within this many days is marked, so the next thing to pay stands out. */
 const dueSoonDays = 14;
@@ -45,31 +46,41 @@ function DueCell({ record, today, label }: { record: Entry; today: string; label
  return <td data-label={label} className="loan-due"><span className={tone}>{formatDate(record.date, locale)}</span>{when && <small className={tone}>{when}</small>}</td>;
 }
 
+/** How far it is paid off: the bar (full and in the positive tone once settled), what is paid of the total as entered,
+ * or for money lent the share repaid. Without a recorded starting balance there is nothing to measure. */
+function ProgressCell({ record, progress, label }: { record: Entry; progress: Props['progress']; label: string }) {
+ const { t, locale } = useLanguage();
+ const { entered } = useDisplayMoney();
+ if (!progress) return <td data-label={label} data-empty className="loan-progress"><Dash/></td>;
+ const owed = liabilities.includes(record.kind), percent = formatPercent(progress.share, locale, 0);
+ return <td data-label={label} className="loan-progress">
+  <span className="progress-track" data-tone={owed && !settled(record) ? 'debt' : undefined} role="img" aria-label={`${t('Paid off')}: ${percent}`}><span style={{ width: `${progress.share}%` }}/></span>
+  <small>{owed ? <><b>{entered(progress.paid, record.currency)}</b>{' · '}{t('{percent} of {amount}', { percent, amount: entered(progress.total, record.currency) })}</> : <b>{t('{percent} repaid', { percent })}</b>}</small>
+ </td>;
+}
+
 /** One loan, debt, mortgage or loan to someone as a table row: name and kind, rate, start and due dates, how far it is
- * paid off, the monthly payment as entered, and what is left in the display currency. The row opens the record. */
+ * paid off, the monthly payment as entered, and what is left in the display currency. The row opens the record. A
+ * settled record (nothing left) is marked Paid off, sits on a muted background and has nothing to pay. */
 export function LoanRow({ record, name, balance, today, progress, onOpen, onPay, payBlocked, menu }: Props) {
  const { t, locale } = useLanguage();
  const { entered } = useDisplayMoney();
- const owed = liabilities.includes(record.kind);
- const percent = progress && formatPercent(progress.share, locale, 0);
+ const owed = liabilities.includes(record.kind), done = settled(record);
  const started = owed ? record.opened_on : record.lent_date;
  const monthly = owed && (record.estimated_monthly_payment ?? 0) > 0 ? entered(record.estimated_monthly_payment!, record.currency) : null;
  const label = (column: typeof loanColumns[number]) => t(column);
  const open = (event: MouseEvent<HTMLTableRowElement>) => { const target = event.target as HTMLElement; /* Menu items are portaled out of the row, but React still bubbles their clicks here. */ if (event.currentTarget.contains(target) && !target.closest('button,a,input')) onOpen(); };
  const openWithKey = (event: KeyboardEvent<HTMLTableRowElement>) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); onOpen(); } };
- return <tr className="loan-row" tabIndex={0} aria-label={t('Open {name}', { name })} onClick={open} onKeyDown={openWithKey}>
-  <td><div className="record-name"><RecordIcon record={record}/><div><strong>{name}</strong><small>{t(record.kind)}</small></div></div></td>
+ return <tr className="loan-row" data-settled={done || undefined} tabIndex={0} aria-label={t('Open {name}', { name })} onClick={open} onKeyDown={openWithKey}>
+  <td><div className="record-name"><RecordIcon record={record}/><div><strong>{name}</strong><small>{t(record.kind)}{done && <span className="status-badge is-paid">{t('Paid off')}</span>}</small></div></div></td>
   <td data-label={label('Rate')} data-empty={record.rate > 0 ? undefined : true}>{record.rate > 0 ? formatPercent(record.rate, locale, 2) : <Dash/>}</td>
   <td data-label={label('Start date')} data-empty={started ? undefined : true}>{started ? formatDate(started, locale) : <Dash/>}</td>
   <DueCell record={record} today={today} label={label('Due date')}/>
-  <td data-label={label('Paid off')} data-empty={progress ? undefined : true} className="loan-progress">{progress ? <>
-   <span className="progress-track" data-tone={owed ? 'debt' : undefined} role="img" aria-label={`${t('Paid off')}: ${percent}`}><span style={{ width: `${progress.share}%` }}/></span>
-   <small>{owed ? <><b>{entered(progress.paid, record.currency)}</b>{' · '}{t('{percent} of {amount}', { percent: percent!, amount: entered(progress.total, record.currency) })}</> : <b>{t('{percent} repaid', { percent: percent! })}</b>}</small>
-  </> : <Dash/>}</td>
+  <ProgressCell record={record} progress={progress} label={label('Paid off')}/>
   <td data-label={label('Monthly payment')} data-empty={monthly ? undefined : true} className="num">{monthly ?? <Dash/>}</td>
   <td className="num loan-balance"><strong>{balance}</strong></td>
   <td><div className="row-actions">
-   {onPay && <Button size="icon-sm" variant="outline" className="loan-row-pay" aria-label={`${t('Record payment')}: ${name}`} title={payBlocked ?? t('Record payment')} aria-disabled={payBlocked ? true : undefined} onClick={() => { if (!payBlocked) onPay(); }}><Check size={16} aria-hidden="true"/></Button>}
+   {onPay && !done && <Button size="icon-sm" variant="outline" className="loan-row-pay" aria-label={`${t('Record payment')}: ${name}`} title={payBlocked ?? t('Record payment')} aria-disabled={payBlocked ? true : undefined} onClick={() => { if (!payBlocked) onPay(); }}><Check size={16} aria-hidden="true"/></Button>}
    <RowMenu label={t('Actions for {name}', { name })} items={menu}/>
   </div></td>
  </tr>;

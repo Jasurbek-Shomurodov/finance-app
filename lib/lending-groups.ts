@@ -16,9 +16,14 @@ export function borrowers(records: readonly Entry[]): string[] {
 
 export type LendingItem<T> = { row: T } | { borrower: string; rows: T[] };
 
+/** A loan, debt or loan to someone with nothing left to pay or collect: it reads as settled and sits after the open ones. */
+export const settled = (entry: Pick<Entry, 'amount'>) => Number(entry.amount) <= 0;
+
 /** A list with money lent of the same borrower group gathered under one heading, placed where the group's first loan
- * was. A group with one loan, a loan without a group and every other record stay rows of their own. */
-export function lendingSequence<T>(rows: readonly T[], entryOf: (row: T) => Entry): LendingItem<T>[] {
+ * was. A group with one loan, a loan without a group and every other record stay rows of their own. Settled records
+ * keep their order but follow the open ones, so a borrower group with an open loan stays among the open rows. */
+export function lendingSequence<T>(listed: readonly T[], entryOf: (row: T) => Entry): LendingItem<T>[] {
+ const rows = [...listed.filter(row => !settled(entryOf(row))), ...listed.filter(row => settled(entryOf(row)))];
  const keyOf = (row: T) => { const entry = entryOf(row); return entry.kind === 'Money lent' ? borrowerKey(entry.borrower_group) : null; };
  const counts = new Map<string, number>();
  for (const row of rows) { const key = keyOf(row); if (key) counts.set(key, (counts.get(key) ?? 0) + 1); }

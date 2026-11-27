@@ -32,6 +32,13 @@
 /* Record payment waits for the pointer or the keyboard; touch screens always show it. */
 @media(hover:hover){.loan-row:not(:hover,:focus-within) .loan-row-pay{opacity:0}}
 .loan-row-pay[aria-disabled=true]{opacity:.5;cursor:not-allowed}
+/* A settled record steps back: a muted ground (under the hover, which still shows), quieter figures and a Paid off
+ * badge beside its kind; its bar is full in the positive tone. The sticky name cell carries the same ground. */
+:where(.loans-table) :where(tr.loan-row[data-settled]){--settled-ground:color-mix(in srgb,var(--muted) 70%,var(--card));background:var(--settled-ground)}
+.workspace .content .loans-table tbody tr.loan-row[data-settled]:not(:hover,:focus-within)>td:first-child{background:var(--settled-ground)}
+.loan-row[data-settled]>td:not(:first-child),.loan-row[data-settled] .loan-progress b{color:var(--muted-foreground)}
+.loan-row[data-settled] .record-name small{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.loan-row[data-settled] .status-badge{line-height:1.4}
 /* On a phone each record is a card: name and balance on the first line, then each figure beside its column label;
  * a figure it does not have is left out. */
 @container content (max-width:560px){
@@ -52,6 +59,7 @@
  .loans-table td[data-empty]{display:none}
  .loans-table td:last-child{flex:1 0 100%}
  .loans-table td:last-child .row-actions{justify-content:flex-end}
+ .loans-table tbody tr.loan-row[data-settled]{margin-block:4px;padding-inline:12px;border-bottom:0;border-radius:var(--radius-control)}
  .loans-table tbody tr.table-group-row{padding:16px 0 4px;border-bottom:0}
  .loans-table tbody tr.table-group-row th:first-child{flex:1;position:static;min-width:0;background:none}
  .loans-table tbody tr.table-group-row th:last-child{display:none}

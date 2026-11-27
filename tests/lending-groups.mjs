@@ -39,3 +39,9 @@ test('only money lent may name a borrower, of at most 120 characters, trimmed',(
  assert.ok(!recordSchema.safeParse({...base,kind:'Loan',date:'2026-12-01',borrower_group:'Family'}).success);
  assert.ok(recordSchema.safeParse({...base,borrower_group:null}).success);
 });
+
+test('settled records follow the open ones in their order; a borrower group with an open loan stays among the open rows',()=>{
+ const rows=[{id:'done',kind:'Debt',amount:0},{id:'car',kind:'Loan',amount:500},lent('a','Family',{amount:0}),lent('b',null,{amount:0}),lent('c','family'),{id:'odd',kind:'Debt',amount:-1}];
+ assert.deepEqual(lendingSequence(rows,row=>row).map(item=>'row' in item?item.row.id:`${item.borrower}: ${item.rows.map(row=>row.id).join(',')}`),['car','family: c,a','done','b','odd'],'the group is named by its first open loan and keeps its paid loan last');
+ assert.deepEqual(lendingSequence([lent('x','Kin',{amount:0}),{id:'open',kind:'Debt',amount:1},lent('y','kin',{amount:0})],row=>row).map(item=>'row' in item?item.row.id:item.borrower),['open','Kin'],'a fully repaid group sits with the settled');
+});

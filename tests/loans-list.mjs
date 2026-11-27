@@ -104,6 +104,20 @@ test('Record payment is the row\'s one button and the rest sits in the menu; the
  assert.ok(!sample.words().includes('Tracker'));
 });
 
+test('a settled record is marked Paid off, sits after the open ones and has nothing to pay', () => {
+ const paid = { ...card, id: 'paid', name: 'Car debt', amount: 0 };
+ stored.set('paid', paid);
+ const { r, html, words } = list({ visible: [paid, shownFlat, card, ali, vali] }, [event('paid', 5000)]);
+ const shown = words();
+ assert.ok(ascending(order(shown, 'February 2026', 'Card', 'Ali', 'Car debt', 'March 2025')), shown);
+ assert.match(html(), /<tr class="loan-row" data-settled="true"[^>]*aria-label="Open Car debt"/);
+ assert.match(html(), /<small>Debt<span class="status-badge is-paid">Paid off<\/span><\/small>/);
+ assert.equal((html().match(/status-badge is-paid/g) ?? []).length, 1, 'only the settled record is marked');
+ assert.match(html(), /<span class="progress-track" role="img" aria-label="Paid off: 100%">/, 'its full bar takes the positive tone');
+ assert.ok(!r.all(element => element.props?.className === 'loan-row-pay').some(button => button.props['aria-label'].includes('Car debt')));
+ stored.delete('paid');
+});
+
 test('grouped by month, each month nets what is lent against what is owed, newest list order kept', () => {
  const { r, words } = list();
  r.find(element => element.props?.['data-group'] === 'month').props.onClick();
