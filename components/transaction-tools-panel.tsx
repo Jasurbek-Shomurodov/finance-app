@@ -61,7 +61,7 @@ export function TransactionToolsPanel({categories,saveCategory,icons,removed,loa
  const saveEdit=async(item:CategoryItem,{name:renamed,...look}:CategoryLookChange&{name?:string})=>{if(renamed)await saveCategory(renamed,item.direction,item.id);if(look.icon!==undefined||look.color!==undefined)await icons.update(item.id,look);};
  const add=async(name:string,icon:string|null)=>{const id=await saveCategory(name,direction);if(icon)await icons.choose(id,icon);};
  return <section id="categories" className="panel category-settings">
- <PanelTitle title={t('Categories')} count={<Count value={listed.length} loading={loading}/>} hint={t('Add income and expense categories to use when recording transactions.')}>
+ <PanelTitle title={t('Categories')} count={<Count value={listed.length} loading={loading}/>} hint={t('A category says what the money was for, such as Groceries or Salary. Each transaction has one category, and Budget and Reports add up your money by category. To group transactions across categories, use tags.')}>
   <Segmented label={t('Categories')} value={direction} onChange={setDirection} options={[{value:'expense',label:t('Expenses')},{value:'income',label:t('Income')}]}/>
   <label className="category-search"><Search size={16} aria-hidden="true"/><Input type="search" aria-label={t('Search categories')} placeholder={t('Search categories')} value={query} maxLength={80} onChange={event=>setQuery(event.target.value)}/></label>
   <Button type="button" size="sm" disabled={disabled} onClick={()=>setAdding(true)}><Plus size={16} aria-hidden="true"/>{t(direction==='income'?'Add income category':'Add expense category')}</Button>
