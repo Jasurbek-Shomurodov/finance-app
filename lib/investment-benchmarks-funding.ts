@@ -1,7 +1,7 @@
 import type { InvestmentPortfolioInput } from './investment-portfolio';
 import type { HistoryEvent } from './investment-history';
 import { validDay } from './benchmark-data';
-import { expenses, income } from './finance';
+import { expenses, income, ownAmount } from './finance';
 import { spendingAmount } from './spending';
 
 export type ExpenseFunding={id:string;date:string;name:string;kind:string;amount:number;currency:string};
@@ -29,7 +29,8 @@ export function assetIncomePayouts(cashflows:InvestmentPortfolioInput['cashflows
   const asset=row.business_id??row.income_source_id??row.property_id;
   if(!income.includes(row.kind)||row.frequency!=='Once'||!validDay(row.date)||row.date>today||!asset||!held.has(asset))return [];
   if(row.history_event_id&&eventIds.has(row.history_event_id))return [];
-  const amount=Number(row.amount);
+  // Only the owner's share of a "Whole business" payout is theirs to reinvest.
+  const amount=ownAmount(row);
   return Number.isFinite(amount)&&amount>0?[{date:row.date,amount,currency:row.currency}]:[];
  }).sort((a,b)=>a.date.localeCompare(b.date));
 }

@@ -6,7 +6,7 @@
 // rate did, shown as its own line. Sales use the average-cost method: a sale removes the share of the cost that the
 // proceeds were of the value just before it.
 import { shiftDay } from './calendar-days';
-import { expenses, income, unitPricedKinds, value, type Entry } from './finance';
+import { expenses, income, ownAmount, unitPricedKinds, value, type Entry } from './finance';
 import { benchmarkInvestment, openingFunding, type BenchmarkMovement } from './investment-benchmarks';
 import type { HistoryEvent } from './investment-history';
 import { convertAmount, marketEntry, marketRates, type MarketData } from './market';
@@ -178,7 +178,8 @@ function linkedHolding(row: Entry, states: Map<string, State>) {
 function applyLinked(ledger: Ledger, row: Entry) {
  const state = linkedHolding(row, ledger.states);
  if (!state || row.date > ledger.input.today || row.date < (ledger.input.start ?? '')) return;
- const entered = { amount: Number(row.amount), currency: row.currency }, rates = ratesOf(row, marketRates(ledger.input.market));
+ // A "Whole business" amount counts at the owner's share, as Cash flow and Reports count it (migration 167).
+ const entered = { amount: ownAmount(row), currency: row.currency }, rates = ratesOf(row, marketRates(ledger.input.market));
  const local = amountIn(entered, state.record.currency, rates), shown = amountIn(entered, ledger.input.currency, rates);
  if (local === null || shown === null) { ledger.missing++; return; }
  addFlow(ledger, state, { id: row.id, date: row.date, type: income.includes(row.kind) ? 'income' : 'cost', local, shown, name: row.name, linked: true });

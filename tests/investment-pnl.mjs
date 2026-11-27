@@ -232,3 +232,13 @@ test('a reinvested dividend is income once and not new money; a split changes no
  const typed=run([record('KO','Stock',1080)],[events[0],event('drip','KO','contribution',80,'2026-06-10',1080,{notes:'Dividend reinvestment. '})]);
  near(typed.holdings[0].invested,1080);
 });
+
+test('a "Whole business" payment counts at the owner\'s share in profit and loss and in the benchmark payouts (MONEY-017)',()=>{
+ const {assetIncomePayouts}=loadTS('lib/investment-benchmarks-funding.ts');
+ // A quarter of a 100,000 business; one 10,000 sale entered for the whole business is 2,500 of the owner's money.
+ const sale={...record('sale','Business income',10000,{business_id:'shop',business_share:25,amount_basis:'whole'}),date:'2026-05-05'};
+ const mine={...record('fee','Business expense',400,{business_id:'shop'}),date:'2026-05-06'};
+ const pnl=run([record('shop','Business',100000,{ownership_percentage:25})],[event('open','shop','baseline',0,'2026-01-01',100000,{ownership_percentage:25})],{cashflows:[sale,mine]});
+ near(pnl.holdings[0].income,2500,'income at the share');
+ assert.deepEqual(assetIncomePayouts([sale],new Set(['shop']),[],today),[{date:'2026-05-05',amount:2500,currency:'USD'}]);
+});
