@@ -35,3 +35,16 @@ test('the navigation shimmer is the destination layout, never the workspace bann
  assert.match(fs.readFileSync('components/presentation-foundation/skeleton-kit.tsx', 'utf8'), /function Loading\(.*\n.*role="status" aria-busy="true"/);
  assert.doesNotMatch(placeholders, /Loading your workspace/);
 });
+
+test('a command-menu link with a #part opens its page, so its shimmer clears and names the right page', async () => {
+ const {loadTS} = await import('./helpers/load-ts.mjs');
+ const {pageOf, pendingDestination, sections} = loadTS('components/workspace/navigation.ts');
+ const links = loadTS('lib/add-links.ts');
+ assert.match(shell, /const page = pageOf\(path\), hash = /);
+ // Picking Rules while on Transactions is no page change at all: nothing loads, the screen stays.
+ assert.equal(pageOf(links.rulesLink), '/transactions');
+ assert.equal(pendingDestination({ from: '/transactions', to: pageOf(links.rulesLink) }, '/transactions'), null);
+ const pages = new Set(sections.map(section => section.path));
+ for (const [name, link] of Object.entries(links)) if (typeof link === 'string' && link.startsWith('/'))
+  assert.ok(pages.has(pageOf(link)), `${name} opens a page with a shimmer (${link})`);
+});

@@ -36,6 +36,9 @@ test('choosing a saved record opens the page that lists it',()=>{
  assert.equal(recordPath({kind:'Cash',frequency:'Once'}),'/accounts');
  assert.equal(recordPath({kind:'Cash',frequency:'Once',holding_account_id:'h1'}),'/assets');
  assert.equal(recordPath({kind:'Stock',frequency:'Once'}),'/assets');
+ // A deposit lives on Accounts, where the Dashboard's allocation row also opens it.
+ assert.equal(recordPath({kind:'Deposit',frequency:'Once'}),'/accounts');
+{const {allocationHref}=loadTS('lib/overview.ts');assert.equal(allocationHref('Deposit'),recordPath({kind:'Deposit',frequency:'Once'}));}
  assert.equal(recordPath({kind:'Property',frequency:'Once'}),'/assets');
  assert.equal(recordPath({kind:'Mortgage',frequency:'Monthly'}),'/loans-debts');
  assert.equal(recordPath({kind:'Money lent',frequency:'Once'}),'/loans-debts');
@@ -145,7 +148,7 @@ test('a search finds saved records and goals by name or kind, and always offers 
 test('the shell holds one command menu, the top bar its search button, and the styles follow the motion rules',()=>{
  const shell=fs.readFileSync('components/workspace/workspace-shell.tsx','utf8'),bar=fs.readFileSync('components/workspace/top-bar.tsx','utf8'),css=stylesheet();
  assert.equal(shell.split('<CommandMenu ').length,2);
- assert.match(shell,/function go\(path: string\) \{ const page = path\.split\('\?'\)\[0\]; if \(page !== pathname\) navigate\(page\); openPath\(path\); \}/);
+ assert.match(shell,/if \(page === pathname && hash\) \{ setTimeout\(\(\) => \{ window\.location\.hash = hash; \}, 50\); return; \}\n  if \(page !== pathname\) navigate\(page\); openPath\(path\);/);
  assert.match(bar,/className="command-search" aria-label=\{t\('Search'\)\} aria-keyshortcuts="Meta\+K Control\+K" onClick=\{openCommandMenu\}/);
  assert.ok(!/from '@\/components\/workspace\/command-menu'/.test(bar),'the bar opens the menu by event, without importing it');
  assert.match(css,/\[data-slot=dialog-content\]\.command-menu\{[^}]*backdrop-filter/);

@@ -14,7 +14,7 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { TopBarSlotProvider } from '@/components/presentation-foundation/top-bar-slot';
 import { CommandMenu } from '@/components/workspace/command-menu';
 import { AppDrawer } from '@/components/workspace/app-drawer';
-import { pendingDestination, sectionFor, type PendingNavigation } from '@/components/workspace/navigation';
+import { pageOf, pendingDestination, sectionFor, type PendingNavigation } from '@/components/workspace/navigation';
 import { DisplayPreferences, TopBar } from '@/components/workspace/top-bar';
 import { WorkspaceDialogs } from '@/components/workspace/workspace-dialogs';
 import { useWorkspace, WorkspaceProvider } from '@/components/workspace/workspace-provider';
@@ -41,7 +41,13 @@ function WorkspaceShell({ children }: { children: ReactNode }) {
  }, [destination]);
  function navigate(path: string) { setPending({ from: pathname, to: path }); window.scrollTo({ top: 0 }); }
  // The command menu opens a page as a drawer tap does: its shape at once, then the route.
- function go(path: string) { const page = path.split('?')[0]; if (page !== pathname) navigate(page); openPath(path); }
+ function go(path: string) {
+  const page = pageOf(path), hash = path.match(/^[^?#]*(#.+)$/)?.[1];
+  // A #part of the page already open (Rules on Transactions) is a hash change, which the page's hash request answers;
+  // it waits a frame so the menu has closed and does not take the dialog it opens down with it.
+  if (page === pathname && hash) { setTimeout(() => { window.location.hash = hash; }, 50); return; }
+  if (page !== pathname) navigate(page); openPath(path);
+ }
  const visitor = useVisitor();
  const signedIn = !!user || demo;
  // The server already knows a visitor without session cookies is signed out, so the tour and the sign-in card render there without waiting for the session check.

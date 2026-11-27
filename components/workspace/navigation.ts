@@ -44,6 +44,9 @@ export function pendingDestination(pending: PendingNavigation | null, pathname: 
  return pending && pending.from === pathname && pending.to !== pathname ? pending.to : null;
 }
 
+/** The page a link opens: its path without the query or the #part, which the router never reports as the pathname. */
+export const pageOf = (link: string) => link.split(/[?#]/)[0] || '/';
+
 /** The section a path belongs to. Unknown paths fall back to Overview. */
 export function sectionFor(pathname: string): SectionName {
  return sections.find(section => section.path === pathname)?.name ?? 'Overview';

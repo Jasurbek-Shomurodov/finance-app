@@ -30,7 +30,8 @@ export function matchCommands<T extends Command>(commands: readonly T[], query: 
 export function recordPath(record: Pick<Entry, 'kind' | 'frequency' | 'holding_account_id'>) {
  if (income.includes(record.kind) || expenses.includes(record.kind)) return record.frequency === 'Once' ? '/transactions' : '/upcoming';
  if (liabilities.includes(record.kind) || record.kind === 'Money lent') return '/loans-debts';
- if (record.kind === 'Cash' && !record.holding_account_id) return '/accounts';
+ // Accounts lists cash outside an investment account and every deposit (`balanceAccounts`), as the Dashboard links them.
+ if ((record.kind === 'Cash' && !record.holding_account_id) || record.kind === 'Deposit') return '/accounts';
  return assets.includes(record.kind) ? '/assets' : '/accounts';
 }
 
