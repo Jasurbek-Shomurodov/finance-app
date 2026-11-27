@@ -1,6 +1,6 @@
 import { depositToday } from './deposit-interest';
 import type { EarningSource } from './earning-sources';
-import { income, monthly, duplicatesAssetEstimate, type Entry } from './finance';
+import { income, monthly, duplicatesAssetEstimate, ownAmount, type Entry } from './finance';
 import { earnsMonthly } from './holding-figures';
 import { convertAmount } from './market';
 import { amountIn, type Money, type PairRate, type RateTable } from './money';
@@ -98,12 +98,13 @@ export function monthlyIncomeCards(entries: Entry[], month: string, sources: Ear
    // Actual payments accumulate only within this month; estimates stay intact.
    if (existing.excluded && existing.entry.frequency === 'Once' && entry.frequency === 'Once') existing.amount += entry.amount;
    existing.received ||= received;
-   const value = received ? amountIn({ amount: entry.amount, currency: entry.currency }, existing.entry.currency, ratesOrPair(entry, rates)) : 0;
+   // What was received counts the owner's share of a "Whole business" figure, as Cash flow's Income received does.
+   const value = received ? amountIn({ amount: ownAmount(entry), currency: entry.currency }, existing.entry.currency, ratesOrPair(entry, rates)) : 0;
    if (value === null) existing.missing += 1; else existing.receivedAmount += value;
    if (received) { existing.entered = enteredWith(existing.entered, entry); existing.paid.push(entry); }
    if (!existing.notes.includes(note)) existing.notes.push(note);
   } else {
-   cards.push({ entry, amount: entry.amount, asset: false, excluded: true, notes: [note], received, receivedAmount: received ? entry.amount : 0, missing: 0, paid: received ? [entry] : [], entered: received ? { amount: entry.amount, currency: entry.currency } : undefined });
+   cards.push({ entry, amount: entry.amount, asset: false, excluded: true, notes: [note], received, receivedAmount: received ? ownAmount(entry) : 0, missing: 0, paid: received ? [entry] : [], entered: received ? { amount: ownAmount(entry), currency: entry.currency } : undefined });
   }
  }
  // Larger sources first, compared in one currency: each card is in its own (a source in sums is not larger than one in dollars).
@@ -111,10 +112,11 @@ export function monthlyIncomeCards(entries: Entry[], month: string, sources: Ear
  return cards.sort((a, b) => Number(a.excluded) - Number(b.excluded) || Number(b.entry.kind === 'Salary') - Number(a.entry.kind === 'Salary') || size(b) - size(a));
 }
 
-/** The payments of a card as entered: one currency added up, a second currency ends it (null). */
+/** The payments of a card as entered: one currency added up, a second currency ends it (null). A "Whole business"
+ * payout is the owner's share of it, as the card's progress reads it. */
 function enteredWith(before: Money | null | undefined, payment: Entry): Money | null {
  if (before === null || (before && before.currency !== payment.currency)) return null;
- return { amount: (before?.amount ?? 0) + payment.amount, currency: payment.currency };
+ return { amount: (before?.amount ?? 0) + ownAmount(payment), currency: payment.currency };
 }
 
 /** A month's income headline: what was received against the estimate, over every card (not only the previewed five).

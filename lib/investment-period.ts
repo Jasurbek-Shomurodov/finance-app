@@ -1,5 +1,5 @@
 import { benchmarkExpenseFunding, benchmarkInvestment, investmentActivity, openingFunding, type BenchmarkMovement, type FundingScope } from './investment-benchmarks';
-import { income, liabilities, type Entry } from './finance';
+import { income, liabilities, ownAmount, type Entry } from './finance';
 import { convertAmount, marketRates } from './market';
 import { convertHistorical } from './investment-comparison';
 import type { FxPoint } from './benchmark-data';
@@ -91,7 +91,7 @@ function periodTotals(input:PeriodInput,start:string,details?:PeriodDetails){
    // The payment itself could not be read: its saved copy still carries the principal.
    context.category='Mortgage';
    add('invested',Number(row.payment_principal??Number(row.amount)-Number(row.payment_interest??0)),row.currency);
-  }else if(income.includes(row.kind)&&!(row.history_event_id&&eventIds.has(row.history_event_id))&&!copiesCapitalizedInterest(row,capitalized))add('income',Number(row.amount),row.currency);
+  }else if(income.includes(row.kind)&&!(row.history_event_id&&eventIds.has(row.history_event_id))&&!copiesCapitalizedInterest(row,capitalized))add('income',ownAmount(row),row.currency);
  }
  return {...totals,missing:[...missing]};
 }

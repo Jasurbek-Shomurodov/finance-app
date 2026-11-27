@@ -1,5 +1,5 @@
 import {monthDays} from './calendar-days';
-import {expenses,type Entry} from './finance';
+import {expenses,ownAmount,type Entry} from './finance';
 import {spendingAmount} from './spending';
 import type {Watchlist} from './workspace-preferences';
 import type {TransactionSplit} from './transaction-tools';
@@ -12,7 +12,7 @@ export type WatchlistConvert=(amount:number,from:string,record?:Entry)=>number|n
 function matchedAmount(watchlist:Watchlist,record:Entry,splits:TransactionSplit[]){
  if(!watchlist.category)return spendingAmount(record);
  const parts=splits.filter(s=>s.record_id===record.id);
- if(parts.length)return parts.filter(s=>s.category_id===watchlist.category).reduce((sum,s)=>sum+Number(s.amount),0);
+ if(parts.length)return parts.filter(s=>s.category_id===watchlist.category).reduce((sum,s)=>sum+ownAmount(record,Number(s.amount)),0);
  return record.custom_category_id===watchlist.category?spendingAmount(record):0;
 }
 

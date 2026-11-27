@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import ts from 'typescript';
-import {monthly,income,interestKinds,interestCompounding,duplicatesAssetEstimate} from '../lib/finance.ts';
+import {monthly,income,ownAmount,interestKinds,interestCompounding,duplicatesAssetEstimate} from '../lib/finance.ts';
 import {convertAmount} from '../lib/market.ts';
 import {depositInterest} from '../lib/deposit-interest.ts';
 import {capitalizedInterest,copiesCapitalizedInterest} from '../lib/investment-history.ts';
@@ -10,7 +10,7 @@ import * as days from '../lib/calendar-days.ts';
 import {loadTS} from './helpers/load-ts.mjs';
 const {ratesOf}=loadTS('lib/transaction-rates.ts');
 const source=ts.transpileModule(fs.readFileSync('lib/income-history.ts','utf8').replace(/^import .*;\n/gm,'').replace(/export /g,''),{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
-const history=new Function('monthly','income','interestKinds','interestCompounding','duplicatesAssetEstimate','convertAmount','depositInterest','shiftMonth','ratesOf','capitalizedInterest','copiesCapitalizedInterest',source+';return incomeHistory;')(monthly,income,interestKinds,interestCompounding,duplicatesAssetEstimate,convertAmount,depositInterest,days.shiftMonth,ratesOf,capitalizedInterest,copiesCapitalizedInterest);
+const history=new Function('monthly','income','ownAmount','interestKinds','interestCompounding','duplicatesAssetEstimate','convertAmount','depositInterest','shiftMonth','ratesOf','capitalizedInterest','copiesCapitalizedInterest',source+';return incomeHistory;')(monthly,income,ownAmount,interestKinds,interestCompounding,duplicatesAssetEstimate,convertAmount,depositInterest,days.shiftMonth,ratesOf,capitalizedInterest,copiesCapitalizedInterest);
 const event=(id,record_id,amount,type='income')=>({id,record_id,event_type:type,amount,occurred_on:'2026-09-10',balance:null});
 const payment=(id,kind,amount,extra={})=>({id,kind,amount,currency:'USD',frequency:'Once',date:'2026-09-10',...extra});
 test('income includes dividends, salaries, rent, business and interest without counting Tracker copies twice',()=>{

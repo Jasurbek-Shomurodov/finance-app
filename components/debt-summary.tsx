@@ -8,7 +8,7 @@ import { financialTotals, type Entry } from '@/lib/finance';
 
 /** When the payoff plan clears every debt, and when minimum payments alone would (`payoffDay`); null is never.
  * `ready` is false while the plan is loading or there is no debt to plan. */
-export type DebtFree = { ready: boolean; day: string | null; minimumsDay: string | null; onOpen: () => void };
+export type DebtFree = { ready: boolean; day: string | null; minimumsDay: string | null; onOpen: () => void; /** Debts in other currencies are owed too, and the plan leaves them out. */ partial?: boolean };
 
 export function DebtSummary({entries,currency,debtFree}:{entries:Entry[];currency:string;debtFree?:DebtFree}) {
  const {t,locale}=useLanguage();
@@ -22,6 +22,7 @@ export function DebtSummary({entries,currency,debtFree}:{entries:Entry[];currenc
   <StatTile label={t('Net lending position')} value={formatMoney(netLending,currency,locale)} tone={signTone(netLending,true)}></StatTile>
   {debtFree&&<StatTile label={t('Estimated debt-free date')} rolling={false} value={!debtFree.ready?'—':debtFree.day?formatMonthYear(debtFree.day,locale):t('Not repaid within 50 years')} aside={<button type="button" className="panel-link" onClick={debtFree.onOpen}>{t('Plan')}<ArrowRight size={14} aria-hidden="true"/></button>}>
    {debtFree.ready&&debtFree.minimumsDay&&debtFree.minimumsDay!==debtFree.day&&<p>{t('{date} with minimums only',{date:formatMonthYear(debtFree.minimumsDay,locale)})}</p>}
+   {debtFree.ready&&debtFree.partial&&<p>{t('Only debts in {currency} are included.',{currency})}</p>}
   </StatTile>}
  </StatTiles>;
 }

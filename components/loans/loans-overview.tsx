@@ -7,7 +7,7 @@ import { PayoffPlanCardSkeleton } from '@/components/presentation-foundation/scr
 import { useLanguage } from '@/components/language-provider';
 import { useWorkspace } from '@/components/workspace/workspace-provider';
 import { usePortfolioHistory } from '@/hooks/use-portfolio-history';
-import { payoffDay, payoffPlan, planFor } from '@/lib/debt-plan';
+import { owesOutsidePlan, payoffDay, payoffPlan, planFor } from '@/lib/debt-plan';
 import { demoHistory } from '@/lib/demo-finance';
 import { depositToday } from '@/lib/deposit-interest';
 import { liabilities } from '@/lib/finance';
@@ -28,7 +28,7 @@ export function LoansOverview({ onOpenPlanner }: { onOpenPlanner: () => void }) 
  const ready = !planning.loading && !planning.error && !workspacePreferences.loading && !!worked.result && worked.debts.length > 0;
  const debts = planning.data.records.filter(record => liabilities.includes(record.kind) && record.amount > 0);
  return <>
-  <DebtSummary entries={current} currency={currency} debtFree={{ ready, day: payoffDay(today, worked.result?.months), minimumsDay: payoffDay(today, worked.minimums?.months), onOpen: onOpenPlanner }}/>
+  <DebtSummary entries={current} currency={currency} debtFree={{ ready, day: payoffDay(today, worked.result?.months), minimumsDay: payoffDay(today, worked.minimums?.months), onOpen: onOpenPlanner, partial: owesOutsidePlan(planning.data.records, plan.currency) }}/>
   <div className="loans-layout">
    <LoansList events={events}/>
    {debts.length > 0 && <div className="loans-side">

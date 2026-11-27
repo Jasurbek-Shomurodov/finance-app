@@ -1,5 +1,5 @@
 import { daysBetween, monthEnd, shiftMonth } from './calendar-days';
-import { income, type Entry } from './finance';
+import { income, ownAmount, type Entry } from './finance';
 import { spendingAmount, transferAmount } from './spending';
 import { canAssignBusiness, inBusinessFilter } from './business';
 import { matchesTags, type TagMatch } from './tags';
@@ -78,7 +78,7 @@ export const signedAmount = (record: Pick<Entry, 'kind' | 'amount'>) => income.i
 /** What a record adds to a total: income up, spending down by the shared definition (`lib/spending.ts`), so a mortgage
  * payment's principal, a transfer to the debt, counts in neither a day's total nor the Summary while its row still
  * shows the whole payment (`signedAmount`). */
-export const netAmount = (record: Parameters<typeof spendingAmount>[0]) => income.includes(record.kind) ? Number(record.amount) : -spendingAmount(record);
+export const netAmount = (record: Parameters<typeof spendingAmount>[0]) => income.includes(record.kind) ? ownAmount(record) : -spendingAmount(record);
 
 /** Rows grouped by day; a day's total adds up its rows' `netAmount` and is null when a currency cannot be converted.
  * `principal` is the mortgage principal the day's payments moved to the debt: the rows show it, the total leaves it out. */
@@ -126,7 +126,7 @@ export function summarizeTransactions(records: readonly Entry[], convert: Conver
  // The largest expense is picked by its converted size and shown as entered (`entered`, its own amount and currency).
  let largest: { name: string; amount: number; entered: { amount: number; currency: string } } | null = null;
  for (const record of records) {
-  const own = income.includes(record.kind) ? Number(record.amount) : spendingAmount(record);
+  const own = income.includes(record.kind) ? ownAmount(record) : spendingAmount(record);
   const value = convert(own, record.currency, record);
   if (value === null) { missing++; continue; }
   if (income.includes(record.kind)) received += value;

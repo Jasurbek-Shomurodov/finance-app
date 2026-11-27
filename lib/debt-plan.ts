@@ -13,6 +13,9 @@ export const methodLabels: Record<PayoffMethod, string> = { avalanche: 'Highest 
 
 /** The debts a plan covers: what is still owed in the plan's currency. Amounts in different currencies are never added. */
 export const plannedDebts = (records: readonly Entry[], currency: string) => records.filter(record => liabilities.includes(record.kind) && record.currency === currency && record.amount > 0);
+/** Whether something is still owed in another currency than the plan's: a debt-free date from the plan then covers only
+ * part of what is owed, and says so. */
+export const owesOutsidePlan = (records: readonly Entry[], currency: string) => records.some(record => liabilities.includes(record.kind) && record.currency !== currency && record.amount > 0);
 
 /** A plan worked out: the debts, the plan itself, the same debts on minimum payments only, and the other method. */
 export function payoffPlan(records: readonly Entry[], plan: DebtPlan) {

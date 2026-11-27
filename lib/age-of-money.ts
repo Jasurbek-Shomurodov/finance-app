@@ -1,11 +1,11 @@
 import { daysBetween, shiftDay } from './calendar-days';
-import { expenses, income, type Entry } from './finance';
+import { expenses, income, ownAmount, type Entry } from './finance';
 import { convertAmount } from './market';
 import { spendingAmount } from './spending';
 import { ratesOf } from './transaction-rates';
 
 type Rates = number | Record<string, number> | undefined;
-type MoneyRow = Pick<Entry, 'id' | 'kind' | 'amount' | 'currency' | 'date' | 'frequency'> & Partial<Pick<Entry, 'account_id' | 'mortgage_payment_id' | 'payment_principal' | 'payment_interest'>>;
+type MoneyRow = Pick<Entry, 'id' | 'kind' | 'amount' | 'currency' | 'date' | 'frequency'> & Partial<Pick<Entry, 'account_id' | 'mortgage_payment_id' | 'payment_principal' | 'payment_interest' | 'amount_basis' | 'business_id' | 'business_share'>>;
 
 /** How many of the latest cash outflows the average covers. */
 export const ageOfMoneyOutflows = 10;
@@ -38,7 +38,7 @@ export function ageOfMoney(records: readonly MoneyRow[], currency: string, asOf:
   const inflow = income.includes(record.kind);
   if (!inflow && !expenses.includes(record.kind)) continue;
   if (cashAccounts && record.account_id && !cashAccounts.has(record.account_id)) continue;
-  const raw = inflow ? Number(record.amount) : spendingAmount(record);
+  const raw = inflow ? ownAmount(record) : spendingAmount(record);
   if (!(raw > 0)) continue;
   const amount = convertAmount(raw, record.currency, currency, ratesOf(record, rates));
   if (amount === null) { skipped++; continue; }

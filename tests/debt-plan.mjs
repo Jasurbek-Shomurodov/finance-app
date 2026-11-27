@@ -86,3 +86,12 @@ test('paid off is measured from the first recorded balance plus later borrowing,
  assert.equal(debtProgress({ id: 'loan', amount: 0 }, [event('loan', '2025-01-01', 'baseline', 0, 24300)]).share, 100);
  assert.equal(debtProgress(loan, [event('loan', '2025-01-01', 'baseline', 0, 0)]), null);
 });
+
+test('the debt-free date says when debts in another currency are left out of the plan', () => {
+ const { owesOutsidePlan } = loadTS('lib/debt-plan.ts');
+ const usd = debt('car', 5000, 10, 300), eur = debt('family', 900, 0, 100, { kind: 'Debt', currency: 'EUR' });
+ assert.equal(owesOutsidePlan([usd], 'USD'), false);
+ assert.equal(owesOutsidePlan([usd, eur], 'USD'), true);
+ assert.equal(owesOutsidePlan([usd, { ...eur, amount: 0 }], 'USD'), false, 'a repaid debt is not owed');
+ assert.equal(owesOutsidePlan([usd, { ...eur, kind: 'Money lent' }], 'USD'), false, 'money lent is owed to you');
+});

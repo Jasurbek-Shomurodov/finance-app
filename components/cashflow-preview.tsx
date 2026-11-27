@@ -11,7 +11,7 @@ import { useLanguage } from '@/components/language-provider';
 import { formatMoney, formatSignedMoney } from '@/lib/format';
 import { useDisplayMoney } from '@/components/display-money';
 import { incomeCardTotals, monthlyIncomeCards } from '@/lib/monthly-income-cards';
-import type { Entry } from '@/lib/finance';
+import { ownAmount, type Entry } from '@/lib/finance';
 import type { EarningSource } from '@/lib/earning-sources';
 import { amountIn, type RateTable } from '@/lib/money';
 import { ratesOrPair } from '@/lib/transaction-rates';
@@ -50,7 +50,7 @@ export function CashflowPreview({entries,sources,month,currency,rates,loading,er
  const allCards=monthlyIncomeCards(entries,month,sources,undefined,rates);
  const cards=allSources?allCards:allCards.filter((card,index)=>index<5||card.received);
  // Each card in its source's own currency; the headline adds them in the display currency, what came in at each payment's day's rates.
- const income=incomeCardTotals(allCards,convert,payment=>amountIn({amount:payment.amount,currency:payment.currency},currency,ratesOrPair(payment,rates)));
+ const income=incomeCardTotals(allCards,convert,payment=>amountIn({amount:ownAmount(payment),currency:payment.currency},currency,ratesOrPair(payment,rates)));
  if(error)return <InlineError message={t(error)} onRetry={onRetry}/>;
  if(loading)return <CashflowPreviewSkeleton label={t('Loading records…')}/>;
  return <div className="cashflow-preview-grid">

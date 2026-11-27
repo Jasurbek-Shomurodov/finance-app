@@ -1,5 +1,5 @@
 import { shiftMonth } from './calendar-days';
-import { monthly, income, interestKinds, interestCompounding, duplicatesAssetEstimate, type Entry } from './finance';
+import { monthly, income, ownAmount, interestKinds, interestCompounding, duplicatesAssetEstimate, type Entry } from './finance';
 import { capitalizedInterest, copiesCapitalizedInterest, type HistoryEvent } from './investment-history';
 import { convertAmount } from './market';
 import { depositInterest } from './deposit-interest';
@@ -17,7 +17,7 @@ function group(entry:Entry,investment=false):IncomeGroup {
  if(interestKinds.includes(entry.kind)||entry.kind==='Money lent')return 'interest';
  return 'other';
 }
-// Receipts are personal cash amounts. Do not apply ownership a second time or
+// Receipts are personal cash amounts (a "Whole business" figure counts at the owner's share, `ownAmount`). Do not apply ownership a second time or
 // turn schedules, transfers, opening balances and returned principal into income.
 export function receivedIncome(records:Entry[],events:HistoryEvent[],incomeRecords:Entry[],today:string) {
  const byId=new Map(records.map(record=>[record.id,record]));
@@ -35,7 +35,7 @@ export function receivedIncome(records:Entry[],events:HistoryEvent[],incomeRecor
   seen.add(entry.id);
   if(entry.history_event_id&&eventIds.has(entry.history_event_id))continue;
   if(copiesCapitalizedInterest(entry,capitalized))continue;
-  receipts.push({id:entry.id,date:entry.date,amount:Number(entry.amount),currency:entry.currency,group:group(entry),name:entry.name,record:entry});
+  receipts.push({id:entry.id,date:entry.date,amount:ownAmount(entry),currency:entry.currency,group:group(entry),name:entry.name,record:entry});
  }
  return receipts.sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));
 }
