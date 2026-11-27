@@ -43,10 +43,13 @@ export function useRecordActions({ demo, rows, setRows, refreshRecords, splits, 
         else { await requestJson('/api/records',{body:stopped}); refreshRecords(); }
         showSaved();
     }
-    /** A payment's category as the person chose it; a no-op when it already has it. */
-    const categorizePayment = (payment: MortgagePayment) => payment.category
-        ? requestJson('/api/transaction-rules', { body: { action: 'categorize', data: { ids: [payment.id], kind: payment.category.kind, category_id: payment.category.category_id } } }).catch(() => undefined)
-        : undefined;
+    /** A saved payment's category as the person chose it; a no-op when it already has it. A refusal is shown, never
+     * hidden behind "Saved", and the list still refreshes to show the payment; saving again with the same id is safe. */
+    async function categorizePayment(payment: MortgagePayment) {
+        try {
+            if (payment.category) await requestJson('/api/transaction-rules', { body: { action: 'categorize', data: { ids: [payment.id], kind: payment.category.kind, category_id: payment.category.category_id } } });
+        } finally { refreshRecords(); }
+    }
     async function recordMortgagePayment(payment: MortgagePayment) {
         if (demo) {
             if (rows.some(row => row.id === payment.id)) return;
@@ -58,7 +61,6 @@ export function useRecordActions({ demo, rows, setRows, refreshRecords, splits, 
             const payload=crossCurrency?{...fields,record_id:payment.mortgage_id,type:'mortgage_payment',amount:decimalSum([payment.principal,payment.interest]),balance:null}:fields;
             await requestJson(crossCurrency?'/api/investment-history/exchange':'/api/mortgage-payments', { body: payload, fallback: 'Payment could not be confirmed. Retry with the same details.' });
             await categorizePayment(payment);
-            refreshRecords();
         }
         showSaved();
     }
@@ -75,7 +77,6 @@ export function useRecordActions({ demo, rows, setRows, refreshRecords, splits, 
         else {
             await requestJson('/api/mortgage-payments', { method: 'PATCH', body: paymentFields(payment), fallback: 'Payment could not be confirmed. Retry with the same details.' });
             await categorizePayment(payment);
-            refreshRecords();
         }
         showSaved();
     }

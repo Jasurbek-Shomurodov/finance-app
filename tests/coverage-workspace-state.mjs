@@ -305,6 +305,11 @@ test('signed in, settings and records are read, and every change is sent and rea
  await ws().recordMortgagePayment({ id: 'pay5', mortgage_id: 'm1', principal: 10, interest: 2, date: today, notes: '', account_id: 'c1', category: { kind: 'Charity', category_id: null } });
  assert.deepEqual(requests.filter(request => request.url === '/api/mortgage-payments').at(-1).body, { id: 'pay5', mortgage_id: 'm1', principal: 10, interest: 2, date: today, notes: '', account_id: 'c1' });
  assert.deepEqual(requests.filter(request => request.url === '/api/transaction-rules').at(-1).body, { action: 'categorize', data: { ids: ['pay5'], kind: 'Charity', category_id: null } });
+ // ERR-001: a refused category change is shown, never hidden behind "Saved"; the saved payment still refreshes in.
+ server.fail['POST /api/transaction-rules'] = 'Could not update categories. Please try again.';
+ await assert.rejects(ws().recordMortgagePayment({ id: 'pay6', mortgage_id: 'm1', principal: 10, interest: 2, date: today, notes: '', category: { kind: 'Charity', category_id: null } }), /Could not update categories/);
+ await assert.rejects(ws().editMortgagePayment({ id: 'pay6', mortgage_id: 'm1', principal: 10, interest: 2, date: today, notes: '', category: { kind: 'Charity', category_id: null } }), /Could not update categories/);
+ delete server.fail['POST /api/transaction-rules'];
  await ws().editMortgagePayment({ id: 'pay5', mortgage_id: 'm1', principal: 11, interest: 1, date: today, notes: 'Fixed', account_id: 'c1' });
  assert.deepEqual(requests.filter(request => request.method === 'PATCH' && request.url === '/api/mortgage-payments').at(-1).body, { id: 'pay5', mortgage_id: 'm1', principal: 11, interest: 1, date: today, notes: 'Fixed', account_id: 'c1' });
  await ws().mortgagePaymentSource({ ...record, id: 'pay5', mortgage_payment_id: 'pay5' });
