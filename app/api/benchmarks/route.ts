@@ -45,7 +45,8 @@ async function loadBenchmarks(req: Request) {
   for(const asset of portfolioRows.filter(asset=>asset.kind==='crypto'))jobs.push(async()=>{const id=portfolioAssetKey(asset,portfolio!);try{data.prices[id]=await history('crypto',asset.symbol);}catch{data.errors[id]='Market history is unavailable for this period.';}});
   if(selected.includes('BTC'))jobs.push(async () => { try { data.prices.BTC = await history('crypto','BTC'); } catch { data.errors.BTC = 'Market history is unavailable for this period.'; } });
   if(selected.includes('PORTFOLIO')&&portfolioCrypto)jobs.push(async()=>{try{data.prices.portfolioCrypto=await history('crypto',portfolioCrypto);}catch{data.errors.portfolioCrypto='Market history is unavailable for this period.';}});
-  jobs.push(async () => {
+  // The day rates are database reads every chart needs, so they go first rather than queue behind slow price feeds.
+  jobs.unshift(async () => {
    try { data.fx = await benchmarkFx(start, end, { today: depositToday() }); } catch { data.errors.fx = 'Historical exchange rates are unavailable.'; }
   });
   let index = 0;

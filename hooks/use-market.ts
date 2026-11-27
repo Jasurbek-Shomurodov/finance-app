@@ -46,7 +46,12 @@ export function useMarket(entries: Entry[], enabled: boolean) {
   const answered = useRef(false);
   // Each instrument once, in a fixed order: the same holdings read from another list ask for nothing new.
   const signature = useMemo(() => JSON.stringify([...new Set(entries.filter(e => instrumentFor(e)).map(e => JSON.stringify({ kind: e.kind, name: e.name, metal: e.metal })))].sort()), [entries]);
+  // The holdings the last full read priced. Until it covers the current ones the market reads as loading, even in the
+  // render before the effect below starts, so a snapshot (usePortfolioSnapshots) is never posted on saved prices and
+  // then cancelled and posted again once the quotes start.
+  const [priced, setPriced] = useState<string | null>(null);
   if (!enabled && market !== null) setMarket(null);
+  if (!enabled && priced !== null) setPriced(null);
   const refresh = useCallback(() => setRefreshId(id => id + 1), []);
   useEffect(() => {
     if (!enabled) return;
@@ -66,12 +71,12 @@ export function useMarket(entries: Entry[], enabled: boolean) {
       try { const data = await fetchMarket(entries, controller.signal); if (!controller.signal.aborted) { answered.current = true; setMarket(data); } }
       // A failed refresh keeps the last good answer: rates already on screen do not vanish until the next one.
       catch { if (!controller.signal.aborted) setError('Market prices unavailable. Saved prices are shown.'); }
-      finally { running = false; if (!controller.signal.aborted) setLoading(false); }
+      finally { running = false; if (!controller.signal.aborted) { setLoading(false); setPriced(signature); } }
     };
     void load();
     const interval = setInterval(() => { if (!document.hidden) void load(); }, 300000);
     return () => { controller.abort(); clearInterval(interval); };
   }, [signature, enabled, refreshId]);
   useEffect(() => { if (!enabled) answered.current = false; }, [enabled]);
-  return { market: enabled ? market : null, loading: enabled && loading, error: enabled ? error : '', refresh };
+  return { market: enabled ? market : null, loading: enabled && (loading || priced !== signature), error: enabled ? error : '', refresh };
 }

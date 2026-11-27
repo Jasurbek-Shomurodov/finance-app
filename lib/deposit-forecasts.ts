@@ -10,8 +10,10 @@ function readAll<T>(path:string,token:string){return readAllPages<T>(range=>supa
  * read with the same token that include every interest-bearing holding, so they are not read again. */
 export async function depositForecasts(token: string, holdings?: readonly Entry[]): Promise<Entry[]> {
  const deposits = holdings ? holdings.filter(record => interestKinds.includes(record.kind)).map(record => ({ ...record })) : await readAll<Entry>(`/rest/v1/finance_records?kind=in.(${interestKinds.map(kind => encodeURIComponent(`"${kind}"`)).join(',')})&select=*&order=id.asc`, token);
- for (let offset = 0; offset < deposits.length; offset += 100) {
-  const batch = deposits.slice(offset, offset + 100);
+ // Each hundred deposits' history is one request; the batches are read together rather than one after another.
+ const batches: Entry[][] = [];
+ for (let offset = 0; offset < deposits.length; offset += 100) batches.push(deposits.slice(offset, offset + 100));
+ await Promise.all(batches.map(async batch => {
   const events = await readAll<HistoryEvent>(`/rest/v1/investment_history?record_id=in.(${batch.map(d=>d.id).join(',')})&select=*&order=occurred_on.asc,created_at.asc,id.asc`, token);
   const byRecord = new Map<string, HistoryEvent[]>();
   for (const event of events) { const group = byRecord.get(event.record_id) ?? []; group.push(event); byRecord.set(event.record_id, group); }
@@ -20,6 +22,6 @@ export async function depositForecasts(token: string, holdings?: readonly Entry[
    deposit.estimated_monthly_income = depositInterest(history, Number(deposit.rate), undefined, interestCompounding(deposit), deposit.date);
    deposit.interest_ends = depositTerm(history, deposit.date);
   }
- }
+ }));
  return deposits.map(deposit => ({id:deposit.id,name:deposit.name,kind:deposit.kind,currency:deposit.currency,amount:deposit.amount,quantity:deposit.quantity,cost:deposit.cost,rate:deposit.rate,date:deposit.date,frequency:deposit.frequency,notes:'',estimated_monthly_income:deposit.estimated_monthly_income,interest_ends:deposit.interest_ends,deposit_compounding:deposit.deposit_compounding,record_count:1}));
 }

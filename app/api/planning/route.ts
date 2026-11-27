@@ -10,7 +10,7 @@ import { inScheduleCurrency } from '@/lib/schedule-currency';
 import { crossSite,parseAction,postgrestFailure,readJson,signInAgain } from '@/lib/api-route';
 import { session,supa,sameOrigin } from '@/lib/supabase';
 import { readOwnerRows } from '@/lib/server-records';
-import { withViewerDayRates } from '@/lib/viewer-day-rates';
+import { preferredCurrencies, withViewerDayRates } from '@/lib/viewer-day-rates';
 import { categoryNameTaken, duplicateCategoryMessage } from '@/lib/category-names';
 import type { Category, ExtraPayment, Occurrence } from '@/lib/planning';
 import { queueMilestoneCheck } from '@/lib/notify-action';
@@ -23,6 +23,17 @@ const debtRows=(read:boolean,filter:{and?:string},activity:RepaymentRow[],token:
 /** Later payments for recorded occurrences add to them; limited scopes leave those transactions out of `records`.
  * A failed read answers 503 like the other reads: counting none would show scheduled payments as less paid than they are. */
 const readExtraPayments=(historyOnly:boolean,token:string)=>historyOnly?Promise.resolve([] as ExtraPayment[]):readOwnerRows<ExtraPayment>('finance_records',token,{select:'id,occurrence_record_id,occurrence_due_on,amount,currency,date',occurrence_record_id:'not.is.null'});
+type MortgagePaymentRow={id:string;mortgage_id:string;paid_on:string;principal:number;interest:number};
+/** The loan payments a debts read can ask for before its tables answer: the mortgage payments, and the repayments when
+ * the read's own operations do not hold every one. A repayment held in those operations is taken from them later
+ * (`null` here). Both are marked handled, so a failure while the other reads run is not an unhandled rejection. */
+function earlyDebtReads(debts:boolean,holdsEveryOperation:boolean,token:string){
+ if(!debts)return {repayments:null,mortgages:null};
+ const repayments=holdsEveryOperation?null:Promise.resolve(debtRows(false,{},[],token));
+ const mortgages=readOwnerRows<MortgagePaymentRow>('mortgage_payments',token,{select:'id,mortgage_id,paid_on,principal,interest'});
+ repayments?.catch(()=>null);mortgages.catch(()=>null);
+ return {repayments,mortgages};
+}
 const monthNumber=(month:string)=>Number(month.slice(0,4))*12+Number(month.slice(5));
 /** A budget read names its first month, no later than `month` and at most two years before it. */
 const budgetRange=(first:string|undefined,month:string)=>!!first&&/^\d{4}-(0[1-9]|1[0-2])$/.test(first)&&first<=month&&monthNumber(month)-monthNumber(first)<=23;
@@ -43,6 +54,9 @@ export async function GET(req?:Request){
  const debts=plan.debtPayments||params.has('debts');
  const reads=Promise.all(Object.entries(tables).filter(([key])=>plan.tables.has(key as keyof typeof tables)).map(async([key,table])=>[key,await readOwnerRows(table,auth.token,filters[key as keyof typeof filters]??{})]));
  const extraPayments=readExtraPayments(plan.historyOnly,auth.token);
+ // The currencies the rows are dated in, and the loan payments that need no loan's id, start beside the tables.
+ const currencies=preferredCurrencies(auth);
+ const early=earlyDebtReads(debts,plan.tables.has('activity')&&!filters.activity.and,auth.token);
  // Awaited below; marked handled now so a failure while the other reads run is not an unhandled rejection.
  extraPayments.catch(()=>null);
  // One rate per currency pair and payment day for the whole read, a few requests at a time: the kept day tables first
@@ -51,10 +65,10 @@ export async function GET(req?:Request){
  const results=await reads;
  const data={records:[],categories:[],goals:[],occurrences:[],activity:[],movements:[],investmentLinks:[],...Object.fromEntries(results)} as Record<string,unknown>;
  // Each transaction carries its own day's rates, read while the rest of the answer is put together.
- const dated=withViewerDayRates(data as Parameters<typeof withViewerDayRates>[0],auth);dated.catch(()=>null);
+ const dated=withViewerDayRates(data as Parameters<typeof withViewerDayRates>[0],auth,currencies);dated.catch(()=>null);
  // Loan repayments and mortgage payments settle a loan's monthly payment on Recurring and Upcoming payments.
  if(debts){const loans=(data.records as Entry[]).filter(record=>record.kind==='Loan'||record.kind==='Debt').map(record=>record.id);
-  const [repayments,mortgagePayments,tracked]=await Promise.all([debtRows(plan.tables.has('activity'),filters.activity,data.activity as RepaymentRow[],auth.token),readOwnerRows<{id:string;mortgage_id:string;paid_on:string;principal:number;interest:number}>('mortgage_payments',auth.token,{select:'id,mortgage_id,paid_on,principal,interest'}),loans.length?readOwnerRows<TrackerRepayment>('investment_history',auth.token,{select:trackerRepaymentColumns,event_type:'eq.withdrawal',record_id:`in.(${loans.join(',')})`}):[]]);
+  const [repayments,mortgagePayments,tracked]=await Promise.all([early.repayments??debtRows(true,filters.activity,data.activity as RepaymentRow[],auth.token),early.mortgages!,loans.length?readOwnerRows<TrackerRepayment>('investment_history',auth.token,{select:trackerRepaymentColumns,event_type:'eq.withdrawal',record_id:`in.(${loans.join(',')})`}):[]]);
   // Each payment says how much it paid, in its loan's currency, so a partial payment never shows the installment paid in full.
   const loanCurrency=new Map((data.records as Entry[]).map(record=>[record.id,record.currency]));
   data.debtPayments=await debtPaymentsInLoanCurrency(debtPaymentsFrom(withTrackerRepayments(repayments,tracked),mortgagePayments,loanCurrency),loanCurrency,dayRate);}

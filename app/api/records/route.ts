@@ -14,7 +14,7 @@ import { pagePath,readAllPages } from '@/lib/owner-rows';
 import { session,supa,sameOrigin } from '@/lib/supabase';
 import { queueMilestoneCheck } from '@/lib/notify-action';
 import type { ActionEvent } from '@/lib/action-messages';
-import { withViewerDayRates } from '@/lib/viewer-day-rates';
+import { preferredCurrencies, withViewerDayRates } from '@/lib/viewer-day-rates';
 async function handle(req:Request,method:string){if(method!=='GET'&&!sameOrigin(req))return crossSite();try{const s=await session();if(!s)return signInAgain();let path='/rest/v1/finance_records';let init:RequestInit={};let event:ActionEvent|null=null;if(method==='GET'){
  const params=new URL(req.url).searchParams;
  const query=z.object({page:z.coerce.number().int().min(1).max(1000000),section:z.enum(['all','assets','cashflow','debts']),currency:fiatCurrency.nullable(),summary:z.enum(['0','1'])}).safeParse({page:params.get('page')||'1',section:params.get('section')||'all',currency:params.get('currency'),summary:params.get('summary')||'0'});
@@ -67,6 +67,11 @@ init={method:'POST',body:JSON.stringify({...(lent_from?{p_account:lent_from,...l
 // Every holding, so live prices and exchange rates can determine order before pagination; read beside the summary.
 const assetsRead=method==='GET' && new URL(req.url).searchParams.get('section')==='assets';
 const holdings=assetsRead?readAllPages<Entry>(range=>supa(pagePath('/rest/v1/finance_records?'+new URLSearchParams({select:'*',kind:`in.(${assetRecordKinds.join(',')})`,order:'id.asc'}),range),{},s.token)).catch(()=>null):null;
+// Any other page read dates its rows in the viewer's currencies, and a summary carries the deposits' forecasts: neither
+// needs the page, so both start beside it. Marked handled now, so a page that fails first leaves no unhandled rejection.
+const pagedRead=method==='GET'&&!assetsRead;
+const currencies=pagedRead?preferredCurrencies(s):undefined;
+const summaryDeposits=pagedRead&&new URL(req.url).searchParams.get('summary')==='1'?depositForecasts(s.token):null;summaryDeposits?.catch(()=>null);
 // The day's rates are kept first, so the database saves the transaction with them (migration 150).
 const r=await supa(path,init,s.token);
 // Undoing a linked operation names its own refusals (a later trade, a cash reversal), which the record form's list below does not know.
@@ -81,8 +86,8 @@ if(assetsRead){
  data.page=Math.min(data.page ?? 1,Math.max(1,Math.ceil(records.length/10)));
 }
 // The page's day rates and the summary's deposit forecasts are independent reads, so they run side by side.
-const pageRecords=data.records,datedPage=method==='GET' && pageRecords && !assetsRead?withViewerDayRates({records:pageRecords},s):null;
-const [dated,deposits]=await Promise.all([datedPage,method==='GET' && data.summary?depositForecasts(s.token,records??undefined):null]);
+const pageRecords=data.records,datedPage=pagedRead && pageRecords?withViewerDayRates({records:pageRecords},s,currencies):null;
+const [dated,deposits]=await Promise.all([datedPage,method==='GET' && data.summary?summaryDeposits??depositForecasts(s.token,records??undefined):null]);
 if(dated)data.records=dated.records as Entry[];
 // A saved transaction comes back with its day's rates too, so totals do not move until the next read.
 if(method==='POST' && 'kind' in data && 'currency' in data){const saved=data as unknown as Entry;const [dated]=(await withViewerDayRates({records:[saved]},s)).records;return Response.json(dated);}

@@ -28,7 +28,11 @@
   `shiftMonth`, `monthEnd`); "today" is `depositToday()`, never
   `new Date().toISOString()`.
 - Client requests: `requestJson` from `lib/api-client.ts`; owner resources load
-  through `useOwnerResource`.
+  through `useOwnerResource`. A screen's reads that need only the owner start beside the workspace's
+  through `lib/section-reads.ts` (`warmRead`), under the same URL and revision the card asks with.
+- Reads in one route that do not need each other's answer start together. Rows dated for the viewer
+  (`withViewerDayRates`, `lib/viewer-day-rates.ts`) get the currencies from `preferredCurrencies(auth)`
+  started beside the rows' own read. A rate-limit check stays in front of the read it guards.
 - Telegram messages: `lib/telegram-kit.ts` (`messageKit`, `keyboardRows`,
   `backButton`); typed amounts through `parseTypedAmount`. Scheduled reports
   (digest, recap, monthly) are pictures: a `ReportCard` (`lib/report-card.ts`)

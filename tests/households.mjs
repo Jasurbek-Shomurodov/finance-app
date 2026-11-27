@@ -116,7 +116,8 @@ test('the household API checks the open workspace against the database and keeps
  api=householdApi({cookie:other});
  body=await (await api.route.GET()).json();
  assert.equal(body.active,me);assert.equal(body.role,'owner');assert.deepEqual(api.cookies.deleted,['hf_workspace']);assert.equal(body.reset,true,'the app reads again from the person\'s own workspace');
- assert.equal(api.calls[1].workspace,'');
+ // The people of the workspace the cookie named are asked for beside the state; once it no longer stands, the person's own are.
+ assert.deepEqual(api.calls.map(call=>[call.name,call.workspace]),[['household_state',''],['household_people',other],['household_people','']]);
  // Switching is allowed only into a listed household; the client's word is never enough.
  api=householdApi();
  assert.equal((await api.post('switch',{owner:other})).status,403);assert.deepEqual(api.cookies.writes,[]);

@@ -8,7 +8,7 @@ function route({rows=[],fail=false,auth={token:'t',user:{id:'me'}}}={}){
  const {GET}=loadTS('app/api/property-payments/route.ts',{
   '@/lib/supabase':{session:async()=>auth,supa:async()=>{throw Error('unused');}},
   '@/lib/server-records':{readOwnerRows:async(...args)=>{reads.push(args);if(fail)throw Error('down');return rows;}},
-  '@/lib/viewer-day-rates':{withViewerDayRates:async data=>({records:data.records.map(row=>({...row,day_rates:{USD:1,UZS:12000}}))})},
+  '@/lib/viewer-day-rates':{preferredCurrencies:async()=>[],withViewerDayRates:async data=>({records:data.records.map(row=>({...row,day_rates:{USD:1,UZS:12000}}))})},
  });
  return {GET,reads};
 }

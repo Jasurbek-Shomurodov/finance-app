@@ -5,7 +5,7 @@ import { assetPaymentEvents, assetPaymentsQuery, assetSchedulesQuery, schedulePa
 import { byHistoryDate, type HistoryEvent } from '@/lib/investment-history';
 import { readAllPages } from '@/lib/owner-rows';
 import { session, supa, sameOrigin } from '@/lib/supabase';
-import { withViewerDayRates } from '@/lib/viewer-day-rates';
+import { preferredCurrencies, withViewerDayRates } from '@/lib/viewer-day-rates';
 const schema = z.object({ account_id:uuid.optional(),id:uuid,record_id:uuid,type:z.enum(['valuation','contribution','withdrawal','income','expense']),date:isoDate,amount:nonnegativeAmount,balance:nonnegativeAmount.nullable(),notes:z.string().max(2000),
  /** A counted asset's value update: how many units and the value of one (the balance is their product), and a new ownership share. Value updates only. */
  quantity:z.number().finite().min(0).max(1e12).nullish(),unit_value:nonnegativeAmount.nullish(),ownership:z.number().finite().gt(0).max(100).nullish() })
@@ -21,10 +21,12 @@ const databaseUpdate='The app database needs an update. Ask the administrator to
  * property, so the schedules' payments are read too; a row that was never saved with its day's rates looks them up. */
 async function assetPayments(id:string,auth:{token:string;user:{id:string}}){
  const read=<T,>(query:string)=>readAllPages<T>(range=>supa(`/rest/v1/finance_records?${query}&${range}`,{},auth.token),'missing');
+ // The currencies the payments' rates are dated in are read beside the payments rather than after them.
+ const currencies=preferredCurrencies(auth);
  const [linked,schedules]=await Promise.all([read<AssetRow>(assetPaymentsQuery(id)),read<{id:string}>(assetSchedulesQuery(id))]);
  const named=schedules.length?await read<AssetRow>(schedulePaymentsQuery(schedules.map(schedule=>schedule.id))):[];
  const rows=[...new Map([...linked,...named].map(row=>[row.id,row])).values()];
- return rows.length>1?(await withViewerDayRates({records:rows},auth)).records:rows;
+ return rows.length>1?(await withViewerDayRates({records:rows},auth,currencies)).records:rows;
 }
 export async function GET(req:Request) {
  try {

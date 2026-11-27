@@ -11,11 +11,19 @@ const budgetRead = (from: string, to: string) => `/api/planning?scope=budget&mon
  * known (`useSectionWarmup`) rather than after settings arrive and the screen mounts. Each URL comes from the range helper
  * the screen itself uses, so its card finds the reply. A screen opened on another period, or a Budget with rollover funds
  * reaching further back, asks for its own range as before. Recurring has no entry: it opens on the workspace's own
- * planning read, and its Subscriptions view reads only once chosen. */
+ * planning read, and its Subscriptions view reads only once chosen. Every screen also warms the shell's reads. */
 export function sectionReads(section: string, today: string): SectionRead[] {
+ return [...screenReads(section, today), ...shellReads];
+}
+/** The shell's own reads, on every screen: the database check under the top bar mounts only once settings are in. */
+const shellReads: SectionRead[] = [{ url: '/api/database-status', revision: 0 }];
+/** The Telegram link belongs to the signed-in person; the Overview nudge and the Settings panel read it from 0. */
+const telegramRead: SectionRead = { url: '/api/telegram', session: true, revision: 0 };
+function screenReads(section: string, today: string): SectionRead[] {
  const month = today.slice(0, 7);
  switch (section) {
-  case 'Overview': return [{ url: '/api/planning?scope=review&month=' + month }, { url: '/api/portfolio-history' }, { url: '/api/comparison-profile', session: true, revision: 0 }];
+  // The Budget card and the headline row read this month's budget as Budget does; the forecast reads the payouts in the history.
+  case 'Overview': { const { from, to } = budgetReadRange(month, 'month', []); return [{ url: '/api/planning?scope=review&month=' + month }, { url: '/api/portfolio-history' }, { url: '/api/comparison-profile', session: true, revision: 0 }, { url: budgetRead(from, to) }, telegramRead]; }
   // Holdings shows each holding's result from the history, and Profit & loss and Payouts read nothing else.
   case 'Assets & investments': return [{ url: '/api/portfolio-history' }];
   // Accounts draws its list only once the workspace's planning read is in, and only then asks for what is booked to the
@@ -25,11 +33,15 @@ export function sectionReads(section: string, today: string): SectionRead[] {
   case 'Loans & debts': return [{ url: '/api/portfolio-history' }];
   // A savings goal's chart reads its contributions; Goals opens on the overview of the first goal.
   case 'Savings goals': return [{ url: '/api/goal-tools' }];
-  case 'Budget': { const { from, to } = budgetReadRange(month, 'month', []); return [{ url: budgetRead(from, to) }]; }
+  // Age of Money reads its own history beside the month's budget.
+  case 'Budget': { const { from, to } = budgetReadRange(month, 'month', []); return [{ url: budgetRead(from, to) }, { url: '/api/planning?scope=insights' }]; }
   case 'Transactions': { const { from, to } = periodDays('three_months', today); return [{ url: budgetRead(from.slice(0, 7), to.slice(0, 7)) }]; }
-  case 'Income & expenses': { const { first, readTo } = readRange(month, today); return [{ url: budgetRead(first, readTo) }, { url: '/api/goal-tools' }]; }
+  case 'Income & expenses': { const { first, readTo } = readRange(month, today); return [{ url: budgetRead(first, readTo) }, { url: '/api/goal-tools' }, { url: '/api/portfolio-history' }]; }
   case 'Reports': { const { from, to } = readableRange(trendWindow(periodOf('month', today, today), 'month')); return [{ url: budgetRead(from.slice(0, 7), to.slice(0, 7)) }]; }
-  case 'Recently deleted': return [{ url: '/api/deleted-items?page=1', session: true, revision: 0 }];
+  // The restore preview counts this month's budget and plans against the review read.
+  case 'Recently deleted': return [{ url: '/api/deleted-items?page=1', session: true, revision: 0 }, { url: '/api/planning?scope=review&month=' + month }];
+  // Settings mounts its panels once preferences are in; their reads start beside the workspace's instead.
+  case 'Settings': return [telegramRead, { url: '/api/account-access', session: true, revision: 0 }, { url: '/api/comparison-profile', session: true, revision: 0 }, { url: '/api/import' }];
   default: return [];
  }
 }

@@ -19,14 +19,18 @@ async function rpc<T>(name: string, args: Record<string, unknown>, token: string
 }
 const failed = (result: { error: string | null }) => result.error ? reply({ error: result.error }, 409) : unavailable();
 
-/** The household as Settings and the workspace switcher show it, with the open workspace checked against the database. */
-async function state(token: string, wanted: string): Promise<HouseholdState | null> {
- const stored = await rpc<Stored>('household_state', {}, token);
+/** The household as Settings and the workspace switcher show it, with the open workspace checked against the database.
+ * The people of the workspace the cookie names (`me` when it is the person's own) are asked for beside the state, since
+ * that is nearly always the one that stands; only a workspace the person no longer belongs to asks again, for their own. */
+async function state(token: string, wanted: string, me: string): Promise<HouseholdState | null> {
+ const guess = wanted === me ? '' : wanted;
+ const [stored, guessed] = await Promise.all([rpc<Stored>('household_state', {}, token), rpc<HouseholdPerson[]>('household_people', {}, token, guess)]);
  if (!stored.ok) return null;
  const membership = stored.data.memberships.find(item => item.owner_id === wanted);
  const active = membership ? wanted : stored.data.me;
  if (!membership) (await cookies()).delete(workspaceCookie);
- const people = await rpc<HouseholdPerson[]>('household_people', {}, token, active === stored.data.me ? '' : active);
+ const workspace = active === stored.data.me ? '' : active;
+ const people = workspace === guess ? guessed : await rpc<HouseholdPerson[]>('household_people', {}, token, workspace);
  if (!people.ok) return null;
  return { ...stored.data, active, role: membership?.role ?? 'owner', people: people.data };
 }
@@ -35,7 +39,7 @@ export async function GET() {
  try {
   const auth = await session(); if (!auth) return signInAgain();
   const wanted = workspaceOwner(auth);
-  const result = await state(auth.token, wanted);
+  const result = await state(auth.token, wanted, auth.user.id);
   return result ? reply(result.active === wanted ? result : { ...result, reset: true }) : unavailable();
  } catch { return unavailable(); }
 }
@@ -65,7 +69,7 @@ export async function POST(req: Request) {
   }
   if (action === 'switch') {
    if (data.owner === null || data.owner === me) { jar.delete(workspaceCookie); return reply({ active: me }); }
-   const result = await state(auth.token, data.owner!);
+   const result = await state(auth.token, data.owner!, auth.user.id);
    if (!result) return unavailable();
    if (result.active !== data.owner) return reply({ error: 'You no longer have access to this shared workspace.' }, 403);
    jar.set(workspaceCookie, data.owner!, cookieOptions);
