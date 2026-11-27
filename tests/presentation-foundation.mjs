@@ -119,15 +119,17 @@ test('every drawer destination shimmers in its own layout',()=>{
  // stands where the records will.
  const shapes={'/':['stat-tiles','dashboard-grid','dashboard-column','overview-hero','dashboard-lead'],'/assistant':['assistant-layout','assistant-panel','assistant-log','assistant-form'],
   '/accounts':['accounts-hero','accounts-mix','accounts-master-detail','account-directory','account-selected-panel'],
-  '/transactions':['transactions-tools','transactions-layout','transactions-table','transaction-day-row','transaction-row','transaction-category-cell','records-pagination','transactions-aside','transactions-summary','transactions-net','transactions-flow','transactions-top','tools-panel'],
+  '/transactions':['transactions-tools','transactions-layout','transactions-table','transaction-day-row','transaction-row','transaction-category-cell','records-pagination','transactions-aside','transactions-summary','transactions-net','transactions-flow','transactions-top'],
   '/income-expenses':['cashflow-month-bar','cashflow-summary','cash-flow-report-grid','cash-flow-trend','cash-flow-where','cashflow-income-preview','cashflow-still-to-come'],
   '/reports':['page-heading-actions','data-columns="4"','sankey-skeleton','report-transactions','transactions-summary'],
   '/budget':['budget-layout','budget-section','panel-title','budget-section-header','budget-category-row','budget-total-row','budget-side','budget-left','budget-left-figure','budget-pace','stat-tile'],
-  '/upcoming':['recurring-summary','recurring-bar','recurring-left','recurring-layout','recurring-main','recurring-list-tools','transaction-day-heading','recurring-row','row-actions','recurring-side','recurring-coming'],
+  '/upcoming':['recurring-summary','recurring-bar','recurring-left','recurring-layout','recurring-main','recurring-list-tools','transaction-day-heading','recurring-row','row-actions','recurring-side','recurring-coming','tools-panel'],
   '/goals':['goals-split','goals-list','goal-row','goal-row-main','goal-detail','goal-detail-head','goal-detail-chart','stat-tiles','goal-funding-panel','goal-funding-figures'],
   '/assets':['portfolio-summary','portfolio-summary-metrics','portfolio-allocation-body','asset-account-section','asset-card-grid','asset-card-details','asset-holdings','asset-card-grid'],
   '/loans-debts':['data-columns="4"','loans-layout','panel loans-list','record-filters','loans-table','loan-group','loan-row','loans-side','owed-breakdown','payoff-plan-card'],
   '/recently-deleted':['recovery-layout','recovery-tools','recovery-day','recovery-row','recovery-side','recovery-detail'],'/settings':['settings-columns','settings-nav','settings-nav-group','settings-sections','preferences-card','setting-label','setting-control']};
+ // The review suggestions moved to Recurring (50e87c48), and their shimmer with them.
+ assert.ok(!render(NavigationShimmer,{label:'L',path:'/transactions'}).includes('tools-panel'),'Transactions has no suggestions panel');
  for(const path of paths){
   const html=render(NavigationShimmer,{label:'Loading records…',path});
   assert.match(html,/^<div class="content page-loading"><div role="status" aria-busy="true"[^>]*><span class="sr-only">Loading records…<\/span>/,path);

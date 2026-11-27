@@ -42,7 +42,6 @@ export function TransactionsSkeleton({ label, tools = true }: { label: string; t
         <section className="panel transactions-top"><Heading width={140} link/><ul>{times(4).map(row => <li key={row}><Skeleton className="size-7 shrink-0 rounded-lg"/><span className="grid flex-1 gap-2"><span className="flex justify-between"><Skeleton className="h-4 w-24"/><Skeleton className="h-4 w-14"/></span><Track/></span></li>)}</ul></section>
       </div>
     </div>
-    {tools && <section className="panel tools-panel"><Skeleton className="h-11 w-60 rounded-xl"/></section>}
   </Loading>;
 }
 
@@ -131,7 +130,8 @@ function RecurringRow({ row }: { row: number }) {
 
 /** Recurring, as the view shown: on a phone the tabs, month arrows and Add recurring the page opens with (its
  * `PageHeader` loads with the page); for List and Calendar the month's income and bills bars and what is left, then the
- * schedules grouped by day or the month's calendar, beside what is coming up. Subscriptions and Reminders draw their
+ * schedules grouped by day or the month's calendar, beside what is coming up, and under the list the review
+ * suggestions button. Subscriptions and Reminders draw their
  * own panels under the header. */
 export function RecurringSkeleton({ label, view = 'list' }: { label: string; view?: 'list' | 'calendar' | 'subscriptions' | 'reminders' }) {
   const scheduled = view === 'list' || view === 'calendar';
@@ -148,6 +148,8 @@ export function RecurringSkeleton({ label, view = 'list' }: { label: string; vie
       </section>}</div>
       <aside className="recurring-side"><section className="panel recurring-coming"><Heading width={170} aside={92}/><ul>{times(3).map(row => <li key={row}><div className="recurring-coming-row"><Skeleton className="h-11 w-11 rounded-xl"/><Skeleton className="h-4 w-28"/><Skeleton className="h-4 w-12"/></div></li>)}</ul></section></aside>
     </div>}
+    {/* Transaction review suggestions, under the list (`TransactionInsights`). */}
+    {view === 'list' && <section className="panel tools-panel"><Skeleton className="h-11 w-60 rounded-xl"/></section>}
     {view === 'subscriptions' && <section className="panel subscriptions-panel"><Heading width={170} aside={220}/><ul className="subscription-list">{times(4).map(row => <RecurringRow key={row} row={row}/>)}</ul></section>}
   </Loading>;
 }
