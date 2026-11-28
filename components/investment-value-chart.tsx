@@ -95,8 +95,8 @@ export function InvestmentValueChart({points,series,currency,tooltip,onPointSele
   <Tooltip {...chartTooltip} position={mobile?{x:0,y:40}:undefined} offset={{x:0,y:20}} allowEscapeViewBox={{x:false,y:true}} content={tapOpensDetails?noTooltip:tooltip} labelFormatter={date=>formatDate(historyChartDate(Number(date)),locale)} formatter={amount=>money(Number(amount))} wrapperStyle={{zIndex:20,pointerEvents:'auto',maxWidth:'100%',...(mobile?{width:'100%',whiteSpace:'normal' as const}:{})}}/>
   {series.map(item=><Area key={item.key} type="monotone" dataKey={item.key} name={item.label} baseValue="dataMin" {...(item.primary?leadArea(id):{...chartLine,fill:'none'})} stroke={item.color} strokeDasharray={item.dash} connectNulls={false} activeDot={false}/>)}
  </ComposedChart></ResponsiveContainer>;
- if(!navigable)return <div className="portfolio-chart" aria-label={t(label)}>{chart}</div>;
- return <div ref={viewportRef} className="portfolio-chart" data-navigable="" aria-label={t(label)}>
+ if(!navigable)return <div className="portfolio-chart" role="group" aria-label={t(label)}>{chart}</div>;
+ return <div ref={viewportRef} className="portfolio-chart" data-navigable="" role="group" aria-label={t(label)}>
   <ViewportTools whole={whole} canZoomIn={!single&&!!viewportView} zoom={zoom} reset={reset}/>
   {chart}
  </div>;

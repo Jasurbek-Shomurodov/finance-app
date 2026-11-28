@@ -744,7 +744,7 @@ test('a Money flow Sankey opens over the page for its month, a transaction in it
  assert.deepEqual([result.data, result.throughToday], [handed, false], 'it shows the data it was handed, and says whether that runs to today');
 });
 
-test('a recent transaction on the dashboard opens its details by click, Enter or Space; without a handler it stays plain', () => {
+test('a recent transaction on the dashboard opens its details from a real button inside its list item; without a handler it stays plain', () => {
  const r = createRenderer();
  const modules = { '@/components/language-provider': language('en-US'), '@/lib/deposit-interest': { ...loadTS('lib/deposit-interest.ts'), depositToday: () => '2026-08-31' },
   '@/hooks/use-owner-resource': { useOwnerResource: (url, owner, enabled, revision, empty) => ({ data: empty, loading: false }) }, 'next/link': hostModule(), 'lucide-react': hostModule(),
@@ -753,15 +753,15 @@ test('a recent transaction on the dashboard opens its details by click, Enter or
  const data = { records: [record('pay', 'EPAM', 'Salary', 3000, '2026-08-05'), record('food', 'Market', 'Living expense', 50, '2026-08-06')], categories: [], goals: [], occurrences: [], activity: [] };
  const opened = [];
  r.mount(React.createElement(RecentTransactionsCard, { data, onOpen: item => opened.push(item.id) }));
- const rows = r.all(node => node.type === 'li' && node.props.role === 'button');
- assert.deepEqual(rows.map(row => row.props['aria-label']), ['View details for Market', 'View details for EPAM'], 'newest first, each a button');
+ // A list item keeps its list role (axe `list`); the button inside it is focusable and answers Enter and Space natively.
+ assert.equal(r.all(node => node.type === 'li' && node.props.role).length, 0);
+ const rows = r.all(node => node.type === 'button' && node.props.className === 'overview-row');
+ assert.deepEqual(rows.map(row => [row.props.type, row.props['aria-label']]), [['button', 'View details for Market'], ['button', 'View details for EPAM']], 'newest first, each a button');
  rows[0].props.onClick();
- rows[1].props.onKeyDown({ key: 'Enter', preventDefault() {} });
- rows[1].props.onKeyDown({ key: ' ', preventDefault() {} });
- rows[1].props.onKeyDown({ key: 'Tab', preventDefault() {} });
- assert.deepEqual(opened, ['food', 'pay', 'pay']);
+ rows[1].props.onClick();
+ assert.deepEqual(opened, ['food', 'pay']);
  r.mount(React.createElement(RecentTransactionsCard, { data }));
- assert.equal(r.all(node => node.type === 'li' && node.props.role === 'button').length, 0);
+ assert.equal(r.all(node => node.type === 'button' && node.props.className === 'overview-row').length, 0);
  const dashboard = fs.readFileSync('components/workspace/screens/overview-screen.tsx', 'utf8');
  assert.match(dashboard, /<RecentTransactionsCard [^\n]*onOpen=\{open\}\/>/, 'the dashboard card opens what it is handed');
  assert.match(dashboard, /dashboardCards\(nodes, \{[^\n]*open: record => setViewing\(storedRecord\(record\)\)/, 'and the dashboard hands it the transaction’s details');

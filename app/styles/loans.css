@@ -43,6 +43,7 @@
  * a figure it does not have is left out. */
 @container content (max-width:560px){
  .loans-table thead{position:absolute;display:block;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+ .loans-table thead :is(th,td):nth-child(n){position:static;background:none}
  .loans-table,.loans-table tbody{display:block;white-space:normal}
  .loans-table tbody tr{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding:14px 0;border-bottom:1px solid var(--hairline)}
  .loans-table tbody tr:last-child{border-bottom:0}

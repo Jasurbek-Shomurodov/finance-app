@@ -45,7 +45,8 @@ function CompactReview({result,estimates,running,unknown,loading,money}:{result:
  const rate=result.received>0?result.saved/result.received*100:null;
  const or=(value:number|null|undefined,format:(value:number)=>string)=>value==null?'—':format(value);
  // The same Estimated monthly surplus the Dashboard shows, so one surplus figure means one thing on every page.
- const net=`${t('Estimated monthly surplus')}: ${or(estimates?.net,money)}`;
+ // The figure never breaks from its sign: "−" alone at a line's end reads as a dash (CF, 28 November 2026).
+ const net=<>{t('Estimated monthly surplus')}: <span className="nowrap">{or(estimates?.net,money)}</span></>;
  return <section className="cashflow-summary" aria-label={t('Monthly review')}>
   <StatTiles columns={4}>
    <EstimateTile label={t('Income received')} value={figure(money(result.received))} amount={result.received} estimate={estimates?.income} shown={shown} money={money}/>

@@ -21,10 +21,15 @@
 /* On a phone each transaction is a card: payee and amount on the first line, category and account under the payee. */
 @container content (max-width:600px){
  .transactions-table thead{position:absolute;display:block;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+ /* The hidden column names stay for screen readers; their sticky Payee cell would otherwise paint its background over the first rows (`:nth-child(n)` outranks the desktop `:first-child` rule). */
+ .transactions-table thead :is(th,td):nth-child(n){position:static;background:none}
  .transactions-table,.transactions-table tbody{display:block}
  .transactions-table tbody tr{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;padding:10px 16px}
  .transactions-table tbody tr.transaction-row+tr.transaction-row{border-top:1px solid var(--hairline)}
  .transactions-table tbody :is(td,th){display:block;padding:0;border:0;background:none}
+ /* The desktop table's first and last cells keep their side padding and the sticky Payee cell its own background; on a
+    card they would push the payee and the amount in from the day heading and draw a box behind the payee. */
+ .transactions-table tbody :is(td,th):is(:first-child,:last-child){padding:0;background:none}
  .transactions-table tbody td:first-child{position:static;flex:1 1 0;min-width:0;order:0}
  .transactions-table tbody td.num{order:1;flex:none;margin-inline-start:auto}
  /* A full-width break after the amount, so category and account share the second line, under the payee's name. */

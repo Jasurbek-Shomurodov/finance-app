@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, type KeyboardEvent } from 'react';
+import { useMemo } from 'react';
 import { ChartPie, Goal as GoalIcon, ReceiptText } from 'lucide-react';
 import { BudgetProgress } from '@/components/budget/budget-rows';
 import type { WorkspaceBudget } from '@/hooks/use-budget';
@@ -48,8 +48,9 @@ export function RecentTransactionsCard({ owner = null, demo = false, revision = 
   <PanelTitle title={t('Transactions')}><DrawerLink href="/transactions">{t('View all')}</DrawerLink></PanelTitle>
   {owner && !demo && remote.loading ? <LoadingPlaceholder label={t('Loading records…')} rows={4}/> : owner && !demo && remote.error ? <InlineError message={t(remote.error)} onRetry={remote.retry}/> : recent.length ? <ul className="overview-list overview-due">{recent.map((record, index) => {
    const incoming = income.includes(record.kind);
-   const open = onOpen ? { role: 'button', tabIndex: 0, 'aria-label': t('View details for {name}', { name: shownName(record, t) }), onClick: () => onOpen(record), onKeyDown: (event: KeyboardEvent) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen(record); } } } : {};
-   return <li key={record.id} {...open}><CategoryIcon kind={record.kind}/><span>{shownName(record, t)}<small>{named[index] && <>{t(record.kind)} · </>}{formatDate(record.date, locale)}</small></span><strong className={incoming ? 'positive' : undefined}>{incoming ? '+' : ''}{entered(Math.abs(signedAmount(record)), record.currency)}</strong></li>;
+   const row = <><CategoryIcon kind={record.kind}/><span>{shownName(record, t)}<small>{named[index] && <>{t(record.kind)} · </>}{formatDate(record.date, locale)}</small></span><strong className={incoming ? 'positive' : undefined}>{incoming ? '+' : ''}{entered(Math.abs(signedAmount(record)), record.currency)}</strong></>;
+   // A row that opens its details is a real button inside the list item, so the list stays a list for screen readers.
+   return <li key={record.id}>{onOpen ? <button type="button" className="overview-row" aria-label={t('View details for {name}', { name: shownName(record, t) })} onClick={() => onOpen(record)}>{row}</button> : row}</li>;
   })}</ul> : <EmptyState icon={<ReceiptText/>} description={t('No transactions recorded this month or last.')}/>}
  </section>;
 }

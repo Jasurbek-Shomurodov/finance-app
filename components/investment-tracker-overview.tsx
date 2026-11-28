@@ -108,7 +108,7 @@ function TrackerChart({record,points}:{record:Entry;points:Point[]}){
  const axis=niceAxis(points.flatMap(point=>drawn.map(item=>point[item.key])).filter((value):value is number=>typeof value==='number'&&Number.isFinite(value)));
  const first=points[0].timestamp,last=points.at(-1)!.timestamp;
  const dateLabel=(date:unknown)=>formatDate(historyChartDate(Number(date)),locale);
- return <div className="tracker-chart" aria-label={t('Investment history chart')}>
+ return <div className="tracker-chart" role="group" aria-label={t('Investment history chart')}>
   <ResponsiveContainer width="100%" height={chartHeight.compact}><LineChart data={points} margin={chartMargin} accessibilityLayer>
    <CartesianGrid {...chartGrid}/>
    <XAxis dataKey="timestamp" type="number" scale="time" domain={[first,last===first?first+day:last]} ticks={last===first?[first]:undefined} tickFormatter={dateLabel} minTickGap={80} {...chartAxis}/>

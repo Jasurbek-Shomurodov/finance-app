@@ -157,10 +157,8 @@
 .overview-list:is(.overview-due,.overview-commitments) li{grid-template-columns:auto minmax(0,1fr) auto}
 .overview-due :is(li,.overview-row)>span:nth-child(2){display:grid;min-width:0;overflow-wrap:anywhere}
 .overview-due small{min-width:0;text-align:start}
-/* A recent transaction on the dashboard opens its Sankey. */
-.dashboard-transactions li[role=button]{cursor:pointer;border-radius:var(--radius-control)}
-.dashboard-transactions li[role=button]:hover{background:color-mix(in srgb,var(--foreground) 4%,transparent)}
-.dashboard-transactions li[role=button]:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
+/* A recent transaction on the dashboard opens its details: a button laid out as the row (.overview-row below). */
+button.overview-row{width:auto;border:0;background:none;font:inherit;text-align:start;cursor:pointer}
 /* What a tap on an upcoming payment does, said on the row: the whole row is the link. */
 .overview-due-pay{justify-self:start;font-size:var(--type-caption);font-weight:500;color:var(--primary)}
 /* A row that opens its item is one link across the whole row: at least 44px tall, tinted under the pointer, giving when

@@ -48,7 +48,8 @@ const dashboardCardBodies: Record<string, () => ReactNode> = {
   spending: () => <><CardHeading width={210}/><ChartSkeleton height={220}/><div className="spending-pace-legend">{bars(3).map(key => <Skeleton key={key} className="h-4 w-20"/>)}</div></>,
   // Budget: how much of the plan is used and its bar, then the three categories closest to their limit.
   budget: () => <><CardHeading width={200}/><div className="dashboard-budget-total"><Skeleton className="h-8 w-40"/></div><Skeleton className="h-2 w-full"/><div className="dashboard-budget-list"><SkeletonRows rows={3}/></div></>,
-  income: () => <><CardHeading width={190} aside={false}/><ChartSkeleton height={260} bars/></>,
+  // Income over time: the period switch, the three figures, the legend, the bars and the folded table under them.
+  income: () => <><CardHeading width={190} aside={false}/><Skeleton className="mb-4 h-11 w-72 max-w-full rounded-xl"/><div className="portfolio-headline">{bars(3).map(item => <div key={item}><Skeleton className="h-4 w-28"/><Skeleton className="mt-2 h-7 w-20"/></div>)}</div><div className="comparison-legend">{bars(2).map(item => <Skeleton key={item} className="h-8 w-36 rounded-full"/>)}</div><ChartSkeleton height={300} bars/><Skeleton className="mt-4 h-4 w-32"/></>,
   // Monthly commitments: three lines and the surplus at the foot.
   commitments: () => <><CardHeading width={220} aside={false}/><SkeletonRows rows={3}/><div className="cash-footer"><Skeleton className="h-5 w-44"/><Skeleton className="h-5 w-20"/></div></>,
   upcoming: () => <><CardHeading width={230}/><SkeletonRows rows={4}/></>,
@@ -131,7 +132,7 @@ export function CashFlowReportSkeleton({ label }: { label?: string }) {
   const report = <div aria-hidden="true" className="cash-flow-report">
     <div className="cash-flow-report-grid">
       <section className="panel cash-flow-trend"><Skeleton className="mb-3 h-7 w-72 max-w-full"/><Skeleton className="mb-3 h-4 w-48"/><ChartSkeleton bars height={220}/><div className="cash-flow-totals"><Skeleton className="h-4 w-48"/></div></section>
-      <section className="panel cash-flow-where"><div className="panel-title"><Skeleton className="h-7 w-60 max-w-full"/><div className="cash-flow-switches"><Skeleton className="h-9 w-[7.5rem] rounded-xl"/><Skeleton className="h-9 w-[5.75rem] rounded-xl"/></div></div><SkeletonRows rows={5}/></section>
+      <section className="panel cash-flow-where"><div className="panel-title"><Skeleton className="h-7 w-60 max-w-full"/><div className="cash-flow-switches"><Skeleton className="h-11 w-[11.75rem] rounded-xl"/><Skeleton className="h-11 w-[9rem] rounded-xl"/></div></div><SkeletonRows rows={5}/></section>
     </div>
   </div>;
   return label ? <div role="status" aria-busy="true"><span className="sr-only">{label}</span>{report}</div> : report;

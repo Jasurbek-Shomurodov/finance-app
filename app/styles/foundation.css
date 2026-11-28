@@ -178,6 +178,8 @@ small{font-size:var(--type-caption)}
 .muted{color:var(--muted-foreground);line-height:1.6}
 .positive{color:var(--positive)}
 .negative{color:var(--negative)}
+/* A figure kept on one line, so a sign never wraps away from its amount. */
+.nowrap{white-space:nowrap}
 .eyebrow{font-size:var(--type-caption);font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--primary);margin-bottom:12px}
 
 /* Brand mark, shared by the sidebar, the sign-in screen and the loading state. */

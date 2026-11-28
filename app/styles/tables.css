@@ -76,6 +76,7 @@ roll-strip>roll-char{display:block;height:1lh}
  * Wider screens keep the table, which scrolls sideways with the name column frozen. */
 @container content (max-width:560px){
  .records table thead{position:absolute;display:block;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+ .records table thead :is(th,td):nth-child(n){position:static;background:none}
  .records table,.records table tbody{display:block;white-space:normal}
  .records table tbody tr{display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px;padding:14px 16px;border-bottom:1px solid var(--hairline)}
  /* A zero-height full-width break after the value: the second line always starts with the category, however short the name. */
