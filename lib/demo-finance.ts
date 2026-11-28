@@ -247,11 +247,13 @@ export function demoHistory(records: Entry[], today: string) {
    add('value-' + month, date, 'valuation', 0, balance);
    if (!investment) continue;
    const rental = record.kind === 'Property' ? original.estimated_monthly_income ?? 0 : 0;
-   if (interestKinds.includes(record.kind) || record.kind === 'Business' || rental > 0 || (record.kind === 'Stock' && month % 3 === 0)) {
+   // A business worth nothing in the sample (the two LLCs that only hold their own accounts) pays out nothing of its own.
+   const earning = record.kind === 'Business' && amount > 0;
+   if (interestKinds.includes(record.kind) || earning || rental > 0 || (record.kind === 'Stock' && month % 3 === 0)) {
     const receipt = interestKinds.includes(record.kind) ? amount * original.rate / 100 / 12 : record.kind === 'Business' ? 820 + month * 8 : rental || amount * .003;
     add('income-' + month, date, 'income', receipt, null);
    }
-   if (record.kind === 'Business') add('expense-' + month, date, 'expense', 45 + month * 2, null);
+   if (earning) add('expense-' + month, date, 'expense', 45 + month * 2, null);
    if (rental > 0 && month % 4 === 0) add('expense-' + month, date, 'expense', Math.round(rental * .35), null);
   }
  }

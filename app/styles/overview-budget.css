@@ -354,6 +354,7 @@ button.budget-category-name:hover>span:not(.category-icon){text-decoration:under
 .budget-recalculate{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-control);font-size:var(--type-small)}
 .budget-year{width:100%;padding:0;overflow:hidden}
 .budget-year-scroll{overflow-x:auto}
+.budget-year-scroll:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 .budget-year table{width:100%;border-collapse:collapse;font-size:var(--type-caption);font-variant-numeric:tabular-nums}
 .budget-year th,.budget-year td{padding:10px 12px;border-bottom:1px solid var(--hairline);text-align:end;white-space:nowrap;vertical-align:top}
 .budget-year thead th{background:var(--muted);color:var(--muted-foreground);font-weight:500}

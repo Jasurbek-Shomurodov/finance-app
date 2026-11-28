@@ -95,3 +95,10 @@ test('the debt-free date says when debts in another currency are left out of the
  assert.equal(owesOutsidePlan([usd, { ...eur, amount: 0 }], 'USD'), false, 'a repaid debt is not owed');
  assert.equal(owesOutsidePlan([usd, { ...eur, kind: 'Money lent' }], 'USD'), false, 'money lent is owed to you');
 });
+
+test('interest saved is the difference of the whole amounts shown beside it', () => {
+ const { interestSaved } = loadTS('lib/debt-plan.ts');
+ assert.equal(interestSaved(66883.6, 66800.4), 84, '66,884 − 66,800 reads 84, not 83');
+ assert.equal(interestSaved(100.4, 100.4), 0);
+ assert.equal(interestSaved(10, 12.6), -3);
+});

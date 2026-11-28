@@ -29,7 +29,7 @@ export function BudgetYear({ rows, mode, month, history, amounts, schedules, cur
  return <>
  <BudgetRateNotice planned={overall.reduce((sum, item) => sum + item.missing, 0)} actual={unconverted.reduce((sum, count) => sum + count, 0)}/>
  <section className="panel budget-year">
-  {visible.length ? <div className="budget-year-scroll"><table>
+  {visible.length ? <div className="budget-year-scroll" role="region" aria-label={t('Budget')} tabIndex={0}><table>
    <thead><tr><th scope="col">{t('Category')}</th>{months.map(item => <th scope="col" key={item} data-current={item === current || undefined}>{formatMonthShort(item, locale)}</th>)}<th scope="col">{t('Total')}</th></tr></thead>
    <tbody>{visible.map(({ row, cells }) => {
     const total = cells.reduce<number | null>((sum, cell, position) => { const value = months[position] <= current ? cell.actual : own(cell) ? cell.budget : 0; return sum === null || value === null ? null : sum + value; }, 0);

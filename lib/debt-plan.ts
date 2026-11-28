@@ -8,6 +8,9 @@ export type DebtPlan = { currency: string; extra: number; method: PayoffMethod; 
 export const emptyDebtPlan = (currency: string): DebtPlan => ({ currency, extra: 0, method: 'avalanche', payments: {} });
 /** The plan as saved for this display currency, else an empty one: a plan never carries over to another currency. */
 export const planFor = (saved: DebtPlan | undefined, currency: string): DebtPlan => saved?.currency === currency ? saved : emptyDebtPlan(currency);
+/** How much less interest one plan pays than another, as the difference of the two whole amounts shown beside it: 66,884
+ * against 66,800 saves 84, never the 83 the unrounded figures would give. */
+export const interestSaved = (more: number, less: number) => Math.round(more) - Math.round(less);
 export const otherMethod = (method: PayoffMethod): PayoffMethod => method === 'snowball' ? 'avalanche' : 'snowball';
 export const methodLabels: Record<PayoffMethod, string> = { avalanche: 'Highest interest first', snowball: 'Smallest balance first' };
 

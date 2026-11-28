@@ -13,7 +13,7 @@ import { RollingText } from '@/components/presentation-foundation/rolling-text';
 import { StatTile, StatTiles } from '@/components/presentation-foundation/stat-tile';
 import { Button } from '@/components/ui/button';
 import type { PreferenceResource } from '@/hooks/use-workspace-preferences';
-import { methodLabels, otherMethod, payoffDay, payoffPlan, payoffSeries, planFor, type DebtPlan } from '@/lib/debt-plan';
+import { interestSaved, methodLabels, otherMethod, payoffDay, payoffPlan, payoffSeries, planFor, type DebtPlan } from '@/lib/debt-plan';
 import type { PayoffMethod } from '@/lib/debt-payoff';
 import type { Entry } from '@/lib/finance';
 import { formatMoney, formatMonthYear, formatNumber, formatPercent } from '@/lib/format';
@@ -66,7 +66,7 @@ function PayoffTiles({worked,extra,today,money}:{worked:Worked;extra:number;toda
  const {t,locale}=useLanguage();
  const result=worked.result!,minimums=worked.minimums;
  const day=payoffDay(today,result.months),minimumsDay=payoffDay(today,minimums?.months);
- const less=minimums?.months!=null&&result.months!==null?minimums.interest-result.interest:0;
+ const less=minimums?.months!=null&&result.months!==null?interestSaved(minimums.interest,result.interest):0;
  return <StatTiles columns={3}>
   <StatTile label={t('Estimated debt-free date')} rolling={false} value={day?formatMonthYear(day,locale):t('Not repaid within 50 years')}>{minimumsDay&&minimumsDay!==day&&<p>{t('{date} with minimums only',{date:formatMonthYear(minimumsDay,locale)})}</p>}</StatTile>
   <StatTile label={t('Estimated interest')} value={result.months===null?'—':money(result.interest)}>{less>=1&&<p>{t('{amount} less than minimums only',{amount:money(less)})}</p>}</StatTile>
@@ -98,7 +98,7 @@ function PayoffMethods({worked,plan,today,money,onChange}:{worked:Worked;plan:De
  const results={[plan.method]:worked.result,[otherMethod(plan.method)]:worked.alternative} as Record<PayoffMethod,Worked['result']>;
  const methods:PayoffMethod[]=['avalanche','snowball'];
  const [a,b]=[results.avalanche,results.snowball];
- const cheaper=a?.months!=null&&b?.months!=null&&Math.abs(a.interest-b.interest)>=1?(a.interest<b.interest?'avalanche':'snowball'):null;
+ const cheaper=a?.months!=null&&b?.months!=null&&Math.abs(interestSaved(a.interest,b.interest))>=1?(a.interest<b.interest?'avalanche':'snowball'):null;
  return <section className="panel"><PanelTitle title={t('Payoff method')}/>
   <div className="payoff-methods" role="group" aria-label={t('Payoff method')}>{methods.map(method=>{
    const result=results[method],day=payoffDay(today,result?.months);
@@ -108,6 +108,6 @@ function PayoffMethods({worked,plan,today,money,onChange}:{worked:Worked;plan:De
     <small>{result&&result.months!==null?t('interest {amount}',{amount:money(result.interest)}):t('Not repaid within 50 years')}</small>
    </button>;})}
   </div>
-  {cheaper&&<p className="payoff-saving">{t('{method} saves {amount}',{method:t(methodLabels[cheaper]),amount:money(Math.abs(a!.interest-b!.interest))})}</p>}
+  {cheaper&&<p className="payoff-saving">{t('{method} saves {amount}',{method:t(methodLabels[cheaper]),amount:money(Math.abs(interestSaved(a!.interest,b!.interest)))})}</p>}
  </section>;
 }

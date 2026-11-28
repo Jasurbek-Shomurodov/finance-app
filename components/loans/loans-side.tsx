@@ -6,7 +6,7 @@ import { OwedDonut, PayoffChartCompact } from '@/components/loans/loans-lazy';
 import { PanelTitle } from '@/components/presentation-foundation/panel-title';
 import { RollingText } from '@/components/presentation-foundation/rolling-text';
 import { Button } from '@/components/ui/button';
-import { methodLabels, payoffSeries, type DebtPlan, type payoffPlan } from '@/lib/debt-plan';
+import { interestSaved, methodLabels, payoffSeries, type DebtPlan, type payoffPlan } from '@/lib/debt-plan';
 import type { Entry } from '@/lib/finance';
 import { formatMoney, formatMonthYear, formatPercent } from '@/lib/format';
 
@@ -43,7 +43,7 @@ export function PayoffPlanCard({ plan, worked, today, onOpen }: { plan: DebtPlan
  if (!result || !worked.debts.length) return null;
  const money = (amount: number) => formatMoney(amount, plan.currency, locale);
  const points = payoffSeries(today, result, plan.extra > 0 ? minimums : null);
- const saved = minimums?.months != null && result.months !== null ? minimums.interest - result.interest : null;
+ const saved = minimums?.months != null && result.months !== null ? interestSaved(minimums.interest, result.interest) : null;
  return <section className="panel payoff-plan-card">
   <PanelTitle title={t('Payoff plan')} hint={<><p>{t('Compare fixed-rate monthly scenarios. Minimum payments are planning assumptions; this does not record payments. Fees, new borrowing and rate changes are excluded.')}</p><p>{t('Only debts in {currency} are included.', { currency: plan.currency })}</p></>}><span className="status-badge payoff-method-badge">{t(methodLabels[plan.method])}</span></PanelTitle>
   <div><PayoffChartCompact points={points} currency={plan.currency} compact/><p className="payoff-chart-ends"><span>{formatMonthYear(points[0].month, locale)}</span><span>{formatMonthYear(points[points.length - 1].month, locale)}</span></p></div>
