@@ -72,3 +72,15 @@ test('A Cash flow income card counts a whole-business payout received at the own
  assert.equal(incomeCardTotals(cards).received, 1000);
  assert.deepEqual(card.entered, { amount: 1000, currency: 'USD' }, 'the card says what came to the owner, as its progress does');
 });
+
+test('A whole-business transaction moves its cash account by the owner\'s share, as the database does (migration 174)', () => {
+ const { applyRecordChange } = loadTS('lib/record-balance.ts');
+ const { transactionChange } = loadTS('lib/net-worth-moves.ts');
+ const wallet = row('cash', 'Cash', 1000, { kind: 'Cash' });
+ const [saved, account] = applyRecordChange([wallet], undefined, sale);
+ assert.equal(saved.id, 'sale');
+ assert.equal(account.amount, 3500);
+ assert.equal(applyRecordChange([wallet, sale], sale, { ...sale, amount_basis: 'mine' }).find(item => item.id === 'cash').amount, 8500, 'switching to My share adds the rest');
+ assert.equal(transactionChange(sale, wallet), 2500);
+ assert.equal(transactionChange(cost, wallet), -200);
+});

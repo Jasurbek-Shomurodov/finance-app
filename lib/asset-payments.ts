@@ -27,7 +27,7 @@ export function assetPaymentEvents(rows: readonly AssetRow[], assetId: string): 
    id: row.id, record_id: assetId, event_type: spent ? 'contribution' as const : 'income' as const, occurred_on: row.date, created_at: row.created_at,
    // The row reads as it was entered; what it counts for is the owner's share of a whole-business figure.
    amount: amountIn({ amount: ownAmount(row), currency: row.currency }, asset.currency, ratesOf(row, null)), balance: null, ownership_percentage: 100, principal: 0, interest: 0, notes: row.notes || row.name, entered,
-   account_link: row.account_id ? { account_id: row.account_id, amount: spent ? -entered.amount : entered.amount } : null,
+   account_link: row.account_id ? { account_id: row.account_id, amount: spent ? -ownAmount(row) : ownAmount(row) } : null,
   }];
  });
 }

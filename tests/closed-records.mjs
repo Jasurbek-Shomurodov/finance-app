@@ -47,6 +47,7 @@ test('closing needs an empty record; a cash account sends what is left to an acc
  assert.equal(closed.isEmptyRecord(record('a','Cash',0)),true);assert.equal(closed.isEmptyRecord(record('a','Cash',.01)),false);
  assert.equal(closed.isEmptyRecord(record('s','Stock',250,{quantity:0})),true,'sold out, whatever the last price');
  assert.equal(closed.isEmptyRecord(record('s','Stock',250,{quantity:2})),false);
+ assert.equal(closed.isEmptyRecord(record('s','Stock',0,{quantity:2})),false,'units left at a price of 0: a live quote would value them again (migration 174)');
  assert.equal(closed.isEmptyRecord(record('p','Property',0)),true);
  assert.equal(closed.isEmptyRecord(record('f','Business',90,{quantity:0,unit_label:'sheep'})),true,'a counted asset with none left');
  assert.equal(closed.isEmptyRecord(record('f','Business',90,{quantity:0})),false,'without a unit the quantity means nothing');

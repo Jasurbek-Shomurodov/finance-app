@@ -58,7 +58,7 @@ export async function createTelegramAccount(deps:{db:ServiceDatabase;admin:Admin
  if('exists' in created)return created;
  const userId=created.id,at=person.now.toISOString();
  try{
-  const preferences=await deps.db.write('/rest/v1/user_preferences?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates'},body:JSON.stringify({user_id:userId,language:person.language,currencies:['USD'],display_name:person.firstName.trim().slice(0,80)})});
+  const preferences=await deps.db.write('/rest/v1/user_preferences?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates'},body:JSON.stringify({user_id:userId,language:person.language,currencies:['USD']})});
   if(!preferences.ok)throw Error('Database request failed.');
   const subscription=await deps.db.write('/rest/v1/telegram_subscriptions?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates'},body:JSON.stringify({user_id:userId,chat_id:person.chatId,telegram_user_id:person.telegramUserId,phone:person.phone,first_name:person.firstName.trim().slice(0,80)||null,linked_at:at,consented_at:at,digest_enabled:true,actions_enabled:true,updated_at:at})});
   if(!subscription.ok)throw Error('Database request failed.');

@@ -93,7 +93,7 @@ test('creating an account stores preferences and a linked chat with the consent 
  const admin={createPhoneUser:async input=>{sent.push(input);return {id:ownerId};},setUserPassword:async()=>{},deleteUser:async()=>{}};
  assert.deepEqual(await createTelegramAccount({db,admin,secret:'s'},person),{userId:ownerId});
  assert.deepEqual(sent[0],{phone:'+998901234567',password:derivedPassword('s',777),metadata:{telegram_user_id:777,first_name:'  Aziz '.slice(0,80)}});
- assert.deepEqual(db.tables.user_preferences,[{user_id:ownerId,language:'en',currencies:['USD'],display_name:'Aziz'}]);
+ assert.deepEqual(db.tables.user_preferences,[{user_id:ownerId,language:'en',currencies:['USD']}],'a bot-created account has no name until the person saves one in Settings: never the Telegram profile name');
  const [row]=db.tables.telegram_subscriptions;
  assert.deepEqual({...row,linked_at:undefined,consented_at:undefined,updated_at:undefined},{user_id:ownerId,chat_id:777,telegram_user_id:777,phone:'+998901234567',first_name:'Aziz',digest_enabled:true,actions_enabled:true,linked_at:undefined,consented_at:undefined,updated_at:undefined});
  assert.equal(row.consented_at,now.toISOString());assert.equal(row.linked_at,now.toISOString());

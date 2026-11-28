@@ -1,5 +1,5 @@
 import { depositToday } from './deposit-interest';
-import { expenses, income, liabilities, type Entry } from './finance';
+import { expenses, income, liabilities, ownAmount, type Entry } from './finance';
 import type { HistoryEvent } from './investment-history';
 import { accountAmount } from './record-balance';
 
@@ -27,7 +27,7 @@ export function transactionChange(row: Entry, account: Entry | undefined): numbe
  if (!account || row.frequency !== 'Once' || !row.date || row.history_event_id || row.mortgage_payment_id || row.operation_id || row.movement_id) return null;
  const sign = income.includes(row.kind) ? 1 : expenses.includes(row.kind) ? -1 : 0;
  if (!sign || (row.currency !== account.currency && row.account_exchange_rate == null)) return null;
- try { return sign * accountAmount(Number(row.amount), row.account_exchange_rate); } catch { return null; }
+ try { return sign * accountAmount(ownAmount(row), row.account_exchange_rate); } catch { return null; }
 }
 
 /** Collects the moves: a change is kept when it was entered after its day, on or before today, and the record has a

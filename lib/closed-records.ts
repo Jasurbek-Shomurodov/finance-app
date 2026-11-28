@@ -15,9 +15,10 @@ export const closedOnly = <T extends { closed_on?: string | null }>(items: reado
  items.filter(isClosed).sort((a, b) => String(b.closed_on).localeCompare(String(a.closed_on)));
 
 /** Nothing is left in it: closing needs this (the database's own rule, `guard_closed_record`). A holding sold out to
- * zero units is empty whatever its last price. */
+ * zero units is empty whatever its last price; one with units left is not, even at a price of 0, since a live quote
+ * values them again (migration 174). */
 export const isEmptyRecord = (record: Pick<Entry, 'kind' | 'amount' | 'quantity' | 'unit_label'>) =>
- unitPricedKinds.includes(record.kind) || isCounted(record) ? Number(record.quantity) === 0 || Number(record.amount) === 0 : Number(record.amount) === 0;
+ unitPricedKinds.includes(record.kind) ? Number(record.quantity) === 0 : isCounted(record) ? Number(record.quantity) === 0 || Number(record.amount) === 0 : Number(record.amount) === 0;
 
 /** A cash account or deposit can send what is left to another account as it closes; anything else is brought to zero
  * first (sold, moved or revalued). */

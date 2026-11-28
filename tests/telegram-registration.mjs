@@ -110,7 +110,7 @@ test('sharing your own number creates a confirmed phone account, links the chat 
  assert.deepEqual(context.created[0],{phone:'+998901234567',password:derivedPassword('server-secret',777),metadata:{telegram_user_id:777,first_name:'Aziz'}});
  const [row]=context.db.tables.telegram_subscriptions;
  assert.equal(row.chat_id,777);assert.equal(row.telegram_user_id,777);assert.equal(row.phone,'+998901234567');assert.equal(row.consented_at,now.toISOString());
- assert.deepEqual(context.db.tables.user_preferences,[{user_id:ownerId,language:'ru',currencies:['USD'],display_name:'Aziz'}]);
+ assert.deepEqual(context.db.tables.user_preferences,[{user_id:ownerId,language:'ru',currencies:['USD']}],'a bot-created account has no name until the person saves one in Settings: never the Telegram profile name');
  assert.deepEqual(context.db.tables.telegram_drafts.map(draft=>draft.step),['onboard:language']);
  assert.equal(outcome.replies.length,2);
  assert.equal(outcome.replies[0].text,t('ru','Account created. Let us set up a few things.'));assert.deepEqual(outcome.replies[0].keyboard,{remove:true});

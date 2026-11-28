@@ -17,7 +17,7 @@ const aziz={id:id(101),name:'Aziz',percentage:30},dilshod={id:id(102),name:'Dils
 
 test('migration 173 is in setup.sql, moves the schema version and is safe to re-run',async()=>{
  assert.ok(setup.includes(migration),'setup.sql includes migration 173');
- assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 173/);
+ assert.match(fs.readFileSync('lib/database-capabilities.ts','utf8'),/requiredSchemaVersion = 174/);
  const d=await db(setup.slice(0,setup.indexOf(migration)));
  try{
   await d.query("INSERT INTO finance_records(id,user_id,name,kind,currency,amount,date,ownership_percentage) VALUES($1,$2,'Old cafe','Business','USD',1000,'2026-01-01',40)",[id(11),owner]);

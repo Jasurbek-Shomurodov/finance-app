@@ -6,7 +6,8 @@ import { useLanguage } from '@/components/language-provider';
 import { ExchangeRatePreview } from '@/components/presentation-foundation/exchange-rate-preview';
 import { useDatedExchangeRate } from '@/hooks/use-dated-exchange-rate';
 import { formatAccountOption, formatMoney } from '@/lib/format';
-import { income, type Entry } from '@/lib/finance';
+import { income, shareOf, type Entry } from '@/lib/finance';
+import { basisShare } from '@/components/record-dialog/business-basis-field';
 import { accountAmount } from '@/lib/record-balance';
 
 /** `onSuggest`, for a new transaction: once the accounts have loaded, a blank account starts as the one last used in its
@@ -23,6 +24,9 @@ export function CashAccountField({entry,records,loading,error,busy,problem,onSug
  const fx=useDatedExchangeRate(savedRate?undefined:account?.currency,entry.currency,entry.date);
  const cross=!!account&&account.currency!==entry.currency;
  const rate=savedRate??fx.rate;
+ // A "Whole business" figure moves the account by the owner's share (migration 174).
+ const share=entry.amount_basis==='whole'?basisShare(entry,records,original):null;
+ const moved=share===null?entry.amount:shareOf(entry.amount,share);
  // Accounts grouped as the household's and each business's, searchable, like Income source; saving without one says
  // "Choose a cash account." (cashAccountProblem), so the field needs no browser check of its own.
  const businesses=[...new Set(accounts.map(account=>account.business_id).filter((id):id is string=>!!id))];
@@ -35,6 +39,6 @@ export function CashAccountField({entry,records,loading,error,busy,problem,onSug
   {error&&<p className="error" role="alert">{t(error)}</p>}
   {entry.frequency!=='Once'&&<p className="muted">{t('Choose a cash account when recording the actual payment.')}</p>}
   <input type="hidden" name="account_exchange_rate" value={cross&&rate?rate:''}/>
-  {cross&&<>{!savedRate&&<ExchangeRatePreview fx={fx}/>} {rate&&<p className="muted">{t('Account amount')}: <strong>{formatMoney(accountAmount(entry.amount,rate),account.currency,locale)}</strong></p>}</>}
+  {cross&&<>{!savedRate&&<ExchangeRatePreview fx={fx}/>} {rate&&<p className="muted">{t('Account amount')}: <strong>{formatMoney(accountAmount(moved,rate),account.currency,locale)}</strong></p>}</>}
  </div>;
 }
