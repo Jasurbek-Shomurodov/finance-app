@@ -1,4 +1,4 @@
-import { decimalSum } from './decimal-amounts';
+import { decimalSum, wholeUp } from './decimal-amounts';
 import { income, liabilities, type Entry } from './finance';
 import { typicalMortgagePayment } from './form-suggestions';
 import { availableForPayment, latestPaymentCategory, type MortgagePayment } from './mortgage-payment-edit';
@@ -59,7 +59,7 @@ function itemPlan(item: RecurringItem, data: Data, today: string): PaymentPlan {
  if (item.installment) return debtPlan(item.record, item.date.slice(0, 7) < today.slice(0, 7) ? item.date : today);
  const incoming = income.includes(item.record.kind);
  if (item.status === 'paid') {
-  const amount = Math.max(Math.ceil(item.amount - (item.recorded ?? item.amount)), 0);
+  const amount = Math.max(wholeUp(item.amount - (item.recorded ?? item.amount)), 0);
   return { kind: 'schedule', target: item.record, date: item.date, amount, due: amount, incoming, extra: true };
  }
  const dues = [...new Set([...openDueDates(data.records, data.occurrences, item.record.id, today), item.date])].sort();

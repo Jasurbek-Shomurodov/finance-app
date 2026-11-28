@@ -95,7 +95,18 @@ export function archivedIn(item: { archived?: boolean; archive_pauses?: readonly
  if (item.archived && !pauses?.some(pause => pause.to === null)) return true;
  return !!pauses?.some(pause => month >= pause.from.slice(0, 7) && (pause.to === null || month < pause.to.slice(0, 7)));
 }
-export const monthly=(e:Entry,month?:string)=>e.source_paused||(month?archivedIn(e,month):e.archived)?0:month && ((e.date && e.date.slice(0,7)>month) || (e.end_date && e.end_date.slice(0,7)<month)) ? 0 : e.frequency==='Yearly'?e.amount/12:e.frequency==='Monthly'?e.amount:intervalDays(e)?e.amount*(month?scheduleDates(e,month+'-01',new Date(Date.UTC(Number(month.slice(0,4)),Number(month.slice(5,7)),0)).toISOString().slice(0,10)).length:365.25/12/intervalDays(e)!):0;
+/** What a schedule comes to in `month` (YYYY-MM), or in an average month without one. A monthly schedule whose end
+ * date falls in `month` before its payment day pays nothing that month, as Recurring shows it; a yearly one is spread
+ * over twelve months. */
+export const monthly=(e:Entry,month?:string)=>{
+ if(e.source_paused||(month?archivedIn(e,month):e.archived))return 0;
+ if(month&&((e.date&&e.date.slice(0,7)>month)||(e.end_date&&e.end_date.slice(0,7)<month)))return 0;
+ const last=month&&new Date(Date.UTC(Number(month.slice(0,4)),Number(month.slice(5,7)),0)).toISOString().slice(0,10);
+ if(e.frequency==='Yearly')return e.amount/12;
+ if(e.frequency==='Monthly')return month&&last&&e.end_date?.slice(0,7)===month?e.amount*scheduleDates(e,month+'-01',last).length:e.amount;
+ const days=intervalDays(e);
+ return days?e.amount*(month&&last?scheduleDates(e,month+'-01',last).length:365.25/12/days):0;
+};
 
 // Salary is pay for work, even when its employer is a business the user owns.
 // Only linked business distributions replace the business income estimate.

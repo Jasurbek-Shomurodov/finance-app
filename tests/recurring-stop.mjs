@@ -7,7 +7,8 @@ test('stopping preserves prior forecasts and excludes later months for monthly a
  assert.equal(estimatedCashFlow(entries,'2025-12').forecast,0);
  assert.equal(estimatedCashFlow(entries,'2026-01').forecast,1200);
  assert.equal(estimatedCashFlow(entries,'2026-05').forecast,1100);
- assert.equal(estimatedCashFlow(entries,'2026-06').forecast,1100);
+ // Stopped on 2 June, before its day: no June salary, as Recurring shows it; the yearly bill still counts its twelfth.
+ assert.equal(estimatedCashFlow(entries,'2026-06').forecast,-100);
  assert.equal(estimatedCashFlow(entries,'2026-07').forecast,0);
  assert.equal(entries.length,2);
  assert.equal(estimatedCashFlow([{...entries[0],end_date:null}],'2026-07').forecast,1200);

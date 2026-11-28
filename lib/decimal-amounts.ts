@@ -14,3 +14,7 @@ export function decimalSum(amounts:number[]){
  const digits=(negative?-total:total).toString().padStart(scale+1,'0');
  return Number((negative?'-':'')+digits.slice(0,digits.length-scale)+(scale?'.'+digits.slice(-scale):''));
 }
+/** `value` rounded up to a whole number, ignoring a binary floating-point tail: 3.000000000000001 (from 10.3 − 7.3)
+ * is 3, never 4. For auto-filled whole amounts and counts of months, which must reach the target without overshooting
+ * by one. */
+export const wholeUp=(value:number)=>Math.ceil(value-1e-9*Math.max(1,Math.abs(value)))+0;

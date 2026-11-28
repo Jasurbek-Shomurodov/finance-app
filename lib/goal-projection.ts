@@ -1,4 +1,5 @@
 import { addMonths, dayMs, dayTime, daysBetween } from './calendar-days';
+import { wholeUp } from './decimal-amounts';
 import { assets, liabilities, estimatedCashFlow, financialTotals, type Entry } from './finance';
 import type { ForecastBudget } from './budget-forecast';
 import { marketEntry, marketRates, type MarketData } from './market';
@@ -65,7 +66,7 @@ export function goalSummary(goal: { target: number; target_date: string | null; 
  const left = current === null ? null : Math.max(0, target - current);
  const percent = current === null || target <= 0 ? null : Math.max(0, Math.min(100, current / target * 100));
  const monthsLeft = goal.target_date ? Math.max(0, (Number(goal.target_date.slice(0, 4)) - Number(today.slice(0, 4))) * 12 + Number(goal.target_date.slice(5, 7)) - Number(today.slice(5, 7))) : null;
- const needed = left === null || monthsLeft === null ? null : left === 0 ? 0 : Math.ceil(left / Math.max(1, monthsLeft));
+ const needed = left === null || monthsLeft === null ? null : left === 0 ? 0 : wholeUp(left / Math.max(1, monthsLeft));
  return { percent, left, monthsLeft, needed, monthly: Math.max(0, Number(goal.funding_monthly ?? goal.monthly_contribution ?? 0)) };
 }
 
@@ -73,7 +74,7 @@ export function goalSummary(goal: { target: number; target_date: string | null; 
  * today's month; null when nothing is left, nothing goes in, or it would take more than a century. */
 export function reachedIn(left: number | null, monthly: number, today: string) {
  if (left === null || left <= 0 || !(monthly > 0)) return null;
- const months = Math.ceil(left / monthly);
+ const months = wholeUp(left / monthly);
  if (months > 1200) return null;
  const index = Number(today.slice(0, 4)) * 12 + Number(today.slice(5, 7)) - 1 + months;
  return `${Math.floor(index / 12)}-${String(index % 12 + 1).padStart(2, '0')}`;
@@ -87,7 +88,7 @@ export function goalPath(goal: { target: number; target_date: string | null; ann
  const target = Number(goal.target), rate = Number(goal.annual_return ?? 0);
  if (current === null || !(target > 0) || !Number.isFinite(current)) return null;
  if (current >= target) return { points: [{ date: today, projected: current }], reachesOn: today };
- const steady = monthly > 0 ? Math.ceil((target - current) / monthly) : null;
+ const steady = monthly > 0 ? wholeUp((target - current) / monthly) : null;
  // Without a return the target is reached after `steady` contributions; a return only brings that day closer.
  const reachBy = steady !== null && steady <= 1200 ? addMonths(today, steady) : null;
  const horizon = [goal.target_date, reachBy].filter((date): date is string => !!date && date > today).sort().pop();

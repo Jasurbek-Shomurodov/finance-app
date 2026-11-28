@@ -1,4 +1,5 @@
 // The personal financial report's layout: what each section says and shows. The figures come from lib/report-figures.ts.
+import { wholeUp } from './decimal-amounts';
 import { dayMs, monthEnd, shiftMonth } from './calendar-days';
 import { projectGoal } from './goal-projection';
 import { convertAmount, marketRates } from './market';
@@ -183,7 +184,7 @@ function moneyGoal(r:Report,goal:Goal){
  const {t,money,today}=r,currency=goalCurrency(r,goal);
  const current=goal.kind==='net_worth'?netWorthIn(r,currency):number(goal.allocated),target=number(goal.target);
  const projection=current===null||target===null||!goal.target_date?null:projectGoal(current,target,today,goal.target_date,0,Number(goal.annual_return??0));
- r.table(['Current / target','Completion','Target date','Required monthly contribution'],[[`${money(current,currency)} / ${money(target,currency)}`,completion(r,current,target),r.date(goal.target_date),money(projection?.required==null?null:Math.ceil(projection.required),currency)]],[.34,.15,.23,.28],[0,1,3]);
+ r.table(['Current / target','Completion','Target date','Required monthly contribution'],[[`${money(current,currency)} / ${money(target,currency)}`,completion(r,current,target),r.date(goal.target_date),money(projection?.required==null?null:wholeUp(projection.required),currency)]],[.34,.15,.23,.28],[0,1,3]);
  r.add('text',`${t('Progress basis')}: ${t(goal.kind==='net_worth'?'Net worth':'Dedicated savings')} · ${t('Assumed annual return')}: ${r.percent(goal.annual_return??0)}`);
  if(current===null)r.issues.add(`${goal.name}: ${t('Goal progress unavailable because values or exchange rates are missing')}`);
  if(goal.target_date&&goal.target_date<today&&current!==null&&target!==null&&current<target)r.issues.add(`${goal.name}: ${t('Target date passed')}`);

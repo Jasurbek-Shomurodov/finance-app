@@ -16,6 +16,7 @@ import { Segmented } from '@/components/presentation-foundation/segmented';
 import { SeriesLegend, toggleKey } from '@/components/presentation-foundation/series-legend';
 import { useLanguage } from '@/components/language-provider';
 import { formatDate, formatMoney, formatMonthYear, formatPercent } from '@/lib/format';
+import { wholeUp } from '@/lib/decimal-amounts';
 import { projectGoal } from '@/lib/goal-projection';
 import type { Goal } from '@/lib/planning';
 import { snapshotPoints, type PortfolioSnapshot } from '@/lib/portfolio-snapshots';
@@ -59,7 +60,7 @@ export function GoalForecast({ goal, starting, surplus, currency, today, snapsho
  const progress = result ? Math.max(0, Math.min(100, result.projected / goal.target * 100)) : 0;
  const overBudget = contribution !== null && surplus !== null ? Math.max(0, contribution - Math.max(0, surplus)) : 0;
  // Quick-fill chooses a whole amount that still meets the target; typed amounts retain their precision.
- const requiredContribution = result?.required == null ? null : Math.ceil(result.required);
+ const requiredContribution = result?.required == null ? null : wholeUp(result.required);
  const monthlyMax = Math.min(1e15, Math.max(1000, Math.ceil(Math.max((requiredContribution ?? 0) * 1.5, (surplus ?? 0) * 2, contribution ?? 0) / 1000) * 1000));
  const rangeStyle = (value: number, max: number) => ({ '--range-progress': `${Math.min(100, value / max * 100)}%` } as CSSProperties);
  const savePlan = async () => {
