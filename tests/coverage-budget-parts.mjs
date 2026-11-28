@@ -717,11 +717,11 @@ test('ERR-005: a plan typed below the category’s recurring bills goes back to 
  assert.equal(one(view,'x-number-input').props.value,650);
 });
 
-test('LeftToBudgetCard: the Summary lists the money rolled over apart from Planned spending; the Expenses tab adds it to each bucket, the Flexible bucket its own carry in flex mode',()=>{
+test('LeftToBudgetCard: the Summary shows the money rolled over as an unsigned note under the total, since the total does not add it; the Expenses tab adds it to each bucket, the Flexible bucket its own carry in flex mode',()=>{
  const rows=[row({key:'rent',name:'Rent',type:'fixed',budget:1500,actual:1600,rolloverIn:100,rollover:true}),row({key:'groceries',type:'flexible',budget:400,actual:250,rolloverIn:40,rollover:true})];
  const carried={...left,expenses:1900,rollover:140};
  const view=mount(React.createElement(page.LeftToBudgetCard,{left:carried,rows,mode:'category',currency:'USD'}));
- assert.equal(text(byClass(view,'budget-left-summary')[0]),`T:Planned income${money(3000)}T:Planned spending−${money(1900)}T:Rolled over+${money(140)}T:Goal contributions−${money(250)}T:Left to budget${money(750)}`);
+ assert.equal(text(byClass(view,'budget-left-summary')[0]),`T:Planned income${money(3000)}T:Planned spending−${money(1900)}T:Goal contributions−${money(250)}T:Left to budget${money(750)}T:Rolled over${money(140)}`);
  one(view,'x-segmented').props.onChange('expenses');view.render();
  assert.deepEqual(all(view,'li').map(text),[`T:FixedT:${money(1600)} plannedT:${money(1600)} spentT:${money(0)} remaining`,`T:FlexibleT:${money(440)} plannedT:${money(250)} spentT:${money(190)} remaining`],'buckets plan with the carry: 1600 + 440 is Planned spending plus Rolled over');
  // Flex mode: the bucket plans its own amount plus its own carry; the categories’ carry is not its.
@@ -730,7 +730,7 @@ test('LeftToBudgetCard: the Summary lists the money rolled over apart from Plann
  assert.equal(text(all(flex,'li')[1]),`T:FlexibleT:${money(960)} plannedT:${money(250)} spentT:${money(710)} remaining`);
  // An unknown carry reads — and is never shown as a figure.
  const unknown=mount(React.createElement(page.LeftToBudgetCard,{left:{...carried,flexible:900,flexibleRollover:null,rollover:null,missing:1},rows:[rows[0]],mode:'flex',currency:'USD'}));
- assert.match(text(byClass(unknown,'budget-left-summary')[0]),/T:Rolled over—T:Goal contributions/);
+ assert.match(text(byClass(unknown,'budget-left-summary')[0]),/T:Left to budget.*T:Rolled over—$/);
  one(unknown,'x-segmented').props.onChange('expenses');unknown.render();
  assert.equal(text(all(unknown,'li')[1]),`T:FlexibleT:— plannedT:${money(0)} spentT:— remaining`);
 });

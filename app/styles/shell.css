@@ -16,7 +16,7 @@
 .nav-item svg{width:17px!important;height:17px!important;opacity:.7}
 .nav-item[data-active=true]{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground)}
 .nav-item[data-active=true] svg{opacity:1}
-.nav-item>span.count:last-child{flex:0 0 auto;min-width:max-content;margin-inline-start:auto;background:color-mix(in srgb,var(--negative) 8%,transparent);color:var(--negative)}
+.nav-item>span.count:last-child{flex:0 0 auto;min-width:max-content;margin-inline-start:auto;background:color-mix(in srgb,var(--negative) 8%,transparent);color:color-mix(in srgb,var(--negative) 82%,var(--foreground))}
 .sidebar-account{padding:12px;gap:6px}
 .user-line{display:flex;align-items:center;gap:4px;min-width:0;padding-top:6px;border-top:1px solid var(--sidebar-border)}
 .user-link{display:flex;flex:1;align-items:center;gap:10px;min-width:0;padding:6px;border-radius:8px;color:inherit;transition:background .15s,transform var(--motion-quick) var(--ease-out)}

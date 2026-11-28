@@ -21,6 +21,7 @@ export function GoalProjectionChart({ points, target, today, currency, labels }:
  // The first and last labels hug the chart's edges, so a long date is never cut off.
  const edgeTick = ({ x, y, payload }: { x: number | string; y: number | string; payload: { value: unknown } }) => <text className="goal-projection-tick" x={x} y={y} dy="0.9em" textAnchor={ticks.length > 1 && payload.value === first ? 'start' : payload.value === last && ticks.length > 1 ? 'end' : 'middle'}>{tick(Number(payload.value))}</text>;
  const name: Record<string, string> = { saved: labels.saved, projected: labels.projected };
+ const lone = data.filter(point => typeof point.saved === 'number').length === 1;
  return <div className="goal-projection"><ResponsiveContainer width="100%" height={chartHeight.slim}>
   <ComposedChart data={data} margin={chartMargin} accessibilityLayer>
    <ChartGradient id="goal-projection-fill"/>
@@ -29,7 +30,8 @@ export function GoalProjectionChart({ points, target, today, currency, labels }:
    <YAxis hide domain={axis.domain} ticks={axis.ticks}/>
    <Tooltip {...chartTooltip} labelFormatter={time => formatDate(isoDay(Number(time)), locale)} formatter={(amount, key) => [formatMoney(Number(amount), currency, locale), name[String(key)] ?? String(key)]}/>
    <ReferenceLine y={target} {...referenceLine} stroke="var(--positive)" ifOverflow="extendDomain"/>
-   <Area type="monotone" dataKey="saved" name="saved" connectNulls {...leadArea('goal-projection-fill')}/>
+   {/* With nothing recorded before today, Already saved is a single point: drawn as a dot, so the key's first entry is on the chart. */}
+   <Area type="monotone" dataKey="saved" name="saved" connectNulls {...leadArea('goal-projection-fill')} {...(lone ? { dot: { r: 4, fill: 'var(--primary)', stroke: 'var(--card)', strokeWidth: 2 } } : {})}/>
    <Line type="monotone" dataKey="projected" name="projected" connectNulls {...plannedLine}/>
   </ComposedChart>
  </ResponsiveContainer></div>;

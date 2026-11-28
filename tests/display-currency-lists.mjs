@@ -135,6 +135,14 @@ test('Transactions suggestions and duplicates show each transaction as entered, 
  asEntered(shown);
 });
 
+test('Transactions suggestions show the first five and keep the rest behind Show more', () => {
+ const many = Array.from({ length: 8 }, (_, index) => ({ id: 's' + index, record: entry('Plan ' + index, 'Other expense', 'USD', 10 + index), cadence: 'monthly', next: '2026-11-01', changed: false, previous: 0 }));
+ const insights = { cadenceLabels: { monthly: 'Monthly' }, recurringPlanDraft: () => ({}), recurringSuggestions: () => many, suspectedDuplicates: () => [] };
+ const shown = mountScreen('components/transaction-insights.tsx', 'TransactionInsights', { owner: null, records: [], today: '2026-10-09', onReview() {} }, { '@/lib/recurring-insights': insights, '@/hooks/use-owner-resource': { useOwnerResource: () => ({}) }, '@/lib/planning': { emptyPlanning: {} }, ...foundation('resource-state', 'panel-title') });
+ assert.ok(shown.includes('Plan 4') && !shown.includes('Plan 5'), shown);
+ assert.ok(shown.includes('Show more'), shown);
+});
+
 test('a business’s other assets and debts read in the display currency, a debt with its minus (MONEY-008)', () => {
  const shown = mountScreen('components/planning/accounts/business-holdings.tsx', 'BusinessHoldings', { records: [entry('Van', 'Vehicle', 'USD', 1000), entry('Credit', 'Loan', 'USD', 500), entry('Shop', 'Property', 'GBP', 100)], market }, foundation('category-icon', 'count', 'panel-title'));
  assert.ok(shown.includes(eur(900)) && shown.includes('−' + eur(450)), shown);

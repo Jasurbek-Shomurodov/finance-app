@@ -46,10 +46,11 @@ export function LeftToBudgetCard({ left, rows, mode, currency, tab: chosen, onTa
    <dl className="budget-left-summary">
     <div><dt>{t('Planned income')}</dt><dd><RollingText text={money(left.income)}/></dd></div>
     <div><dt data-key="spending">{t('Planned spending')}</dt><dd><RollingText text={taken(left.expenses)}/></dd></div>
-    {/* Money carried in by rollover funds is not planned from this month's income, so it stands apart: Planned spending plus this line is what the Expenses tab and the table total. */}
-    {left.rollover !== 0 && <div><dt>{t('Rolled over')}</dt><dd><RollingText text={left.rollover === null ? '—' : formatSignedMoney(left.rollover, currency, locale)}/></dd></div>}
     <div><dt data-key="goals">{t('Goal contributions')}</dt><dd><RollingText text={taken(left.contributions)}/></dd></div>
     <div className="budget-left-total"><dt data-key="left">{t('Left to budget')}</dt><dd data-tone={tone}><RollingText text={money(left.left)}/></dd></div>
+    {/* Money carried in by rollover funds was planned in earlier months, not from this month's income, so it is no part of the
+        sum above: it stands under the total, unsigned, as a note. Planned spending plus it is what the Expenses tab and the table total. */}
+    {left.rollover !== 0 && <div className="budget-left-note"><dt>{t('Rolled over')}</dt><dd><RollingText text={left.rollover === null ? '—' : money(left.rollover)}/></dd></div>}
    </dl>
    {left.left !== null && Math.round(left.left) >= 1 && <Button asChild><DrawerLink href={planFundingLink}>{t('Assign {amount}', { amount: money(left.left) })}</DrawerLink></Button>}
   </>}

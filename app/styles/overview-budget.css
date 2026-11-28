@@ -252,8 +252,9 @@ button.budget-category-name:hover>span:not(.category-icon){text-decoration:under
 .budget-progress>div{height:100%;border-radius:inherit;background:var(--mark-bg)}
 .budget-progress[data-over]>div{background:var(--negative)}
 .budget-pill{display:inline-block;min-width:64px;padding:2px 10px;border-radius:999px;font-weight:500;text-align:center;color:var(--muted-foreground);background:var(--muted)}
-.budget-pill[data-tone=positive]{color:var(--positive);background:color-mix(in srgb,var(--positive) 12%,transparent)}
-.budget-pill[data-tone=negative]{color:var(--negative);background:color-mix(in srgb,var(--negative) 12%,transparent)}
+/* Text a little towards the foreground, so the tinted pill keeps AA contrast in both themes. */
+.budget-pill[data-tone=positive]{color:color-mix(in srgb,var(--positive) 80%,var(--foreground));background:color-mix(in srgb,var(--positive) 12%,transparent)}
+.budget-pill[data-tone=negative]{color:color-mix(in srgb,var(--negative) 80%,var(--foreground));background:color-mix(in srgb,var(--negative) 12%,transparent)}
 .budget-input{display:inline-block;width:100%;max-width:120px}
 .budget-input input{height:32px;padding-inline:10px;text-align:end;font-variant-numeric:tabular-nums}
 /* Spending without a plan, set apart under its own heading: the count, what it comes to and Plan these. */
@@ -318,6 +319,9 @@ button.budget-category-name:hover>span:not(.category-icon){text-decoration:under
 .budget-left-summary dd{margin:0;font-variant-numeric:tabular-nums}
 .budget-left-total{padding-top:8px;border-top:1px solid var(--hairline);font-weight:600}
 .budget-left-total dt{color:var(--foreground)}
+/* Rolled over: a note under the total, not one of the figures it adds. */
+.budget-left-note{font-size:var(--type-caption);color:var(--muted-foreground)}
+.budget-left-summary .budget-left-note dd{color:var(--muted-foreground)}
 [data-tone=positive]{color:var(--positive)}
 [data-tone=negative]{color:var(--negative)}
 .budget-left-list{display:flex;flex-direction:column;gap:14px;margin:0;padding:0;list-style:none;font-size:var(--type-small)}
