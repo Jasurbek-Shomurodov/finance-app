@@ -38,6 +38,13 @@ through the `test` in `e2e/test.mjs`, which every spec imports instead of `@play
 that moment. The day is in the future because the browser drops cookies that expired by its real clock; move it
 forward, and refresh every screenshot, before real time reaches it.
 
+### Accessibility tests
+
+`e2e/accessibility.spec.mjs` runs axe-core's WCAG 2.1 A and AA rules on every workspace screen, each Settings section,
+the signed-out pages and every dialog, in light and dark, once animations have finished. It walks the same screens and
+dialogs as the screenshot tests (`e2e/screen-list.mjs`): a new screen or dialog added there is checked here too. A
+failure names the rule and the element; fix the page, never the list of rules.
+
 ### Screenshot tests
 
 `e2e/screens.spec.mjs` compares whole pages with saved pictures (`toHaveScreenshot`): every workspace screen (the
